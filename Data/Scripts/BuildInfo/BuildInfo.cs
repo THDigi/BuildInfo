@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game;
+using VRage.Game.Components;
+using VRage.Game.ModAPI;
 using VRageMath;
 using VRage.ObjectBuilders;
 using VRage.Utils;
-using VRage.Game.Components;
-using VRage.Game.ModAPI;
-using VRage.Game;
 
 using Digi.Utils;
 
@@ -19,7 +18,14 @@ namespace Digi.BuildInfo
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
     public class BuildInfo : MySessionComponentBase
     {
+        public override void LoadData()
+        {
+            Log.SetUp("Build Info", 514062285, "BuildInfo");
+        }
+
         public static bool init { get; private set; }
+
+        public bool isThisDS = false;
 
         private static bool showBuildInfo = true;
 
@@ -150,29 +156,40 @@ namespace Digi.BuildInfo
 
         public void Init()
         {
-            Log.Info("Initialized.");
+            Log.Init();
             init = true;
+            isThisDS = (MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }
 
         protected override void UnloadData()
         {
-            Log.Info("Mod unloaded");
+            try
+            {
+                if(init)
+                {
+                    init = false;
+                    cubes = null;
+                    hudLines = null;
+
+                    MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+
             Log.Close();
-
-            init = false;
-            cubes = null;
-            hudLines = null;
-
-            MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
         }
-
+        
+        // TODO move on top?
         private long lastScroll = 0;
         private const int SCROLL_FROM_LINE = 2;
         private int atLine = SCROLL_FROM_LINE;
         private const int MAX_LINES = 8;
-
+        
         public override void UpdateAfterSimulation()
         {
             try
@@ -185,13 +202,16 @@ namespace Digi.BuildInfo
                     Init();
                 }
 
-                if(showBuildInfo && MyCubeBuilder.Static != null && MyCubeBuilder.Static.HudBlockDefinition != null)
+                if(isThisDS)
+                    return;
+
+                if(showBuildInfo && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
                 {
                     if(++skip < 6)
                         return;
 
                     skip = 0;
-                    var def = MyCubeBuilder.Static.HudBlockDefinition;
+                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition; // TODO WHITELIST!
                     long now = DateTime.UtcNow.Ticks;
 
                     if(def.Id.SubtypeId != lastSubTypeId || def.Id.TypeId != lastTypeId)
@@ -234,7 +254,7 @@ namespace Digi.BuildInfo
 
                         lastScroll = now + TimeSpan.TicksPerSecond;
                         atLine = SCROLL_FROM_LINE;
-
+                        
                         for(int l = 0; l < hudLines.Count; l++)
                         {
                             var hud = hudLines[l];
@@ -378,6 +398,7 @@ namespace Digi.BuildInfo
             {
                 SetText(line++, "Requires power: " + PowerFormat(piston.RequiredPowerInput) + ", Sink group: " + PowerGroup(piston.ResourceSinkGroup));
                 SetText(line++, "Extended length: " + DistanceFormat(piston.Maximum));
+                SetText(line++, "Max speed: " + SpeedFormat(piston.MaxVelocity));
             }
 
             var motor = def as MyMotorStatorDefinition;
@@ -406,7 +427,7 @@ namespace Digi.BuildInfo
                 string topPart = null;
 
                 if(motor != null)
-                    topPart = motor.RotorPart;
+                    topPart = motor.TopPart;
                 else if(piston != null)
                     topPart = piston.TopPart;
 
@@ -427,8 +448,8 @@ namespace Digi.BuildInfo
                     bool deformable = def.BlockTopology == MyBlockTopology.Cube;
                     bool buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
 
-                    SetText(line++, "Subpart - " + MassFormat(partDef.Mass) + ", " + VectorFormat(partDef.Size) + ", " + TimeFormat((int)((def.MaxIntegrity / def.IntegrityPointsPerSec) / MyAPIGateway.Session.WelderSpeedMultiplier)) + (partDef.DisassembleRatio > 1 ? ", Disassemble ratio: " + partDef.DisassembleRatio.ToString(FLOAT_FORMAT) : "") + (buildModels ? "" : " (No construction models)"));
-                    SetText(line++, "             - Integrity: " + partDef.MaxIntegrity.ToString(INT_FORMAT) + (deformable ? ", Deformable (" + partDef.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "") + ", Air-tight: " + (airTight ? "Yes" : (airTightFaces == 0 ? "No" : airTightFaces + " of " + totalFaces + " grid faces")));
+                    SetText(line++, "Part: " + MassFormat(partDef.Mass) + ", " + VectorFormat(partDef.Size) + ", " + TimeFormat((int)((def.MaxIntegrity / def.IntegrityPointsPerSec) / MyAPIGateway.Session.WelderSpeedMultiplier)) + (partDef.DisassembleRatio > 1 ? ", Disassemble ratio: " + partDef.DisassembleRatio.ToString(FLOAT_FORMAT) : "") + (buildModels ? "" : " (No construction models)"));
+                    SetText(line++, "      - Integrity: " + partDef.MaxIntegrity.ToString(INT_FORMAT) + (deformable ? ", Deformable (" + partDef.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "") + ", Air-tight: " + (airTight ? "Yes" : (airTightFaces == 0 ? "No" : airTightFaces + " of " + totalFaces + " grid faces")));
                 }
 
                 return;
@@ -631,8 +652,8 @@ namespace Digi.BuildInfo
             var battery = def as MyBatteryBlockDefinition;
             if(battery != null)
             {
-                SetText(line++, "Power group: " + battery.ResourceSinkGroup.String + ", Power source group: " + PowerGroup(battery.ResourceSourceGroup));
-                SetText(line++, "Power capacity: " + PowerFormat(battery.MaxStoredPower) + ", Input required: " + PowerFormat(battery.RequiredPowerInput) + (battery.AdaptibleInput ? " (adaptable)" : "") + ", Sink group: " + PowerGroup(battery.ResourceSinkGroup));
+                SetText(line++, "Power group: " + battery.ResourceSinkGroup.String + ", Power source group: " + PowerGroup(battery.ResourceSourceGroup) + ", Input required: " + PowerFormat(battery.RequiredPowerInput) + (battery.AdaptibleInput ? " (adaptable)" : ""));
+                SetText(line++, "Power capacity: " + PowerStorageFormat(battery.MaxStoredPower) + ", output: " + PowerFormat(battery.MaxPowerOutput));
                 return;
             }
 
@@ -694,9 +715,10 @@ namespace Digi.BuildInfo
             var sensor = def as MySensorBlockDefinition;
             if(sensor != null)
             {
-                //SetText(line++, "Requires power: "+sensor.RequiredPowerInput+", Sink group: "+PowerGroup(sensor.ResourceSinkGroup)); // TODO RequiredPowerInput doesn't seem to be working?
-                SetText(line++, "Power sink group: " + PowerGroup(sensor.ResourceSinkGroup)); // set on the same line with "Requires power" when that's fixed
-                SetText(line++, "Range: " + DistanceFormat(sensor.MaxRange));
+                // TODO check if fixed: RequiredPowerInput seems to always be 0 for sensors:
+                SetText(line++, "Requires power: " + PowerFormat(sensor.RequiredPowerInput) + ", Sink group: " + PowerGroup(sensor.ResourceSinkGroup));
+                //SetText(line++, "Power sink group: " + PowerGroup(sensor.ResourceSinkGroup));
+                SetText(line++, "Max range: " + DistanceFormat(sensor.MaxRange));
                 return;
             }
 
@@ -730,11 +752,22 @@ namespace Digi.BuildInfo
                 return;
             }
 
+            var lcd = def as MyTextPanelDefinition;
+            if(lcd != null)
+            {
+                SetText(line++, "Power sink group: " + PowerGroup(lcd.ResourceSinkGroup));
+                SetText(line++, "Screen resolution: " + (lcd.TextureResolution * lcd.TextureAspectRadio) + "x" + lcd.TextureResolution);
+                return;
+            }
+
             var camera = def as MyCameraBlockDefinition;
             if(camera != null)
             {
                 SetText(line++, "Requires power: " + PowerFormat(camera.RequiredPowerInput) + ", Sink group: " + PowerGroup(camera.ResourceSinkGroup));
                 SetText(line++, "Field of view: " + RadAngleFormat(camera.MinFov) + " to " + RadAngleFormat(camera.MaxFov));
+
+                var index = Math.Max(camera.OverlayTexture.LastIndexOf('/'), camera.OverlayTexture.LastIndexOf('\\'));
+                SetText(line++, "Overlay texture: " + camera.OverlayTexture.Substring(index + 1));
                 return;
             }
 
@@ -780,6 +813,7 @@ namespace Digi.BuildInfo
                 SetText(line++, "Power required: " + PowerFormat(jumpDrive.RequiredPowerInput) + ", For jump: " + PowerFormat(jumpDrive.PowerNeededForJump) + ", Sink group: " + PowerGroup(jumpDrive.ResourceSinkGroup));
                 SetText(line++, "Max distance: " + DistanceFormat((float)jumpDrive.MaxJumpDistance));
                 SetText(line++, "Max mass: " + MassFormat((float)jumpDrive.MaxJumpMass));
+                SetText(line++, "Jump delay: " + TimeFormat(jumpDrive.JumpDelay));
                 return;
             }
 
@@ -862,6 +896,11 @@ namespace Digi.BuildInfo
             return W.ToString(FLOAT_FORMAT) + " W";
         }
 
+        private string PowerStorageFormat(float MW)
+        {
+            return PowerFormat(MW) + "h";
+        }
+
         private string DistanceFormat(float m)
         {
             if(m > 1000)
@@ -883,6 +922,11 @@ namespace Digi.BuildInfo
             return String.Format("{0:00}:{1:00}", (seconds / 60), (seconds % 60));
         }
 
+        private string TimeFormat(float seconds)
+        {
+            return String.Format("{0:#.##}s", seconds);
+        }
+
         private string RadAngleFormat(float radians)
         {
             return AngleFormat(MathHelper.ToDegrees(radians));
@@ -896,6 +940,11 @@ namespace Digi.BuildInfo
         private string VectorFormat(Vector3 vec)
         {
             return vec.X + "x" + vec.Y + "x" + vec.Z;
+        }
+
+        private string SpeedFormat(float mps)
+        {
+            return mps.ToString(FLOAT_FORMAT) + " m/s";
         }
 
         private void SetText(int line, string text, MyFontEnum font = MyFontEnum.White, int aliveTime = 100)
@@ -912,15 +961,10 @@ namespace Digi.BuildInfo
             hudLines[line].Font = font;
             hudLines[line].Text = text;
             hudLines[line].AliveTime = aliveTime;
-            hudLines[line].Show();
-        }
 
-        private string cacheOres = null;
-        private string cacheMods = null;
-        private string cacheAmmo = null;
-        private string cacheItems = null;
-        private string cacheComps = null;
-        private string cacheSuits = null;
+            // UNDONE:
+            //hudLines[line].Show();
+        }
 
         public void MessageEntered(string msg, ref bool send)
         {
@@ -928,369 +972,7 @@ namespace Digi.BuildInfo
             {
                 send = false;
                 showBuildInfo = !showBuildInfo;
-                MyAPIGateway.Utilities.ShowMessage(Log.MOD_NAME, "Display turned " + (showBuildInfo ? "on" : "off"));
-            }
-            else if(msg.StartsWith("/info", StringComparison.InvariantCultureIgnoreCase))
-            {
-                send = false;
-                msg = msg.Substring("/info".Length).Trim().ToLower();
-
-                bool on = msg.StartsWith("on");
-
-                if(on || msg.StartsWith("off"))
-                {
-                    showBuildInfo = on;
-                    MyAPIGateway.Utilities.ShowMessage(Log.MOD_NAME, "Display turned " + (showBuildInfo ? "on" : "off"));
-                }
-                else if(msg.StartsWith("mod"))
-                {
-                    if(cacheMods == null)
-                    {
-                        var mods = MyAPIGateway.Session.GetCheckpoint("null").Mods;
-                        stringBuilder.Clear();
-                        int n = 1;
-
-                        for(int i = (mods.Count - 1); i >= 0; i--)
-                        {
-                            var mod = mods[i];
-                            stringBuilder.Append(n++).Append(". ").Append(mod.FriendlyName).Append(" (ID: ").Append(mod.PublishedFileId).Append(')').AppendLine();
-                        }
-
-                        cacheMods = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Mods list", "", "", cacheMods, null, "Close");
-                }
-                else if(msg.StartsWith("ammo") || msg.StartsWith("mag"))
-                {
-                    if(cacheAmmo == null)
-                    {
-                        var defList = MyDefinitionManager.Static.GetAllDefinitions();
-                        stringBuilder.Clear();
-
-                        foreach(var def in defList)
-                        {
-                            if(def is MyAmmoMagazineDefinition)
-                            {
-                                var mag = def as MyAmmoMagazineDefinition;
-                                var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
-                                var projectile = ammo as MyProjectileAmmoDefinition;
-                                var missile = ammo as MyMissileAmmoDefinition;
-
-                                stringBuilder.Append(mag.DisplayNameText).AppendLine().AppendLine();
-
-                                if(!mag.Context.IsBaseGame)
-                                    stringBuilder.Append("  Mod: ").Append(mag.Context.ModName).AppendLine();
-
-                                stringBuilder.Append("  Type: ").Append(ammo.AmmoType).AppendLine();
-                                stringBuilder.Append("  Capacity:").Append(mag.Capacity).AppendLine();
-
-                                if(projectile != null)
-                                {
-                                    stringBuilder.Append("  Damage to organic: " + projectile.ProjectileHealthDamage);
-
-                                    if(projectile.HeadShot)
-                                        stringBuilder.Append(", headshot damage: ").Append(projectile.ProjectileHeadShotDamage);
-
-                                    stringBuilder.AppendLine();
-                                    stringBuilder.Append("  Damage to mechanic: ").Append(projectile.ProjectileMassDamage).AppendLine();
-
-                                    /*
-                                    projectile.ProjectileMassDamage; // for mechanical objects
-                                    projectile.ProjectileHealthDamage; // for living beings
-                                    projectile.HeadShot ? projectile.ProjectileHeadShotDamage;
-                                    projectile.IsExplosive; // not sure if used
-                                     */
-                                }
-                                else if(missile != null)
-                                {
-                                    stringBuilder.Append("  Explosion radius: ").Append(missile.MissileExplosionRadius).AppendLine();
-                                    stringBuilder.Append("  Explosion damage: ").Append(missile.MissileExplosionDamage).AppendLine();
-
-                                    /*
-                                    missile.MissileExplosionDamage;
-                                    missile.MissileExplosionRadius;
-                                     */
-                                }
-
-                                stringBuilder.AppendLine().AppendLine();
-                            }
-                            /*
-                            else
-                            {
-                                stringBuilder.Append(def.Id.TypeId.ToString() + " / "+ def.Id.SubtypeName).AppendLine();
-                            }
-                             */
-                        }
-
-                        cacheAmmo = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Ammo and magazines info", "", "", cacheAmmo, null, "Close");
-                }
-                else if(msg.StartsWith("comp") || msg.StartsWith("part"))
-                {
-                    if(cacheComps == null)
-                    {
-                        var defList = MyDefinitionManager.Static.GetAllDefinitions();
-                        stringBuilder.Clear();
-
-                        foreach(var def in defList)
-                        {
-                            if(def is MyComponentDefinition)
-                            {
-                                var item = def as MyComponentDefinition;
-
-                                //comp.DropProbability; // ???
-
-                                stringBuilder.Append(item.DisplayNameText).AppendLine().AppendLine();
-
-                                if(!item.Context.IsBaseGame)
-                                    stringBuilder.Append("  Mod: ").Append(item.Context.ModName).AppendLine();
-
-                                stringBuilder.Append("  Volume: ").Append((item.Volume * 1000).ToString(NUMBER_FORMAT)).Append(" L").AppendLine();
-                                stringBuilder.Append("  Mass: ").Append(MassFormat(item.Mass)).AppendLine();
-                                stringBuilder.Append("  Integrity: ").Append(item.MaxIntegrity).AppendLine();
-                                stringBuilder.Append("  Deconstruction efficiency: ").Append(Math.Round(item.DeconstructionEfficiency * 100, 0)).Append('%').AppendLine();
-                                stringBuilder.Append("  Drop probability*: ").Append(Math.Round(item.DropProbability * 100, 0)).Append('%').AppendLine();
-
-                                stringBuilder.AppendLine().AppendLine();
-                            }
-                        }
-
-                        stringBuilder.AppendLine().Append("* = Drop probabilty is the chance that you get scrap from the destroyed component and how many of this item will drop from a destroyed container.");
-
-                        cacheComps = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Components info", "", "", cacheComps, null, "Close");
-                }
-                else if(msg.StartsWith("ore") || msg.StartsWith("ingot"))
-                {
-                    if(cacheOres == null)
-                    {
-                        var defList = MyDefinitionManager.Static.GetAllDefinitions();
-                        stringBuilder.Clear();
-
-                        foreach(var def in defList)
-                        {
-                            if(def is MyPhysicalItemDefinition)
-                            {
-                                var item = def as MyPhysicalItemDefinition;
-
-                                if(item.Id.TypeId == typeof(MyObjectBuilder_Ingot) || item.Id.TypeId == typeof(MyObjectBuilder_Ore))
-                                {
-                                    stringBuilder.Append(item.DisplayNameText).AppendLine().AppendLine();
-
-                                    if(!item.Context.IsBaseGame)
-                                        stringBuilder.Append("  Mod: ").Append(item.Context.ModName).AppendLine();
-
-                                    stringBuilder.Append("  Volume: ").Append((item.Volume * 1000).ToString(NUMBER_FORMAT)).Append(" L").AppendLine();
-                                    stringBuilder.Append("  Mass: ").Append(MassFormat(item.Mass)).AppendLine();
-
-                                    stringBuilder.AppendLine().AppendLine();
-                                }
-                            }
-                        }
-
-                        cacheOres = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Ores and ingots info", "", "", cacheOres, null, "Close");
-                }
-                else if(msg.StartsWith("item") || msg.StartsWith("weapon") || msg.StartsWith("tool"))
-                {
-                    if(cacheItems == null)
-                    {
-                        var defList = MyDefinitionManager.Static.GetAllDefinitions();
-                        stringBuilder.Clear();
-
-                        foreach(var def in defList)
-                        {
-                            if(def is MyPhysicalItemDefinition)
-                            {
-                                var item = def as MyPhysicalItemDefinition;
-
-                                if(item is MyComponentDefinition || item is MyAmmoMagazineDefinition || item.Id.TypeId == typeof(MyObjectBuilder_Ingot) || item.Id.TypeId == typeof(MyObjectBuilder_Ore))
-                                    continue;
-
-                                stringBuilder.Append(item.DisplayNameText).AppendLine().AppendLine();
-
-                                if(!item.Context.IsBaseGame)
-                                    stringBuilder.Append("  Mod: ").Append(item.Context.ModName).AppendLine();
-
-                                stringBuilder.Append("  Volume: ").Append((item.Volume * 1000).ToString(NUMBER_FORMAT)).Append(" L").AppendLine();
-                                stringBuilder.Append("  Mass: ").Append(MassFormat(item.Mass)).AppendLine();
-
-                                var weapon = item as MyWeaponItemDefinition;
-                                var bottle = item as MyOxygenContainerDefinition;
-
-                                if(weapon != null)
-                                {
-                                    var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
-
-                                    stringBuilder.Append("  Ammo: ").AppendLine();
-
-                                    for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
-                                    {
-                                        var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
-                                        var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
-                                        var weaponData = wepDef.WeaponAmmoDatas[(int)ammo.AmmoType];
-
-                                        stringBuilder.Append("    - ").Append(mag.DisplayNameText).Append(" (").Append(weaponData.RateOfFire.ToString(FLOAT_FORMAT)).Append(" RPM)").AppendLine();
-                                    }
-                                }
-                                else if(bottle != null)
-                                {
-                                    stringBuilder.Append("  Capacity: ").Append(bottle.Capacity.ToString(NUMBER_FORMAT)).Append(" O2").AppendLine();
-                                    stringBuilder.Append("  Stored gas: ").Append(bottle.StoredGasId.SubtypeName).AppendLine();
-                                }
-
-                                stringBuilder.AppendLine().AppendLine();
-                            }
-                        }
-
-                        if(stringBuilder.Length > 2)
-                            stringBuilder.Length -= 2;
-
-                        cacheItems = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Items and tools info", "", "", cacheItems, null, "Close");
-                }
-                else if(msg.StartsWith("suit") || msg.StartsWith("char"))
-                {
-                    if(cacheSuits == null)
-                    {
-                        var defList = MyDefinitionManager.Static.Characters;
-                        stringBuilder.Clear();
-                        HashSet<string> helmetVariations = new HashSet<string>();
-                        int listed = 0;
-
-                        foreach(var suit in defList)
-                        {
-                            if(helmetVariations.Contains(suit.Name))
-                                continue;
-
-                            bool hasHelmet = suit.HelmetVariation != null && suit.HelmetVariation.Length > 0;
-
-                            if(hasHelmet && !helmetVariations.Contains(suit.HelmetVariation))
-                                helmetVariations.Add(suit.HelmetVariation);
-
-                            stringBuilder.Append(suit.Name).AppendLine().AppendLine();
-                            listed++;
-
-                            if(!suit.Context.IsBaseGame)
-                                stringBuilder.Append("  Mod: ").Append(suit.Context.ModName).AppendLine();
-
-                            stringBuilder.Append("  Skeleton: ").Append(suit.Skeleton).AppendLine();
-                            stringBuilder.Append("  Mass: ").Append(MassFormat(suit.Mass)).AppendLine();
-
-                            MyStatsDefinition stats = null;
-                            stringBuilder.Append("  Stats: ").AppendLine();
-
-                            if(MyDefinitionManager.Static.TryGetDefinition<MyStatsDefinition>(new MyDefinitionId(typeof(MyObjectBuilder_StatsDefinition), suit.Stats), out stats))
-                            {
-                                MyEntityStatDefinition stat = null;
-
-                                foreach(MyDefinitionId current in stats.Stats)
-                                {
-                                    if(MyDefinitionManager.Static.TryGetDefinition<MyEntityStatDefinition>(current, out stat))
-                                    {
-                                        stringBuilder.Append("    ").Append(stat.Name).Append(": ").Append(stat.MaxValue).AppendLine();
-
-                                        /*
-                                        MyStringHash orCompute = MyStringHash.GetOrCompute(myEntityStatDefinition.Name);
-                                        MyEntityStat myEntityStat = null;
-                                        if (!this.m_stats.TryGetValue(current.SubtypeId, out myEntityStat) || !(myEntityStat.StatId == orCompute))
-                                        {
-                                            this.AddStat(orCompute, new MyObjectBuilder_EntityStat
-                                                         {
-                                                             SubtypeName = current.SubtypeName,
-                                                             MaxValue = 1f,
-                                                             Value = myEntityStatDefinition.DefaultValue / myEntityStatDefinition.MaxValue
-                                                         });
-                                        }
-                                         */
-                                    }
-                                }
-                            }
-
-                            /*
-                            MyEntityStat health = this.StatComp.Health;
-                            if (health != null)
-                            {
-                                if (myObjectBuilder_Character.Health.HasValue)
-                                {
-                                    health.Value = myObjectBuilder_Character.Health.Value;
-                                }
-                                health.OnStatChanged += new MyEntityStat.StatChangedDelegate(this.StatComp.OnHealthChanged);
-                            }
-                             */
-
-                            //stringBuilder.Append("  Height: ").Append(suit.CharacterHeight.ToString(NUMBER_FORMAT)).Append(" m").AppendLine(); // seems always 0
-
-                            stringBuilder.Append("  Inventory capacity: ").Append((suit.InventoryDefinition.InventoryVolume * 1000).ToString(NUMBER_FORMAT)).Append(" L").AppendLine();
-                            stringBuilder.Append("  Oxygen:").AppendLine();
-                            stringBuilder.Append("    Helmet: ").Append(hasHelmet ? "Yes" : "No").AppendLine();
-                            stringBuilder.Append("    Pressurized: ").Append(suit.NeedsOxygen ? "No" : "Yes").AppendLine();
-                            stringBuilder.Append("    Capacity: ").Append(suit.OxygenCapacity.ToString(NUMBER_FORMAT)).Append(" O2").AppendLine();
-                            stringBuilder.Append("    Consumes: ").Append(suit.OxygenConsumption.ToString(NUMBER_FORMAT)).Append(" O2/s").AppendLine();
-                            stringBuilder.Append("    Time: ").Append(TimeFormat((int)(suit.OxygenCapacity / suit.OxygenConsumption))).AppendLine();
-
-                            stringBuilder.Append("  Movement:").AppendLine();
-                            stringBuilder.Append("    Walking: ").Append(suit.MaxWalkSpeed).Append(" m/s").AppendLine();
-                            stringBuilder.Append("    Running: ").Append(suit.MaxRunSpeed).Append(" m/s").AppendLine();
-                            stringBuilder.Append("    Sprinting: ").Append(suit.MaxSprintSpeed).Append(" m/s").AppendLine();
-                            stringBuilder.Append("    Crouching: ").Append(suit.MaxCrouchWalkSpeed).Append(" m/s").AppendLine();
-
-                            if(suit.Jetpack == null)
-                            {
-                                stringBuilder.Append("  Jetpack: No").AppendLine();
-                            }
-                            else
-                            {
-                                stringBuilder.Append("  Jetpack:").AppendLine();
-                                stringBuilder.Append("    Force: ").Append(ForceFormat(suit.Jetpack.ThrustProperties.ForceMagnitude)).AppendLine();
-                                stringBuilder.Append("    Slowdown factor: ").Append(ForceFormat(suit.Jetpack.ThrustProperties.SlowdownFactor)).AppendLine();
-                                stringBuilder.Append("    Power usage - idle: ").Append(PowerFormat(suit.Jetpack.ThrustProperties.MinPowerConsumption)).Append(", usage: ").Append(PowerFormat(suit.Jetpack.ThrustProperties.MaxPowerConsumption)).AppendLine();
-                            }
-
-                            stringBuilder.AppendLine().AppendLine();
-                        }
-
-                        if(helmetVariations.Count > 0)
-                        {
-                            stringBuilder.AppendLine();
-
-                            if(helmetVariations.Count == 1)
-                                stringBuilder.Append("There is one other unlisted suit that acts as helmet toggle for the listed ").Append(listed == 1 ? "one" : "ones").Append('.');
-                            else
-                                stringBuilder.Append("There are ").Append(helmetVariations.Count).Append(" other unlisted suits that act as helmet toggles for the listed ").Append(listed == 1 ? "one" : "ones").Append('.');
-                        }
-
-                        cacheSuits = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                    }
-
-                    MyAPIGateway.Utilities.ShowMissionScreen("Items and tools info", "", "", cacheSuits, null, "Close");
-                }
-                else
-                {
-                    MyAPIGateway.Utilities.ShowMessage(Log.MOD_NAME, "Commands list:");
-                    MyAPIGateway.Utilities.ShowMessage("/info on/off ", "turn the build info on or off");
-                    MyAPIGateway.Utilities.ShowMessage("/info comps ", "components list");
-                    MyAPIGateway.Utilities.ShowMessage("/info ammo ", "magazines and ammo list");
-                    MyAPIGateway.Utilities.ShowMessage("/info ores ", "ores and ingots list");
-                    MyAPIGateway.Utilities.ShowMessage("/info items ", "items and tools list");
-                    MyAPIGateway.Utilities.ShowMessage("/info suits ", "character suits list");
-                    MyAPIGateway.Utilities.ShowMessage("/info mods ", "mods list");
-                }
+                MyAPIGateway.Utilities.ShowMessage(Log.modName, "Display turned " + (showBuildInfo ? "on" : "off"));
             }
         }
     }

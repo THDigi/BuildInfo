@@ -1,21 +1,106 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Sandbox.ModAPI;
-using Sandbox.Common;
+using VRage.Game;
+using VRage.Game.ModAPI;
+using VRage.Utils;
 
 namespace Digi.Utils
 {
-    class Log
+    public static class Log // v1.2
     {
-        public const string MOD_NAME = "BuildInfo";
+        public static string modName = "UNNAMED";
+        public static string modFolder = "UNNAMED";
+        public static ulong workshopId = 0;
         public const string LOG_FILE = "info.log";
 
-        private static System.IO.TextWriter writer;
+        private static TextWriter writer = null;
+        private static IMyHudNotification notify = null;
+        private static readonly StringBuilder cache = new StringBuilder(64);
+        private static readonly List<string> preInitMessages = new List<string>(0);
         private static int indent = 0;
-        private static StringBuilder cache = new StringBuilder();
+
+        public static void SetUp(string modName, ulong workshopId, string modFolder = null)
+        {
+            Log.modName = modName;
+            Log.modFolder = (modFolder == null ? modName : modFolder);
+            Log.workshopId = workshopId;
+        }
+
+        public static void Init()
+        {
+            if(MyAPIGateway.Utilities == null)
+            {
+                MyLog.Default.WriteLineAndConsole(modName + " Log.Init() called before API was ready!");
+                return;
+            }
+
+            if(writer != null)
+                Close();
+
+            writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(LOG_FILE, typeof(Log));
+
+            if(preInitMessages.Count > 0)
+            {
+                foreach(var msg in preInitMessages)
+                {
+                    Log.Error(msg);
+                }
+
+                preInitMessages.Clear();
+            }
+
+            Info("Initialized");
+
+            cache.Clear();
+            cache.Append("DS=").Append(MyAPIGateway.Utilities.IsDedicated);
+            cache.Append("; defined=");
+
+#if STABLE
+            cache.Append("STABLE, ");
+#endif
+
+#if UNOFFICIAL
+            cache.Append("UNOFFICIAL, ");
+#endif
+
+#if DEBUG
+            cache.Append("DEBUG, ");
+#endif
+
+#if BRANCH_STABLE
+            cache.Append("BRANCH_STABLE, ");
+#endif
+
+#if BRANCH_DEVELOP
+            cache.Append("BRANCH_DEVELOP, ");
+#endif
+
+#if BRANCH_UNKNOWN
+            cache.Append("BRANCH_UNKNOWN, ");
+#endif
+
+            Info(cache.ToString());
+            cache.Clear();
+        }
+
+        public static void Close()
+        {
+            if(writer != null)
+            {
+                Log.Info("Unloaded.");
+
+                writer.Flush();
+                writer.Close();
+                writer = null;
+            }
+
+            indent = 0;
+            cache.Clear();
+        }
 
         public static void IncreaseIndent()
         {
@@ -24,7 +109,7 @@ namespace Digi.Utils
 
         public static void DecreaseIndent()
         {
-            if (indent > 0)
+            if(indent > 0)
                 indent--;
         }
 
@@ -44,11 +129,29 @@ namespace Digi.Utils
 
             try
             {
-                MyAPIGateway.Utilities.ShowNotification(MOD_NAME + " error - open %AppData%/SpaceEngineers/Storage/..._" + MOD_NAME + "/" + LOG_FILE + " for details", 10000, MyFontEnum.Red);
+                MyLog.Default.WriteLineAndConsole(modName + " error/exception: " + msg);
+
+                if(MyAPIGateway.Session != null)
+                {
+                    string text = modName + " error - open %AppData%/SpaceEngineers/Storage/" + workshopId + "_" + modFolder + "/" + LOG_FILE + " for details";
+
+                    if(notify == null)
+                    {
+                        notify = MyAPIGateway.Utilities.CreateNotification(text, 10000, MyFontEnum.Red);
+                    }
+                    else
+                    {
+                        notify.Text = text;
+                        notify.ResetAliveTime();
+                    }
+
+                    notify.Show();
+                }
             }
-            catch (Exception e)
+            catch(Exception e)
             {
-                Info("ERROR: Could not send notification to local client: " + e.ToString());
+                Info("ERROR: Could not send notification to local client: " + e);
+                MyLog.Default.WriteLineAndConsole(modName + " error/exception: Could not send notification to local client: " + e);
             }
         }
 
@@ -59,41 +162,37 @@ namespace Digi.Utils
 
         private static void Write(string msg)
         {
-            if (writer == null)
+            try
             {
-                if (MyAPIGateway.Utilities == null)
-                    throw new Exception("API not initialied but got a log message: " + msg);
+                cache.Clear();
+                cache.Append(DateTime.Now.ToString("[HH:mm:ss] "));
 
-                writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(LOG_FILE, typeof(Log));
+                if(writer == null)
+                    cache.Append("(PRE-INIT) ");
+
+                for(int i = 0; i < indent; i++)
+                {
+                    cache.Append("\t");
+                }
+
+                cache.Append(msg);
+
+                if(writer == null)
+                {
+                    preInitMessages.Add(cache.ToString());
+                }
+                else
+                {
+                    writer.WriteLine(cache);
+                    writer.Flush();
+                }
+
+                cache.Clear();
             }
-
-            cache.Clear();
-            cache.Append(DateTime.Now.ToString("[HH:mm:ss] "));
-
-            for (int i = 0; i < indent; i++)
+            catch(Exception e)
             {
-                cache.Append("\t");
+                MyLog.Default.WriteLineAndConsole(modName + " had an error while logging message='" + msg + "'\nLogger error: " + e.Message + "\n" + e.StackTrace);
             }
-
-            cache.Append(msg);
-
-            writer.WriteLine(cache);
-            writer.Flush();
-
-            cache.Clear();
-        }
-        
-        public static void Close()
-        {
-            if (writer != null)
-            {
-                writer.Flush();
-                writer.Close();
-                writer = null;
-            }
-
-            indent = 0;
-            cache.Clear();
         }
     }
 }
