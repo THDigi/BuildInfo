@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -10,7 +9,7 @@ using VRage.Utils;
 
 namespace Digi.Utils
 {
-    public static class Log // v1.2
+    public static class Log // v1.3
     {
         public static string modName = "UNNAMED";
         public static string modFolder = "UNNAMED";
@@ -123,7 +122,17 @@ namespace Digi.Utils
             Error(e.ToString());
         }
 
+        public static void Error(Exception e, string printText)
+        {
+            Error(e.ToString(), printText);
+        }
+
         public static void Error(string msg)
+        {
+            Error(msg, modName + " error - open %AppData%/SpaceEngineers/Storage/" + workshopId + "_" + modFolder + "/" + LOG_FILE + " for details");
+        }
+
+        public static void Error(string msg, string printText)
         {
             Info("ERROR: " + msg);
 
@@ -133,15 +142,13 @@ namespace Digi.Utils
 
                 if(MyAPIGateway.Session != null)
                 {
-                    string text = modName + " error - open %AppData%/SpaceEngineers/Storage/" + workshopId + "_" + modFolder + "/" + LOG_FILE + " for details";
-
                     if(notify == null)
                     {
-                        notify = MyAPIGateway.Utilities.CreateNotification(text, 10000, MyFontEnum.Red);
+                        notify = MyAPIGateway.Utilities.CreateNotification(printText, 10000, MyFontEnum.Red);
                     }
                     else
                     {
-                        notify.Text = text;
+                        notify.Text = printText;
                         notify.ResetAliveTime();
                     }
 

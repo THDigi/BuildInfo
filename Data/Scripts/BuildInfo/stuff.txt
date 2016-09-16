@@ -1,0 +1,72 @@
+
+                    //Vector3D t;
+                    //MyCubeBuilder.Static.GetAddPosition(out t);
+                    //m.Translation = t;
+
+                    /*
+                    var grid = MyCubeBuilder.Static.FindClosestGrid();
+
+                    if(grid != null)
+                    {
+                        if(grid.GridSizeEnum != def.CubeSize)
+                            return;
+
+                        {
+                            Vector3D t;
+                            MyCubeBuilder.Static.GetAddPosition(out t);
+                            t -= grid.WorldMatrix.Translation;
+                            m.Translation += (grid.GridSizeEnum == MyCubeSize.Large ? t * 1.5 : (t / 2) - t);
+                        }
+
+
+                        //Vector3I temp;
+                        //Vector3D worldCenter = Vector3D.Zero;
+                        //Vector3D worldPos = m.Translation;
+                        //
+                        //int posIndex = 0;
+                        //
+                        //for(temp.X = 0; temp.X < def.Size.X; temp.X++)
+                        //    for(temp.Y = 0; temp.Y < def.Size.Y; temp.Y++)
+                        //        for(temp.Z = 0; temp.Z < def.Size.Z; temp.Z++)
+                        //        {
+                        //            Vector3I gridPosition = gizmoSpace.m_positions[posIndex++]; // ????
+                        //            Vector3D tempWorldPos = Vector3D.Transform(gridPosition * grid.GridSize, grid.WorldMatrix);
+                        //
+                        //            worldCenter += gridPosition * grid.GridSize;
+                        //        }
+                        //
+                        //worldCenter /= def.Size.Size;
+                        //worldCenter = Vector3D.Transform(worldCenter, grid.WorldMatrix);
+                        //m.Translation = worldCenter;
+
+
+                        //{
+                        //    var pos = Vector3I.Round(m.Translation - grid.WorldMatrix.Translation);
+                        //    m.Translation = Vector3D.Transform(pos * grid.GridSize, grid.WorldMatrix);
+                        //}
+
+                        // DEBUG
+                        {
+                            MyTransparentGeometry.AddLineBillboard("Square", Color.Red.ToVector4(), m.Translation - m.Forward * 25, m.Forward, 50, 0.1f);
+                            MyTransparentGeometry.AddLineBillboard("Square", Color.Green.ToVector4(), m.Translation - m.Up * 25, m.Up, 50, 0.1f);
+                            MyTransparentGeometry.AddLineBillboard("Square", Color.Blue.ToVector4(), m.Translation - m.Right * 25, m.Right, 50, 0.1f);
+                        }
+
+                        //{
+                        //    var offset = def.Center * grid.GridSizeHalf;
+                        //    m.Translation -= (m.Right * offset.X) + (m.Up * offset.Y) + (m.Backward * offset.Z);
+                        //}
+
+                        //{
+                        //    var offset = def.Center * grid.GridSizeHalf;
+                        //    m.Translation += (box.Orientation.Right * offset.X) + (box.Orientation.Up * offset.Y) + (box.Orientation.Forward * offset.Z);
+                        //}
+
+                        {
+                            var offset = def.Size - Vector3I.One;
+                            m.Translation += m.Up * (offset.Y * grid.GridSizeHalf);
+                            m.Translation += m.Right * -(offset.X * grid.GridSizeHalf);
+                            m.Translation += m.Forward * -(offset.Z * grid.GridSizeHalf);
+                        }
+                    }
+                    */

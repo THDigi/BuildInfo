@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRageMath;
 using VRage.ObjectBuilders;
 using VRage.Utils;
+using VRageMath;
 
 using Digi.Utils;
 
@@ -23,14 +24,21 @@ namespace Digi.BuildInfo
             Log.SetUp("Build Info", 514062285, "BuildInfo");
         }
 
-        public static bool init { get; private set; }
+        private bool init = false;
+        private bool isThisDS = false;
 
-        public bool isThisDS = false;
+        private bool showBuildInfo = true;
+        private bool showMountPoints = false;
 
-        private static bool showBuildInfo = true;
+        private IMyHudNotification buildInfoNotification = null;
+        private IMyHudNotification mountPointsNotification = null;
 
         private short skip = 0;
         private int maxLineWidthPx = 0;
+        private long lastScroll = 0;
+        private const int SCROLL_FROM_LINE = 2;
+        private int atLine = SCROLL_FROM_LINE;
+        private const int MAX_LINES = 8;
 
         private List<IMyHudNotification> hudLines;
         private HashSet<Vector3I> cubes = new HashSet<Vector3I>();
@@ -184,12 +192,66 @@ namespace Digi.BuildInfo
             Log.Close();
         }
         
-        // TODO move on top?
-        private long lastScroll = 0;
-        private const int SCROLL_FROM_LINE = 2;
-        private int atLine = SCROLL_FROM_LINE;
-        private const int MAX_LINES = 8;
-        
+        public override void HandleInput()
+        {
+            try
+            {
+                if(!init)
+                    return;
+
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
+                {
+                    showBuildInfo = !showBuildInfo;
+
+                    if(buildInfoNotification == null)
+                        buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                    buildInfoNotification.Text = showBuildInfo ? "Build info ON" : "Build info OFF";
+                    buildInfoNotification.Show();
+                }
+
+                if(showBuildInfo && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                {
+                    if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
+                    {
+                        showMountPoints = !showMountPoints;
+
+                        if(mountPointsNotification == null)
+                            mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                        mountPointsNotification.Text = showMountPoints ? "Mount points mode ON" : "Mount points mode OFF";
+                        mountPointsNotification.Show();
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        public override void Draw()
+        {
+            try
+            {
+                if(!init)
+                    return;
+
+                if(showBuildInfo && showMountPoints && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                {
+                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
+                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    var m = MatrixD.CreateFromQuaternion(box.Orientation);
+                    m.Translation = box.Center;
+                    MyCubeBuilder.DrawMountPoints(MyDefinitionManager.Static.GetCubeSize(def.CubeSize), def, ref m);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
         public override void UpdateAfterSimulation()
         {
             try
@@ -211,7 +273,7 @@ namespace Digi.BuildInfo
                         return;
 
                     skip = 0;
-                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition; // TODO WHITELIST!
+                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
                     long now = DateTime.UtcNow.Ticks;
 
                     if(def.Id.SubtypeId != lastSubTypeId || def.Id.TypeId != lastTypeId)
@@ -245,7 +307,7 @@ namespace Digi.BuildInfo
 
                         SetText(line++, MassFormat(def.Mass) + ", " + VectorFormat(def.Size) + ", " + TimeFormat((int)(assembleTime / MyAPIGateway.Session.WelderSpeedMultiplier)) + (def.DisassembleRatio > 1 ? ", Disassemble ratio: " + def.DisassembleRatio.ToString(FLOAT_FORMAT) : "") + (blending ? ", Blends with armor!" : "") + (buildModels ? "" : " (No construction models)"), (blending ? MyFontEnum.DarkBlue : MyFontEnum.White));
                         SetText(line++, "Integrity: " + def.MaxIntegrity + ", Deformable: " + (deformable ? "Yes (" + def.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "No"), (deformable ? MyFontEnum.Blue : MyFontEnum.White));
-                        SetText(line++, "Air-tight: " + (airTight ? "Yes" + (isDoor ? " (when closed)" : "") : (airTightFaces == 0 ? "No" : airTightFaces + " of " + totalFaces + " grid faces")), (isDoor || airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.DarkBlue)));
+                        SetText(line++, "Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)), (isDoor || airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.DarkBlue)));
 
                         GetExtraInfo(ref line, def, defType);
 
@@ -254,7 +316,7 @@ namespace Digi.BuildInfo
 
                         lastScroll = now + TimeSpan.TicksPerSecond;
                         atLine = SCROLL_FROM_LINE;
-                        
+
                         for(int l = 0; l < hudLines.Count; l++)
                         {
                             var hud = hudLines[l];
@@ -961,9 +1023,6 @@ namespace Digi.BuildInfo
             hudLines[line].Font = font;
             hudLines[line].Text = text;
             hudLines[line].AliveTime = aliveTime;
-
-            // UNDONE:
-            //hudLines[line].Show();
         }
 
         public void MessageEntered(string msg, ref bool send)
