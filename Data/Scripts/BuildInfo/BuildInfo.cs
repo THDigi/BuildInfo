@@ -191,7 +191,7 @@ namespace Digi.BuildInfo
 
             Log.Close();
         }
-        
+
         public override void HandleInput()
         {
             try
@@ -199,28 +199,37 @@ namespace Digi.BuildInfo
                 if(!init)
                     return;
 
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
+                if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
                 {
-                    showBuildInfo = !showBuildInfo;
+                    var GUI = MyAPIGateway.Gui;
 
-                    if(buildInfoNotification == null)
-                        buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-                    buildInfoNotification.Text = showBuildInfo ? "Build info ON" : "Build info OFF";
-                    buildInfoNotification.Show();
-                }
-
-                if(showBuildInfo && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
-                {
-                    if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
+                    // TODO add once fixed: && GUI.ActiveGamePlayScreen == null
+                    if(!GUI.ChatEntryVisible && GUI.GetCurrentScreen == MyTerminalPageEnum.None)
                     {
-                        showMountPoints = !showMountPoints;
+                        if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
+                        {
+                            showBuildInfo = !showBuildInfo;
 
-                        if(mountPointsNotification == null)
-                            mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
+                            if(buildInfoNotification == null)
+                                buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                        mountPointsNotification.Text = showMountPoints ? "Mount points mode ON" : "Mount points mode OFF";
-                        mountPointsNotification.Show();
+                            buildInfoNotification.Text = showBuildInfo ? "Build info ON" : "Build info OFF";
+                            buildInfoNotification.Show();
+                        }
+
+                        if(showBuildInfo && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                        {
+                            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
+                            {
+                                showMountPoints = !showMountPoints;
+
+                                if(mountPointsNotification == null)
+                                    mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                                mountPointsNotification.Text = showMountPoints ? "Mount points mode ON" : "Mount points mode OFF";
+                                mountPointsNotification.Show();
+                            }
+                        }
                     }
                 }
             }
