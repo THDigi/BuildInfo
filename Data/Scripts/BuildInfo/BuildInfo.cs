@@ -13,9 +13,6 @@ using VRage.Utils;
 using VRageMath;
 
 using Digi.Utils;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
 
 namespace Digi.BuildInfo
 {
@@ -156,10 +153,10 @@ namespace Digi.BuildInfo
                 {
                     size += len;
                 }
-                else
-                {
-                    //Log.Error("No character size for "+text[i]);
-                }
+                //else
+                //{
+                //    Log.Error("No character size for "+text[i]);
+                //}
             }
 
             return size;
@@ -206,10 +203,9 @@ namespace Digi.BuildInfo
                 {
                     var GUI = MyAPIGateway.Gui;
 
-                    // TODO add once fixed: && GUI.ActiveGamePlayScreen == null
                     if(!GUI.ChatEntryVisible && GUI.GetCurrentScreen == MyTerminalPageEnum.None)
                     {
-                        if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
+                        if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS) && !GUI.InGameplayMenu())
                         {
                             showBuildInfo = !showBuildInfo;
 
@@ -222,7 +218,7 @@ namespace Digi.BuildInfo
 
                         if(showBuildInfo && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
                         {
-                            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
+                            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT) && !GUI.InGameplayMenu())
                             {
                                 showMountPoints = !showMountPoints;
 
@@ -582,31 +578,24 @@ namespace Digi.BuildInfo
                     }
                 }
 
-                string topPart = null;
-
-                if(motor != null)
-                    topPart = motor.TopPart;
-                else if(piston != null)
-                    topPart = piston.TopPart;
-
+                var topPart = (motor != null ? motor.TopPart : piston.TopPart);
                 var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
 
-                if(group != null)
-                {
-                    var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
-                    var airTightFaces = 0;
-                    var totalFaces = 0;
-                    var airTight = IsAirTight(partDef, ref airTightFaces, ref totalFaces);
-                    var deformable = def.BlockTopology == MyBlockTopology.Cube;
-                    var buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
-                    var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    var weldTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul);
-                    var grindRatio = def.DisassembleRatio;
+                if(group == null)
+                    return;
 
-                    SetText(line++, "Part: " + MassFormat(partDef.Mass) + ", " + VectorFormat(partDef.Size) + ", " + TimeFormat(weldTime) + MultiplierFormat(weldMul) + (grindRatio > 1 ? ", Deconstruct speed: " + PercentFormat(1f / grindRatio) : "") + (buildModels ? "" : " (No construction models)"));
-                    SetText(line++, "      - Integrity: " + partDef.MaxIntegrity.ToString("#,###,###,###,###") + (deformable ? ", Deformable (" + partDef.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "") + ", Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)));
-                }
+                var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
+                var airTightFaces = 0;
+                var totalFaces = 0;
+                var airTight = IsAirTight(partDef, ref airTightFaces, ref totalFaces);
+                var deformable = def.BlockTopology == MyBlockTopology.Cube;
+                var buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
+                var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                var weldTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul);
+                var grindRatio = def.DisassembleRatio;
 
+                SetText(line++, "Part: " + MassFormat(partDef.Mass) + ", " + VectorFormat(partDef.Size) + ", " + TimeFormat(weldTime) + MultiplierFormat(weldMul) + (grindRatio > 1 ? ", Deconstruct speed: " + PercentFormat(1f / grindRatio) : "") + (buildModels ? "" : " (No construction models)"));
+                SetText(line++, "      - Integrity: " + partDef.MaxIntegrity.ToString("#,###,###,###,###") + (deformable ? ", Deformable (" + partDef.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "") + ", Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)));
                 return;
             }
 
@@ -648,18 +637,18 @@ namespace Digi.BuildInfo
                 {
                     if(thrust.NeedsAtmosphereForInfluence)
                     {
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " thrust efficiency " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " atmosphere" : "in atmosphere"));
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " thrust efficiency " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " atmosphere" : "in space"));
+                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " atmosphere" : "in atmosphere"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " atmosphere" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
                     }
                     else
                     {
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " thrust efficiency " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " planet influence" : "on planets"));
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " thrust efficiency " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " planet influence" : "in space"));
+                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " planet influence" : "on planets"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " planet influence" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
                     }
                 }
                 else
                 {
-                    SetText(line++, "100% thrust efficiency in space and planets");
+                    SetText(line++, "No thrust limits in space or planets", MyFontEnum.Green);
                 }
 
                 if(thrust.ConsumptionFactorPerG > 0)
@@ -1318,7 +1307,11 @@ namespace Digi.BuildInfo
             return (Math.Abs(mul - 1f) > 0.001f ? " (x" + Math.Round(mul, 2) + ")" : "");
         }
 
+#if STABLE // HACK >>> STABLE condition
         private void SetText(int line, string text, MyFontEnum font = MyFontEnum.White, int aliveTime = 100)
+#else
+        private void SetText(int line, string text, string font = MyFontEnum.White, int aliveTime = 100)
+#endif
         {
             if(hudLines == null)
                 hudLines = new List<IMyHudNotification>();
@@ -1341,6 +1334,21 @@ namespace Digi.BuildInfo
                 send = false;
                 showBuildInfo = !showBuildInfo;
                 MyAPIGateway.Utilities.ShowMessage(Log.modName, "Display turned " + (showBuildInfo ? "on" : "off"));
+            }
+        }
+    }
+
+    public static class Workarounds
+    {
+        public static bool InGameplayMenu(this IMyGui GUI) // TODO REMOVE once ActiveGamePlayScreen is fixed in both branches
+        {
+            try
+            {
+                return GUI.ActiveGamePlayScreen != null;
+            }
+            catch(Exception)
+            {
+                return false;
             }
         }
     }
