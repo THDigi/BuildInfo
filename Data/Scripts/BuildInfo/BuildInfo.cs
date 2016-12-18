@@ -1306,12 +1306,8 @@ namespace Digi.BuildInfo
         {
             return (Math.Abs(mul - 1f) > 0.001f ? " (x" + Math.Round(mul, 2) + ")" : "");
         }
-
-#if STABLE // HACK >>> STABLE condition
-        private void SetText(int line, string text, MyFontEnum font = MyFontEnum.White, int aliveTime = 100)
-#else
+        
         private void SetText(int line, string text, string font = MyFontEnum.White, int aliveTime = 100)
-#endif
         {
             if(hudLines == null)
                 hudLines = new List<IMyHudNotification>();
