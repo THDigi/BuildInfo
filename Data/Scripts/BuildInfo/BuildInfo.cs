@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
-using Sandbox.Definitions;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
@@ -12,26 +14,53 @@ using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 
-using Digi.Utils;
+using Draygo.API;
+using Sandbox.Common.ObjectBuilders.Definitions;
+using VRage.Game.Entity;
+using VRage.ModAPI;
+using VRage;
+using Sandbox.Common.ObjectBuilders;
+using VRage.Input;
 
 namespace Digi.BuildInfo
 {
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
     public class BuildInfo : MySessionComponentBase
     {
+        private const long WORKSHOP_ID = 514062285;
+
         public override void LoadData()
         {
-            Log.SetUp("Build Info", 514062285, "BuildInfo");
+            Log.SetUp("Build Info", WORKSHOP_ID, "BuildInfo");
         }
 
         private bool init = false;
         private bool isThisDS = false;
 
+        private HUDTextAPI textAPI = null;
+        private bool textAPIenabled = false;
+        private bool textShown = false;
+        private Vector2D textPosition2D = Vector2D.Zero;
+        private Vector2D menuPosition2D = Vector2D.Zero;
+        private HUDTextAPI.HUDMessage textObject;
+        private float textLengthMeters = 0.1f;
+        private int textLines = 0;
+        private bool hudVisible = true;
+        private double aspectRatio = 1;
+
+        private bool showMenu = false;
+        private bool menuNeedsUpdate = true;
+        private int menuSelectedItem = 0;
+        private int usableMenuItems;
+        private Vector3 previousMove = Vector3.Zero;
+
         private bool showBuildInfo = true;
         private bool showMountPoints = false;
+        private bool useTextAPI = true;
 
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
+        private IMyHudNotification transparencyNotification = null;
 
         private short skip = 0;
         private int maxLineWidthPx = 0;
@@ -40,9 +69,13 @@ namespace Digi.BuildInfo
         private int atLine = SCROLL_FROM_LINE;
         private const int MAX_LINES = 8;
 
+        private const double TEXT_SCALE = 0.8;
+        private static readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9825, 0.8);
+        private static readonly Vector2D TEXT_HUDPOS_TRIPPLE = new Vector2D(TEXT_HUDPOS.X / 3f, TEXT_HUDPOS.Y);
+        private static readonly Vector2D MENU_HUDPOS = new Vector2D(-0.3, 0.4);
+        private static readonly Vector2D MENU_HUDPOS_TRIPPLE = new Vector2D(MENU_HUDPOS.X / 3f, MENU_HUDPOS.Y);
+
         private List<IMyHudNotification> hudLines;
-        private HashSet<Vector3I> cubes = new HashSet<Vector3I>();
-        private StringBuilder str = new StringBuilder();
         private MyObjectBuilderType lastTypeId;
         private MyStringHash lastSubTypeId;
 
@@ -51,52 +84,58 @@ namespace Digi.BuildInfo
         private const string FLOAT3_FORMAT = "0.000";
         private const string NUMBER_FORMAT = "N";
 
-        private HashSet<string> blendingSubTypeIds = new HashSet<string>()
-        {
-            "LargeBlockArmorRoundedSlope",
-            "LargeBlockArmorRoundedCorner",
-            "LargeHeavyBlockArmorRoundedSlope",
-            "LargeHeavyBlockArmorRoundedCorner",
-            "LargeBlockArmorAngledSlope",
-            "LargeBlockArmorAngledCorner",
-            "LargeHeavyBlockArmorAngledSlope",
-            "LargeHeavyBlockArmorAngledCorner",
-            "LargeBlockArmorSlope2BaseSmooth",
-            "LargeBlockArmorSlope2TipSmooth",
-            "LargeBlockArmorCorner2BaseSmooth",
-            "LargeBlockArmorCorner2TipSmooth",
-            "LargeBlockArmorInvCorner2BaseSmooth",
-            "LargeBlockArmorInvCorner2TipSmooth",
-            "LargeHeavyBlockArmorSlope2BaseSmooth",
-            "LargeHeavyBlockArmorSlope2TipSmooth",
-            "LargeHeavyBlockArmorCorner2BaseSmooth",
-            "LargeHeavyBlockArmorCorner2TipSmooth",
-            "LargeHeavyBlockArmorInvCorner2BaseSmooth",
-            "LargeHeavyBlockArmorInvCorner2TipSmooth",
-            "SmallBlockArmorRoundedSlope",
-            "SmallBlockArmorRoundedCorner",
-            "SmallHeavyBlockArmorRoundedSlope",
-            "SmallHeavyBlockArmorRoundedCorner",
-            "SmallBlockArmorAngledSlope",
-            "SmallBlockArmorAngledCorner",
-            "SmallHeavyBlockArmorAngledSlope",
-            "SmallHeavyBlockArmorAngledCorner",
-            "SmallBlockArmorSlope2BaseSmooth",
-            "SmallBlockArmorSlope2TipSmooth",
-            "SmallBlockArmorCorner2BaseSmooth",
-            "SmallBlockArmorCorner2TipSmooth",
-            "SmallBlockArmorInvCorner2BaseSmooth",
-            "SmallBlockArmorInvCorner2TipSmooth",
-            "SmallHeavyBlockArmorSlope2BaseSmooth",
-            "SmallHeavyBlockArmorSlope2TipSmooth",
-            "SmallHeavyBlockArmorCorner2BaseSmooth",
-            "SmallHeavyBlockArmorCorner2TipSmooth",
-            "SmallHeavyBlockArmorInvCorner2BaseSmooth",
-            "SmallHeavyBlockArmorInvCorner2TipSmooth",
-        };
+        private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>();
+        private readonly StringBuilder str = new StringBuilder();
+        private readonly StringBuilder str2 = new StringBuilder();
+        private readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority = new Dictionary<MyStringHash, ResourceGroupData>();
+        private int resourceSinkGroups = 0;
+        private int resourceSourceGroups = 0;
 
-        private static Dictionary<char, int> charSize = new Dictionary<char, int>();
+        public static readonly Dictionary<MyDefinitionId, IExtraBlockData> extraBlockData = new Dictionary<MyDefinitionId, IExtraBlockData>();
+
+        public interface IExtraBlockData { }
+
+        public class ExtraThrustData : IExtraBlockData
+        {
+            public readonly float radius;
+            public readonly float distance;
+            public readonly int flames;
+
+            public ExtraThrustData(MyThrust thrust)
+            {
+                var def = thrust.BlockDefinition;
+                double distSq = 0;
+
+                // HACK hardcoded; from MyThrust.UpdateThrustFlame()
+                thrust.ThrustLengthRand = 10f * def.FlameLengthScale; // make the GetDamageCapsuleLine() method think it thrusts at max and with no random
+
+                foreach(var flame in thrust.Flames)
+                {
+                    var flameLine = thrust.GetDamageCapsuleLine(flame);
+                    var flameDistSq = (flameLine.From - flameLine.To).LengthSquared();
+
+                    if(flameDistSq > distSq)
+                    {
+                        distSq = flameDistSq;
+                        radius = flame.Radius;
+                    }
+                }
+
+                distance = (float)Math.Sqrt(distSq);
+                flames = thrust.Flames.Count;
+
+                extraBlockData.Add(def.Id, this);
+            }
+        }
+
+        private static readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
         private const int SPACE_SIZE = 8;
+
+        struct ResourceGroupData
+        {
+            public MyResourceDistributionGroupDefinition def;
+            public int priority;
+        }
 
         static BuildInfo()
         {
@@ -169,6 +208,35 @@ namespace Digi.BuildInfo
             isThisDS = (MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
+
+            if(!isThisDS)
+            {
+                textAPI = new HUDTextAPI(WORKSHOP_ID);
+
+                MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
+
+                UpdateConfigValues();
+
+                #region Resource Group Priority precompute
+                resourceGroupPriority.Clear();
+                resourceSourceGroups = 0;
+                resourceSinkGroups = 0;
+
+                var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
+                var orderedGroups = from def in groupDefs
+                                    orderby def.Priority
+                                    select def;
+
+                foreach(var group in orderedGroups)
+                {
+                    resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData()
+                    {
+                        def = group,
+                        priority = (group.IsSource ? ++resourceSourceGroups : ++resourceSinkGroups),
+                    });
+                }
+                #endregion
+            }
         }
 
         protected override void UnloadData()
@@ -178,10 +246,17 @@ namespace Digi.BuildInfo
                 if(init)
                 {
                     init = false;
-                    cubes = null;
                     hudLines = null;
 
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
+
+                    MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
+
+                    if(textAPI != null)
+                    {
+                        textAPI.Close();
+                        textAPI = null;
+                    }
                 }
             }
             catch(Exception e)
@@ -190,51 +265,183 @@ namespace Digi.BuildInfo
             }
 
             Log.Close();
+
+            cubes.Clear();
+            extraBlockData.Clear();
+        }
+
+        private void GuiControlRemoved(object obj)
+        {
+            try
+            {
+                if(obj.ToString().EndsWith("ScreenOptionsSpace")) // closing options menu just assumes you changed something so it'll re-check config settings
+                {
+                    UpdateConfigValues();
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        private void UpdateConfigValues()
+        {
+            var cfg = MyAPIGateway.Session.Config;
+            hudVisible = !cfg.MinimalHud;
+            aspectRatio = (double)cfg.ScreenWidth / (double)cfg.ScreenHeight;
+
+            textObject.message = null;
+            textPosition2D = (aspectRatio > 5 ? TEXT_HUDPOS_TRIPPLE : TEXT_HUDPOS);
+            menuPosition2D = (aspectRatio > 5 ? MENU_HUDPOS_TRIPPLE : MENU_HUDPOS);
+
+            // TODO use a top-right position when rotation hints are turned off?
+            //if(cfg.RotationHints)
+            //    textPosition2D = (aspectRatio > 5 ? TEXT_HUDPOS_TRIPPLE : TEXT_HUDPOS);
+            //else
+            //    textPosition2D = new Vector2D(0.4, 0.95);
         }
 
         public override void HandleInput()
         {
             try
             {
-                if(!init)
+                if(!init || MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible)
                     return;
+
+                var input = MyAPIGateway.Input;
+
+                if(input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
+                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
+
+                if(showMenu)
+                {
+                    var move = Vector3.Round(input.GetPositionDelta(), 1);
+
+                    if(previousMove.Z == 0)
+                    {
+                        if(move.Z > 0.2f)
+                        {
+                            menuNeedsUpdate = true;
+
+                            if(++menuSelectedItem >= usableMenuItems)
+                                menuSelectedItem = 0;
+                        }
+
+                        if(move.Z < -0.2f)
+                        {
+                            menuNeedsUpdate = true;
+
+                            if(--menuSelectedItem < 0)
+                                menuSelectedItem = (usableMenuItems - 1);
+                        }
+                    }
+
+                    if(previousMove.X == 0 && Math.Abs(move.X) > 0.2f)
+                    {
+                        menuNeedsUpdate = true;
+
+                        switch(menuSelectedItem)
+                        {
+                            case 0:
+                                {
+                                    showMenu = false;
+                                    menuNeedsUpdate = true;
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    //HideText();
+                                    showBuildInfo = !showBuildInfo;
+
+                                    if(buildInfoNotification == null)
+                                        buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                                    buildInfoNotification.Text = (showBuildInfo ? "Build info ON" : "Build info OFF");
+                                    buildInfoNotification.Show();
+                                    break;
+                                }
+                            case 2:
+                                {
+                                    showMountPoints = !showMountPoints;
+                                    break;
+                                }
+                            case 3:
+                                {
+                                    MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
+                                    break;
+                                }
+                            case 4:
+                                {
+                                    if(textShown)
+                                        HideText();
+
+                                    useTextAPI = !useTextAPI;
+                                    break;
+                                }
+                        }
+                    }
+
+                    previousMove = move;
+                }
 
                 if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
                 {
-                    var GUI = MyAPIGateway.Gui;
-
-                    if(!GUI.ChatEntryVisible && GUI.GetCurrentScreen == MyTerminalPageEnum.None)
+                    if(input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
                     {
-                        if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS) && !GUI.InGameplayMenu())
+                        if(input.IsAnyShiftKeyPressed())
                         {
-                            showBuildInfo = !showBuildInfo;
+                            MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
+                            menuNeedsUpdate = true;
 
-                            if(buildInfoNotification == null)
-                                buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
+                            if(transparencyNotification == null)
+                                transparencyNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                            buildInfoNotification.Text = showBuildInfo ? "Build info ON" : "Build info OFF";
-                            buildInfoNotification.Show();
+                            transparencyNotification.Text = (MyCubeBuilder.Static.UseTransparency ? "Placement transparency ON" : "Placement transparency OFF");
+                            transparencyNotification.Show();
                         }
-
-                        if(showBuildInfo && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                        else if(input.IsAnyCtrlKeyPressed())
                         {
-                            if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT) && !GUI.InGameplayMenu())
-                            {
-                                showMountPoints = !showMountPoints;
+                            showMountPoints = !showMountPoints;
+                            menuNeedsUpdate = true;
 
-                                if(mountPointsNotification == null)
-                                    mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
+                            if(mountPointsNotification == null)
+                                mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                                mountPointsNotification.Text = showMountPoints ? "Mount points mode ON" : "Mount points mode OFF";
-                                mountPointsNotification.Show();
-                            }
+                            mountPointsNotification.Text = (showMountPoints ? "Mount points view ON" : "Mount points view OFF");
+                            mountPointsNotification.Show();
+                        }
+                        else
+                        {
+                            showMenu = !showMenu;
+                            menuNeedsUpdate = true;
                         }
                     }
+                }
+                else if(showMenu)
+                {
+                    showMenu = false;
                 }
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        private void HideText()
+        {
+            textShown = false;
+
+            if(textAPI != null && textAPI.Heartbeat)
+            {
+                textAPI.CreateAndSend(1, 0, Vector2D.Zero, string.Empty);
+                textAPI.CreateAndSend(2, 0, Vector2D.Zero, string.Empty);
+            }
+
+            foreach(var hud in hudLines)
+            {
+                hud.Hide();
             }
         }
 
@@ -245,13 +452,72 @@ namespace Digi.BuildInfo
                 if(!init)
                     return;
 
-                if(showBuildInfo && showMountPoints && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                // background for the textAPI's text
+                if(textAPIenabled && textShown && hudVisible)
                 {
-                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
-                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
-                    var m = MatrixD.CreateFromQuaternion(box.Orientation);
-                    m.Translation = box.Center;
-                    MyCubeBuilder.DrawMountPoints(MyDefinitionManager.Static.GetCubeSize(def.CubeSize), def, ref m);
+                    var camera = MyAPIGateway.Session.Camera;
+                    var camMatrix = camera.WorldMatrix;
+                    var fov = camera.FovWithZoom;
+
+                    var localscale = 0.1735 * Math.Tan(fov / 2);
+                    var localXmul = (aspectRatio * 9d / 16d);
+                    var localYmul = (1 / aspectRatio) * localXmul;
+
+                    var origin = (showMenu ? menuPosition2D : textPosition2D);
+                    origin.X *= localscale * localXmul;
+                    origin.Y *= localscale * localYmul;
+                    var textpos = Vector3D.Transform(new Vector3D(origin.X, origin.Y, -0.1), camMatrix);
+
+                    var widthStep = localscale * 9d * 0.001075;
+                    var width = textLengthMeters * widthStep;
+                    var heightStep = localscale * 9d * 0.001;
+                    var height = (textLines + 1) * heightStep;
+                    textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
+
+                    MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Up, camMatrix.Right, (float)height, (float)width);
+                }
+
+                if(showMountPoints && hudVisible && MyCubeBuilder.Static.DynamicMode)
+                {
+                    var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+
+                    if(def != null && MyCubeBuilder.Static.IsActivated)
+                    {
+                        var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                        var m = MatrixD.CreateFromQuaternion(box.Orientation);
+                        m.Translation = box.Center;
+
+                        // TODO find a way to get gizmo center when placed on grids...
+                        //var grid = MyCubeBuilder.Static.FindClosestGrid();
+                        //
+                        //if(grid != null)
+                        //{
+                        //    var gridPos = grid.WorldMatrix.Translation;
+                        //    var localPos = (box.Center - gridPos) * grid.GridSize;
+                        //    m.Translation = gridPos + localPos;
+                        //
+                        //    if(def.Size.Size > 1)
+                        //    {
+                        //        //var center = Vector3D.Transform(def.Center * grid.GridSize, m);
+                        //        //MyAPIGateway.Utilities.ShowNotification("dot=" + Math.Round(Vector3D.Dot(m.Translation, m.Up), 3), 16);
+                        //
+                        //        var extraSize = (def.Size - Vector3I.One) * grid.GridSizeHalf;
+                        //        m.Translation += m.Left * extraSize.X;
+                        //        m.Translation += m.Up * extraSize.Y;
+                        //        m.Translation += m.Backward * extraSize.Z;
+                        //
+                        //        //var extraSize = def.Size - Vector3I.One;
+                        //        //var dotX = (Vector3D.Dot(m., m.Right) > 0 ? 1 : -1);
+                        //        //var dotY = (Vector3D.Dot(m.Translation, m.Up) > 0 ? 1 : -1);
+                        //        //var dotZ = (Vector3D.Dot(m.Translation, m.Backward) > 0 ? 1 : -1);
+                        //        //m.Translation += m.Right * (grid.GridSizeHalf * extraSize.X * dotX);
+                        //        //m.Translation += m.Up * (grid.GridSizeHalf * extraSize.Y * dotY);
+                        //        //m.Translation += m.Backward * (grid.GridSizeHalf * extraSize.Z * dotZ);
+                        //    }
+                        //}
+
+                        MyCubeBuilder.DrawMountPoints(MyDefinitionManager.Static.GetCubeSize(def.CubeSize), def, ref m);
+                    }
                 }
             }
             catch(Exception e)
@@ -275,157 +541,295 @@ namespace Digi.BuildInfo
                 if(isThisDS)
                     return;
 
-                if(showBuildInfo && MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
+                textAPIenabled = (useTextAPI && textAPI != null && textAPI.Heartbeat);
+
+                #region Cube builder active
+                if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.CubeBuilderState != null && MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition != null)
                 {
-                    if(++skip < 6)
-                        return;
+                    bool textUpdated = false;
+                    int line = 0;
 
-                    skip = 0;
-                    var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
-                    long now = DateTime.UtcNow.Ticks;
-
-                    if(def.Id.SubtypeId != lastSubTypeId || def.Id.TypeId != lastTypeId)
+                    if(showMenu)
                     {
-                        lastTypeId = def.Id.TypeId;
-                        lastSubTypeId = def.Id.SubtypeId;
-
-                        var defType = def.Id.TypeId.ToString();
-                        bool isDoor = false;
-
-                        switch(defType)
+                        if(menuNeedsUpdate)
                         {
-                            case "MyObjectBuilder_AdvancedDoor":
-                            case "MyObjectBuilder_AirtightDoorGeneric":
-                            case "MyObjectBuilder_AirtightHangarDoor":
-                            case "MyObjectBuilder_Door":
-                                isDoor = true;
-                                break;
-                        }
+                            bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
+                            lastSubTypeId = MyStringHash.NullOrEmpty;
+                            usableMenuItems = (canUseTextAPI ? 5 : 4);
+                            menuNeedsUpdate = false;
+                            textUpdated = true;
 
-                        int airTightFaces = 0;
-                        int totalFaces = 0;
-                        bool airTight = (isDoor || IsAirTight(def, ref airTightFaces, ref totalFaces));
-                        bool deformable = def.BlockTopology == MyBlockTopology.Cube;
-                        int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
-                        bool buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
-                        bool blending = blendingSubTypeIds.Contains(def.Id.SubtypeName);
+                            var lines = new List<string>();
 
-                        maxLineWidthPx = 0;
-                        int line = 0;
+                            SetText(line++, "Build info settings:", MyFontEnum.DarkBlue);
 
-                        var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                        var weldTime = (assembleTime / weldMul);
-                        var grindRatio = def.DisassembleRatio;
+                            var control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+                            var key = control.GetKeyboardControl();
+                            if(key == MyKeys.None)
+                                key = control.GetSecondKeyboardControl();
 
-                        if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor
-                            grindRatio *= 3.3f;
-
-                        SetText(line++, MassFormat(def.Mass) + ", " + VectorFormat(def.Size) + ", " + TimeFormat(weldTime) + MultiplierFormat(weldMul) + (grindRatio > 1 ? ", Deconstruct speed: " + PercentFormat(1f / grindRatio) : "") + (blending ? ", Blends with armor!" : "") + (buildModels ? "" : " (No construction models)"), (blending ? MyFontEnum.DarkBlue : MyFontEnum.White));
-                        SetText(line++, "Integrity: " + def.MaxIntegrity.ToString("#,###,###,###,###") + ", Deformable: " + (deformable ? "Yes (" + def.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "No"), (deformable ? MyFontEnum.Blue : MyFontEnum.White));
-                        SetText(line++, "Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)), (isDoor || airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.DarkBlue)));
-
-                        // TODO when VoxelPlacementSettings is whitelisted:
-                        //if(def.VoxelPlacement.HasValue)
-                        //{
-                        //    var vp = def.VoxelPlacement.Value;
-                        //    SetText(line++, "Voxel rules - Dynamic: " + vp.DynamicMode.PlacementMode + ", Static: " + vp.StaticMode.PlacementMode);
-                        //}
-
-                        if(defType != "MyObjectBuilder_CubeBlock")
-                            GetExtraInfo(ref line, def, defType);
-
-                        if(!def.Context.IsBaseGame)
-                            SetText(line++, "Mod: " + def.Context.ModName, MyFontEnum.Blue);
-
-                        lastScroll = now + TimeSpan.TicksPerSecond;
-                        atLine = SCROLL_FROM_LINE;
-
-                        for(int l = 0; l < hudLines.Count; l++)
-                        {
-                            var hud = hudLines[l];
-
-                            if(l >= line)
+                            for(int i = 0; i < 5; i++)
                             {
-                                hud.Text = "";
-                                continue;
+                                str.Clear();
+                                str.Append("[ ");
+
+                                switch(i)
+                                {
+                                    case 0:
+                                        str.Append("Exit");
+                                        break;
+                                    case 1:
+                                        str.Append("Show build info: ").Append(showBuildInfo ? "ON" : "OFF");
+                                        break;
+                                    case 2:
+                                        str.Append("Show mount points: ").Append(showMountPoints ? "ON" : "OFF").Append(key == MyKeys.None ? "" : "   (Ctrl+" + key + ")");
+                                        break;
+                                    case 3:
+                                        str.Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF").Append(key == MyKeys.None ? "" : "   (Shift+" + key + ")");
+                                        break;
+                                    case 4:
+                                        if(canUseTextAPI)
+                                            str.Append("Use TextAPI: ").Append(useTextAPI ? "ON" : "OFF");
+                                        else
+                                            str.Append("Use TextAPI: ").Append("OFF (mod not detected!)");
+                                        break;
+                                }
+
+                                str.Append(" ]");
+
+                                SetText(line++, str.ToString(), (menuSelectedItem == i ? MyFontEnum.Green : (i == 4 && !canUseTextAPI ? MyFontEnum.Red : MyFontEnum.White)));
                             }
 
-                            int textWidthPx = GetStringSize(hud.Text);
+                            str.Clear();
 
-                            textWidthPx = maxLineWidthPx - textWidthPx;
-
-                            int fillchars = (int)Math.Floor((float)textWidthPx / (float)SPACE_SIZE);
-
-                            if(fillchars < 1)
-                                continue;
-
-                            string fill = new String(' ', fillchars);
-
-                            hud.Text += fill;
+                            SetText(line++, "Use movement controls to navigate and edit settings.", MyFontEnum.Blue);
                         }
                     }
-
-                    int lines = 0;
-
-                    foreach(var hud in hudLines)
+                    else if(showBuildInfo)
                     {
-                        if(hud.Text.Length > 0)
-                            lines++;
-
-                        hud.Hide();
-                    }
-
-                    if(lines > MAX_LINES)
-                    {
-                        int l;
-
-                        for(l = 0; l < lines; l++)
+                        if(++skip >= 6)
                         {
-                            var hud = hudLines[l];
+                            skip = 0;
+                            var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
 
-                            if(l < SCROLL_FROM_LINE)
+                            if(def.Id.SubtypeId != lastSubTypeId || def.Id.TypeId != lastTypeId)
                             {
-                                hud.ResetAliveTime();
-                                hud.Show();
+                                var defTypeId = def.Id.TypeId;
+                                lastTypeId = defTypeId;
+                                lastSubTypeId = def.Id.SubtypeId;
+
+                                bool isDoor = false;
+                                if(defTypeId == typeof(MyObjectBuilder_AdvancedDoor)
+                                || defTypeId == typeof(MyObjectBuilder_AirtightDoorGeneric)
+                                || defTypeId == typeof(MyObjectBuilder_AirtightHangarDoor)
+                                || defTypeId == typeof(MyObjectBuilder_AirtightSlideDoor)
+                                || defTypeId == typeof(MyObjectBuilder_Door))
+                                    isDoor = true;
+
+                                int airTightFaces = 0;
+                                int totalFaces = 0;
+                                bool airTight = (isDoor || IsAirTight(def, ref airTightFaces, ref totalFaces));
+                                bool deformable = def.BlockTopology == MyBlockTopology.Cube;
+                                int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
+                                bool buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
+
+                                maxLineWidthPx = 0;
+
+                                var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                                var grindRatio = def.DisassembleRatio;
+
+                                if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
+                                    grindRatio *= 3.3f;
+
+                                textUpdated = true;
+                                SetText(line++, MassFormat(def.Mass) + ", " + VectorFormat(def.Size) + ", " + TimeFormat(assembleTime / weldMul) + MultiplierFormat(weldMul) + (grindRatio > 1 ? ", Deconstruct speed: " + PercentFormat(1f / grindRatio) : "") + (buildModels ? "" : " (No construction models)"), MyFontEnum.White);
+                                SetText(line++, "Integrity: " + def.MaxIntegrity.ToString("#,###,###,###,###") + ", Deformable: " + (deformable ? "Yes (" + def.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "No"), (deformable ? MyFontEnum.Blue : MyFontEnum.White));
+                                SetText(line++, "Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)), (isDoor || airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.DarkBlue)));
+
+                                // TODO when VoxelPlacementSettings and VoxelPlacementMode are whitelisted:
+                                //if(def.VoxelPlacement.HasValue)
+                                //{
+                                //    var vp = def.VoxelPlacement.Value;
+                                //    SetText(line++, "Voxel rules - Dynamic: " + vp.DynamicMode.PlacementMode + ", Static: " + vp.StaticMode.PlacementMode);
+                                //}
+
+                                if(defTypeId != typeof(MyObjectBuilder_CubeBlock))
+                                    GetExtraInfo(ref line, def);
+
+                                if(!def.Context.IsBaseGame)
+                                    SetText(line++, "Mod: " + def.Context.ModName, MyFontEnum.Blue);
                             }
-                        }
-
-                        int d = SCROLL_FROM_LINE;
-                        l = atLine;
-
-                        while(d < MAX_LINES)
-                        {
-                            var hud = hudLines[l];
-
-                            if(hud.Text.Length == 0)
-                                break;
-
-                            hud.ResetAliveTime();
-                            hud.Show();
-
-                            if(++l >= lines)
-                                l = SCROLL_FROM_LINE;
-
-                            d++;
-                        }
-
-                        if(lastScroll < now)
-                        {
-                            if(++atLine >= lines)
-                                atLine = SCROLL_FROM_LINE;
-
-                            lastScroll = now + TimeSpan.TicksPerSecond;
                         }
                     }
                     else
                     {
-                        for(int l = 0; l < lines; l++)
+                        if(textShown)
+                            HideText();
+
+                        return;
+                    }
+
+                    if(textUpdated)
+                    {
+                        if(textAPIenabled)
                         {
-                            var hud = hudLines[l];
-                            hud.ResetAliveTime();
-                            hud.Show();
+                            // text API message sent only once when text changes
+
+                            str.Clear();
+
+                            string longestLine = string.Empty;
+
+                            for(int l = 0; l < hudLines.Count; l++)
+                            {
+                                var hud = hudLines[l];
+
+                                if(l >= line)
+                                    continue;
+
+                                var text = hud.Text;
+
+                                if(text.Length > longestLine.Length)
+                                    longestLine = text;
+
+                                switch(hud.Font)
+                                {
+                                    case MyFontEnum.White: str.Append("<color=white>"); break;
+                                    case MyFontEnum.Red: str.Append("<color=255,100,0>"); break;
+                                    case MyFontEnum.Green: str.Append("<color=0,200,0>"); break;
+                                    case MyFontEnum.Blue: str.Append("<color=180,210,230>"); break;
+                                    case MyFontEnum.DarkBlue: str.Append("<color=110,180,225>"); break;
+                                }
+
+                                str.Append(text).Append('\n');
+                            }
+
+                            textLines = line;
+                            textLengthMeters = (float)textAPI.GetLineLength(longestLine, TEXT_SCALE);
+                            textObject = new HUDTextAPI.HUDMessage(1, int.MaxValue, (showMenu ? menuPosition2D : textPosition2D), TEXT_SCALE, true, false, Color.Black, str.ToString());
+                            textAPI.Send(textObject);
+                            textShown = true;
+                        }
+                        else
+                        {
+                            // HUD notification requires padding to look aligned and must be printed more constant to update the scrolling and all that
+
+                            long now = DateTime.UtcNow.Ticks;
+                            lastScroll = now + TimeSpan.TicksPerSecond;
+                            atLine = SCROLL_FROM_LINE;
+
+                            for(int l = 0; l < hudLines.Count; l++)
+                            {
+                                var hud = hudLines[l];
+
+                                if(l >= line)
+                                {
+                                    hud.Text = "";
+                                    continue;
+                                }
+
+                                int textWidthPx = GetStringSize(hud.Text);
+
+                                textWidthPx = maxLineWidthPx - textWidthPx;
+
+                                int fillchars = (int)Math.Floor((float)textWidthPx / (float)SPACE_SIZE);
+
+                                if(fillchars < 1)
+                                    continue;
+
+                                string fill = new String(' ', fillchars);
+
+                                hud.Text += fill;
+                            }
                         }
                     }
+
+                    if(textAPIenabled)
+                    {
+                        // show last generated block info message
+                        if(!textShown && !string.IsNullOrEmpty(textObject.message))
+                        {
+                            textAPI.Send(textObject);
+                            textShown = true;
+                        }
+                    }
+                    else if(hudLines != null)
+                    {
+                        // print and scroll through HUD notification types of messages, not needed for text API
+                        textShown = true;
+                        int lines = 0;
+
+                        foreach(var hud in hudLines)
+                        {
+                            if(hud.Text.Length > 0)
+                                lines++;
+
+                            hud.Hide();
+                        }
+
+                        if(lines > MAX_LINES)
+                        {
+                            int l;
+
+                            for(l = 0; l < lines; l++)
+                            {
+                                var hud = hudLines[l];
+
+                                if(l < SCROLL_FROM_LINE)
+                                {
+                                    hud.ResetAliveTime();
+                                    hud.Show();
+                                }
+                            }
+
+                            int d = SCROLL_FROM_LINE;
+                            l = atLine;
+
+                            while(d < MAX_LINES)
+                            {
+                                var hud = hudLines[l];
+
+                                if(hud.Text.Length == 0)
+                                    break;
+
+                                hud.ResetAliveTime();
+                                hud.Show();
+
+                                if(++l >= lines)
+                                    l = SCROLL_FROM_LINE;
+
+                                d++;
+                            }
+
+                            long now = DateTime.UtcNow.Ticks;
+
+                            if(lastScroll < now)
+                            {
+                                if(++atLine >= lines)
+                                    atLine = SCROLL_FROM_LINE;
+
+                                lastScroll = now + TimeSpan.TicksPerSecond;
+                            }
+                        }
+                        else
+                        {
+                            for(int l = 0; l < lines; l++)
+                            {
+                                var hud = hudLines[l];
+                                hud.ResetAliveTime();
+                                hud.Show();
+                            }
+                        }
+                    }
+
+                    return;
+                }
+                #endregion Cube builder active
+
+                // hide text if shown
+                if(textShown)
+                {
+                    showMenu = false;
+                    HideText();
                 }
             }
             catch(Exception e)
@@ -469,81 +873,132 @@ namespace Digi.BuildInfo
             return (def.IsAirTight || airTightFaces == totalFaces);
         }
 
-        private void GetExtraInfo(ref int line, MyCubeBlockDefinition def, string defType)
+        private void GetExtraInfo(ref int line, MyCubeBlockDefinition def)
         {
-            switch(defType) // TODO convert these to object 'as' checking when their interfaces are not internal anymore
+            // TODO convert these if conditions to 'as' checking when their interfaces are not internal anymore
+
+            var defTypeId = def.Id.TypeId;
+
+            if(defTypeId == typeof(MyObjectBuilder_TerminalBlock)) // control panel block
             {
-                case "MyObjectBuilder_TerminalBlock": // control panel block
-                    {
-                        SetText(line++, "Requires power*: No", MyFontEnum.Green);
-                        return;
-                    }
-                case "MyObjectBuilder_Conveyor": // conveyor blocks
-                case "MyObjectBuilder_ConveyorConnector": // conveyor tubes
-                    {
-                        // HACK hardcoded; from MyGridConveyorSystem
-                        float requiredPower = 2E-05f;
-                        string powerGroup = "Conveyors";
+                SetText(line++, "Power required*: No", MyFontEnum.Green);
+                return;
+            }
 
-                        SetText(line++, "Requires power*: " + PowerFormat(requiredPower) + ", Sink group*: " + ResourceGroup(powerGroup), MyFontEnum.Green);
-                        return;
-                    }
-                case "MyObjectBuilder_ShipWelder":
-                case "MyObjectBuilder_ShipGrinder":
-                    {
-                        // HACK hardcoded; from MyShipToolBase
-                        float requiredPower = 0.002f;
-                        string powerGroup = "Defense";
-                        var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                        var volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
+            if(defTypeId == typeof(MyObjectBuilder_Conveyor) || defTypeId == typeof(MyObjectBuilder_ConveyorConnector)) // conveyor hubs and tubes
+            {
+                // HACK hardcoded; from MyGridConveyorSystem
+                float requiredPower = MyEnergyConstants.REQUIRED_INPUT_CONVEYOR_LINE;
+                var powerGroup = MyStringHash.GetOrCompute("Conveyors");
 
-                        SetText(line++, "Requires power*: " + PowerFormat(requiredPower) + ", Sink group*: " + ResourceGroup(powerGroup));
-                        SetText(line++, "Inventory*: " + InventoryFormat(volume * 1000));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true), MyFontEnum.Green);
+                return;
+            }
 
-                        if(defType == "MyObjectBuilder_ShipWelder")
-                        {
-                            float weld = 2; // HACK hardcoded; from MyShipWelder
-                            var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                            SetText(line++, "Weld speed*: " + PercentFormat(weld * mul) + " split accross targets" + MultiplierFormat(mul));
-                        }
-                        else
-                        {
-                            float grind = 2; // HACK hardcoded; from MyShipGrinder
-                            var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                            SetText(line++, "Grind speed*: " + PercentFormat(grind * mul) + " split accross targets" + MultiplierFormat(mul));
-                        }
-                        return;
-                    }
-                case "MyObjectBuilder_Drill":
-                    {
-                        // HACK hardcoded; from MyShipDrill
-                        float requiredPower = 0.002f;
-                        var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                        float volume = (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
+            if(defTypeId == typeof(MyObjectBuilder_ShipWelder) || defTypeId == typeof(MyObjectBuilder_ShipGrinder))
+            {
+                // HACK hardcoded; from MyShipToolBase
+                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
+                var powerGroup = MyStringHash.GetOrCompute("Defense");
+                float volume;
 
-                        SetText(line++, "Requires power*: " + PowerFormat(requiredPower));
-                        SetText(line++, "Inventory*: " + InventoryFormat(volume * 1000));
-                        return;
-                    }
-                case "MyObjectBuilder_ShipConnector":
-                    {
-                        // HACK hardcoded; from MyShipConnector
-                        var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                        var inventorySize = def.Size * gridSize * 0.8f;
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true));
 
-                        SetText(line++, "Inventory*: " + InventoryFormat(inventorySize.Volume * 1000));
-                        return;
-                    }
-                    // TODO when MyObjectBuilder_UpgradeModuleDefinition is whitelisted or it has a non-objectbuilder definition
-                    /*
-                case "MyObjectBuilder_UpgradeModule":
-                    {
-                        var obj = def.GetObjectBuilder() as MyObjectBuilder_UpgradeModuleDefinition; // prohibited
-                        
-                        SetText(line++, "upgrades: " + obj.Upgrades[0].ModifierType);
-                        return;
-                    }
-                    */
+                if(GetInventoryFromComponent(def, out volume))
+                {
+                    SetText(line++, "Inventory: " + InventoryFormat(volume));
+                }
+                else
+                {
+                    // HACK hardcoded; from MyShipToolBase
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
+                    SetText(line++, "Inventory*: " + InventoryFormat(volume));
+                }
+
+                if(defTypeId == typeof(MyObjectBuilder_ShipWelder))
+                {
+                    float weld = 2; // HACK hardcoded; from MyShipWelder
+                    var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                    SetText(line++, "Weld speed*: " + PercentFormat(weld * mul) + " split accross targets" + MultiplierFormat(mul));
+                }
+                else
+                {
+                    float grind = 2; // HACK hardcoded; from MyShipGrinder
+                    var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+                    SetText(line++, "Grind speed*: " + PercentFormat(grind * mul) + " split accross targets" + MultiplierFormat(mul));
+                }
+                return;
+            }
+
+            if(defTypeId == typeof(MyObjectBuilder_Drill))
+            {
+                // HACK hardcoded; from MyShipDrill
+                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
+                float volume;
+
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower));
+
+                if(GetInventoryFromComponent(def, out volume))
+                {
+                    SetText(line++, "Inventory: " + InventoryFormat(volume, typeof(MyObjectBuilder_Ore)));
+                }
+                else
+                {
+                    // HACK hardcoded; from MyShipDrill
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    volume = (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
+                    SetText(line++, "Inventory*: " + InventoryFormat(volume, typeof(MyObjectBuilder_Ore)));
+                }
+
+                return;
+            }
+
+            if(defTypeId == typeof(MyObjectBuilder_ShipConnector))
+            {
+                // HACK hardcoded; from MyShipConnector
+                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_CONNECTOR;
+                if(def.CubeSize == MyCubeSize.Small)
+                    requiredPower *= 0.01f;
+                var powerGroup = MyStringHash.GetOrCompute("Conveyors");
+                float volume;
+
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true));
+
+                if(GetInventoryFromComponent(def, out volume))
+                {
+                    SetText(line++, "Inventory: " + InventoryFormat(volume));
+                }
+                else
+                {
+                    // HACK hardcoded; from MyShipConnector
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    var inventorySize = def.Size * gridSize * 0.8f;
+                    SetText(line++, "Inventory*: " + InventoryFormat(inventorySize.Volume));
+                }
+                return;
+            }
+
+            if(defTypeId == typeof(MyObjectBuilder_UpgradeModule))
+            {
+                // TODO when MyObjectBuilder_UpgradeModuleDefinition is whitelisted or it has a non-objectbuilder definition
+                //var obj = def.GetObjectBuilder() as MyObjectBuilder_UpgradeModuleDefinition; // prohibited
+                //SetText(line++, "upgrades: " + obj.Upgrades[0].ModifierType);
+
+                // HACK hardcoded; from vanilla definitions
+                switch(def.Id.SubtypeName)
+                {
+                    case "LargeProductivityModule":
+                        SetText(line++, "Upgrades*: Productivity +50% added per slot");
+                        break;
+                    case "LargeEffectivenessModule":
+                        SetText(line++, "Upgrades*: Effectiveness multiplied by 1.0905077 per slot");
+                        break;
+                    case "LargeEnergyModule":
+                        SetText(line++, "Upgrades*: PowerEfficiency multiplied by 1.2228445 per slot");
+                        break;
+                }
+                return;
             }
 
             var piston = def as MyPistonBaseDefinition;
@@ -553,14 +1008,14 @@ namespace Digi.BuildInfo
             {
                 if(piston != null)
                 {
-                    SetText(line++, "Requires power: " + PowerFormat(piston.RequiredPowerInput) + ", Sink group: " + ResourceGroup(piston.ResourceSinkGroup));
+                    SetText(line++, "Power required: " + PowerFormat(piston.RequiredPowerInput) + ", " + ResourcePriority(piston.ResourceSinkGroup));
                     SetText(line++, "Extended length: " + DistanceFormat(piston.Maximum));
                     SetText(line++, "Max speed: " + SpeedFormat(piston.MaxVelocity));
                 }
 
                 if(motor != null)
                 {
-                    SetText(line++, "Requires power: " + PowerFormat(motor.RequiredPowerInput) + ", Sink group: " + ResourceGroup(motor.ResourceSinkGroup));
+                    SetText(line++, "Power required: " + PowerFormat(motor.RequiredPowerInput) + ", " + ResourcePriority(motor.ResourceSinkGroup));
 
                     if(!(def is MyMotorSuspensionDefinition))
                     {
@@ -573,7 +1028,7 @@ namespace Digi.BuildInfo
                     var suspension = def as MyMotorSuspensionDefinition;
                     if(suspension != null)
                     {
-                        SetText(line++, "Force: " + ForceFormat(suspension.PropulsionForce) + ", Steer speed: " + TorqueFormat(suspension.SteeringSpeed * 100) + ", Steer angle: " + RadAngleFormat(suspension.MaxSteer));
+                        SetText(line++, "Force: " + ForceFormat(suspension.PropulsionForce) + ", Steer speed: " + RotationSpeed(suspension.SteeringSpeed * 60) + ", Steer angle: " + AngleFormat(suspension.MaxSteer));
                         SetText(line++, "Height: " + DistanceFormat(suspension.MinHeight) + " to " + DistanceFormat(suspension.MaxHeight));
                     }
                 }
@@ -607,16 +1062,25 @@ namespace Digi.BuildInfo
                 var cockpit = def as MyCockpitDefinition;
                 if(cockpit != null)
                 {
-                    float volume = Vector3.One.Volume; // HACK hardcoded; from MyCockpit
+                    float volume;
 
-                    SetText(line++, "Inventory*: " + InventoryFormat(volume * 1000));
-                    SetText(line++, (cockpit.IsPressurized ? "Pressurized: Yes, Oxygen capacity: " + cockpit.OxygenCapacity.ToString(NUMBER_FORMAT) + " O2" : "Pressurized: No"), (cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red));
+                    if(GetInventoryFromComponent(def, out volume))
+                    {
+                        SetText(line++, "Inventory: " + InventoryFormat(volume));
+                    }
+                    else
+                    {
+                        volume = Vector3.One.Volume; // HACK hardcoded; from MyCockpit
+                        SetText(line++, "Inventory*: " + InventoryFormat(volume));
+                    }
+
+                    SetText(line++, (cockpit.IsPressurized ? "Pressurized: Yes, Oxygen capacity: " + cockpit.OxygenCapacity.ToString(NUMBER_FORMAT) + " oxy" : "Pressurized: No"), (cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red));
                 }
 
                 var rc = def as MyRemoteControlDefinition;
                 if(rc != null)
                 {
-                    SetText(line++, "Requires power: " + PowerFormat(rc.RequiredPowerInput) + ", Sink group: " + ResourceGroup(rc.ResourceSinkGroup));
+                    SetText(line++, "Power required: " + PowerFormat(rc.RequiredPowerInput) + ", " + ResourcePriority(rc.ResourceSinkGroup));
                 }
 
                 return;
@@ -625,26 +1089,30 @@ namespace Digi.BuildInfo
             var thrust = def as MyThrustDefinition;
             if(thrust != null)
             {
-                SetText(line++, "Usage - Idle: " + PowerFormat(thrust.MinPowerConsumption) + ", Max: " + PowerFormat(thrust.MaxPowerConsumption) + ", Sink group: " + ResourceGroup(thrust.ResourceSinkGroup));
-                SetText(line++, "Force: " + ForceFormat(thrust.ForceMagnitude) + ", Dampener factor: " + thrust.SlowdownFactor.ToString(FLOAT_FORMAT));
-
                 if(!thrust.FuelConverter.FuelId.IsNull())
                 {
+                    SetText(line++, "Requires power to be controlled, " + ResourcePriority(thrust.ResourceSinkGroup));
                     SetText(line++, "Requires fuel: " + thrust.FuelConverter.FuelId.SubtypeId + ", Efficiency: " + Math.Round(thrust.FuelConverter.Efficiency * 100, 2) + "%");
                 }
+                else
+                {
+                    SetText(line++, "Power: " + PowerFormat(thrust.MaxPowerConsumption) + ", Idle: " + PowerFormat(thrust.MinPowerConsumption) + ", " + ResourcePriority(thrust.ResourceSinkGroup));
+                }
+
+                SetText(line++, "Force: " + ForceFormat(thrust.ForceMagnitude) + ", Dampener factor: " + thrust.SlowdownFactor.ToString(FLOAT_FORMAT));
 
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
-                    if(thrust.NeedsAtmosphereForInfluence)
-                    {
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " atmosphere" : "in atmosphere"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " atmosphere" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                    }
-                    else
-                    {
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " planet influence" : "on planets"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                        SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " planet influence" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                    }
+                    //if(thrust.NeedsAtmosphereForInfluence) // seems to be a pointless var
+                    //{
+                    SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " atmosphere" : "in atmosphere"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                    SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " atmosphere" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                    //}
+                    //else
+                    //{
+                    //    SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " planet influence" : "on planets"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                    //    SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " planet influence" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
+                    //}
                 }
                 else
                 {
@@ -652,24 +1120,39 @@ namespace Digi.BuildInfo
                 }
 
                 if(thrust.ConsumptionFactorPerG > 0)
-                    SetText(line++, "Extra gravity consumption: +" + PercentFormat(thrust.ConsumptionFactorPerG) + " per g");
+                    SetText(line++, "Extra consumption: +" + PercentFormat(thrust.ConsumptionFactorPerG) + " per natural g acceleration");
 
-                SetText(line++, "Thrust damage scale: " + thrust.FlameDamage.ToString(FLOAT_FORMAT) + ", Distance scale: " + thrust.FlameDamageLengthScale.ToString(NUMBER_FORMAT));
+                var data = (ExtraThrustData)extraBlockData.GetValueOrDefault(def.Id, null);
+
+                if(data == null)
+                {
+                    var fakeBlock = SpawnFakeBlock(def) as MyThrust;
+
+                    if(fakeBlock == null)
+                        Log.Error("Couldn't get thrust data from fake entity!", "Couldn't get thrust data from fake entity!");
+                    else
+                        data = new ExtraThrustData(fakeBlock);
+                }
+
+                if(data != null)
+                {
+                    var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
+
+                    // HACK harcdoded; from MyThrust.DamageGrid() and MyThrust.ThrustDamage()
+                    var damage = thrust.FlameDamage * data.flames;
+                    var flameShipDamage = damage * 30f;
+                    var flameDamage = damage * 10f * data.radius;
+
+                    SetText(line++, (data.flames > 1 ? "Flames: " + data.flames + ", Max distance: " : "Flame max distance: ") + DistanceFormat(flameDistance) + ", Max damage: " + flameShipDamage.ToString(FLOAT_FORMAT) + " to ships, " + flameDamage.ToString(FLOAT_FORMAT) + " to the rest");
+                }
+
                 return;
             }
 
             var lg = def as MyLandingGearDefinition;
             if(lg != null)
             {
-                SetText(line++, "Requires power*: No", MyFontEnum.Green);
-                return;
-            }
-
-            var vent = def as MyAirVentDefinition;
-            if(vent != null)
-            {
-                SetText(line++, "Usage - Idle: " + PowerFormat(vent.StandbyPowerConsumption) + ", Operational: " + PowerFormat(vent.OperationalPowerConsumption) + ", Sink group: " + ResourceGroup(vent.ResourceSinkGroup));
-                SetText(line++, "Output - Rate: " + vent.VentilationCapacityPerSecond.ToString(NUMBER_FORMAT) + " O2/s, Source group: " + ResourceGroup(vent.ResourceSourceGroup));
+                SetText(line++, "Power required*: No", MyFontEnum.Green);
                 return;
             }
 
@@ -681,7 +1164,7 @@ namespace Digi.BuildInfo
                 if(spotlight != null)
                     radius = light.LightReflectorRadius;
 
-                SetText(line++, "Requires power: " + PowerFormat(light.RequiredPowerInput) + ", Sink group: " + ResourceGroup(light.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(light.RequiredPowerInput) + ", " + ResourcePriority(light.ResourceSinkGroup));
                 SetText(line++, "Radius: " + DistanceFormat(radius.Min) + " to " + DistanceFormat(radius.Max) + ", Default: " + DistanceFormat(radius.Default));
                 SetText(line++, "Intensity: " + light.LightIntensity.Min.ToString(FLOAT_FORMAT) + " to " + light.LightIntensity.Max.ToString(FLOAT_FORMAT) + ", Default: " + light.LightIntensity.Default.ToString(FLOAT_FORMAT));
                 SetText(line++, "Falloff: " + light.LightFalloff.Min.ToString(FLOAT_FORMAT) + " to " + light.LightFalloff.Max.ToString(FLOAT_FORMAT) + ", Default: " + light.LightFalloff.Default.ToString(FLOAT_FORMAT));
@@ -697,7 +1180,7 @@ namespace Digi.BuildInfo
             {
                 var requiredPowerInput = 0.002f; // HACK hardcoded; from MyOreDetector
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(oreDetector.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(oreDetector.ResourceSinkGroup));
                 SetText(line++, "Max range: " + DistanceFormat(oreDetector.MaximumRange));
                 return;
             }
@@ -705,7 +1188,7 @@ namespace Digi.BuildInfo
             var gyro = def as MyGyroDefinition;
             if(gyro != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(gyro.RequiredPowerInput) + ", Sink group: " + ResourceGroup(gyro.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(gyro.RequiredPowerInput) + ", " + ResourcePriority(gyro.ResourceSinkGroup));
                 SetText(line++, "Force: " + ForceFormat(gyro.ForceMagnitude));
                 return;
             }
@@ -713,7 +1196,7 @@ namespace Digi.BuildInfo
             var projector = def as MyProjectorDefinition;
             if(projector != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(projector.RequiredPowerInput) + ", Sink group: " + ResourceGroup(projector.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(projector.RequiredPowerInput) + ", " + ResourcePriority(projector.ResourceSinkGroup));
                 return;
             }
 
@@ -722,7 +1205,7 @@ namespace Digi.BuildInfo
             {
                 float requiredPowerInput = 3E-05f; // HACK hardcoded; from MyDoor
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(door.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(door.ResourceSinkGroup));
                 SetText(line++, "Move time: " + TimeFormat(door.MaxOpen / door.OpeningSpeed));
                 SetText(line++, "Move distance: " + DistanceFormat(door.MaxOpen));
                 return;
@@ -731,7 +1214,7 @@ namespace Digi.BuildInfo
             var airTightDoor = def as MyAirtightDoorGenericDefinition; // does not extend MyDoorDefinition
             if(airTightDoor != null)
             {
-                SetText(line++, "Usage - Idle: " + PowerFormat(airTightDoor.PowerConsumptionIdle) + ", Moving: " + PowerFormat(airTightDoor.PowerConsumptionMoving) + ", Sink group: " + ResourceGroup(airTightDoor.ResourceSinkGroup));
+                SetText(line++, "Power: " + PowerFormat(airTightDoor.PowerConsumptionMoving) + ", Idle: " + PowerFormat(airTightDoor.PowerConsumptionIdle) + ", " + ResourcePriority(airTightDoor.ResourceSinkGroup));
 
                 // needs subpart count to reliably compute move time
                 //SetText(line++, "Move time: " + TimeFormat((airTightDoor.SubpartMovementDistance * subparts) / airTightDoor.OpeningSpeed)); // <<< math not quite correct
@@ -744,7 +1227,7 @@ namespace Digi.BuildInfo
             var advDoor = def as MyAdvancedDoorDefinition; // does not extend MyDoorDefinition
             if(advDoor != null)
             {
-                SetText(line++, "Usage - Idle: " + PowerFormat(advDoor.PowerConsumptionIdle) + ", Moving: " + PowerFormat(advDoor.PowerConsumptionMoving) + ", Sink group: " + ResourceGroup(advDoor.ResourceSinkGroup));
+                SetText(line++, "Power: " + PowerFormat(advDoor.PowerConsumptionMoving) + ", Idle: " + PowerFormat(advDoor.PowerConsumptionIdle) + ", " + ResourcePriority(advDoor.ResourceSinkGroup));
 
                 float openTime = 0;
                 float closeTime = 0;
@@ -764,7 +1247,7 @@ namespace Digi.BuildInfo
             var production = def as MyProductionBlockDefinition;
             if(production != null)
             {
-                SetText(line++, "Usage - Idle: " + PowerFormat(production.StandbyPowerConsumption) + ", Operational: " + PowerFormat(production.OperationalPowerConsumption) + ", Sink group: " + ResourceGroup(production.ResourceSinkGroup));
+                SetText(line++, "Power: " + PowerFormat(production.OperationalPowerConsumption) + ", Idle: " + PowerFormat(production.StandbyPowerConsumption) + ", " + ResourcePriority(production.ResourceSinkGroup));
 
                 var assembler = def as MyAssemblerDefinition;
                 if(assembler != null)
@@ -772,7 +1255,7 @@ namespace Digi.BuildInfo
                     var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    SetText(line++, "Assembly speed: " + PercentFormat(assembler.AssemblySpeed * mulSpeed) + MultiplierFormat(mulSpeed) + ", Efficiency: " + PercentFormat(1 / mulEff) + MultiplierFormat(mulEff));
+                    SetText(line++, "Assembly speed: " + PercentFormat(assembler.AssemblySpeed * mulSpeed) + MultiplierFormat(mulSpeed) + ", Efficiency: " + PercentFormat(mulEff) + MultiplierFormat(mulEff));
                 }
 
                 var refinery = def as MyRefineryDefinition;
@@ -798,7 +1281,7 @@ namespace Digi.BuildInfo
 
                     foreach(var gas in oxygenGenerator.ProducedGases)
                     {
-                        str.Append(gas.Id.SubtypeName).Append(" (ratio ").Append(gas.IceToGasRatio).Append("), ");
+                        str.Append(gas.Id.SubtypeName).Append(" (ratio: ").AppendFormat(FLOAT_FORMAT, gas.IceToGasRatio).Append("), ");
                     }
 
                     str.Length -= 2;
@@ -806,13 +1289,22 @@ namespace Digi.BuildInfo
                     SetText(line++, "Produces: " + str);
                 }
 
-                SetText(line++, "Inventory: " + InventoryFormat((production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume) * 1000));
+                var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
+
+                if(refinery != null || assembler != null)
+                {
+                    SetText(line++, "In+out inventories: " + InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint));
+                }
+                else
+                {
+                    SetText(line++, "Inventory: " + InventoryFormat(volume, production.InputInventoryConstraint));
+                }
 
                 if(production.BlueprintClasses != null)
                 {
                     if(production.BlueprintClasses.Count == 0)
                     {
-                        SetText(line++, "Has no blueprint classes (?!)", MyFontEnum.Red);
+                        SetText(line++, "Has no blueprint classes.", MyFontEnum.Red);
                     }
                     else
                     {
@@ -820,7 +1312,7 @@ namespace Digi.BuildInfo
 
                         foreach(var bp in production.BlueprintClasses)
                         {
-                            str.Append(bp.DisplayNameText).Append(',');
+                            str.Append(bp.DisplayNameText).Append(", ");
                         }
 
                         str.Length -= 1;
@@ -842,47 +1334,45 @@ namespace Digi.BuildInfo
             var powerProducer = def as MyPowerProducerDefinition;
             if(powerProducer != null)
             {
-                SetText(line++, "Power output: " + PowerFormat(powerProducer.MaxPowerOutput) + ", Group: " + ResourceGroup(powerProducer.ResourceSourceGroup));
+                SetText(line++, "Power output: " + PowerFormat(powerProducer.MaxPowerOutput) + ", " + ResourcePriority(powerProducer.ResourceSourceGroup));
 
                 var reactor = def as MyReactorDefinition;
                 if(reactor != null)
                 {
                     if(reactor.FuelDefinition != null)
                     {
-                        SetText(line++, "Requires fuel: " + reactor.FuelId.SubtypeId);
+                        SetText(line++, "Requires fuel: " + IdTypeSubtypeFormat(reactor.FuelId));
                     }
 
-                    SetText(line++, "Inventory: " + InventoryFormat((reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume) * 1000));
-
+                    var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
                     var invLimit = reactor.InventoryConstraint;
 
                     if(invLimit != null)
                     {
+                        SetText(line++, "Inventory: " + InventoryFormat(volume, reactor.FuelId)); // TODO use reactor.InventoryConstraint
                         SetText(line++, "Inventory items " + (invLimit.IsWhitelist ? "allowed" : "NOT allowed") + ":");
 
                         foreach(var id in invLimit.ConstrainedIds)
                         {
-                            string typeName = id.TypeId.ToString();
-                            typeName = typeName.Substring(typeName.IndexOf('_') + 1);
-
-                            SetText(line++, "       - " + typeName + " / " + id.SubtypeName);
+                            SetText(line++, "       - " + IdTypeSubtypeFormat(id));
                         }
 
                         foreach(var type in invLimit.ConstrainedTypes)
                         {
-                            string typeName = type.ToString();
-                            typeName = typeName.Substring(typeName.IndexOf('_') + 1);
-
-                            SetText(line++, "       - All of type: " + typeName);
+                            SetText(line++, "       - All of type: " + IdTypeFormat(type));
                         }
+                    }
+                    else
+                    {
+                        SetText(line++, "Inventory: " + InventoryFormat(volume));
                     }
                 }
 
                 var battery = def as MyBatteryBlockDefinition;
                 if(battery != null)
                 {
-                    SetText(line++, "Power input: " + PowerFormat(battery.RequiredPowerInput) + (battery.AdaptibleInput ? " (adaptable)" : "") + ", Group: " + ResourceGroup(battery.ResourceSinkGroup));
-                    SetText(line++, "Power capacity: " + PowerStorageFormat(battery.MaxStoredPower) + ", Initial: " + PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio) + " (" + Math.Round(battery.InitialStoredPowerRatio * 100, 2) + "%)");
+                    SetText(line++, "Power input: " + PowerFormat(battery.RequiredPowerInput) + (battery.AdaptibleInput ? " (adaptable)" : " (minimum required)") + ", " + ResourcePriority(battery.ResourceSinkGroup), (battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red));
+                    SetText(line++, "Power capacity: " + PowerStorageFormat(battery.MaxStoredPower) + ", Pre-charged: " + PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio) + " (" + Math.Round(battery.InitialStoredPowerRatio * 100, 2) + "%)");
                     return;
                 }
 
@@ -898,9 +1388,17 @@ namespace Digi.BuildInfo
             var oxygenFarm = def as MyOxygenFarmDefinition;
             if(oxygenFarm != null)
             {
-                SetText(line++, "Power usage: " + PowerFormat(oxygenFarm.OperationalPowerConsumption) + ", Sink group: " + ResourceGroup(oxygenFarm.ResourceSinkGroup));
-                SetText(line++, "Produces: " + oxygenFarm.MaxGasOutput.ToString(NUMBER_FORMAT) + " " + oxygenFarm.ProducedGas.SubtypeName + " per second, Source group: " + ResourceGroup(oxygenFarm.ResourceSourceGroup));
+                SetText(line++, "Power: " + PowerFormat(oxygenFarm.OperationalPowerConsumption) + ", " + ResourcePriority(oxygenFarm.ResourceSinkGroup));
+                SetText(line++, "Produces: " + oxygenFarm.MaxGasOutput.ToString(NUMBER_FORMAT) + " " + oxygenFarm.ProducedGas.SubtypeName + " per second, : " + ResourcePriority(oxygenFarm.ResourceSourceGroup));
                 SetText(line++, (oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided"), (oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red));
+                return;
+            }
+
+            var vent = def as MyAirVentDefinition;
+            if(vent != null)
+            {
+                SetText(line++, "Idle: " + PowerFormat(vent.StandbyPowerConsumption) + ", Operational: " + PowerFormat(vent.OperationalPowerConsumption) + ", " + ResourcePriority(vent.ResourceSinkGroup));
+                SetText(line++, "Output - Rate: " + vent.VentilationCapacityPerSecond.ToString(NUMBER_FORMAT) + " oxy/s, " + ResourcePriority(vent.ResourceSourceGroup));
                 return;
             }
 
@@ -911,7 +1409,7 @@ namespace Digi.BuildInfo
                 float maxRadius = (def.CubeSize == MyCubeSize.Large ? 50000f : 5000f);
                 float requiredPowerInput = (maxRadius / 500f) * 0.002f;
 
-                SetText(line++, "Max required power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(radioAntenna.ResourceSinkGroup));
+                SetText(line++, "Max required power*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(radioAntenna.ResourceSinkGroup));
                 SetText(line++, "Max radius*: " + DistanceFormat(maxRadius));
                 return;
             }
@@ -919,9 +1417,10 @@ namespace Digi.BuildInfo
             var laserAntenna = def as MyLaserAntennaDefinition;
             if(laserAntenna != null)
             {
-                SetText(line++, "Usage - Idle: " + PowerFormat(laserAntenna.PowerInputIdle) + ", Turning: " + PowerFormat(laserAntenna.PowerInputTurning) + ", Connected: " + PowerFormat(laserAntenna.PowerInputLasing));
-                SetText(line++, "Range: " + DistanceFormat(laserAntenna.MaxRange) + ", Line-of-sight: " + (laserAntenna.RequireLineOfSight ? "Required" : "Not required!"), (laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green));
-                SetText(line++, "Rotation Pitch: " + AngleFormat(laserAntenna.MinElevationDegrees) + " to " + AngleFormat(laserAntenna.MaxElevationDegrees) + ", Yaw: " + AngleFormat(laserAntenna.MinAzimuthDegrees) + " to " + AngleFormat(laserAntenna.MaxAzimuthDegrees));
+                SetText(line++, "Power: " + PowerFormat(laserAntenna.PowerInputLasing) + ", Turning: " + PowerFormat(laserAntenna.PowerInputTurning) + ", Idle: " + PowerFormat(laserAntenna.PowerInputIdle) + ", " + ResourcePriority(laserAntenna.ResourceSinkGroup));
+                SetText(line++, "Range: " + DistanceFormat(laserAntenna.MaxRange) + ", Line-of-sight: " + (laserAntenna.RequireLineOfSight ? "Required" : "Not required"), (laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green));
+                SetText(line++, "Rotation Pitch: " + AngleFormatDeg(laserAntenna.MinElevationDegrees) + " to " + AngleFormatDeg(laserAntenna.MaxElevationDegrees) + ", Yaw: " + AngleFormatDeg(laserAntenna.MinAzimuthDegrees) + " to " + AngleFormatDeg(laserAntenna.MaxAzimuthDegrees));
+                SetText(line++, "Rotation Speed: " + RotationSpeed(laserAntenna.RotationRate * 60));
                 return;
             }
 
@@ -932,7 +1431,7 @@ namespace Digi.BuildInfo
                 float maxRadius = (def.CubeSize == MyCubeSize.Large ? 50000f : 5000f);
                 float requiredPowerInput = (maxRadius / 100000f) * 0.02f;
 
-                SetText(line++, "Max required power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(beacon.ResourceSinkGroup));
+                SetText(line++, "Max required power*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(beacon.ResourceSinkGroup));
                 SetText(line++, "Max radius*: " + DistanceFormat(maxRadius));
                 return;
             }
@@ -943,7 +1442,7 @@ namespace Digi.BuildInfo
                 // HACK hardcoded; from MyTimerBlock
                 float requiredPowerInput = 1E-07f;
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(timer.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(timer.ResourceSinkGroup));
                 return;
             }
 
@@ -953,7 +1452,7 @@ namespace Digi.BuildInfo
                 // HACK hardcoded; from MyProgrammableBlock
                 float requiredPowerInput = 0.0005f;
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(pb.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(pb.ResourceSinkGroup));
                 return;
             }
 
@@ -963,7 +1462,7 @@ namespace Digi.BuildInfo
                 // HACK hardcoded; from MySoundBlock
                 float requiredPowerInput = 0.0002f;
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(sound.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(sound.ResourceSinkGroup));
                 return;
             }
 
@@ -976,7 +1475,7 @@ namespace Digi.BuildInfo
                 Vector3 maxField = new Vector3(sensor.MaxRange * 2);
                 float requiredPower = 0.0003f * (float)Math.Pow((maxField - minField).Volume, 1f / 3f);
 
-                SetText(line++, "Max required power*: " + PowerFormat(requiredPower) + ", Sink group: " + ResourceGroup(sensor.ResourceSinkGroup));
+                SetText(line++, "Max required power*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(sensor.ResourceSinkGroup));
                 SetText(line++, "Max area: " + VectorFormat(maxField));
                 return;
             }
@@ -984,7 +1483,7 @@ namespace Digi.BuildInfo
             var artificialMass = def as MyVirtualMassDefinition;
             if(artificialMass != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(artificialMass.RequiredPowerInput) + ", Sink group: " + ResourceGroup(artificialMass.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(artificialMass.RequiredPowerInput) + ", " + ResourcePriority(artificialMass.ResourceSinkGroup));
                 SetText(line++, "Artificial mass: " + MassFormat(artificialMass.VirtualMass));
                 return;
             }
@@ -992,7 +1491,7 @@ namespace Digi.BuildInfo
             var spaceBall = def as MySpaceBallDefinition; // this doesn't extend MyVirtualMassDefinition
             if(spaceBall != null)
             {
-                SetText(line++, "Requires power*: No", MyFontEnum.Green);
+                SetText(line++, "Power required*: No", MyFontEnum.Green); // HACK hardcoded
                 SetText(line++, "Max artificial mass: " + MassFormat(spaceBall.MaxVirtualMass));
                 return;
             }
@@ -1000,7 +1499,7 @@ namespace Digi.BuildInfo
             var warhead = def as MyWarheadDefinition;
             if(warhead != null)
             {
-                SetText(line++, "Requires power*: No", MyFontEnum.Green);
+                SetText(line++, "Power required*: No", MyFontEnum.Green); // HACK hardcoded
                 SetText(line++, "Radius: " + DistanceFormat(warhead.ExplosionRadius));
                 SetText(line++, "Damage: " + warhead.WarheadExplosionDamage.ToString("#,###,###,###,###.##"));
                 return;
@@ -1012,7 +1511,7 @@ namespace Digi.BuildInfo
                 // HACK hardcoded; from MyButtonPanel
                 float requiredPowerInput = 0.0001f;
 
-                SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(button.ResourceSinkGroup));
+                SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(button.ResourceSinkGroup));
                 SetText(line++, "Button count: " + button.ButtonCount);
                 return;
             }
@@ -1020,7 +1519,7 @@ namespace Digi.BuildInfo
             var lcd = def as MyTextPanelDefinition;
             if(lcd != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(lcd.RequiredPowerInput) + ", Sink group: " + ResourceGroup(lcd.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(lcd.RequiredPowerInput) + ", " + ResourcePriority(lcd.ResourceSinkGroup));
                 SetText(line++, "Screen resolution: " + (lcd.TextureResolution * lcd.TextureAspectRadio) + "x" + lcd.TextureResolution);
                 return;
             }
@@ -1028,8 +1527,8 @@ namespace Digi.BuildInfo
             var camera = def as MyCameraBlockDefinition;
             if(camera != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(camera.RequiredPowerInput) + ", Sink group: " + ResourceGroup(camera.ResourceSinkGroup));
-                SetText(line++, "Field of view: " + RadAngleFormat(camera.MinFov) + " to " + RadAngleFormat(camera.MaxFov));
+                SetText(line++, "Power required: " + PowerFormat(camera.RequiredPowerInput) + ", " + ResourcePriority(camera.ResourceSinkGroup));
+                SetText(line++, "Field of view: " + AngleFormat(camera.MinFov) + " to " + AngleFormat(camera.MaxFov));
 
                 //var index = Math.Max(camera.OverlayTexture.LastIndexOf('/'), camera.OverlayTexture.LastIndexOf('\\')); // last / or \ char
                 //SetText(line++, "Overlay texture: " + camera.OverlayTexture.Substring(index + 1));
@@ -1042,22 +1541,22 @@ namespace Digi.BuildInfo
                 var poweredCargo = def as MyPoweredCargoContainerDefinition;
                 if(poweredCargo != null)
                 {
-                    SetText(line++, "Requires power: " + PowerFormat(poweredCargo.RequiredPowerInput) + ", Sink group: " + ResourceGroup(poweredCargo.ResourceSinkGroup));
+                    SetText(line++, "Power required: " + PowerFormat(poweredCargo.RequiredPowerInput) + ", " + ResourcePriority(poweredCargo.ResourceSinkGroup));
                 }
 
-                float maxVolume = cargo.InventorySize.Volume;
+                float volume = cargo.InventorySize.Volume;
 
-                if(maxVolume == 0)
+                if(Math.Abs(volume) > 0.0001f || GetInventoryFromComponent(def, out volume))
                 {
-                    // HACK hardcoded; from MyCargoContainer
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    maxVolume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize;
-
-                    SetText(line++, "Inventory*: " + InventoryFormat(maxVolume * 1000));
+                    SetText(line++, "Inventory: " + InventoryFormat(volume));
                 }
                 else
                 {
-                    SetText(line++, "Inventory: " + InventoryFormat(maxVolume * 1000));
+                    // HACK hardcoded; from MyCargoContainer
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize;
+
+                    SetText(line++, "Inventory*: " + InventoryFormat(volume));
                 }
 
                 return;
@@ -1066,8 +1565,8 @@ namespace Digi.BuildInfo
             var sorter = def as MyConveyorSorterDefinition;
             if(sorter != null)
             {
-                SetText(line++, "Requires power: " + PowerFormat(sorter.PowerInput) + ", Sink group: " + ResourceGroup(sorter.ResourceSinkGroup));
-                SetText(line++, "Inventory: " + InventoryFormat(sorter.InventorySize.Volume * 1000));
+                SetText(line++, "Power required: " + PowerFormat(sorter.PowerInput) + ", " + ResourcePriority(sorter.ResourceSinkGroup));
+                SetText(line++, "Inventory: " + InventoryFormat(sorter.InventorySize.Volume));
                 return;
             }
 
@@ -1077,14 +1576,14 @@ namespace Digi.BuildInfo
                 var gravityFlat = def as MyGravityGeneratorDefinition;
                 if(gravityFlat != null)
                 {
-                    SetText(line++, "Requires power: " + PowerFormat(gravityFlat.RequiredPowerInput) + ", Sink group: " + ResourceGroup(gravityFlat.ResourceSinkGroup));
+                    SetText(line++, "Max power use: " + PowerFormat(gravityFlat.RequiredPowerInput) + ", " + ResourcePriority(gravityFlat.ResourceSinkGroup));
                     SetText(line++, "Field size: " + VectorFormat(gravityFlat.MinFieldSize) + " to " + VectorFormat(gravityFlat.MaxFieldSize));
                 }
 
                 var gravitySphere = def as MyGravityGeneratorSphereDefinition;
                 if(gravitySphere != null)
                 {
-                    SetText(line++, "Base power usage: " + PowerFormat(gravitySphere.BasePowerInput) + ", Consumption: " + PowerFormat(gravitySphere.ConsumptionPower) + ", Sink group: " + ResourceGroup(gravitySphere.ResourceSinkGroup));
+                    SetText(line++, "Base power usage: " + PowerFormat(gravitySphere.BasePowerInput) + ", Consumption: " + PowerFormat(gravitySphere.ConsumptionPower) + ", " + ResourcePriority(gravitySphere.ResourceSinkGroup));
                     SetText(line++, "Radius: " + DistanceFormat(gravitySphere.MinRadius) + " to " + DistanceFormat(gravitySphere.MaxRadius));
                 }
 
@@ -1095,7 +1594,7 @@ namespace Digi.BuildInfo
             var jumpDrive = def as MyJumpDriveDefinition;
             if(jumpDrive != null)
             {
-                SetText(line++, "Power required: " + PowerFormat(jumpDrive.RequiredPowerInput) + ", For jump: " + PowerFormat(jumpDrive.PowerNeededForJump) + ", Sink group: " + ResourceGroup(jumpDrive.ResourceSinkGroup));
+                SetText(line++, "Power required: " + PowerFormat(jumpDrive.RequiredPowerInput) + ", For jump: " + PowerFormat(jumpDrive.PowerNeededForJump) + ", " + ResourcePriority(jumpDrive.ResourceSinkGroup));
                 SetText(line++, "Max distance: " + DistanceFormat((float)jumpDrive.MaxJumpDistance));
                 SetText(line++, "Max mass: " + MassFormat((float)jumpDrive.MaxJumpMass));
                 SetText(line++, "Jump delay: " + TimeFormat(jumpDrive.JumpDelay));
@@ -1105,48 +1604,44 @@ namespace Digi.BuildInfo
             var merger = def as MyMergeBlockDefinition;
             if(merger != null)
             {
-                SetText(line++, "Requires power*: No", MyFontEnum.Green);
-                SetText(line++, "Magnetic force: " + ForceFormat(merger.Strength));
+                SetText(line++, "Power required*: No", MyFontEnum.Green);
+                SetText(line++, "Pull strength: " + merger.Strength.ToString("###,###,###.0######"));
                 return;
             }
 
             var weapon = def as MyWeaponBlockDefinition;
             if(weapon != null)
             {
+                var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
+
                 float requiredPowerInput = -1;
 
                 if(def is MyLargeTurretBaseDefinition)
                 {
-                    requiredPowerInput = 0.002f; // HACK hardcoded; from MyLargeTurretBase
+                    requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET; // HACK hardcoded; from MyLargeTurretBase
                 }
                 else
                 {
-                    switch(defType)
-                    {
-                        case "MyObjectBuilder_SmallGatlingGun":
-                        case "MyObjectBuilder_SmallMissileLauncher":
-                        case "MyObjectBuilder_SmallMissileLauncherReload":
-                            requiredPowerInput = 0.0002f; // HACK hardcoded; from MySmallMissileLauncher & MySmallGatlingGun
-                            break;
-                    }
+                    if(defTypeId == typeof(MyObjectBuilder_SmallGatlingGun)
+                    || defTypeId == typeof(MyObjectBuilder_SmallMissileLauncher)
+                    || defTypeId == typeof(MyObjectBuilder_SmallMissileLauncherReload))
+                        requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN; // HACK hardcoded; from MySmallMissileLauncher & MySmallGatlingGun
                 }
 
                 if(requiredPowerInput > 0)
-                    SetText(line++, "Requires power*: " + PowerFormat(requiredPowerInput) + ", Sink group: " + ResourceGroup(weapon.ResourceSinkGroup));
+                    SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(weapon.ResourceSinkGroup));
                 else
-                    SetText(line++, "Power group: " + ResourceGroup(weapon.ResourceSinkGroup));
+                    SetText(line++, "Power priority: " + ResourcePriority(weapon.ResourceSinkGroup));
 
-                SetText(line++, "Inventory: " + InventoryFormat(weapon.InventoryMaxVolume * 1000));
+                SetText(line++, "Inventory: " + InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId));
 
                 var largeTurret = def as MyLargeTurretBaseDefinition;
                 if(largeTurret != null)
                 {
                     SetText(line++, "Range: " + DistanceFormat(largeTurret.MaxRangeMeters) + ", AI: " + (largeTurret.AiEnabled ? "Yes" : "No") + (largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)"));
-                    SetText(line++, "Speed - Pitch: " + TorqueFormat(largeTurret.ElevationSpeed * 100) + ", Yaw: " + TorqueFormat(largeTurret.RotationSpeed * 100));
-                    SetText(line++, "Rotation - Pitch: " + AngleFormat(largeTurret.MinElevationDegrees) + " to " + AngleFormat(largeTurret.MaxElevationDegrees) + ", Yaw: " + AngleFormat(largeTurret.MinAzimuthDegrees) + " to " + AngleFormat(largeTurret.MaxAzimuthDegrees));
+                    SetText(line++, "Speed - Pitch: " + RotationSpeed(largeTurret.ElevationSpeed * 60) + ", Yaw: " + RotationSpeed(largeTurret.RotationSpeed * 60));
+                    SetText(line++, "Rotation - Pitch: " + AngleFormatDeg(largeTurret.MinElevationDegrees) + " to " + AngleFormatDeg(largeTurret.MaxElevationDegrees) + ", Yaw: " + AngleFormatDeg(largeTurret.MinAzimuthDegrees) + " to " + AngleFormatDeg(largeTurret.MaxAzimuthDegrees));
                 }
-
-                var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
 
                 str.Clear();
 
@@ -1166,14 +1661,26 @@ namespace Digi.BuildInfo
             }
         }
 
-        private string ResourceGroup(MyStringHash hash)
+        private string ResourcePriority(string groupName) // HACK some ResourceSinkGroup are string type for SOME reason
         {
-            return ResourceGroup(hash == null ? "" : hash.String);
+            return ResourcePriority(MyStringHash.GetOrCompute(groupName));
         }
 
-        private string ResourceGroup(string group) // some ResourceSinkGroup fields are MyStringHash while others are string type :/
+        private string ResourcePriority(MyStringHash groupId, bool hardcoded = false)
         {
-            return (group == null || group.Length == 0 ? "(UNDEFINED)" : group);
+            str2.Clear();
+            str2.Append("Priority");
+            if(hardcoded)
+                str2.Append("*");
+            str2.Append(": ");
+            ResourceGroupData data;
+
+            if(groupId == null || !resourceGroupPriority.TryGetValue(groupId, out data))
+                str2.Append("(Undefined)");
+            else
+                str2.Append(groupId.String).Append(" (" + data.priority + "/" + (data.def.IsSource ? resourceSourceGroups : resourceSinkGroups) + ")");
+
+            return str2.ToString();
         }
 
         private string ForceFormat(float N)
@@ -1185,6 +1692,11 @@ namespace Digi.BuildInfo
                 return (N / 1000).ToString(FLOAT_FORMAT) + " kN";
 
             return N.ToString(FLOAT_FORMAT) + " N";
+        }
+
+        private string RotationSpeed(float radPerSecond)
+        {
+            return Math.Round(MathHelper.ToDegrees(radPerSecond), 2) + "°/s";
         }
 
         private string TorqueFormat(float N)
@@ -1234,38 +1746,101 @@ namespace Digi.BuildInfo
             return kg.ToString("#,###,###") + " kg";
         }
 
-        private string InventoryFormat(float liters)
+        private bool GetInventoryFromComponent(MyDefinitionBase def, out float volume)
+        {
+            var comps = MyDefinitionManager.Static.GetEntityComponentDefinitions();
+            volume = 0;
+
+            foreach(var comp in comps)
+            {
+                var invComp = comp as MyInventoryComponentDefinition;
+
+                if(invComp != null && invComp.Id.SubtypeId == def.Id.SubtypeId)
+                {
+                    volume = invComp.Volume;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string InventoryFormat(float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
+        {
+            var types = new HashSet<MyObjectBuilderType>(inputConstraint.ConstrainedTypes);
+            types.UnionWith(outputConstraint.ConstrainedTypes);
+
+            var items = new HashSet<MyDefinitionId>(inputConstraint.ConstrainedIds);
+            items.UnionWith(outputConstraint.ConstrainedIds);
+
+            return InventoryFormat(volume, types: types, items: items, isWhitelist: inputConstraint.IsWhitelist); // HACK only using input constraint's whitelist status...
+        }
+
+        private string InventoryFormat(float volume, MyInventoryConstraint inventoryConstraint)
+        {
+            return InventoryFormat(volume,
+                types: new HashSet<MyObjectBuilderType>(inventoryConstraint.ConstrainedTypes),
+                items: new HashSet<MyDefinitionId>(inventoryConstraint.ConstrainedIds),
+                isWhitelist: inventoryConstraint.IsWhitelist);
+        }
+
+        private string InventoryFormat(float volume, params MyObjectBuilderType[] allowedTypesParams)
+        {
+            return InventoryFormat(volume, types: new HashSet<MyObjectBuilderType>(allowedTypesParams));
+        }
+
+        private string InventoryFormat(float volume, params MyDefinitionId[] allowedItems)
+        {
+            return InventoryFormat(volume, items: new HashSet<MyDefinitionId>(allowedItems));
+        }
+
+        private string InventoryFormat(float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
             var mul = MyAPIGateway.Session.InventoryMultiplier;
             var str = new StringBuilder();
 
-            if(liters > 1000)
-                str.Append(((liters / 1000) * mul).ToString(NUMBER_FORMAT)).Append(" m³");
-            else if(liters > 100)
-                str.Append(((liters / 100) * mul).ToString(NUMBER_FORMAT)).Append(" hL");
-            else
-                str.Append((liters * mul).ToString(NUMBER_FORMAT)).Append(" L");
+            MyValueFormatter.AppendVolumeInBestUnit(volume * mul, str);
 
             if(Math.Abs(mul - 1) > 0.001f)
                 str.Append(" (x").Append(Math.Round(mul, 2)).Append(")");
 
-            var items = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
-            float minMass = float.MaxValue;
-            float maxMass = 0;
+            if(types == null && items == null)
+                types = DEFAULT_ALLOWED_TYPES;
 
-            foreach(var item in items)
+            var physicalItems = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
+            var minMass = float.MaxValue;
+            var maxMass = 0f;
+
+            foreach(var item in physicalItems)
             {
-                if(item.Mass <= 0 || item.Volume <= 0) // skip physics defining items
-                    continue;
+                if(!item.Public || item.Mass <= 0 || item.Volume <= 0)
+                    continue; // skip hidden and physically impossible items
 
-                var mass = item.Mass * (liters / item.Volume);
-                minMass = Math.Min(mass, minMass);
-                maxMass = Math.Max(mass, maxMass);
+                if((types != null && isWhitelist == types.Contains(item.Id.TypeId)) || (items != null && isWhitelist == items.Contains(item.Id)))
+                {
+                    var fillMass = item.Mass * (volume / item.Volume);
+                    minMass = Math.Min(fillMass, minMass);
+                    maxMass = Math.Max(fillMass, maxMass);
+                }
             }
 
-            str.Append(", Expected cargo mass: ").Append(MassFormat(minMass)).Append(" to ").Append(MassFormat(maxMass));
+            if(minMass != float.MaxValue && maxMass != 0)
+            {
+                if(Math.Abs(minMass - maxMass) > 0.00001f)
+                    str.Append(", Cargo mass: ").Append(MassFormat(minMass)).Append(" to ").Append(MassFormat(maxMass));
+                else
+                    str.Append(", Max cargo mass: ").Append(MassFormat(minMass));
+            }
+
             return str.ToString();
         }
+
+        private static readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>()
+        {
+            typeof(MyObjectBuilder_Ore),
+            typeof(MyObjectBuilder_Ingot),
+            typeof(MyObjectBuilder_Component)
+        };
 
         private string TimeFormat(int seconds)
         {
@@ -1277,12 +1852,12 @@ namespace Digi.BuildInfo
             return String.Format("{0:0.##}s", seconds);
         }
 
-        private string RadAngleFormat(float radians)
+        private string AngleFormat(float radians)
         {
-            return AngleFormat(MathHelper.ToDegrees(radians));
+            return AngleFormatDeg(MathHelper.ToDegrees(radians));
         }
 
-        private string AngleFormat(float degrees)
+        private string AngleFormatDeg(float degrees)
         {
             return degrees.ToString(INT_FORMAT) + '°';
         }
@@ -1306,7 +1881,18 @@ namespace Digi.BuildInfo
         {
             return (Math.Abs(mul - 1f) > 0.001f ? " (x" + Math.Round(mul, 2) + ")" : "");
         }
-        
+
+        private string IdTypeFormat(MyObjectBuilderType type)
+        {
+            var typeName = type.ToString();
+            return typeName.Substring(typeName.IndexOf('_') + 1);
+        }
+
+        private string IdTypeSubtypeFormat(MyDefinitionId id)
+        {
+            return IdTypeFormat(id.TypeId) + "/" + id.SubtypeName;
+        }
+
         private void SetText(int line, string text, string font = MyFontEnum.White, int aliveTime = 100)
         {
             if(hudLines == null)
@@ -1315,7 +1901,9 @@ namespace Digi.BuildInfo
             if(line >= hudLines.Count)
                 hudLines.Add(MyAPIGateway.Utilities.CreateNotification(""));
 
-            text = "• " + text;
+            if(!textAPIenabled)
+                text = "• " + text;
+
             maxLineWidthPx = Math.Max(maxLineWidthPx, GetStringSize(text));
 
             hudLines[line].Font = font;
@@ -1328,23 +1916,78 @@ namespace Digi.BuildInfo
             if(msg.StartsWith("/buildinfo", StringComparison.InvariantCultureIgnoreCase))
             {
                 send = false;
-                showBuildInfo = !showBuildInfo;
-                MyAPIGateway.Utilities.ShowMessage(Log.modName, "Display turned " + (showBuildInfo ? "on" : "off"));
+                showMenu = true;
             }
+        }
+
+        private static MyCubeBlock SpawnFakeBlock(MyCubeBlockDefinition def)
+        {
+            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            var spawnPos = camMatrix.Translation + camMatrix.Backward * 10;
+            var fakeGridObj = new MyObjectBuilder_CubeGrid()
+            {
+                CreatePhysics = false,
+                PersistentFlags = MyPersistentEntityFlags2.None,
+                IsStatic = true,
+                GridSizeEnum = def.CubeSize,
+                Editable = false,
+                DestructibleBlocks = false,
+                IsRespawnGrid = false,
+                PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up),
+                CubeBlocks = new List<MyObjectBuilder_CubeBlock>()
+                {
+                    new MyObjectBuilder_CubeBlock()
+                    {
+                        SubtypeName = def.Id.SubtypeName,
+                    }
+                },
+            };
+
+            MyEntities.RemapObjectBuilder(fakeGridObj);
+            var fakeEnt = MyEntities.CreateFromObjectBuilderNoinit(fakeGridObj);
+            fakeEnt.IsPreview = true;
+            fakeEnt.Save = false;
+            fakeEnt.Render.Visible = false;
+            fakeEnt.Flags = EntityFlags.None;
+            MyEntities.InitEntity(fakeGridObj, ref fakeEnt);
+
+            var fakeGrid = (IMyCubeGrid)fakeEnt;
+            var fakeBlock = fakeGrid.GetCubeBlock(Vector3I.Zero)?.FatBlock as MyThrust;
+            fakeGrid.Close();
+            return fakeBlock;
         }
     }
 
-    public static class Workarounds
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false)]
+    public class ThrustBlock : MyGameLogicComponent
     {
-        public static bool InGameplayMenu(this IMyGui GUI) // TODO REMOVE once ActiveGamePlayScreen is fixed in both branches
+        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
+        {
+            NeedsUpdate |= MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+        }
+
+        public override void Close()
+        {
+            NeedsUpdate = MyEntityUpdateEnum.NONE;
+        }
+
+        public override void UpdateOnceBeforeFrame()
         {
             try
             {
-                return GUI.ActiveGamePlayScreen != null;
+                var block = (MyThrust)Entity;
+
+                if(BuildInfo.extraBlockData.ContainsKey(block.BlockDefinition.Id))
+                    return;
+
+                if(((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
+                {
+                    new BuildInfo.ExtraThrustData(block);
+                }
             }
-            catch(Exception)
+            catch(Exception e)
             {
-                return false;
+                Log.Error(e);
             }
         }
     }

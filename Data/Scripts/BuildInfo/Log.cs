@@ -7,9 +7,9 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 
-namespace Digi.Utils
+namespace Digi
 {
-    public static class Log // v1.3
+    public static class Log // v1.4
     {
         public static string modName = "UNNAMED";
         public static string modFolder = "UNNAMED";
