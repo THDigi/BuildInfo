@@ -2,25 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
+using VRage.Input;
+using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 
 using Draygo.API;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using VRage.Game.Entity;
-using VRage.ModAPI;
-using VRage;
-using Sandbox.Common.ObjectBuilders;
-using VRage.Input;
 
 namespace Digi.BuildInfo
 {
@@ -47,11 +45,12 @@ namespace Digi.BuildInfo
         private int textLines = 0;
         private bool hudVisible = true;
         private double aspectRatio = 1;
+        private bool rotationHints = true;
+        private bool autoOrientation = true;
 
         private bool showMenu = false;
         private bool menuNeedsUpdate = true;
         private int menuSelectedItem = 0;
-        private int usableMenuItems;
         private Vector3 previousMove = Vector3.Zero;
 
         private bool showBuildInfo = true;
@@ -61,6 +60,7 @@ namespace Digi.BuildInfo
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
         private IMyHudNotification transparencyNotification = null;
+        private IMyHudNotification autoOrientationNotification = null;
 
         private short skip = 0;
         private int maxLineWidthPx = 0;
@@ -290,16 +290,17 @@ namespace Digi.BuildInfo
             var cfg = MyAPIGateway.Session.Config;
             hudVisible = !cfg.MinimalHud;
             aspectRatio = (double)cfg.ScreenWidth / (double)cfg.ScreenHeight;
+            bool tempRotationHints = cfg.RotationHints;
+
+            if(rotationHints != tempRotationHints)
+            {
+                rotationHints = tempRotationHints;
+                lastTypeId = typeof(MyObjectBuilder_World); // force re-draw
+            }
 
             textObject.message = null;
             textPosition2D = (aspectRatio > 5 ? TEXT_HUDPOS_TRIPPLE : TEXT_HUDPOS);
             menuPosition2D = (aspectRatio > 5 ? MENU_HUDPOS_TRIPPLE : MENU_HUDPOS);
-
-            // TODO use a top-right position when rotation hints are turned off?
-            //if(cfg.RotationHints)
-            //    textPosition2D = (aspectRatio > 5 ? TEXT_HUDPOS_TRIPPLE : TEXT_HUDPOS);
-            //else
-            //    textPosition2D = new Vector2D(0.4, 0.95);
         }
 
         public override void HandleInput()
@@ -314,79 +315,78 @@ namespace Digi.BuildInfo
                 if(input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
-                if(showMenu)
+                if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
                 {
-                    var move = Vector3.Round(input.GetPositionDelta(), 1);
-
-                    if(previousMove.Z == 0)
+                    if(input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
                     {
-                        if(move.Z > 0.2f)
-                        {
-                            menuNeedsUpdate = true;
+                        autoOrientation = !autoOrientation;
 
-                            if(++menuSelectedItem >= usableMenuItems)
-                                menuSelectedItem = 0;
-                        }
+                        if(autoOrientationNotification == null)
+                            autoOrientationNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                        if(move.Z < -0.2f)
-                        {
-                            menuNeedsUpdate = true;
-
-                            if(--menuSelectedItem < 0)
-                                menuSelectedItem = (usableMenuItems - 1);
-                        }
+                        autoOrientationNotification.Text = (autoOrientation ? "Auto-orientation ON" : "Auto-orientation OFF");
+                        autoOrientationNotification.Show();
                     }
 
-                    if(previousMove.X == 0 && Math.Abs(move.X) > 0.2f)
+                    if(showMenu)
                     {
-                        menuNeedsUpdate = true;
+                        bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
+                        int usableMenuItems = (canUseTextAPI ? 5 : 4);
+                        var move = Vector3.Round(input.GetPositionDelta(), 1);
 
-                        switch(menuSelectedItem)
+                        if(previousMove.Z == 0)
                         {
-                            case 0:
-                                {
+                            if(move.Z > 0.2f)
+                            {
+                                menuNeedsUpdate = true;
+
+                                if(++menuSelectedItem >= usableMenuItems)
+                                    menuSelectedItem = 0;
+                            }
+
+                            if(move.Z < -0.2f)
+                            {
+                                menuNeedsUpdate = true;
+
+                                if(--menuSelectedItem < 0)
+                                    menuSelectedItem = (usableMenuItems - 1);
+                            }
+                        }
+
+                        if(previousMove.X == 0 && Math.Abs(move.X) > 0.2f)
+                        {
+                            menuNeedsUpdate = true;
+
+                            switch(menuSelectedItem)
+                            {
+                                case 0:
                                     showMenu = false;
                                     menuNeedsUpdate = true;
                                     break;
-                                }
-                            case 1:
-                                {
-                                    //HideText();
+                                case 1:
                                     showBuildInfo = !showBuildInfo;
-
                                     if(buildInfoNotification == null)
                                         buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-
                                     buildInfoNotification.Text = (showBuildInfo ? "Build info ON" : "Build info OFF");
                                     buildInfoNotification.Show();
                                     break;
-                                }
-                            case 2:
-                                {
+                                case 2:
                                     showMountPoints = !showMountPoints;
                                     break;
-                                }
-                            case 3:
-                                {
+                                case 3:
                                     MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
                                     break;
-                                }
-                            case 4:
-                                {
+                                case 4:
                                     if(textShown)
                                         HideText();
-
                                     useTextAPI = !useTextAPI;
                                     break;
-                                }
+                            }
                         }
+
+                        previousMove = move;
                     }
 
-                    previousMove = move;
-                }
-
-                if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
-                {
                     if(input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
                     {
                         if(input.IsAnyShiftKeyPressed())
@@ -432,6 +432,7 @@ namespace Digi.BuildInfo
         private void HideText()
         {
             textShown = false;
+            skip = 60; // forces instant check when re-equipping block
 
             if(textAPI != null && textAPI.Heartbeat)
             {
@@ -554,21 +555,25 @@ namespace Digi.BuildInfo
                         if(menuNeedsUpdate)
                         {
                             bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
+                            lastTypeId = typeof(MyObjectBuilder_World); // intentinoally invalid
                             lastSubTypeId = MyStringHash.NullOrEmpty;
-                            usableMenuItems = (canUseTextAPI ? 5 : 4);
+                            int showMenuItems = 5;
                             menuNeedsUpdate = false;
                             textUpdated = true;
 
-                            var lines = new List<string>();
+                            var control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+                            string inputName = null;
+
+                            if(control.GetKeyboardControl() != MyKeys.None)
+                                inputName = control.GetKeyboardControl().ToString();
+                            else if(control.GetSecondKeyboardControl() != MyKeys.None)
+                                inputName = control.GetSecondKeyboardControl().ToString();
+                            else if(control.GetMouseControl() != MyMouseButtonsEnum.None)
+                                inputName = MyAPIGateway.Input.GetName(control.GetMouseControl());
 
                             SetText(line++, "Build info settings:", MyFontEnum.DarkBlue);
 
-                            var control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
-                            var key = control.GetKeyboardControl();
-                            if(key == MyKeys.None)
-                                key = control.GetSecondKeyboardControl();
-
-                            for(int i = 0; i < 5; i++)
+                            for(int i = 0; i < showMenuItems; i++)
                             {
                                 str.Clear();
                                 str.Append("[ ");
@@ -576,33 +581,36 @@ namespace Digi.BuildInfo
                                 switch(i)
                                 {
                                     case 0:
-                                        str.Append("Exit");
+                                        str.Append("Close menu").Append(inputName == null ? "" : "   (" + inputName + ")");
                                         break;
                                     case 1:
                                         str.Append("Show build info: ").Append(showBuildInfo ? "ON" : "OFF");
                                         break;
                                     case 2:
-                                        str.Append("Show mount points: ").Append(showMountPoints ? "ON" : "OFF").Append(key == MyKeys.None ? "" : "   (Ctrl+" + key + ")");
+                                        str.Append("Show mount points: ").Append(showMountPoints ? "ON" : "OFF").Append(inputName == null ? "" : "   (Ctrl+" + inputName + ")");
                                         break;
                                     case 3:
-                                        str.Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF").Append(key == MyKeys.None ? "" : "   (Shift+" + key + ")");
+                                        str.Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF").Append(inputName == null ? "" : "   (Shift+" + inputName + ")");
                                         break;
                                     case 4:
+                                        str.Append("Use TextAPI: ");
                                         if(canUseTextAPI)
-                                            str.Append("Use TextAPI: ").Append(useTextAPI ? "ON" : "OFF");
+                                            str.Append(useTextAPI ? "ON" : "OFF");
                                         else
-                                            str.Append("Use TextAPI: ").Append("OFF (mod not detected!)");
+                                            str.Append("OFF (Mod not detected)");
                                         break;
                                 }
 
                                 str.Append(" ]");
-
-                                SetText(line++, str.ToString(), (menuSelectedItem == i ? MyFontEnum.Green : (i == 4 && !canUseTextAPI ? MyFontEnum.Red : MyFontEnum.White)));
+                                SetText(line++, str.ToString(), (menuSelectedItem == i ? MyFontEnum.Green : ((i == 4 && !canUseTextAPI) || (i == 5 && rotationHints) ? MyFontEnum.Red : MyFontEnum.White)));
                             }
 
                             str.Clear();
 
                             SetText(line++, "Use movement controls to navigate and edit settings.", MyFontEnum.Blue);
+
+                            if(inputName == null)
+                                SetText(line++, "The 'Open voxel hand settings' control is not assigned!", MyFontEnum.ErrorMessageBoxCaption);
                         }
                     }
                     else if(showBuildInfo)
@@ -642,9 +650,59 @@ namespace Digi.BuildInfo
                                     grindRatio *= 3.3f;
 
                                 textUpdated = true;
+
+                                if(useTextAPI)
+                                {
+                                    str.Clear().Append(def.DisplayNameText);
+                                    var stages = def.BlockStages;
+
+                                    if(stages != null && stages.Length > 0)
+                                    {
+                                        str.Append("  <color=0,200,0>(Variant 1 of ").Append(stages.Length + 1).Append(")");
+                                    }
+                                    else
+                                    {
+                                        stages = MyCubeBuilder.Static.ToolbarBlockDefinition.BlockStages;
+
+                                        if(stages != null && stages.Length > 0)
+                                        {
+                                            int num = 0;
+
+                                            for(int i = 0; i < stages.Length; ++i)
+                                            {
+                                                if(def.Id == stages[i])
+                                                {
+                                                    num = i + 2; // +2 because the 1st is not in the list
+                                                    break;
+                                                }
+                                            }
+
+                                            str.Append("  <color=0,200,0>(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
+                                        }
+                                    }
+
+                                    SetText(line++, str.ToString(), MyFontEnum.DarkBlue);
+                                    str.Clear();
+                                }
+
                                 SetText(line++, MassFormat(def.Mass) + ", " + VectorFormat(def.Size) + ", " + TimeFormat(assembleTime / weldMul) + MultiplierFormat(weldMul) + (grindRatio > 1 ? ", Deconstruct speed: " + PercentFormat(1f / grindRatio) : "") + (buildModels ? "" : " (No construction models)"), MyFontEnum.White);
                                 SetText(line++, "Integrity: " + def.MaxIntegrity.ToString("#,###,###,###,###") + ", Deformable: " + (deformable ? "Yes (" + def.DeformationRatio.ToString(FLOAT_FORMAT) + ")" : "No"), (deformable ? MyFontEnum.Blue : MyFontEnum.White));
                                 SetText(line++, "Air-tight faces: " + (airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces)), (isDoor || airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.DarkBlue)));
+
+                                bool componentLossLabelShown = false;
+                                foreach(var comp in def.Components)
+                                {
+                                    if(comp.DeconstructItem != comp.Definition)
+                                    {
+                                        if(!componentLossLabelShown)
+                                        {
+                                            SetText(line++, "Grinding loss: " + comp.Definition.DisplayNameText + " turns into " + comp.DeconstructItem.DisplayNameText, MyFontEnum.Red);
+                                            componentLossLabelShown = true;
+                                        }
+                                        else
+                                            SetText(line++, (textAPIenabled ? "   " : "") + "                      - " + comp.Definition.DisplayNameText + " turns into " + comp.DeconstructItem.DisplayNameText, MyFontEnum.Red);
+                                    }
+                                }
 
                                 // TODO when VoxelPlacementSettings and VoxelPlacementMode are whitelisted:
                                 //if(def.VoxelPlacement.HasValue)
@@ -688,8 +746,10 @@ namespace Digi.BuildInfo
 
                                 var text = hud.Text;
 
-                                if(text.Length > longestLine.Length)
-                                    longestLine = text;
+                                // HACK lazy hack to prevent the title+variant to be longer - to fix later
+                                var compare = text.Replace("<color=0,200,0>", "");
+                                if(compare.Length > longestLine.Length)
+                                    longestLine = compare;
 
                                 switch(hud.Font)
                                 {
@@ -698,6 +758,7 @@ namespace Digi.BuildInfo
                                     case MyFontEnum.Green: str.Append("<color=0,200,0>"); break;
                                     case MyFontEnum.Blue: str.Append("<color=180,210,230>"); break;
                                     case MyFontEnum.DarkBlue: str.Append("<color=110,180,225>"); break;
+                                    case MyFontEnum.ErrorMessageBoxCaption: str.Append("<color=255,0,0>"); break;
                                 }
 
                                 str.Append(text).Append('\n');
@@ -705,9 +766,42 @@ namespace Digi.BuildInfo
 
                             textLines = line;
                             textLengthMeters = (float)textAPI.GetLineLength(longestLine, TEXT_SCALE);
+
+                            if(!showMenu && !rotationHints)
+                            {
+                                // TODO could use some optimization...
+
+                                textPosition2D.X = 0;
+                                textPosition2D.Y = 0.98;
+
+                                var camera = MyAPIGateway.Session.Camera;
+                                var camMatrix = camera.WorldMatrix;
+                                var fov = camera.FovWithZoom;
+
+                                var localscale = 0.1735 * Math.Tan(fov / 2);
+                                var localXmul = localscale * (aspectRatio * 9d / 16d);
+                                var localYmul = localscale * (1 / aspectRatio) * localXmul;
+
+                                var textpos = Vector3D.Transform(new Vector3D(textPosition2D.X * localXmul, textPosition2D.Y * localYmul, -0.1), camMatrix);
+
+                                var widthStep = localscale * 9d * 0.001075;
+                                var width = textLengthMeters * widthStep;
+
+                                var screenPosStart = camera.WorldToScreen(ref textpos);
+                                textpos += camMatrix.Right * width;
+                                var screenPosEnd = camera.WorldToScreen(ref textpos);
+                                var panelSize = screenPosEnd - screenPosStart;
+
+                                textPosition2D.X = (1.01 - (panelSize.X * 1.99));
+
+                                if(aspectRatio > 5)
+                                    textPosition2D /= 3.0;
+                            }
+
                             textObject = new HUDTextAPI.HUDMessage(1, int.MaxValue, (showMenu ? menuPosition2D : textPosition2D), TEXT_SCALE, true, false, Color.Black, str.ToString());
                             textAPI.Send(textObject);
                             textShown = true;
+                            str.Clear();
                         }
                         else
                         {
@@ -807,7 +901,7 @@ namespace Digi.BuildInfo
                                 if(++atLine >= lines)
                                     atLine = SCROLL_FROM_LINE;
 
-                                lastScroll = now + TimeSpan.TicksPerSecond;
+                                lastScroll = now + (long)(TimeSpan.TicksPerSecond * 1.5f);
                             }
                         }
                         else
@@ -891,7 +985,7 @@ namespace Digi.BuildInfo
                 float requiredPower = MyEnergyConstants.REQUIRED_INPUT_CONVEYOR_LINE;
                 var powerGroup = MyStringHash.GetOrCompute("Conveyors");
 
-                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true), MyFontEnum.Green);
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true), MyFontEnum.White);
                 return;
             }
 
@@ -1134,7 +1228,11 @@ namespace Digi.BuildInfo
                         data = new ExtraThrustData(fakeBlock);
                 }
 
-                if(data != null)
+                if(data == null)
+                {
+                    Log.Error("Couldn't get block data for: " + def.Id, "Couldn't get block data for: " + def.Id);
+                }
+                else
                 {
                     var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
 
@@ -1203,24 +1301,21 @@ namespace Digi.BuildInfo
             var door = def as MyDoorDefinition;
             if(door != null)
             {
-                float requiredPowerInput = 3E-05f; // HACK hardcoded; from MyDoor
+                float requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR; // HACK hardcoded; from MyDoor
+                float moveTime = (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * door.OpeningSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
 
                 SetText(line++, "Power required*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(door.ResourceSinkGroup));
-                SetText(line++, "Move time: " + TimeFormat(door.MaxOpen / door.OpeningSpeed));
-                SetText(line++, "Move distance: " + DistanceFormat(door.MaxOpen));
+                SetText(line++, "Move time: " + TimeFormat(moveTime) + ", Distance: " + DistanceFormat(door.MaxOpen));
                 return;
             }
 
             var airTightDoor = def as MyAirtightDoorGenericDefinition; // does not extend MyDoorDefinition
             if(airTightDoor != null)
             {
+                float moveTime = (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * airTightDoor.OpeningSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
+
                 SetText(line++, "Power: " + PowerFormat(airTightDoor.PowerConsumptionMoving) + ", Idle: " + PowerFormat(airTightDoor.PowerConsumptionIdle) + ", " + ResourcePriority(airTightDoor.ResourceSinkGroup));
-
-                // needs subpart count to reliably compute move time
-                //SetText(line++, "Move time: " + TimeFormat((airTightDoor.SubpartMovementDistance * subparts) / airTightDoor.OpeningSpeed)); // <<< math not quite correct
-                //SetText(line++, "Extending length: " + DistanceFormat(airTightDoor.SubpartMovementDistance * subparts));
-                // also different calculation required for sliding doors than hangar doors
-
+                SetText(line++, "Move time: " + TimeFormat(moveTime));
                 return;
             }
 
@@ -1278,15 +1373,16 @@ namespace Digi.BuildInfo
                     SetText(line++, "Ice consumption: " + MassFormat(oxygenGenerator.IceConsumptionPerSecond) + " per second");
 
                     str.Clear();
+                    str.Append("Produces: ");
 
                     foreach(var gas in oxygenGenerator.ProducedGases)
                     {
-                        str.Append(gas.Id.SubtypeName).Append(" (ratio: ").AppendFormat(FLOAT_FORMAT, gas.IceToGasRatio).Append("), ");
+                        str.Append(gas.Id.SubtypeName).Append(" (ratio: ").AppendFormat("{0:0.00}", gas.IceToGasRatio).Append("), ");
                     }
 
                     str.Length -= 2;
-
-                    SetText(line++, "Produces: " + str);
+                    SetText(line++, str.ToString());
+                    str.Clear();
                 }
 
                 var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
@@ -1310,21 +1406,23 @@ namespace Digi.BuildInfo
                     {
                         str.Clear();
 
+                        if(def is MyRefineryDefinition)
+                            str.Append("Refines: ");
+                        else if(def is MyGasTankDefinition)
+                            str.Append("Refills: ");
+                        else if(def is MyAssemblerDefinition)
+                            str.Append("Builds: ");
+                        else
+                            str.Append("Blueprints: ");
+
                         foreach(var bp in production.BlueprintClasses)
                         {
                             str.Append(bp.DisplayNameText).Append(", ");
                         }
 
-                        str.Length -= 1;
-
-                        if(def is MyRefineryDefinition)
-                            SetText(line++, "Refines: " + str);
-                        else if(def is MyGasTankDefinition)
-                            SetText(line++, "Refills: " + str);
-                        else if(def is MyAssemblerDefinition)
-                            SetText(line++, "Builds: " + str);
-                        else
-                            SetText(line++, "Blueprints: " + str);
+                        str.Length -= 2;
+                        SetText(line++, str.ToString());
+                        str.Clear();
                     }
                 }
 
@@ -1349,7 +1447,7 @@ namespace Digi.BuildInfo
 
                     if(invLimit != null)
                     {
-                        SetText(line++, "Inventory: " + InventoryFormat(volume, reactor.FuelId)); // TODO use reactor.InventoryConstraint
+                        SetText(line++, "Inventory: " + InventoryFormat(volume, reactor.InventoryConstraint));
                         SetText(line++, "Inventory items " + (invLimit.IsWhitelist ? "allowed" : "NOT allowed") + ":");
 
                         foreach(var id in invLimit.ConstrainedIds)
@@ -1638,25 +1736,32 @@ namespace Digi.BuildInfo
                 var largeTurret = def as MyLargeTurretBaseDefinition;
                 if(largeTurret != null)
                 {
-                    SetText(line++, "Range: " + DistanceFormat(largeTurret.MaxRangeMeters) + ", AI: " + (largeTurret.AiEnabled ? "Yes" : "No") + (largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)"));
+                    SetText(line++, "Auto-target: " + (largeTurret.AiEnabled ? "Yes" : "No") + (largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)") + ", Range: " + DistanceFormat(largeTurret.MaxRangeMeters));
                     SetText(line++, "Speed - Pitch: " + RotationSpeed(largeTurret.ElevationSpeed * 60) + ", Yaw: " + RotationSpeed(largeTurret.RotationSpeed * 60));
                     SetText(line++, "Rotation - Pitch: " + AngleFormatDeg(largeTurret.MinElevationDegrees) + " to " + AngleFormatDeg(largeTurret.MaxElevationDegrees) + ", Yaw: " + AngleFormatDeg(largeTurret.MinAzimuthDegrees) + " to " + AngleFormatDeg(largeTurret.MaxAzimuthDegrees));
                 }
 
-                str.Clear();
+                SetText(line++, "Reload time: " + TimeFormat(wepDef.ReloadTime / 1000));
 
+                str.Clear().Append("Ammo: ");
                 for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
                 {
                     var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
                     var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
                     var weaponData = wepDef.WeaponAmmoDatas[(int)ammo.AmmoType];
 
+                    if(i > 0 && i % 2 == 0)
+                    {
+                        SetText(line++, str.ToString());
+                        str.Clear().Append("       ");
+                    }
+
                     str.Append(mag.Id.SubtypeName).Append(" (").Append(weaponData.RateOfFire).Append(" RPM)").Append(", ");
                 }
 
                 str.Length -= 2;
-
-                SetText(line++, "Ammo: " + str.ToString());
+                SetText(line++, str.ToString());
+                str.Clear();
                 return;
             }
         }
@@ -1797,12 +1902,12 @@ namespace Digi.BuildInfo
         private string InventoryFormat(float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
             var mul = MyAPIGateway.Session.InventoryMultiplier;
-            var str = new StringBuilder();
+            str2.Clear();
 
-            MyValueFormatter.AppendVolumeInBestUnit(volume * mul, str);
+            MyValueFormatter.AppendVolumeInBestUnit(volume * mul, str2);
 
             if(Math.Abs(mul - 1) > 0.001f)
-                str.Append(" (x").Append(Math.Round(mul, 2)).Append(")");
+                str2.Append(" (x").Append(Math.Round(mul, 2)).Append(")");
 
             if(types == null && items == null)
                 types = DEFAULT_ALLOWED_TYPES;
@@ -1827,12 +1932,12 @@ namespace Digi.BuildInfo
             if(minMass != float.MaxValue && maxMass != 0)
             {
                 if(Math.Abs(minMass - maxMass) > 0.00001f)
-                    str.Append(", Cargo mass: ").Append(MassFormat(minMass)).Append(" to ").Append(MassFormat(maxMass));
+                    str2.Append(", Cargo mass: ").Append(MassFormat(minMass)).Append(" to ").Append(MassFormat(maxMass));
                 else
-                    str.Append(", Max cargo mass: ").Append(MassFormat(minMass));
+                    str2.Append(", Max cargo mass: ").Append(MassFormat(minMass));
             }
 
-            return str.ToString();
+            return str2.ToString();
         }
 
         private static readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>()
@@ -1842,13 +1947,11 @@ namespace Digi.BuildInfo
             typeof(MyObjectBuilder_Component)
         };
 
-        private string TimeFormat(int seconds)
-        {
-            return String.Format("{0:00}:{1:00}", (seconds / 60), (seconds % 60));
-        }
-
         private string TimeFormat(float seconds)
         {
+            //if(seconds > 60)
+            //    return String.Format("{0:0}m {1:0.##}s", (seconds / 60), (seconds % 60));
+            //else
             return String.Format("{0:0.##}s", seconds);
         }
 
@@ -1958,17 +2061,12 @@ namespace Digi.BuildInfo
         }
     }
 
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false)]
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: true)]
     public class ThrustBlock : MyGameLogicComponent
     {
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            NeedsUpdate |= MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
-
-        public override void Close()
-        {
-            NeedsUpdate = MyEntityUpdateEnum.NONE;
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
         }
 
         public override void UpdateOnceBeforeFrame()
@@ -1977,13 +2075,12 @@ namespace Digi.BuildInfo
             {
                 var block = (MyThrust)Entity;
 
-                if(BuildInfo.extraBlockData.ContainsKey(block.BlockDefinition.Id))
-                    return;
-
-                if(((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
+                if(!BuildInfo.extraBlockData.ContainsKey(block.BlockDefinition.Id) && ((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
                 {
                     new BuildInfo.ExtraThrustData(block);
                 }
+
+                block.Components.Remove<ThrustBlock>();
             }
             catch(Exception e)
             {
