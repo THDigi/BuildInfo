@@ -475,7 +475,7 @@ namespace Digi.BuildInfo
                     var height = (textLines + 1) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
 
-                    MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Up, camMatrix.Right, (float)height, (float)width);
+                    MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && hudVisible && MyCubeBuilder.Static.DynamicMode)
@@ -651,7 +651,7 @@ namespace Digi.BuildInfo
 
                                 textUpdated = true;
 
-                                if(useTextAPI)
+                                if(textAPIenabled)
                                 {
                                     str.Clear().Append(def.DisplayNameText);
                                     var stages = def.BlockStages;
