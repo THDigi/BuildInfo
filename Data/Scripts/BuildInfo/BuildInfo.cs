@@ -32,6 +32,9 @@ namespace Digi.BuildInfo
             Log.SetUp("Build Info", WORKSHOP_ID, "BuildInfo");
         }
 
+        // HACK workaround, remove after stable is updated past v01.172
+        public static bool tempCompatibilityCheck = false;
+
         private bool init = false;
         private bool isThisDS = false;
 
@@ -211,6 +214,9 @@ namespace Digi.BuildInfo
 
             if(!isThisDS)
             {
+                // NOTE: GetCheckpoint() can be really intensive depending on the world size, highly not recommeded!
+                tempCompatibilityCheck = MathHelper.Floor(MyAPIGateway.Session.GetCheckpoint(null).AppVersion / 1000f) == 1172;
+
                 textAPI = new HUDTextAPI(WORKSHOP_ID);
 
                 MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -475,7 +481,10 @@ namespace Digi.BuildInfo
                     var height = (textLines + 1) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
 
-                    MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
+                    if(tempCompatibilityCheck)
+                        MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Up, camMatrix.Right, (float)height, (float)width);
+                    else
+                        MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && hudVisible && MyCubeBuilder.Static.DynamicMode)
@@ -1236,7 +1245,7 @@ namespace Digi.BuildInfo
                 {
                     var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
 
-                    // HACK harcdoded; from MyThrust.DamageGrid() and MyThrust.ThrustDamage()
+                    // HACK hardcoded; from MyThrust.DamageGrid() and MyThrust.ThrustDamage()
                     var damage = thrust.FlameDamage * data.flames;
                     var flameShipDamage = damage * 30f;
                     var flameDamage = damage * 10f * data.radius;
