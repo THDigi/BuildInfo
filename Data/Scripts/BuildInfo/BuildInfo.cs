@@ -32,9 +32,6 @@ namespace Digi.BuildInfo
             Log.SetUp("Build Info", WORKSHOP_ID, "BuildInfo");
         }
 
-        // HACK workaround, remove after stable is updated past v01.172
-        public static bool tempCompatibilityCheck = false;
-
         private bool init = false;
         private bool isThisDS = false;
 
@@ -60,6 +57,10 @@ namespace Digi.BuildInfo
         private bool showMountPoints = false;
         private bool useTextAPI = true;
 
+        private List<IMyHudNotification> hudLines;
+        private MyObjectBuilderType lastTypeId;
+        private MyStringHash lastSubTypeId;
+
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
         private IMyHudNotification transparencyNotification = null;
@@ -78,9 +79,8 @@ namespace Digi.BuildInfo
         private static readonly Vector2D MENU_HUDPOS = new Vector2D(-0.3, 0.4);
         private static readonly Vector2D MENU_HUDPOS_TRIPPLE = new Vector2D(MENU_HUDPOS.X / 3f, MENU_HUDPOS.Y);
 
-        private List<IMyHudNotification> hudLines;
-        private MyObjectBuilderType lastTypeId;
-        private MyStringHash lastSubTypeId;
+        private static readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
+        private static readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
 
         private const string INT_FORMAT = "0";
         private const string FLOAT_FORMAT = "0.00";
@@ -94,17 +94,17 @@ namespace Digi.BuildInfo
         private int resourceSinkGroups = 0;
         private int resourceSourceGroups = 0;
 
-        public static readonly Dictionary<MyDefinitionId, IExtraBlockData> extraBlockData = new Dictionary<MyDefinitionId, IExtraBlockData>();
+        public static readonly Dictionary<MyDefinitionId, IBlockData> blockData = new Dictionary<MyDefinitionId, IBlockData>();
 
-        public interface IExtraBlockData { }
+        public interface IBlockData { }
 
-        public class ExtraThrustData : IExtraBlockData
+        public class BlockDataThrust : IBlockData
         {
             public readonly float radius;
             public readonly float distance;
             public readonly int flames;
 
-            public ExtraThrustData(MyThrust thrust)
+            public BlockDataThrust(MyThrust thrust)
             {
                 var def = thrust.BlockDefinition;
                 double distSq = 0;
@@ -112,9 +112,11 @@ namespace Digi.BuildInfo
                 // HACK hardcoded; from MyThrust.UpdateThrustFlame()
                 thrust.ThrustLengthRand = 10f * def.FlameLengthScale; // make the GetDamageCapsuleLine() method think it thrusts at max and with no random
 
+                var m = thrust.WorldMatrix;
+
                 foreach(var flame in thrust.Flames)
                 {
-                    var flameLine = thrust.GetDamageCapsuleLine(flame);
+                    var flameLine = thrust.GetDamageCapsuleLine(flame, ref m);
                     var flameDistSq = (flameLine.From - flameLine.To).LengthSquared();
 
                     if(flameDistSq > distSq)
@@ -127,7 +129,7 @@ namespace Digi.BuildInfo
                 distance = (float)Math.Sqrt(distSq);
                 flames = thrust.Flames.Count;
 
-                extraBlockData.Add(def.Id, this);
+                blockData.Add(def.Id, this);
             }
         }
 
@@ -214,9 +216,6 @@ namespace Digi.BuildInfo
 
             if(!isThisDS)
             {
-                // NOTE: GetCheckpoint() can be really intensive depending on the world size, highly not recommeded!
-                tempCompatibilityCheck = MathHelper.Floor(MyAPIGateway.Session.GetCheckpoint(null).AppVersion / 1000f) == 1172;
-
                 textAPI = new HUDTextAPI(WORKSHOP_ID);
 
                 MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -273,7 +272,7 @@ namespace Digi.BuildInfo
             Log.Close();
 
             cubes.Clear();
-            extraBlockData.Clear();
+            blockData.Clear();
         }
 
         private void GuiControlRemoved(object obj)
@@ -481,10 +480,7 @@ namespace Digi.BuildInfo
                     var height = (textLines + 1) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
 
-                    if(tempCompatibilityCheck)
-                        MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Up, camMatrix.Right, (float)height, (float)width);
-                    else
-                        MyTransparentGeometry.AddBillboardOriented("BuildInfo_TextBackground", Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && hudVisible && MyCubeBuilder.Static.DynamicMode)
@@ -627,21 +623,20 @@ namespace Digi.BuildInfo
                         if(++skip >= 6)
                         {
                             skip = 0;
-                            var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
 
-                            if(def.Id.SubtypeId != lastSubTypeId || def.Id.TypeId != lastTypeId)
+                            var def = MyCubeBuilder.Static.CubeBuilderState.CurrentBlockDefinition;
+                            var defTypeId = def.Id.TypeId;
+
+                            if(defTypeId != lastTypeId || def.Id.SubtypeId != lastSubTypeId)
                             {
-                                var defTypeId = def.Id.TypeId;
                                 lastTypeId = defTypeId;
                                 lastSubTypeId = def.Id.SubtypeId;
 
-                                bool isDoor = false;
-                                if(defTypeId == typeof(MyObjectBuilder_AdvancedDoor)
-                                || defTypeId == typeof(MyObjectBuilder_AirtightDoorGeneric)
-                                || defTypeId == typeof(MyObjectBuilder_AirtightHangarDoor)
-                                || defTypeId == typeof(MyObjectBuilder_AirtightSlideDoor)
-                                || defTypeId == typeof(MyObjectBuilder_Door))
-                                    isDoor = true;
+                                bool isDoor = (defTypeId == typeof(MyObjectBuilder_AdvancedDoor)
+                                            || defTypeId == typeof(MyObjectBuilder_AirtightDoorGeneric)
+                                            || defTypeId == typeof(MyObjectBuilder_AirtightHangarDoor)
+                                            || defTypeId == typeof(MyObjectBuilder_AirtightSlideDoor)
+                                            || defTypeId == typeof(MyObjectBuilder_Door));
 
                                 int airTightFaces = 0;
                                 int totalFaces = 0;
@@ -1087,6 +1082,9 @@ namespace Digi.BuildInfo
                 // TODO when MyObjectBuilder_UpgradeModuleDefinition is whitelisted or it has a non-objectbuilder definition
                 //var obj = def.GetObjectBuilder() as MyObjectBuilder_UpgradeModuleDefinition; // prohibited
                 //SetText(line++, "upgrades: " + obj.Upgrades[0].ModifierType);
+                //var upgradeModule = def as SpaceEngineers.Definitions.MyUpgradeModuleDefinition;
+                //foreach(var upgrade in upgradeModule.Upgrades)
+                //    SetText(line++, "upgrade - type=" + upgrade.UpgradeType + "; modifier=" + upgrade.ModifierType + "; modifier=" + upgrade.Modifier);
 
                 // HACK hardcoded; from vanilla definitions
                 switch(def.Id.SubtypeName)
@@ -1225,21 +1223,27 @@ namespace Digi.BuildInfo
                 if(thrust.ConsumptionFactorPerG > 0)
                     SetText(line++, "Extra consumption: +" + PercentFormat(thrust.ConsumptionFactorPerG) + " per natural g acceleration");
 
-                var data = (ExtraThrustData)extraBlockData.GetValueOrDefault(def.Id, null);
+                var data = (BlockDataThrust)blockData.GetValueOrDefault(def.Id, null);
 
                 if(data == null)
                 {
                     var fakeBlock = SpawnFakeBlock(def) as MyThrust;
 
                     if(fakeBlock == null)
-                        Log.Error("Couldn't get thrust data from fake entity!", "Couldn't get thrust data from fake entity!");
+                    {
+                        var error = "Couldn't get block data from fake entity!";
+                        Log.Error(error, error);
+                    }
                     else
-                        data = new ExtraThrustData(fakeBlock);
+                    {
+                        data = new BlockDataThrust(fakeBlock);
+                    }
                 }
 
                 if(data == null)
                 {
-                    Log.Error("Couldn't get block data for: " + def.Id, "Couldn't get block data for: " + def.Id);
+                    var error = "Couldn't get block data for: " + def.Id;
+                    Log.Error(error, error);
                 }
                 else
                 {
@@ -2064,7 +2068,7 @@ namespace Digi.BuildInfo
             MyEntities.InitEntity(fakeGridObj, ref fakeEnt);
 
             var fakeGrid = (IMyCubeGrid)fakeEnt;
-            var fakeBlock = fakeGrid.GetCubeBlock(Vector3I.Zero)?.FatBlock as MyThrust;
+            var fakeBlock = fakeGrid.GetCubeBlock(Vector3I.Zero)?.FatBlock as MyCubeBlock;
             fakeGrid.Close();
             return fakeBlock;
         }
@@ -2084,9 +2088,9 @@ namespace Digi.BuildInfo
             {
                 var block = (MyThrust)Entity;
 
-                if(!BuildInfo.extraBlockData.ContainsKey(block.BlockDefinition.Id) && ((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
+                if(!BuildInfo.blockData.ContainsKey(block.BlockDefinition.Id) && ((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
                 {
-                    new BuildInfo.ExtraThrustData(block);
+                    new BuildInfo.BlockDataThrust(block);
                 }
 
                 block.Components.Remove<ThrustBlock>();
