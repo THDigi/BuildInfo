@@ -46,7 +46,6 @@ namespace Digi.BuildInfo
         private bool hudVisible = true;
         private double aspectRatio = 1;
         private bool rotationHints = true;
-        private bool autoOrientation = true;
 
         private bool showMenu = false;
         private bool menuNeedsUpdate = true;
@@ -64,7 +63,6 @@ namespace Digi.BuildInfo
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
         private IMyHudNotification transparencyNotification = null;
-        private IMyHudNotification autoOrientationNotification = null;
 
         private short skip = 0;
         private int maxLineWidthPx = 0;
@@ -322,17 +320,6 @@ namespace Digi.BuildInfo
 
                 if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
                 {
-                    if(input.IsNewGameControlPressed(MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT))
-                    {
-                        autoOrientation = !autoOrientation;
-
-                        if(autoOrientationNotification == null)
-                            autoOrientationNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-                        autoOrientationNotification.Text = (autoOrientation ? "Auto-orientation ON" : "Auto-orientation OFF");
-                        autoOrientationNotification.Show();
-                    }
-
                     if(showMenu)
                     {
                         bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
@@ -479,8 +466,9 @@ namespace Digi.BuildInfo
                     var heightStep = localscale * 9d * 0.001;
                     var height = (textLines + 1) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
-
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
+                    
+                    // TODO use HUD background transparency once that is a thing
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White * 0.75f, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && hudVisible && MyCubeBuilder.Static.DynamicMode)
