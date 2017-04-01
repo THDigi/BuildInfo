@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -12,6 +13,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -313,13 +315,10 @@ namespace Digi.BuildInfo
                 if(!init || MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible)
                     return;
 
-                var input = MyAPIGateway.Input;
-
-                if(input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
-                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
-
                 if(MyCubeBuilder.Static != null && MyCubeBuilder.Static.IsActivated)
                 {
+                    var input = MyAPIGateway.Input;
+
                     if(showMenu)
                     {
                         bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
@@ -466,7 +465,7 @@ namespace Digi.BuildInfo
                     var heightStep = localscale * 9d * 0.001;
                     var height = (textLines + 1) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
-                    
+
                     // TODO use HUD background transparency once that is a thing
                     MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White * 0.75f, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
@@ -534,6 +533,10 @@ namespace Digi.BuildInfo
 
                 if(isThisDS)
                     return;
+
+                // required here because it gets the previous value if used in HandleInput()
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
+                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
                 textAPIenabled = (useTextAPI && textAPI != null && textAPI.Heartbeat);
 
@@ -981,42 +984,6 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            if(defTypeId == typeof(MyObjectBuilder_ShipWelder) || defTypeId == typeof(MyObjectBuilder_ShipGrinder))
-            {
-                // HACK hardcoded; from MyShipToolBase
-                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
-                var powerGroup = MyStringHash.GetOrCompute("Defense");
-                float volume;
-
-                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true));
-
-                if(GetInventoryFromComponent(def, out volume))
-                {
-                    SetText(line++, "Inventory: " + InventoryFormat(volume));
-                }
-                else
-                {
-                    // HACK hardcoded; from MyShipToolBase
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
-                    SetText(line++, "Inventory*: " + InventoryFormat(volume));
-                }
-
-                if(defTypeId == typeof(MyObjectBuilder_ShipWelder))
-                {
-                    float weld = 2; // HACK hardcoded; from MyShipWelder
-                    var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    SetText(line++, "Weld speed*: " + PercentFormat(weld * mul) + " split accross targets" + MultiplierFormat(mul));
-                }
-                else
-                {
-                    float grind = 2; // HACK hardcoded; from MyShipGrinder
-                    var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    SetText(line++, "Grind speed*: " + PercentFormat(grind * mul) + " split accross targets" + MultiplierFormat(mul));
-                }
-                return;
-            }
-
             if(defTypeId == typeof(MyObjectBuilder_Drill))
             {
                 // HACK hardcoded; from MyShipDrill
@@ -1037,6 +1004,11 @@ namespace Digi.BuildInfo
                     SetText(line++, "Inventory*: " + InventoryFormat(volume, typeof(MyObjectBuilder_Ore)));
                 }
 
+                // HACK MyShipDrillDefinition is internal :/
+                var defObj = (MyObjectBuilder_ShipDrillDefinition)def.GetObjectBuilder();
+
+                SetText(line++, "Mine radius: " + DistanceFormat(defObj.SensorRadius) + ", Front offset: " + DistanceFormat(defObj.SensorOffset));
+                SetText(line++, "Alternate (no ore) radius: " + DistanceFormat(defObj.CutOutRadius) + ", Front offset: " + DistanceFormat(defObj.CutOutOffset));
                 return;
             }
 
@@ -1065,34 +1037,47 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            if(defTypeId == typeof(MyObjectBuilder_UpgradeModule))
+            var shipWelder = def as MyShipWelderDefinition;
+            var shipGrinder = def as MyShipGrinderDefinition;
+            if(shipWelder != null || shipGrinder != null)
             {
-                // TODO when MyObjectBuilder_UpgradeModuleDefinition is whitelisted or it has a non-objectbuilder definition
-                //var obj = def.GetObjectBuilder() as MyObjectBuilder_UpgradeModuleDefinition; // prohibited
-                //SetText(line++, "upgrades: " + obj.Upgrades[0].ModifierType);
-                //var upgradeModule = def as SpaceEngineers.Definitions.MyUpgradeModuleDefinition;
-                //foreach(var upgrade in upgradeModule.Upgrades)
-                //    SetText(line++, "upgrade - type=" + upgrade.UpgradeType + "; modifier=" + upgrade.ModifierType + "; modifier=" + upgrade.Modifier);
+                // HACK hardcoded; from MyShipToolBase
+                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
+                var powerGroup = MyStringHash.GetOrCompute("Defense");
+                float volume;
 
-                // HACK hardcoded; from vanilla definitions
-                switch(def.Id.SubtypeName)
+                SetText(line++, "Power required*: " + PowerFormat(requiredPower) + ", " + ResourcePriority(powerGroup, true));
+
+                if(GetInventoryFromComponent(def, out volume))
                 {
-                    case "LargeProductivityModule":
-                        SetText(line++, "Upgrades*: Productivity +50% added per slot");
-                        break;
-                    case "LargeEffectivenessModule":
-                        SetText(line++, "Upgrades*: Effectiveness multiplied by 1.0905077 per slot");
-                        break;
-                    case "LargeEnergyModule":
-                        SetText(line++, "Upgrades*: PowerEfficiency multiplied by 1.2228445 per slot");
-                        break;
+                    SetText(line++, "Inventory: " + InventoryFormat(volume));
                 }
+                else
+                {
+                    // HACK hardcoded; from MyShipToolBase
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
+                    SetText(line++, "Inventory*: " + InventoryFormat(volume));
+                }
+
+                if(shipWelder != null)
+                {
+                    float weld = 2; // HACK hardcoded; from MyShipWelder
+                    var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                    SetText(line++, "Weld speed*: " + PercentFormat(weld * mul) + " split accross targets" + MultiplierFormat(mul));
+                }
+                else
+                {
+                    float grind = 2; // HACK hardcoded; from MyShipGrinder
+                    var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+                    SetText(line++, "Grind speed*: " + PercentFormat(grind * mul) + " split accross targets" + MultiplierFormat(mul));
+                }
+
                 return;
             }
 
             var piston = def as MyPistonBaseDefinition;
             var motor = def as MyMotorStatorDefinition;
-
             if(piston != null || motor != null)
             {
                 if(piston != null)
@@ -1430,6 +1415,51 @@ namespace Digi.BuildInfo
                 return;
             }
 
+            var upgradeModule = def as MyUpgradeModuleDefinition;
+            if(upgradeModule != null)
+            {
+                if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
+                {
+                    SetText(line++, "Upgrade: N/A", MyFontEnum.Red);
+                }
+                else
+                {
+                    bool singleLine = upgradeModule.Upgrades.Length == 1;
+
+                    if(singleLine)
+                    {
+                        str.Clear();
+                        str.Append("Upgrade: ");
+                    }
+                    else
+                        SetText(line++, "Upgrades:");
+
+                    foreach(var upgrade in upgradeModule.Upgrades)
+                    {
+                        if(!singleLine)
+                            str.Append("      ");
+
+                        str.Append(upgrade.UpgradeType).Append("; ");
+
+                        switch(upgrade.ModifierType)
+                        {
+                            case MyUpgradeModifierType.Additive: str.Append("+").Append(upgrade.Modifier).Append(" added"); break;
+                            case MyUpgradeModifierType.Multiplicative: str.Append("multiplied by ").Append(upgrade.Modifier); break;
+                            default: str.Append(upgrade.Modifier).Append(" (").Append(upgrade.ModifierType).Append(")"); break;
+                        }
+
+                        str.Append(" per slot");
+
+                        SetText(line++, str.ToString());
+
+                        if(!singleLine)
+                            str.Clear();
+                    }
+                }
+
+                return;
+            }
+
             var powerProducer = def as MyPowerProducerDefinition;
             if(powerProducer != null)
             {
@@ -1499,6 +1529,35 @@ namespace Digi.BuildInfo
                 SetText(line++, "Idle: " + PowerFormat(vent.StandbyPowerConsumption) + ", Operational: " + PowerFormat(vent.OperationalPowerConsumption) + ", " + ResourcePriority(vent.ResourceSinkGroup));
                 SetText(line++, "Output - Rate: " + vent.VentilationCapacityPerSecond.ToString(NUMBER_FORMAT) + " oxy/s, " + ResourcePriority(vent.ResourceSourceGroup));
                 return;
+            }
+
+            var medicalRoom = def as MyMedicalRoomDefinition;
+            if(medicalRoom != null)
+            {
+                // HACK hardcoded; from MyMedicalRoom
+                var requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_MEDICAL_ROOM;
+
+                SetText(line++, "Power*: " + PowerFormat(requiredPowerInput) + ", " + ResourcePriority(medicalRoom.ResourceSinkGroup));
+                SetText(line++, "Respawn: " + (medicalRoom.RespawnAllowed ? "Yes" : "No") + ", " + (medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn ? "Forced suit: " + medicalRoom.RespawnSuitName : "Forced suit: (No)"), (medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White)));
+                SetText(line++, "Healing: " + (medicalRoom.HealingAllowed ? "Yes" : "No"), (medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red));
+                SetText(line++, "Recharge: " + (medicalRoom.RefuelAllowed ? "Yes" : "No"), (medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red));
+                SetText(line++, "Suit change: " + (medicalRoom.SuitChangeAllowed ? "Yes" : "No"));
+
+                if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
+                {
+                    SetText(line++, "Usable suits:", MyFontEnum.Blue);
+
+                    foreach(var charName in medicalRoom.CustomWardrobeNames)
+                    {
+                        MyCharacterDefinition charDef;
+                        if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
+                            SetText(line++, "    " + charName + " (not found in definitions)", MyFontEnum.Red);
+                        else
+                            SetText(line++, "    " + charDef.DisplayNameText);
+                    }
+                }
+                else
+                    SetText(line++, "Usable suits: (all)");
             }
 
             var radioAntenna = def as MyRadioAntennaDefinition;
@@ -1879,7 +1938,7 @@ namespace Digi.BuildInfo
             var items = new HashSet<MyDefinitionId>(inputConstraint.ConstrainedIds);
             items.UnionWith(outputConstraint.ConstrainedIds);
 
-            return InventoryFormat(volume, types: types, items: items, isWhitelist: inputConstraint.IsWhitelist); // HACK only using input constraint's whitelist status...
+            return InventoryFormat(volume, types: types, items: items, isWhitelist: inputConstraint.IsWhitelist); // HACK only using input constraint's whitelist status, not sure if output inventory's whitelist is needed
         }
 
         private string InventoryFormat(float volume, MyInventoryConstraint inventoryConstraint)
