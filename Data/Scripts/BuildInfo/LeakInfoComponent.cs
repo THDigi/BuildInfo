@@ -217,13 +217,18 @@ namespace Digi.BuildInfo
     public class LeakInfo
     {
         // used in main thread
-        public Status status = Status.IDLE;
-        public IMyAirVent usedFromVent = null;
-        private float move = 0;
-        private int drawTicks = 0;
-        private Task task;
-        private int skipUpdates = 0;
+        public Status status = Status.IDLE; // the scan/thread status
+        public IMyAirVent usedFromVent = null; // the vent used to start the air leak scan from
+        private Task task; // the background task
         private IMyHudNotification notify = null;
+        private int drawTicks = 0; // ticks until the drawn lines expire
+        private bool stopSpawning = false; // used to stop spawning of particles when the first particle reaches the end point and loops back around
+        private int delayParticles = 0; // used to count spawning particles in Draw(), isolated from gamelogic (which is affected by pause)
+        private readonly List<Particle> particles = new List<Particle>();
+        public IMyTerminalControlOnOffSwitch terminalControl = null; // the air vent button, used to refresh its state manually when clicking it doesn't actually turn to Find state.
+        private int skipUpdates = 0; // used to refresh the viewedVentControlPanel at a lower frequency
+        public IMyAirVent viewedVentControlPanel = null; // used to constantly update the detail info panel of the viewed air vent only
+        public readonly Dictionary<string, IMyModelDummy> dummies = new Dictionary<string, IMyModelDummy>(); // used to temporarily store dummies in the air vent class
 
         // used in background thread
         private Vector3I startPosition;
@@ -239,16 +244,21 @@ namespace Digi.BuildInfo
         // used in both threads, but I've learned this is safe to assign in main and read in the background thread
         private bool cancelTask = false;
 
-        // used in the air vent class
-        public IMyTerminalControlOnOffSwitch terminalControl = null;
-        public IMyAirVent viewedVentControlPanel = null;
-        public readonly Dictionary<string, IMyModelDummy> dummies = new Dictionary<string, IMyModelDummy>();
-
         // constants
-        private const int MAX_DRAW_SECONDS = 300;
-        private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
-        private readonly Color COLOR_PARTICLES = new Color(0, 155, 255);
         public enum Status { IDLE, RUNNING, DRAW }
+        private const int MAX_DRAW_SECONDS = 300; // a cap for the dynamically calculated line lifetime
+        private const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
+        private const float DRAW_DEPTH_F = 0.01f; // float version of the above value
+        private const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
+        private const float DRAW_TRANSPARENCY = 0.4f; // drawn line alpha
+        private const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the line alpha
+        private readonly Color COLOR_PARTICLES = new Color(0, 155, 255); // particles color
+        private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
+        private readonly ParticleData[] particleDataGridSize = new ParticleData[]
+        {
+            new ParticleData(lineLength: 0.5f, lineThickness: 0.02f, spawnDelay: 6, lerpPos: 0.2, lerpDir: 0.1, walkSpeed: 0.2f), // largeship
+            new ParticleData(lineLength: 0.25f, lineThickness: 0.015f, spawnDelay: 6, lerpPos: 0.2, lerpDir: 0.2, walkSpeed: 0.4f) // smallship
+        };
 
         #region Constructor and destructor
         public LeakInfo()
@@ -265,43 +275,110 @@ namespace Digi.BuildInfo
         #endregion
 
         #region Line drawing
+        class ParticleData
+        {
+            public readonly float LineLength;
+            public readonly float LineThickness;
+            public readonly int SpawnDelay;
+            public readonly double LerpPos;
+            public readonly double LerpDir;
+            public readonly float WalkSpeed;
+
+            public ParticleData(float lineLength, float lineThickness, int spawnDelay, double lerpPos, double lerpDir, float walkSpeed)
+            {
+                LineLength = lineLength;
+                LineThickness = lineThickness;
+                SpawnDelay = spawnDelay;
+                LerpPos = lerpPos;
+                LerpDir = lerpDir;
+                WalkSpeed = walkSpeed;
+            }
+        }
+
+        class Particle
+        {
+            private Vector3D position;
+            private Vector3 direction;
+            private float walk;
+
+            private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
+
+            public Particle(IMyCubeGrid grid, List<Line> lines)
+            {
+                var l = lines[lines.Count - 1];
+                position = grid.GridIntegerToWorld(l.Start);
+                direction = (grid.GridIntegerToWorld(l.End) - position);
+                walk = lines.Count - 1;
+            }
+
+            /// <summary>
+            /// Returns true if it should spawn more particles, false otherwise (reached the end and looping back)
+            /// </summary>
+            public bool Draw(IMyCubeGrid grid, List<Line> lines, ref Color color, ParticleData pd)
+            {
+                var i = (int)Math.Floor(walk);
+                var l = lines[i];
+                var lineStart = grid.GridIntegerToWorld(l.Start);
+                var lineEnd = grid.GridIntegerToWorld(l.End);
+                var lineDir = (lineEnd - lineStart);
+                lineDir.Normalize();
+                var fraction = (1 - (walk - i));
+                var targetPosition = lineStart + lineDir * fraction;
+
+                position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
+                direction = Vector3D.Lerp(direction, lineDir, pd.LerpDir);
+
+                var cam = MyAPIGateway.Session.Camera.WorldMatrix.Translation;
+                var drawPosition = cam + ((position - cam) * DRAW_DEPTH);
+                MyTransparentGeometry.AddLineBillboard(MATERIAL_DOT, color, drawPosition, direction, pd.LineLength * DRAW_DEPTH_F, pd.LineThickness * DRAW_DEPTH_F);
+
+                walk -= pd.WalkSpeed; // walk on the lines
+
+                if(walk < 0) // go back to the start and tell the component to stop spawning new ones
+                {
+                    l = lines[lines.Count - 1];
+                    position = grid.GridIntegerToWorld(l.Start);
+                    direction = (grid.GridIntegerToWorld(l.End) - position);
+                    walk = lines.Count - 1;
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
         public void Draw()
         {
             if(status != Status.DRAW || selectedGrid == null || selectedGrid.Closed || lines.Count == 0)
                 return;
 
-            const float lineSize = 0.0002f;
-            const float pointSize = 0.0009f;
-            const float lineLength = 0.0025f;
-            const float transparency = 0.4f;
-            const int fadeOutTicks = 60 * 3;
-
             var camPos = MyAPIGateway.Session.Camera.WorldMatrix.Translation;
-            var alpha = (drawTicks < fadeOutTicks ? (transparency * ((float)drawTicks / (float)fadeOutTicks)) : transparency);
-            var color = COLOR_PARTICLES * alpha;
-
-            move += 0.05f;
-            if(move > 1f)
-                move -= 1f;
+            var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
+            var particleColor = COLOR_PARTICLES * alpha;
 
             // start dot
-            var startPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start) - camPos) * 0.01);
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Green * alpha, startPos, pointSize, 0);
+            var startPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start) - camPos) * DRAW_DEPTH);
+            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Green * alpha, startPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
 
-            // the lines... janky animation :/
-            foreach(var l in lines)
+            var pd = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
+
+            // spawning particles
+            if(!stopSpawning && ++delayParticles > pd.SpawnDelay)
             {
-                var lineStart = selectedGrid.GridIntegerToWorld(l.Start);
-                var lineEnd = selectedGrid.GridIntegerToWorld(l.End);
-                var lineDir = (lineEnd - lineStart);
-                var drawStart = lineStart + lineDir * move;
-                drawStart = camPos + ((drawStart - camPos) * 0.01);
-                MyTransparentGeometry.AddLineBillboard(MATERIAL_DOT, color, drawStart, lineDir, lineLength, lineSize);
+                delayParticles = 0;
+                particles.Add(new Particle(selectedGrid, lines));
+            }
+
+            // draw/move particles
+            for(int i = particles.Count - 1; i >= 0; --i)
+            {
+                if(!particles[i].Draw(selectedGrid, lines, ref particleColor, pd))
+                    stopSpawning = true;
             }
 
             // end dot
-            var endPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[0].End) - camPos) * 0.01);
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Red * alpha, endPos, pointSize, 0);
+            var endPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[0].End) - camPos) * DRAW_DEPTH);
+            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Red * alpha, endPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
         }
         #endregion
 
@@ -368,6 +445,8 @@ namespace Digi.BuildInfo
 
             status = Status.IDLE;
             lines.Clear();
+            particles.Clear();
+            stopSpawning = false;
             drawTicks = 0;
             crumb = null;
             selectedGrid = null;
@@ -458,7 +537,7 @@ namespace Digi.BuildInfo
             else
             {
                 status = Status.DRAW;
-                drawTicks = Math.Min(lines.Count * 60 * 2, 60 * MAX_DRAW_SECONDS);
+                drawTicks = (int)Math.Min(lines.Count * 60 * 2 * selectedGrid.GridSize, 60 * MAX_DRAW_SECONDS);
 
                 NotifyHUD("Found leak, follow blue lines.", 2000, MyFontEnum.White);
             }
