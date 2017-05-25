@@ -612,7 +612,7 @@ namespace Digi.BuildInfo
             }
 
             if(isDoor)
-                GetLine().Append(" (front&back faces are toggleable airtight by the door)");
+                GetLine().Append(" (front+back are toggled)");
 
             GetLine().EndLine();
             #endregion
@@ -842,7 +842,7 @@ namespace Digi.BuildInfo
                 var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
                 var weldTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul);
                 var grindRatio = def.DisassembleRatio;
-                
+
                 AddLine(MyFontEnum.Blue).Append("Part: ").Append(partDef.DisplayNameText).EndLine();
 
                 string padding = (TextAPIEnabled ? "        - " : "       - ");
@@ -1571,7 +1571,7 @@ namespace Digi.BuildInfo
             {
                 // HACK hardcoded
                 AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
-                AddLine().Append("Pull strength: ").AppendFormat("{0:###,###,##0.#######", merger.Strength).EndLine();
+                AddLine().Append("Pull strength: ").AppendFormat("{0:###,###,##0.#######}", merger.Strength).EndLine();
                 return;
             }
 
@@ -1989,7 +1989,7 @@ namespace Digi.BuildInfo
                     case MyFontEnum.Green: textAPIlines.AddIgnored("<color=0,200,0>"); break;
                     case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=0,120,220>"); break; // previously <color=180,210,230>
                     case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=0,50,150>"); break; // previously <color=110,180,225>
-                    case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.AddIgnored("<color=255,75,50>"); break;
+                    case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.AddIgnored("<color=255,0,0>"); break;
                 }
 
                 return textAPIlines;
