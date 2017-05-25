@@ -2653,14 +2653,15 @@ namespace Digi.BuildInfo
         {
             try
             {
-                var block = (MyThrust)Entity;
+                Entity.Components.Remove<ThrustBlock>(); // no longer needing this component past this first update
 
-                if(!BuildInfo.instance.blockData.ContainsKey(block.BlockDefinition.Id) && ((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
+                if(!BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it
                 {
-                    new BuildInfo.BlockDataThrust(block);
-                }
+                    var block = (MyThrust)Entity;
 
-                block.Components.Remove<ThrustBlock>();
+                    if(!BuildInfo.instance.blockData.ContainsKey(block.BlockDefinition.Id) && ((IMyModel)block.Model).AssetName == block.BlockDefinition.Model)
+                        new BuildInfo.BlockDataThrust(block);
+                }
             }
             catch(Exception e)
             {
