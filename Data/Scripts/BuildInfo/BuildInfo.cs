@@ -2654,8 +2654,8 @@ namespace Digi.BuildInfo
             try
             {
                 Entity.Components.Remove<ThrustBlock>(); // no longer needing this component past this first update
-
-                if(!BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it
+                
+                if(BuildInfo.instance != null && !BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
                 {
                     var block = (MyThrust)Entity;
 
