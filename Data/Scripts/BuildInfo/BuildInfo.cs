@@ -211,12 +211,15 @@ namespace Digi.BuildInfo
         {
             var cfg = MyAPIGateway.Session.Config;
             hudVisible = !cfg.MinimalHud;
-            aspectRatio = (double)cfg.ScreenWidth / (double)cfg.ScreenHeight;
-            bool newValue = cfg.RotationHints;
 
-            if(rotationHints != newValue)
+            var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
+            aspectRatio = viewportSize.X / viewportSize.Y;
+
+            bool newRotationHints = cfg.RotationHints;
+
+            if(rotationHints != newRotationHints)
             {
-                rotationHints = newValue;
+                rotationHints = newRotationHints;
                 HideText();
 
                 foreach(CacheTextAPI c in cachedInfoTextAPI.Values)
@@ -1284,6 +1287,7 @@ namespace Digi.BuildInfo
                 {
                     AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)").Separator().ResourcePriority(battery.ResourceSinkGroup).EndLine();
                     AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").NumFormat(battery.InitialStoredPowerRatio * 100, 2).Append("%)").EndLine();
+                    AddLine().Append("Discharge time: ").TimeFormat((battery.MaxStoredPower / battery.MaxPowerOutput) * 3600f).Separator().Append("Recharge time: ").TimeFormat((battery.MaxStoredPower / battery.RequiredPowerInput) * 3600f);
                     return;
                 }
 
@@ -1949,7 +1953,8 @@ namespace Digi.BuildInfo
                 lastDefId = default(MyDefinitionId);
 
                 // text API hide
-                textAPI.Send(TEXTOBJ_EMPTY);
+                if(textAPI != null)
+                    textAPI.Send(TEXTOBJ_EMPTY);
 
                 // HUD notifications don't need hiding, they expire in one frame.
             }
@@ -2569,9 +2574,12 @@ namespace Digi.BuildInfo
 
         public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
         {
-            //if(seconds > 60)
-            //    return String.Format("{0:0}m {1:0.##}s", (seconds / 60), (seconds % 60));
-            //else
+            if(seconds >= 3600)
+                return s.AppendFormat("{0:0}h {1:0}m {2:0.##}s", (seconds / 3600), (seconds / 60), (seconds % 60));
+
+            if(seconds >= 60)
+                return s.AppendFormat("{0:0}m {1:0.##}s", (seconds / 60), (seconds % 60));
+
             return s.AppendFormat("{0:0.##}s", seconds);
         }
 
@@ -2654,7 +2662,7 @@ namespace Digi.BuildInfo
             try
             {
                 Entity.Components.Remove<ThrustBlock>(); // no longer needing this component past this first update
-                
+
                 if(BuildInfo.instance != null && !BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
                 {
                     var block = (MyThrust)Entity;
