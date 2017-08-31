@@ -250,14 +250,14 @@ namespace Digi.BuildInfo
         private const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
         private const float DRAW_DEPTH_F = 0.01f; // float version of the above value
         private const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
-        private const float DRAW_TRANSPARENCY = 0.4f; // drawn line alpha
+        private const float DRAW_TRANSPARENCY = 1f; // drawn line alpha
         private const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the line alpha
         private readonly Color COLOR_PARTICLES = new Color(0, 155, 255); // particles color
         private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
         private readonly ParticleData[] particleDataGridSize = new ParticleData[]
         {
-            new ParticleData(lineLength: 0.5f, lineThickness: 0.02f, spawnDelay: 6, lerpPos: 0.2, lerpDir: 0.1, walkSpeed: 0.2f), // largeship
-            new ParticleData(lineLength: 0.25f, lineThickness: 0.015f, spawnDelay: 6, lerpPos: 0.2, lerpDir: 0.2, walkSpeed: 0.4f) // smallship
+            new ParticleData(size: 0.05f, spawnDelay: 6, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
+            new ParticleData(size: 0.05f, spawnDelay: 6, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
         };
 
         #region Constructor and destructor
@@ -277,20 +277,16 @@ namespace Digi.BuildInfo
         #region Line drawing
         class ParticleData
         {
-            public readonly float LineLength;
-            public readonly float LineThickness;
+            public readonly float Size;
             public readonly int SpawnDelay;
             public readonly double LerpPos;
-            public readonly double LerpDir;
             public readonly float WalkSpeed;
 
-            public ParticleData(float lineLength, float lineThickness, int spawnDelay, double lerpPos, double lerpDir, float walkSpeed)
+            public ParticleData(float size, int spawnDelay, double lerpPos, float walkSpeed)
             {
-                LineLength = lineLength;
-                LineThickness = lineThickness;
+                Size = size;
                 SpawnDelay = spawnDelay;
                 LerpPos = lerpPos;
-                LerpDir = lerpDir;
                 WalkSpeed = walkSpeed;
             }
         }
@@ -298,47 +294,46 @@ namespace Digi.BuildInfo
         class Particle
         {
             private Vector3D position;
-            private Vector3 direction;
             private float walk;
-
-            private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
 
             public Particle(IMyCubeGrid grid, List<Line> lines)
             {
                 var l = lines[lines.Count - 1];
                 position = grid.GridIntegerToWorld(l.Start);
-                direction = (grid.GridIntegerToWorld(l.End) - position);
                 walk = lines.Count - 1;
             }
 
             /// <summary>
             /// Returns true if it should spawn more particles, false otherwise (reached the end and looping back)
             /// </summary>
-            public bool Draw(IMyCubeGrid grid, List<Line> lines, ref Color color, ParticleData pd)
+            public bool Draw(IMyCubeGrid grid, List<Line> lines, ref Color color, ParticleData pd, ref Vector3D camPos, ref Vector3D camFw)
             {
-                var i = (int)Math.Floor(walk);
+                var i = (walk < 0 ? 0 : (int)Math.Floor(walk));
                 var l = lines[i];
                 var lineStart = grid.GridIntegerToWorld(l.Start);
                 var lineEnd = grid.GridIntegerToWorld(l.End);
-                var lineDir = (lineEnd - lineStart);
-                lineDir.Normalize();
-                var fraction = (1 - (walk - i));
-                var targetPosition = lineStart + lineDir * fraction;
 
-                position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
-                direction = Vector3D.Lerp(direction, lineDir, pd.LerpDir);
+                if(IsVisibleFast(ref camPos, ref camFw, ref lineStart) || IsVisibleFast(ref camPos, ref camFw, ref lineEnd))
+                {
+                    var lineDir = (lineEnd - lineStart);
+                    var fraction = (1 - (walk - i));
+                    var targetPosition = lineStart + lineDir * fraction;
 
-                var cam = MyAPIGateway.Session.Camera.WorldMatrix.Translation;
-                var drawPosition = cam + ((position - cam) * DRAW_DEPTH);
-                MyTransparentGeometry.AddLineBillboard(MATERIAL_DOT, color, drawPosition, direction, pd.LineLength * DRAW_DEPTH_F, pd.LineThickness * DRAW_DEPTH_F);
+                    position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
+                    var drawPosition = camPos + ((position - camPos) * DRAW_DEPTH);
+                    
+                    if(walk < 0)
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfo.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                    else
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfo.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                }
 
                 walk -= pd.WalkSpeed; // walk on the lines
 
-                if(walk < 0) // go back to the start and tell the component to stop spawning new ones
+                if(walk < -1) // go back to the start and tell the component to stop spawning new ones
                 {
                     l = lines[lines.Count - 1];
                     position = grid.GridIntegerToWorld(l.Start);
-                    direction = (grid.GridIntegerToWorld(l.End) - position);
                     walk = lines.Count - 1;
                     return false;
                 }
@@ -352,13 +347,19 @@ namespace Digi.BuildInfo
             if(status != Status.DRAW || selectedGrid == null || selectedGrid.Closed || lines.Count == 0)
                 return;
 
-            var camPos = MyAPIGateway.Session.Camera.WorldMatrix.Translation;
+            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            var camPos = camMatrix.Translation;
+            var camFw = camMatrix.Forward;
             var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
             var particleColor = COLOR_PARTICLES * alpha;
 
             // start dot
-            var startPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start) - camPos) * DRAW_DEPTH);
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Green * alpha, startPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+            var point = selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start);
+            if(IsVisibleFast(ref camPos, ref camFw, ref point))
+            {
+                var startPos = camPos + ((point - camPos) * DRAW_DEPTH);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Green * alpha, startPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+            }
 
             var pd = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
 
@@ -372,13 +373,22 @@ namespace Digi.BuildInfo
             // draw/move particles
             for(int i = particles.Count - 1; i >= 0; --i)
             {
-                if(!particles[i].Draw(selectedGrid, lines, ref particleColor, pd))
+                if(!particles[i].Draw(selectedGrid, lines, ref particleColor, pd, ref camPos, ref camFw))
                     stopSpawning = true;
             }
 
             // end dot
-            var endPos = camPos + ((selectedGrid.GridIntegerToWorld(lines[0].End) - camPos) * DRAW_DEPTH);
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Red * alpha, endPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+            point = selectedGrid.GridIntegerToWorld(lines[0].End);
+            if(IsVisibleFast(ref camPos, ref camFw, ref point))
+            {
+                var endPos = camPos + ((point - camPos) * DRAW_DEPTH);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Red * alpha, endPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+            }
+        }
+
+        private static bool IsVisibleFast(ref Vector3D camPos, ref Vector3D camFw, ref Vector3D point)
+        {
+            return (((camPos.X * point.X + camPos.Y * point.Y + camPos.Z * point.Z) - (camPos.X * camFw.X + camPos.Y * camFw.Y + camPos.Z * camFw.Z)) > 0);
         }
         #endregion
 
