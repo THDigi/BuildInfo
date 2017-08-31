@@ -35,6 +35,7 @@ namespace Digi.BuildInfo
         public static BuildInfo instance = null;
         public bool init = false;
         public bool isThisDS = false;
+        public Settings settings = null;
         public LeakInfo leakInfo = null; // leak info component
         private short tick = 0; // global incrementing gamelogic tick
         private bool showBuildInfo = true;
@@ -48,6 +49,7 @@ namespace Digi.BuildInfo
         private IMyHudNotification freezeGizmoNotification = null;
         private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
         private bool textShown = false;
+        private Vector3D lastGizmoPosition;
 
         // menu specific stuff
         private bool showMenu = false;
@@ -64,6 +66,14 @@ namespace Digi.BuildInfo
         private HUDTextAPI.HUDMessage textObject;
         private StringBuilder textAPIlines = new StringBuilder();
         private readonly Dictionary<MyDefinitionId, Cache> cachedInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
+
+        private float TextAPIScale
+        {
+            get
+            {
+                return settings.textAPIScale * 0.8f; // *0.8f because that's how I tweaked the background to and it's a mess already so screw it xD
+            }
+        }
 
         // used by the HUD notification view mode
         private int atLine = SCROLL_FROM_LINE;
@@ -93,12 +103,12 @@ namespace Digi.BuildInfo
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
 
         // constants
-        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged
+        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged.
+        private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
         private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
         private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
         private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
         private const int TEXT_ID = 1; // textAPI ID
-        private const double TEXT_SCALE = 0.8; // textAPI text scale
         private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9825, 0.8); // textAPI default left side position
         private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9825 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
         private readonly Vector2D MENU_HUDPOS = new Vector2D(-0.3, 0.4); // textAPI menu position
@@ -106,12 +116,21 @@ namespace Digi.BuildInfo
         private readonly HUDTextAPI.HUDMessage TEXTOBJ_EMPTY = new HUDTextAPI.HUDMessage(TEXT_ID, 0, Vector2D.Zero, string.Empty); // empty text object used to hide the textAPI one
         private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
+
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
         {
             typeof(MyObjectBuilder_Ore),
             typeof(MyObjectBuilder_Ingot),
             typeof(MyObjectBuilder_Component)
         };
+
+        private const string HELP_COMMANDS =
+            "/buildinfo reload\n    reloads the config.\n" +
+            "/buildinfo help\n    shows this window.\n" +
+            "/buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
+            "\n" +
+            "The config is located in:\n" +
+            "%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg";
 
         public void Init()
         {
@@ -131,10 +150,12 @@ namespace Digi.BuildInfo
 
             leakInfo = new LeakInfo();
 
+            settings = new Settings();
+
             textAPI = new HUDTextAPI((long)Log.workshopId);
             textObject.id = TEXT_ID;
             textObject.ttl = int.MaxValue;
-            textObject.scale = TEXT_SCALE;
+            textObject.scale = TextAPIScale;
             textObject.options = HUDTextAPI.Options.HideHud;
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
@@ -165,6 +186,12 @@ namespace Digi.BuildInfo
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
+                    if(settings != null)
+                    {
+                        settings.Close();
+                        settings = null;
+                    }
+
                     if(leakInfo != null)
                     {
                         leakInfo.Close();
@@ -188,10 +215,50 @@ namespace Digi.BuildInfo
 
         public void MessageEntered(string msg, ref bool send)
         {
-            if(msg.StartsWith("/buildinfo", StringComparison.InvariantCultureIgnoreCase))
+            try
             {
-                send = false;
-                showMenu = true;
+                const string CMD_NAME = "/buildinfo";
+
+                if(msg.StartsWith(CMD_NAME, StringComparison.OrdinalIgnoreCase))
+                {
+                    send = false;
+                    msg = msg.Substring(CMD_NAME.Length).Trim();
+
+                    if(msg.StartsWith("reload", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if(settings.Load())
+                            MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", Log.modName, 0, MyFontEnum.Green);
+                        else
+                            MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", Log.modName, 0, MyFontEnum.Green);
+
+                        settings.Save();
+
+                        HideText();
+                        cachedInfoTextAPI.Clear();
+                        return;
+                    }
+
+                    if(msg.StartsWith("clearcache", StringComparison.OrdinalIgnoreCase))
+                    {
+                        cachedInfoNotification.Clear();
+                        cachedInfoTextAPI.Clear();
+                        MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", Log.modName, 0, MyFontEnum.Green);
+                        return;
+                    }
+
+                    if(msg.StartsWith("help", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod Commands", "", "You can type these commands in the chat.", HELP_COMMANDS, null, "Close");
+                        return;
+                    }
+
+                    // if no arguments then show menu
+                    showMenu = true;
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
 
@@ -367,6 +434,9 @@ namespace Digi.BuildInfo
 
                 freezeGizmoNotification.Text = (freeze ? "Freeze placement position ON" : "Freeze placement position OFF");
                 freezeGizmoNotification.Font = MyFontEnum.White;
+
+                if(freeze)
+                    MyCubeBuilder.Static.GetAddPosition(out lastGizmoPosition);
             }
 
             freezeGizmoNotification.Show();
@@ -383,6 +453,7 @@ namespace Digi.BuildInfo
                 if(TextAPIEnabled && textShown)
                 {
                     var cacheTextAPI = (CacheTextAPI)cache;
+
                     var camera = MyAPIGateway.Session.Camera;
                     var camMatrix = camera.WorldMatrix;
                     var fov = camera.FovWithZoom;
@@ -398,12 +469,12 @@ namespace Digi.BuildInfo
 
                     var widthStep = localscale * 9d * 0.001075;
                     var width = cacheTextAPI.largestLineWidth * widthStep;
-                    var heightStep = localscale * 9d * 0.001;
+                    var heightStep = localscale * 9d * 0.001 * settings.textAPIScale;
                     var height = (cacheTextAPI.numLines + 2) * heightStep;
-                    textpos += camMatrix.Right * (width - (widthStep * 2)) + camMatrix.Down * (height - (heightStep * 2));
+                    textpos += camMatrix.Right * (width - (widthStep * (2 * settings.textAPIScale))) + camMatrix.Down * (height - (heightStep * 2));
 
                     // TODO use HUD background transparency once that is a thing
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White * 0.75f, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White * settings.textAPIBackgroundOpacity, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && MyCubeBuilder.Static.DynamicMode) // HACK only in dynamic mode because GetBuildBoundingBox() gives bad values when aiming at a grid
@@ -928,12 +999,13 @@ namespace Digi.BuildInfo
 
                     if(cockpit.HUD != null)
                     {
-                        MyDefinitionBase defBase;
-                        if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defBase))
+                        MyDefinitionBase defHUD;
+
+                        if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Append("Custom HUD: ").Append(cockpit.HUD).Separator().Append("Added by: ").ModFormat(defBase.Context).EndLine();
+                            AddLine(MyFontEnum.Green).Append("Custom HUD: ").Append(cockpit.HUD).Separator().Append("Added by: ").ModFormat(defHUD.Context).EndLine();
                         }
                         else
                         {
@@ -1128,6 +1200,59 @@ namespace Digi.BuildInfo
                 }
 
                 AddLine().Append("Move time - Opening: ").TimeFormat(openTime).Separator().Append("Closing: ").TimeFormat(closeTime).EndLine();
+                return;
+            }
+
+            var parachute = def as MyParachuteDefinition;
+            if(parachute != null)
+            {
+                float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+
+                // HACK formulas from MyParachute.UpdateParachute()
+                float atmosphere = 1.0f;
+                float atmosMod = 10.0f * (atmosphere - parachute.ReefAtmosphereLevel);
+
+                if(atmosMod <= 0.5f || double.IsNaN(atmosMod))
+                {
+                    atmosMod = 0.5f;
+                }
+                else
+                {
+                    atmosMod = (float)Math.Log(atmosMod - 0.99f) + 5.0f;
+
+                    if(atmosMod < 0.5f || double.IsNaN(atmosMod))
+                        atmosMod = 0.5f;
+                }
+
+                // basically the atmosphere level at which atmosMod is above 0.5; finds real atmosphere level at which chute starts to fully open
+                // thanks to Equinox for helping with the math here and at maxMass :}
+                float disreefAtmosphere = ((float)Math.Exp(-4.5) + 1f) / 10 + parachute.ReefAtmosphereLevel;
+
+                float chuteSize = (atmosMod * parachute.RadiusMultiplier * gridSize) / 2.0f;
+                float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
+                float realAirDensity = (atmosphere * 1.225f);
+                //Vector3 velocity = Vector3.One * 10;
+                //float force = 2.5f * airDensity * velocity.LengthSquared() * area * parachute.DragCoefficient;
+                //AddLine().Append("Force in normal atmosphere: ").ForceFormatWithLift(force).EndLine();
+
+                //float mass = 100000f;
+                //float g = 9.81f;
+                //float D2 = (chuteX2 * chuteX2);
+                //float descentVelocity = (float)Math.Sqrt((8 * mass * g) / (MathHelper.Pi * airDensity * parachute.DragCoefficient * D2));
+                //AddLine().Append("Descent Velocity: ").SpeedFormat(descentVelocity).EndLine();
+
+                const float TARGET_DESCEND_VEL = 10;
+                float maxMass = 2.5f * realAirDensity * (TARGET_DESCEND_VEL * TARGET_DESCEND_VEL) * chuteArea * parachute.DragCoefficient / 9.81f;
+
+                //var aimedGrid = MyCubeBuilder.Static.FindClosestGrid();
+                //float mass = (aimedGrid != null ? aimedGrid.Physics.Mass : 0f);
+                //float descentVel = (float)Math.Sqrt((mass * 9.81f) / (2.5f * realAirDensity * parachute.DragCoefficient * chuteArea));
+
+                AddLine().Append("Power - Deploy: ").PowerFormat(parachute.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(parachute.PowerConsumptionIdle).Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
+                AddLine().Append("Required item to deploy: ").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
+                AddLine().Append("Required atmosphere - Minimum: ").NumFormat(parachute.MinimumAtmosphereLevel, 2).Separator().Append("Fully open: ").NumFormat(disreefAtmosphere, 2).EndLine();
+                AddLine().Append("Drag coefficient: ").Append(parachute.DragCoefficient).EndLine();
+                AddLine().Append("Load estimate: ").MassFormat(maxMass).Append(" falling at ").SpeedFormat(TARGET_DESCEND_VEL).Append(" in 9.81m/s² and 1.0 air density.").EndLine();
                 return;
             }
 
@@ -1612,31 +1737,102 @@ namespace Digi.BuildInfo
                 var largeTurret = def as MyLargeTurretBaseDefinition;
                 if(largeTurret != null)
                 {
-                    AddLine().Append("Auto-target: ").BoolFormat(largeTurret.AiEnabled).Append(largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Append("Range: ").DistanceFormat(largeTurret.MaxRangeMeters).EndLine();
-                    AddLine().Append("Speed - Pitch: ").RotationSpeed(largeTurret.ElevationSpeed * 60).Separator().Append("Yaw: ").RotationSpeed(largeTurret.RotationSpeed * 60).EndLine();
-                    AddLine().Append("Rotation - Pitch: ").AngleFormatDeg(largeTurret.MinElevationDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(largeTurret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxAzimuthDegrees).EndLine();
+                    AddLine().Append("Auto-target: ").BoolFormat(largeTurret.AiEnabled).Append(largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Append("Max range: ").DistanceFormat(largeTurret.MaxRangeMeters).EndLine();
+                    AddLine().Append("Turret speed - Pitch: ").RotationSpeed(largeTurret.ElevationSpeed * 60).Separator().Append("Yaw: ").RotationSpeed(largeTurret.RotationSpeed * 60).EndLine();
+                    AddLine().Append("Rotation limits - Pitch: ").AngleFormatDeg(largeTurret.MinElevationDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(largeTurret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxAzimuthDegrees).EndLine();
                 }
 
-                AddLine().Append("Reload time: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
+                AddLine().Append("Accuracy: ").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
 
-                AddLine().Append("Ammo: ");
+                var ammoProjectiles = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
+                var ammoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
+
                 for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
                 {
                     var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
                     var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
-                    var weaponData = wepDef.WeaponAmmoDatas[(int)ammo.AmmoType];
+                    int ammoType = (int)ammo.AmmoType;
 
-                    if(i > 0 && i % 2 == 0)
+                    if(wepDef.WeaponAmmoDatas[ammoType] != null)
                     {
-                        GetLine().EndLine();
-                        AddLine().Append("       ");
+                        switch(ammoType)
+                        {
+                            case 0: ammoProjectiles.Add(MyTuple.Create(mag, (MyProjectileAmmoDefinition)ammo)); break;
+                            case 1: ammoMissiles.Add(MyTuple.Create(mag, (MyMissileAmmoDefinition)ammo)); break;
+                        }
                     }
-
-                    GetLine().Append(mag.Id.SubtypeName).Append(" (").Append(weaponData.RateOfFire).Append(" RPM)").Append(", ");
                 }
 
-                GetLine().Length -= 2;
-                GetLine().EndLine();
+                var projectilesData = wepDef.WeaponAmmoDatas[0];
+                var missileData = wepDef.WeaponAmmoDatas[1];
+
+                if(ammoProjectiles.Count > 0)
+                {
+                    // HACK hardcoded; from Sandbox.Game.Weapons.MyProjectile.Start()
+                    const float MIN_RANGE = 0.8f;
+                    const float MAX_RANGE = 1.2f;
+
+                    AddLine().Append("Projectiles - Fire rate: ").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s").
+                        Separator().Append("Magazine: ").Append(projectilesData.ShotsInBurst).Append(" rounds").EndLine();
+
+                    AddLine().Append("Projectiles - Type (ship dmg, char dmg, headshot, speed, travel)");
+
+                    for(int i = 0; i < ammoProjectiles.Count; ++i)
+                    {
+                        var data = ammoProjectiles[i];
+                        var mag = data.Item1;
+                        var ammo = data.Item2;
+
+                        AddLine().Append("      - ").Append(mag.Id.SubtypeName).Append(" (");
+
+                        if(ammo.ProjectileCount > 1)
+                            GetLine().Append(ammo.ProjectileCount).Append("x ");
+
+                        GetLine().Append(ammo.ProjectileMassDamage).Append(", ").Append(ammo.ProjectileHealthDamage);
+
+                        GetLine().Append(", ").Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage);
+
+                        GetLine().Append(", ");
+                        if(ammo.SpeedVar > 0)
+                            GetLine().NumFormat(ammo.DesiredSpeed * (1f - ammo.SpeedVar), 2).Append("~").NumFormat(ammo.DesiredSpeed * (1f + ammo.SpeedVar), 2).Append(" m/s");
+                        else
+                            GetLine().SpeedFormat(ammo.DesiredSpeed);
+
+                        GetLine().Append(", ").DistanceRangeFormat(ammo.MaxTrajectory * MIN_RANGE, ammo.MaxTrajectory * MAX_RANGE).Append(")").EndLine();
+                    }
+                }
+
+                if(ammoMissiles.Count > 0)
+                {
+                    // HACK hardcoded; from Sandbox.Game.Weapons.MyMissile.UpdateBeforeSimulation()
+                    const float MAX_TRAJECTORY_NO_ACCEL = 0.7f;
+
+                    AddLine().Append("Missiles - Fire rate: ").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" missiles / s").
+                        Separator().Append("Magazine: ").Append(missileData.ShotsInBurst).Append(" missiles").EndLine();
+
+                    AddLine().Append("Missiles - Type (damage, radius, speed, travel)");
+
+                    for(int i = 0; i < ammoMissiles.Count; ++i)
+                    {
+                        var data = ammoMissiles[i];
+                        var mag = data.Item1;
+                        var ammo = data.Item2;
+
+                        AddLine().Append("      - ").Append(mag.Id.SubtypeName).Append(" (")
+                            .Append(ammo.MissileExplosionDamage).Append(", ")
+                            .DistanceFormat(ammo.MissileExplosionRadius).Append(", ");
+
+                        // SpeedVar is not used for missiles
+
+                        if(!ammo.MissileSkipAcceleration)
+                            GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").SpeedFormat(ammo.MissileAcceleration).Append("²");
+                        else
+                            GetLine().SpeedFormat(ammo.DesiredSpeed * MAX_TRAJECTORY_NO_ACCEL);
+
+                        GetLine().Append(", ").DistanceFormat(ammo.MaxTrajectory).Append(")").EndLine();
+                    }
+                }
+
                 return;
             }
         }
@@ -1647,6 +1843,7 @@ namespace Digi.BuildInfo
             {
                 textObject.message = textAPIlines.ToString();
                 textObject.origin = GetScreenPosition(largestLineWidth);
+                textObject.scale = TextAPIScale;
                 textAPI.Send(textObject);
                 textShown = true;
 
@@ -1687,6 +1884,14 @@ namespace Digi.BuildInfo
 
         private Vector2D GetScreenPosition(float largestLineWidth)
         {
+            if(settings.textAPIUseScreenPos)
+            {
+                if(showMenu)
+                    return (aspectRatio > 5 ? MENU_HUDPOS_WIDE : MENU_HUDPOS);
+
+                return settings.textAPIScreenPos;
+            }
+
             if(!showMenu && !rotationHints) // right side
             {
                 // TODO could use some optimization...
@@ -1893,12 +2098,11 @@ namespace Digi.BuildInfo
 
                     UpdateVisualText();
 
-                    if(MyAPIGateway.CubeBuilder.FreezeGizmo)
-                    {
-                        // TODO needed to monitor distance?
-                    }
+                    // turn off frozen block preview if camera is too far away from it
+                    if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
+                        SetFreezeGizmo(false);
                 }
-                else
+                else // no block equipped
                 {
                     if(MyAPIGateway.CubeBuilder.FreezeGizmo)
                         SetFreezeGizmo(false);
@@ -2005,8 +2209,8 @@ namespace Digi.BuildInfo
                     case MyFontEnum.White: textAPIlines.AddIgnored("<color=255,255,255>"); break;
                     case MyFontEnum.Red: textAPIlines.AddIgnored("<color=255,200,0>"); break;
                     case MyFontEnum.Green: textAPIlines.AddIgnored("<color=0,200,0>"); break;
-                    case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=50,200,255>"); break; // previously <color=180,210,230>
-                    case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=50,150,255>"); break; // previously <color=110,180,225>
+                    case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=50,200,255>"); break;
+                    case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=50,150,255>"); break;
                     case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.AddIgnored("<color=255,0,0>"); break;
                 }
 
@@ -2073,9 +2277,9 @@ namespace Digi.BuildInfo
                 var c = s[i];
 
                 if(dict.TryGetValue(c, out width))
-                    totalWidth += (width / 45f) * (float)TEXT_SCALE * 1.2f;
+                    totalWidth += (width / 45f) * instance.TextAPIScale * 1.2f;
                 else
-                    totalWidth += (15f / 45f) * (float)TEXT_SCALE * 1.2f;
+                    totalWidth += (15f / 45f) * instance.TextAPIScale * 1.2f;
             }
 
             return totalWidth;
@@ -2505,26 +2709,26 @@ namespace Digi.BuildInfo
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
             if(m1 > 1000)
-                return s.NumFormat(m1 / 1000, 2).Append(" ~ ").NumFormat(m2 / 1000, 2).Append(" km");
+                return s.NumFormat(m1 / 1000, 2).Append("~").NumFormat(m2 / 1000, 2).Append(" km");
 
             if(m1 < 10)
-                return s.NumFormat(m1, 2).Append(" ~ ").NumFormat(m2, 2).Append(" m");
+                return s.NumFormat(m1, 2).Append("~").NumFormat(m2, 2).Append(" m");
 
-            return s.Append((int)m1).Append(" ~ ").Append((int)m2).Append(" m");
+            return s.Append((int)m1).Append("~").Append((int)m2).Append(" m");
         }
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
             if(kg > 1000000)
-                return s.Append((int)(kg / 1000000)).Append(" MT");
+                return s.Append(Math.Round(kg / 1000000, 2)).Append(" Mt");
 
             if(kg > 1000)
-                return s.Append((int)(kg / 1000)).Append(" T");
+                return s.Append(Math.Round(kg / 1000, 2)).Append(" t");
 
             if(kg < 1f)
                 return s.Append((int)(kg * 1000)).Append(" g");
 
-            return s.Append((int)kg).Append(" kg");
+            return s.Append(Math.Round(kg, 2)).Append(" kg");
         }
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
