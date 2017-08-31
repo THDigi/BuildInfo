@@ -18,7 +18,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: true)]
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
     public class AirVent : MyGameLogicComponent
     {
         private byte init = 0; // init states, 0 no init, 1 init events, 2 init with main model (for dummyLocation)
@@ -27,10 +27,10 @@ namespace Digi.BuildInfo
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
+            NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
         }
 
-        public override void UpdateAfterSimulation()
+        public override void UpdateAfterSimulation10()
         {
             try
             {
@@ -88,7 +88,7 @@ namespace Digi.BuildInfo
                     dummies.Clear();
                 }
 
-                if(++skip > 60) // every second
+                if(++skip > 6) // every second
                 {
                     skip = 0;
 
@@ -838,7 +838,6 @@ namespace Digi.BuildInfo
                     }
                     return false;
                 }
-                return result;
             }
             return false;
         }

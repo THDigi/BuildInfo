@@ -145,12 +145,15 @@ namespace Digi.BuildInfo
         {
             Log.Close();
             instance = null;
-            SetUpdateOrder(MyUpdateOrder.NoUpdate);
+            SetUpdateOrder(MyUpdateOrder.NoUpdate); // this throws exceptions if called in an update method, which is why the InvokeOnGameThread() is needed.
             MyAPIGateway.Session.UnregisterComponent(this);
         }
 
         protected override void UnloadData()
         {
+            if(instance == null)
+                return;
+
             instance = null;
 
             try
@@ -289,7 +292,7 @@ namespace Digi.BuildInfo
                                     MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
                                     break;
                                 case 4:
-                                    MyCubeBuilder.Static.FreezeGizmo = !MyCubeBuilder.Static.FreezeGizmo;
+                                    SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
                                     break;
                                 case 5:
                                     useTextAPI = !useTextAPI;
@@ -327,7 +330,7 @@ namespace Digi.BuildInfo
                         }
                         else if(input.IsAnyAltKeyPressed())
                         {
-                            SetFreezeGizmo(!MyCubeBuilder.Static.FreezeGizmo);
+                            SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
                         }
                         else
                         {
@@ -359,6 +362,7 @@ namespace Digi.BuildInfo
             }
             else
             {
+                // HACK using this method instead of MyAPIGateway.CubeBuilder.FreezeGizmo's setter because that one ignores the value and sets it to true.
                 MyCubeBuilder.Static.FreezeGizmo = freeze;
 
                 freezeGizmoNotification.Text = (freeze ? "Freeze placement position ON" : "Freeze placement position OFF");
@@ -494,7 +498,7 @@ namespace Digi.BuildInfo
                             GetLine().Append("   (Shift+" + inputName + ")");
                         break;
                     case 4:
-                        GetLine().Append("Freeze in position: ").Append(MyCubeBuilder.Static.FreezeGizmo ? "ON" : "OFF");
+                        GetLine().Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
                         if(inputName != null)
                             GetLine().Append("   (Alt+" + inputName + ")");
                         break;
@@ -916,7 +920,7 @@ namespace Digi.BuildInfo
                     AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red)).Append("Pressurized: ");
 
                     if(cockpit.IsPressurized)
-                        GetLine().Append("Yes, Oxygen capacity: ").NumFormat(cockpit.OxygenCapacity, 3).Append(" oxy");
+                        GetLine().Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
                     else
                         GetLine().Append("No");
 
@@ -1152,13 +1156,13 @@ namespace Digi.BuildInfo
                 var gasTank = def as MyGasTankDefinition;
                 if(gasTank != null)
                 {
-                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").NumFormat(gasTank.Capacity, 3).EndLine();
+                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity).EndLine();
                 }
 
                 var oxygenGenerator = def as MyOxygenGeneratorDefinition;
                 if(oxygenGenerator != null)
                 {
-                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append(" per second").EndLine();
+                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s").EndLine();
 
                     if(oxygenGenerator.ProducedGases.Count > 0)
                     {
@@ -1166,7 +1170,7 @@ namespace Digi.BuildInfo
 
                         foreach(var gas in oxygenGenerator.ProducedGases)
                         {
-                            GetLine().Append(gas.Id.SubtypeName).Append(" (ratio: ").NumFormat(gas.IceToGasRatio, 2).Append("), ");
+                            GetLine().Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(oxygenGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
                         }
 
                         GetLine().Length -= 2;
@@ -1303,7 +1307,7 @@ namespace Digi.BuildInfo
             if(oxygenFarm != null)
             {
                 AddLine().Append("Power: ").PowerFormat(oxygenFarm.OperationalPowerConsumption).Separator().ResourcePriority(oxygenFarm.ResourceSinkGroup).EndLine();
-                AddLine().Append("Produces: ").NumFormat(oxygenFarm.MaxGasOutput, 3).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" per second").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
+                AddLine().Append("Produces: ").NumFormat(oxygenFarm.MaxGasOutput, 3).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
                 AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
                 return;
             }
@@ -1312,7 +1316,7 @@ namespace Digi.BuildInfo
             if(vent != null)
             {
                 AddLine().Append("Idle: ").PowerFormat(vent.StandbyPowerConsumption).Separator().Append("Operational: ").PowerFormat(vent.OperationalPowerConsumption).Separator().ResourcePriority(vent.ResourceSinkGroup).EndLine();
-                AddLine().Append("Output - Rate: ").NumFormat(vent.VentilationCapacityPerSecond, 3).Append(" oxy/s").Separator().ResourcePriority(vent.ResourceSourceGroup).EndLine();
+                AddLine().Append("Output - Rate: ").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s").Separator().ResourcePriority(vent.ResourceSourceGroup).EndLine();
                 return;
             }
 
@@ -1725,6 +1729,12 @@ namespace Digi.BuildInfo
         {
             if(TextAPIEnabled)
             {
+                if(!showBuildInfo && !showMenu)
+                {
+                    HideText();
+                    return;
+                }
+
                 // show last generated block info message
                 if(!textShown && !string.IsNullOrEmpty(textObject.message))
                 {
@@ -1741,6 +1751,9 @@ namespace Digi.BuildInfo
             }
             else
             {
+                if(!showBuildInfo && !showMenu)
+                    return;
+
                 // print and scroll through HUD notification types of messages, not needed for text API
 
                 if(!textShown)
@@ -1862,7 +1875,7 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        if(def.Id != lastDefId)
+                        if(showBuildInfo && def.Id != lastDefId)
                         {
                             lastDefId = def.Id;
 
@@ -1992,8 +2005,8 @@ namespace Digi.BuildInfo
                     case MyFontEnum.White: textAPIlines.AddIgnored("<color=255,255,255>"); break;
                     case MyFontEnum.Red: textAPIlines.AddIgnored("<color=255,200,0>"); break;
                     case MyFontEnum.Green: textAPIlines.AddIgnored("<color=0,200,0>"); break;
-                    case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=0,120,220>"); break; // previously <color=180,210,230>
-                    case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=0,50,150>"); break; // previously <color=110,180,225>
+                    case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=50,200,255>"); break; // previously <color=180,210,230>
+                    case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=50,150,255>"); break; // previously <color=110,180,225>
                     case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.AddIgnored("<color=255,0,0>"); break;
                 }
 
@@ -2473,20 +2486,31 @@ namespace Digi.BuildInfo
             return s.NumFormat(W, 3).Append(" W");
         }
 
-        public static StringBuilder PowerStorageFormat(this StringBuilder s, float MW)
+        public static StringBuilder PowerStorageFormat(this StringBuilder s, float MWh)
         {
-            return s.PowerFormat(MW).Append("h");
+            return s.PowerFormat(MWh).Append("h");
         }
 
         public static StringBuilder DistanceFormat(this StringBuilder s, float m)
         {
             if(m > 1000)
-                return s.NumFormat(m / 1000, 3).Append(" km");
+                return s.NumFormat(m / 1000, 2).Append("km");
 
             if(m < 10)
-                return s.NumFormat(m, 3).Append(" m");
+                return s.NumFormat(m, 2).Append("m");
 
-            return s.Append((int)m).Append(" m");
+            return s.Append((int)m).Append("m");
+        }
+
+        public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
+        {
+            if(m1 > 1000)
+                return s.NumFormat(m1 / 1000, 2).Append(" ~ ").NumFormat(m2 / 1000, 2).Append(" km");
+
+            if(m1 < 10)
+                return s.NumFormat(m1, 2).Append(" ~ ").NumFormat(m2, 2).Append(" m");
+
+            return s.Append((int)m1).Append(" ~ ").Append((int)m2).Append(" m");
         }
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
@@ -2501,6 +2525,11 @@ namespace Digi.BuildInfo
                 return s.Append((int)(kg * 1000)).Append(" g");
 
             return s.Append((int)kg).Append(" kg");
+        }
+
+        public static StringBuilder VolumeFormat(this StringBuilder s, float l)
+        {
+            return s.NumFormat(l, 3).Append(" l");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
@@ -2583,14 +2612,14 @@ namespace Digi.BuildInfo
             return s.AppendFormat("{0:0.##}s", seconds);
         }
 
-        public static StringBuilder AngleFormat(this StringBuilder s, float radians)
+        public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0)
         {
-            return s.AngleFormatDeg(MathHelper.ToDegrees(radians));
+            return s.AngleFormatDeg(MathHelper.ToDegrees(radians), digits);
         }
 
-        public static StringBuilder AngleFormatDeg(this StringBuilder s, float degrees)
+        public static StringBuilder AngleFormatDeg(this StringBuilder s, float degrees, int digits = 0)
         {
-            return s.Append((int)degrees).Append('°');
+            return s.Append(Math.Round(degrees, digits)).Append('°');
         }
 
         public static StringBuilder VectorFormat(this StringBuilder s, Vector3 vec)
@@ -2600,7 +2629,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder SpeedFormat(this StringBuilder s, float mps)
         {
-            return s.NumFormat(mps, 3).Append(" m/s");
+            return s.NumFormat(mps, 2).Append(" m/s");
         }
 
         public static StringBuilder PercentFormat(this StringBuilder s, float ratio)
@@ -2649,20 +2678,18 @@ namespace Digi.BuildInfo
     }
     #endregion
 
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: true)]
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: false)]
     public class ThrustBlock : MyGameLogicComponent
     {
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            Entity.NeedsUpdate |= MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
         }
 
         public override void UpdateOnceBeforeFrame()
         {
             try
             {
-                Entity.Components.Remove<ThrustBlock>(); // no longer needing this component past this first update
-
                 if(BuildInfo.instance != null && !BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
                 {
                     var block = (MyThrust)Entity;
