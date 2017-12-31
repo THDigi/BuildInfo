@@ -316,7 +316,7 @@ namespace Digi.BuildInfo
                         int usableMenuItems = (canUseTextAPI ? 6 : 5);
                         var move = Vector3.Round(input.GetPositionDelta(), 1);
 
-                        if(previousMove.Z == 0)
+                        if(Math.Abs(previousMove.Z) < 0.01f)
                         {
                             if(move.Z > 0.2f)
                             {
@@ -335,7 +335,7 @@ namespace Digi.BuildInfo
                             }
                         }
 
-                        if(previousMove.X == 0 && Math.Abs(move.X) > 0.2f)
+                        if(Math.Abs(previousMove.X) < 0.01f && Math.Abs(move.X) > 0.2f)
                         {
                             menuNeedsUpdate = true;
 
@@ -450,7 +450,7 @@ namespace Digi.BuildInfo
                     return;
 
                 // background for the textAPI's text
-                if(TextAPIEnabled && textShown)
+                if(TextAPIEnabled && textShown && cache is CacheTextAPI)
                 {
                     var cacheTextAPI = (CacheTextAPI)cache;
 
