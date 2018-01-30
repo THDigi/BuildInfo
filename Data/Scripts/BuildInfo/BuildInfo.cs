@@ -759,17 +759,12 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            if(defTypeId == typeof(MyObjectBuilder_Drill))
+            var shipDrill = def as MyShipDrillDefinition;
+            if(shipDrill != null)
             {
                 // HACK hardcoded; from MyShipDrill
                 float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
-                AddLine().Append("Power required*: ").PowerFormat(requiredPower);
-
-                // HACK hardcoded only for vanilla definitions unchanged
-                if(def.Context.IsBaseGame)
-                    GetLine().Separator().ResourcePriority("Defense", hardcoded: true);
-
-                GetLine().EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
@@ -784,33 +779,8 @@ namespace Digi.BuildInfo
                     AddLine().Append("Inventory*: ").InventoryFormat(volume, typeof(MyObjectBuilder_Ore)).EndLine();
                 }
 
-                // HACK MyShipDrillDefinition is internal; also GetObjectBuilder() is useless
-                //var defObj = (MyObjectBuilder_ShipDrillDefinition)def.GetObjectBuilder();
-                //AddLine().Append("Harvest radius: ").DistanceFormat(defObj.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(defObj.SensorOffset).EndLine();
-                //AddLine().Append("Alternate (no ore) radius: ").DistanceFormat(defObj.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(defObj.CutOutOffset).EndLine();
-
-                // HACK hardcoded only for vanilla definitions unchanged
-                if(def.Context.IsBaseGame)
-                {
-                    if(def.Id.SubtypeName == "SmallBlockDrill")
-                    {
-                        const float sensorRadius = 1.3f;
-                        const float sensorOffset = 0.8f;
-                        const float cutOutRadius = 1.3f;
-                        const float cutOutOffset = 0.6f;
-                        AddLine().Append("Harvest radius*: ").DistanceFormat(sensorRadius).Separator().Append("Front offset*: ").DistanceFormat(sensorOffset).EndLine();
-                        AddLine().Append("Alternate (no ore) radius*: ").DistanceFormat(cutOutRadius).Separator().Append("Front offset*: ").DistanceFormat(cutOutOffset).EndLine();
-                    }
-                    else if(def.Id.SubtypeName == "LargeBlockDrill")
-                    {
-                        const float sensorRadius = 1.9f;
-                        const float sensorOffset = 2.8f;
-                        const float cutOutRadius = 1.9f;
-                        const float cutOutOffset = 2.8f;
-                        AddLine().Append("Harvest radius*: ").DistanceFormat(sensorRadius).Separator().Append("Front offset*: ").DistanceFormat(sensorOffset).EndLine();
-                        AddLine().Append("Alternate (no ore) radius*: ").DistanceFormat(cutOutRadius).Separator().Append("Front offset*: ").DistanceFormat(cutOutOffset).EndLine();
-                    }
-                }
+                AddLine().Append("Harvest radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
+                AddLine().Append("Alternate (no ore) radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
                 return;
             }
 
@@ -954,19 +924,10 @@ namespace Digi.BuildInfo
                     AddLine().Append("Power required: ").PowerFormat(rc.RequiredPowerInput).Separator().ResourcePriority(rc.ResourceSinkGroup).EndLine();
                 }
 
-                // HACK MyCryoChamberDefinition is internal
-                if(defTypeId == typeof(MyObjectBuilder_CryoChamber))
+                var cryo = def as MyCryoChamberDefinition;
+                if(cryo != null)
                 {
-                    // UNDONE objectbuilder is not actually getting the values from the definition, so it's useless.
-                    //var defObj = (MyObjectBuilder_CryoChamberDefinition)def.GetObjectBuilder();
-                    //AddLine().Append("Power required: ").PowerFormat(defObj.IdlePowerConsumption).Separator().ResourcePriority(defObj.ResourceSinkGroup).EndLine();
-
-                    // hardcoded only for the vanilla definition if it is not overwritten by a mod
-                    if(def.Context.IsBaseGame && def.Id.SubtypeName == "LargeBlockCryoChamber")
-                    {
-                        const float idlePowerConsumption = 0.00003f;
-                        AddLine().Append("Power required*: ").PowerFormat(idlePowerConsumption).Separator().ResourcePriority("Utility", hardcoded: true).EndLine();
-                    }
+                    AddLine().Append("Power required: ").PowerFormat(cryo.IdlePowerConsumption).Separator().ResourcePriority(cryo.ResourceSinkGroup).EndLine();
                 }
 
                 AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No").EndLine();
@@ -1000,7 +961,6 @@ namespace Digi.BuildInfo
                     if(cockpit.HUD != null)
                     {
                         MyDefinitionBase defHUD;
-
                         if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
