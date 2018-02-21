@@ -595,7 +595,7 @@ namespace Digi.BuildInfo
                         if(distToOutside < 0) // gone outside of edge already, exit
                             return crumb;
 
-                        if(IsInInflatedBounds(grid, target) && !IsPressurized(grid, crumb.Position, target))
+                        if(IsInInflatedBounds(grid, target) && !Pressurization.IsPressurized(grid, crumb.Position, target))
                         {
                             int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
                             int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
@@ -740,117 +740,5 @@ namespace Digi.BuildInfo
             var s = Vector3I.Min(max - p, p - min);
             return Math.Min(s.X, Math.Min(s.Y, s.Z));
         }
-
-        #region Pressurization checks - copied from game source
-        // TODO update this code when changed in game
-        // all these are from Sandbox.Game.GameSystems.MyGridGasSystem
-        // since that namespace is prohibited I have to copy it and convert it to work with modAPI
-
-        private bool IsPressurized(IMyCubeGrid grid, Vector3I startPos, Vector3I endPos)
-        {
-            IMySlimBlock b1 = grid.GetCubeBlock(startPos);
-            IMySlimBlock b2 = grid.GetCubeBlock(endPos);
-
-            if(b1 == b2)
-                return b1 != null && ((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight;
-
-            return (b1 != null && (((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight || IsPressurized(b1, startPos, endPos - startPos))) || (b2 != null && (((MyCubeBlockDefinition)b2.BlockDefinition).IsAirTight || IsPressurized(b2, endPos, startPos - endPos)));
-        }
-
-        private bool IsPressurized(IMySlimBlock block, Vector3I pos, Vector3 normal)
-        {
-            var def = (MyCubeBlockDefinition)block.BlockDefinition;
-
-            if(def.BuildProgressModels.Length > 0)
-            {
-                MyCubeBlockDefinition.BuildProgressModel buildProgressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
-                if(block.BuildLevelRatio < buildProgressModel.BuildRatioUpperBound)
-                {
-                    return false;
-                }
-            }
-            Matrix matrix;
-            block.Orientation.GetMatrix(out matrix);
-            matrix.TransposeRotationInPlace();
-            Vector3 vector = Vector3.Transform(normal, matrix);
-            Vector3 position = Vector3.Zero;
-            if(block.FatBlock != null)
-            {
-                position = pos - block.FatBlock.Position;
-            }
-            Vector3 value = Vector3.Transform(position, matrix) + def.Center;
-            bool flag = def.IsCubePressurized[Vector3I.Round(value)][Vector3I.Round(vector)];
-            if(flag)
-            {
-                return true;
-            }
-            if(block.FatBlock != null)
-            {
-                MyCubeBlock fatBlock = (MyCubeBlock)block.FatBlock;
-                bool result;
-                if(fatBlock is MyDoor)
-                {
-                    MyDoor myDoor = fatBlock as MyDoor;
-                    if(!myDoor.Open)
-                    {
-                        MyCubeBlockDefinition.MountPoint[] mountPoints = def.MountPoints;
-                        for(int i = 0; i < mountPoints.Length; i++)
-                        {
-                            MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
-                            if(vector == mountPoint.Normal)
-                            {
-                                result = false;
-                                return result;
-                            }
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-                else if(fatBlock is MyAdvancedDoor)
-                {
-                    MyAdvancedDoor myAdvancedDoor = fatBlock as MyAdvancedDoor;
-                    if(myAdvancedDoor.FullyClosed)
-                    {
-                        MyCubeBlockDefinition.MountPoint[] mountPoints2 = def.MountPoints;
-                        for(int j = 0; j < mountPoints2.Length; j++)
-                        {
-                            MyCubeBlockDefinition.MountPoint mountPoint2 = mountPoints2[j];
-                            if(vector == mountPoint2.Normal)
-                            {
-                                result = false;
-                                return result;
-                            }
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-                else if(fatBlock is MyAirtightSlideDoor)
-                {
-                    MyAirtightDoorGeneric myAirtightDoorGeneric = fatBlock as MyAirtightDoorGeneric;
-                    if(myAirtightDoorGeneric.IsFullyClosed && vector == Vector3.Forward)
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                else
-                {
-                    if(!(fatBlock is MyAirtightDoorGeneric))
-                    {
-                        return false;
-                    }
-                    MyAirtightDoorGeneric myAirtightDoorGeneric2 = fatBlock as MyAirtightDoorGeneric;
-                    if(myAirtightDoorGeneric2.IsFullyClosed && (vector == Vector3.Forward || vector == Vector3.Backward))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-            }
-            return false;
-        }
-        #endregion
     }
 }

@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildInfo.cs" />
+    <Compile Include="Pressurization.cs" />
     <Compile Include="HUDTextAPI.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LeakInfoComponent.cs" />
