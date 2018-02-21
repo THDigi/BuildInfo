@@ -483,7 +483,7 @@ namespace Digi.BuildInfo
             startPosition = start;
 
             status = Status.RUNNING;
-            task = MyAPIGateway.Parallel.StartBackground(ThreadRun, ThreadFinished);
+            task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
         }
 
         #region A* pathfinding
