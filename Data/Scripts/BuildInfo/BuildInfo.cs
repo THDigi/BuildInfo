@@ -117,6 +117,9 @@ namespace Digi.BuildInfo
         private readonly HUDTextAPI.HUDMessage TEXTOBJ_EMPTY = new HUDTextAPI.HUDMessage(TEXT_ID, 0, Vector2D.Zero, string.Empty); // empty text object used to hide the textAPI one
         private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
+        private readonly Color MOUNTPOINT_COLOR = Color.Yellow * 0.75f;
+        private readonly Color MOUNTPOINT_COLOR_DEFAULT = Color.Blue * 0.75f;
+        private readonly MyStringId MOUNTPOINT_MATERIAL = MyStringId.GetOrCompute("Square");
 
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
         {
@@ -489,39 +492,12 @@ namespace Digi.BuildInfo
                         var m = MatrixD.CreateFromQuaternion(box.Orientation);
                         m.Translation = box.Center;
 
-                        #region experiments
-                        // experiments to find a way to get gizmo center when placed on grids... nothing useful so far
-                        //
-                        //var grid = MyCubeBuilder.Static.FindClosestGrid();
-                        //
-                        //if(grid != null)
-                        //{
-                        //    var gridPos = grid.WorldMatrix.Translation;
-                        //    var localPos = (box.Center - gridPos) * grid.GridSize;
-                        //    m.Translation = gridPos + localPos;
-                        //
-                        //    if(def.Size.Size > 1)
-                        //    {
-                        //        //var center = Vector3D.Transform(def.Center * grid.GridSize, m);
-                        //        //MyAPIGateway.Utilities.ShowNotification("dot=" + Math.Round(Vector3D.Dot(m.Translation, m.Up), 3), 16);
-                        //
-                        //        var extraSize = (def.Size - Vector3I.One) * grid.GridSizeHalf;
-                        //        m.Translation += m.Left * extraSize.X;
-                        //        m.Translation += m.Up * extraSize.Y;
-                        //        m.Translation += m.Backward * extraSize.Z;
-                        //
-                        //        //var extraSize = def.Size - Vector3I.One;
-                        //        //var dotX = (Vector3D.Dot(m., m.Right) > 0 ? 1 : -1);
-                        //        //var dotY = (Vector3D.Dot(m.Translation, m.Up) > 0 ? 1 : -1);
-                        //        //var dotZ = (Vector3D.Dot(m.Translation, m.Backward) > 0 ? 1 : -1);
-                        //        //m.Translation += m.Right * (grid.GridSizeHalf * extraSize.X * dotX);
-                        //        //m.Translation += m.Up * (grid.GridSizeHalf * extraSize.Y * dotY);
-                        //        //m.Translation += m.Backward * (grid.GridSizeHalf * extraSize.Z * dotZ);
-                        //    }
-                        //}
-                        #endregion
+                        var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
 
-                        MyCubeBuilder.DrawMountPoints(MyDefinitionManager.Static.GetCubeSize(def.CubeSize), def, ref m);
+                        MyCubeBuilder.DrawMountPoints(gridSize, def, ref m);
+
+                        // HACK drawing my own opaque mount points because vanilla are just wireframe now and are not as readable.
+                        DrawMountPoints(gridSize, def, ref m);
                     }
                 }
 
@@ -572,6 +548,49 @@ namespace Digi.BuildInfo
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        private void DrawMountPoints(float cubeSize, MyCubeBlockDefinition def, ref MatrixD drawMatrix)
+        {
+            var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+
+            if(mountPoints == null)
+                return;
+
+            // copied from game code...
+            // TODO optimize
+
+            var minSize = (def.CubeSize == MyCubeSize.Large ? 0.1 : 0.025); // a minimum size to have some thickness
+            var center = def.Center;
+            var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cubeSize) * drawMatrix;
+
+            for(int i = 0; i < mountPoints.Length; i++)
+            {
+                var mountPoint = mountPoints[i];
+
+                var startLocal = mountPoint.Start - center;
+                var endLocal = mountPoint.End - center;
+
+                var color = mountPoint.Default ? MOUNTPOINT_COLOR_DEFAULT : MOUNTPOINT_COLOR;
+
+                var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cubeSize, Vector3.Max(startLocal, endLocal) * cubeSize);
+                var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+
+                var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                m.Right *= Math.Max(obb.HalfExtent.X * 2, minSize);
+                m.Up *= Math.Max(obb.HalfExtent.Y * 2, minSize);
+                m.Forward *= Math.Max(obb.HalfExtent.Z * 2, minSize);
+                m.Translation = obb.Center;
+
+                // draw OBB
+                var scale = m.Scale;
+                var halfExtent = scale / 2.0;
+                m.Right /= scale.X;
+                m.Up /= scale.Y;
+                m.Forward /= scale.Z;
+                var box = new BoundingBoxD(-halfExtent, halfExtent);
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref box, ref color, MySimpleObjectRasterizer.Solid, 1, 0.01f, MOUNTPOINT_MATERIAL, null, true);
             }
         }
 
