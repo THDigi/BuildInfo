@@ -63,6 +63,7 @@ namespace Digi.BuildInfo
         private bool hudVisible = true;
         private double aspectRatio = 1;
         private int lastNewLineIndex = 0;
+        private float hudBackgroundOpacity = 1f;
         private HUDTextAPI.HUDMessage textObject;
         private StringBuilder textAPIlines = new StringBuilder();
         private readonly Dictionary<MyDefinitionId, Cache> cachedInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
@@ -281,6 +282,7 @@ namespace Digi.BuildInfo
         {
             var cfg = MyAPIGateway.Session.Config;
             hudVisible = !cfg.MinimalHud;
+            hudBackgroundOpacity = cfg.HUDBkOpacity;
 
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             aspectRatio = viewportSize.X / viewportSize.Y;
@@ -473,8 +475,8 @@ namespace Digi.BuildInfo
                     var height = (cacheTextAPI.numLines + 2) * heightStep;
                     textpos += camMatrix.Right * (width - (widthStep * (2 * settings.textAPIScale))) + camMatrix.Down * (height - (heightStep * 2));
 
-                    // TODO use HUD background transparency once that is a thing
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, Color.White * settings.textAPIBackgroundOpacity, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
+                    var color = Color.White * (settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : settings.textAPIBackgroundOpacity);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, color, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
                 if(showMountPoints && MyCubeBuilder.Static.DynamicMode) // HACK only in dynamic mode because GetBuildBoundingBox() gives bad values when aiming at a grid

@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Text;
 using System.IO;
+using System.Text;
 using Sandbox.ModAPI;
 using VRageMath;
 
@@ -8,23 +8,28 @@ namespace Digi.BuildInfo
 {
     public class Settings
     {
-        private const string FILE = "settings.cfg";
+        public bool textAPIUseScreenPos;
+        public Vector2D textAPIScreenPos;
+        public float textAPIScale;
+        public float textAPIBackgroundOpacity;
 
-        public bool textAPIUseScreenPos = false;
-        public Vector2D textAPIScreenPos = Default_textAPIScreenPos;
-        public float textAPIScale = Default_textAPIScale;
-        public float textAPIBackgroundOpacity = Default_textAPIBackgroundOpacity; // TODO add a special value that gets the game's HUD transparency when that is available
-
-        public static readonly Vector2D Default_textAPIScreenPos = new Vector2D(-0.9825, 0.8);
-        public static readonly float Default_textAPIScale = 1f;
-        public static readonly float Default_textAPIBackgroundOpacity = 0.9f;
+        public const bool default_textAPIUseScreenPos = false;
+        public readonly Vector2D default_textAPIScreenPos = new Vector2D(-0.9825, 0.8);
+        public const float default_textAPIScale = 1f;
+        public const float default_textAPIBackgroundOpacity = -1f;
 
         public bool firstLoad = false;
 
-        private static char[] CHARS = new char[] { '=' };
+        private const string FILE = "settings.cfg";
+        private readonly char[] CHARS = new char[] { '=' };
 
         public Settings()
         {
+            textAPIUseScreenPos = default_textAPIUseScreenPos;
+            textAPIScreenPos = default_textAPIScreenPos;
+            textAPIScale = default_textAPIScale;
+            textAPIBackgroundOpacity = default_textAPIBackgroundOpacity;
+
             // load the settings if they exist
             if(!Load())
                 firstLoad = true; // config didn't exist, assume it's the first time the mod is loaded
@@ -79,43 +84,56 @@ namespace Digi.BuildInfo
 
                     if(args.Length != 2)
                     {
-                        Log.Error("Unknown " + FILE + " line: " + line + "\nMaybe is missing the '=' ?");
+                        Log.Error($"Unknown {FILE} line: {line}\nMaybe is missing the '=' ?");
                         continue;
                     }
 
-                    args[0] = args[0].Trim().ToLower();
-                    args[1] = args[1].Trim().ToLower();
+                    var key = args[0];
+                    var val = args[1];
 
-                    switch(args[0])
+                    if(key.Equals("UseScreenPos", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        case "usescreenpos":
-                            if(bool.TryParse(args[1], out b))
-                                textAPIUseScreenPos = b;
-                            else
-                                Log.Error("Invalid " + args[0] + " value: " + args[1]);
-                            continue;
-                        case "screenpos":
-                            var vars = args[1].Split(',');
-                            double x, y;
-                            if(vars.Length == 2 && double.TryParse(vars[0].Trim(), out x) && double.TryParse(vars[1].Trim(), out y))
-                                textAPIScreenPos = new Vector2D(x, y);
-                            else
-                                Log.Error("Invalid " + args[0] + " value: " + args[1]);
-                            continue;
-                        case "scale":
-                            if(float.TryParse(args[1], out f))
-                            {
-                                textAPIScale = MathHelper.Clamp(f, -100, 100);
-                            }
-                            else
-                                Log.Error("Invalid " + args[0] + " value: " + args[1]);
-                            continue;
-                        case "backgroundopacity":
-                            if(float.TryParse(args[1], out f))
-                                textAPIBackgroundOpacity = MathHelper.Clamp(f, 0, 1);
-                            else
-                                Log.Error("Invalid " + args[0] + " value: " + args[1]);
-                            continue;
+                        if(bool.TryParse(val, out b))
+                            textAPIUseScreenPos = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("ScreenPos", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        var vars = val.Split(',');
+                        double x, y;
+
+                        if(vars.Length == 2 && double.TryParse(vars[0], out x) && double.TryParse(vars[1], out y))
+                            textAPIScreenPos = new Vector2D(x, y);
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("Scale", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(float.TryParse(val, out f))
+                            textAPIScale = MathHelper.Clamp(f, -100, 100);
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("BackgroundOpacity", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(val.Trim().Equals("HUD", StringComparison.CurrentCultureIgnoreCase))
+                            textAPIBackgroundOpacity = -1;
+                        else if(float.TryParse(val, out f))
+                            textAPIBackgroundOpacity = MathHelper.Clamp(f, 0, 1);
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
                     }
                 }
 
@@ -159,10 +177,10 @@ namespace Digi.BuildInfo
                 str.AppendLine("// These control the visuals of the info box that gets created with textAPI.");
             }
 
-            str.Append("UseScreenPos=").Append(textAPIUseScreenPos ? "true" : "false").AppendLine(comments ? " // override screen position set by the mod with your own? Default: false" : "");
-            str.Append("ScreenPos=").Append(Math.Round(textAPIScreenPos.X, 5)).Append(", ").Append(Math.Round(textAPIScreenPos.Y, 5)).AppendLine(comments ? " // only used if above setting is true; screen position in X and Y coordinates where 0,0 is the screen center. Positive values are right and up and negative ones are opposite of that. Default: " + Default_textAPIScreenPos.X + ", " + Default_textAPIScreenPos.Y : "");
-            str.Append("Scale=").Append(Math.Round(textAPIScale, 5)).AppendLine(comments ? " // The overall scale. Default: " + Default_textAPIScale : "");
-            str.Append("BackgroundOpacity=").Append(Math.Round(textAPIBackgroundOpacity, 5)).AppendLine(comments ? " // Background opacity percent scale (0 to 1 value). Should be configured to match the game HUD opacity. Default: " + Default_textAPIBackgroundOpacity : "");
+            str.Append("UseScreenPos=").Append(textAPIUseScreenPos).AppendLine(comments ? " // override screen position set by the mod with your own? Default: " + default_textAPIUseScreenPos : "");
+            str.Append("ScreenPos=").Append(Math.Round(textAPIScreenPos.X, 5)).Append(", ").Append(Math.Round(textAPIScreenPos.Y, 5)).AppendLine(comments ? " // only used if above setting is true; screen position in X and Y coordinates where 0,0 is the screen center. Positive values are right and up and negative ones are opposite of that. Default: " + default_textAPIScreenPos.X + ", " + default_textAPIScreenPos.Y : "");
+            str.Append("Scale=").Append(Math.Round(textAPIScale, 5)).AppendLine(comments ? " // The overall scale. Default: " + default_textAPIScale : "");
+            str.Append("BackgroundOpacity=").Append(textAPIBackgroundOpacity < 0 ? "HUD" : Math.Round(textAPIBackgroundOpacity, 5).ToString()).AppendLine(comments ? " // Background opacity percent scale (0 to 1 value) or can be set to the word HUD to use the game's background opacity. Default: " + (default_textAPIBackgroundOpacity < 0 ? "HUD" : default_textAPIBackgroundOpacity.ToString()) : "");
 
             return str.ToString();
         }
