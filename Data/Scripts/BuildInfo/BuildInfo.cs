@@ -479,7 +479,7 @@ namespace Digi.BuildInfo
                     MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, color, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
                 }
 
-                if(showMountPoints && MyCubeBuilder.Static.DynamicMode) // HACK only in dynamic mode because GetBuildBoundingBox() gives bad values when aiming at a grid
+                if(showMountPoints)
                 {
                     var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
@@ -527,6 +527,47 @@ namespace Digi.BuildInfo
 
                 if(leakInfo != null)
                     leakInfo.Draw();
+
+                // testing real time pressurization display
+#if false
+                {
+                    var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+
+                    if(def != null && MyCubeBuilder.Static.IsActivated)
+                    {
+                        var grid = MyCubeBuilder.Static.FindClosestGrid();
+
+                        Vector3D worldAdd;
+                        MyCubeBuilder.Static.GetAddPosition(out worldAdd);
+
+                        var bb = MyCubeBuilder.Static.GetBuildBoundingBox();
+                        var matrix = Matrix.CreateFromQuaternion(bb.Orientation);
+
+                        var startPos = grid.WorldToGridInteger(worldAdd);
+
+                        for(int i = 0; i < Base6Directions.IntDirections.Length; ++i)
+                        {
+                            var endPos = startPos + Base6Directions.IntDirections[i];
+                            bool airtight = def.IsAirTight || Pressurization.TestPressurize(startPos, endPos - startPos, matrix, def);
+
+                            //if(!airtight)
+                            //{
+                            //    IMySlimBlock b2 = grid.GetCubeBlock(startPos);
+                            //
+                            //    if(b2 != null)
+                            //    {
+                            //        var def2 = (MyCubeBlockDefinition)b2.BlockDefinition;
+                            //        airtight = def2.IsAirTight || Pressurization.IsPressurized(b2, endPos, startPos - endPos);
+                            //    }
+                            //}
+
+                            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), (airtight ? Color.Green : Color.Red), worldAdd, Vector3D.TransformNormal(Base6Directions.IntDirections[i], matrix), 1f, 0.1f);
+
+                            //MyAPIGateway.Utilities.ShowNotification($"{i}. airtight={airtight}", 16); // DEBUG print
+                        }
+                    }
+                }
+#endif
             }
             catch(Exception e)
             {
