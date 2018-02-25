@@ -1541,11 +1541,10 @@ namespace Digi.BuildInfo
             if(radioAntenna != null)
             {
                 // HACK hardcoded; from MyRadioAntenna
-                float maxRadius = (def.CubeSize == MyCubeSize.Large ? 50000f : 5000f);
-                float requiredPowerInput = (maxRadius / 500f) * 0.002f;
-
+                float requiredPowerInput = (radioAntenna.MaxBroadcastRadius / 500f) * 0.002f;
+                
                 AddLine().Append("Max required power*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(radioAntenna.ResourceSinkGroup).EndLine();
-                AddLine().Append("Max radius*: ").DistanceFormat(maxRadius).EndLine();
+                AddLine().Append("Max radius: ").DistanceFormat(radioAntenna.MaxBroadcastRadius).EndLine();
                 return;
             }
 
@@ -1563,11 +1562,10 @@ namespace Digi.BuildInfo
             if(beacon != null)
             {
                 // HACK hardcoded; from MyBeacon
-                float maxRadius = (def.CubeSize == MyCubeSize.Large ? 50000f : 5000f);
-                float requiredPowerInput = (maxRadius / 100000f) * 0.02f;
+                float requiredPowerInput = (beacon.MaxBroadcastRadius / 100000f) * 0.02f;
 
                 AddLine().Append("Max required power*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(beacon.ResourceSinkGroup).EndLine();
-                AddLine().Append("Max radius*: ").DistanceFormat(maxRadius).EndLine();
+                AddLine().Append("Max radius: ").DistanceFormat(beacon.MaxBroadcastRadius).EndLine();
                 return;
             }
 
