@@ -1361,7 +1361,24 @@ namespace Digi.BuildInfo
 
                         foreach(var bp in production.BlueprintClasses)
                         {
-                            GetLine().Append(bp.DisplayNameText).Append(", ");
+                            var name = bp.DisplayNameText;
+                            var newLineIndex = name.IndexOf('\n');
+
+                            if(newLineIndex != -1) // name contains a new line, ignore everything after that
+                            {
+                                for(int i = 0; i < newLineIndex; ++i)
+                                {
+                                    GetLine().Append(name[i]);
+                                }
+
+                                GetLine().TrimEndWhitespace();
+                            }
+                            else
+                            {
+                                GetLine().Append(name);
+                            }
+
+                            GetLine().Append(", ");
                         }
 
                         GetLine().Length -= 2;
