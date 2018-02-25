@@ -43,13 +43,6 @@ namespace Digi.BuildInfo
         {
             return s.Append(b ? "Yes" : "No");
         }
-
-        public static StringBuilder AddIgnored(this StringBuilder s, string text)
-        {
-            s.Append(text);
-            BuildInfo.instance.ignorePx += BuildInfo.GetStringSizeTextAPI(s, length: text.Length);
-            return s;
-        }
         
         public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false) // HACK some ResourceSinkGroup are string type for SOME reason
         {

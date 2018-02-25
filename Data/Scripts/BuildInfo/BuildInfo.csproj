@@ -112,10 +112,10 @@
     <Compile Include="BuildInfo.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Pressurization.cs" />
-    <Compile Include="HUDTextAPI.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LeakInfoComponent.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="TextAPIv2.cs" />
     <Compile Include="ThrustBlock.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

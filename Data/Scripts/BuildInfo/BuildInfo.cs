@@ -58,22 +58,20 @@ namespace Digi.BuildInfo
         private Vector3 previousMove = Vector3.Zero;
 
         // used by the textAPI view mode
-        public HUDTextAPI textAPI = null;
+        public HudAPIv2 textAPI = null;
         private bool rotationHints = true;
         private bool hudVisible = true;
         private double aspectRatio = 1;
-        private int lastNewLineIndex = 0;
         private float hudBackgroundOpacity = 1f;
-        private HUDTextAPI.HUDMessage textObject;
+        private StringBuilder textSB = new StringBuilder();
+        private HudAPIv2.HUDMessage textObject = null;
+        private HudAPIv2.BillBoardHUDMessage bgObject = null;
         private StringBuilder textAPIlines = new StringBuilder();
         private readonly Dictionary<MyDefinitionId, Cache> cachedInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
 
         private float TextAPIScale
         {
-            get
-            {
-                return settings.textAPIScale * 0.8f; // *0.8f because that's how I tweaked the background to and it's a mess already so screw it xD
-            }
+            get { return settings.textAPIScale * 1.2f; }
         }
 
         // used by the HUD notification view mode
@@ -86,7 +84,6 @@ namespace Digi.BuildInfo
         private int line = -1;
         private bool addLineCalled = false;
         private float largestLineWidth = 0;
-        public float ignorePx = 0;
 
         // resource sink group cache
         public int resourceSinkGroups = 0;
@@ -114,7 +111,7 @@ namespace Digi.BuildInfo
         private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9825 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
         private readonly Vector2D MENU_HUDPOS = new Vector2D(-0.3, 0.4); // textAPI menu position
         private readonly Vector2D MENU_HUDPOS_WIDE = new Vector2D(-0.3 / 3f, 0.4); // textAPI menu position when using a really wide resolution
-        private readonly HUDTextAPI.HUDMessage TEXTOBJ_EMPTY = new HUDTextAPI.HUDMessage(TEXT_ID, 0, Vector2D.Zero, string.Empty); // empty text object used to hide the textAPI one
+        private const float BACKGROUND_EDGE = 0.05f; // added padding edge around the text boundary for the background image
         private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
         private readonly Color MOUNTPOINT_COLOR = Color.Yellow * 0.75f;
@@ -156,11 +153,7 @@ namespace Digi.BuildInfo
 
             settings = new Settings();
 
-            textAPI = new HUDTextAPI((long)Log.workshopId);
-            textObject.id = TEXT_ID;
-            textObject.ttl = int.MaxValue;
-            textObject.scale = TextAPIScale;
-            textObject.options = HUDTextAPI.Options.HideHud;
+            textAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -296,11 +289,6 @@ namespace Digi.BuildInfo
             {
                 rotationHints = newRotationHints;
                 HideText();
-
-                foreach(CacheTextAPI c in cachedInfoTextAPI.Values)
-                {
-                    c.InvalidateScreenPosition();
-                }
             }
         }
 
@@ -453,34 +441,6 @@ namespace Digi.BuildInfo
             {
                 if(!init || !hudVisible)
                     return;
-
-                // background for the textAPI's text
-                if(TextAPIEnabled && textShown && cache is CacheTextAPI)
-                {
-                    var cacheTextAPI = (CacheTextAPI)cache;
-
-                    var camera = MyAPIGateway.Session.Camera;
-                    var camMatrix = camera.WorldMatrix;
-                    var fov = camera.FovWithZoom;
-
-                    var localscale = 0.1735 * Math.Tan(fov / 2);
-                    var localXmul = (aspectRatio * 9d / 16d);
-                    var localYmul = (1 / aspectRatio) * localXmul;
-
-                    var origin = cacheTextAPI.screenPos;
-                    origin.X *= localscale * localXmul;
-                    origin.Y *= localscale * localYmul;
-                    var textpos = Vector3D.Transform(new Vector3D(origin.X, origin.Y, -0.1), camMatrix);
-
-                    var widthStep = localscale * 9d * 0.001075;
-                    var width = cacheTextAPI.largestLineWidth * widthStep;
-                    var heightStep = localscale * 9d * 0.001 * settings.textAPIScale;
-                    var height = (cacheTextAPI.numLines + 2) * heightStep;
-                    textpos += camMatrix.Right * (width - (widthStep * (2 * settings.textAPIScale))) + camMatrix.Down * (height - (heightStep * 2));
-
-                    var color = Color.White * (settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : settings.textAPIBackgroundOpacity);
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_BACKGROUND, color, textpos, camMatrix.Left, camMatrix.Up, (float)width, (float)height);
-                }
 
                 if(showMountPoints)
                 {
@@ -688,7 +648,7 @@ namespace Digi.BuildInfo
 
                 if(stages != null && stages.Length > 0)
                 {
-                    GetLine().Append("  ").AddIgnored(variantColor).Append("(Variant 1 of ").Append(stages.Length + 1).Append(")");
+                    GetLine().Append("  ").Append(variantColor).Append("(Variant 1 of ").Append(stages.Length + 1).Append(")");
                 }
                 else
                 {
@@ -707,7 +667,7 @@ namespace Digi.BuildInfo
                             }
                         }
 
-                        GetLine().Append("  ").AddIgnored(variantColor).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
+                        GetLine().Append("  ").Append(variantColor).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
                     }
                 }
 
@@ -1880,13 +1840,9 @@ namespace Digi.BuildInfo
         {
             if(TextAPIEnabled)
             {
-                textObject.message = textAPIlines.ToString();
-                textObject.origin = GetScreenPosition(largestLineWidth);
-                textObject.scale = TextAPIScale;
-                textAPI.Send(textObject);
-                textShown = true;
-
-                cache = new CacheTextAPI(textObject.message, line, largestLineWidth, textObject.origin);
+                var text = textAPIlines.ToString();
+                var textSize = UpdateTextAPIvisuals(text);
+                cache = new CacheTextAPI(text, textObject.Origin, textSize);
 
                 if(cachedInfoTextAPI.ContainsKey(id))
                     cachedInfoTextAPI[id] = cache;
@@ -1921,52 +1877,66 @@ namespace Digi.BuildInfo
             }
         }
 
-        private Vector2D GetScreenPosition(float largestLineWidth)
+        private Vector2D UpdateTextAPIvisuals(string text, Vector2D textSize = default(Vector2D))
         {
-            if(settings.textAPIUseScreenPos)
-            {
-                if(showMenu)
-                    return (aspectRatio > 5 ? MENU_HUDPOS_WIDE : MENU_HUDPOS);
+            if(textObject == null)
+                textObject = new HudAPIv2.HUDMessage(textSB, Vector2D.Zero);
 
-                return settings.textAPIScreenPos;
+            textObject.Visible = true;
+            textObject.Options = HudAPIv2.Options.HideHud;
+            textObject.Scale = TextAPIScale;
+
+            textSB.Clear().Append(text);
+
+            var textPos = Vector2D.Zero;
+            var textOffset = Vector2D.Zero;
+
+            if(textSize.LengthSquared() < 0.0001)
+                textSize = textObject.GetTextLength();
+
+            if(showMenu) // in the menu
+            {
+                textOffset = new Vector2D(textSize.X / -2, 0.8);
+            }
+            else if(settings.textAPIUseScreenPos) // custom alignment and position
+            {
+                textPos = settings.textAPIScreenPos;
+
+                // DEBUG TODO <<<
+                //if(settings.textAPIAlignRight)
+                //    textOffset.X = -textSize.X;
+
+                //if(settings.textAPIAlignBottom)
+                //    textOffset.Y = textSize.Y;
+            }
+            // DEBUG TODO <<<
+            //else if(!rotationHints) // right side autocomputed
+            //{
+            //    textPos = (aspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
+            //    textOffset = new Vector2D(-textSize.X, 0);
+            //}
+            else // left side autocomputed
+            {
+                textPos = (aspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
             }
 
-            if(!showMenu && !rotationHints) // right side
-            {
-                // TODO could use some optimization...
+            textObject.Origin = textPos;
+            textObject.Offset = textOffset;
 
-                var textPosition2D = new Vector2D(0, 0.98);
+            if(bgObject == null)
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_BACKGROUND, Vector2D.Zero, Color.White, Scale: 1, Shadowing: true);
+            
+            float edge = BACKGROUND_EDGE * TextAPIScale;
 
-                var camera = MyAPIGateway.Session.Camera;
-                var camMatrix = camera.WorldMatrix;
-                var fov = camera.FovWithZoom;
+            bgObject.BillBoardColor = Color.White * settings.textAPIBackgroundOpacity;
+            bgObject.Origin = textPos;
+            bgObject.Width = (float)Math.Abs(textSize.X) + edge;
+            bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
+            bgObject.Offset = textOffset + (textSize / 2);
+            bgObject.Visible = true;
 
-                // math from textAPI's sources
-                var localscale = 0.1735 * Math.Tan(fov / 2);
-                var localXmul = localscale * (aspectRatio * 9d / 16d);
-                var localYmul = localscale * (1 / aspectRatio) * localXmul;
-
-                var textpos = Vector3D.Transform(new Vector3D(textPosition2D.X * localXmul, textPosition2D.Y * localYmul, -0.1), camMatrix);
-
-                var widthStep = localscale * 9d * 0.001075;
-                var width = largestLineWidth * widthStep;
-
-                var screenPosStart = camera.WorldToScreen(ref textpos);
-                textpos += camMatrix.Right * width;
-                var screenPosEnd = camera.WorldToScreen(ref textpos);
-                var panelSize = screenPosEnd - screenPosStart;
-
-                textPosition2D.X = (1.01 - (panelSize.X * 1.99));
-
-                if(aspectRatio > 5) // really wide resolution (3+ monitors)
-                    textPosition2D.X /= 3.0;
-
-                return textPosition2D;
-            }
-            else // left side or menu
-            {
-                return (aspectRatio > 5 ? (showMenu ? MENU_HUDPOS_WIDE : TEXT_HUDPOS_WIDE) : (showMenu ? MENU_HUDPOS : TEXT_HUDPOS));
-            }
+            textShown = true;
+            return textSize;
         }
 
         private void UpdateVisualText()
@@ -1980,17 +1950,11 @@ namespace Digi.BuildInfo
                 }
 
                 // show last generated block info message
-                if(!textShown && !string.IsNullOrEmpty(textObject.message))
+                if(!textShown && textObject != null)
                 {
                     var cacheTextAPI = (CacheTextAPI)cache;
-
                     cacheTextAPI.ResetExpiry();
-                    cacheTextAPI.ComputePositionIfNeeded();
-
-                    textObject.origin = cacheTextAPI.screenPos;
-                    textObject.message = cacheTextAPI.text;
-                    textAPI.Send(textObject);
-                    textShown = true;
+                    UpdateTextAPIvisuals(cacheTextAPI.Text, cacheTextAPI.TextSize);
                 }
             }
             else
@@ -2088,6 +2052,10 @@ namespace Digi.BuildInfo
                     Init();
                 }
 
+                // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
+                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
+
                 unchecked // global ticker
                 {
                     ++tick;
@@ -2095,10 +2063,6 @@ namespace Digi.BuildInfo
 
                 if(leakInfo != null) // update the leak info component
                     leakInfo.Update();
-
-                // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
-                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
                 #region Cubebuilder monitor
                 var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
@@ -2209,8 +2173,11 @@ namespace Digi.BuildInfo
                 lastDefId = default(MyDefinitionId);
 
                 // text API hide
-                if(textAPI != null)
-                    textAPI.Send(TEXTOBJ_EMPTY);
+                if(textObject != null)
+                    textObject.Visible = false;
+
+                if(bgObject != null)
+                    bgObject.Visible = false;
 
                 // HUD notifications don't need hiding, they expire in one frame.
             }
@@ -2230,7 +2197,6 @@ namespace Digi.BuildInfo
 
             line = -1;
             largestLineWidth = 0;
-            lastNewLineIndex = 0;
             addLineCalled = false;
         }
 
@@ -2245,12 +2211,12 @@ namespace Digi.BuildInfo
             {
                 switch(font)
                 {
-                    case MyFontEnum.White: textAPIlines.AddIgnored("<color=255,255,255>"); break;
-                    case MyFontEnum.Red: textAPIlines.AddIgnored("<color=255,200,0>"); break;
-                    case MyFontEnum.Green: textAPIlines.AddIgnored("<color=0,200,0>"); break;
-                    case MyFontEnum.Blue: textAPIlines.AddIgnored("<color=50,200,255>"); break;
-                    case MyFontEnum.DarkBlue: textAPIlines.AddIgnored("<color=50,150,255>"); break;
-                    case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.AddIgnored("<color=255,0,0>"); break;
+                    case MyFontEnum.White: textAPIlines.Append("<color=255,255,255>"); break;
+                    case MyFontEnum.Red: textAPIlines.Append("<color=255,200,0>"); break;
+                    case MyFontEnum.Green: textAPIlines.Append("<color=0,200,0>"); break;
+                    case MyFontEnum.Blue: textAPIlines.Append("<color=50,200,255>"); break;
+                    case MyFontEnum.DarkBlue: textAPIlines.Append("<color=50,150,255>"); break;
+                    case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.Append("<color=255,0,0>"); break;
                 }
 
                 return textAPIlines;
@@ -2276,52 +2242,21 @@ namespace Digi.BuildInfo
 
             if(TextAPIEnabled)
             {
-                var px = GetStringSizeTextAPI(textAPIlines, startIndex: lastNewLineIndex) - ignorePx;
-
-                largestLineWidth = Math.Max(largestLineWidth, px);
-
-                lastNewLineIndex = textAPIlines.Length;
                 textAPIlines.Append('\n');
             }
             else
             {
-                var px = (int)(GetStringSizeNotif(notificationLines[line].str) - ignorePx);
+                var px = GetStringSizeNotif(notificationLines[line].str);
 
                 largestLineWidth = Math.Max(largestLineWidth, px);
 
                 notificationLines[line].lineWidthPx = px;
             }
-
-            ignorePx = 0;
         }
 
         private StringBuilder GetLine()
         {
             return (TextAPIEnabled ? textAPIlines : notificationLines[line].str);
-        }
-
-        public static float GetStringSizeTextAPI(StringBuilder s, int length = 0, int startIndex = 0)
-        {
-            var dict = instance.textAPI.FontDict;
-
-            if(length > 0)
-                startIndex = (s.Length - length);
-
-            int endLength = s.Length;
-            int width;
-            float totalWidth = 0;
-
-            for(int i = startIndex; i < endLength; ++i)
-            {
-                var c = s[i];
-
-                if(dict.TryGetValue(c, out width))
-                    totalWidth += (width / 45f) * instance.TextAPIScale * 1.2f;
-                else
-                    totalWidth += (15f / 45f) * instance.TextAPIScale * 1.2f;
-            }
-
-            return totalWidth;
         }
 
         public static int GetStringSizeNotif(StringBuilder builder)
@@ -2439,30 +2374,16 @@ namespace Digi.BuildInfo
 
         class CacheTextAPI : Cache
         {
-            public string text = null;
-            public Vector2D screenPos;
-            public int numLines = 0;
-            public float largestLineWidth;
+            public string Text = null;
+            public Vector2D TextPos;
+            public Vector2D TextSize;
 
-            public CacheTextAPI(string text, int numLines, float largestLineWidth, Vector2D screenPos)
+            public CacheTextAPI(string text, Vector2D textPos, Vector2D textSize)
             {
                 ResetExpiry();
-                this.text = text;
-                this.numLines = numLines;
-                this.largestLineWidth = largestLineWidth;
-                this.screenPos = screenPos;
-            }
-
-            public void InvalidateScreenPosition()
-            {
-                screenPos.X = -1;
-                screenPos.Y = -1;
-            }
-
-            public void ComputePositionIfNeeded()
-            {
-                if(screenPos.X < -0.5 && screenPos.Y < -0.5)
-                    screenPos = instance.GetScreenPosition(largestLineWidth);
+                Text = text;
+                TextPos = textPos;
+                TextSize = textSize;
             }
         }
 
