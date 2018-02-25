@@ -1138,6 +1138,7 @@ namespace Digi.BuildInfo
             {
                 // HACK hardcoded
                 AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine().Append("Max differential velocity for locking: ").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
                 return;
             }
 
