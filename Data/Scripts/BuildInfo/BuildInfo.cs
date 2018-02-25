@@ -1656,6 +1656,7 @@ namespace Digi.BuildInfo
             {
                 AddLine().Append("Power required: ").PowerFormat(lcd.RequiredPowerInput).Separator().ResourcePriority(lcd.ResourceSinkGroup).EndLine();
                 AddLine().Append("Screen resolution: ").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution).EndLine();
+                AddLine().Append("Font size limits - Min: ").Append(lcd.MinFontSize).Separator().Append("Max: ").Append(lcd.MaxFontSize).EndLine();
                 return;
             }
 
