@@ -44,90 +44,48 @@ namespace Digi.BuildInfo
             block.Orientation.GetMatrix(out matrix);
             matrix.TransposeRotationInPlace();
 
-            Vector3 vector = Vector3.Transform(normal, matrix);
+            Vector3I vector = Vector3I.Round(Vector3.Transform(normal, matrix));
             Vector3 position = Vector3.Zero;
 
             if(block.FatBlock != null)
                 position = pos - block.FatBlock.Position;
 
-            Vector3 value = Vector3.Transform(position, matrix) + def.Center;
+            Vector3I value = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
 
-            if(def.IsCubePressurized[Vector3I.Round(value)][Vector3I.Round(vector)])
+            if(def.IsCubePressurized[value][vector])
                 return true;
 
-            if(block.FatBlock != null)
+            var door = block.FatBlock as IMyDoor;
+
+            if(door != null)
+                return IsDoorFaceOpen(def, vector, door.OpenRatio <= 0.01f);
+
+            return false;
+        }
+
+        public static bool IsDoorFaceOpen(MyCubeBlockDefinition def, Vector3I vector, bool fullyClosed)
+        {
+            if(def is MyAirtightSlideDoorDefinition)
             {
-                MyCubeBlock fatBlock = (MyCubeBlock)block.FatBlock;
-                bool result;
+                return (fullyClosed && vector == Vector3I.Forward);
+            }
 
-                if(fatBlock is MyDoor)
+            if(def is MyAirtightDoorGenericDefinition)
+            {
+                return (fullyClosed && (vector == Vector3I.Forward || vector == Vector3I.Backward));
+            }
+
+            if(fullyClosed)
+            {
+                var mountPoints = def.MountPoints;
+
+                for(int i = 0; i < mountPoints.Length; i++)
                 {
-                    MyDoor myDoor = fatBlock as MyDoor;
-
-                    if(!myDoor.Open)
-                    {
-                        MyCubeBlockDefinition.MountPoint[] mountPoints = def.MountPoints;
-
-                        for(int i = 0; i < mountPoints.Length; i++)
-                        {
-                            MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
-
-                            if(vector == mountPoint.Normal)
-                            {
-                                result = false;
-                                return result;
-                            }
-                        }
-
-                        return true;
-                    }
-
-                    return false;
-                }
-                else if(fatBlock is MyAdvancedDoor)
-                {
-                    MyAdvancedDoor myAdvancedDoor = fatBlock as MyAdvancedDoor;
-
-                    if(myAdvancedDoor.FullyClosed)
-                    {
-                        MyCubeBlockDefinition.MountPoint[] mountPoints2 = def.MountPoints;
-                        for(int j = 0; j < mountPoints2.Length; j++)
-                        {
-                            MyCubeBlockDefinition.MountPoint mountPoint2 = mountPoints2[j];
-
-                            if(vector == mountPoint2.Normal)
-                            {
-                                result = false;
-                                return result;
-                            }
-                        }
-
-                        return true;
-                    }
-
-                    return false;
-                }
-                else if(fatBlock is MyAirtightSlideDoor)
-                {
-                    MyAirtightDoorGeneric myAirtightDoorGeneric = fatBlock as MyAirtightDoorGeneric;
-
-                    if(myAirtightDoorGeneric.IsFullyClosed && vector == Vector3.Forward)
-                        return true;
-
-                    return false;
-                }
-                else
-                {
-                    if(!(fatBlock is MyAirtightDoorGeneric))
+                    if(vector == mountPoints[i].Normal)
                         return false;
-
-                    MyAirtightDoorGeneric myAirtightDoorGeneric2 = fatBlock as MyAirtightDoorGeneric;
-
-                    if(myAirtightDoorGeneric2.IsFullyClosed && (vector == Vector3.Forward || vector == Vector3.Backward))
-                        return true;
-
-                    return false;
                 }
+
+                return true;
             }
 
             return false;

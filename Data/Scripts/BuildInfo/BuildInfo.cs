@@ -21,27 +21,103 @@ using VRageMath;
 
 using Draygo.API;
 
+// TODO: show top part (rotors, wheels, etc)
+
 namespace Digi.BuildInfo
 {
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
     public class BuildInfo : MySessionComponentBase
     {
-        public override void LoadData()
+        #region Constants
+        private const string MOD_NAME = "Build Info";
+        private const ulong MOD_WORKSHOP_ID = 514062285;
+        private const string MOD_SHORTNAME = "BuildInfo";
+
+        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged.
+        private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
+        private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
+        private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
+        private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
+
+        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.97, 0.8); // textAPI default left side position
+        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.97 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
+        private readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.97, 0.97); // textAPI default right side position
+        private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.97); // textAPI default right side position when using a really wide resolution
+
+        private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
+        private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
+        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
+
+        private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
+        private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
+
+        private readonly Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * 0.7f;
+        private readonly Color MOUNTPOINT_DEFAULT_COLOR = new Color(55, 55, 255) * 0.7f;
+        private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * 0.7f;
+
+        public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
+        public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
+        public readonly Color COLOR_NORMAL = Color.White;
+        public readonly Color COLOR_GOOD = Color.Lime;
+        public readonly Color COLOR_BAD = Color.Red;
+        public readonly Color COLOR_WARNING = Color.Yellow;
+        public readonly Color COLOR_UNIMPORTANT = Color.Gray;
+        public readonly Color COLOR_PART = new Color(55, 255, 155);
+        public readonly Color COLOR_MOD = Color.DeepSkyBlue;
+
+        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
         {
-            instance = this;
-            Log.SetUp("Build Info", 514062285, "BuildInfo");
+            typeof(MyObjectBuilder_Ore),
+            typeof(MyObjectBuilder_Ingot),
+            typeof(MyObjectBuilder_Component)
+        };
+
+        enum TextAPIMsgIds
+        {
+            AXIS_Z,
+            AXIS_X,
+            AXIS_Y,
+            DRILL_MINE,
+            DRILL_CUTOUT,
+            SHIP_TOOL,
+            DOOR_AIRTIGHT,
         }
 
+        private const string HELP =
+            "/buildinfo reload\n    reloads the config.\n" +
+            "/buildinfo help\n    shows this window.\n" +
+            "/buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
+            "\n" +
+            "The config is located in:\n" +
+            "%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg\n" +
+            "\n" +
+            "Airtightness & Mount points explained:\n" +
+            "  Mount points are used for determining what surfaces can be\n" +
+            "    mounted by other mountable surfaces.\n" +
+            "  The blue face is used for auto rotation when placing.\n" +
+            "\n" +
+            "  Airtightness also uses the mount points system.\n" +
+            "  If a face (defined by a single grid cell) has an entire\n" +
+            "    mount point then that face can seal against void.\n" +
+            "  Additionally, if 2 blocks' mount points combined make a full face\n" +
+            "    then that combination also creates an airtight seal.\n" +
+            "\n";
+        #endregion
+
+        #region Fields
         public static BuildInfo instance = null;
         public bool init = false;
         public bool isThisDS = false;
         public Settings settings = null;
         public LeakInfo leakInfo = null; // leak info component
         private short tick = 0; // global incrementing gamelogic tick
-        private bool showBuildInfo = true;
-        private bool showMountPoints = false;
+        private bool drawBlockVolumes = false;
+        private bool blockDataDraw = false;
+        private bool doorAirtightBlink = false;
+        private int doorAirtightBlinkTick = 0;
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
-        private bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
+        private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
+        public bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
         private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
@@ -63,10 +139,12 @@ namespace Digi.BuildInfo
         private bool hudVisible = true;
         private double aspectRatio = 1;
         private float hudBackgroundOpacity = 1f;
+        private StringBuilder textAPIlines = new StringBuilder();
         private StringBuilder textSB = new StringBuilder();
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private StringBuilder textAPIlines = new StringBuilder();
+        private HudAPIv2.SpaceMessage[] textAPILabels;
+        private HudAPIv2.SpaceMessage[] textAPIShadows;
         private readonly Dictionary<MyDefinitionId, Cache> cachedInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
 
         private float TextAPIScale
@@ -94,44 +172,19 @@ namespace Digi.BuildInfo
         private readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
 
         // cached block data that is inaccessible via definitions (like thruster flames)
-        public readonly Dictionary<MyDefinitionId, IBlockData> blockData = new Dictionary<MyDefinitionId, IBlockData>();
+        public readonly Dictionary<MyDefinitionId, BlockDataBase> blockData = new Dictionary<MyDefinitionId, BlockDataBase>();
 
         // various temporary caches
         private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>();
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
+        public readonly Dictionary<string, IMyModelDummy> dummies = new Dictionary<string, IMyModelDummy>();
+        #endregion
 
-        // constants
-        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged.
-        private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
-        private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
-        private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
-        private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
-        private const int TEXT_ID = 1; // textAPI ID
-        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9825, 0.8); // textAPI default left side position
-        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9825 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
-        private readonly Vector2D MENU_HUDPOS = new Vector2D(-0.3, 0.4); // textAPI menu position
-        private readonly Vector2D MENU_HUDPOS_WIDE = new Vector2D(-0.3 / 3f, 0.4); // textAPI menu position when using a really wide resolution
-        private const float BACKGROUND_EDGE = 0.05f; // added padding edge around the text boundary for the background image
-        private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
-        private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
-        private readonly Color MOUNTPOINT_COLOR = Color.Yellow * 0.75f;
-        private readonly Color MOUNTPOINT_COLOR_DEFAULT = Color.Blue * 0.75f;
-        private readonly MyStringId MOUNTPOINT_MATERIAL = MyStringId.GetOrCompute("Square");
-
-        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
+        public override void LoadData()
         {
-            typeof(MyObjectBuilder_Ore),
-            typeof(MyObjectBuilder_Ingot),
-            typeof(MyObjectBuilder_Component)
-        };
-
-        private const string HELP_COMMANDS =
-            "/buildinfo reload\n    reloads the config.\n" +
-            "/buildinfo help\n    shows this window.\n" +
-            "/buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
-            "\n" +
-            "The config is located in:\n" +
-            "%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg";
+            instance = this;
+            Log.SetUp(MOD_NAME, MOD_WORKSHOP_ID, MOD_SHORTNAME);
+        }
 
         public void Init()
         {
@@ -145,6 +198,10 @@ namespace Digi.BuildInfo
                 return;
             }
 
+            int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
+            textAPILabels = new HudAPIv2.SpaceMessage[count];
+            textAPIShadows = new HudAPIv2.SpaceMessage[count];
+
             ComputeCharacterSizes();
             ComputeResourceGroups();
             UpdateConfigValues();
@@ -155,6 +212,8 @@ namespace Digi.BuildInfo
 
             textAPI = new HudAPIv2();
 
+            // DEBUG experiment - block detection without gamelogic comp
+            //MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
         }
@@ -210,6 +269,41 @@ namespace Digi.BuildInfo
             Log.Close();
         }
 
+        // DEBUG experiment - block detection without gamelogic comp
+#if false
+        private readonly Dictionary<MyObjectBuilderType, Type> blockTypesMonitor = new Dictionary<MyObjectBuilderType, Type>(MyObjectBuilderType.Comparer)
+        {
+            [typeof(MyObjectBuilder_Thrust)] = typeof(BlockDataThrust),
+            [typeof(MyObjectBuilder_ShipWelder)] = typeof(BlockDataShipWelder),
+        };
+
+        private void OnEntityAdd(IMyEntity ent)
+        {
+            try
+            {
+                var grid = ent as MyCubeGrid;
+
+                if(grid == null)
+                    return;
+
+                foreach(var block in grid.GetFatBlocks())
+                {
+                    var defId = block.BlockDefinition.Id;
+                    Type type;
+
+                    if(blockTypesMonitor.TryGetValue(defId.TypeId, out type))
+                    {
+                        BlockDataBase.SetData(type, block);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+#endif
+
         public void MessageEntered(string msg, ref bool send)
         {
             try
@@ -223,15 +317,7 @@ namespace Digi.BuildInfo
 
                     if(msg.StartsWith("reload", StringComparison.OrdinalIgnoreCase))
                     {
-                        if(settings.Load())
-                            MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", Log.modName, 0, MyFontEnum.Green);
-                        else
-                            MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", Log.modName, 0, MyFontEnum.Green);
-
-                        settings.Save();
-
-                        HideText();
-                        cachedInfoTextAPI.Clear();
+                        ReloadConfig();
                         return;
                     }
 
@@ -245,7 +331,7 @@ namespace Digi.BuildInfo
 
                     if(msg.StartsWith("help", StringComparison.OrdinalIgnoreCase))
                     {
-                        MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod Commands", "", "You can type these commands in the chat.", HELP_COMMANDS, null, "Close");
+                        ShowHelp();
                         return;
                     }
 
@@ -257,6 +343,24 @@ namespace Digi.BuildInfo
             {
                 Log.Error(e);
             }
+        }
+
+        private void ReloadConfig()
+        {
+            if(settings.Load())
+                MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", Log.modName, 0, MyFontEnum.Green);
+            else
+                MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", Log.modName, 0, MyFontEnum.Green);
+
+            settings.Save();
+
+            HideText();
+            cachedInfoTextAPI.Clear();
+        }
+
+        private void ShowHelp()
+        {
+            MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod Commands", "", "You can type these commands in the chat.", HELP, null, "Close");
         }
 
         private void GuiControlRemoved(object obj)
@@ -305,8 +409,15 @@ namespace Digi.BuildInfo
 
                     if(showMenu)
                     {
+                        if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.Escape))
+                        {
+                            showMenu = false;
+                            menuNeedsUpdate = true;
+                            return;
+                        }
+
                         bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
-                        int usableMenuItems = (canUseTextAPI ? 6 : 5);
+                        int usableMenuItems = (canUseTextAPI ? 8 : 7);
                         var move = Vector3.Round(input.GetPositionDelta(), 1);
 
                         if(Math.Abs(previousMove.Z) < 0.01f)
@@ -339,22 +450,32 @@ namespace Digi.BuildInfo
                                     menuNeedsUpdate = true;
                                     break;
                                 case 1:
-                                    showBuildInfo = !showBuildInfo;
-                                    if(buildInfoNotification == null)
-                                        buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-                                    buildInfoNotification.Text = (showBuildInfo ? "Build info ON" : "Build info OFF");
-                                    buildInfoNotification.Show();
+                                    showMenu = false;
+                                    menuNeedsUpdate = true;
+                                    ShowHelp();
                                     break;
                                 case 2:
-                                    showMountPoints = !showMountPoints;
+                                    settings.showTextInfo = !settings.showTextInfo;
+                                    settings.Save();
+
+                                    if(buildInfoNotification == null)
+                                        buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
+                                    buildInfoNotification.Text = (settings.showTextInfo ? "Text info ON (saved to config)" : "Text info OFF (saved to config)");
+                                    buildInfoNotification.Show();
                                     break;
                                 case 3:
-                                    MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
+                                    drawBlockVolumes = !drawBlockVolumes;
                                     break;
                                 case 4:
-                                    SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                                    MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
                                     break;
                                 case 5:
+                                    SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                                    break;
+                                case 6:
+                                    ReloadConfig();
+                                    break;
+                                case 7:
                                     useTextAPI = !useTextAPI;
                                     HideText();
                                     break;
@@ -379,13 +500,13 @@ namespace Digi.BuildInfo
                         }
                         else if(input.IsAnyCtrlKeyPressed())
                         {
-                            showMountPoints = !showMountPoints;
+                            drawBlockVolumes = !drawBlockVolumes;
                             menuNeedsUpdate = true;
 
                             if(mountPointsNotification == null)
                                 mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                            mountPointsNotification.Text = (showMountPoints ? "Mount points view ON" : "Mount points view OFF");
+                            mountPointsNotification.Text = (drawBlockVolumes ? "Block Volumes draw ON" : "Block Volumes draw OFF");
                             mountPointsNotification.Show();
                         }
                         else if(input.IsAnyAltKeyPressed())
@@ -442,24 +563,7 @@ namespace Digi.BuildInfo
                 if(!init || !hudVisible)
                     return;
 
-                if(showMountPoints)
-                {
-                    var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-
-                    if(def != null && MyCubeBuilder.Static.IsActivated)
-                    {
-                        var box = MyCubeBuilder.Static.GetBuildBoundingBox();
-                        var m = MatrixD.CreateFromQuaternion(box.Orientation);
-                        m.Translation = box.Center;
-
-                        var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-
-                        MyCubeBuilder.DrawMountPoints(gridSize, def, ref m);
-
-                        // HACK drawing my own opaque mount points because vanilla are just wireframe now and are not as readable.
-                        DrawMountPoints(gridSize, def, ref m);
-                    }
-                }
+                DrawBlockVolumes();
 
                 if(leakInfo != null)
                     leakInfo.Draw();
@@ -511,106 +615,381 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void DrawMountPoints(float cubeSize, MyCubeBlockDefinition def, ref MatrixD drawMatrix)
+        private void DrawBlockVolumes()
         {
-            var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-
-            if(mountPoints == null)
-                return;
-
-            // copied from game code...
-            // TODO optimize
-
-            var minSize = (def.CubeSize == MyCubeSize.Large ? 0.1 : 0.025); // a minimum size to have some thickness
-            var center = def.Center;
-            var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cubeSize) * drawMatrix;
-
-            for(int i = 0; i < mountPoints.Length; i++)
+            if(drawBlockVolumes)
             {
-                var mountPoint = mountPoints[i];
+                var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
-                var startLocal = mountPoint.Start - center;
-                var endLocal = mountPoint.End - center;
+                if(def != null && MyCubeBuilder.Static.IsActivated)
+                {
+                    // needed to hide text messages that are no longer used while other stuff still draws
+                    for(int i = 0; i < textAPILabels.Length; ++i)
+                    {
+                        var msgObj = textAPILabels[i];
 
-                var color = mountPoint.Default ? MOUNTPOINT_COLOR_DEFAULT : MOUNTPOINT_COLOR;
+                        if(msgObj != null)
+                        {
+                            msgObj.Visible = false;
+                            textAPIShadows[i].Visible = false;
+                        }
+                    }
 
-                var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cubeSize, Vector3.Max(startLocal, endLocal) * cubeSize);
-                var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+                    blockDataDraw = true;
 
-                var m = MatrixD.CreateFromQuaternion(obb.Orientation);
-                m.Right *= Math.Max(obb.HalfExtent.X * 2, minSize);
-                m.Up *= Math.Max(obb.HalfExtent.Y * 2, minSize);
-                m.Forward *= Math.Max(obb.HalfExtent.Z * 2, minSize);
-                m.Translation = obb.Center;
+                    var camera = MyAPIGateway.Session.Camera;
 
-                // draw OBB
-                var scale = m.Scale;
-                var halfExtent = scale / 2.0;
-                m.Right /= scale.X;
-                m.Up /= scale.Y;
-                m.Forward /= scale.Z;
-                var box = new BoundingBoxD(-halfExtent, halfExtent);
-                MySimpleObjectDraw.DrawTransparentBox(ref m, ref box, ref color, MySimpleObjectRasterizer.Solid, 1, 0.01f, MOUNTPOINT_MATERIAL, null, true);
+                    #region Draw mount points
+                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    var drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
+
+                    if(MyCubeBuilder.Static.DynamicMode)
+                        drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
+                    else
+                        drawMatrix.Translation = box.Center;
+
+                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+
+                    if(TextAPIEnabled)
+                    {
+                        DrawMountPointAxixText(def, gridSize, ref drawMatrix);
+                    }
+                    else
+                    {
+                        // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn
+                        var mp = def.MountPoints;
+                        def.MountPoints = BLANK_MOUNTPOINTS;
+                        MyCubeBuilder.DrawMountPoints(gridSize, def, ref drawMatrix);
+                        def.MountPoints = mp;
+                    }
+
+                    var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
+                    var center = def.Center;
+                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * gridSize) * drawMatrix;
+                    var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+
+                    if(mountPoints != null)
+                    {
+                        for(int i = 0; i < mountPoints.Length; i++)
+                        {
+                            var mountPoint = mountPoints[i];
+                            var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+
+                            DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
+                        }
+                    }
+                    #endregion
+
+                    #region Draw drill mining/cutout radius
+                    var drill = def as MyShipDrillDefinition;
+                    if(drill != null)
+                    {
+                        const float lineHeight = 0.3f;
+                        const int wireDivRatio = 20;
+                        var colorMine = Color.Lime;
+                        var colorMineFace = colorMine * 0.3f;
+                        var colorCut = Color.Red;
+                        var colorCutFace = colorCut * 0.3f;
+
+                        var mineMatrix = drawMatrix;
+                        mineMatrix.Translation += mineMatrix.Forward * drill.SensorOffset;
+                        MySimpleObjectDraw.DrawTransparentSphere(ref mineMatrix, drill.SensorRadius, ref colorMineFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
+
+                        bool showCutOut = (Math.Abs(drill.SensorRadius - drill.CutOutRadius) > 0.0001f || Math.Abs(drill.SensorOffset - drill.CutOutOffset) > 0.0001f);
+
+                        if(TextAPIEnabled)
+                        {
+                            var labelDir = mineMatrix.Down;
+                            var sphereEdge = mineMatrix.Translation + (labelDir * drill.SensorRadius);
+                            DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, (showCutOut ? "Mining radius" : "Mining/cutout radius"), colorMine, constantTextUpdate: true, lineHeight: lineHeight, underlineLength: (showCutOut ? 0.75f : 1f));
+                        }
+
+                        if(showCutOut)
+                        {
+                            var cutMatrix = drawMatrix;
+                            cutMatrix.Translation += cutMatrix.Forward * drill.CutOutOffset;
+                            MySimpleObjectDraw.DrawTransparentSphere(ref cutMatrix, drill.CutOutRadius, ref colorCutFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
+
+                            if(TextAPIEnabled)
+                            {
+                                var labelDir = cutMatrix.Left;
+                                var sphereEdge = cutMatrix.Translation + (labelDir * drill.CutOutRadius);
+                                DrawLineLabel(TextAPIMsgIds.DRILL_CUTOUT, sphereEdge, labelDir, "Cutout radius", colorCut, lineHeight: lineHeight);
+                            }
+                        }
+                    }
+                    #endregion
+
+                    #region Door airtightness toggle blinking
+                    if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition)
+                    {
+                        if(++doorAirtightBlinkTick >= 30)
+                        {
+                            doorAirtightBlinkTick = 0;
+                            doorAirtightBlink = !doorAirtightBlink;
+                        }
+
+                        if(TextAPIEnabled)
+                        {
+                            // TODO: optimize
+                            MatrixD matrix = MatrixD.CreateTranslation(def.Center - (def.Size * 0.5f)) * MatrixD.CreateScale(gridSize) * drawMatrix;
+                            Base6Directions.Direction dir = Base6Directions.Direction.Left;
+                            Vector3D corner = Vector3D.Zero;
+                            Vector3D vFw = Vector3.Forward;
+                            corner = def.MountPointLocalToBlockLocal(corner, dir);
+                            corner = Vector3D.Transform(corner, matrix);
+                            vFw = def.MountPointLocalNormalToBlockLocal(vFw, dir);
+                            vFw = Vector3D.TransformNormal(vFw, matrix);
+
+                            DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, corner, vFw, "Airtight when door is closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.2f, underlineLength: 2f);
+                        }
+
+                        if(doorAirtightBlink)
+                        {
+                            var mp = new MyCubeBlockDefinition.MountPoint()
+                            {
+                                Enabled = false,
+                                Default = false,
+                                Normal = Vector3I.Forward,
+                                Start = new Vector3(0, 0, 0),
+                                End = new Vector3(def.Size.X, def.Size.Y, 0),
+                            };
+
+                            DrawMountPoint(mp, gridSize, ref center, ref mainMatrix, ref MOUNTPOINT_DOOR_COLOR, minSize);
+
+                            if(!(def is MyAirtightSlideDoorDefinition))
+                            {
+                                mp = new MyCubeBlockDefinition.MountPoint()
+                                {
+                                    Enabled = false,
+                                    Default = false,
+                                    Normal = Vector3I.Backward,
+                                    Start = new Vector3(0, 0, def.Size.Z),
+                                    End = new Vector3(def.Size.X, def.Size.Y, def.Size.Z),
+                                };
+
+                                DrawMountPoint(mp, gridSize, ref center, ref mainMatrix, ref MOUNTPOINT_DOOR_COLOR, minSize);
+                            }
+                        }
+                    }
+                    #endregion
+
+                    bool isShipWelder = def is MyShipWelderDefinition;
+                    if(isShipWelder || def is MyShipGrinderDefinition)
+                    {
+                        // TODO cache this somehow?
+                        var data = BlockDataBase.TryGetData<BlockDataShipToolBase>(def);
+
+                        if(data != null)
+                        {
+                            const float lineHeight = 0.3f;
+                            const int wireDivRatio = 20;
+                            var color = Color.Lime;
+                            var colorFace = color * 0.3f;
+                            var radius = data.sphereDummy.Radius;
+
+                            var sphereMatrix = drawMatrix;
+                            sphereMatrix.Translation = Vector3D.Transform(data.sphereDummy.Center, drawMatrix);
+
+                            MySimpleObjectDraw.DrawTransparentSphere(ref sphereMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
+
+                            if(TextAPIEnabled)
+                            {
+                                var labelDir = sphereMatrix.Down;
+                                var sphereEdge = sphereMatrix.Translation + (labelDir * radius);
+                                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, (isShipWelder ? "Welding radius" : "Grinding radius"), color, constantTextUpdate: true, lineHeight: lineHeight, underlineLength: 0.75f);
+                            }
+                        }
+                    }
+
+                    // TODO same for welders, grinders, LGs, connectors, and who knows what else...
+
+                    return;
+                }
             }
+
+            // not drawing
+            if(blockDataDraw)
+            {
+                blockDataDraw = false;
+
+                for(int i = 0; i < textAPILabels.Length; ++i)
+                {
+                    var msgObj = textAPILabels[i];
+
+                    if(msgObj != null)
+                    {
+                        msgObj.Visible = false;
+                        textAPIShadows[i].Visible = false;
+                    }
+                }
+            }
+        }
+
+        private const double SHADOW_OFFSET = 0.007;
+
+        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, string text, Color color, bool constantTextUpdate = false, float lineHeight = 0.3f, float lineThick = 0.005f, float underlineLength = 0.75f)
+        {
+            var camera = MyAPIGateway.Session.Camera;
+            var end = start + direction * lineHeight;
+
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, lineHeight, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, start + camera.WorldMatrix.Right * SHADOW_OFFSET + camera.WorldMatrix.Down * SHADOW_OFFSET, direction, lineHeight, lineThick);
+
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, end + camera.WorldMatrix.Right * SHADOW_OFFSET + camera.WorldMatrix.Down * SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
+
+            DrawSimpleLabel(id, end, text, color, constantTextUpdate);
+        }
+
+        private void DrawSimpleLabel(TextAPIMsgIds id, Vector3D worldPos, string text, Color textColor, bool updateText = false)
+        {
+            var i = (int)id;
+            var camera = MyAPIGateway.Session.Camera;
+            var msgObj = textAPILabels[i];
+            HudAPIv2.SpaceMessage shadowObj = textAPIShadows[i];
+
+            if(msgObj == null)
+            {
+                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), worldPos, Vector3D.Up, Vector3D.Left, 0.1);
+                msgObj.Offset = new Vector2D(0.1, 0.1);
+
+                textAPIShadows[i] = shadowObj = new HudAPIv2.SpaceMessage(new StringBuilder(), worldPos, Vector3D.Up, Vector3D.Left, 0.1);
+                shadowObj.Offset = msgObj.Offset + new Vector2D(SHADOW_OFFSET, -SHADOW_OFFSET);
+
+                updateText = true;
+            }
+
+            if(updateText)
+            {
+                msgObj.Message.Clear().Append(textColor.ToTextAPIColor()).Append(text);
+                shadowObj.Message.Clear().Append(Color.Black.ToTextAPIColor()).Append(text);
+            }
+
+            msgObj.Visible = true;
+            msgObj.WorldPosition = worldPos;
+            msgObj.Left = camera.WorldMatrix.Left;
+            msgObj.Up = camera.WorldMatrix.Up;
+
+            shadowObj.Visible = true;
+            shadowObj.WorldPosition = worldPos;
+            shadowObj.Left = camera.WorldMatrix.Left;
+            shadowObj.Up = camera.WorldMatrix.Up;
+        }
+
+        private void DrawMountPoint(MyCubeBlockDefinition.MountPoint mountPoint, float cubeSize, ref Vector3I center, ref MatrixD mainMatrix, ref Color colorFace, double minSize)
+        {
+            var startLocal = mountPoint.Start - center;
+            var endLocal = mountPoint.End - center;
+
+            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cubeSize, Vector3.Max(startLocal, endLocal) * cubeSize);
+            var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+
+            var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+            m.Right *= Math.Max(obb.HalfExtent.X * 2, minSize);
+            m.Up *= Math.Max(obb.HalfExtent.Y * 2, minSize);
+            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, minSize);
+            m.Translation = obb.Center;
+
+            // draw OBB
+            var scale = m.Scale;
+            var halfExtent = scale / 2.0;
+            m.Right /= scale.X;
+            m.Up /= scale.Y;
+            m.Forward /= scale.Z;
+            var box = new BoundingBoxD(-halfExtent, halfExtent);
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref box, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
+        }
+
+        private void DrawMountPointAxixText(MyCubeBlockDefinition def, float gridSize, ref MatrixD drawMatrix)
+        {
+            var matrix = MatrixD.CreateScale(def.Size * gridSize);
+            matrix.Translation = (def.Center - (def.Size * 0.5f));
+            matrix = matrix * drawMatrix;
+
+            DrawAxis(TextAPIMsgIds.AXIS_Z, ref Vector3.Forward, Color.Blue, ref drawMatrix, ref matrix);
+            DrawAxis(TextAPIMsgIds.AXIS_X, ref Vector3.Right, Color.Red, ref drawMatrix, ref matrix);
+            DrawAxis(TextAPIMsgIds.AXIS_Y, ref Vector3.Up, Color.Lime, ref drawMatrix, ref matrix);
+        }
+
+        private string[] AXIS_LABELS = new string[]
+        {
+            "Forward",
+            "Right",
+            "Up",
+        };
+
+        private void DrawAxis(TextAPIMsgIds id, ref Vector3 direction, Color color, ref MatrixD drawMatrix, ref MatrixD matrix)
+        {
+            var camera = MyAPIGateway.Session.Camera;
+            var dir = Vector3D.TransformNormal(direction * 0.5f, matrix);
+            var textPos = drawMatrix.Translation + dir * 1.25;
+            var text = AXIS_LABELS[(int)id];
+            DrawLineLabel(id, drawMatrix.Translation, dir, text, color, lineHeight: 1.5f, underlineLength: text.Length * 0.1f);
+        }
+
+        private StringBuilder AddMenuItemLine(int item, bool enabled = true)
+        {
+            AddLine(font: (menuSelectedItem == item ? MyFontEnum.Green : (enabled ? MyFontEnum.White : MyFontEnum.Red)));
+
+            if(menuSelectedItem == item)
+                GetLine().SetTextAPIColor(COLOR_GOOD).Append("  > ");
+            else
+                GetLine().SetTextAPIColor(enabled ? COLOR_NORMAL : COLOR_UNIMPORTANT).Append(' ', 6);
+
+            return GetLine();
         }
 
         private void GenerateMenuText()
         {
             ResetLines();
 
-            int showMenuItems = 6;
             bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
             var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
 
             AddLine(MyFontEnum.Blue).Append("Build info settings:").EndLine();
 
-            for(int i = 0; i < showMenuItems; i++)
-            {
-                AddLine(font: (menuSelectedItem == i ? MyFontEnum.Green : (i == 5 && !canUseTextAPI ? MyFontEnum.Red : MyFontEnum.White)));
+            #region Menu items
+            int i = 0;
 
-                GetLine().Append("[ ");
+            AddMenuItemLine(i++).Append("Close menu");
+            if(inputName != null)
+                GetLine().Append("   (").Append(inputName).Append(")");
+            GetLine().ResetTextAPIColor().EndLine();
 
-                switch(i)
-                {
-                    case 0:
-                        GetLine().Append("Close menu");
-                        if(inputName != null)
-                            GetLine().Append("   (" + inputName + ")");
-                        break;
-                    case 1:
-                        GetLine().Append("Show build info: ").Append(showBuildInfo ? "ON" : "OFF");
-                        break;
-                    case 2:
-                        GetLine().Append("Show mount points: ").Append(showMountPoints ? "ON" : "OFF");
-                        if(inputName != null)
-                            GetLine().Append("   (Ctrl+" + inputName + ")");
-                        break;
-                    case 3:
-                        GetLine().Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
-                        if(inputName != null)
-                            GetLine().Append("   (Shift+" + inputName + ")");
-                        break;
-                    case 4:
-                        GetLine().Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
-                        if(inputName != null)
-                            GetLine().Append("   (Alt+" + inputName + ")");
-                        break;
-                    case 5:
-                        GetLine().Append("Use TextAPI: ");
-                        if(canUseTextAPI)
-                            GetLine().Append(useTextAPI ? "ON" : "OFF");
-                        else
-                            GetLine().Append("OFF (Mod not detected)");
-                        break;
-                }
+            AddMenuItemLine(i++).Append("Open help window").Append("   (/buildinfo help)").ResetTextAPIColor().EndLine();
 
-                GetLine().Append(" ]").EndLine();
-            }
+            AddMenuItemLine(i++).Append("Text info: ").Append(settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
 
-            AddLine(MyFontEnum.Blue).Append("Use movement controls to navigate and edit settings.").EndLine();
+            AddMenuItemLine(i++).Append("Draw block volumes (mounts, airtight, etc): ").Append(drawBlockVolumes ? "ON" : "OFF");
+            if(inputName != null)
+                GetLine().Append("   (Ctrl+" + inputName + ")");
+            GetLine().ResetTextAPIColor().EndLine();
+
+            AddMenuItemLine(i++).Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
+            if(inputName != null)
+                GetLine().Append("   (Shift+" + inputName + ")");
+            GetLine().ResetTextAPIColor().EndLine();
+
+            AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
+            if(inputName != null)
+                GetLine().Append("   (Alt+" + inputName + ")");
+            GetLine().ResetTextAPIColor().EndLine();
+
+            AddMenuItemLine(i++).Append("Reload settings file").ResetTextAPIColor().EndLine();
+
+            AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
+            if(canUseTextAPI)
+                GetLine().Append(useTextAPI ? "ON" : "OFF");
+            else
+                GetLine().Append("OFF (Mod not detected)");
+            GetLine().ResetTextAPIColor().EndLine();
+            #endregion
+
+            AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("Use movement controls to navigate and edit settings.").ResetTextAPIColor().EndLine();
 
             if(inputName == null)
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("The 'Open voxel hand settings' control is not assigned!").EndLine();
+                AddLine(MyFontEnum.ErrorMessageBoxCaption).SetTextAPIColor(COLOR_BAD).Append("The 'Open voxel hand settings' control is not assigned!").ResetTextAPIColor().EndLine();
 
             EndAddedLines();
         }
@@ -619,36 +998,16 @@ namespace Digi.BuildInfo
         {
             ResetLines();
 
-            int airTightFaces = 0;
-            int totalFaces = 0;
-            var defTypeId = def.Id.TypeId;
-            var isDoor = (defTypeId == typeof(MyObjectBuilder_Door)
-                        || defTypeId == typeof(MyObjectBuilder_AirtightDoorGeneric)
-                        || defTypeId == typeof(MyObjectBuilder_AirtightHangarDoor)
-                        || defTypeId == typeof(MyObjectBuilder_AirtightSlideDoor)
-                        || defTypeId == typeof(MyObjectBuilder_AdvancedDoor));
-            var airTight = IsAirTight(def, ref airTightFaces, ref totalFaces);
-            var deformable = (def.BlockTopology == MyBlockTopology.Cube);
-            var assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
-            var buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
-            var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-            var grindRatio = def.DisassembleRatio;
-
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
-                grindRatio *= 3.3f;
-
             #region Block name line only for textAPI
             if(TextAPIEnabled)
             {
-                AddLine(MyFontEnum.DarkBlue).Append(def.DisplayNameText);
+                AddLine().SetTextAPIColor(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
                 var stages = def.BlockStages;
 
-                const string variantColor = "<color=0,200,0>";
-
                 if(stages != null && stages.Length > 0)
                 {
-                    GetLine().Append("  ").Append(variantColor).Append("(Variant 1 of ").Append(stages.Length + 1).Append(")");
+                    GetLine().Append("  ").SetTextAPIColor(COLOR_BLOCKVARIANTS).Append("(Variant 1 of ").Append(stages.Length + 1).Append(")");
                 }
                 else
                 {
@@ -667,62 +1026,22 @@ namespace Digi.BuildInfo
                             }
                         }
 
-                        GetLine().Append("  ").Append(variantColor).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
+                        GetLine().Append("  ").SetTextAPIColor(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
                     }
                 }
 
-                GetLine().EndLine();
+                GetLine().ResetTextAPIColor().EndLine();
             }
             #endregion
 
-            #region Line 1
-            AddLine().MassFormat(def.Mass).Separator().VectorFormat(def.Size).Separator().TimeFormat(assembleTime / weldMul).MultiplierFormat(weldMul);
-
-            if(grindRatio > 1)
-                GetLine().Separator().Append("Deconstruct speed: ").PercentFormat(1f / grindRatio);
-
-            if(!buildModels)
-                GetLine().Separator().Append("(No construction models)");
-
-            GetLine().EndLine();
-            #endregion
-
-            #region Line 2
-            AddLine(font: (deformable ? MyFontEnum.Blue : MyFontEnum.White)).Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator().Append("Deformable: ");
-            if(deformable)
-                GetLine().Append("Yes (").NumFormat(def.DeformationRatio, 3).Append(")");
-            else
-                GetLine().Append("No");
-            GetLine().EndLine();
-            #endregion
-
-            #region Line 3
-            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).Append("Air-tight faces: ");
-
-            if(airTight)
-            {
-                GetLine().Append("All");
-            }
-            else
-            {
-                if(airTightFaces == 0)
-                    GetLine().Append("None");
-                else
-                    GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
-            }
-
-            if(isDoor)
-                GetLine().Append(" (front+back are toggled)");
-
-            GetLine().EndLine();
-            #endregion
+            AppendBasics(def, part: false);
 
             #region Optional - different item gain on grinding
             foreach(var comp in def.Components)
             {
                 if(comp.DeconstructItem != comp.Definition)
                 {
-                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
+                    AddLine(MyFontEnum.ErrorMessageBoxCaption).SetTextAPIColor(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetTextAPIColor().EndLine();
                 }
             }
             #endregion
@@ -735,28 +1054,101 @@ namespace Digi.BuildInfo
             //}
 
             #region Optional - creative-only stuff
-            if(MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste) // creative game mode OR spacemaster's creative tools are enabled
+            if(MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste) // HACK Session.EnableCopyPaste used as spacemaster check
             {
                 if(def.MirroringBlock != null)
                 {
                     MyCubeBlockDefinition mirrorDef;
-
                     if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(new MyDefinitionId(def.Id.TypeId, def.MirroringBlock), out mirrorDef))
-                        AddLine(MyFontEnum.Blue).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText).EndLine();
+                        AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_GOOD).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText).EndLine();
                     else
-                        AddLine(MyFontEnum.Red).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)").EndLine();
+                        AddLine(MyFontEnum.Red).SetTextAPIColor(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)").EndLine();
                 }
             }
             #endregion
 
             #region Details on last lines
-            if(defTypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
+            if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
                 GenerateAdvancedBlockText(def);
 
             if(!def.Context.IsBaseGame)
-                AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(def.Context).EndLine();
+                AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).ResetTextAPIColor().EndLine();
 
             EndAddedLines();
+            #endregion
+        }
+
+        private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
+        {
+            int airTightFaces = 0;
+            int totalFaces = 0;
+            var airTight = IsAirTight(def, ref airTightFaces, ref totalFaces);
+            var deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
+            var assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
+            var buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
+            var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+            var grindRatio = def.DisassembleRatio;
+
+            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
+                grindRatio *= 3.3f;
+
+            string padding = (part ? (TextAPIEnabled ? "        - " : "       - ") : "");
+
+            if(part)
+                AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).ResetTextAPIColor().EndLine();
+
+            #region Line 1
+            AddLine().Append(padding).SetTextAPIColor(Color.Yellow).MassFormat(def.Mass).ResetTextAPIColor().Separator()
+                .VectorFormat(def.Size).Separator()
+                .TimeFormat(assembleTime / weldMul).SetTextAPIColor(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetTextAPIColor();
+
+            if(Math.Abs(grindRatio - 1) >= 0.0001f)
+                GetLine().Separator().SetTextAPIColor(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").PercentFormat(1f / grindRatio).ResetTextAPIColor();
+
+            if(!buildModels)
+                GetLine().Separator().SetTextAPIColor(COLOR_WARNING).Append("(No construction models)").ResetTextAPIColor();
+
+            GetLine().EndLine();
+            #endregion
+
+            #region Line 2
+            AddLine().Append(padding).Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
+
+            GetLine().SetTextAPIColor(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
+            if(deformable)
+                GetLine().Append("Yes (").PercentFormat(def.DeformationRatio).Append(")");
+            else
+                GetLine().Append("No");
+
+            GetLine().ResetTextAPIColor();
+
+            if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
+            {
+                GetLine().Separator()
+                    .SetTextAPIColor(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
+                    .Append("Damage intake: ").PercentFormat(def.GeneralDamageMultiplier)
+                    .ResetTextAPIColor();
+            }
+
+            GetLine().EndLine();
+            #endregion
+
+            #region Line 3
+            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).Append(padding).Append("Air-tight: ");
+
+            if(airTight)
+            {
+                GetLine().Append("on all sides");
+            }
+            else
+            {
+                GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
+            }
+
+            if(!part)
+                GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (/buildinfo help)").ResetTextAPIColor();
+
+            GetLine().EndLine();
             #endregion
         }
 
@@ -769,10 +1161,11 @@ namespace Digi.BuildInfo
             if(defTypeId == typeof(MyObjectBuilder_TerminalBlock)) // control panel block
             {
                 // HACK hardcoded
-                AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Power required*: No").EndLine();
                 return;
             }
 
+            // HACK conveyor blocks have no definition
             if(defTypeId == typeof(MyObjectBuilder_Conveyor) || defTypeId == typeof(MyObjectBuilder_ConveyorConnector)) // conveyor hubs and tubes
             {
                 // HACK hardcoded; from MyGridConveyorSystem
@@ -801,11 +1194,20 @@ namespace Digi.BuildInfo
                     AddLine().Append("Inventory*: ").InventoryFormat(volume, typeof(MyObjectBuilder_Ore)).EndLine();
                 }
 
-                AddLine().Append("Harvest radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
-                AddLine().Append("Alternate (no ore) radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
+                AddLine().Append("Mining radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
+                AddLine().Append("Cutout radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
+
+                // DEBUG TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
+                }
+
                 return;
             }
 
+            // HACK ship connector has no definition
             if(defTypeId == typeof(MyObjectBuilder_ShipConnector))
             {
                 // HACK hardcoded; from MyShipConnector
@@ -836,7 +1238,6 @@ namespace Digi.BuildInfo
             {
                 // HACK hardcoded; from MyShipToolBase
                 float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
-
                 AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority("Defense", hardcoded: true).EndLine();
 
                 float volume;
@@ -852,18 +1253,34 @@ namespace Digi.BuildInfo
                     AddLine().Append("Inventory*: ").InventoryFormat(volume).EndLine();
                 }
 
+                var data = BlockDataBase.TryGetData<BlockDataShipToolBase>(def);
+
                 if(shipWelder != null)
                 {
-                    float weld = 2; // HACK hardcoded; from MyShipWelder
+                    float weld = 2; // HACK hardcoded; from MyShipWelder.WELDER_AMOUNT_PER_SECOND
                     var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
                     AddLine().Append("Weld speed*: ").PercentFormat(weld * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+
+                    if(data != null)
+                        AddLine().Append("Welding radius: ").DistanceFormat(data.sphereDummy.Radius).EndLine();
                 }
                 else
                 {
-                    float grind = 2; // HACK hardcoded; from MyShipGrinder
+                    float grind = MyShipGrinderConstants.GRINDER_AMOUNT_PER_SECOND;
                     var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    AddLine().Append("Grind speed*: ").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+                    AddLine().Append("Grind speed: ").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+
+                    if(data != null)
+                        AddLine().Append("Grinding radius: ").DistanceFormat(data.sphereDummy.Radius).EndLine();
                 }
+
+                // DEBUG TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
+                }
+
                 return;
             }
 
@@ -874,26 +1291,27 @@ namespace Digi.BuildInfo
                 if(piston != null)
                 {
                     AddLine().Append("Power required: ").PowerFormat(piston.RequiredPowerInput).Separator().ResourcePriority(piston.ResourceSinkGroup).EndLine();
-                    AddLine().Append("Extended length: ").DistanceFormat(piston.Maximum).Separator().Append("Max speed: ").DistanceFormat(piston.MaxVelocity).EndLine();
+                    AddLine().Append("Extended length: ").DistanceFormat(piston.Maximum).Separator().Append("Max velocity: ").DistanceFormat(piston.MaxVelocity).EndLine();
                 }
 
                 if(motor != null)
                 {
                     AddLine().Append("Power required: ").PowerFormat(motor.RequiredPowerInput).Separator().ResourcePriority(motor.ResourceSinkGroup).EndLine();
 
-                    if(!(def is MyMotorSuspensionDefinition))
+                    var suspension = def as MyMotorSuspensionDefinition;
+
+                    if(suspension == null)
                     {
-                        AddLine().Append("Max force: ").ForceFormat(motor.MaxForceMagnitude).EndLine();
+                        AddLine().Append("Max torque: ").TorqueFormat(motor.MaxForceMagnitude).EndLine();
 
                         if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                             AddLine().Append("Displacement: ").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
                     }
-
-                    var suspension = def as MyMotorSuspensionDefinition;
-                    if(suspension != null)
+                    else
                     {
-                        AddLine().Append("Force: ").ForceFormat(suspension.PropulsionForce).Separator().Append("Steer speed: ").RotationSpeed(suspension.SteeringSpeed * 60).Separator().Append("Steer angle: ").AngleFormat(suspension.MaxSteer).EndLine();
-                        AddLine().Append("Height: ").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
+                        AddLine().Append("Max torque: ").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
+                        AddLine().Append("Steering - Max angle: ").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
+                        AddLine().Append("Ride height: ").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
                     }
                 }
 
@@ -904,6 +1322,10 @@ namespace Digi.BuildInfo
                     return;
 
                 var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
+
+                AppendBasics(partDef, part: true);
+
+#if false
                 var airTightFaces = 0;
                 var totalFaces = 0;
                 var airTight = IsAirTight(partDef, ref airTightFaces, ref totalFaces);
@@ -913,14 +1335,14 @@ namespace Digi.BuildInfo
                 var weldTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul);
                 var grindRatio = def.DisassembleRatio;
 
-                AddLine(MyFontEnum.Blue).Append("Part: ").Append(partDef.DisplayNameText).EndLine();
+                AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_PART).Append("Part: ").Append(partDef.DisplayNameText).EndLine();
 
                 string padding = (TextAPIEnabled ? "        - " : "       - ");
 
-                AddLine().Append(padding).MassFormat(partDef.Mass).Separator().VectorFormat(partDef.Size).Separator().TimeFormat(weldTime).MultiplierFormat(weldMul);
+                AddLine().Append(padding).MassFormat(partDef.Mass).Separator().VectorFormat(partDef.Size).Separator().TimeFormat(weldTime).SetTextAPIColor(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetTextAPIColor();
 
                 if(grindRatio > 1)
-                    GetLine().Separator().Append("Deconstruct speed: ").PercentFormat(1f / grindRatio);
+                    GetLine().Separator().Append("Deconstruct: ").PercentFormat(1f / grindRatio);
 
                 if(!buildModels)
                     GetLine().Append(" (No construction models)");
@@ -934,6 +1356,7 @@ namespace Digi.BuildInfo
 
                 GetLine().Separator().Append("Air-tight faces: ").Append(airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces));
                 GetLine().EndLine();
+#endif
                 return;
             }
 
@@ -987,11 +1410,11 @@ namespace Digi.BuildInfo
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Append("Custom HUD: ").Append(cockpit.HUD).Separator().Append("Added by: ").ModFormat(defHUD.Context).EndLine();
+                            AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetTextAPIColor().Separator().SetTextAPIColor(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
                         }
                         else
                         {
-                            AddLine(MyFontEnum.Red).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)").EndLine();
+                            AddLine(MyFontEnum.Red).SetTextAPIColor(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)").EndLine();
                         }
                     }
                 }
@@ -1049,29 +1472,9 @@ namespace Digi.BuildInfo
                 if(thrust.ConsumptionFactorPerG > 0)
                     AddLine(MyFontEnum.Red).Append("Extra consumption: +").PercentFormat(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
 
-                var data = (BlockDataThrust)blockData.GetValueOrDefault(def.Id, null);
+                var data = BlockDataBase.TryGetData<BlockDataThrust>(def);
 
-                if(data == null)
-                {
-                    var fakeBlock = SpawnFakeBlock(def) as MyThrust;
-
-                    if(fakeBlock == null)
-                    {
-                        var error = "Couldn't get block data from fake entity!";
-                        Log.Error(error, error);
-                    }
-                    else
-                    {
-                        data = new BlockDataThrust(fakeBlock);
-                    }
-                }
-
-                if(data == null)
-                {
-                    var error = "Couldn't get block data for: " + def.Id;
-                    Log.Error(error, error);
-                }
-                else
+                if(data != null)
                 {
                     var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
 
@@ -1153,6 +1556,13 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).Separator().Append("Distance: ").DistanceFormat(door.MaxOpen).EndLine();
+
+                // DEBUG TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
+                }
                 return;
             }
 
@@ -1163,6 +1573,13 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Power: ").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(airTightDoor.PowerConsumptionIdle).Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).EndLine();
+
+                // DEBUG TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
+                }
                 return;
             }
 
@@ -1183,6 +1600,13 @@ namespace Digi.BuildInfo
                 }
 
                 AddLine().Append("Move time - Opening: ").TimeFormat(openTime).Separator().Append("Closing: ").TimeFormat(closeTime).EndLine();
+
+                // DEBUG TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
+                }
                 return;
             }
 
@@ -1516,6 +1940,8 @@ namespace Digi.BuildInfo
                 AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green).Append("Range: ").DistanceFormat(laserAntenna.MaxRange).Separator().Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").EndLine();
                 AddLine().Append("Rotation Pitch: ").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
                 AddLine().Append("Rotation Speed: ").RotationSpeed(laserAntenna.RotationRate * 60).EndLine();
+
+                // DEBUG << TODO visualize angle limits?
                 return;
             }
 
@@ -1571,6 +1997,8 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Max required power*: ").PowerFormat(requiredPower).Separator().ResourcePriority(sensor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max area: ").VectorFormat(maxField).EndLine();
+
+                // TODO visualize max area?
                 return;
             }
 
@@ -1598,6 +2026,8 @@ namespace Digi.BuildInfo
                 AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
+
+                // TODO visualize damage radius?
                 return;
             }
 
@@ -1624,11 +2054,21 @@ namespace Digi.BuildInfo
             var camera = def as MyCameraBlockDefinition;
             if(camera != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(camera.RequiredPowerInput).Separator().ResourcePriority(camera.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power - Normal use: ").PowerFormat(camera.RequiredPowerInput).Separator().Append("Raycast charging: ").PowerFormat(camera.RequiredChargingInput).Separator().ResourcePriority(camera.ResourceSinkGroup).EndLine();
                 AddLine().Append("Field of view: ").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov).EndLine();
+                AddLine().Append("Raycast - Cone limit: ").AngleFormatDeg(camera.RaycastConeLimit).Separator().Append("Distance limit: ");
+
+                if(camera.RaycastDistanceLimit < 0)
+                    GetLine().Append("Infinite");
+                else
+                    GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
+
+                GetLine().Separator().Append("Time multiplier: ").NumFormat(camera.RaycastTimeMultiplier, 3).EndLine();
 
                 //var index = Math.Max(camera.OverlayTexture.LastIndexOf('/'), camera.OverlayTexture.LastIndexOf('\\')); // last / or \ char
                 //AddLine().Append("Overlay texture: " + camera.OverlayTexture.Substring(index + 1));
+
+                // DEBUG << TODO visualize angle limits?
                 return;
             }
 
@@ -1685,6 +2125,8 @@ namespace Digi.BuildInfo
                 }
 
                 AddLine().Append("Acceleration: ").ForceFormat(gravity.MinGravityAcceleration).Append(" to ").ForceFormat(gravity.MaxGravityAcceleration).EndLine();
+
+                // TODO visualize field?
                 return;
             }
 
@@ -1739,9 +2181,13 @@ namespace Digi.BuildInfo
                     AddLine().Append("Auto-target: ").BoolFormat(largeTurret.AiEnabled).Append(largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Append("Max range: ").DistanceFormat(largeTurret.MaxRangeMeters).EndLine();
                     AddLine().Append("Turret speed - Pitch: ").RotationSpeed(largeTurret.ElevationSpeed * 60).Separator().Append("Yaw: ").RotationSpeed(largeTurret.RotationSpeed * 60).EndLine();
                     AddLine().Append("Rotation limits - Pitch: ").AngleFormatDeg(largeTurret.MinElevationDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(largeTurret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxAzimuthDegrees).EndLine();
+
+                    // DEBUG TODO visualize angle limits?
                 }
 
                 AddLine().Append("Accuracy: ").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
+
+                // DEBUG TODO visualize accuracy?
 
                 var ammoProjectiles = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
                 var ammoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
@@ -1880,10 +2326,9 @@ namespace Digi.BuildInfo
         private Vector2D UpdateTextAPIvisuals(string text, Vector2D textSize = default(Vector2D))
         {
             if(textObject == null)
-                textObject = new HudAPIv2.HUDMessage(textSB, Vector2D.Zero);
+                textObject = new HudAPIv2.HUDMessage(textSB, Vector2D.Zero, HideHud: true);
 
             textObject.Visible = true;
-            textObject.Options = HudAPIv2.Options.HideHud;
             textObject.Scale = TextAPIScale;
 
             textSB.Clear().Append(text);
@@ -1891,30 +2336,28 @@ namespace Digi.BuildInfo
             var textPos = Vector2D.Zero;
             var textOffset = Vector2D.Zero;
 
-            if(textSize.LengthSquared() < 0.0001)
+            if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
                 textSize = textObject.GetTextLength();
 
             if(showMenu) // in the menu
             {
-                textOffset = new Vector2D(textSize.X / -2, 0.8);
+                textOffset = new Vector2D(-textSize.X, textSize.Y / -2);
             }
-            else if(settings.textAPIUseScreenPos) // custom alignment and position
+            else if(settings.textAPIUseCustomStyling) // custom alignment and position
             {
                 textPos = settings.textAPIScreenPos;
 
-                // DEBUG TODO <<<
-                //if(settings.textAPIAlignRight)
-                //    textOffset.X = -textSize.X;
+                if(settings.textAPIAlignRight)
+                    textOffset.X = -textSize.X;
 
-                //if(settings.textAPIAlignBottom)
-                //    textOffset.Y = textSize.Y;
+                if(settings.textAPIAlignBottom)
+                    textOffset.Y = -textSize.Y;
             }
-            // DEBUG TODO <<<
-            //else if(!rotationHints) // right side autocomputed
-            //{
-            //    textPos = (aspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
-            //    textOffset = new Vector2D(-textSize.X, 0);
-            //}
+            else if(!rotationHints) // right side autocomputed
+            {
+                textPos = (aspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
+                textOffset = new Vector2D(-textSize.X, 0);
+            }
             else // left side autocomputed
             {
                 textPos = (aspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
@@ -1925,10 +2368,10 @@ namespace Digi.BuildInfo
 
             if(bgObject == null)
                 bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_BACKGROUND, Vector2D.Zero, Color.White, Scale: 1, Shadowing: true);
-            
+
             float edge = BACKGROUND_EDGE * TextAPIScale;
 
-            bgObject.BillBoardColor = Color.White * settings.textAPIBackgroundOpacity;
+            bgObject.BillBoardColor = Color.White * (settings.textAPIBackgroundOpacity >= 0 ? settings.textAPIBackgroundOpacity : hudBackgroundOpacity);
             bgObject.Origin = textPos;
             bgObject.Width = (float)Math.Abs(textSize.X) + edge;
             bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
@@ -1943,7 +2386,7 @@ namespace Digi.BuildInfo
         {
             if(TextAPIEnabled)
             {
-                if(!showBuildInfo && !showMenu)
+                if(!settings.showTextInfo && !showMenu)
                 {
                     HideText();
                     return;
@@ -1959,7 +2402,7 @@ namespace Digi.BuildInfo
             }
             else
             {
-                if(!showBuildInfo && !showMenu)
+                if(!settings.showTextInfo && !showMenu)
                     return;
 
                 // print and scroll through HUD notification types of messages, not needed for text API
@@ -2052,6 +2495,12 @@ namespace Digi.BuildInfo
                     Init();
                 }
 
+                if(!textAPIresponded && textAPI.Heartbeat)
+                {
+                    textAPIresponded = true;
+                    HideText(); // force a re-check to make the HUD -> textAPI transition
+                }
+
                 // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
@@ -2083,7 +2532,7 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        if(showBuildInfo && def.Id != lastDefId)
+                        if(settings.showTextInfo && def.Id != lastDefId)
                         {
                             lastDefId = def.Id;
 
@@ -2209,16 +2658,6 @@ namespace Digi.BuildInfo
 
             if(TextAPIEnabled)
             {
-                switch(font)
-                {
-                    case MyFontEnum.White: textAPIlines.Append("<color=255,255,255>"); break;
-                    case MyFontEnum.Red: textAPIlines.Append("<color=255,200,0>"); break;
-                    case MyFontEnum.Green: textAPIlines.Append("<color=0,200,0>"); break;
-                    case MyFontEnum.Blue: textAPIlines.Append("<color=50,200,255>"); break;
-                    case MyFontEnum.DarkBlue: textAPIlines.Append("<color=50,150,255>"); break;
-                    case MyFontEnum.ErrorMessageBoxCaption: textAPIlines.Append("<color=255,0,0>"); break;
-                }
-
                 return textAPIlines;
             }
             else
@@ -2395,48 +2834,6 @@ namespace Digi.BuildInfo
         }
         #endregion
 
-        #region Non-definition block data
-        /// <summary>
-        /// Spawns a ghost grid with the requested block definition, used for getting data that is only obtainable from a placed block.
-        /// </summary>
-        public static MyCubeBlock SpawnFakeBlock(MyCubeBlockDefinition def)
-        {
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var spawnPos = camMatrix.Translation + camMatrix.Backward * 10;
-            var fakeGridObj = new MyObjectBuilder_CubeGrid()
-            {
-                CreatePhysics = false,
-                PersistentFlags = MyPersistentEntityFlags2.None,
-                IsStatic = true,
-                GridSizeEnum = def.CubeSize,
-                Editable = false,
-                DestructibleBlocks = false,
-                IsRespawnGrid = false,
-                PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up),
-                CubeBlocks = new List<MyObjectBuilder_CubeBlock>()
-                {
-                    new MyObjectBuilder_CubeBlock()
-                    {
-                        SubtypeName = def.Id.SubtypeName,
-                    }
-                },
-            };
-
-            MyEntities.RemapObjectBuilder(fakeGridObj);
-            var fakeEnt = MyEntities.CreateFromObjectBuilderNoinit(fakeGridObj);
-            fakeEnt.IsPreview = true;
-            fakeEnt.Save = false;
-            fakeEnt.Render.Visible = false;
-            fakeEnt.Flags = EntityFlags.None;
-            MyEntities.InitEntity(fakeGridObj, ref fakeEnt);
-
-            var fakeGrid = (IMyCubeGrid)fakeEnt;
-            var fakeBlock = fakeGrid.GetCubeBlock(Vector3I.Zero)?.FatBlock as MyCubeBlock;
-            fakeGrid.Close();
-            return fakeBlock;
-        }
-        #endregion
-
         #region Notification font character width data
         private void ComputeCharacterSizes()
         {
@@ -2513,6 +2910,4 @@ namespace Digi.BuildInfo
         }
         #endregion
     }
-
-    public interface IBlockData { }
 }

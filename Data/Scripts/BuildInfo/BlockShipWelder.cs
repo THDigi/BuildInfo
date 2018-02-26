@@ -12,60 +12,37 @@ using VRageMath;
 namespace Digi.BuildInfo
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipWelder), useEntityUpdate: false)]
-    public class BlockShipWelder : MyGameLogicComponent
-    {
-        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
-        {
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
+    public class BlockShipWelder : BlockBase<BlockDataShipToolBase> { }
 
-        public override void UpdateOnceBeforeFrame()
-        {
-            try
-            {
-                if(BuildInfo.instance != null && !BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
-                {
-                    var block = (IMyCubeBlock)Entity;
-                    var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipGrinder), useEntityUpdate: false)]
+    public class BlockShipGrinder : BlockBase<BlockDataShipToolBase> { }
 
-                    if(!BuildInfo.instance.blockData.ContainsKey(def.Id) && block.Model.AssetName == def.Model)
-                    {
-                        new BlockDataShipWelder(block);
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-    }
-
-    public class BlockDataShipWelder : IBlockData
+    public class BlockDataShipToolBase : BlockDataBase
     {
         public BoundingSphere sphereDummy;
 
-        public BlockDataShipWelder(IMyCubeBlock block)
+        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
-            var dummies = new Dictionary<string, IMyModelDummy>();
-
-            if(block.Model.GetDummies(dummies) == 0)
-                return;
-
-            // HACK: copied from Sandbox.Game.Weapons.MyShipToolBase.LoadDummies()
+            bool success = false;
+            var dummies = BuildInfo.instance.dummies;
+            dummies.Clear();
+            block.Model.GetDummies(dummies);
 
             foreach(var kv in dummies)
             {
+                // HACK: copied from Sandbox.Game.Weapons.MyShipToolBase.LoadDummies()
                 if(kv.Key.ToUpper().Contains("DETECTOR_SHIPTOOL"))
                 {
                     var matrix = kv.Value.Matrix;
                     var radius = matrix.Scale.AbsMin();
                     sphereDummy = new BoundingSphere(matrix.Translation, radius);
-                    BuildInfo.instance.blockData.Add(def.Id, this);
+                    success = true;
                     break;
                 }
             }
+
+            dummies.Clear();
+            return success;
         }
     }
 }

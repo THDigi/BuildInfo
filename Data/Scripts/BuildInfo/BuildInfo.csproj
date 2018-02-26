@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlockAirVent.cs" />
+    <Compile Include="BlockDataBase.cs" />
     <Compile Include="BlockShipWelder.cs" />
     <Compile Include="BlockThruster.cs" />
     <Compile Include="BuildInfo.cs" />

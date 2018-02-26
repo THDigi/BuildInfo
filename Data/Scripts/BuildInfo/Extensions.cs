@@ -44,7 +44,26 @@ namespace Digi.BuildInfo
         {
             return s.Append(b ? "Yes" : "No");
         }
-        
+
+        public static StringBuilder SetTextAPIColor(this StringBuilder s, Color color)
+        {
+            if(BuildInfo.instance.TextAPIEnabled)
+                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+
+            return s;
+        }
+
+        public static StringBuilder ResetTextAPIColor(this StringBuilder s)
+        {
+            if(BuildInfo.instance.TextAPIEnabled)
+            {
+                var color = BuildInfo.instance.COLOR_NORMAL;
+                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+            }
+
+            return s;
+        }
+
         public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false) // HACK some ResourceSinkGroup are string type for SOME reason
         {
             return s.ResourcePriority(MyStringHash.GetOrCompute(groupName), hardcoded);
@@ -288,7 +307,7 @@ namespace Digi.BuildInfo
             // HACK workaround for MyModContext not having workshop ID as ulong... only filename which is unreliable in determining that
             var mod = MyAPIGateway.Session.Mods.First((m) => m.Name == context.ModId);
             if(mod.PublishedFileId != 0)
-                s.Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
+                s.SetTextAPIColor(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
 
             return s;
         }
@@ -296,6 +315,11 @@ namespace Digi.BuildInfo
         public static StringBuilder NumFormat(this StringBuilder s, float f, int d)
         {
             return s.Append(Math.Round(f, d));
+        }
+
+        public static string ToTextAPIColor(this Color color)
+        {
+            return $"<color={color.R},{color.G},{color.B}>";
         }
 
         /// <summary>
