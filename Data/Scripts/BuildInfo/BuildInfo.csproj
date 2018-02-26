@@ -109,7 +109,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AirVent.cs" />
+    <Compile Include="BlockAirVent.cs" />
+    <Compile Include="BlockShipWelder.cs" />
+    <Compile Include="BlockThruster.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Pressurization.cs" />
@@ -117,7 +119,6 @@
     <Compile Include="LeakInfoComponent.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TextAPIv2.cs" />
-    <Compile Include="ThrustBlock.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

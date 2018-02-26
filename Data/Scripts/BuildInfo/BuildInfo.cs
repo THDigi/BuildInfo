@@ -2396,47 +2396,10 @@ namespace Digi.BuildInfo
         #endregion
 
         #region Non-definition block data
-        public interface IBlockData { }
-
-        public class BlockDataThrust : IBlockData
-        {
-            public readonly float radius;
-            public readonly float distance;
-            public readonly int flames;
-
-            public BlockDataThrust(MyThrust thrust)
-            {
-                var def = thrust.BlockDefinition;
-                double distSq = 0;
-
-                // HACK hardcoded; from MyThrust.UpdateThrustFlame()
-                thrust.ThrustLengthRand = 10f * def.FlameLengthScale; // make the GetDamageCapsuleLine() method think it thrusts at max and with no random
-
-                var m = thrust.WorldMatrix;
-
-                foreach(var flame in thrust.Flames)
-                {
-                    var flameLine = thrust.GetDamageCapsuleLine(flame, ref m);
-                    var flameDistSq = (flameLine.From - flameLine.To).LengthSquared();
-
-                    if(flameDistSq > distSq)
-                    {
-                        distSq = flameDistSq;
-                        radius = flame.Radius;
-                    }
-                }
-
-                distance = (float)Math.Sqrt(distSq);
-                flames = thrust.Flames.Count;
-
-                instance.blockData.Add(def.Id, this);
-            }
-        }
-
         /// <summary>
         /// Spawns a ghost grid with the requested block definition, used for getting data that is only obtainable from a placed block.
         /// </summary>
-        private static MyCubeBlock SpawnFakeBlock(MyCubeBlockDefinition def)
+        public static MyCubeBlock SpawnFakeBlock(MyCubeBlockDefinition def)
         {
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var spawnPos = camMatrix.Translation + camMatrix.Backward * 10;
@@ -2550,4 +2513,6 @@ namespace Digi.BuildInfo
         }
         #endregion
     }
+
+    public interface IBlockData { }
 }

@@ -15,7 +15,7 @@ using VRageMath;
 namespace Digi.BuildInfo
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
-    public class AirVent : MyGameLogicComponent
+    public class BlockAirVent : MyGameLogicComponent
     {
         private byte init = 0; // init states, 0 no init, 1 init events, 2 init with main model (for dummyLocation)
         private byte skip = 0;
