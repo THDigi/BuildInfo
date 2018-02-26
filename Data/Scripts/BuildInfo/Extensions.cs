@@ -6,6 +6,7 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -295,6 +296,23 @@ namespace Digi.BuildInfo
         public static StringBuilder NumFormat(this StringBuilder s, float f, int d)
         {
             return s.Append(Math.Round(f, d));
+        }
+
+        /// <summary>
+        /// Gets the key/button name assigned to the specified control.
+        /// </summary>
+        public static string GetControlAssignedName(this MyStringId controlId)
+        {
+            var control = MyAPIGateway.Input.GetGameControl(controlId);
+
+            if(control.GetKeyboardControl() != MyKeys.None)
+                return control.GetKeyboardControl().ToString();
+            else if(control.GetSecondKeyboardControl() != MyKeys.None)
+                return control.GetSecondKeyboardControl().ToString();
+            else if(control.GetMouseControl() != MyMouseButtonsEnum.None)
+                return MyAPIGateway.Input.GetName(control.GetMouseControl());
+
+            return null;
         }
     }
 }

@@ -560,7 +560,7 @@ namespace Digi.BuildInfo
 
             int showMenuItems = 6;
             bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
-            var inputName = GetControlAssignedName(MyControlsSpace.VOXEL_HAND_SETTINGS);
+            var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
 
             AddLine(MyFontEnum.Blue).Append("Build info settings:").EndLine();
 
@@ -2342,23 +2342,6 @@ namespace Digi.BuildInfo
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Gets the key/button name assigned to the specified control.
-        /// </summary>
-        private string GetControlAssignedName(MyStringId controlId)
-        {
-            var control = MyAPIGateway.Input.GetGameControl(controlId);
-
-            if(control.GetKeyboardControl() != MyKeys.None)
-                return control.GetKeyboardControl().ToString();
-            else if(control.GetSecondKeyboardControl() != MyKeys.None)
-                return control.GetSecondKeyboardControl().ToString();
-            else if(control.GetMouseControl() != MyMouseButtonsEnum.None)
-                return MyAPIGateway.Input.GetName(control.GetMouseControl());
-
-            return null;
         }
 
         #region Classes for storing generated info

@@ -37,6 +37,10 @@ namespace Digi.BuildInfo
             Save(); // refresh config in case of any missing or extra settings
         }
 
+        public void Close()
+        {
+        }
+
         public bool Load()
         {
             try
@@ -183,10 +187,6 @@ namespace Digi.BuildInfo
             str.Append("BackgroundOpacity=").Append(textAPIBackgroundOpacity < 0 ? "HUD" : Math.Round(textAPIBackgroundOpacity, 5).ToString()).AppendLine(comments ? " // Background opacity percent scale (0 to 1 value) or can be set to the word HUD to use the game's background opacity. Default: " + (default_textAPIBackgroundOpacity < 0 ? "HUD" : default_textAPIBackgroundOpacity.ToString()) : "");
 
             return str.ToString();
-        }
-
-        public void Close()
-        {
         }
     }
 }
