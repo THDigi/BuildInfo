@@ -209,7 +209,7 @@ namespace Digi.BuildInfo
             MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
             if(Math.Abs(mul - 1) > 0.001f)
-                s.Append(" (x").Append(Math.Round(mul, 2)).Append(")");
+                s.SetTextAPIColor(BuildInfo.instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
 
             if(types == null && items == null)
                 types = BuildInfo.instance.DEFAULT_ALLOWED_TYPES;
