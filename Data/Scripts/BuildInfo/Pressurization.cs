@@ -58,34 +58,39 @@ namespace Digi.BuildInfo
             var door = block.FatBlock as IMyDoor;
 
             if(door != null)
-                return IsDoorFaceOpen(def, vector, door.OpenRatio <= 0.01f);
+                return IsDoorFacePressurized(def, vector, door.OpenRatio <= 0.05f);
 
             return false;
         }
 
-        public static bool IsDoorFaceOpen(MyCubeBlockDefinition def, Vector3I vector, bool fullyClosed)
+        public static bool IsDoorFacePressurized(MyCubeBlockDefinition def, Vector3I normal, bool fullyClosed)
         {
-            if(def is MyAirtightSlideDoorDefinition)
+            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
             {
-                return (fullyClosed && vector == Vector3I.Forward);
-            }
-
-            if(def is MyAirtightDoorGenericDefinition)
-            {
-                return (fullyClosed && (vector == Vector3I.Forward || vector == Vector3I.Backward));
-            }
-
-            if(fullyClosed)
-            {
-                var mountPoints = def.MountPoints;
-
-                for(int i = 0; i < mountPoints.Length; i++)
+                if(fullyClosed)
                 {
-                    if(vector == mountPoints[i].Normal)
-                        return false;
+                    var mountPoints = def.MountPoints;
+
+                    for(int i = 0; i < mountPoints.Length; i++)
+                    {
+                        if(normal == mountPoints[i].Normal)
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
                 }
 
-                return true;
+                return false;
+            }
+            else if(def is MyAirtightSlideDoorDefinition)
+            {
+                return (fullyClosed && normal == Vector3I.Forward);
+            }
+            else if(def is MyAirtightDoorGenericDefinition)
+            {
+                return (fullyClosed && (normal == Vector3I.Forward || normal == Vector3I.Backward));
             }
 
             return false;

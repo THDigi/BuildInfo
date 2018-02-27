@@ -126,6 +126,16 @@ namespace Digi.BuildInfo
             "  n2 = defPowerLasing * 200000 - n2 * 200000 * 200000\n" +
             "  powerUsage = (rangeSquared * n2 + n3) / 1000000\n" +
             "\n";
+
+        private readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
+        {
+            Vector3.Right,
+            Vector3.Left,
+            Vector3.Up,
+            Vector3.Down,
+            Vector3.Backward,
+            Vector3.Forward,
+        };
         #endregion
 
         #region Fields
@@ -714,46 +724,38 @@ namespace Digi.BuildInfo
                         doorAirtightBlink = !doorAirtightBlink;
                     }
 
-                    if(TextAPIEnabled)
+                    var cubeSize = def.Size * (gridSize * 0.5f);
+                    bool firstFace = true;
+
+                    for(int i = 0; i < 6; ++i)
                     {
-                        // TODO: optimize
-                        MatrixD matrix = MatrixD.CreateTranslation(def.Center - (def.Size * 0.5f)) * MatrixD.CreateScale(gridSize) * drawMatrix;
-                        Base6Directions.Direction dir = Base6Directions.Direction.Left;
-                        Vector3D corner = Vector3D.Zero;
-                        Vector3D vFw = Vector3.Forward;
-                        corner = def.MountPointLocalToBlockLocal(corner, dir);
-                        corner = Vector3D.Transform(corner, matrix);
-                        vFw = def.MountPointLocalNormalToBlockLocal(vFw, dir);
-                        vFw = Vector3D.TransformNormal(vFw, matrix);
+                        var normal = DIRECTIONS[i];
 
-                        DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, corner, vFw, "Airtight when door is closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.2f, underlineLength: 2f);
-                    }
-
-                    if(doorAirtightBlink)
-                    {
-                        var mp = new MyCubeBlockDefinition.MountPoint()
+                        if(Pressurization.IsDoorFacePressurized(def, (Vector3I)normal, true))
                         {
-                            Enabled = false,
-                            Default = false,
-                            Normal = Vector3I.Forward,
-                            Start = new Vector3(0, 0, 0),
-                            End = new Vector3(def.Size.X, def.Size.Y, 0),
-                        };
+                            var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
+                            var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
+                            var dirUp = Vector3D.TransformNormal(DIRECTIONS[((i + 2) % 6)], drawMatrix);
 
-                        DrawMountPoint(mp, gridSize, ref center, ref mainMatrix, ref MOUNTPOINT_DOOR_COLOR, minSize);
+                            var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
+                            float width = cubeSize.GetDim(((i + 4) % 6) / 2);
+                            float height = cubeSize.GetDim(((i + 2) % 6) / 2);
 
-                        if(!(def is MyAirtightSlideDoorDefinition))
-                        {
-                            mp = new MyCubeBlockDefinition.MountPoint()
+                            if(doorAirtightBlink)
                             {
-                                Enabled = false,
-                                Default = false,
-                                Normal = Vector3I.Backward,
-                                Start = new Vector3(0, 0, def.Size.Z),
-                                End = new Vector3(def.Size.X, def.Size.Y, def.Size.Z),
-                            };
+                                // specifying width and height to not be misused with the other overload that has radius and customprojection
+                                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
+                            }
 
-                            DrawMountPoint(mp, gridSize, ref center, ref mainMatrix, ref MOUNTPOINT_DOOR_COLOR, minSize);
+                            if(firstFace) // only label the first one
+                            {
+                                firstFace = false;
+                                var labelPos = pos + dirLeft * width + dirUp * height;
+                                DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.5f, underlineLength: 1.7f);
+
+                                if(!doorAirtightBlink)
+                                    break;
+                            }
                         }
                     }
                 }
