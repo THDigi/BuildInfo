@@ -9,6 +9,7 @@ namespace Digi.BuildInfo
     public class Settings
     {
         public bool showTextInfo;
+        public bool alwaysVisible;
         public bool textAPIUseCustomStyling;
         public Vector2D textAPIScreenPos;
         public bool textAPIAlignRight;
@@ -19,6 +20,7 @@ namespace Digi.BuildInfo
         public bool axisLabels = true;
 
         public const bool default_showTextInfo = true;
+        public const bool default_alwaysVisible = false;
         public const bool default_textAPIUseCustomStyling = false;
         public readonly Vector2D default_textAPIScreenPos = new Vector2D(-0.9825, 0.8);
         public const bool default_textAPIAlignRight = false;
@@ -29,6 +31,7 @@ namespace Digi.BuildInfo
         private void SetDefaults()
         {
             showTextInfo = default_showTextInfo;
+            alwaysVisible = default_alwaysVisible;
             textAPIUseCustomStyling = default_textAPIUseCustomStyling;
             textAPIScreenPos = default_textAPIScreenPos;
             textAPIAlignRight = default_textAPIAlignRight;
@@ -116,6 +119,16 @@ namespace Digi.BuildInfo
                     {
                         if(bool.TryParse(val, out b))
                             showTextInfo = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("AlwaysVisible", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(bool.TryParse(val, out b))
+                            alwaysVisible = b;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -249,17 +262,27 @@ namespace Digi.BuildInfo
                 str.Append("// Lines starting with // are comments. All values are case and space insensitive unless otherwise specified.").AppendLine();
                 str.AppendLine();
                 str.AppendLine();
-                str.AppendLine();
             }
 
             if(comments)
             {
+                str.AppendLine();
                 str.Append("// Whether to show the build info when having a block equipped.").AppendLine();
                 str.Append("// This can be chaned in-game in the menu as well.").AppendLine();
-                str.Append("// Default: true").AppendLine();
+                str.Append("// Default: ").Append(default_showTextInfo ? "true" : "false").AppendLine();
             }
 
             str.Append("ShowTextInfo = ").Append(showTextInfo ? "true" : "false").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// Determines if game HUD hidden state is used for hiding this mod's elements.").AppendLine();
+                str.Append("// Set to true to draw info regardless of HUD visible state.").AppendLine();
+                str.Append("// Default: ").Append(default_alwaysVisible ? "true" : "false").AppendLine();
+            }
+
+            str.Append("AlwaysVisible = ").Append(alwaysVisible ? "true" : "false").AppendLine();
 
             if(comments)
             {
@@ -269,7 +292,7 @@ namespace Digi.BuildInfo
                 str.Append("// Enables the use of ScrenPos and Alignment settings which allows you to place the text info box anywhere you want.").AppendLine();
                 str.Append("// If false, the text info box will be placed according to rotation hints (the cube and key hints top right).").AppendLine();
                 str.Append("// (If false) With rotation hints off, text info will be set top-left, otherwise top-right.").AppendLine();
-                str.Append("// Default: false").AppendLine();
+                str.Append("// Default: ").Append(default_textAPIUseCustomStyling ? "true" : "false").AppendLine();
             }
 
             str.Append("UseCustomStyling = ").Append(textAPIUseCustomStyling ? "true" : "false").AppendLine();

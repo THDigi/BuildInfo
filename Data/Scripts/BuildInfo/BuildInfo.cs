@@ -419,6 +419,20 @@ namespace Digi.BuildInfo
 
             HideText();
             cachedInfoTextAPI.Clear();
+
+            if(textObject != null)
+            {
+                if(settings.alwaysVisible)
+                {
+                    textObject.Options &= ~HudAPIv2.Options.HideHud;
+                    bgObject.Options &= ~HudAPIv2.Options.HideHud;
+                }
+                else
+                {
+                    textObject.Options |= HudAPIv2.Options.HideHud;
+                    bgObject.Options |= HudAPIv2.Options.HideHud;
+                }
+            }
         }
 
         private void ShowHelp()
@@ -628,7 +642,7 @@ namespace Digi.BuildInfo
 
                 DrawBlockVolumes();
 
-                if(!hudVisible)
+                if(!hudVisible && !settings.alwaysVisible)
                     return;
 
                 if(leakInfo != null)
@@ -683,7 +697,7 @@ namespace Digi.BuildInfo
 
         private void DrawBlockVolumes()
         {
-            if(hudVisible && drawBlockVolumes && selectedDef != null)
+            if(drawBlockVolumes && (hudVisible || settings.alwaysVisible) && selectedDef != null)
             {
                 var def = selectedDef;
 
@@ -2626,7 +2640,7 @@ namespace Digi.BuildInfo
         private Vector2D UpdateTextAPIvisuals(string text, Vector2D textSize = default(Vector2D))
         {
             if(textObject == null)
-                textObject = new HudAPIv2.HUDMessage(textSB, Vector2D.Zero, HideHud: true);
+                textObject = new HudAPIv2.HUDMessage(textSB, Vector2D.Zero, HideHud: !settings.alwaysVisible);
 
             textObject.Visible = true;
             textObject.Scale = TextAPIScale;
@@ -2667,7 +2681,7 @@ namespace Digi.BuildInfo
             textObject.Offset = textOffset;
 
             if(bgObject == null)
-                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_BACKGROUND, Vector2D.Zero, Color.White, Scale: 1, Shadowing: true);
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_BACKGROUND, Vector2D.Zero, Color.White, Scale: 1, HideHud: !settings.alwaysVisible, Shadowing: true);
 
             float edge = BACKGROUND_EDGE * TextAPIScale;
 
