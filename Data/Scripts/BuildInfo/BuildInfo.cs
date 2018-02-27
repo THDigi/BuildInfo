@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         private readonly Color MOUNTPOINT_DEFAULT_COLOR = new Color(55, 55, 255) * 0.7f;
         private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * 0.7f;
         private const double TEXT_SHADOW_OFFSET = 0.007;
+        private readonly Color TEXT_SHADOW_COLOR = Color.Black * 0.9f;
 
         public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
         public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
@@ -937,10 +938,10 @@ namespace Digi.BuildInfo
             var direction = (end - start);
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, 1f, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, 1f, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, 1f, lineThick);
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
 
             DrawSimpleLabel(id, end, text, color, constantTextUpdate);
         }
@@ -951,10 +952,10 @@ namespace Digi.BuildInfo
             var end = start + direction * lineHeight;
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, lineHeight, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, lineHeight, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, lineHeight, lineThick);
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Black, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
 
             DrawSimpleLabel(id, end, text, color, constantTextUpdate);
         }
@@ -980,7 +981,7 @@ namespace Digi.BuildInfo
             if(updateText)
             {
                 msgObj.Message.Clear().Append(textColor.ToTextAPIColor()).Append(text);
-                shadowObj.Message.Clear().Append(Color.Black.ToTextAPIColor()).Append(text);
+                shadowObj.Message.Clear().Append(TEXT_SHADOW_COLOR.ToTextAPIColor()).Append(text);
             }
 
             msgObj.Visible = true;
