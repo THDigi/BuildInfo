@@ -852,12 +852,11 @@ namespace Digi.BuildInfo
 
                             if(doorAirtightBlink)
                             {
-                                // specifying width and height to not be misused with the other overload that has radius and customprojection
                                 //MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
 
-                                var m = MatrixD.CreateWorld(pos, dirForward, dirLeft);
-                                m.Right *= height * 2;
-                                m.Up *= width * 2;
+                                var m = MatrixD.CreateWorld(pos, dirForward, dirUp);
+                                m.Right *= width * 2;
+                                m.Up *= height * 2;
                                 m.Forward *= MOUNTPOINT_THICKNESS;
                                 MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref MOUNTPOINT_DOOR_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
                             }
