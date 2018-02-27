@@ -1246,7 +1246,7 @@ namespace Digi.BuildInfo
             GetLine().ResetTextAPIColor().EndLine();
 
             AddMenuItemLine(i++).Append("Reload settings file").SetTextAPIColor(COLOR_UNIMPORTANT).Append("   (/buildinfo reload)").ResetTextAPIColor().EndLine();
-            
+
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
             if(canUseTextAPI)
                 GetLine().Append(useTextAPI ? "ON" : "OFF");
@@ -1403,21 +1403,18 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Line 3
-            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).Append(padding).Append("Air-tight: ");
+            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).Append(padding)
+                .SetTextAPIColor(airTight ? COLOR_GOOD : (airTightFaces == 0 ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight faces: ");
 
             if(airTight)
-            {
-                GetLine().Append("on all sides");
-            }
+                GetLine().Append("all");
             else
-            {
                 GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
-            }
 
             if(!part)
-                GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (/buildinfo help)").ResetTextAPIColor();
+                GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (/buildinfo help)");
 
-            GetLine().EndLine();
+            GetLine().ResetTextAPIColor().EndLine();
             #endregion
         }
 
@@ -2094,7 +2091,7 @@ namespace Digi.BuildInfo
                     if(invLimit != null)
                     {
                         AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
-                        AddLine().Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").EndLine();
+                        AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").ResetTextAPIColor().EndLine();
 
                         foreach(var id in invLimit.ConstrainedIds)
                         {
