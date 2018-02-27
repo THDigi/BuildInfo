@@ -1211,7 +1211,7 @@ namespace Digi.BuildInfo
             bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
             var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
 
-            AddLine(MyFontEnum.Blue).Append("Build info settings:").EndLine();
+            AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_BLOCKTITLE).Append("Build info settings:").ResetTextAPIColor().EndLine();
 
             #region Menu items
             int i = 0;
@@ -1221,11 +1221,11 @@ namespace Digi.BuildInfo
                 GetLine().Append("   (").Append(inputName).Append(")");
             GetLine().ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Open help window").Append("   (/buildinfo help)").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Open help window").SetTextAPIColor(COLOR_UNIMPORTANT).Append("   (/buildinfo help)").ResetTextAPIColor().EndLine();
 
             AddMenuItemLine(i++).Append("Text info: ").Append(settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Draw block volumes (mounts, airtight, etc): ").Append(drawBlockVolumes ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Draw block volumes: ").Append(drawBlockVolumes ? "ON" : "OFF");
             if(inputName != null)
                 GetLine().Append("   (Ctrl+" + inputName + ")");
             GetLine().ResetTextAPIColor().EndLine();
@@ -1240,8 +1240,8 @@ namespace Digi.BuildInfo
                 GetLine().Append("   (Alt+" + inputName + ")");
             GetLine().ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Reload settings file").ResetTextAPIColor().EndLine();
-
+            AddMenuItemLine(i++).Append("Reload settings file").SetTextAPIColor(COLOR_UNIMPORTANT).Append("   (/buildinfo reload)").ResetTextAPIColor().EndLine();
+            
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
             if(canUseTextAPI)
                 GetLine().Append(useTextAPI ? "ON" : "OFF");
@@ -1250,7 +1250,7 @@ namespace Digi.BuildInfo
             GetLine().ResetTextAPIColor().EndLine();
             #endregion
 
-            AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("Use movement controls to navigate and edit settings.").ResetTextAPIColor().EndLine();
+            AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_WARNING).Append("Use movement controls to navigate and edit settings.").ResetTextAPIColor().EndLine();
 
             if(inputName == null)
                 AddLine(MyFontEnum.ErrorMessageBoxCaption).SetTextAPIColor(COLOR_BAD).Append("The 'Open voxel hand settings' control is not assigned!").ResetTextAPIColor().EndLine();
