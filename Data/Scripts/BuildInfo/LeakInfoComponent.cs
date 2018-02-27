@@ -116,7 +116,9 @@ namespace Digi.BuildInfo
                     var fraction = (1 - (walk - i));
                     var targetPosition = lineStart + lineDir * fraction;
 
-                    position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
+                    if(!MyParticlesManager.Paused)
+                        position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
+
                     var drawPosition = camPos + ((position - camPos) * DRAW_DEPTH);
 
                     if(walk < 0)
@@ -125,14 +127,17 @@ namespace Digi.BuildInfo
                         MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfo.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
                 }
 
-                walk -= pd.WalkSpeed; // walk on the lines
-
-                if(walk < -1) // go back to the start and tell the component to stop spawning new ones
+                if(!MyParticlesManager.Paused)
                 {
-                    l = lines[lines.Count - 1];
-                    position = grid.GridIntegerToWorld(l.Start);
-                    walk = lines.Count - 1;
-                    return false;
+                    walk -= pd.WalkSpeed; // walk on the lines
+
+                    if(walk < -1) // go back to the start and tell the component to stop spawning new ones
+                    {
+                        l = lines[lines.Count - 1];
+                        position = grid.GridIntegerToWorld(l.Start);
+                        walk = lines.Count - 1;
+                        return false;
+                    }
                 }
 
                 return true;
@@ -161,7 +166,7 @@ namespace Digi.BuildInfo
             var pd = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
 
             // spawning particles
-            if(!stopSpawning && ++delayParticles > pd.SpawnDelay)
+            if(!stopSpawning && !MyParticlesManager.Paused && ++delayParticles > pd.SpawnDelay)
             {
                 delayParticles = 0;
                 particles.Add(new Particle(selectedGrid, lines));
