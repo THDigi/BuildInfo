@@ -50,12 +50,13 @@ namespace Digi.BuildInfo
         private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
         private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
 
-        private const double MOUNTPOINT_THICKNESS = 0.01;
-        private const float MOUNTPOINT_ALPHA = 0.75f;
-        private readonly Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
-        private readonly Color MOUNTPOINT_DEFAULT_COLOR = new Color(255, 155, 0) * MOUNTPOINT_ALPHA;
-        private readonly Color MOUNTPOINT_DISABLED_COLOR = new Color(25, 155, 255) * MOUNTPOINT_ALPHA;
-        private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * MOUNTPOINT_ALPHA;
+        private const double MOUNTPOINT_THICKNESS = 0.05;
+        private const float MOUNTPOINT_ALPHA = 0.65f;
+        private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
+        private Color MOUNTPOINT_DEFAULT_COLOR = new Color(255, 200, 0) * MOUNTPOINT_ALPHA;
+        private Color AIRTIGHT_COLOR = new Color(0, 155, 255) * MOUNTPOINT_ALPHA;
+        private Color AIRTIGHT_TOGGLE_COLOR = new Color(0, 255, 155) * MOUNTPOINT_ALPHA;
+
         private const double TEXT_SHADOW_OFFSET = 0.007;
         private const double TEXT_SHADOW_OFFSET_Z = 0.01;
         private readonly Color TEXT_SHADOW_COLOR = Color.Black * 0.9f;
@@ -109,6 +110,13 @@ namespace Digi.BuildInfo
             "Up",
         };
 
+        private string[] DRAW_VOLUME_TYPE = new string[]
+        {
+            "OFF",
+            "Airtightness",
+            "Mounting",
+        };
+
         private const string HELP =
             "Chat commands:\n" +
             "  /buildinfo\n    shows this window or menu if you're holding a block.\n" +
@@ -128,18 +136,12 @@ namespace Digi.BuildInfo
             "\n" +
             "Mount points & airtightness explained:\n" +
             "\n" +
-            "  Mount points are used for determining what surfaces\n" +
-            "     can be mounted by other mountable surfaces.\n" +
-            "\n" +
-            "  These can only be on the outer faces of the block bounds.\n" +
+            "  Mount points define areas that can be attached to other\n" +
+            "    block's mount points.\n" +
             "\n" +
             "  Airtightness also uses the mount points system, if a\n" +
             "    mount point spans accross an entire grid cell face\n" +
-            "    then that face is considered airtight.\n" +
-            "\n" +
-            "  Yellow = mount point (can be airtight if occupies an entire face)\n" +
-            "  Orange = mount point + auto rotation target.\n" +
-            "  Sky-blue = disabled mount point, only used by airtight system.\n" +
+            "    then that face is airtight.\n" +
             "\n" +
             "\n" +
             "[1] Laser antenna power usage is linear up to 200km.\n" +
@@ -170,7 +172,7 @@ namespace Digi.BuildInfo
         public Settings settings = null;
         public LeakInfo leakInfo = null; // leak info component
         private short tick = 0; // global incrementing gamelogic tick
-        private bool drawBlockVolumes = false;
+        private int drawVolumeType = 0;
         private bool blockDataDraw = false;
         private bool doorAirtightBlink = false;
         private int doorAirtightBlinkTick = 0;
@@ -274,7 +276,7 @@ namespace Digi.BuildInfo
 
             textAPI = new HudAPIv2();
 
-            // DEBUG experiment - block detection without gamelogic comp
+            // TODO experiment - block detection without gamelogic comp
             //MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -301,7 +303,7 @@ namespace Digi.BuildInfo
                 {
                     init = false;
 
-                    // DEBUG experiment - block detection without gamelogic comp
+                    // TODO experiment - block detection without gamelogic comp
                     //MyAPIGateway.Entities.OnEntityAdd -= OnEntityAdd;
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
@@ -333,7 +335,7 @@ namespace Digi.BuildInfo
             Log.Close();
         }
 
-        // DEBUG experiment - block detection without gamelogic comp
+        // TODO experiment - block detection without gamelogic comp
 #if false
         private readonly Dictionary<MyObjectBuilderType, Type> blockTypesMonitor = new Dictionary<MyObjectBuilderType, Type>(MyObjectBuilderType.Comparer)
         {
@@ -545,7 +547,7 @@ namespace Digi.BuildInfo
                                     buildInfoNotification.Show();
                                     break;
                                 case 3:
-                                    drawBlockVolumes = !drawBlockVolumes;
+                                    CycleDrawVolume();
                                     break;
                                 case 4:
                                     MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
@@ -581,13 +583,13 @@ namespace Digi.BuildInfo
                         }
                         else if(input.IsAnyCtrlKeyPressed())
                         {
-                            drawBlockVolumes = !drawBlockVolumes;
+                            CycleDrawVolume();
                             menuNeedsUpdate = true;
 
                             if(mountPointsNotification == null)
                                 mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                            mountPointsNotification.Text = (drawBlockVolumes ? "Block Volumes draw ON" : "Block Volumes draw OFF");
+                            mountPointsNotification.Text = "Block Volumes: " + DRAW_VOLUME_TYPE[drawVolumeType];
                             mountPointsNotification.Show();
                         }
                         else if(input.IsAnyAltKeyPressed())
@@ -610,6 +612,12 @@ namespace Digi.BuildInfo
             {
                 Log.Error(e);
             }
+        }
+
+        private void CycleDrawVolume()
+        {
+            if(++drawVolumeType >= DRAW_VOLUME_TYPE.Length)
+                drawVolumeType = 0;
         }
 
         private void SetFreezeGizmo(bool freeze)
@@ -701,7 +709,7 @@ namespace Digi.BuildInfo
 
         private void DrawBlockVolumes()
         {
-            if(drawBlockVolumes && (hudVisible || settings.alwaysVisible) && selectedDef != null)
+            if(drawVolumeType > 0 && (hudVisible || settings.alwaysVisible) && selectedDef != null)
             {
                 var def = selectedDef;
 
@@ -755,69 +763,95 @@ namespace Digi.BuildInfo
 
                     if(mountPoints != null)
                     {
-                        if(def.IsAirTight)
+                        if(drawVolumeType == 1)
                         {
-                            var color = MOUNTPOINT_DISABLED_COLOR;
-                            var halfExtents = def.Size * (gridSize * 0.5);
-                            var localBB = new BoundingBoxD(-halfExtents, halfExtents);
-                            MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
-                        }
-
-                        // DEBUG TODO iterate each outer face and check for pressurization (using PRessurization class!)
-                        // HACK also note that the pressurization assumes that it doesn't combine mount points of 2 neighbouring blocks
-                        //if(!def.IsAirTight)
-                        //{
-                        //    var transformMatrix = MatrixD.CreateTranslation(center - (def.Size * 0.5f)) * drawMatrix;
-                        //
-                        //    foreach(var kv in def.IsCubePressurized)
-                        //    {
-                        //        foreach(var kv2 in kv.Value)
-                        //        {
-                        //            if(kv2.Value) // this pos+normal is pressurized
-                        //            {
-                        //                // this is offset if the cube size is multiple of 2...?
-                        //                var pos = Vector3D.Transform((Vector3D)((kv.Key - center) * gridSize), drawMatrix);
-                        //                var dir = Vector3.TransformNormal(kv2.Key, drawMatrix);
-                        //
-                        //                MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Magenta, pos, dir, gridSize * 0.5f, 0.01f);
-                        //            }
-                        //        }
-                        //    }
-                        //}
-
-                        for(int i = 0; i < mountPoints.Length; i++)
-                        {
-                            var mountPoint = mountPoints[i];
-
-                            if(!mountPoint.Enabled && def.IsAirTight)
-                                continue; // ignore disabled mount points if the block is already fully airtight
-
-                            var colorFace = (mountPoint.Enabled ? (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR) : MOUNTPOINT_DISABLED_COLOR);
-
-                            DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
-
-                            if(drawLabel)
+                            if(def.IsAirTight)
                             {
-                                drawLabel = false; // only draw for the first mount point
+                                var halfExtents = def.Size * (gridSize * 0.5);
+                                var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
+                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+                            }
+                            else
+                            {
+                                var half = Vector3D.One * -(0.5f * gridSize);
+                                var corner = (Vector3D)def.Size * -(0.5f * gridSize);
+                                var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
-                                // TODO use? needs fixing for multi-cell blocks...
+                                foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = is airtight
+                                {
+                                    foreach(var kv2 in kv.Value)
+                                    {
+                                        if(!kv2.Value) // pos+normal not airtight
+                                            continue;
 
-                                //var cubeSize = def.Size * (gridSize * 0.5f);
-                                //var dirIndex = (int)Base6Directions.GetDirection(mountPoint.Normal);
-                                //var dirForward = Vector3D.TransformNormal(DIRECTIONS[dirIndex], drawMatrix);
-                                //var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
-                                //var dirUp = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+                                        var pos = Vector3D.Transform((Vector3D)(kv.Key * gridSize), transformMatrix);
+                                        var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                                        var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
+                                        var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
-                                //var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
-                                //float width = cubeSize.GetDim(((i + 4) % 6) / 2);
-                                //float height = cubeSize.GetDim(((i + 2) % 6) / 2);
+                                        var m = MatrixD.Identity;
+                                        m.Translation = pos + dirForward * (gridSize * 0.5f);
+                                        m.Forward = dirForward;
+                                        m.Backward = -dirForward;
+                                        m.Left = Vector3D.Cross(dirForward, dirUp);
+                                        m.Right = -m.Left;
+                                        m.Up = dirUp;
+                                        m.Down = -dirUp;
+                                        var scale = new Vector3D(gridSize, gridSize, MOUNTPOINT_THICKNESS);
+                                        MatrixD.Rescale(ref m, ref scale);
 
-                                //var labelPos = pos + dirLeft * width + dirUp * height;
-                                //var labelDir = dirUp;
+                                        MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
 
-                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT, labelPos, labelPos + labelDir * 0.3, "Mount/pressure face", MOUNTPOINT_COLOR);
-                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_ROTATE, labelPos, labelPos + labelDir * 0.5, "Auto-rotate face", MOUNTPOINT_DEFAULT_COLOR);
-                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_DISABLED, labelPos, labelPos + labelDir * 0.7, "Pressure only face", MOUNTPOINT_DISABLED_COLOR);
+                                        //var colorWire = AIRTIGHT_COLOR * 4; 
+                                        //MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorWire, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.01f, lineMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
+
+                                        // makes an X
+                                        //var v0 = (m.Translation + m.Down * 0.5 + m.Left * 0.5);
+                                        //var v1 = (m.Translation + m.Up * 0.5 + m.Right * 0.5);
+                                        //var v2 = (m.Translation + m.Down * 0.5 + m.Right * 0.5);
+                                        //var v3 = (m.Translation + m.Up * 0.5 + m.Left * 0.5);
+                                        //MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, colorWire, v0, (v1 - v0), 1f, 0.05f);
+                                        //MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, colorWire, v2, (v3 - v2), 1f, 0.05f);
+                                    }
+                                }
+                            }
+                        }
+                        else if(drawVolumeType == 2)
+                        {
+                            for(int i = 0; i < mountPoints.Length; i++)
+                            {
+                                var mountPoint = mountPoints[i];
+
+                                if(!mountPoint.Enabled)
+                                    continue; // ignore all disabled mount points as airtight ones are rendered separate
+
+                                var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+
+                                DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
+
+                                if(drawLabel)
+                                {
+                                    drawLabel = false; // only draw for the first mount point
+
+                                    // TODO use? needs fixing for multi-cell blocks...
+
+                                    //var cubeSize = def.Size * (gridSize * 0.5f);
+                                    //var dirIndex = (int)Base6Directions.GetDirection(mountPoint.Normal);
+                                    //var dirForward = Vector3D.TransformNormal(DIRECTIONS[dirIndex], drawMatrix);
+                                    //var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
+                                    //var dirUp = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+
+                                    //var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
+                                    //float width = cubeSize.GetDim(((i + 4) % 6) / 2);
+                                    //float height = cubeSize.GetDim(((i + 2) % 6) / 2);
+
+                                    //var labelPos = pos + dirLeft * width + dirUp * height;
+                                    //var labelDir = dirUp;
+
+                                    //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT, labelPos, labelPos + labelDir * 0.3, "Mount/pressure face", MOUNTPOINT_COLOR);
+                                    //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_ROTATE, labelPos, labelPos + labelDir * 0.5, "Auto-rotate face", MOUNTPOINT_DEFAULT_COLOR);
+                                    //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_DISABLED, labelPos, labelPos + labelDir * 0.7, "Pressure only face", MOUNTPOINT_DISABLED_COLOR);
+                                }
                             }
                         }
                     }
@@ -827,7 +861,7 @@ namespace Digi.BuildInfo
                 #region Door airtightness toggle blinking
                 if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition)
                 {
-                    if(++doorAirtightBlinkTick >= 30)
+                    if(!MyParticlesManager.Paused && ++doorAirtightBlinkTick >= 60)
                     {
                         doorAirtightBlinkTick = 0;
                         doorAirtightBlink = !doorAirtightBlink;
@@ -836,42 +870,41 @@ namespace Digi.BuildInfo
                     var cubeSize = def.Size * (gridSize * 0.5f);
                     bool drawLabel = settings.allLabels && TextAPIEnabled;
 
-                    for(int i = 0; i < 6; ++i)
+                    if(drawLabel || doorAirtightBlink)
                     {
-                        var normal = DIRECTIONS[i];
-
-                        if(Pressurization.IsDoorFacePressurized(def, (Vector3I)normal, true))
+                        for(int i = 0; i < 6; ++i)
                         {
-                            var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
-                            var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
-                            var dirUp = Vector3D.TransformNormal(DIRECTIONS[((i + 2) % 6)], drawMatrix);
+                            var normal = DIRECTIONS[i];
 
-                            var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
-                            float width = cubeSize.GetDim(((i + 4) % 6) / 2);
-                            float height = cubeSize.GetDim(((i + 2) % 6) / 2);
-
-                            if(doorAirtightBlink)
+                            if(Pressurization.IsDoorFacePressurized(def, (Vector3I)normal, true))
                             {
-                                //MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
+                                var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
+                                var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
+                                var dirUp = Vector3D.TransformNormal(DIRECTIONS[((i + 2) % 6)], drawMatrix);
 
-                                var m = MatrixD.CreateWorld(pos, dirForward, dirUp);
-                                m.Right *= width * 2;
-                                m.Up *= height * 2;
-                                m.Forward *= MOUNTPOINT_THICKNESS;
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref MOUNTPOINT_DOOR_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
-                            }
+                                var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
+                                float width = cubeSize.GetDim(((i + 4) % 6) / 2);
+                                float height = cubeSize.GetDim(((i + 2) % 6) / 2);
 
-                            if(drawLabel) // only label the first one
-                            {
-                                drawLabel = false;
-                                var labelPos = pos + dirLeft * width + dirUp * height;
+                                if(doorAirtightBlink)
+                                {
+                                    var m = MatrixD.CreateWorld(pos, dirForward, dirUp);
+                                    m.Right *= width * 2;
+                                    m.Up *= height * 2;
+                                    m.Forward *= MOUNTPOINT_THICKNESS;
+                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
+                                }
 
-                                DrawLineLabelAlternate(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, labelPos + dirLeft * 0.5, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, underlineLength: 1.7f);
+                                if(drawLabel) // only label the first one
+                                {
+                                    drawLabel = false;
 
-                                //DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.5f, underlineLength: 1.7f);
+                                    var labelPos = pos + dirLeft * width + dirUp * height;
+                                    DrawLineLabelAlternate(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, labelPos + dirLeft * 0.5, "Airtight when closed", AIRTIGHT_TOGGLE_COLOR, underlineLength: 1.7f);
 
-                                if(!doorAirtightBlink)
-                                    break;
+                                    if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
+                                        break;
+                                }
                             }
                         }
                     }
@@ -1166,14 +1199,10 @@ namespace Digi.BuildInfo
             m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
             m.Translation = obb.Center;
 
-            // draw OBB
-            var scale = m.Scale;
-            var halfExtent = scale / 2.0;
-            m.Right /= scale.X;
-            m.Up /= scale.Y;
-            m.Forward /= scale.Z;
-            var box = new BoundingBoxD(-halfExtent, halfExtent);
-            MySimpleObjectDraw.DrawTransparentBox(ref m, ref box, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
+
+            //var colorWire = colorFace * 4;
+            //MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorWire, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.005f, lineMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
         }
 
         private void DrawMountPointAxixText(MyCubeBlockDefinition def, float gridSize, ref MatrixD drawMatrix)
@@ -1229,7 +1258,7 @@ namespace Digi.BuildInfo
 
             AddMenuItemLine(i++).Append("Text info: ").Append(settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Draw block volumes: ").Append(drawBlockVolumes ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Draw block volumes: ").Append(DRAW_VOLUME_TYPE[drawVolumeType]);
             if(inputName != null)
                 GetLine().Append("   (Ctrl+" + inputName + ")");
             GetLine().ResetTextAPIColor().EndLine();
