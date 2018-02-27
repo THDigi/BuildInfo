@@ -623,10 +623,13 @@ namespace Digi.BuildInfo
         {
             try
             {
-                if(!init || !hudVisible)
+                if(!init)
                     return;
 
                 DrawBlockVolumes();
+
+                if(!hudVisible)
+                    return;
 
                 if(leakInfo != null)
                     leakInfo.Draw();
@@ -680,7 +683,7 @@ namespace Digi.BuildInfo
 
         private void DrawBlockVolumes()
         {
-            if(drawBlockVolumes && selectedDef != null)
+            if(hudVisible && drawBlockVolumes && selectedDef != null)
             {
                 var def = selectedDef;
 
@@ -799,7 +802,7 @@ namespace Digi.BuildInfo
                             {
                                 // specifying width and height to not be misused with the other overload that has radius and customprojection
                                 //MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
-                                
+
                                 var m = MatrixD.CreateWorld(pos, dirForward, dirLeft);
                                 m.Right *= height * 2;
                                 m.Up *= width * 2;
