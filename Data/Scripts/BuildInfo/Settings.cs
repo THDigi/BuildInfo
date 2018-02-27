@@ -15,6 +15,8 @@ namespace Digi.BuildInfo
         public bool textAPIAlignBottom;
         public float textAPIScale;
         public float textAPIBackgroundOpacity;
+        public bool allLabels = true;
+        public bool axisLabels = true;
 
         public const bool default_showTextInfo = true;
         public const bool default_textAPIUseCustomStyling = false;
@@ -190,6 +192,26 @@ namespace Digi.BuildInfo
 
                         continue;
                     }
+
+                    if(key.Equals("AllLabels", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(bool.TryParse(val, out b))
+                            allLabels = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("AxisLabels", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(bool.TryParse(val, out b))
+                            axisLabels = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
                 }
 
                 Log.Info("Loaded settings:\n" + GetSettingsString(false));
@@ -294,6 +316,17 @@ namespace Digi.BuildInfo
             }
 
             str.Append("BackgroundOpacity = ").Append(textAPIBackgroundOpacity < 0 ? "HUD" : Math.Round(textAPIBackgroundOpacity, 5).ToString()).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// Using textAPI and block volumes view mode shows labels on some things.").AppendLine();
+                str.Append("// You can toggle those labels here.").AppendLine();
+                str.Append("// Everything is default true").AppendLine();
+            }
+
+            str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
+            str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
 
             return str.ToString();
         }

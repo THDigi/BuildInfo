@@ -43,15 +43,19 @@ namespace Digi.BuildInfo
 
         private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
         private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
-        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
+        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("BuildInfo_Square");
         private readonly MyStringId MATERIAL_WHITEDOT = MyStringId.GetOrCompute("WhiteDot");
 
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
         private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
+        private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
 
-        private readonly Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * 0.7f;
-        private readonly Color MOUNTPOINT_DEFAULT_COLOR = new Color(55, 55, 255) * 0.7f;
-        private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * 0.7f;
+        private const double MOUNTPOINT_THICKNESS = 0.01;
+        private const float MOUNTPOINT_ALPHA = 0.75f;
+        private readonly Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
+        private readonly Color MOUNTPOINT_DEFAULT_COLOR = new Color(255, 155, 0) * MOUNTPOINT_ALPHA;
+        private readonly Color MOUNTPOINT_DISABLED_COLOR = new Color(25, 155, 255) * MOUNTPOINT_ALPHA;
+        private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * MOUNTPOINT_ALPHA;
         private const double TEXT_SHADOW_OFFSET = 0.007;
         private readonly Color TEXT_SHADOW_COLOR = Color.Black * 0.9f;
 
@@ -79,11 +83,14 @@ namespace Digi.BuildInfo
             typeof(MyObjectBuilder_Component)
         };
 
-        enum TextAPIMsgIds
+        private enum TextAPIMsgIds
         {
-            AXIS_Z,
+            AXIS_Z, // NOTE these 3 must remain the first 3, because AXIS_LABELS uses their integer values as indexes
             AXIS_X,
             AXIS_Y,
+            //MOUNT,
+            //MOUNT_ROTATE,
+            //MOUNT_DISABLED,
             DRILL_MINE,
             DRILL_CUTOUT,
             SHIP_TOOL,
@@ -94,10 +101,18 @@ namespace Digi.BuildInfo
             MAGNET,
         }
 
+        private string[] AXIS_LABELS = new string[]
+        {
+            "Forward",
+            "Right",
+            "Up",
+        };
+
         private const string HELP =
-            "/buildinfo reload\n    reloads the config.\n" +
-            "/buildinfo help\n    shows this window.\n" +
-            "/buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
+            "Chat commands:\n" +
+            "  /buildinfo reload\n    reloads the config.\n" +
+            "  /buildinfo help\n    shows this window.\n" +
+            "  /buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
             "\n" +
             "\n" +
             "The config is located in:\n" +
@@ -106,23 +121,30 @@ namespace Digi.BuildInfo
             "\n" +
             "The asterisks on the labels (e.g. Power usage*: 10 W) means\n" +
             "  that the value is calculated from hardcoded values taken\n" +
-            "  from the game source, take them with a grain of salt.\n" +
+            "  from the game source, they might become inaccurate with updates.\n" +
             "\n" +
             "\n" +
             "Airtightness & Mount points explained:\n" +
-            "  Mount points are used for determining what surfaces can be\n" +
-            "    mounted by other mountable surfaces.\n" +
-            "  The blue face is used for auto rotation when placing.\n" +
             "\n" +
+            "  Mount points (yellow) are used for determining what surfaces\n" +
+            "     can be mounted by other mountable surfaces.\n" +
             "  Airtightness also uses the mount points system.\n" +
+            "\n" +
+            "  The orange face is used for auto rotation when placing.\n" +
+            "\n" +
+            "  Sky-blue faces are only used by gas system, not for mounting.\n" +
+            "\n" +
             "  If a face (defined by a single grid cell) has an entire\n" +
             "    mount point then that face can seal against void.\n" +
-            "  Additionally, if 2 blocks' mount points combined make a full face\n" +
-            "    then that combination also creates an airtight seal.\n" +
+            "\n" +
+            "  If 2 blocks' mount points combined make a full face then\n" +
+            "    that combination also creates an airtight seal.\n" +
             "\n" +
             "\n" +
             "[1] Laser antenna power usage is linear up to 200km.\n" +
+            "\n" +
             "  After that it's a weird formula that I don't really understand:\n" +
+            "\n" +
             "  defPowerLasing = 10MW for largeship laser antenna\n" +
             "  n1 = defPowerLasing / 2 / 200000\n" +
             "  n2 = defPowerLasing * 200000 - n2 * 200000 * 200000\n" +
@@ -401,7 +423,7 @@ namespace Digi.BuildInfo
 
         private void ShowHelp()
         {
-            MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod Commands", "", "You can type these commands in the chat.", HELP, null, "Close");
+            MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", HELP, null, "Close");
         }
 
         private void GuiControlRemoved(object obj)
@@ -695,26 +717,54 @@ namespace Digi.BuildInfo
                 }
                 else
                 {
-                    // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn
+                    // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
                     var mp = def.MountPoints;
                     def.MountPoints = BLANK_MOUNTPOINTS;
                     MyCubeBuilder.DrawMountPoints(gridSize, def, ref drawMatrix);
                     def.MountPoints = mp;
                 }
 
-                var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
-                var center = def.Center;
-                var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * gridSize) * drawMatrix;
-                var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-
-                if(mountPoints != null)
+                // draw custom mount point styling
                 {
-                    for(int i = 0; i < mountPoints.Length; i++)
-                    {
-                        var mountPoint = mountPoints[i];
-                        var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+                    var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
+                    var center = def.Center;
+                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * gridSize) * drawMatrix;
+                    var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+                    bool drawLabel = settings.allLabels && TextAPIEnabled;
 
-                        DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
+                    if(mountPoints != null)
+                    {
+                        for(int i = 0; i < mountPoints.Length; i++)
+                        {
+                            var mountPoint = mountPoints[i];
+                            var colorFace = (mountPoint.Enabled ? (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR) : MOUNTPOINT_DISABLED_COLOR);
+
+                            DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
+
+                            if(drawLabel)
+                            {
+                                drawLabel = false; // only draw for the first mount point
+
+                                // TODO use? needs fixing for multi-cell blocks...
+
+                                //var cubeSize = def.Size * (gridSize * 0.5f);
+                                //var dirIndex = (int)Base6Directions.GetDirection(mountPoint.Normal);
+                                //var dirForward = Vector3D.TransformNormal(DIRECTIONS[dirIndex], drawMatrix);
+                                //var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
+                                //var dirUp = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+
+                                //var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
+                                //float width = cubeSize.GetDim(((i + 4) % 6) / 2);
+                                //float height = cubeSize.GetDim(((i + 2) % 6) / 2);
+
+                                //var labelPos = pos + dirLeft * width + dirUp * height;
+                                //var labelDir = dirUp;
+
+                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT, labelPos, labelPos + labelDir * 0.3, "Mount/pressure face", MOUNTPOINT_COLOR);
+                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_ROTATE, labelPos, labelPos + labelDir * 0.5, "Auto-rotate face", MOUNTPOINT_DEFAULT_COLOR);
+                                //DrawLineLabelAlternate(TextAPIMsgIds.MOUNT_DISABLED, labelPos, labelPos + labelDir * 0.7, "Pressure only face", MOUNTPOINT_DISABLED_COLOR);
+                            }
+                        }
                     }
                 }
                 #endregion
@@ -729,7 +779,7 @@ namespace Digi.BuildInfo
                     }
 
                     var cubeSize = def.Size * (gridSize * 0.5f);
-                    bool firstFace = TextAPIEnabled;
+                    bool drawLabel = settings.allLabels && TextAPIEnabled;
 
                     for(int i = 0; i < 6; ++i)
                     {
@@ -748,14 +798,23 @@ namespace Digi.BuildInfo
                             if(doorAirtightBlink)
                             {
                                 // specifying width and height to not be misused with the other overload that has radius and customprojection
-                                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
+                                //MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, MOUNTPOINT_DOOR_COLOR, pos, dirLeft, dirUp, width: width, height: height);
+                                
+                                var m = MatrixD.CreateWorld(pos, dirForward, dirLeft);
+                                m.Right *= height * 2;
+                                m.Up *= width * 2;
+                                m.Forward *= MOUNTPOINT_THICKNESS;
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref MOUNTPOINT_DOOR_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
                             }
 
-                            if(firstFace) // only label the first one
+                            if(drawLabel) // only label the first one
                             {
-                                firstFace = false;
+                                drawLabel = false;
                                 var labelPos = pos + dirLeft * width + dirUp * height;
-                                DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.5f, underlineLength: 1.7f);
+
+                                DrawLineLabelAlternate(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, labelPos + dirLeft * 0.5, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, underlineLength: 1.7f);
+
+                                //DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", MOUNTPOINT_DOOR_COLOR, lineHeight: 0.5f, underlineLength: 1.7f);
 
                                 if(!doorAirtightBlink)
                                     break;
@@ -775,6 +834,7 @@ namespace Digi.BuildInfo
                     var colorMineFace = colorMine * 0.3f;
                     var colorCut = Color.Red;
                     var colorCutFace = colorCut * 0.3f;
+                    bool drawLabels = settings.allLabels && TextAPIEnabled;
 
                     var mineMatrix = drawMatrix;
                     mineMatrix.Translation += mineMatrix.Forward * drill.SensorOffset;
@@ -782,7 +842,7 @@ namespace Digi.BuildInfo
 
                     bool showCutOut = (Math.Abs(drill.SensorRadius - drill.CutOutRadius) > 0.0001f || Math.Abs(drill.SensorOffset - drill.CutOutOffset) > 0.0001f);
 
-                    if(TextAPIEnabled)
+                    if(drawLabels)
                     {
                         var labelDir = mineMatrix.Down;
                         var sphereEdge = mineMatrix.Translation + (labelDir * drill.SensorRadius);
@@ -795,7 +855,7 @@ namespace Digi.BuildInfo
                         cutMatrix.Translation += cutMatrix.Forward * drill.CutOutOffset;
                         MySimpleObjectDraw.DrawTransparentSphere(ref cutMatrix, drill.CutOutRadius, ref colorCutFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
 
-                        if(TextAPIEnabled)
+                        if(drawLabels)
                         {
                             var labelDir = cutMatrix.Left;
                             var sphereEdge = cutMatrix.Translation + (labelDir * drill.CutOutRadius);
@@ -824,7 +884,7 @@ namespace Digi.BuildInfo
 
                         MySimpleObjectDraw.DrawTransparentSphere(ref sphereMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
 
-                        if(TextAPIEnabled)
+                        if(settings.allLabels && TextAPIEnabled)
                         {
                             var labelDir = sphereMatrix.Down;
                             var sphereEdge = sphereMatrix.Translation + (labelDir * radius);
@@ -865,7 +925,7 @@ namespace Digi.BuildInfo
                         //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
                         //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
 
-                        if(TextAPIEnabled)
+                        if(settings.allLabels && TextAPIEnabled)
                         {
                             var labelDir = coneMatrix.Up;
                             var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
@@ -892,7 +952,7 @@ namespace Digi.BuildInfo
                         var color = Color.Red;
                         var colorFace = color * 0.5f;
                         var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
-                        bool first = TextAPIEnabled;
+                        bool drawLabel = settings.allLabels && TextAPIEnabled;
 
                         foreach(var flame in data.damageFlames)
                         {
@@ -901,9 +961,9 @@ namespace Digi.BuildInfo
                             capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Height * 0.5));
                             MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.Radius, flame.Height, ref colorFace, wireDivideRatio, MATERIAL_SQUARE);
 
-                            if(first) // label only on the first flame
+                            if(drawLabel)
                             {
-                                first = false;
+                                drawLabel = false; // label only on the first flame
                                 var labelDir = drawMatrix.Down;
                                 var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * flame.Radius;
                                 DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, "Thrust damage", color, lineHeight: lineHeight, underlineLength: 1.1f);
@@ -922,7 +982,7 @@ namespace Digi.BuildInfo
                     {
                         var color = new Color(55, 200, 255);
                         var colorFace = color * 0.5f;
-                        bool first = TextAPIEnabled;
+                        bool drawLabel = settings.allLabels && TextAPIEnabled;
 
                         foreach(var obb in data.magents)
                         {
@@ -933,9 +993,9 @@ namespace Digi.BuildInfo
 
                             MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
 
-                            if(first) // only label the first one
+                            if(drawLabel)
                             {
-                                first = false;
+                                drawLabel = false; // only label the first one
                                 var labelDir = drawMatrix.Down;
                                 var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
                                 DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, "Magnet", color, lineHeight: 0.5f, underlineLength: 0.7f);
@@ -975,6 +1035,9 @@ namespace Digi.BuildInfo
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, 1f, lineThick);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, 1f, lineThick);
 
+            if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
+                return;
+
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
 
@@ -988,6 +1051,9 @@ namespace Digi.BuildInfo
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, lineHeight, lineThick);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, lineHeight, lineThick);
+
+            if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
+                return;
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
@@ -1038,10 +1104,12 @@ namespace Digi.BuildInfo
             var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cubeSize, Vector3.Max(startLocal, endLocal) * cubeSize);
             var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
 
+            var normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
+
             var m = MatrixD.CreateFromQuaternion(obb.Orientation);
-            m.Right *= Math.Max(obb.HalfExtent.X * 2, minSize);
-            m.Up *= Math.Max(obb.HalfExtent.Y * 2, minSize);
-            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, minSize);
+            m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MOUNTPOINT_THICKNESS : 0));
+            m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MOUNTPOINT_THICKNESS : 0));
+            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
             m.Translation = obb.Center;
 
             // draw OBB
@@ -1064,13 +1132,6 @@ namespace Digi.BuildInfo
             DrawAxis(TextAPIMsgIds.AXIS_X, ref Vector3.Right, Color.Red, ref drawMatrix, ref matrix);
             DrawAxis(TextAPIMsgIds.AXIS_Y, ref Vector3.Up, Color.Lime, ref drawMatrix, ref matrix);
         }
-
-        private string[] AXIS_LABELS = new string[]
-        {
-            "Forward",
-            "Right",
-            "Up",
-        };
 
         private void DrawAxis(TextAPIMsgIds id, ref Vector3 direction, Color color, ref MatrixD drawMatrix, ref MatrixD matrix)
         {
