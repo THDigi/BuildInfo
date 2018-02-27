@@ -57,6 +57,7 @@ namespace Digi.BuildInfo
         private readonly Color MOUNTPOINT_DISABLED_COLOR = new Color(25, 155, 255) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_DOOR_COLOR = new Color(55, 255, 155) * MOUNTPOINT_ALPHA;
         private const double TEXT_SHADOW_OFFSET = 0.007;
+        private const double TEXT_SHADOW_OFFSET_Z = 0.01;
         private readonly Color TEXT_SHADOW_COLOR = Color.Black * 0.9f;
 
         public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
@@ -1083,34 +1084,34 @@ namespace Digi.BuildInfo
 
         private void DrawLineLabelAlternate(TextAPIMsgIds id, Vector3D start, Vector3D end, string text, Color color, bool constantTextUpdate = false, float lineThick = 0.005f, float underlineLength = 0.75f)
         {
-            var camera = MyAPIGateway.Session.Camera;
+            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             var direction = (end - start);
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, 1f, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, 1f, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + cm.Right * TEXT_SHADOW_OFFSET + cm.Down * TEXT_SHADOW_OFFSET + cm.Forward * TEXT_SHADOW_OFFSET_Z, direction, 1f, lineThick);
 
             if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
                 return;
 
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, cm.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + cm.Right * TEXT_SHADOW_OFFSET + cm.Down * TEXT_SHADOW_OFFSET + cm.Forward * TEXT_SHADOW_OFFSET_Z, cm.Right, underlineLength, lineThick);
 
             DrawSimpleLabel(id, end, text, color, constantTextUpdate);
         }
 
         private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, string text, Color color, bool constantTextUpdate = false, float lineHeight = 0.3f, float lineThick = 0.005f, float underlineLength = 0.75f)
         {
-            var camera = MyAPIGateway.Session.Camera;
+            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             var end = start + direction * lineHeight;
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, lineHeight, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, direction, lineHeight, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, start + cm.Right * TEXT_SHADOW_OFFSET + cm.Down * TEXT_SHADOW_OFFSET + cm.Forward * TEXT_SHADOW_OFFSET_Z, direction, lineHeight, lineThick);
 
             if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
                 return;
 
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, camera.WorldMatrix.Right, underlineLength, lineThick);
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + camera.WorldMatrix.Right * TEXT_SHADOW_OFFSET + camera.WorldMatrix.Down * TEXT_SHADOW_OFFSET, camera.WorldMatrix.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, cm.Right, underlineLength, lineThick);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, TEXT_SHADOW_COLOR, end + cm.Right * TEXT_SHADOW_OFFSET + cm.Down * TEXT_SHADOW_OFFSET + cm.Forward * TEXT_SHADOW_OFFSET_Z, cm.Right, underlineLength, lineThick);
 
             DrawSimpleLabel(id, end, text, color, constantTextUpdate);
         }
