@@ -110,8 +110,9 @@ namespace Digi.BuildInfo
 
         private const string HELP =
             "Chat commands:\n" +
-            "  /buildinfo reload\n    reloads the config.\n" +
+            "  /buildinfo\n    shows this window or menu if you're holding a block.\n" +
             "  /buildinfo help\n    shows this window.\n" +
+            "  /buildinfo reload\n    reloads the config.\n" +
             "  /buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
             "\n" +
             "\n" +
@@ -397,8 +398,11 @@ namespace Digi.BuildInfo
                         return;
                     }
 
-                    // if no arguments then show menu
-                    showMenu = true;
+                    // no arguments
+                    if(selectedDef != null)
+                        showMenu = true;
+                    else
+                        ShowHelp();
                 }
             }
             catch(Exception e)
