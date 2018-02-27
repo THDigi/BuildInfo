@@ -28,7 +28,7 @@ namespace Digi.BuildInfo
             return (b1 != null && (((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight || IsPressurized(b1, startPos, endPos - startPos))) || (b2 != null && (((MyCubeBlockDefinition)b2.BlockDefinition).IsAirTight || IsPressurized(b2, endPos, startPos - endPos)));
         }
 
-        public static bool IsPressurized(IMySlimBlock block, Vector3I pos, Vector3 normal)
+        public static bool IsPressurized(IMySlimBlock block, Vector3I gridPos, Vector3 normal)
         {
             var def = (MyCubeBlockDefinition)block.BlockDefinition;
 
@@ -44,26 +44,26 @@ namespace Digi.BuildInfo
             block.Orientation.GetMatrix(out matrix);
             matrix.TransposeRotationInPlace();
 
-            Vector3I vector = Vector3I.Round(Vector3.Transform(normal, matrix));
+            Vector3I normalLocal = Vector3I.Round(Vector3.Transform(normal, matrix));
             Vector3 position = Vector3.Zero;
 
             if(block.FatBlock != null)
-                position = pos - block.FatBlock.Position;
+                position = gridPos - block.FatBlock.Position;
 
             Vector3I value = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
 
-            if(def.IsCubePressurized[value][vector])
+            if(def.IsCubePressurized[value][normalLocal])
                 return true;
 
             var door = block.FatBlock as IMyDoor;
 
             if(door != null)
-                return IsDoorFacePressurized(def, vector, door.OpenRatio <= 0.05f);
+                return IsDoorFacePressurized(def, normalLocal, door.OpenRatio <= 0.05f);
 
             return false;
         }
 
-        public static bool IsDoorFacePressurized(MyCubeBlockDefinition def, Vector3I normal, bool fullyClosed)
+        public static bool IsDoorFacePressurized(MyCubeBlockDefinition def, Vector3I normalLocal, bool fullyClosed)
         {
             if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
             {
@@ -73,7 +73,7 @@ namespace Digi.BuildInfo
 
                     for(int i = 0; i < mountPoints.Length; i++)
                     {
-                        if(normal == mountPoints[i].Normal)
+                        if(normalLocal == mountPoints[i].Normal)
                         {
                             return false;
                         }
@@ -86,11 +86,11 @@ namespace Digi.BuildInfo
             }
             else if(def is MyAirtightSlideDoorDefinition)
             {
-                return (fullyClosed && normal == Vector3I.Forward);
+                return (fullyClosed && normalLocal == Vector3I.Forward);
             }
             else if(def is MyAirtightDoorGenericDefinition)
             {
-                return (fullyClosed && (normal == Vector3I.Forward || normal == Vector3I.Backward));
+                return (fullyClosed && (normalLocal == Vector3I.Forward || normalLocal == Vector3I.Backward));
             }
 
             return false;

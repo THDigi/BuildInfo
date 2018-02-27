@@ -124,21 +124,20 @@ namespace Digi.BuildInfo
             "  from the game source, they might become inaccurate with updates.\n" +
             "\n" +
             "\n" +
-            "Airtightness & Mount points explained:\n" +
+            "Mount points & airtightness explained:\n" +
             "\n" +
-            "  Mount points (yellow) are used for determining what surfaces\n" +
+            "  Mount points are used for determining what surfaces\n" +
             "     can be mounted by other mountable surfaces.\n" +
-            "  Airtightness also uses the mount points system.\n" +
             "\n" +
-            "  The orange face is used for auto rotation when placing.\n" +
+            "  These can only be on the outer faces of the block bounds.\n" +
             "\n" +
-            "  Sky-blue faces are only used by gas system, not for mounting.\n" +
+            "  Airtightness also uses the mount points system, if a\n" +
+            "    mount point spans accross an entire grid cell face\n" +
+            "    then that face is considered airtight.\n" +
             "\n" +
-            "  If a face (defined by a single grid cell) has an entire\n" +
-            "    mount point then that face can seal against void.\n" +
-            "\n" +
-            "  If 2 blocks' mount points combined make a full face then\n" +
-            "    that combination also creates an airtight seal.\n" +
+            "  Yellow = mount point (can be airtight if occupies an entire face)\n" +
+            "  Orange = mount point + auto rotation target.\n" +
+            "  Sky-blue = disabled mount point, only used by airtight system.\n" +
             "\n" +
             "\n" +
             "[1] Laser antenna power usage is linear up to 200km.\n" +
@@ -173,20 +172,20 @@ namespace Digi.BuildInfo
         private bool blockDataDraw = false;
         private bool doorAirtightBlink = false;
         private int doorAirtightBlinkTick = 0;
+        private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public MyCubeBlockDefinition selectedDef = null;
         public BlockDataBase selectedBlockData = null;
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
         private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
         public bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
-        private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
+        private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
+        private bool textShown = false;
+        private Vector3D lastGizmoPosition;
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification mountPointsNotification = null;
         private IMyHudNotification transparencyNotification = null;
         private IMyHudNotification freezeGizmoNotification = null;
         private IMyHudNotification unsupportedGridSizeNotification = null;
-        private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
-        private bool textShown = false;
-        private Vector3D lastGizmoPosition;
 
         // menu specific stuff
         private bool showMenu = false;
@@ -751,9 +750,43 @@ namespace Digi.BuildInfo
 
                     if(mountPoints != null)
                     {
+                        if(def.IsAirTight)
+                        {
+                            var color = MOUNTPOINT_DISABLED_COLOR;
+                            var halfExtents = def.Size * (gridSize * 0.5);
+                            var localBB = new BoundingBoxD(-halfExtents, halfExtents);
+                            MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+                        }
+
+                        // DEBUG TODO iterate each outer face and check for pressurization (using PRessurization class!)
+                        // HACK also note that the pressurization assumes that it doesn't combine mount points of 2 neighbouring blocks
+                        //if(!def.IsAirTight)
+                        //{
+                        //    var transformMatrix = MatrixD.CreateTranslation(center - (def.Size * 0.5f)) * drawMatrix;
+                        //
+                        //    foreach(var kv in def.IsCubePressurized)
+                        //    {
+                        //        foreach(var kv2 in kv.Value)
+                        //        {
+                        //            if(kv2.Value) // this pos+normal is pressurized
+                        //            {
+                        //                // this is offset if the cube size is multiple of 2...?
+                        //                var pos = Vector3D.Transform((Vector3D)((kv.Key - center) * gridSize), drawMatrix);
+                        //                var dir = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                        //
+                        //                MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Magenta, pos, dir, gridSize * 0.5f, 0.01f);
+                        //            }
+                        //        }
+                        //    }
+                        //}
+
                         for(int i = 0; i < mountPoints.Length; i++)
                         {
                             var mountPoint = mountPoints[i];
+
+                            if(!mountPoint.Enabled && def.IsAirTight)
+                                continue; // ignore disabled mount points if the block is already fully airtight
+
                             var colorFace = (mountPoint.Enabled ? (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR) : MOUNTPOINT_DISABLED_COLOR);
 
                             DrawMountPoint(mountPoint, gridSize, ref center, ref mainMatrix, ref colorFace, minSize);
