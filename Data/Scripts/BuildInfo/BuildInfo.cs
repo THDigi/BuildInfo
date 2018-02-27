@@ -728,7 +728,7 @@ namespace Digi.BuildInfo
                     }
 
                     var cubeSize = def.Size * (gridSize * 0.5f);
-                    bool firstFace = true;
+                    bool firstFace = TextAPIEnabled;
 
                     for(int i = 0; i < 6; ++i)
                     {
