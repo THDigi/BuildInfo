@@ -91,6 +91,7 @@ namespace Digi.BuildInfo
             //ACCURACY_100M,
             DOOR_AIRTIGHT,
             THRUST_DAMAGE,
+            MAGNET,
         }
 
         private const string HELP =
@@ -911,6 +912,38 @@ namespace Digi.BuildInfo
                     }
                 }
                 #endregion
+
+                #region Landing gear magnet points
+                if(def is MyLandingGearDefinition)
+                {
+                    var data = BlockDataBase.TryGetDataCached<BlockLandingGear>(def);
+
+                    if(data != null)
+                    {
+                        var color = new Color(55, 200, 255);
+                        var colorFace = color * 0.5f;
+                        bool first = TextAPIEnabled;
+
+                        foreach(var obb in data.magents)
+                        {
+                            var localBB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
+                            var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                            m.Translation = obb.Center;
+                            m *= drawMatrix;
+
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+
+                            if(first) // only label the first one
+                            {
+                                first = false;
+                                var labelDir = drawMatrix.Down;
+                                var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
+                                DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, "Magnet", color, lineHeight: 0.5f, underlineLength: 0.7f);
+                            }
+                        }
+                    }
+                }
+                #endregion
             }
             else
             {
@@ -1623,6 +1656,13 @@ namespace Digi.BuildInfo
                 // HACK hardcoded
                 AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
                 AddLine().Append("Max differential velocity for locking: ").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
+
+                // TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                {
+                    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                    AddLine(MyFontEnum.DarkBlue).SetTextAPIColor(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(inputName).Append(" to visualize magnets)").ResetTextAPIColor().EndLine();
+                }
                 return;
             }
 
