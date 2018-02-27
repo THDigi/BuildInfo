@@ -277,6 +277,8 @@ namespace Digi.BuildInfo
                 {
                     init = false;
 
+                    // DEBUG experiment - block detection without gamelogic comp
+                    //MyAPIGateway.Entities.OnEntityAdd -= OnEntityAdd;
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
@@ -1315,7 +1317,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Mining radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
                 AddLine().Append("Cutout radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
 
-                // DEBUG TODO find a way to refresh this?
+                // TODO find a way to refresh this?
                 //if(!drawBlockVolumes)
                 {
                     var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
@@ -1392,7 +1394,7 @@ namespace Digi.BuildInfo
                         AddLine().Append("Grinding radius: ").DistanceFormat(data.sphereDummy.Radius).EndLine();
                 }
 
-                // DEBUG TODO find a way to refresh this?
+                // TODO find a way to refresh this?
                 //if(!drawBlockVolumes)
                 {
                     var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
@@ -1676,7 +1678,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).Separator().Append("Distance: ").DistanceFormat(door.MaxOpen).EndLine();
 
-                // DEBUG TODO find a way to refresh this?
+                // TODO find a way to refresh this?
                 //if(!drawBlockVolumes)
                 {
                     var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
@@ -1693,7 +1695,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power: ").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(airTightDoor.PowerConsumptionIdle).Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).EndLine();
 
-                // DEBUG TODO find a way to refresh this?
+                // TODO find a way to refresh this?
                 //if(!drawBlockVolumes)
                 {
                     var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
@@ -1720,7 +1722,7 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Move time - Opening: ").TimeFormat(openTime).Separator().Append("Closing: ").TimeFormat(closeTime).EndLine();
 
-                // DEBUG TODO find a way to refresh this?
+                // TODO find a way to refresh this?
                 //if(!drawBlockVolumes)
                 {
                     var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
@@ -2093,7 +2095,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Rotation Pitch: ").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
                 AddLine().Append("Rotation Speed: ").RotationSpeed(laserAntenna.RotationRate * 60).EndLine();
 
-                // DEBUG << TODO visualize angle limits?
+                // TODO visualize angle limits?
                 return;
             }
 
@@ -2220,7 +2222,7 @@ namespace Digi.BuildInfo
                 //var index = Math.Max(camera.OverlayTexture.LastIndexOf('/'), camera.OverlayTexture.LastIndexOf('\\')); // last / or \ char
                 //AddLine().Append("Overlay texture: " + camera.OverlayTexture.Substring(index + 1));
 
-                // DEBUG << TODO visualize angle limits?
+                // TODO visualize angle limits?
                 return;
             }
 
@@ -2347,10 +2349,19 @@ namespace Digi.BuildInfo
 
                     GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.RotationSpeed * 60).EndLine();
 
-                    // DEBUG TODO visualize angle limits?
+                    // TODO visualize angle limits?
                 }
 
-                AddLine().Append("Accuracy: ").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
+                AddLine().Append("Accuracy: ").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000);
+
+                // TODO find a way to refresh this?
+                //if(!drawBlockVolumes)
+                //{
+                //    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
+                //    GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (Ctrl+").Append(inputName).Append(" to see accuracy)").ResetTextAPIColor();
+                //}
+
+                GetLine().EndLine();
 
                 var ammoProjectiles = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
                 var ammoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
@@ -2380,12 +2391,12 @@ namespace Digi.BuildInfo
                     const float MIN_RANGE = 0.8f;
                     const float MAX_RANGE = 1.2f;
 
-                    AddLine().Append("Projectiles - Fire rate: ").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s").
-                        Separator().SetTextAPIColor(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    AddLine().Append("Projectiles - Fire rate: ").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
+                        .Separator().SetTextAPIColor(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
                     if(projectilesData.ShotsInBurst == 0)
                         GetLine().Append("No reloading");
                     else
-                        GetLine().Append(projectilesData.ShotsInBurst).Append(" until reload");
+                        GetLine().Append(projectilesData.ShotsInBurst);
                     GetLine().ResetTextAPIColor().EndLine();
 
                     AddLine().Append("Projectiles - ").SetTextAPIColor(COLOR_PART).Append("Type").ResetTextAPIColor().Append(" (")
@@ -2425,10 +2436,19 @@ namespace Digi.BuildInfo
                     // HACK hardcoded; from Sandbox.Game.Weapons.MyMissile.UpdateBeforeSimulation()
                     const float MAX_TRAJECTORY_NO_ACCEL = 0.7f;
 
-                    AddLine().Append("Missiles - Fire rate: ").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" missiles / s").
-                        Separator().Append("Magazine: ").Append(missileData.ShotsInBurst).Append(" missiles").EndLine();
+                    AddLine().Append("Missiles - Fire rate: ").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
+                        .Separator().SetTextAPIColor(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    if(missileData.ShotsInBurst == 0)
+                        GetLine().Append("No reloading");
+                    else
+                        GetLine().Append(missileData.ShotsInBurst);
+                    GetLine().ResetTextAPIColor().EndLine();
 
-                    AddLine().Append("Missiles - Type (damage, radius, speed, travel)");
+                    AddLine().Append("Missiles - ").SetTextAPIColor(COLOR_PART).Append("Type").ResetTextAPIColor().Append(" (")
+                        .SetTextAPIColor(COLOR_STAT_SHIPDMG).Append("damage").ResetTextAPIColor().Append(", ")
+                        .SetTextAPIColor(COLOR_STAT_CHARACTERDMG).Append("radius").ResetTextAPIColor().Append(", ")
+                        .SetTextAPIColor(COLOR_STAT_SPEED).Append("speed").ResetTextAPIColor().Append(", ")
+                        .SetTextAPIColor(COLOR_STAT_TRAVEL).Append("travel").ResetTextAPIColor().Append(")").EndLine();
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -2436,18 +2456,21 @@ namespace Digi.BuildInfo
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Append(mag.Id.SubtypeName).Append(" (")
-                            .Append(ammo.MissileExplosionDamage).Append(", ")
-                            .DistanceFormat(ammo.MissileExplosionRadius).Append(", ");
+                        AddLine().Append("      - ").SetTextAPIColor(COLOR_PART).Append(mag.Id.SubtypeName).ResetTextAPIColor().Append(" (")
+                            .SetTextAPIColor(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetTextAPIColor().Append(", ")
+                            .SetTextAPIColor(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetTextAPIColor().Append(", ");
 
                         // SpeedVar is not used for missiles
+
+                        GetLine().SetTextAPIColor(COLOR_STAT_SPEED);
 
                         if(!ammo.MissileSkipAcceleration)
                             GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").SpeedFormat(ammo.MissileAcceleration).Append("²");
                         else
                             GetLine().SpeedFormat(ammo.DesiredSpeed * MAX_TRAJECTORY_NO_ACCEL);
 
-                        GetLine().Append(", ").DistanceFormat(ammo.MaxTrajectory).Append(")").EndLine();
+                        GetLine().ResetTextAPIColor().Append(", ").SetTextAPIColor(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                            .ResetTextAPIColor().Append(")").EndLine();
                     }
                 }
 
