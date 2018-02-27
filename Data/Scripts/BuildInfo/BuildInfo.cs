@@ -1654,7 +1654,7 @@ namespace Digi.BuildInfo
             if(lg != null)
             {
                 // HACK hardcoded
-                AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Max differential velocity for locking: ").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
 
                 // TODO find a way to refresh this?
@@ -2208,7 +2208,7 @@ namespace Digi.BuildInfo
             if(spaceBall != null)
             {
                 // HACK hardcoded
-                AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Max artificial mass: ").MassFormat(spaceBall.MaxVirtualMass).EndLine();
                 return;
             }
@@ -2217,7 +2217,7 @@ namespace Digi.BuildInfo
             if(warhead != null)
             {
                 // HACK hardcoded
-                AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
 
@@ -2338,7 +2338,7 @@ namespace Digi.BuildInfo
             if(merger != null)
             {
                 // HACK hardcoded
-                AddLine(MyFontEnum.Green).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).SetTextAPIColor(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Pull strength: ").AppendFormat("{0:###,###,##0.#######}", merger.Strength).EndLine();
                 return;
             }
