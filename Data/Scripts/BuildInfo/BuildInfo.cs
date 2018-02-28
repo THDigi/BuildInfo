@@ -1579,38 +1579,50 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            var piston = def as MyPistonBaseDefinition;
-            var motor = def as MyMotorStatorDefinition;
-            if(piston != null || motor != null)
+            var mechanicalBase = def as MyMechanicalConnectionBlockBaseDefinition;
+            if(mechanicalBase != null)
             {
+                string topPart = null;
+                var piston = def as MyPistonBaseDefinition;
+
                 if(piston != null)
                 {
+                    topPart = piston.TopPart;
+
                     AddLine().Append("Power required: ").PowerFormat(piston.RequiredPowerInput).Separator().ResourcePriority(piston.ResourceSinkGroup).EndLine();
                     AddLine().Append("Extended length: ").DistanceFormat(piston.Maximum).Separator().Append("Max velocity: ").DistanceFormat(piston.MaxVelocity).EndLine();
                 }
-
-                if(motor != null)
+                else
                 {
-                    AddLine().Append("Power required: ").PowerFormat(motor.RequiredPowerInput).Separator().ResourcePriority(motor.ResourceSinkGroup).EndLine();
+                    var motor = def as MyMotorStatorDefinition;
 
-                    var suspension = def as MyMotorSuspensionDefinition;
-
-                    if(suspension == null)
+                    if(motor != null)
                     {
-                        AddLine().Append("Max torque: ").TorqueFormat(motor.MaxForceMagnitude).EndLine();
+                        topPart = motor.TopPart;
 
-                        if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
-                            AddLine().Append("Displacement: ").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
-                    }
-                    else
-                    {
-                        AddLine().Append("Max torque: ").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
-                        AddLine().Append("Steering - Max angle: ").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
-                        AddLine().Append("Ride height: ").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
+                        AddLine().Append("Power required: ").PowerFormat(motor.RequiredPowerInput).Separator().ResourcePriority(motor.ResourceSinkGroup).EndLine();
+
+                        var suspension = def as MyMotorSuspensionDefinition;
+
+                        if(suspension == null)
+                        {
+                            AddLine().Append("Max torque: ").TorqueFormat(motor.MaxForceMagnitude).EndLine();
+
+                            if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
+                                AddLine().Append("Displacement: ").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
+                        }
+                        else
+                        {
+                            AddLine().Append("Max torque: ").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
+                            AddLine().Append("Steering - Max angle: ").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
+                            AddLine().Append("Ride height: ").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
+                        }
                     }
                 }
 
-                var topPart = (motor != null ? motor.TopPart : piston.TopPart);
+                if(topPart == null)
+                    return;
+
                 var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
 
                 if(group == null)
@@ -1619,39 +1631,6 @@ namespace Digi.BuildInfo
                 var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
 
                 AppendBasics(partDef, part: true);
-
-#if false
-                var airTightFaces = 0;
-                var totalFaces = 0;
-                var airTight = IsAirTight(partDef, ref airTightFaces, ref totalFaces);
-                var deformable = def.BlockTopology == MyBlockTopology.Cube;
-                var buildModels = def.BuildProgressModels != null && def.BuildProgressModels.Length > 0;
-                var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                var weldTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul);
-                var grindRatio = def.DisassembleRatio;
-
-                AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_PART).Append("Part: ").Append(partDef.DisplayNameText).EndLine();
-
-                string padding = (TextAPIEnabled ? "        - " : "       - ");
-
-                AddLine().Append(padding).MassFormat(partDef.Mass).Separator().VectorFormat(partDef.Size).Separator().TimeFormat(weldTime).SetTextAPIColor(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetTextAPIColor();
-
-                if(grindRatio > 1)
-                    GetLine().Separator().Append("Deconstruct: ").PercentFormat(1f / grindRatio);
-
-                if(!buildModels)
-                    GetLine().Append(" (No construction models)");
-
-                GetLine().EndLine();
-
-                AddLine().Append(padding).Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", partDef.MaxIntegrity);
-
-                if(deformable)
-                    GetLine().Separator().Append("Deformable (").NumFormat(partDef.DeformationRatio, 3).Append(")");
-
-                GetLine().Separator().Append("Air-tight faces: ").Append(airTight ? "All" : (airTightFaces == 0 ? "None" : airTightFaces + " of " + totalFaces));
-                GetLine().EndLine();
-#endif
                 return;
             }
 
