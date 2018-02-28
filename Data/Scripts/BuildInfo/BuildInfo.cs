@@ -250,7 +250,7 @@ namespace Digi.BuildInfo
             Log.SetUp(MOD_NAME, MOD_WORKSHOP_ID, MOD_SHORTNAME);
         }
 
-        public void Init()
+        public bool Init()
         {
             Log.Init();
             init = true;
@@ -259,7 +259,7 @@ namespace Digi.BuildInfo
             if(isThisDS) // not doing anything DS side so get rid of this component entirely
             {
                 MyAPIGateway.Utilities.InvokeOnGameThread(DisposeComponent);
-                return;
+                return false;
             }
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
@@ -280,6 +280,7 @@ namespace Digi.BuildInfo
             //MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
+            return true;
         }
 
         private void DisposeComponent()
@@ -2869,7 +2870,8 @@ namespace Digi.BuildInfo
                     if(MyAPIGateway.Session == null)
                         return;
 
-                    Init();
+                    if(!Init())
+                        return;
                 }
 
                 if(!textAPIresponded && textAPI.Heartbeat)
