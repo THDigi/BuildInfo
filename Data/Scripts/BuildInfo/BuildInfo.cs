@@ -110,7 +110,7 @@ namespace Digi.BuildInfo
             "Up",
         };
 
-        private string[] DRAW_VOLUME_TYPE = new string[]
+        private string[] DRAW_OVERLAY_NAME = new string[]
         {
             "OFF",
             "Airtightness",
@@ -172,7 +172,7 @@ namespace Digi.BuildInfo
         public Settings settings = null;
         public LeakInfo leakInfo = null; // leak info component
         private short tick = 0; // global incrementing gamelogic tick
-        private int drawVolumeType = 0;
+        private int drawOverlay = 0;
         private bool blockDataDraw = false;
         private bool doorAirtightBlink = false;
         private int doorAirtightBlinkTick = 0;
@@ -548,7 +548,7 @@ namespace Digi.BuildInfo
                                     buildInfoNotification.Show();
                                     break;
                                 case 3:
-                                    CycleDrawVolume();
+                                    CycleOverlay();
                                     break;
                                 case 4:
                                     MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
@@ -584,13 +584,13 @@ namespace Digi.BuildInfo
                         }
                         else if(input.IsAnyCtrlKeyPressed())
                         {
-                            CycleDrawVolume();
+                            CycleOverlay();
                             menuNeedsUpdate = true;
 
                             if(mountPointsNotification == null)
                                 mountPointsNotification = MyAPIGateway.Utilities.CreateNotification("");
 
-                            mountPointsNotification.Text = "Block Volumes: " + DRAW_VOLUME_TYPE[drawVolumeType];
+                            mountPointsNotification.Text = "Overlays: " + DRAW_OVERLAY_NAME[drawOverlay];
                             mountPointsNotification.Show();
                         }
                         else if(input.IsAnyAltKeyPressed())
@@ -615,10 +615,10 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void CycleDrawVolume()
+        private void CycleOverlay()
         {
-            if(++drawVolumeType >= DRAW_VOLUME_TYPE.Length)
-                drawVolumeType = 0;
+            if(++drawOverlay >= DRAW_OVERLAY_NAME.Length)
+                drawOverlay = 0;
         }
 
         private void SetFreezeGizmo(bool freeze)
@@ -653,7 +653,7 @@ namespace Digi.BuildInfo
                 if(!init)
                     return;
 
-                DrawBlockVolumes();
+                DrawOverlays();
 
                 if(!hudVisible && !settings.alwaysVisible)
                     return;
@@ -708,9 +708,9 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void DrawBlockVolumes()
+        private void DrawOverlays()
         {
-            if(drawVolumeType > 0 && (hudVisible || settings.alwaysVisible) && selectedDef != null)
+            if(drawOverlay > 0 && (hudVisible || settings.alwaysVisible) && selectedDef != null)
             {
                 var def = selectedDef;
 
@@ -764,7 +764,7 @@ namespace Digi.BuildInfo
 
                     if(mountPoints != null)
                     {
-                        if(drawVolumeType == 1)
+                        if(drawOverlay == 1)
                         {
                             if(def.IsAirTight)
                             {
@@ -817,7 +817,7 @@ namespace Digi.BuildInfo
                                 }
                             }
                         }
-                        else if(drawVolumeType == 2)
+                        else if(drawOverlay == 2)
                         {
                             for(int i = 0; i < mountPoints.Length; i++)
                             {
@@ -1259,7 +1259,7 @@ namespace Digi.BuildInfo
 
             AddMenuItemLine(i++).Append("Text info: ").Append(settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Draw block volumes: ").Append(DRAW_VOLUME_TYPE[drawVolumeType]);
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
             if(inputName != null)
                 GetLine().Append("   (Ctrl+" + inputName + ")");
             GetLine().ResetTextAPIColor().EndLine();
