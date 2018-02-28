@@ -1067,7 +1067,7 @@ namespace Digi.BuildInfo
 
                     if(data != null)
                     {
-                        var color = new Color(55, 200, 255);
+                        var color = new Color(20, 255, 155);
                         var colorFace = color * 0.5f;
                         bool drawLabel = settings.allLabels && TextAPIEnabled;
 
