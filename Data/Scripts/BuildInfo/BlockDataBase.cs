@@ -43,12 +43,17 @@ namespace Digi.BuildInfo
         {
         }
 
-        public void CheckAndAdd(IMyCubeBlock block)
+        public bool CheckAndAdd(IMyCubeBlock block)
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
             if(IsValid(block, def))
+            {
                 BuildInfo.instance.blockData.Add(def.Id, this);
+                return true;
+            }
+
+            return false;
         }
 
         public virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
@@ -60,10 +65,11 @@ namespace Digi.BuildInfo
         {
             var data = BuildInfo.instance.selectedBlockData as T;
 
-            if(data != null)
-                return data;
+            if(data == null)
+                data = TryGetData<T>(def);
 
-            return TryGetData<T>(def);
+            BuildInfo.instance.selectedBlockData = data;
+            return data;
         }
 
         public static T TryGetData<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
@@ -82,7 +88,9 @@ namespace Digi.BuildInfo
                 }
 
                 data = new T();
-                data.CheckAndAdd(fakeBlock);
+
+                if(!data.CheckAndAdd(fakeBlock))
+                    return null;
             }
 
             if(data == null)
