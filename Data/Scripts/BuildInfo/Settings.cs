@@ -16,8 +16,9 @@ namespace Digi.BuildInfo
         public bool textAPIAlignBottom;
         public float textAPIScale;
         public float textAPIBackgroundOpacity;
-        public bool allLabels = true;
-        public bool axisLabels = true;
+        public bool allLabels;
+        public bool axisLabels;
+        public int configVersion;
 
         public const bool default_showTextInfo = true;
         public const bool default_alwaysVisible = false;
@@ -27,6 +28,10 @@ namespace Digi.BuildInfo
         public const bool default_textAPIAlignBottom = false;
         public const float default_textAPIScale = 1f;
         public const float default_textAPIBackgroundOpacity = -1f;
+        public const bool default_allLabels = true;
+        public const bool default_axisLabels = true;
+
+        public const int LATEST_CONFIG_VERSION = 1; // controls reset/ignore of settings
 
         private void SetDefaults()
         {
@@ -38,6 +43,9 @@ namespace Digi.BuildInfo
             textAPIAlignBottom = default_textAPIAlignBottom;
             textAPIScale = default_textAPIScale;
             textAPIBackgroundOpacity = default_textAPIBackgroundOpacity;
+            allLabels = default_allLabels;
+            axisLabels = default_axisLabels;
+            // don't reset configVersion, only read
         }
 
         public bool firstLoad = false;
@@ -50,7 +58,25 @@ namespace Digi.BuildInfo
         {
             // load the settings if they exist
             if(!Load())
+            {
                 firstLoad = true; // config didn't exist, assume it's the first time the mod is loaded
+            }
+
+            // HACK because of an issue with new configs being created with wrong default values, they need to be wiped :(
+            if(Math.Abs(textAPIScale) < 0.0001f)
+            {
+                if(configVersion == 0)
+                {
+                    Log.Info("NOTE: Config version 0 and scale 0 -> the mod will reset all settings due to a default config generation issue.");
+                    SetDefaults();
+                }
+                else
+                {
+                    textAPIScale = MathHelper.Clamp(textAPIScale, 0.0001f, 10f);
+                }
+            }
+
+            configVersion = LATEST_CONFIG_VERSION;
 
             Save(); // refresh config in case of any missing or extra settings
         }
@@ -63,6 +89,8 @@ namespace Digi.BuildInfo
         {
             try
             {
+                SetDefaults();
+
                 if(MyAPIGateway.Utilities.FileExistsInLocalStorage(FILE, typeof(Settings)))
                 {
                     var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FILE, typeof(Settings));
@@ -83,8 +111,6 @@ namespace Digi.BuildInfo
         {
             try
             {
-                SetDefaults(); // reset all settings first, this allows an empty file to be reset to default
-
                 string line;
                 string[] args;
                 int i;
@@ -96,10 +122,10 @@ namespace Digi.BuildInfo
                     if(line.Length == 0)
                         continue;
 
-                    i = line.IndexOf("//", StringComparison.Ordinal);
+                    var index = line.IndexOf("//", StringComparison.Ordinal);
 
-                    if(i > -1)
-                        line = (i == 0 ? "" : line.Substring(0, i));
+                    if(index > -1)
+                        line = (index == 0 ? "" : line.Substring(0, index));
 
                     if(line.Length == 0)
                         continue;
@@ -187,7 +213,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("Scale", StringComparison.CurrentCultureIgnoreCase))
                     {
                         if(float.TryParse(val, out f))
-                            textAPIScale = MathHelper.Clamp(f, -100, 100);
+                            textAPIScale = MathHelper.Clamp(f, 0f, 10f);
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -220,6 +246,16 @@ namespace Digi.BuildInfo
                     {
                         if(bool.TryParse(val, out b))
                             axisLabels = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("ConfigVersion", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if(int.TryParse(val, out i))
+                            configVersion = i;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -324,7 +360,7 @@ namespace Digi.BuildInfo
             {
                 str.AppendLine();
                 str.Append("// The overall text info scale. Works regardless of UseCustomStyling's value.").AppendLine();
-                str.Append("// Default: ").AppendFormat("{0:0.0#####}", default_textAPIScale).AppendLine();
+                str.Append("// Minimum value is 0.0001, max 10. Default: ").AppendFormat("{0:0.0#####}", default_textAPIScale).AppendLine();
             }
 
             str.Append("Scale = ").AppendFormat("{0:0.0#####}", textAPIScale).AppendLine();
@@ -350,6 +386,16 @@ namespace Digi.BuildInfo
 
             str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
             str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.AppendLine();
+                str.AppendLine();
+                str.Append("// Config version; should not be edited.").AppendLine();
+            }
+
+            str.Append("ConfigVersion = ").Append(configVersion).AppendLine();
 
             return str.ToString();
         }
