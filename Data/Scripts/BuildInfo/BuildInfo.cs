@@ -19,6 +19,7 @@ using VRage.Utils;
 using VRageMath;
 
 using Draygo.API;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 
 namespace Digi.BuildInfo
 {
@@ -1344,11 +1345,25 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            // TODO when VoxelPlacementSettings and VoxelPlacementMode are whitelisted:
+            // TODO use? not sure if useful...
             //if(def.VoxelPlacement.HasValue)
             //{
+            //    // Comment from definition: 
+            //    // <!--Possible settings Both,InVoxel,OutsideVoxel,Volumetric. If volumetric set than MaxAllowed and MinAllowed will be used.-->
+            //
             //    var vp = def.VoxelPlacement.Value;
-            //    SetText(line++, "Voxel rules - Dynamic: " + vp.DynamicMode.PlacementMode + ", Static: " + vp.StaticMode.PlacementMode);
+            //
+            //    AddLine().SetTextAPIColor(COLOR_WARNING).Append($"Terrain placement - Dynamic: ").Append(vp.DynamicMode.PlacementMode);
+            //
+            //    if(vp.DynamicMode.PlacementMode == VoxelPlacementMode.Volumetric)
+            //        GetLine().Append(" (").Append(vp.DynamicMode.MinAllowed).Append(" to ").Append(vp.DynamicMode.MaxAllowed).Append(")");
+            //
+            //    GetLine().Separator().Append($"Static: ").Append(vp.StaticMode.PlacementMode);
+            //
+            //    if(vp.StaticMode.PlacementMode == VoxelPlacementMode.Volumetric)
+            //        GetLine().Append(" (").Append(vp.StaticMode.MinAllowed).Append(" to ").Append(vp.StaticMode.MaxAllowed).Append(")");
+            //
+            //    GetLine().ResetTextAPIColor().EndLine();
             //}
 
             #region Optional - creative-only stuff
@@ -1439,9 +1454,6 @@ namespace Digi.BuildInfo
                 GetLine().Append("all");
             else
                 GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
-
-            if(!part)
-                GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (/buildinfo help)");
 
             GetLine().ResetTextAPIColor().EndLine();
             #endregion
