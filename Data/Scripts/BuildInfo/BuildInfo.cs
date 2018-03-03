@@ -1390,13 +1390,13 @@ namespace Digi.BuildInfo
             if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
                 grindRatio *= 3.3f;
 
-            string padding = (part ? (TextAPIEnabled ? "        - " : "       - ") : "");
+            string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
             if(part)
                 AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).ResetTextAPIColor().EndLine();
 
             #region Line 1
-            AddLine().Append(padding).SetTextAPIColor(Color.Yellow).MassFormat(def.Mass).ResetTextAPIColor().Separator()
+            AddLine().SetTextAPIColor(COLOR_PART).Append(padding).SetTextAPIColor(Color.Yellow).MassFormat(def.Mass).ResetTextAPIColor().Separator()
                 .VectorFormat(def.Size).Separator()
                 .TimeFormat(assembleTime / weldMul).SetTextAPIColor(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetTextAPIColor();
 
@@ -1410,7 +1410,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Line 2
-            AddLine().Append(padding).Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
+            AddLine().SetTextAPIColor(COLOR_PART).Append(padding).SetTextAPIColor(COLOR_NORMAL).Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
 
             GetLine().SetTextAPIColor(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
             if(deformable)
@@ -1432,7 +1432,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Line 3
-            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).Append(padding)
+            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue))).SetTextAPIColor(COLOR_PART).Append(padding)
                 .SetTextAPIColor(airTight ? COLOR_GOOD : (airTightFaces == 0 ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight faces: ");
 
             if(airTight)
