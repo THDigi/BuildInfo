@@ -15,7 +15,7 @@ namespace Digi.BuildInfo
 {
     static class Extensions
     {
-        // HACK copy of TrimTrailingWhitespace() since it's not whitelisted in modAPI
+        // HACK copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
             int num = sb.Length;

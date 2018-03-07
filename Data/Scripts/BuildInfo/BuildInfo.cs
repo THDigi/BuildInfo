@@ -2793,57 +2793,83 @@ namespace Digi.BuildInfo
                     hud.Hide();
                 }
 
-                if(lines > MAX_LINES)
+                if(showMenu)
                 {
-                    int l;
+                    const int itemsStartAt = 1;
+                    const int itemsEndAt = 8;
 
-                    for(l = 0; l < lines; l++)
+                    var selected = itemsStartAt + menuSelectedItem;
+
+                    for(int l = 0; l < lines; ++l)
                     {
-                        var hud = hudLines[l];
-
-                        if(l < SCROLL_FROM_LINE)
+                        if(l < itemsStartAt
+                        || l > itemsEndAt
+                        || (selected == itemsEndAt && l == (selected - 2))
+                        || l == (selected - 1)
+                        || l == selected
+                        || l == (selected + 1)
+                        || (selected == itemsStartAt && l == (selected + 2)))
                         {
+                            var hud = hudLines[l];
                             hud.ResetAliveTime();
                             hud.Show();
                         }
                     }
-
-                    int d = SCROLL_FROM_LINE;
-                    l = atLine;
-
-                    while(d < MAX_LINES)
-                    {
-                        var hud = hudLines[l];
-
-                        if(hud.Text.Length == 0)
-                            break;
-
-                        hud.ResetAliveTime();
-                        hud.Show();
-
-                        if(++l >= lines)
-                            l = SCROLL_FROM_LINE;
-
-                        d++;
-                    }
-
-                    long now = DateTime.UtcNow.Ticks;
-
-                    if(lastScroll < now)
-                    {
-                        if(++atLine >= lines)
-                            atLine = SCROLL_FROM_LINE;
-
-                        lastScroll = now + (long)(TimeSpan.TicksPerSecond * 1.5f);
-                    }
                 }
                 else
                 {
-                    for(int l = 0; l < lines; l++)
+                    if(lines > MAX_LINES)
                     {
-                        var hud = hudLines[l];
-                        hud.ResetAliveTime();
-                        hud.Show();
+                        int l;
+
+                        for(l = 0; l < lines; ++l)
+                        {
+                            var hud = hudLines[l];
+
+                            if(l < SCROLL_FROM_LINE)
+                            {
+                                hud.ResetAliveTime();
+                                hud.Show();
+                            }
+                        }
+
+                        int d = SCROLL_FROM_LINE;
+                        l = atLine;
+
+                        while(d < MAX_LINES)
+                        {
+                            var hud = hudLines[l];
+
+                            if(hud.Text.Length == 0)
+                                break;
+
+                            hud.ResetAliveTime();
+                            hud.Show();
+
+                            if(++l >= lines)
+                                l = SCROLL_FROM_LINE;
+
+                            d++;
+                        }
+
+                        long now = DateTime.UtcNow.Ticks;
+
+                        if(lastScroll < now)
+                        {
+                            if(++atLine >= lines)
+                                atLine = SCROLL_FROM_LINE;
+
+                            lastScroll = now + (long)(TimeSpan.TicksPerSecond * 1.5f);
+                        }
+                    }
+                    else
+                    {
+                        for(int l = 0; l < lines; l++)
+                        {
+                            var hud = hudLines[l];
+                            hud.ResetAliveTime();
+                            hud.Show();
+                        }
                     }
                 }
             }
