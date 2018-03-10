@@ -91,12 +91,12 @@ namespace Digi.BuildInfo
         public static StringBuilder ForceFormat(this StringBuilder s, float N)
         {
             if(N > 1000000)
-                return s.NumFormat(N / 1000000, 3).Append(" MN");
+                return s.NumFormat(N / 1000000, 2).Append(" MN");
 
             if(N > 1000)
-                return s.NumFormat(N / 1000, 3).Append(" kN");
+                return s.NumFormat(N / 1000, 2).Append(" kN");
 
-            return s.NumFormat(N, 3).Append(" N");
+            return s.NumFormat(N, 2).Append(" N");
         }
 
         public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond)
@@ -107,24 +107,32 @@ namespace Digi.BuildInfo
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)
         {
             if(N > 1000000)
-                return s.NumFormat(N / 1000000, 3).Append(" MN-m");
+                return s.NumFormat(N / 1000000, 2).Append(" MN-m");
 
             if(N > 1000)
-                return s.NumFormat(N / 1000, 3).Append(" kN-m");
+                return s.NumFormat(N / 1000, 2).Append(" kN-m");
 
-            return s.NumFormat(N, 3).Append("N-m");
+            return s.NumFormat(N, 2).Append("N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
-            float W = MW * 1000000f;
+            if(MW > 1000000000)
+                return s.Append(MW / 1000000000).Append(" PetaWatts");
 
-            if(W > 1000000)
-                return s.NumFormat(MW, 3).Append(" MW");
-            if(W > 1000)
-                return s.NumFormat(W / 1000f, 3).Append(" kW");
+            if(MW > 1000000)
+                return s.NumFormat(MW / 1000000, 2).Append(" TerraWatts");
 
-            return s.NumFormat(W, 3).Append(" W");
+            if(MW > 1000)
+                return s.NumFormat(MW / 1000, 2).Append(" GigaWatts");
+
+            if(MW > 1)
+                return s.NumFormat(MW, 2).Append(" MW");
+
+            if(MW > 0.001)
+                return s.NumFormat(MW * 1000f, 2).Append(" kW");
+
+            return s.NumFormat(MW * 1000000f, 2).Append(" W");
         }
 
         public static StringBuilder PowerStorageFormat(this StringBuilder s, float MWh)
@@ -170,7 +178,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
-            return s.NumFormat(l, 3).Append(" l");
+            return s.NumFormat(l, 2).Append(" l");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
