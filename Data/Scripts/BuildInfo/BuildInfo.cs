@@ -145,14 +145,10 @@ namespace Digi.BuildInfo
             "    then that face is airtight.\n" +
             "\n" +
             "\n" +
-            "[1] Laser antenna power usage is linear up to 200km.\n" +
-            "\n" +
-            "  After that it's a weird formula that I don't really understand:\n" +
-            "\n" +
-            "  defPowerLasing = 10MW for largeship laser antenna\n" +
-            "  n1 = defPowerLasing / 2 / 200000\n" +
-            "  n2 = defPowerLasing * 200000 - n2 * 200000 * 200000\n" +
-            "  powerUsage = (rangeSquared * n2 + n3) / 1000000\n" +
+            "[1] Laser antenna power usage is linear up to 200km, after\n" +
+            "   that it's a quadratic ecuation.\n" +
+            "\n  To calculate it at your needed distance, hold a laser antenna\n" +
+            "    and type in chat: /laserpower <km>" +
             "\n";
 
         private readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
@@ -376,28 +372,30 @@ namespace Digi.BuildInfo
         {
             try
             {
-                const string CMD_NAME = "/buildinfo";
+                const string CMD_BUILDINFO = "/buildinfo";
+                const string CMD_LASERPOWER = "/laserpower";
+                const StringComparison COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
 
-                if(msg.StartsWith(CMD_NAME, StringComparison.OrdinalIgnoreCase))
+                if(msg.StartsWith(CMD_BUILDINFO, COMPARE_TYPE))
                 {
                     send = false;
-                    msg = msg.Substring(CMD_NAME.Length).Trim();
+                    msg = msg.Substring(CMD_BUILDINFO.Length).Trim();
 
-                    if(msg.StartsWith("reload", StringComparison.OrdinalIgnoreCase))
+                    if(msg.StartsWith("reload", COMPARE_TYPE))
                     {
                         ReloadConfig();
                         return;
                     }
 
-                    if(msg.StartsWith("clearcache", StringComparison.OrdinalIgnoreCase))
+                    if(msg.StartsWith("clearcache", COMPARE_TYPE))
                     {
                         cachedInfoNotification.Clear();
                         cachedInfoTextAPI.Clear();
-                        MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", Log.modName, 0, MyFontEnum.Green);
+                        MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", CMD_BUILDINFO, 0, MyFontEnum.Green);
                         return;
                     }
 
-                    if(msg.StartsWith("help", StringComparison.OrdinalIgnoreCase))
+                    if(msg.StartsWith("help", COMPARE_TYPE))
                     {
                         ShowHelp();
                         return;
@@ -408,6 +406,37 @@ namespace Digi.BuildInfo
                         showMenu = true;
                     else
                         ShowHelp();
+
+                    return;
+                }
+
+                if(msg.StartsWith(CMD_LASERPOWER, COMPARE_TYPE))
+                {
+                    send = false;
+
+                    if(selectedDef is MyLaserAntennaDefinition)
+                    {
+                        var arg = msg.Substring(CMD_LASERPOWER.Length);
+                        float km;
+
+                        if(float.TryParse(arg, out km))
+                        {
+                            var meters = (km * 1000);
+                            var megaWatts = GameData.LaserAntennaPowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
+                            var s = new StringBuilder().Append(selectedDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
+                            MyVisualScriptLogicProvider.SendChatMessage(s.ToString(), CMD_LASERPOWER, 0, MyFontEnum.Green);
+                        }
+                        else
+                        {
+                            MyVisualScriptLogicProvider.SendChatMessage($"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                        }
+                    }
+                    else
+                    {
+                        MyVisualScriptLogicProvider.SendChatMessage("Need a reference Laser Antenna, equip one first.", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                    }
+
+                    return;
                 }
             }
             catch(Exception e)
@@ -2230,30 +2259,10 @@ namespace Digi.BuildInfo
             var laserAntenna = def as MyLaserAntennaDefinition;
             if(laserAntenna != null)
             {
-                float powerUsage;
-                {
-                    // HACK copied from MyLaserAntenna.UpdatePowerInput()
-                    const double LINEAR_UP_TO = 200000;
-                    Vector3D headPos = Vector3D.Zero;
-                    Vector3D targetCoords = new Vector3D(0, 0, 1000);
+                float mWpKm = GameData.LaserAntennaPowerUsage(laserAntenna, 1000);
 
-                    double powerInputLasing = (double)laserAntenna.PowerInputLasing;
-                    double range = (laserAntenna.MaxRange < 0 ? double.MaxValue : laserAntenna.MaxRange);
-                    double rangeSq = Math.Min(Vector3D.DistanceSquared(targetCoords, headPos), (range * range));
-
-                    if(rangeSq > (LINEAR_UP_TO * LINEAR_UP_TO)) // 200km
-                    {
-                        double n2 = powerInputLasing / 2.0 / LINEAR_UP_TO;
-                        double n3 = powerInputLasing * LINEAR_UP_TO - n2 * LINEAR_UP_TO * LINEAR_UP_TO;
-                        powerUsage = (float)(rangeSq * n2 + n3) / 1000000f;
-                    }
-                    else
-                    {
-                        powerUsage = (float)(powerInputLasing * Math.Sqrt(rangeSq)) / 1000000f;
-                    }
-                }
-
-                AddLine().Append("Power - Active: ").PowerFormat(powerUsage).Append("/km[1]").Separator().Append("Turning: ").PowerFormat(laserAntenna.PowerInputTurning).Separator().Append("Idle: ").PowerFormat(laserAntenna.PowerInputIdle).Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power - Active[1]: ").PowerFormat(mWpKm).Append(" per km (/buildinfo help)").EndLine();
+                AddLine().Append("Power - Turning: ").PowerFormat(laserAntenna.PowerInputTurning).Separator().Append("Idle: ").PowerFormat(laserAntenna.PowerInputIdle).Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
 
                 AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green)
                     .SetTextAPIColor(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
