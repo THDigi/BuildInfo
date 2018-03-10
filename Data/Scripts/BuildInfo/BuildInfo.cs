@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
@@ -14,240 +12,23 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
-using VRage.ObjectBuilders;
-using VRage.Utils;
 using VRageMath;
 
 using Draygo.API;
-using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 
 namespace Digi.BuildInfo
 {
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
-    public class BuildInfo : MySessionComponentBase
+    public partial class BuildInfo : MySessionComponentBase
     {
-        #region Constants
-        private const string MOD_NAME = "Build Info";
-        private const ulong MOD_WORKSHOP_ID = 514062285;
-        private const string MOD_SHORTNAME = "BuildInfo";
-
-        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged.
-        private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
-        private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
-        private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
-        private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
-
-        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.97, 0.8); // textAPI default left side position
-        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.97 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
-        private readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.97, 0.97); // textAPI default right side position
-        private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.97); // textAPI default right side position when using a really wide resolution
-
-        private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
-        private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_TextBackground");
-        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("BuildInfo_Square");
-        private readonly MyStringId MATERIAL_WHITEDOT = MyStringId.GetOrCompute("WhiteDot");
-
-        private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
-        private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
-        private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
-
-        private const double MOUNTPOINT_THICKNESS = 0.05;
-        private const float MOUNTPOINT_ALPHA = 0.65f;
-        private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
-        private Color MOUNTPOINT_DEFAULT_COLOR = new Color(255, 200, 0) * MOUNTPOINT_ALPHA;
-        private Color AIRTIGHT_COLOR = new Color(0, 155, 255) * MOUNTPOINT_ALPHA;
-        private Color AIRTIGHT_TOGGLE_COLOR = new Color(0, 255, 155) * MOUNTPOINT_ALPHA;
-
-        private const double TEXT_SHADOW_OFFSET = 0.007;
-        private const double TEXT_SHADOW_OFFSET_Z = 0.01;
-        private readonly Color TEXT_SHADOW_COLOR = Color.Black * 0.9f;
-
-        public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
-        public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
-        public readonly Color COLOR_NORMAL = Color.White;
-        public readonly Color COLOR_GOOD = Color.Lime;
-        public readonly Color COLOR_BAD = Color.Red;
-        public readonly Color COLOR_WARNING = Color.Yellow;
-        public readonly Color COLOR_UNIMPORTANT = Color.Gray;
-        public readonly Color COLOR_PART = new Color(55, 255, 155);
-        public readonly Color COLOR_MOD = Color.DeepSkyBlue;
-
-        public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
-        public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
-        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 155, 0);
-        public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
-        public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
-        public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
-
-        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
-        {
-            typeof(MyObjectBuilder_Ore),
-            typeof(MyObjectBuilder_Ingot),
-            typeof(MyObjectBuilder_Component)
-        };
-
-        private enum TextAPIMsgIds
-        {
-            AXIS_Z, // NOTE these 3 must remain the first 3, because AXIS_LABELS uses their integer values as indexes
-            AXIS_X,
-            AXIS_Y,
-            //MOUNT,
-            //MOUNT_ROTATE,
-            //MOUNT_DISABLED,
-            DRILL_MINE,
-            DRILL_CUTOUT,
-            SHIP_TOOL,
-            ACCURACY_MAX,
-            //ACCURACY_100M,
-            DOOR_AIRTIGHT,
-            THRUST_DAMAGE,
-            MAGNET,
-        }
-
-        private string[] AXIS_LABELS = new string[]
-        {
-            "Forward",
-            "Right",
-            "Up",
-        };
-
-        private string[] DRAW_OVERLAY_NAME = new string[]
-        {
-            "OFF",
-            "Airtightness",
-            "Mounting",
-        };
-
-        private const string HELP =
-            "Chat commands:\n" +
-            "  /buildinfo\n    shows this window or menu if you're holding a block.\n" +
-            "  /buildinfo help\n    shows this window.\n" +
-            "  /buildinfo reload\n    reloads the config.\n" +
-            "  /buildinfo clearcache\n    clears the block info cache, not for normal use.\n" +
-            "\n" +
-            "\n" +
-            "The config is located in:\n" +
-            "%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg\n" +
-            "\n" +
-            "\n" +
-            "The asterisks on the labels (e.g. Power usage*: 10 W) means\n" +
-            "  that the value is calculated from hardcoded values taken\n" +
-            "  from the game source, they might become inaccurate with updates.\n" +
-            "\n" +
-            "\n" +
-            "Mount points & airtightness explained:\n" +
-            "\n" +
-            "  Mount points define areas that can be attached to other\n" +
-            "    block's mount points.\n" +
-            "\n" +
-            "  Airtightness also uses the mount points system, if a\n" +
-            "    mount point spans accross an entire grid cell face\n" +
-            "    then that face is airtight.\n" +
-            "\n" +
-            "\n" +
-            "[1] Laser antenna power usage is linear up to 200km, after\n" +
-            "   that it's a quadratic ecuation.\n" +
-            "\n  To calculate it at your needed distance, hold a laser antenna\n" +
-            "    and type in chat: /laserpower <km>" +
-            "\n";
-
-        private readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
-        {
-            Vector3.Right,
-            Vector3.Left,
-            Vector3.Up,
-            Vector3.Down,
-            Vector3.Backward,
-            Vector3.Forward,
-        };
-        #endregion
-
-        #region Fields
-        public static BuildInfo instance = null;
-        public bool init = false;
-        public bool isThisDS = false;
-        public Settings settings = null;
-        public LeakInfo leakInfo = null; // leak info component
-        private short tick = 0; // global incrementing gamelogic tick
-        private int drawOverlay = 0;
-        private bool blockDataDraw = false;
-        private bool doorAirtightBlink = false;
-        private int doorAirtightBlinkTick = 0;
-        private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
-        public MyCubeBlockDefinition selectedDef = null;
-        public BlockDataBase selectedBlockData = null;
-        private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
-        private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
-        public bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
-        private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
-        private bool textShown = false;
-        private Vector3D lastGizmoPosition;
-        private IMyHudNotification buildInfoNotification = null;
-        private IMyHudNotification mountPointsNotification = null;
-        private IMyHudNotification transparencyNotification = null;
-        private IMyHudNotification freezeGizmoNotification = null;
-        private IMyHudNotification unsupportedGridSizeNotification = null;
-
-        // menu specific stuff
-        private bool showMenu = false;
-        private bool menuNeedsUpdate = true;
-        private int menuSelectedItem = 0;
-        private Vector3 previousMove = Vector3.Zero;
-
-        // used by the textAPI view mode
-        public HudAPIv2 textAPI = null;
-        private bool rotationHints = true;
-        private bool hudVisible = true;
-        private double aspectRatio = 1;
-        private float hudBackgroundOpacity = 1f;
-        private StringBuilder textAPIlines = new StringBuilder();
-        private StringBuilder textSB = new StringBuilder();
-        private HudAPIv2.HUDMessage textObject = null;
-        private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private HudAPIv2.SpaceMessage[] textAPILabels;
-        private HudAPIv2.SpaceMessage[] textAPIShadows;
-        private readonly Dictionary<MyDefinitionId, Cache> cachedInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
-
-        private float TextAPIScale
-        {
-            get { return settings.textAPIScale * 1.2f; }
-        }
-
-        // used by the HUD notification view mode
-        private int atLine = SCROLL_FROM_LINE;
-        private long lastScroll = 0;
-        private List<HudLine> notificationLines = new List<HudLine>();
-        private readonly Dictionary<MyDefinitionId, Cache> cachedInfoNotification = new Dictionary<MyDefinitionId, Cache>();
-
-        // used in generating the block info text or menu for either view mode
-        private int line = -1;
-        private bool addLineCalled = false;
-        private float largestLineWidth = 0;
-
-        // resource sink group cache
-        public int resourceSinkGroups = 0;
-        public int resourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority = new Dictionary<MyStringHash, ResourceGroupData>();
-
-        // character size cache for notifications; textAPI has its own.
-        private readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
-
-        // cached block data that is inaccessible via definitions (like thruster flames)
-        public readonly Dictionary<MyDefinitionId, BlockDataBase> blockData = new Dictionary<MyDefinitionId, BlockDataBase>();
-
-        // various temporary caches
-        private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>();
-        private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
-        public readonly Dictionary<string, IMyModelDummy> dummies = new Dictionary<string, IMyModelDummy>();
-        #endregion
-
+        #region Init and unload
         public override void LoadData()
         {
             instance = this;
             Log.SetUp(MOD_NAME, MOD_WORKSHOP_ID, MOD_SHORTNAME);
         }
 
-        public bool Init()
+        public bool Init() // called in first call of UpdateAfterSimulation()
         {
             Log.Init();
             init = true;
@@ -273,8 +54,6 @@ namespace Digi.BuildInfo
 
             textAPI = new HudAPIv2();
 
-            // TODO experiment - block detection without gamelogic comp
-            //MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
             return true;
@@ -301,8 +80,6 @@ namespace Digi.BuildInfo
                 {
                     init = false;
 
-                    // TODO experiment - block detection without gamelogic comp
-                    //MyAPIGateway.Entities.OnEntityAdd -= OnEntityAdd;
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
@@ -332,181 +109,163 @@ namespace Digi.BuildInfo
 
             Log.Close();
         }
+        #endregion
 
-        // TODO experiment - block detection without gamelogic comp
-#if false
-        private readonly Dictionary<MyObjectBuilderType, Type> blockTypesMonitor = new Dictionary<MyObjectBuilderType, Type>(MyObjectBuilderType.Comparer)
-        {
-            [typeof(MyObjectBuilder_Thrust)] = typeof(BlockDataThrust),
-            [typeof(MyObjectBuilder_ShipWelder)] = typeof(BlockDataShipWelder),
-        };
-
-        private void OnEntityAdd(IMyEntity ent)
+        public override void UpdateAfterSimulation()
         {
             try
             {
-                var grid = ent as MyCubeGrid;
-
-                if(grid == null)
+                if(isThisDS) // failsafe in case the component is still updating or not removed...
                     return;
 
-                foreach(var block in grid.GetFatBlocks())
+                if(!init)
                 {
-                    var defId = block.BlockDefinition.Id;
-                    Type type;
+                    if(MyAPIGateway.Session == null)
+                        return;
 
-                    if(blockTypesMonitor.TryGetValue(defId.TypeId, out type))
-                    {
-                        BlockDataBase.SetData(type, block);
-                    }
+                    if(!Init())
+                        return;
                 }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-#endif
 
-        public void MessageEntered(string msg, ref bool send)
-        {
-            try
-            {
-                const string CMD_BUILDINFO = "/buildinfo";
-                const string CMD_LASERPOWER = "/laserpower";
-                const StringComparison COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
-
-                if(msg.StartsWith(CMD_BUILDINFO, COMPARE_TYPE))
+                if(!textAPIresponded && textAPI.Heartbeat)
                 {
-                    send = false;
-                    msg = msg.Substring(CMD_BUILDINFO.Length).Trim();
+                    textAPIresponded = true;
+                    HideText(); // force a re-check to make the HUD -> textAPI transition
+                }
 
-                    if(msg.StartsWith("reload", COMPARE_TYPE))
+                // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
+                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
+
+                unchecked // global ticker
+                {
+                    ++tick;
+                }
+
+                if(leakInfo != null) // update the leak info component
+                    leakInfo.Update();
+
+                #region Cubebuilder monitor
+                selectedDef = null;
+                var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+
+                if(def != null && MyCubeBuilder.Static.IsActivated)
+                {
+                    var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
+                    var grid = hit?.HitEntity as IMyCubeGrid;
+
+                    if(grid != null && grid.GridSizeEnum != def.CubeSize) // if aimed grid is supported by definition size
                     {
-                        ReloadConfig();
-                        return;
-                    }
+                        if(unsupportedGridSizeNotification == null)
+                            unsupportedGridSizeNotification = MyAPIGateway.Utilities.CreateNotification("", 100, MyFontEnum.Red);
 
-                    if(msg.StartsWith("clearcache", COMPARE_TYPE))
-                    {
-                        cachedInfoNotification.Clear();
-                        cachedInfoTextAPI.Clear();
-                        MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", CMD_BUILDINFO, 0, MyFontEnum.Green);
-                        return;
+                        unsupportedGridSizeNotification.Text = $"{def.DisplayNameText} can't be placed on {grid.GridSizeEnum} grid size.";
+                        unsupportedGridSizeNotification.Show();
                     }
-
-                    if(msg.StartsWith("help", COMPARE_TYPE))
-                    {
-                        ShowHelp();
-                        return;
-                    }
-
-                    // no arguments
-                    if(selectedDef != null)
-                        showMenu = true;
                     else
-                        ShowHelp();
-
-                    return;
+                    {
+                        selectedDef = def;
+                    }
                 }
 
-                if(msg.StartsWith(CMD_LASERPOWER, COMPARE_TYPE))
+                if(selectedDef != null)
                 {
-                    send = false;
-
-                    if(selectedDef is MyLaserAntennaDefinition)
+                    if(showMenu)
                     {
-                        var arg = msg.Substring(CMD_LASERPOWER.Length);
-                        float km;
+                        if(menuNeedsUpdate)
+                        {
+                            lastDefId = DEFID_MENU;
+                            menuNeedsUpdate = false;
+                            textShown = false;
 
-                        if(float.TryParse(arg, out km))
-                        {
-                            var meters = (km * 1000);
-                            var megaWatts = GameData.LaserAntennaPowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
-                            var s = new StringBuilder().Append(selectedDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
-                            MyVisualScriptLogicProvider.SendChatMessage(s.ToString(), CMD_LASERPOWER, 0, MyFontEnum.Green);
-                        }
-                        else
-                        {
-                            MyVisualScriptLogicProvider.SendChatMessage($"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                            GenerateMenuText();
+                            PostProcessText(DEFID_MENU);
                         }
                     }
                     else
                     {
-                        MyVisualScriptLogicProvider.SendChatMessage("Need a reference Laser Antenna, equip one first.", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                        if(settings.showTextInfo && def.Id != lastDefId)
+                        {
+                            lastDefId = def.Id;
+                            selectedBlockData = null;
+
+                            if(TextAPIEnabled ? cachedInfoTextAPI.TryGetValue(def.Id, out cache) : cachedInfoNotification.TryGetValue(def.Id, out cache))
+                            {
+                                textShown = false; // make the textAPI update
+                            }
+                            else
+                            {
+                                GenerateBlockText(def);
+                                PostProcessText(def.Id);
+                            }
+                        }
                     }
 
-                    return;
+                    UpdateVisualText();
+
+                    // turn off frozen block preview if camera is too far away from it
+                    if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
+                        SetFreezeGizmo(false);
                 }
+                else // no block equipped
+                {
+                    selectedBlockData = null;
+                    showMenu = false;
+
+                    if(MyAPIGateway.CubeBuilder.FreezeGizmo)
+                        SetFreezeGizmo(false);
+
+                    HideText();
+                }
+                #endregion
+
+                #region Purge cache
+                if(tick % 60 == 0)
+                {
+                    var haveNotifCache = cachedInfoNotification.Count > 0;
+                    var haveTextAPICache = cachedInfoTextAPI.Count > 0;
+
+                    if(haveNotifCache || haveTextAPICache)
+                    {
+                        removeCacheIds.Clear();
+                        var time = DateTime.UtcNow.Ticks;
+
+                        if(haveNotifCache)
+                        {
+                            foreach(var kv in cachedInfoNotification)
+                                if(kv.Value.expires < time)
+                                    removeCacheIds.Add(kv.Key);
+
+                            if(cachedInfoNotification.Count == removeCacheIds.Count)
+                                cachedInfoNotification.Clear();
+                            else
+                                foreach(var key in removeCacheIds)
+                                    cachedInfoNotification.Remove(key);
+
+                            removeCacheIds.Clear();
+                        }
+
+                        if(haveTextAPICache)
+                        {
+                            foreach(var kv in cachedInfoTextAPI)
+                                if(kv.Value.expires < time)
+                                    removeCacheIds.Add(kv.Key);
+
+                            if(cachedInfoTextAPI.Count == removeCacheIds.Count)
+                                cachedInfoTextAPI.Clear();
+                            else
+                                foreach(var key in removeCacheIds)
+                                    cachedInfoTextAPI.Remove(key);
+
+                            removeCacheIds.Clear();
+                        }
+                    }
+                }
+                #endregion
             }
             catch(Exception e)
             {
                 Log.Error(e);
-            }
-        }
-
-        private void ReloadConfig()
-        {
-            if(settings.Load())
-                MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", Log.modName, 0, MyFontEnum.Green);
-            else
-                MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", Log.modName, 0, MyFontEnum.Green);
-
-            settings.Save();
-
-            HideText();
-            cachedInfoTextAPI.Clear();
-
-            if(textObject != null)
-            {
-                if(settings.alwaysVisible)
-                {
-                    textObject.Options &= ~HudAPIv2.Options.HideHud;
-                    bgObject.Options &= ~HudAPIv2.Options.HideHud;
-                }
-                else
-                {
-                    textObject.Options |= HudAPIv2.Options.HideHud;
-                    bgObject.Options |= HudAPIv2.Options.HideHud;
-                }
-            }
-        }
-
-        private void ShowHelp()
-        {
-            MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", HELP, null, "Close");
-        }
-
-        private void GuiControlRemoved(object obj)
-        {
-            try
-            {
-                if(obj.ToString().EndsWith("ScreenOptionsSpace")) // closing options menu just assumes you changed something so it'll re-check config settings
-                {
-                    UpdateConfigValues();
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        private void UpdateConfigValues()
-        {
-            var cfg = MyAPIGateway.Session.Config;
-            hudVisible = !cfg.MinimalHud;
-            hudBackgroundOpacity = cfg.HUDBkOpacity;
-
-            var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
-            aspectRatio = viewportSize.X / viewportSize.Y;
-
-            bool newRotationHints = cfg.RotationHints;
-
-            if(rotationHints != newRotationHints)
-            {
-                rotationHints = newRotationHints;
-                HideText();
             }
         }
 
@@ -645,37 +404,6 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void CycleOverlay()
-        {
-            if(++drawOverlay >= DRAW_OVERLAY_NAME.Length)
-                drawOverlay = 0;
-        }
-
-        private void SetFreezeGizmo(bool freeze)
-        {
-            if(freezeGizmoNotification == null)
-                freezeGizmoNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-            if(freeze && MyCubeBuilder.Static.DynamicMode)
-            {
-                freezeGizmoNotification.Text = "First aim at a grid!";
-                freezeGizmoNotification.Font = MyFontEnum.Red;
-            }
-            else
-            {
-                // HACK using this method instead of MyAPIGateway.CubeBuilder.FreezeGizmo's setter because that one ignores the value and sets it to true.
-                MyCubeBuilder.Static.FreezeGizmo = freeze;
-
-                freezeGizmoNotification.Text = (freeze ? "Freeze placement position ON" : "Freeze placement position OFF");
-                freezeGizmoNotification.Font = MyFontEnum.White;
-
-                if(freeze)
-                    MyCubeBuilder.Static.GetAddPosition(out lastGizmoPosition);
-            }
-
-            freezeGizmoNotification.Show();
-        }
-
         public override void Draw()
         {
             try
@@ -738,6 +466,182 @@ namespace Digi.BuildInfo
             }
         }
 
+        public void MessageEntered(string msg, ref bool send)
+        {
+            try
+            {
+                const string CMD_BUILDINFO = "/buildinfo";
+                const string CMD_LASERPOWER = "/laserpower";
+                const StringComparison COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
+
+                if(msg.StartsWith(CMD_BUILDINFO, COMPARE_TYPE))
+                {
+                    send = false;
+                    msg = msg.Substring(CMD_BUILDINFO.Length).Trim();
+
+                    if(msg.StartsWith("reload", COMPARE_TYPE))
+                    {
+                        ReloadConfig();
+                        return;
+                    }
+
+                    if(msg.StartsWith("clearcache", COMPARE_TYPE))
+                    {
+                        cachedInfoNotification.Clear();
+                        cachedInfoTextAPI.Clear();
+                        MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", CMD_BUILDINFO, 0, MyFontEnum.Green);
+                        return;
+                    }
+
+                    if(msg.StartsWith("help", COMPARE_TYPE))
+                    {
+                        ShowHelp();
+                        return;
+                    }
+
+                    // no arguments
+                    if(selectedDef != null)
+                        showMenu = true;
+                    else
+                        ShowHelp();
+
+                    return;
+                }
+
+                if(msg.StartsWith(CMD_LASERPOWER, COMPARE_TYPE))
+                {
+                    send = false;
+
+                    if(selectedDef is MyLaserAntennaDefinition)
+                    {
+                        var arg = msg.Substring(CMD_LASERPOWER.Length);
+                        float km;
+
+                        if(float.TryParse(arg, out km))
+                        {
+                            var meters = (km * 1000);
+                            var megaWatts = GameData.LaserAntennaPowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
+                            var s = new StringBuilder().Append(selectedDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
+                            MyVisualScriptLogicProvider.SendChatMessage(s.ToString(), CMD_LASERPOWER, 0, MyFontEnum.Green);
+                        }
+                        else
+                        {
+                            MyVisualScriptLogicProvider.SendChatMessage($"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                        }
+                    }
+                    else
+                    {
+                        MyVisualScriptLogicProvider.SendChatMessage("Need a reference Laser Antenna, equip one first.", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                    }
+
+                    return;
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        #region Various config/state helpers
+        private void ReloadConfig()
+        {
+            if(settings.Load())
+                MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", Log.modName, 0, MyFontEnum.Green);
+            else
+                MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", Log.modName, 0, MyFontEnum.Green);
+
+            settings.Save();
+
+            HideText();
+            cachedInfoTextAPI.Clear();
+
+            if(textObject != null)
+            {
+                if(settings.alwaysVisible)
+                {
+                    textObject.Options &= ~HudAPIv2.Options.HideHud;
+                    bgObject.Options &= ~HudAPIv2.Options.HideHud;
+                }
+                else
+                {
+                    textObject.Options |= HudAPIv2.Options.HideHud;
+                    bgObject.Options |= HudAPIv2.Options.HideHud;
+                }
+            }
+        }
+
+        private void ShowHelp()
+        {
+            MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", HELP, null, "Close");
+        }
+
+        private void GuiControlRemoved(object obj)
+        {
+            try
+            {
+                if(obj.ToString().EndsWith("ScreenOptionsSpace")) // closing options menu just assumes you changed something so it'll re-check config settings
+                {
+                    UpdateConfigValues();
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        private void UpdateConfigValues()
+        {
+            var cfg = MyAPIGateway.Session.Config;
+            hudVisible = !cfg.MinimalHud;
+            hudBackgroundOpacity = cfg.HUDBkOpacity;
+
+            var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
+            aspectRatio = viewportSize.X / viewportSize.Y;
+
+            bool newRotationHints = cfg.RotationHints;
+
+            if(rotationHints != newRotationHints)
+            {
+                rotationHints = newRotationHints;
+                HideText();
+            }
+        }
+
+        private void CycleOverlay()
+        {
+            if(++drawOverlay >= DRAW_OVERLAY_NAME.Length)
+                drawOverlay = 0;
+        }
+
+        private void SetFreezeGizmo(bool freeze)
+        {
+            if(freezeGizmoNotification == null)
+                freezeGizmoNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+            if(freeze && MyCubeBuilder.Static.DynamicMode)
+            {
+                freezeGizmoNotification.Text = "First aim at a grid!";
+                freezeGizmoNotification.Font = MyFontEnum.Red;
+            }
+            else
+            {
+                // HACK using this method instead of MyAPIGateway.CubeBuilder.FreezeGizmo's setter because that one ignores the value and sets it to true.
+                MyCubeBuilder.Static.FreezeGizmo = freeze;
+
+                freezeGizmoNotification.Text = (freeze ? "Freeze placement position ON" : "Freeze placement position OFF");
+                freezeGizmoNotification.Font = MyFontEnum.White;
+
+                if(freeze)
+                    MyCubeBuilder.Static.GetAddPosition(out lastGizmoPosition);
+            }
+
+            freezeGizmoNotification.Show();
+        }
+        #endregion
+
+        #region Overlay draw
         private void DrawOverlays()
         {
             if(drawOverlay > 0 && (hudVisible || settings.alwaysVisible) && selectedDef != null)
@@ -1255,7 +1159,9 @@ namespace Digi.BuildInfo
             var text = AXIS_LABELS[(int)id];
             DrawLineLabel(id, drawMatrix.Translation, dir, text, color, lineHeight: 1.5f, underlineLength: text.Length * 0.1f);
         }
+        #endregion
 
+        #region Menu generation
         private StringBuilder AddMenuItemLine(int item, bool enabled = true)
         {
             AddLine(font: (menuSelectedItem == item ? MyFontEnum.Green : (enabled ? MyFontEnum.White : MyFontEnum.Red)));
@@ -1277,7 +1183,6 @@ namespace Digi.BuildInfo
 
             AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_BLOCKTITLE).Append("Build info settings:").ResetTextAPIColor().EndLine();
 
-            #region Menu items
             int i = 0;
 
             AddMenuItemLine(i++).Append("Close menu");
@@ -1312,7 +1217,6 @@ namespace Digi.BuildInfo
             else
                 GetLine().Append("OFF (Mod not detected)");
             GetLine().ResetTextAPIColor().EndLine();
-            #endregion
 
             AddLine(MyFontEnum.Blue).SetTextAPIColor(COLOR_WARNING).Append("Use movement controls to navigate and edit settings.").ResetTextAPIColor().EndLine();
 
@@ -1321,7 +1225,9 @@ namespace Digi.BuildInfo
 
             EndAddedLines();
         }
+        #endregion
 
+        #region Text info generation
         private void GenerateBlockText(MyCubeBlockDefinition def)
         {
             ResetLines();
@@ -2659,7 +2565,9 @@ namespace Digi.BuildInfo
                 return;
             }
         }
+        #endregion
 
+        #region Text handling
         private void PostProcessText(MyDefinitionId id)
         {
             if(TextAPIEnabled)
@@ -2884,164 +2792,6 @@ namespace Digi.BuildInfo
             }
         }
 
-        public override void UpdateAfterSimulation()
-        {
-            try
-            {
-                if(isThisDS) // failsafe in case the component is still updating or not removed...
-                    return;
-
-                if(!init)
-                {
-                    if(MyAPIGateway.Session == null)
-                        return;
-
-                    if(!Init())
-                        return;
-                }
-
-                if(!textAPIresponded && textAPI.Heartbeat)
-                {
-                    textAPIresponded = true;
-                    HideText(); // force a re-check to make the HUD -> textAPI transition
-                }
-
-                // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
-                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
-                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
-
-                unchecked // global ticker
-                {
-                    ++tick;
-                }
-
-                if(leakInfo != null) // update the leak info component
-                    leakInfo.Update();
-
-                #region Cubebuilder monitor
-                selectedDef = null;
-                var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-
-                if(def != null && MyCubeBuilder.Static.IsActivated)
-                {
-                    var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
-                    var grid = hit?.HitEntity as IMyCubeGrid;
-
-                    if(grid != null && grid.GridSizeEnum != def.CubeSize) // if aimed grid is supported by definition size
-                    {
-                        if(unsupportedGridSizeNotification == null)
-                            unsupportedGridSizeNotification = MyAPIGateway.Utilities.CreateNotification("", 100, MyFontEnum.Red);
-
-                        unsupportedGridSizeNotification.Text = $"{def.DisplayNameText} can't be placed on {grid.GridSizeEnum} grid size.";
-                        unsupportedGridSizeNotification.Show();
-                    }
-                    else
-                    {
-                        selectedDef = def;
-                    }
-                }
-
-                if(selectedDef != null)
-                {
-                    if(showMenu)
-                    {
-                        if(menuNeedsUpdate)
-                        {
-                            lastDefId = DEFID_MENU;
-                            menuNeedsUpdate = false;
-                            textShown = false;
-
-                            GenerateMenuText();
-                            PostProcessText(DEFID_MENU);
-                        }
-                    }
-                    else
-                    {
-                        if(settings.showTextInfo && def.Id != lastDefId)
-                        {
-                            lastDefId = def.Id;
-                            selectedBlockData = null;
-
-                            if(TextAPIEnabled ? cachedInfoTextAPI.TryGetValue(def.Id, out cache) : cachedInfoNotification.TryGetValue(def.Id, out cache))
-                            {
-                                textShown = false; // make the textAPI update
-                            }
-                            else
-                            {
-                                GenerateBlockText(def);
-                                PostProcessText(def.Id);
-                            }
-                        }
-                    }
-
-                    UpdateVisualText();
-
-                    // turn off frozen block preview if camera is too far away from it
-                    if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
-                        SetFreezeGizmo(false);
-                }
-                else // no block equipped
-                {
-                    selectedBlockData = null;
-                    showMenu = false;
-
-                    if(MyAPIGateway.CubeBuilder.FreezeGizmo)
-                        SetFreezeGizmo(false);
-
-                    HideText();
-                }
-                #endregion
-
-                #region Purge cache
-                if(tick % 60 == 0)
-                {
-                    var haveNotifCache = cachedInfoNotification.Count > 0;
-                    var haveTextAPICache = cachedInfoTextAPI.Count > 0;
-
-                    if(haveNotifCache || haveTextAPICache)
-                    {
-                        removeCacheIds.Clear();
-                        var time = DateTime.UtcNow.Ticks;
-
-                        if(haveNotifCache)
-                        {
-                            foreach(var kv in cachedInfoNotification)
-                                if(kv.Value.expires < time)
-                                    removeCacheIds.Add(kv.Key);
-
-                            if(cachedInfoNotification.Count == removeCacheIds.Count)
-                                cachedInfoNotification.Clear();
-                            else
-                                foreach(var key in removeCacheIds)
-                                    cachedInfoNotification.Remove(key);
-
-                            removeCacheIds.Clear();
-                        }
-
-                        if(haveTextAPICache)
-                        {
-                            foreach(var kv in cachedInfoTextAPI)
-                                if(kv.Value.expires < time)
-                                    removeCacheIds.Add(kv.Key);
-
-                            if(cachedInfoTextAPI.Count == removeCacheIds.Count)
-                                cachedInfoTextAPI.Clear();
-                            else
-                                foreach(var key in removeCacheIds)
-                                    cachedInfoTextAPI.Remove(key);
-
-                            removeCacheIds.Clear();
-                        }
-                    }
-                }
-                #endregion
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
         private void HideText()
         {
             if(textShown)
@@ -3142,200 +2892,6 @@ namespace Digi.BuildInfo
 
             return size;
         }
-
-        /// <summary>
-        /// Returns true if specified definition has all faces fully airtight.
-        /// The referenced arguments are assigned with the said values which should only really be used if it returns false (due to the quick escape return true).
-        /// An fully airtight face means it keeps the grid airtight when the face is the only obstacle between empty void and the ship's interior.
-        /// Due to the complexity of airtightness when connecting blocks, this method simply can not indicate that, that's what the mount points view is for.
-        /// </summary>
-        private bool IsAirTight(MyCubeBlockDefinition def, ref int airTightFaces, ref int totalFaces)
-        {
-            if(def.IsAirTight)
-                return true;
-
-            airTightFaces = 0;
-            totalFaces = 0;
-            cubes.Clear();
-
-            foreach(var kv in def.IsCubePressurized)
-            {
-                cubes.Add(kv.Key);
-            }
-
-            foreach(var kv in def.IsCubePressurized)
-            {
-                foreach(var kv2 in kv.Value)
-                {
-                    if(cubes.Contains(kv.Key + kv2.Key))
-                        continue;
-
-                    if(kv2.Value)
-                        airTightFaces++;
-
-                    totalFaces++;
-                }
-            }
-
-            cubes.Clear();
-            return (airTightFaces == totalFaces);
-        }
-
-        /// <summary>
-        /// Gets the inventory volume from the EntityComponents and EntityContainers definitions.
-        /// </summary>
-        private static bool GetInventoryFromComponent(MyDefinitionBase def, out float volume)
-        {
-            volume = 0;
-            MyContainerDefinition containerDef;
-
-            if(MyDefinitionManager.Static.TryGetContainerDefinition(def.Id, out containerDef) && containerDef.DefaultComponents != null)
-            {
-                MyComponentDefinitionBase compDefBase;
-
-                foreach(var compPointer in containerDef.DefaultComponents)
-                {
-                    if(compPointer.BuilderType == typeof(MyObjectBuilder_Inventory) && MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
-                    {
-                        var invComp = compDefBase as MyInventoryComponentDefinition;
-
-                        if(invComp != null && invComp.Id.SubtypeId == def.Id.SubtypeId)
-                        {
-                            volume = invComp.Volume;
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        #region Classes for storing generated info
-        class Cache
-        {
-            public long expires;
-
-            public void ResetExpiry()
-            {
-                expires = DateTime.UtcNow.Ticks + (TimeSpan.TicksPerSecond * CACHE_EXPIRE_SECONDS);
-            }
-        }
-
-        class CacheTextAPI : Cache
-        {
-            public string Text = null;
-            public Vector2D TextPos;
-            public Vector2D TextSize;
-
-            public CacheTextAPI(string text, Vector2D textPos, Vector2D textSize)
-            {
-                ResetExpiry();
-                Text = text;
-                TextPos = textPos;
-                TextSize = textSize;
-            }
-        }
-
-        class CacheNotifications : Cache
-        {
-            public List<IMyHudNotification> lines = null;
-
-            public CacheNotifications(List<HudLine> hudLines)
-            {
-                ResetExpiry();
-                lines = new List<IMyHudNotification>();
-
-                foreach(var hl in hudLines)
-                {
-                    if(hl.str.Length > 0)
-                        lines.Add(MyAPIGateway.Utilities.CreateNotification(hl.str.ToString(), 16, hl.font));
-                }
-            }
-        }
-
-        class HudLine
-        {
-            public StringBuilder str = new StringBuilder();
-            public string font;
-            public int lineWidthPx;
-        }
-        #endregion
-
-        #region Notification font character width data
-        private void ComputeCharacterSizes()
-        {
-            charSize.Clear();
-
-            // generated from fonts/white_shadow/FontData.xml
-            AddCharsSize(" !I`ijl ¡¨¯´¸ÌÍÎÏìíîïĨĩĪīĮįİıĵĺļľłˆˇ˘˙˚˛˜˝ІЇії‹›∙", 8);
-            AddCharsSize("\"-rª­ºŀŕŗř", 10);
-            AddCharsSize("#0245689CXZ¤¥ÇßĆĈĊČŹŻŽƒЁЌАБВДИЙПРСТУХЬ€", 19);
-            AddCharsSize("$&GHPUVY§ÙÚÛÜÞĀĜĞĠĢĤĦŨŪŬŮŰŲОФЦЪЯжы†‡", 20);
-            AddCharsSize("%ĲЫ", 24);
-            AddCharsSize("'|¦ˉ‘’‚", 6);
-            AddCharsSize("(),.1:;[]ft{}·ţťŧț", 9);
-            AddCharsSize("*²³¹", 11);
-            AddCharsSize("+<=>E^~¬±¶ÈÉÊË×÷ĒĔĖĘĚЄЏЕНЭ−", 18);
-            AddCharsSize("/ĳтэє", 14);
-            AddCharsSize("3FKTabdeghknopqsuy£µÝàáâãäåèéêëðñòóôõöøùúûüýþÿāăąďđēĕėęěĝğġģĥħĶķńņňŉōŏőśŝşšŢŤŦũūŭůűųŶŷŸșȚЎЗКЛбдекруцяёђћўџ", 17);
-            AddCharsSize("7?Jcz¢¿çćĉċčĴźżžЃЈЧавийнопсъьѓѕќ", 16);
-            AddCharsSize("@©®мшњ", 25);
-            AddCharsSize("ABDNOQRSÀÁÂÃÄÅÐÑÒÓÔÕÖØĂĄĎĐŃŅŇŌŎŐŔŖŘŚŜŞŠȘЅЊЖф□", 21);
-            AddCharsSize("L_vx«»ĹĻĽĿŁГгзлхчҐ–•", 15);
-            AddCharsSize("MМШ", 26);
-            AddCharsSize("WÆŒŴ—…‰", 31);
-            AddCharsSize("\\°“”„", 12);
-            AddCharsSize("mw¼ŵЮщ", 27);
-            AddCharsSize("½Щ", 29);
-            AddCharsSize("¾æœЉ", 28);
-            AddCharsSize("ю", 23);
-            AddCharsSize("ј", 7);
-            AddCharsSize("љ", 22);
-            AddCharsSize("ґ", 13);
-            AddCharsSize("™", 30);
-            AddCharsSize("", 40);
-            AddCharsSize("", 41);
-            AddCharsSize("", 32);
-            AddCharsSize("", 34);
-        }
-
-        private void AddCharsSize(string chars, int size)
-        {
-            for(int i = 0; i < chars.Length; i++)
-            {
-                charSize.Add(chars[i], size);
-            }
-        }
-        #endregion
-
-        #region Resource group priorities
-        private void ComputeResourceGroups()
-        {
-            resourceGroupPriority.Clear();
-            resourceSourceGroups = 0;
-            resourceSinkGroups = 0;
-
-            var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
-            var orderedGroups = from def in groupDefs
-                                orderby def.Priority
-                                select def;
-
-            foreach(var group in orderedGroups)
-            {
-                resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData()
-                {
-                    def = group,
-                    priority = (group.IsSource ? ++resourceSourceGroups : ++resourceSinkGroups),
-                });
-            }
-        }
-
-        public struct ResourceGroupData
-        {
-            public MyResourceDistributionGroupDefinition def;
-            public int priority;
-        }
-        #endregion
+        #endregion Text handling
     }
 }

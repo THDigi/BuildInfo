@@ -124,6 +124,8 @@
     <Compile Include="BlockShipWelder.cs" />
     <Compile Include="BlockThruster.cs" />
     <Compile Include="BlockWeapons.cs" />
+    <Compile Include="BuildInfo-Extras.cs" />
+    <Compile Include="BuildInfo-Fields.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameData.cs" />
