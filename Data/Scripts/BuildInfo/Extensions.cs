@@ -115,10 +115,10 @@ namespace Digi.BuildInfo
 
         public static StringBuilder ForceFormat(this StringBuilder s, float N)
         {
-            if(N > 1000000)
+            if(N >= 1000000)
                 return s.NumFormat(N / 1000000, 2).Append(" MN");
 
-            if(N > 1000)
+            if(N >= 1000)
                 return s.NumFormat(N / 1000, 2).Append(" kN");
 
             return s.NumFormat(N, 2).Append(" N");
@@ -131,10 +131,10 @@ namespace Digi.BuildInfo
 
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)
         {
-            if(N > 1000000)
+            if(N >= 1000000)
                 return s.NumFormat(N / 1000000, 2).Append(" MN-m");
 
-            if(N > 1000)
+            if(N >= 1000)
                 return s.NumFormat(N / 1000, 2).Append(" kN-m");
 
             return s.NumFormat(N, 2).Append("N-m");
@@ -142,19 +142,19 @@ namespace Digi.BuildInfo
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
-            if(MW > 1000000000)
+            if(MW >= 1000000000)
                 return s.Append(MW / 1000000000).Append(" PetaWatts");
 
-            if(MW > 1000000)
+            if(MW >= 1000000)
                 return s.NumFormat(MW / 1000000, 2).Append(" TerraWatts");
 
-            if(MW > 1000)
+            if(MW >= 1000)
                 return s.NumFormat(MW / 1000, 2).Append(" GigaWatts");
 
-            if(MW > 1)
+            if(MW >= 1)
                 return s.NumFormat(MW, 2).Append(" MW");
 
-            if(MW > 0.001)
+            if(MW >= 0.001)
                 return s.NumFormat(MW * 1000f, 2).Append(" kW");
 
             return s.NumFormat(MW * 1000000f, 2).Append(" W");
@@ -167,7 +167,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder DistanceFormat(this StringBuilder s, float m)
         {
-            if(m > 1000)
+            if(m >= 1000)
                 return s.NumFormat(m / 1000, 2).Append("km");
 
             if(m < 10)
@@ -178,7 +178,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
-            if(m1 > 1000)
+            if(m1 >= 1000)
                 return s.NumFormat(m1 / 1000, 2).Append("~").NumFormat(m2 / 1000, 2).Append(" km");
 
             if(m1 < 10)
@@ -189,10 +189,10 @@ namespace Digi.BuildInfo
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
-            if(kg > 1000000)
+            if(kg >= 1000000)
                 return s.Append(Math.Round(kg / 1000000, 2)).Append(" Mt");
 
-            if(kg > 1000)
+            if(kg >= 1000)
                 return s.Append(Math.Round(kg / 1000, 2)).Append(" t");
 
             if(kg < 1f)
@@ -203,13 +203,13 @@ namespace Digi.BuildInfo
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
         {
-            if(integrity > 1000000000)
+            if(integrity >= 1000000000)
                 return s.Append(Math.Round(integrity / 1000000000, 2)).Append(" G");
 
-            if(integrity > 1000000)
+            if(integrity >= 1000000)
                 return s.Append(Math.Round(integrity / 1000000, 2)).Append(" M");
 
-            if(integrity > 1000)
+            if(integrity >= 1000)
                 return s.Append(Math.Round(integrity / 1000, 2)).Append(" k");
 
             return s.Append(Math.Round(integrity, 2));
@@ -217,7 +217,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
-            if(l > 1000)
+            if(l >= 1000)
                 return s.NumFormat(l / 1000f, 2).Append(" m³");
 
             return s.NumFormat(l, 2).Append(" L");
