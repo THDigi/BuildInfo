@@ -370,7 +370,6 @@ namespace Digi.BuildInfo
                 str.AppendLine();
                 str.Append("// Text info's background opacity percent scale (0.0 to 1.0 value) or the word HUD.").AppendLine();
                 str.Append("// The HUD value will use the game's UI background opacity.").AppendLine();
-                str.Append("// NOTE: Currently, too opaque values will fade out the text.").AppendLine();
                 str.Append("// Default: ").Append(default_textAPIBackgroundOpacity < 0 ? "HUD" : default_textAPIBackgroundOpacity.ToString()).AppendLine();
             }
 

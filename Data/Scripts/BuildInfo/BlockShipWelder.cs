@@ -14,7 +14,7 @@ namespace Digi.BuildInfo
 
     public class BlockDataShipToolBase : BlockDataBase
     {
-        public BoundingSphere sphereDummy;
+        public BoundingSphere SphereDummy;
 
         public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -30,7 +30,7 @@ namespace Digi.BuildInfo
                 {
                     var matrix = kv.Value.Matrix;
                     var radius = matrix.Scale.AbsMin();
-                    sphereDummy = new BoundingSphere(matrix.Translation, radius);
+                    SphereDummy = new BoundingSphere(matrix.Translation, radius);
                     success = true;
                     break;
                 }

@@ -95,32 +95,33 @@ namespace Digi.BuildInfo
 
         class CacheTextAPI : Cache
         {
-            public string Text = null;
-            public Vector2D TextPos;
-            public Vector2D TextSize;
+            public readonly StringBuilder Text = new StringBuilder();
+            public readonly Vector2D TextSize;
 
-            public CacheTextAPI(string text, Vector2D textPos, Vector2D textSize)
+            public CacheTextAPI(StringBuilder textSB, Vector2D textSize)
             {
                 ResetExpiry();
-                Text = text;
-                TextPos = textPos;
+                Text.AppendSB(textSB);
                 TextSize = textSize;
             }
         }
 
         class CacheNotifications : Cache
         {
-            public List<IMyHudNotification> lines = null;
+            public readonly List<IMyHudNotification> Lines = new List<IMyHudNotification>();
 
             public CacheNotifications(List<HudLine> hudLines)
             {
                 ResetExpiry();
-                lines = new List<IMyHudNotification>();
 
-                foreach(var hl in hudLines)
+                for(int i = 0; i < hudLines.Count; ++i)
                 {
-                    if(hl.str.Length > 0)
-                        lines.Add(MyAPIGateway.Utilities.CreateNotification(hl.str.ToString(), 16, hl.font));
+                    var line = hudLines[i];
+
+                    if(line.str.Length > 0)
+                    {
+                        Lines.Add(MyAPIGateway.Utilities.CreateNotification(line.str.ToString(), 16, line.font));
+                    }
                 }
             }
         }
@@ -208,5 +209,36 @@ namespace Digi.BuildInfo
             public int priority;
         }
         #endregion
+
+        void UpdateCameraViewProjInvMatrix()
+        {
+            var cam = MyAPIGateway.Session.Camera;
+            viewProjInv = MatrixD.Invert(cam.ViewMatrix * cam.ProjectionMatrix);
+        }
+
+        Vector3D GameHUDToWorld(Vector2 hud)
+        {
+            var vec4 = new Vector4D((2d * hud.X - 1d), (1d - 2d * hud.Y), 0d, 1d);
+            Vector4D.Transform(ref vec4, ref viewProjInv, out vec4);
+            return new Vector3D((vec4.X / vec4.W), (vec4.Y / vec4.W), (vec4.Z / vec4.W));
+        }
+
+        Vector2 GetGameHUDBlockInfoPos()
+        {
+            Vector2 posHUD = new Vector2(0.9894f, 0.7487f);
+
+            if(MyAPIGateway.Session.ControlledObject is IMyShipController)
+                posHUD.Y -= 0.1f; // HACK cockpits intentionally bump up the HUD
+
+            if(aspectRatio > 5) // triple monitor
+                posHUD.X += 0.75f;
+
+            return posHUD;
+        }
+
+        Vector2 GetGameHUDBlockInfoSize()
+        {
+            return new Vector2(0.02164f, 0.00076f);
+        }
     }
 }

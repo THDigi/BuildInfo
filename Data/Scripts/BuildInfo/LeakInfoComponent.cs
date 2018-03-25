@@ -272,10 +272,10 @@ namespace Digi.BuildInfo
             return !(min != Vector3I.Min(pos, min)) && !(max != Vector3I.Max(pos, max));
         }
 
-        private bool IsInBounds(IMyCubeGrid grid, Vector3I pos)
-        {
-            return !(grid.Min != Vector3I.Min(pos, grid.Min)) && !(grid.Max != Vector3I.Max(pos, grid.Max));
-        }
+        //private bool IsInBounds(IMyCubeGrid grid, Vector3I pos)
+        //{
+        //    return !(grid.Min != Vector3I.Min(pos, grid.Min)) && !(grid.Max != Vector3I.Max(pos, grid.Max));
+        //}
 
         public void StartThread(IMyCubeGrid grid, Vector3I start)
         {

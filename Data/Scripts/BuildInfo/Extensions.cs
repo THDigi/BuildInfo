@@ -30,6 +30,31 @@ namespace Digi.BuildInfo
             return sb;
         }
 
+        // HACK copy of StringBuilderExtensions_Format.AppendStringBuilder() since it's not whitelisted in modAPI
+        public static StringBuilder AppendSB(this StringBuilder sb, StringBuilder otherSb)
+        {
+            sb.EnsureCapacity(sb.Length + otherSb.Length);
+
+            for(int i = 0; i < otherSb.Length; i++)
+            {
+                sb.Append(otherSb[i]);
+            }
+
+            return sb;
+        }
+
+        public static StringBuilder AppendSubstring(this StringBuilder sb, string text, int start, int count)
+        {
+            sb.EnsureCapacity(sb.Length + count);
+
+            for(int i = 0; i < count; i++)
+            {
+                sb.Append(text[start + i]);
+            }
+
+            return sb;
+        }
+
         public static StringBuilder Separator(this StringBuilder s)
         {
             return s.Append(", ");
@@ -45,7 +70,7 @@ namespace Digi.BuildInfo
             return s.Append(b ? "Yes" : "No");
         }
 
-        public static StringBuilder SetTextAPIColor(this StringBuilder s, Color color)
+        public static StringBuilder Color(this StringBuilder s, Color color)
         {
             if(BuildInfo.instance.TextAPIEnabled)
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
@@ -99,9 +124,9 @@ namespace Digi.BuildInfo
             return s.NumFormat(N, 2).Append(" N");
         }
 
-        public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond)
+        public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond, int digits = 2)
         {
-            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), 2)).Append("°/s");
+            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append("°/s");
         }
 
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)
@@ -176,6 +201,20 @@ namespace Digi.BuildInfo
             return s.Append(Math.Round(kg, 2)).Append(" kg");
         }
 
+        public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
+        {
+            if(integrity > 1000000000)
+                return s.Append(Math.Round(integrity / 1000000000, 2)).Append(" G");
+
+            if(integrity > 1000000)
+                return s.Append(Math.Round(integrity / 1000000, 2)).Append(" M");
+
+            if(integrity > 1000)
+                return s.Append(Math.Round(integrity / 1000, 2)).Append(" k");
+
+            return s.Append(Math.Round(integrity, 2));
+        }
+
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
             return s.NumFormat(l, 2).Append(" l");
@@ -217,7 +256,7 @@ namespace Digi.BuildInfo
             MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
             if(Math.Abs(mul - 1) > 0.001f)
-                s.SetTextAPIColor(BuildInfo.instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
+                s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
 
             if(types == null && items == null)
                 types = BuildInfo.instance.DEFAULT_ALLOWED_TYPES;
@@ -253,12 +292,12 @@ namespace Digi.BuildInfo
         public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
         {
             if(seconds >= 3600)
-                return s.AppendFormat("{0:0}h {1:0}m {2:0.##}s", (seconds / 3600), (seconds / 60), (seconds % 60));
+                return s.AppendFormat("{0:0}h {1:0}m {2:0.#}s", (seconds / 3600), (seconds / 60), (seconds % 60));
 
             if(seconds >= 60)
-                return s.AppendFormat("{0:0}m {1:0.##}s", (seconds / 60), (seconds % 60));
+                return s.AppendFormat("{0:0}m {1:0.#}s", (seconds / 60), (seconds % 60));
 
-            return s.AppendFormat("{0:0.##}s", seconds);
+            return s.AppendFormat("{0:0.#}s", seconds);
         }
 
         public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0)
@@ -276,9 +315,9 @@ namespace Digi.BuildInfo
             return s.Append(vec.X).Append('x').Append(vec.Y).Append('x').Append(vec.Z);
         }
 
-        public static StringBuilder SpeedFormat(this StringBuilder s, float mps)
+        public static StringBuilder SpeedFormat(this StringBuilder s, float mps, int digits = 2)
         {
-            return s.NumFormat(mps, 2).Append(" m/s");
+            return s.NumFormat(mps, digits).Append(" m/s");
         }
 
         public static StringBuilder PercentFormat(this StringBuilder s, float ratio)
@@ -315,7 +354,7 @@ namespace Digi.BuildInfo
             // HACK workaround for MyModContext not having workshop ID as ulong... only filename which is unreliable in determining that
             var mod = MyAPIGateway.Session.Mods.First((m) => m.Name == context.ModId);
             if(mod.PublishedFileId != 0)
-                s.SetTextAPIColor(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
+                s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
 
             return s;
         }
@@ -331,9 +370,9 @@ namespace Digi.BuildInfo
         }
 
         /// <summary>
-        /// Gets the key/button name assigned to the specified control.
+        /// Gets the key/button name assigned to this control.
         /// </summary>
-        public static string GetControlAssignedName(this MyStringId controlId)
+        public static string GetAssignedInputName(this MyStringId controlId)
         {
             var control = MyAPIGateway.Input.GetGameControl(controlId);
 

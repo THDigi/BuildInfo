@@ -5,8 +5,6 @@ using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRageMath;
 
 namespace Digi.BuildInfo
@@ -50,6 +48,7 @@ namespace Digi.BuildInfo
             var invMatrix = block.WorldMatrixInvScaled;
 
             // HACK copied from MyThrust.UpdateThrustFlame()
+
             // HACK make the GetDamageCapsuleLine() method think it thrusts at max and with no random
             thrust.ThrustLengthRand = /* CurrentStrength * */ 10f * /* MyUtils.GetRandomFloat(0.6f, 1f) * */ thrustDef.FlameLengthScale;
 

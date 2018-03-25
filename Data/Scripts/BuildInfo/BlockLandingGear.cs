@@ -11,7 +11,7 @@ namespace Digi.BuildInfo
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LandingGear), useEntityUpdate: false)]
     public class BlockLandingGear : BlockDataBase
     {
-        public List<MyOrientedBoundingBoxD> magents = new List<MyOrientedBoundingBoxD>();
+        public readonly List<MyOrientedBoundingBoxD> Magents = new List<MyOrientedBoundingBoxD>();
 
         public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -29,9 +29,7 @@ namespace Digi.BuildInfo
 
             if(lockPositions.Length == 0)
                 return false;
-
-            var wm = block.WorldMatrix;
-
+            
             for(int i = 0; i < lockPositions.Length; ++i)
             {
                 var m = lockPositions[i];
@@ -43,7 +41,7 @@ namespace Digi.BuildInfo
                 halfExtents *= new Vector3(2f, 1f, 2f);
                 orientation.Normalize();
 
-                magents.Add(new MyOrientedBoundingBoxD(mn.Translation, halfExtents, orientation));
+                Magents.Add(new MyOrientedBoundingBoxD(mn.Translation, halfExtents, orientation));
             }
 
             return success;

@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game.Components;
-using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
-using VRageMath;
 
 namespace Digi.BuildInfo
 {
@@ -19,7 +16,7 @@ namespace Digi.BuildInfo
     {
         private byte init = 0; // init states, 0 no init, 1 init events, 2 init with main model (for dummyLocation)
         private byte skip = 0;
-        private Vector3 dummyLocation;
+        //private Vector3 dummyLocation;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -72,16 +69,16 @@ namespace Digi.BuildInfo
                 if(init < 2 && block.IsFunctional) // needs to be functional to get the dummy from the main model
                 {
                     init = 2;
-                    const string DUMMY_NAME = "vent_001"; // HACK hardcoded from MyAirVent.VentDummy property
-
-                    var dummies = leakInfo.dummies;
-                    dummies.Clear();
-
-                    IMyModelDummy dummy;
-                    if(block.Model.GetDummies(dummies) > 0 && dummies.TryGetValue(DUMMY_NAME, out dummy))
-                        dummyLocation = dummy.Matrix.Translation;
-
-                    dummies.Clear();
+                    //const string DUMMY_NAME = "vent_001"; // HACK hardcoded from MyAirVent.VentDummy property
+                    //
+                    //var dummies = leakInfo.dummies;
+                    //dummies.Clear();
+                    //
+                    //IMyModelDummy dummy;
+                    //if(block.Model.GetDummies(dummies) > 0 && dummies.TryGetValue(DUMMY_NAME, out dummy))
+                    //    dummyLocation = dummy.Matrix.Translation;
+                    //
+                    //dummies.Clear();
                 }
 
                 if(++skip > 6) // every second
@@ -150,8 +147,7 @@ namespace Digi.BuildInfo
                     //    return;
                     //}
 
-                    var dummies = new Dictionary<string, IMyModelDummy>();
-                    var start = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(dummyLocation, block.WorldMatrix));
+                    //var start = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(dummyLocation, block.WorldMatrix));
 
                     leakInfo.StartThread(block.CubeGrid, block.Position);
                     leakInfo.usedFromVent = block;

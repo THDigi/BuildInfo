@@ -63,12 +63,12 @@ namespace Digi.BuildInfo
 
         public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
         {
-            var data = BuildInfo.instance.selectedBlockData as T;
+            var data = BuildInfo.instance.blockDataCache as T;
 
             if(data == null)
                 data = TryGetData<T>(def);
 
-            BuildInfo.instance.selectedBlockData = data;
+            BuildInfo.instance.blockDataCache = data;
             return data;
         }
 

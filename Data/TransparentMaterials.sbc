@@ -4,14 +4,14 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
-        <SubtypeId>BuildInfo_TextBackground</SubtypeId>
+        <SubtypeId>BuildInfo_UI_Background</SubtypeId>
       </Id>
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
-      <Texture>Textures\Background.dds</Texture>
+      <Texture>Textures\GUI\Blank.dds</Texture>
       <UseAtlas>false</UseAtlas>
       <UVOffset>
         <X>0</X>
@@ -21,7 +21,27 @@
         <X>1</X>
         <Y>1</Y>
       </UVSize>
-      <IsFlareOccluder>true</IsFlareOccluder>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_UI_TopRightCorner</SubtypeId>
+      </Id>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <IgnoreDepth>true</IgnoreDepth>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <Texture>Textures\UI_TopRightCorner.dds</Texture>
+      <UseAtlas>false</UseAtlas>
+      <UVOffset>
+        <X>0</X>
+        <Y>0</Y>
+      </UVOffset>
+      <UVSize>
+        <X>1</X>
+        <Y>1</Y>
+      </UVSize>
     </TransparentMaterial>
     <TransparentMaterial>
       <Id>
