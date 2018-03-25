@@ -207,8 +207,8 @@ namespace Digi.BuildInfo
         public bool init = false;
         public bool isThisDS = false;
         public Settings settings = null;
-        public LeakInfo leakInfo = null; // leak info component
-        private short tick = 0; // global incrementing gamelogic tick
+        public LeakInfoComponent leakInfoComp = null;
+        public short tick = 0; // global incrementing gamelogic tick
         private int drawOverlay = 0;
         private bool overlaysDrawn = false;
         private bool doorAirtightBlink = false;

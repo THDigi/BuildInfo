@@ -11,7 +11,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    public class LeakInfo
+    public class LeakInfoComponent
     {
         // used in main thread
         public Status status = Status.IDLE; // the scan/thread status
@@ -58,7 +58,7 @@ namespace Digi.BuildInfo
         };
 
         #region Constructor and destructor
-        public LeakInfo()
+        public LeakInfoComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
@@ -122,9 +122,9 @@ namespace Digi.BuildInfo
                     var drawPosition = camPos + ((position - camPos) * DRAW_DEPTH);
 
                     if(walk < 0)
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfo.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfoComp.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
                     else
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfo.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfoComp.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
                 }
 
                 if(!MyParticlesManager.Paused)

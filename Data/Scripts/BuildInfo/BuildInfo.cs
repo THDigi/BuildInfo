@@ -54,10 +54,8 @@ namespace Digi.BuildInfo
             ComputeResourceGroups();
             UpdateConfigValues();
 
-            leakInfo = new LeakInfo();
-
             settings = new Settings();
-
+            leakInfoComp = new LeakInfoComponent();
             textAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
@@ -95,10 +93,10 @@ namespace Digi.BuildInfo
                         settings = null;
                     }
 
-                    if(leakInfo != null)
+                    if(leakInfoComp != null)
                     {
-                        leakInfo.Close();
-                        leakInfo = null;
+                        leakInfoComp.Close();
+                        leakInfoComp = null;
                     }
 
                     if(textAPI != null)
@@ -158,8 +156,8 @@ namespace Digi.BuildInfo
                     MyAPIGateway.Utilities.ShowNotification($"Press a number key to place '{pickBlockDef.DisplayNameText}' in...", 16 * 5, MyFontEnum.Blue);
                 }
 
-                if(leakInfo != null) // update the leak info component
-                    leakInfo.Update();
+                if(leakInfoComp != null)
+                    leakInfoComp.Update();
 
                 #region Cubebuilder, welder and grinder monitor
                 var prevSelectedToolDefId = selectedToolDefId;
@@ -523,8 +521,8 @@ namespace Digi.BuildInfo
                 if(!hudVisible && !settings.alwaysVisible)
                     return;
 
-                if(leakInfo != null)
-                    leakInfo.Draw();
+                if(leakInfoComp != null)
+                    leakInfoComp.Draw();
 
                 if(MyAPIGateway.Gui.IsCursorVisible && textShown && textObject != null)
                 {

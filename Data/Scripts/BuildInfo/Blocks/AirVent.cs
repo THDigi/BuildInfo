@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Blocks
                 if(BuildInfo.instance == null || BuildInfo.instance.isThisDS)
                     return;
 
-                var leakInfo = BuildInfo.instance.leakInfo;
+                var leakInfo = BuildInfo.instance.leakInfoComp;
 
                 if(leakInfo == null)
                     return;
@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Blocks
                     skip = 0;
 
                     // clear the air leak visual display or stop the running thread if the air vent's room is sealed.
-                    if(leakInfo.usedFromVent == block && leakInfo.status != LeakInfo.Status.IDLE && block.CanPressurize)
+                    if(leakInfo.usedFromVent == block && leakInfo.status != LeakInfoComponent.Status.IDLE && block.CanPressurize)
                         leakInfo.ClearStatus();
                 }
             }
@@ -113,12 +113,12 @@ namespace Digi.BuildInfo.Blocks
         {
             try
             {
-                var leakInfo = BuildInfo.instance.leakInfo;
+                var leakInfo = BuildInfo.instance.leakInfoComp;
 
                 if(BuildInfo.instance.isThisDS || leakInfo == null)
                     return;
 
-                if(leakInfo.status != LeakInfo.Status.IDLE)
+                if(leakInfo.status != LeakInfoComponent.Status.IDLE)
                 {
                     leakInfo.ClearStatus();
 
@@ -164,8 +164,8 @@ namespace Digi.BuildInfo.Blocks
 
         private bool Terminal_Getter(IMyTerminalBlock b)
         {
-            var leakInfo = BuildInfo.instance.leakInfo;
-            return leakInfo != null && leakInfo.status != LeakInfo.Status.IDLE;
+            var leakInfo = BuildInfo.instance.leakInfoComp;
+            return leakInfo != null && leakInfo.status != LeakInfoComponent.Status.IDLE;
         }
 
         private void CustomInfo(IMyTerminalBlock b, StringBuilder str)
@@ -173,7 +173,7 @@ namespace Digi.BuildInfo.Blocks
             try
             {
                 var block = (IMyAirVent)b;
-                var leakInfo = BuildInfo.instance.leakInfo;
+                var leakInfo = BuildInfo.instance.leakInfoComp;
 
                 if(leakInfo != null)
                 {
@@ -182,7 +182,7 @@ namespace Digi.BuildInfo.Blocks
 
                     switch(leakInfo.status)
                     {
-                        case LeakInfo.Status.IDLE:
+                        case LeakInfoComponent.Status.IDLE:
                             if(!block.IsWorking)
                                 str.Append("Air vent not working.");
                             else if(block.CanPressurize)
@@ -190,10 +190,10 @@ namespace Digi.BuildInfo.Blocks
                             else
                                 str.Append("Ready to scan.");
                             break;
-                        case LeakInfo.Status.RUNNING:
+                        case LeakInfoComponent.Status.RUNNING:
                             str.Append("Computing...");
                             break;
-                        case LeakInfo.Status.DRAW:
+                        case LeakInfoComponent.Status.DRAW:
                             str.Append("Leak found and displayed.");
                             break;
                     }
