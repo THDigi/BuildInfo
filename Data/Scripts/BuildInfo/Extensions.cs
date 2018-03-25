@@ -217,7 +217,10 @@ namespace Digi.BuildInfo
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
-            return s.NumFormat(l, 2).Append(" l");
+            if(l > 1000)
+                return s.NumFormat(l / 1000f, 2).Append(" m³");
+
+            return s.NumFormat(l, 2).Append(" L");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
