@@ -9,10 +9,10 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
-    public class BlockAirVent : MyGameLogicComponent
+    public class AirVent : MyGameLogicComponent
     {
         private byte init = 0; // init states, 0 no init, 1 init events, 2 init with main model (for dummyLocation)
         private byte skip = 0;

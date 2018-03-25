@@ -7,7 +7,7 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: false)]
     public class BlockThruster : BlockBase<BlockDataThrust> { }

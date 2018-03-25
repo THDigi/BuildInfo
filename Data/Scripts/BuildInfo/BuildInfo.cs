@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Blocks;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -18,6 +19,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ModAPI;
 using VRageMath;
+
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
 
 namespace Digi.BuildInfo

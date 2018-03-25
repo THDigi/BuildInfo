@@ -6,7 +6,7 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallGatlingGun), useEntityUpdate: false)]
     public class BlockGatlingGun : BlockBase<BlockDataWeapons> { }

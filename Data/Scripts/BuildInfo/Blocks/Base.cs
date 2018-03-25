@@ -11,7 +11,7 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.Blocks
 {
     public class BlockBase<T> : MyGameLogicComponent where T : BlockDataBase, new()
     {

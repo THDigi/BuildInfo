@@ -119,12 +119,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BlockAirVent.cs" />
-    <Compile Include="BlockDataBase.cs" />
-    <Compile Include="BlockLandingGear.cs" />
-    <Compile Include="BlockShipWelder.cs" />
-    <Compile Include="BlockThruster.cs" />
-    <Compile Include="BlockWeapons.cs" />
+    <Compile Include="Blocks\AirVent.cs" />
+    <Compile Include="Blocks\Base.cs" />
+    <Compile Include="Blocks\LandingGear.cs" />
+    <Compile Include="Blocks\ShipWelder.cs" />
+    <Compile Include="Blocks\Thruster.cs" />
+    <Compile Include="Blocks\Weapons.cs" />
     <Compile Include="BuildInfo-Extras.cs" />
     <Compile Include="BuildInfo-Fields.cs" />
     <Compile Include="BuildInfo.cs" />
