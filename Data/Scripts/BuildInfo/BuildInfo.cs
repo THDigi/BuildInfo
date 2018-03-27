@@ -3609,10 +3609,11 @@ namespace Digi.BuildInfo
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.Standard;
                 const float REACH_DISTANCE = 4.5f; // HACK hardcoded from MyShipToolBase.DEFAULT_REACH_DISTANCE
+                var color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
                 var m = controller.WorldMatrix;
 
-                MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, Color.Red, m.Translation, m.Forward, REACH_DISTANCE, 0.01f, blendType: BLEND_TYPE);
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_VANILLA_DOT, Color.Red, m.Translation + m.Forward * REACH_DISTANCE, 0.025f, 0f, blendType: BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, m.Translation, m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_VANILLA_DOT, color, m.Translation + m.Forward * REACH_DISTANCE, 0.015f, 0f, blendType: BLEND_TYPE);
             }
 
             if(shipControllerObj != null && shipControllerObj.Toolbar != null && shipControllerObj.Toolbar.SelectedSlot.HasValue)
