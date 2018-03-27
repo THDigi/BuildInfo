@@ -89,7 +89,7 @@ namespace Digi.BuildInfo
             return s;
         }
 
-        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false) // HACK some ResourceSinkGroup are string type for SOME reason
+        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false) // HACK some ResourceSinkGroup are string and some are MyStringHash...
         {
             return s.ResourcePriority(MyStringHash.GetOrCompute(groupName), hardcoded);
         }
@@ -355,9 +355,14 @@ namespace Digi.BuildInfo
             s.Append(context.ModName);
 
             // HACK workaround for MyModContext not having workshop ID as ulong... only filename which is unreliable in determining that
-            var mod = MyAPIGateway.Session.Mods.First((m) => m.Name == context.ModId);
-            if(mod.PublishedFileId != 0)
-                s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
+            foreach(var mod in MyAPIGateway.Session.Mods)
+            {
+                if(mod.Name == context.ModId)
+                {
+                    s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
+                    break;
+                }
+            }
 
             return s;
         }

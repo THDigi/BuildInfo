@@ -3172,8 +3172,27 @@ namespace Digi.BuildInfo
             #endregion
 
             #region
-            if(!def.Context.IsBaseGame)
-                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).ResetTextAPIColor().EndLine();
+            var context = def.Context;
+            if(!context.IsBaseGame)
+            {
+                if(TextAPIEnabled)
+                {
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(Color.GreenYellow).Append(context.ModName).ResetTextAPIColor().EndLine();
+
+                    foreach(var mod in MyAPIGateway.Session.Mods)
+                    {
+                        if(mod.Name == context.ModId)
+                        {
+                            AddLine().Color(COLOR_MOD).Append("       | ").ResetTextAPIColor().Append("WorkshopID: ").Append(mod.PublishedFileId).EndLine();
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(context).EndLine();
+                }
+            }
             #endregion
 
             EndAddedLines();
