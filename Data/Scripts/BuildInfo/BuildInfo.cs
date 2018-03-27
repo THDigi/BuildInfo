@@ -1982,8 +1982,7 @@ namespace Digi.BuildInfo
 
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
-                    //if(thrust.NeedsAtmosphereForInfluence) // seems to be a pointless var
-                    //{
+                    // thrust.NeedsAtmosphereForInfluence seems to be a pointless var
 
                     AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
                         .PercentFormat(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetTextAPIColor();
@@ -2000,17 +1999,10 @@ namespace Digi.BuildInfo
                     else
                         GetLine().Append("in space");
                     GetLine().EndLine();
-
-                    //}
-                    //else
-                    //{
-                    //    SetText(line++, PercentFormat(thrust.EffectivenessAtMaxInfluence) + " max thrust " + (thrust.MaxPlanetaryInfluence < 1f ? "in " + PercentFormat(thrust.MaxPlanetaryInfluence) + " planet influence" : "on planets"), thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                    //    SetText(line++, PercentFormat(thrust.EffectivenessAtMinInfluence) + " max thrust " + (thrust.MinPlanetaryInfluence > 0f ? "below " + PercentFormat(thrust.MinPlanetaryInfluence) + " planet influence" : "in space"), thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White);
-                    //}
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Green).Append("No thrust limits in space or planets").EndLine();
+                    AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets").EndLine();
                 }
 
                 if(thrust.ConsumptionFactorPerG > 0)
@@ -2022,10 +2014,10 @@ namespace Digi.BuildInfo
                 {
                     var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
 
-                    // HACK hardcoded; from MyThrust.DamageGrid() and MyThrust.ThrustDamage()
-                    var damage = thrust.FlameDamage * data.flamesCount;
-                    var flameShipDamage = damage * 30f;
-                    var flameDamage = damage * 10f * data.radius;
+                    // HACK hardcoded; from MyThrust.ThrustDamageDealDamage() and MyThrust.DamageGrid()
+                    var damage = thrust.FlameDamage * data.flamesCount * 60; // 60 = ticks in a second
+                    var flameShipDamage = damage;
+                    var flameDamage = damage * data.radius;
 
                     AddLine();
 
@@ -2034,9 +2026,10 @@ namespace Digi.BuildInfo
                     else
                         GetLine().Append("Flame max distance: ");
 
-                    GetLine().DistanceFormat(flameDistance).Separator().Append("Max damage: ").NumFormat(flameShipDamage, 3).Append(" to ships").Separator().NumFormat(flameDamage, 3).Append(" to the rest").EndLine();
+                    GetLine().DistanceFormat(flameDistance).Separator().Append("Damage: ").NumFormat(flameShipDamage, 1).Append("/s to ships").Separator().NumFormat(flameDamage, 1).Append("/s to other things").EndLine();
                 }
 
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize flames damage area)").ResetTextAPIColor().EndLine();
                 return;
             }
 
