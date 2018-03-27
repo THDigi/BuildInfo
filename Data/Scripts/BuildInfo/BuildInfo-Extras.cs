@@ -55,7 +55,7 @@ namespace Digi.BuildInfo
         /// <summary>
         /// Gets the inventory volume from the EntityComponents and EntityContainers definitions.
         /// </summary>
-        private static bool GetInventoryFromComponent(MyDefinitionBase def, out float volume)
+        public static bool GetInventoryFromComponent(MyDefinitionBase def, out float volume)
         {
             volume = 0;
             MyContainerDefinition containerDef;

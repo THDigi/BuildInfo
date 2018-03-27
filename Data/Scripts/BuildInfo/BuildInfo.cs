@@ -1647,8 +1647,10 @@ namespace Digi.BuildInfo
             var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
             var grindRatio = def.DisassembleRatio;
 
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
-                grindRatio *= 3.3f;
+            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
+            {
+                grindRatio *= GameData.Hardcoded.Door_Closed_DisassembleRatioMultiplier;
+            }
 
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
@@ -1720,67 +1722,49 @@ namespace Digi.BuildInfo
 
         private void GenerateAdvancedBlockText(MyCubeBlockDefinition def)
         {
-            // TODO convert these if conditions to 'as' checking when their definitions are not internal anymore
-
             var defTypeId = def.Id.TypeId;
 
+            // HACK: control panel type doesn't have a definition
             if(defTypeId == typeof(MyObjectBuilder_TerminalBlock)) // control panel block
             {
-                // HACK hardcoded
+                // HACK hardcoded; control panel doesn't use power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").EndLine();
                 return;
             }
 
-            // HACK conveyor blocks have no definition
+            // HACK: conveyor blocks have no definition
             if(defTypeId == typeof(MyObjectBuilder_Conveyor) || defTypeId == typeof(MyObjectBuilder_ConveyorConnector)) // conveyor hubs and tubes
             {
-                // HACK hardcoded; from MyGridConveyorSystem
-                float requiredPower = MyEnergyConstants.REQUIRED_INPUT_CONVEYOR_LINE;
-                AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.Conveyors_PowerReq).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
                 return;
             }
 
             var shipDrill = def as MyShipDrillDefinition;
             if(shipDrill != null)
             {
-                // HACK hardcoded; from MyShipDrill
-                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
-                AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipDrill_Power).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
                 {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, typeof(MyObjectBuilder_Ore)).EndLine();
+                    AddLine().Append("Inventory: ").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
                 }
                 else
                 {
-                    // HACK hardcoded; from MyShipDrill
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    volume = (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
-                    AddLine().Append("Inventory*: ").InventoryFormat(volume, typeof(MyObjectBuilder_Ore)).EndLine();
+                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
                 }
 
                 AddLine().Append("Mining radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
                 AddLine().Append("Cutout radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
-                }
-
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
                 return;
             }
 
-            // HACK ship connector has no definition
+            // HACK: ship connector has no definition
             if(defTypeId == typeof(MyObjectBuilder_ShipConnector))
             {
-                // HACK hardcoded; from MyShipConnector
-                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_CONNECTOR;
-                if(def.CubeSize == MyCubeSize.Small)
-                    requiredPower *= 0.01f;
-
-                AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipConnector_PowerReq(def)).Separator().ResourcePriority(GameData.Hardcoded.ShipConnector_PowerGroup, hardcoded: true).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
@@ -1789,10 +1773,7 @@ namespace Digi.BuildInfo
                 }
                 else
                 {
-                    // HACK hardcoded; from MyShipConnector
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    volume = (def.Size * gridSize * 0.8f).Volume;
-                    AddLine().Append("Inventory*: ").InventoryFormat(volume).EndLine();
+                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipConnector_InventoryVolume(def)).EndLine();
                 }
                 return;
             }
@@ -1801,9 +1782,7 @@ namespace Digi.BuildInfo
             var shipGrinder = def as MyShipGrinderDefinition;
             if(shipWelder != null || shipGrinder != null)
             {
-                // HACK hardcoded; from MyShipToolBase
-                float requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
-                AddLine().Append("Power required*: ").PowerFormat(requiredPower).Separator().ResourcePriority("Defense", hardcoded: true).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipTool_PowerReq).Separator().ResourcePriority(GameData.Hardcoded.ShipTool_PowerGroup, hardcoded: true).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
@@ -1812,39 +1791,31 @@ namespace Digi.BuildInfo
                 }
                 else
                 {
-                    // HACK hardcoded; from MyShipToolBase
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
-                    AddLine().Append("Inventory*: ").InventoryFormat(volume).EndLine();
+                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
                 }
 
                 var data = BlockDataBase.TryGetDataCached<BlockDataShipToolBase>(def);
 
                 if(shipWelder != null)
                 {
-                    float weld = 2; // HACK hardcoded; from MyShipWelder.WELDER_AMOUNT_PER_SECOND
+                    float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                     var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    AddLine().Append("Weld speed*: ").PercentFormat(weld * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+                    AddLine().Append("Weld speed*: ").PercentFormat(weld).Append(" split accross targets").MultiplierFormat(mul).EndLine();
 
                     if(data != null)
                         AddLine().Append("Welding radius: ").DistanceFormat(data.SphereDummy.Radius).EndLine();
                 }
                 else
                 {
-                    float grind = MyShipGrinderConstants.GRINDER_AMOUNT_PER_SECOND;
+                    float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
                     var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    AddLine().Append("Grind speed: ").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+                    AddLine().Append("Grind speed*: ").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
 
                     if(data != null)
                         AddLine().Append("Grinding radius: ").DistanceFormat(data.SphereDummy.Radius).EndLine();
                 }
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
-                }
-
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -1933,8 +1904,7 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        volume = Vector3.One.Volume; // HACK hardcoded; from MyCockpit
-                        AddLine().Append("Inventory*: ").InventoryFormat(volume).EndLine();
+                        AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.Cockpit_InventoryVolume).EndLine();
                     }
 
                     AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red)).Append("Pressurized: ");
@@ -2036,15 +2006,11 @@ namespace Digi.BuildInfo
             var lg = def as MyLandingGearDefinition;
             if(lg != null)
             {
-                // HACK hardcoded
+                // HACK: hardcoded; LG doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Max differential velocity for locking: ").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize magnets)").ResetTextAPIColor().EndLine();
-                }
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize magnets)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -2070,8 +2036,7 @@ namespace Digi.BuildInfo
             var oreDetector = def as MyOreDetectorDefinition;
             if(oreDetector != null)
             {
-                var requiredPowerInput = 0.002f; // HACK hardcoded; from MyOreDetector
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(oreDetector.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.OreDetector_PowerReq).Separator().ResourcePriority(oreDetector.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max range: ").DistanceFormat(oreDetector.MaximumRange).EndLine();
                 return;
             }
@@ -2094,17 +2059,12 @@ namespace Digi.BuildInfo
             var door = def as MyDoorDefinition;
             if(door != null)
             {
-                float requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR; // HACK hardcoded; from MyDoor
                 float moveTime = (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * door.OpeningSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
 
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.Door_PowerReq).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).Separator().Append("Distance: ").DistanceFormat(door.MaxOpen).EndLine();
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
-                }
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -2116,11 +2076,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power: ").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(airTightDoor.PowerConsumptionIdle).Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).EndLine();
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
-                }
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -2142,11 +2098,7 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Move time - Opening: ").TimeFormat(openTime).Separator().Append("Closing: ").TimeFormat(closeTime).EndLine();
 
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                {
-                    AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
-                }
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -2155,7 +2107,7 @@ namespace Digi.BuildInfo
             {
                 float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
 
-                // HACK formulas from MyParachute.UpdateParachute()
+                // HACK: formulas from MyParachute.UpdateParachute()
                 float atmosphere = 1.0f;
                 float atmosMod = 10.0f * (atmosphere - parachute.ReefAtmosphereLevel);
 
@@ -2174,26 +2126,12 @@ namespace Digi.BuildInfo
                 // basically the atmosphere level at which atmosMod is above 0.5; finds real atmosphere level at which chute starts to fully open
                 // thanks to Equinox for helping with the math here and at maxMass :}
                 float disreefAtmosphere = ((float)Math.Exp(-4.5) + 1f) / 10 + parachute.ReefAtmosphereLevel;
-
                 float chuteSize = (atmosMod * parachute.RadiusMultiplier * gridSize) / 2.0f;
                 float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
                 float realAirDensity = (atmosphere * 1.225f);
-                //Vector3 velocity = Vector3.One * 10;
-                //float force = 2.5f * airDensity * velocity.LengthSquared() * area * parachute.DragCoefficient;
-                //AddLine().Append("Force in normal atmosphere: ").ForceFormatWithLift(force).EndLine();
-
-                //float mass = 100000f;
-                //float g = 9.81f;
-                //float D2 = (chuteX2 * chuteX2);
-                //float descentVelocity = (float)Math.Sqrt((8 * mass * g) / (MathHelper.Pi * airDensity * parachute.DragCoefficient * D2));
-                //AddLine().Append("Descent Velocity: ").SpeedFormat(descentVelocity).EndLine();
 
                 const float TARGET_DESCEND_VEL = 10;
                 float maxMass = 2.5f * realAirDensity * (TARGET_DESCEND_VEL * TARGET_DESCEND_VEL) * chuteArea * parachute.DragCoefficient / 9.81f;
-
-                //var aimedGrid = MyCubeBuilder.Static.FindClosestGrid();
-                //float mass = (aimedGrid != null ? aimedGrid.Physics.Mass : 0f);
-                //float descentVel = (float)Math.Sqrt((mass * 9.81f) / (2.5f * realAirDensity * parachute.DragCoefficient * chuteArea));
 
                 AddLine().Append("Power - Deploy: ").PowerFormat(parachute.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(parachute.PowerConsumptionIdle).Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
                 AddLine().Append("Required item to deploy: ").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
@@ -2414,10 +2352,7 @@ namespace Digi.BuildInfo
             var medicalRoom = def as MyMedicalRoomDefinition;
             if(medicalRoom != null)
             {
-                // HACK hardcoded; from MyMedicalRoom
-                var requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_MEDICAL_ROOM;
-
-                AddLine().Append("Power*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(medicalRoom.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power*: ").PowerFormat(GameData.Hardcoded.MedicalRoom_PowerReq).Separator().ResourcePriority(medicalRoom.ResourceSinkGroup).EndLine();
 
                 AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White)).Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).Separator();
                 if(medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn)
@@ -2467,10 +2402,7 @@ namespace Digi.BuildInfo
             var radioAntenna = def as MyRadioAntennaDefinition;
             if(radioAntenna != null)
             {
-                // HACK hardcoded; from MyRadioAntenna
-                float requiredPowerInput = (radioAntenna.MaxBroadcastRadius / 500f) * 0.002f;
-
-                AddLine().Append("Max required power*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(radioAntenna.ResourceSinkGroup).EndLine();
+                AddLine().Append("Max required power*: ").PowerFormat(GameData.Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius)).Separator().ResourcePriority(radioAntenna.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max radius: ").DistanceFormat(radioAntenna.MaxBroadcastRadius).EndLine();
                 return;
             }
@@ -2503,10 +2435,7 @@ namespace Digi.BuildInfo
             var beacon = def as MyBeaconDefinition;
             if(beacon != null)
             {
-                // HACK hardcoded; from MyBeacon
-                float requiredPowerInput = (beacon.MaxBroadcastRadius / 100000f) * 0.02f;
-
-                AddLine().Append("Max required power*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(beacon.ResourceSinkGroup).EndLine();
+                AddLine().Append("Max required power*: ").PowerFormat(GameData.Hardcoded.Beacon_PowerReq(beacon.MaxBroadcastRadius)).Separator().ResourcePriority(beacon.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max radius: ").DistanceFormat(beacon.MaxBroadcastRadius).EndLine();
                 return;
             }
@@ -2514,43 +2443,29 @@ namespace Digi.BuildInfo
             var timer = def as MyTimerBlockDefinition;
             if(timer != null)
             {
-                // HACK hardcoded; from MyTimerBlock
-                float requiredPowerInput = 1E-07f;
-
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(timer.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.Timer_PowerReq).Separator().ResourcePriority(timer.ResourceSinkGroup).EndLine();
                 return;
             }
 
             var pb = def as MyProgrammableBlockDefinition;
             if(pb != null)
             {
-                // HACK hardcoded; from MyProgrammableBlock
-                float requiredPowerInput = 0.0005f;
-
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(pb.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ProgrammableBlock_PowerReq).Separator().ResourcePriority(pb.ResourceSinkGroup).EndLine();
                 return;
             }
 
             var sound = def as MySoundBlockDefinition;
             if(sound != null)
             {
-                // HACK hardcoded; from MySoundBlock
-                float requiredPowerInput = 0.0002f;
-
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(sound.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.SoundBlock_PowerReq).Separator().ResourcePriority(sound.ResourceSinkGroup).EndLine();
                 return;
             }
 
             var sensor = def as MySensorBlockDefinition;
             if(sensor != null)
             {
-                Vector3 minField = Vector3.One;
-                Vector3 maxField = new Vector3(sensor.MaxRange * 2);
-
-                // HACK hardcoded; from MySensorBlock - sensor.RequiredPowerInput exists but is always reporting 0 and it seems ignored in the source code (see: Sandbox.Game.Entities.Blocks.MySensorBlock.CalculateRequiredPowerInput())
-                float requiredPower = 0.0003f * (float)Math.Pow((maxField - minField).Volume, 1f / 3f);
-
-                AddLine().Append("Max required power*: ").PowerFormat(requiredPower).Separator().ResourcePriority(sensor.ResourceSinkGroup).EndLine();
+                var maxField = GameData.Hardcoded.Sensor_MaxField(sensor.MaxRange);
+                AddLine().Append("Max required power*: ").PowerFormat(GameData.Hardcoded.Sensor_PowerReq(maxField)).Separator().ResourcePriority(sensor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max area: ").VectorFormat(maxField).EndLine();
 
                 // TODO visualize max area?
@@ -2568,7 +2483,7 @@ namespace Digi.BuildInfo
             var spaceBall = def as MySpaceBallDefinition; // this doesn't extend MyVirtualMassDefinition
             if(spaceBall != null)
             {
-                // HACK hardcoded
+                // HACK: hardcoded; Warhead doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Max artificial mass: ").MassFormat(spaceBall.MaxVirtualMass).EndLine();
                 return;
@@ -2577,7 +2492,7 @@ namespace Digi.BuildInfo
             var warhead = def as MyWarheadDefinition;
             if(warhead != null)
             {
-                // HACK hardcoded
+                // HACK: hardcoded; SpaceBall doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
@@ -2589,10 +2504,7 @@ namespace Digi.BuildInfo
             var button = def as MyButtonPanelDefinition;
             if(button != null)
             {
-                // HACK hardcoded; from MyButtonPanel
-                float requiredPowerInput = 0.0001f;
-
-                AddLine().Append("Power required*: ").PowerFormat(requiredPowerInput).Separator().ResourcePriority(button.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ButtonPanel_PowerReq).Separator().ResourcePriority(button.ResourceSinkGroup).EndLine();
                 AddLine().Append("Button count: ").Append(button.ButtonCount).EndLine();
                 return;
             }
@@ -2644,11 +2556,7 @@ namespace Digi.BuildInfo
                 }
                 else
                 {
-                    // HACK hardcoded; from MyCargoContainer
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    volume = (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize;
-
-                    AddLine().Append("Inventory*: ").InventoryFormat(volume).EndLine();
+                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.CargoContainer_InventoryVolume(def)).EndLine();
                 }
 
                 return;
@@ -2698,7 +2606,7 @@ namespace Digi.BuildInfo
             var merger = def as MyMergeBlockDefinition;
             if(merger != null)
             {
-                // HACK hardcoded
+                // HACK hardcoded; MergeBlock doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Pull strength: ").AppendFormat("{0:###,###,##0.#######}", merger.Strength).EndLine();
                 return;
@@ -2713,14 +2621,14 @@ namespace Digi.BuildInfo
 
                 if(def is MyLargeTurretBaseDefinition)
                 {
-                    requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET; // HACK hardcoded; from MyLargeTurretBase
+                    requiredPowerInput = GameData.Hardcoded.Turret_PowerReq;
                 }
                 else
                 {
                     if(defTypeId == typeof(MyObjectBuilder_SmallGatlingGun)
                     || defTypeId == typeof(MyObjectBuilder_SmallMissileLauncher)
                     || defTypeId == typeof(MyObjectBuilder_SmallMissileLauncherReload))
-                        requiredPowerInput = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN; // HACK hardcoded; from MySmallMissileLauncher & MySmallGatlingGun
+                        requiredPowerInput = GameData.Hardcoded.ShipGun_PowerReq;
                 }
 
                 if(requiredPowerInput > 0)
@@ -2834,9 +2742,6 @@ namespace Digi.BuildInfo
 
                 if(ammoMissiles.Count > 0)
                 {
-                    // HACK hardcoded; from Sandbox.Game.Weapons.MyMissile.UpdateBeforeSimulation()
-                    const float MAX_TRAJECTORY_NO_ACCEL = 0.7f;
-
                     AddLine().Append("Missiles - Fire rate: ").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
                     if(missileData.ShotsInBurst == 0)
@@ -2868,7 +2773,7 @@ namespace Digi.BuildInfo
                         if(!ammo.MissileSkipAcceleration)
                             GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").SpeedFormat(ammo.MissileAcceleration).Append("²");
                         else
-                            GetLine().SpeedFormat(ammo.DesiredSpeed * MAX_TRAJECTORY_NO_ACCEL);
+                            GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
 
                         GetLine().ResetTextAPIColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
                             .ResetTextAPIColor().Append(")").EndLine();
@@ -2891,8 +2796,10 @@ namespace Digi.BuildInfo
             var grindMul = MyAPIGateway.Session.GrinderSpeedMultiplier;
             var grindRatio = def.DisassembleRatio;
 
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition) // HACK hardcoded; from MyDoor & MyAdvancedDoor's overridden DisassembleRatio
-                grindRatio *= 3.3f;
+            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
+            {
+                grindRatio *= GameData.Hardcoded.Door_Closed_DisassembleRatioMultiplier;
+            }
 
             var terminalBlock = selectedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
@@ -2979,7 +2886,7 @@ namespace Digi.BuildInfo
             }
             else // assuming ship tool
             {
-                toolMul = 2; // HACK tools are hardcoded to this multiplier, unless scripted but those I can't get if they don't offer an API :}
+                toolMul = GameData.Hardcoded.ShipWelder_WeldPerSecond;
             }
 
             var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
@@ -3620,7 +3527,7 @@ namespace Digi.BuildInfo
             if(drawOverlay > 0)
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.Standard;
-                const float REACH_DISTANCE = 4.5f; // HACK hardcoded from MyShipToolBase.DEFAULT_REACH_DISTANCE
+                const float REACH_DISTANCE = GameData.Hardcoded.ShipTool_ReachDistance;
                 var color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
                 var m = controller.WorldMatrix;
 
