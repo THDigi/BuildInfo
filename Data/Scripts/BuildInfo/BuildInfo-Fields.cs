@@ -179,6 +179,7 @@ namespace Digi.BuildInfo
             "\n" +
             "  Mount points define areas that can be attached to other\n" +
             "    block's mount points.\n" +
+            "  Orange mount point is the one used for auto-rotation.\n" +
             "\n" +
             "  Airtightness also uses the mount points system, if a\n" +
             "    mount point spans accross an entire grid cell face\n" +
@@ -187,8 +188,8 @@ namespace Digi.BuildInfo
             "\n" +
             "[1] Laser antenna power usage is linear up to 200km, after\n" +
             "   that it's a quadratic ecuation.\n" +
-            "\n  To calculate it at your needed distance, hold a laser antenna\n" +
-            "    and type in chat: /laserpower <km>" +
+            "   To calculate it at your needed distance, hold a laser antenna\n" +
+            "   and type in chat: /bi laserpower <km>" +
             "\n";
 
         private readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
