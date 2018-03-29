@@ -1775,6 +1775,23 @@ namespace Digi.BuildInfo
                 {
                     AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipConnector_InventoryVolume(def)).EndLine();
                 }
+
+                var data = BData_Base.TryGetDataCached<BData_Connector>(def);
+
+                if(data != null)
+                {
+                    if(data.Connector)
+                    {
+                        AddLine().Append("Connectable: Yes");
+                    }
+                    else
+                    {
+                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetTextAPIColor();
+                    }
+
+                    GetLine().Separator().Append("Can throw contents*: Yes").EndLine();
+                }
+
                 return;
             }
 
