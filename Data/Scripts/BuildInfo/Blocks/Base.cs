@@ -13,7 +13,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Blocks
 {
-    public class BlockBase<T> : MyGameLogicComponent where T : BlockDataBase, new()
+    public class BlockBase<T> : MyGameLogicComponent where T : BData_Base, new()
     {
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -27,7 +27,7 @@ namespace Digi.BuildInfo.Blocks
                 if(BuildInfo.Instance != null && !BuildInfo.Instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
                 {
                     var block = (IMyCubeBlock)Entity;
-                    BlockDataBase.SetData<T>(block);
+                    BData_Base.TrySetData<T>(block);
                 }
             }
             catch(Exception e)
@@ -37,9 +37,9 @@ namespace Digi.BuildInfo.Blocks
         }
     }
 
-    public class BlockDataBase
+    public class BData_Base
     {
-        public BlockDataBase()
+        public BData_Base()
         {
         }
 
@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Blocks
             return false;
         }
 
-        public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
+        public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
             var data = BuildInfo.Instance.blockDataCache as T;
 
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Blocks
             return data;
         }
 
-        public static T TryGetData<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
+        public static T TryGetData<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
             var data = (T)BuildInfo.Instance.blockData.GetValueOrDefault(def.Id, null);
 
@@ -103,7 +103,7 @@ namespace Digi.BuildInfo.Blocks
             return data;
         }
 
-        public static void SetData<T>(IMyCubeBlock block) where T : BlockDataBase, new()
+        public static void TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 

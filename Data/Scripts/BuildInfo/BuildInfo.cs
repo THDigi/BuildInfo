@@ -1173,7 +1173,7 @@ namespace Digi.BuildInfo
                 bool isShipWelder = def is MyShipWelderDefinition;
                 if(isShipWelder || def is MyShipGrinderDefinition)
                 {
-                    var data = BlockDataBase.TryGetDataCached<BlockDataShipToolBase>(def);
+                    var data = BData_Base.TryGetDataCached<BData_ShipTool>(def);
 
                     if(data != null)
                     {
@@ -1202,7 +1202,7 @@ namespace Digi.BuildInfo
                 var weapon = def as MyWeaponBlockDefinition;
                 if(weapon != null)
                 {
-                    var data = BlockDataBase.TryGetDataCached<BlockDataWeapons>(def);
+                    var data = BData_Base.TryGetDataCached<BData_Weapons>(def);
 
                     if(data != null)
                     {
@@ -1259,7 +1259,7 @@ namespace Digi.BuildInfo
                 var thrust = def as MyThrustDefinition;
                 if(thrust != null)
                 {
-                    var data = BlockDataBase.TryGetDataCached<BlockDataThrust>(def);
+                    var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
 
                     if(data != null)
                     {
@@ -1292,7 +1292,7 @@ namespace Digi.BuildInfo
                 #region Landing gear magnet points
                 if(def is MyLandingGearDefinition)
                 {
-                    var data = BlockDataBase.TryGetDataCached<BlockLandingGear>(def);
+                    var data = BData_Base.TryGetDataCached<BData_LandingGear>(def);
 
                     if(data != null)
                     {
@@ -1794,7 +1794,7 @@ namespace Digi.BuildInfo
                     AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
                 }
 
-                var data = BlockDataBase.TryGetDataCached<BlockDataShipToolBase>(def);
+                var data = BData_Base.TryGetDataCached<BData_ShipTool>(def);
 
                 if(shipWelder != null)
                 {
@@ -1978,7 +1978,7 @@ namespace Digi.BuildInfo
                 if(thrust.ConsumptionFactorPerG > 0)
                     AddLine(MyFontEnum.Red).Append("Extra consumption: +").PercentFormat(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
 
-                var data = BlockDataBase.TryGetDataCached<BlockDataThrust>(def);
+                var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
 
                 if(data != null)
                 {

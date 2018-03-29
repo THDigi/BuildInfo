@@ -226,7 +226,7 @@ namespace Digi.BuildInfo
         public bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
         public bool canShowMenu = false;
         public bool aimInfoNeedsUpdate = false;
-        public BlockDataBase blockDataCache = null;
+        public BData_Base blockDataCache = null;
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
         private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
         public bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
@@ -284,7 +284,7 @@ namespace Digi.BuildInfo
         private readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
 
         // cached block data that is inaccessible via definitions (like thruster flames)
-        public readonly Dictionary<MyDefinitionId, BlockDataBase> blockData = new Dictionary<MyDefinitionId, BlockDataBase>();
+        public readonly Dictionary<MyDefinitionId, BData_Base> blockData = new Dictionary<MyDefinitionId, BData_Base>();
 
         // various temporary caches
         private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>();

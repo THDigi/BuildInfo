@@ -10,9 +10,9 @@ using VRageMath;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: false)]
-    public class BlockThruster : BlockBase<BlockDataThrust> { }
+    public class BlockThruster : BlockBase<BData_Thrust> { }
 
-    public class BlockDataThrust : BlockDataBase
+    public class BData_Thrust : BData_Base
     {
         public float radius;
         public float distance;

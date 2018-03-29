@@ -9,24 +9,24 @@ using VRageMath;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallGatlingGun), useEntityUpdate: false)]
-    public class BlockGatlingGun : BlockBase<BlockDataWeapons> { }
+    public class BlockGatlingGun : BlockBase<BData_Weapons> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallMissileLauncher), useEntityUpdate: false)]
-    public class BlockMissileLauncher : BlockBase<BlockDataWeapons> { }
+    public class BlockMissileLauncher : BlockBase<BData_Weapons> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SmallMissileLauncherReload), useEntityUpdate: false)]
-    public class BlockMissileLauncherReload : BlockBase<BlockDataWeapons> { }
+    public class BlockMissileLauncherReload : BlockBase<BData_Weapons> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LargeGatlingTurret), useEntityUpdate: false)]
-    public class BlockGatlingTurret : BlockBase<BlockDataWeapons> { }
+    public class BlockGatlingTurret : BlockBase<BData_Weapons> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LargeMissileTurret), useEntityUpdate: false)]
-    public class BlockMissileTurret : BlockBase<BlockDataWeapons> { }
+    public class BlockMissileTurret : BlockBase<BData_Weapons> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_InteriorTurret), useEntityUpdate: false)]
-    public class BlockInteriorTurret : BlockBase<BlockDataWeapons> { }
+    public class BlockInteriorTurret : BlockBase<BData_Weapons> { }
 
-    public class BlockDataWeapons : BlockDataBase
+    public class BData_Weapons : BData_Base
     {
         public Matrix muzzleLocalMatrix;
 

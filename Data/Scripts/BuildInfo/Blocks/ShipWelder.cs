@@ -7,12 +7,12 @@ using VRageMath;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipWelder), useEntityUpdate: false)]
-    public class BlockShipWelder : BlockBase<BlockDataShipToolBase> { }
+    public class BlockShipWelder : BlockBase<BData_ShipTool> { }
 
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipGrinder), useEntityUpdate: false)]
-    public class BlockShipGrinder : BlockBase<BlockDataShipToolBase> { }
+    public class BlockShipGrinder : BlockBase<BData_ShipTool> { }
 
-    public class BlockDataShipToolBase : BlockDataBase
+    public class BData_ShipTool : BData_Base
     {
         public BoundingSphere SphereDummy;
 

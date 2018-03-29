@@ -9,13 +9,14 @@ using VRageMath;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LandingGear), useEntityUpdate: false)]
-    public class BlockLandingGear : BlockDataBase
+    public class BlockLandingGear : BlockBase<BData_LandingGear> { }
+
+    public class BData_LandingGear : BData_Base
     {
         public readonly List<MyOrientedBoundingBoxD> Magents = new List<MyOrientedBoundingBoxD>();
 
         public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            bool success = false;
             var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
@@ -29,7 +30,7 @@ namespace Digi.BuildInfo.Blocks
 
             if(lockPositions.Length == 0)
                 return false;
-            
+
             for(int i = 0; i < lockPositions.Length; ++i)
             {
                 var m = lockPositions[i];
@@ -44,7 +45,7 @@ namespace Digi.BuildInfo.Blocks
                 Magents.Add(new MyOrientedBoundingBoxD(mn.Translation, halfExtents, orientation));
             }
 
-            return success;
+            return true;
         }
     }
 }
