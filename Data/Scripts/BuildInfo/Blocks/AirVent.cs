@@ -12,7 +12,7 @@ using VRage.Utils;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
-    public class AirVent : MyGameLogicComponent
+    public class BlockAirVent : MyGameLogicComponent
     {
         private byte init = 0; // init states, 0 no init, 1 init events, 2 init with main model (for dummyLocation)
         private byte skip = 0;
@@ -27,10 +27,10 @@ namespace Digi.BuildInfo.Blocks
         {
             try
             {
-                if(BuildInfo.instance == null || BuildInfo.instance.isThisDS)
+                if(BuildInfo.Instance == null || BuildInfo.Instance.isThisDS)
                     return;
 
-                var leakInfo = BuildInfo.instance.leakInfoComp;
+                var leakInfo = BuildInfo.Instance.leakInfoComp;
 
                 if(leakInfo == null)
                     return;
@@ -113,9 +113,9 @@ namespace Digi.BuildInfo.Blocks
         {
             try
             {
-                var leakInfo = BuildInfo.instance.leakInfoComp;
+                var leakInfo = BuildInfo.Instance.leakInfoComp;
 
-                if(BuildInfo.instance.isThisDS || leakInfo == null)
+                if(BuildInfo.Instance.isThisDS || leakInfo == null)
                     return;
 
                 if(leakInfo.status != LeakInfoComponent.Status.IDLE)
@@ -164,7 +164,7 @@ namespace Digi.BuildInfo.Blocks
 
         private bool Terminal_Getter(IMyTerminalBlock b)
         {
-            var leakInfo = BuildInfo.instance.leakInfoComp;
+            var leakInfo = BuildInfo.Instance.leakInfoComp;
             return leakInfo != null && leakInfo.status != LeakInfoComponent.Status.IDLE;
         }
 
@@ -173,7 +173,7 @@ namespace Digi.BuildInfo.Blocks
             try
             {
                 var block = (IMyAirVent)b;
-                var leakInfo = BuildInfo.instance.leakInfoComp;
+                var leakInfo = BuildInfo.Instance.leakInfoComp;
 
                 if(leakInfo != null)
                 {

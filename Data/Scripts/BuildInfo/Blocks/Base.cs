@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Blocks
         {
             try
             {
-                if(BuildInfo.instance != null && !BuildInfo.instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
+                if(BuildInfo.Instance != null && !BuildInfo.Instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
                 {
                     var block = (IMyCubeBlock)Entity;
                     BlockDataBase.SetData<T>(block);
@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Blocks
 
             if(IsValid(block, def))
             {
-                BuildInfo.instance.blockData.Add(def.Id, this);
+                BuildInfo.Instance.blockData.Add(def.Id, this);
                 return true;
             }
 
@@ -63,18 +63,18 @@ namespace Digi.BuildInfo.Blocks
 
         public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
         {
-            var data = BuildInfo.instance.blockDataCache as T;
+            var data = BuildInfo.Instance.blockDataCache as T;
 
             if(data == null)
                 data = TryGetData<T>(def);
 
-            BuildInfo.instance.blockDataCache = data;
+            BuildInfo.Instance.blockDataCache = data;
             return data;
         }
 
         public static T TryGetData<T>(MyCubeBlockDefinition def) where T : BlockDataBase, new()
         {
-            var data = (T)BuildInfo.instance.blockData.GetValueOrDefault(def.Id, null);
+            var data = (T)BuildInfo.Instance.blockData.GetValueOrDefault(def.Id, null);
 
             if(data == null)
             {
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Blocks
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            if(BuildInfo.instance.blockData.ContainsKey(def.Id) || block.Model.AssetName != def.Model)
+            if(BuildInfo.Instance.blockData.ContainsKey(def.Id) || block.Model.AssetName != def.Model)
                 return;
 
             new T().CheckAndAdd(block);

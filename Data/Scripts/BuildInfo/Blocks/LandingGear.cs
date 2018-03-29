@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.Blocks
         public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             bool success = false;
-            var dummies = BuildInfo.instance.dummies;
+            var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 

@@ -30,7 +30,7 @@ namespace Digi.BuildInfo
         #region Init and unload
         public override void LoadData()
         {
-            instance = this;
+            Instance = this;
             Log.SetUp(MOD_NAME, MOD_WORKSHOP_ID, MOD_SHORTNAME);
         }
 
@@ -66,17 +66,17 @@ namespace Digi.BuildInfo
         private void DisposeComponent()
         {
             Log.Close();
-            instance = null;
+            Instance = null;
             SetUpdateOrder(MyUpdateOrder.NoUpdate); // this throws exceptions if called in an update method, which is why the InvokeOnGameThread() is needed.
             MyAPIGateway.Session.UnregisterComponent(this);
         }
 
         protected override void UnloadData()
         {
-            if(instance == null)
+            if(Instance == null)
                 return;
 
-            instance = null;
+            Instance = null;
 
             try
             {
@@ -549,7 +549,7 @@ namespace Digi.BuildInfo
                         hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
 
                         var worldPos = GameHUDToWorld(hud);
-                        var size = GetGameHUDBlockInfoSize();
+                        var size = BLOCKINFO_SIZE;
                         size.Y *= lines * settings.textAPIScale;
                         size.Y += BLOCKINFO_TEXT_PADDING;
                         size *= scaleFOV;
@@ -2483,7 +2483,7 @@ namespace Digi.BuildInfo
             var spaceBall = def as MySpaceBallDefinition; // this doesn't extend MyVirtualMassDefinition
             if(spaceBall != null)
             {
-                // HACK: hardcoded; Warhead doesn't require power
+                // HACK: hardcoded; SpaceBall doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Max artificial mass: ").MassFormat(spaceBall.MaxVirtualMass).EndLine();
                 return;
@@ -2492,7 +2492,7 @@ namespace Digi.BuildInfo
             var warhead = def as MyWarheadDefinition;
             if(warhead != null)
             {
-                // HACK: hardcoded; SpaceBall doesn't require power
+                // HACK: hardcoded; Warhead doesn't require power
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
@@ -3204,7 +3204,7 @@ namespace Digi.BuildInfo
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET; // make the position top-right
 
                 var worldPos = GameHUDToWorld(hud);
-                var size = GetGameHUDBlockInfoSize();
+                var size = BLOCKINFO_SIZE;
 
                 size.Y *= (float)Math.Abs(textSize.Y) / 0.03f;
                 size.Y += BLOCKINFO_TEXT_PADDING;
@@ -3660,7 +3660,7 @@ namespace Digi.BuildInfo
 
             for(int i = 0; i < endLength; ++i)
             {
-                if(instance.charSize.TryGetValue(builder[i], out len))
+                if(Instance.charSize.TryGetValue(builder[i], out len))
                     size += len;
                 else
                     size += 15;

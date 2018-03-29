@@ -36,11 +36,11 @@ namespace Digi.BuildInfo
         private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.97); // textAPI default right side position when using a really wide resolution
 
         private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
-        private readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_UI_Background");
-        private readonly MyStringId MATERIAL_TOPRIGHTCORNER = MyStringId.GetOrCompute("BuildInfo_UI_TopRightCorner");
-        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("BuildInfo_Square");
-        private readonly MyStringId MATERIAL_VANILLA_DOT = MyStringId.GetOrCompute("WhiteDot");
-        private readonly MyStringId MATERIAL_VANILLA_SQUARE = MyStringId.GetOrCompute("Square");
+        public readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_UI_Background");
+        public readonly MyStringId MATERIAL_TOPRIGHTCORNER = MyStringId.GetOrCompute("BuildInfo_UI_TopRightCorner");
+        public readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("BuildInfo_Square");
+        public readonly MyStringId MATERIAL_VANILLA_DOT = MyStringId.GetOrCompute("WhiteDot");
+        public readonly MyStringId MATERIAL_VANILLA_SQUARE = MyStringId.GetOrCompute("Square");
 
         private const int MENU_TOTAL_ITEMS = 9;
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
@@ -50,6 +50,7 @@ namespace Digi.BuildInfo
 
         private const BlendTypeEnum BLOCKINFO_BLEND_TYPE = BlendTypeEnum.SDR; // allows sprites to be rendered on HUD-level, unaffected by flares or post processing
         private readonly Color BLOCKINFO_BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
+        private readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
         private const float BLOCKINFO_ITEM_HEIGHT = 0.037f; // component height in the vanilla block info
         private const float BLOCKINFO_ITEM_HEIGHT_UNDERLINE = BLOCKINFO_ITEM_HEIGHT * 0.88f;
         private const float BLOCKINFO_TEXT_PADDING = 0.001f;
@@ -204,7 +205,7 @@ namespace Digi.BuildInfo
         #endregion
 
         #region Fields
-        public static BuildInfo instance = null;
+        public static BuildInfo Instance = null;
         public bool init = false;
         public bool isThisDS = false;
         public Settings settings = null;

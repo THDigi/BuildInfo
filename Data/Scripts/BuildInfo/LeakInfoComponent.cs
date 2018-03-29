@@ -122,9 +122,9 @@ namespace Digi.BuildInfo
                     var drawPosition = camPos + ((position - camPos) * DRAW_DEPTH);
 
                     if(walk < 0)
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfoComp.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.Instance.leakInfoComp.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
                     else
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.instance.leakInfoComp.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
+                        MyTransparentGeometry.AddPointBillboard(BuildInfo.Instance.leakInfoComp.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
                 }
 
                 if(!MyParticlesManager.Paused)

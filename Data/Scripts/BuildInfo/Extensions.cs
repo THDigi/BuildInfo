@@ -62,7 +62,7 @@ namespace Digi.BuildInfo
 
         public static void EndLine(this StringBuilder s)
         {
-            BuildInfo.instance.EndAddedLines();
+            BuildInfo.Instance.EndAddedLines();
         }
 
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo
 
         public static StringBuilder Color(this StringBuilder s, Color color)
         {
-            if(BuildInfo.instance.TextAPIEnabled)
+            if(BuildInfo.Instance.TextAPIEnabled)
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
 
             return s;
@@ -80,9 +80,9 @@ namespace Digi.BuildInfo
 
         public static StringBuilder ResetTextAPIColor(this StringBuilder s)
         {
-            if(BuildInfo.instance.TextAPIEnabled)
+            if(BuildInfo.Instance.TextAPIEnabled)
             {
-                var color = BuildInfo.instance.COLOR_NORMAL;
+                var color = BuildInfo.Instance.COLOR_NORMAL;
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
             }
 
@@ -105,10 +105,10 @@ namespace Digi.BuildInfo
 
             BuildInfo.ResourceGroupData data;
 
-            if(groupId == null || !BuildInfo.instance.resourceGroupPriority.TryGetValue(groupId, out data))
+            if(groupId == null || !BuildInfo.Instance.resourceGroupPriority.TryGetValue(groupId, out data))
                 s.Append("(Undefined)");
             else
-                s.Append(groupId.String).Append(" (").Append(data.priority).Append("/").Append(data.def.IsSource ? BuildInfo.instance.resourceSourceGroups : BuildInfo.instance.resourceSinkGroups).Append(")");
+                s.Append(groupId.String).Append(" (").Append(data.priority).Append("/").Append(data.def.IsSource ? BuildInfo.Instance.resourceSourceGroups : BuildInfo.Instance.resourceSinkGroups).Append(")");
 
             return s;
         }
@@ -259,10 +259,10 @@ namespace Digi.BuildInfo
             MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
             if(Math.Abs(mul - 1) > 0.001f)
-                s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
+                s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
 
             if(types == null && items == null)
-                types = BuildInfo.instance.DEFAULT_ALLOWED_TYPES;
+                types = BuildInfo.Instance.DEFAULT_ALLOWED_TYPES;
 
             var physicalItems = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
             var minMass = float.MaxValue;
@@ -359,7 +359,7 @@ namespace Digi.BuildInfo
             {
                 if(mod.Name == context.ModId)
                 {
-                    s.Color(BuildInfo.instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
+                    s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
                     break;
                 }
             }

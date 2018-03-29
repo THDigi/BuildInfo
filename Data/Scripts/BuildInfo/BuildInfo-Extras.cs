@@ -189,18 +189,34 @@ namespace Digi.BuildInfo
             resourceSinkGroups = 0;
 
             var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
-            var orderedGroups = from def in groupDefs
-                                orderby def.Priority
-                                select def;
+            var orderedGroups = groupDefs.OrderBy(GroupOrderBy);
 
             foreach(var group in orderedGroups)
             {
+                int priority = 0;
+
+                if(group.IsSource)
+                {
+                    resourceSourceGroups++;
+                    priority = resourceSourceGroups;
+                }
+                else
+                {
+                    resourceSinkGroups++;
+                    priority = resourceSinkGroups;
+                }
+
                 resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData()
                 {
                     def = group,
-                    priority = (group.IsSource ? ++resourceSourceGroups : ++resourceSinkGroups),
+                    priority = priority,
                 });
             }
+        }
+
+        private int GroupOrderBy(MyResourceDistributionGroupDefinition def)
+        {
+            return def.Priority;
         }
 
         public struct ResourceGroupData
@@ -216,7 +232,7 @@ namespace Digi.BuildInfo
             viewProjInv = MatrixD.Invert(cam.ViewMatrix * cam.ProjectionMatrix);
         }
 
-        Vector3D GameHUDToWorld(Vector2 hud)
+        public Vector3D GameHUDToWorld(Vector2 hud)
         {
             var vec4 = new Vector4D((2d * hud.X - 1d), (1d - 2d * hud.Y), 0d, 1d);
             Vector4D.Transform(ref vec4, ref viewProjInv, out vec4);
@@ -234,11 +250,6 @@ namespace Digi.BuildInfo
                 posHUD.X += 0.75f;
 
             return posHUD;
-        }
-
-        Vector2 GetGameHUDBlockInfoSize()
-        {
-            return new Vector2(0.02164f, 0.00076f);
         }
     }
 }
