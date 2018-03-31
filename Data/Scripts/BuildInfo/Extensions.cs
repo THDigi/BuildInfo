@@ -294,11 +294,19 @@ namespace Digi.BuildInfo
 
         public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
         {
-            if(seconds >= 3600)
-                return s.AppendFormat("{0:0}h {1:0}m {2:0.#}s", (seconds / 3600), (seconds / 60), (seconds % 60));
+            var span = TimeSpan.FromSeconds(seconds);
 
-            if(seconds >= 60)
-                return s.AppendFormat("{0:0}m {1:0.#}s", (seconds / 60), (seconds % 60));
+            if(span.Days > 7)
+                return s.AppendFormat("{0:0}w {1:0}d {2:0}h {3:0.#}m", (span.Days / 7), (span.Days % 7), span.Hours, (span.TotalMinutes % 60));
+
+            if(span.Days > 0)
+                return s.AppendFormat("{0:0}d {1:0}h {2:0}m {3:0.#}s", span.Days, span.Hours, span.Minutes, span.Seconds);
+
+            if(span.Hours > 0)
+                return s.AppendFormat("{0:0}h {1:0}m {2:0.#}s", span.Hours, span.Minutes, span.Seconds);
+
+            if(span.Minutes > 0)
+                return s.AppendFormat("{0:0}m {1:0.#}s", span.Minutes, (seconds % 60));
 
             return s.AppendFormat("{0:0.#}s", seconds);
         }

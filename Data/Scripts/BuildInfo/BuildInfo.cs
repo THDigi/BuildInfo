@@ -511,18 +511,17 @@ namespace Digi.BuildInfo
         /// </summary>
         public override void Draw()
         {
+            if(!init || isThisDS)
+                return;
+
             try
             {
-                if(!init)
-                    return;
-
                 DrawOverlays();
+
+                leakInfoComp?.Draw();
 
                 if(!hudVisible && !settings.alwaysVisible)
                     return;
-
-                if(leakInfoComp != null)
-                    leakInfoComp.Draw();
 
                 if(MyAPIGateway.Gui.IsCursorVisible && textShown && textObject != null)
                 {
