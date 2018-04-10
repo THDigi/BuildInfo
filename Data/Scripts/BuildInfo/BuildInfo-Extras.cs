@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -250,6 +251,15 @@ namespace Digi.BuildInfo
                 posHUD.X += 0.75f;
 
             return posHUD;
+        }
+
+        public static void ShowChatMessage(string from, string message, MyFontEnum font)
+        {
+            if(MyAPIGateway.Session?.Player == null)
+                return;
+
+            // NOTE: this is sent to all players and only shown if their identityId matches the one sent.
+            MyVisualScriptLogicProvider.SendChatMessage(message, from, MyAPIGateway.Session.Player.IdentityId, font);
         }
     }
 }

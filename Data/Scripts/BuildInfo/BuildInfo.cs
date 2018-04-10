@@ -725,7 +725,7 @@ namespace Digi.BuildInfo
                     send = false;
                     cachedBuildInfoNotification.Clear();
                     cachedBuildInfoTextAPI.Clear();
-                    MyVisualScriptLogicProvider.SendChatMessage("Emptied block info cache.", CMD_CLEARCACHE, 0, MyFontEnum.Green);
+                    ShowChatMessage(CMD_CLEARCACHE, "Emptied block info cache.", MyFontEnum.Green);
                     return;
                 }
 
@@ -743,16 +743,16 @@ namespace Digi.BuildInfo
                             var meters = (km * 1000);
                             var megaWatts = GameData.LaserAntennaPowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
                             var s = new StringBuilder().Append(selectedDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
-                            MyVisualScriptLogicProvider.SendChatMessage(s.ToString(), CMD_LASERPOWER, 0, MyFontEnum.Green);
+                            ShowChatMessage(CMD_LASERPOWER, s.ToString(), MyFontEnum.Green);
                         }
                         else
                         {
-                            MyVisualScriptLogicProvider.SendChatMessage($"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                            ShowChatMessage(CMD_LASERPOWER, $"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", MyFontEnum.Red);
                         }
                     }
                     else
                     {
-                        MyVisualScriptLogicProvider.SendChatMessage("Need a reference Laser Antenna, equip one first.", CMD_LASERPOWER, 0, MyFontEnum.Red);
+                        ShowChatMessage(CMD_LASERPOWER, "Need a reference Laser Antenna, equip one first.", MyFontEnum.Red);
                     }
 
                     return;
@@ -775,11 +775,11 @@ namespace Digi.BuildInfo
                                 if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
                                 {
                                     MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, selectedDef.Id, -1);
-                                    MyVisualScriptLogicProvider.SendChatMessage($"{pickBlockDef.DisplayNameText} placed in slot {slot}.", CMD_GETBLOCK, 0, MyFontEnum.Green);
+                                    ShowChatMessage(CMD_GETBLOCK, $"{pickBlockDef.DisplayNameText} placed in slot {slot}.", MyFontEnum.Green);
                                 }
                                 else
                                 {
-                                    MyVisualScriptLogicProvider.SendChatMessage($"'{arg}' is not a number from 1 to 9.", CMD_GETBLOCK, 0, MyFontEnum.Red);
+                                    ShowChatMessage(CMD_GETBLOCK, $"'{arg}' is not a number from 1 to 9.", MyFontEnum.Red);
                                 }
 
                                 return;
@@ -791,7 +791,7 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        MyVisualScriptLogicProvider.SendChatMessage($"Aim at a block with a welder or grinder first.", CMD_GETBLOCK, 0, MyFontEnum.Red);
+                        ShowChatMessage(CMD_GETBLOCK, $"Aim at a block with a welder or grinder first.", MyFontEnum.Red);
                     }
 
                     return;
@@ -807,9 +807,9 @@ namespace Digi.BuildInfo
         private void ReloadConfig(string caller)
         {
             if(settings.Load())
-                MyVisualScriptLogicProvider.SendChatMessage("Reloaded and re-saved config.", caller, 0, MyFontEnum.Green);
+                ShowChatMessage(caller, "Reloaded and re-saved config.", MyFontEnum.Green);
             else
-                MyVisualScriptLogicProvider.SendChatMessage("Config created with the current settings.", caller, 0, MyFontEnum.Green);
+                ShowChatMessage(caller, "Config created with the current settings.", MyFontEnum.Green);
 
             settings.Save();
 
@@ -2715,6 +2715,8 @@ namespace Digi.BuildInfo
                     // HACK hardcoded; from Sandbox.Game.Weapons.MyProjectile.Start()
                     const float MIN_RANGE = 0.8f;
                     const float MAX_RANGE = 1.2f;
+
+                    // TODO check if wepDef.DamageMultiplier is used for weapons (right now in 1.186.5 it's not)
 
                     AddLine().Append("Projectiles - Fire rate: ").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
