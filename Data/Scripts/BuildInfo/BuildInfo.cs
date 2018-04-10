@@ -529,7 +529,7 @@ namespace Digi.BuildInfo
                 }
 
                 #region Block info UI additions
-                if(settings.showTextInfo && selectedBlock != null && !MyAPIGateway.Gui.IsCursorVisible)
+                if(settings.showTextInfo && selectedDef != null && !MyAPIGateway.Gui.IsCursorVisible)
                 {
                     // TODO: optimize?
 
@@ -539,8 +539,8 @@ namespace Digi.BuildInfo
                     UpdateCameraViewProjInvMatrix();
                     var posHUD = GetGameHUDBlockInfoPos();
 
-                    // draw the added top part's background (which requires textAPI)
-                    if(!showMenu && textObject != null && useTextAPI)
+                    // draw the added top part's background only for aimed block (which requires textAPI)
+                    if(selectedBlock != null && !showMenu && textObject != null && useTextAPI)
                     {
                         var hud = posHUD;
 
