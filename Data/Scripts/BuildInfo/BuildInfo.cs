@@ -178,6 +178,8 @@ namespace Digi.BuildInfo
 
                     if(def != null && MyCubeBuilder.Static.IsActivated)
                     {
+                        Sandbox.Game.Gui.MyHud.BlockInfo.BlockBuiltBy = 0; // HACK fix for game's inability to clear this when you equip cubebuilder
+
                         canShowMenu = true;
                         var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
                         var grid = hit?.HitEntity as IMyCubeGrid;
