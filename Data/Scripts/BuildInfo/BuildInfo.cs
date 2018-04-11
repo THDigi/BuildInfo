@@ -697,22 +697,6 @@ namespace Digi.BuildInfo
         {
             try
             {
-                if(msg.StartsWith(CMD_BUILDINFO, CMD_COMPARE_TYPE) || msg.StartsWith(CMD_BUILDINFO_OLD, CMD_COMPARE_TYPE))
-                {
-                    send = false;
-
-                    if(selectedDef == null || msg.StartsWith(CMD_HELP, CMD_COMPARE_TYPE))
-                    {
-                        ShowHelp();
-                    }
-                    else // no arg and block equipped/selected
-                    {
-                        showMenu = true;
-                    }
-
-                    return;
-                }
-
                 if(msg.StartsWith(CMD_RELOAD, CMD_COMPARE_TYPE))
                 {
                     send = false;
@@ -792,6 +776,22 @@ namespace Digi.BuildInfo
                     else
                     {
                         ShowChatMessage(CMD_GETBLOCK, $"Aim at a block with a welder or grinder first.", MyFontEnum.Red);
+                    }
+
+                    return;
+                }
+
+                if(msg.StartsWith(CMD_BUILDINFO, CMD_COMPARE_TYPE) || msg.StartsWith(CMD_BUILDINFO_OLD, CMD_COMPARE_TYPE))
+                {
+                    send = false;
+
+                    if(selectedDef == null || msg.StartsWith(CMD_HELP, CMD_COMPARE_TYPE))
+                    {
+                        ShowHelp();
+                    }
+                    else // no arg and block equipped/selected
+                    {
+                        showMenu = true;
                     }
 
                     return;
