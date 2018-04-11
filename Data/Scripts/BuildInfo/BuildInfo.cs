@@ -411,15 +411,22 @@ namespace Digi.BuildInfo
                                         pickBlockDef = selectedDef;
                                     }
                                     else
-                                    {
                                         MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, MyFontEnum.Red);
-                                    }
                                     break;
                                 case 2:
+                                    if(selectedDef != null && !selectedDef.Context.IsBaseGame)
+                                    {
+                                        showMenu = false;
+                                        ShowModWorkshop();
+                                    }
+                                    else
+                                        MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod to open its workshop link.", 3000, MyFontEnum.Red);
+                                    break;
+                                case 3:
                                     showMenu = false;
                                     ShowHelp();
                                     break;
-                                case 3:
+                                case 4:
                                     settings.showTextInfo = !settings.showTextInfo;
                                     settings.Save();
 
@@ -428,16 +435,16 @@ namespace Digi.BuildInfo
                                     buildInfoNotification.Text = (settings.showTextInfo ? "Text info ON (saved to config)" : "Text info OFF (saved to config)");
                                     buildInfoNotification.Show();
                                     break;
-                                case 4:
+                                case 5:
                                     CycleOverlay();
                                     break;
-                                case 5:
+                                case 6:
                                     MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
                                     break;
-                                case 6:
+                                case 7:
                                     SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
                                     break;
-                                case 7:
+                                case 8:
                                     if(canUseTextAPI)
                                     {
                                         useTextAPI = !useTextAPI;
@@ -450,7 +457,7 @@ namespace Digi.BuildInfo
                                         MyAPIGateway.Utilities.ShowNotification("TextAPI mod not detected! (workshop id: 758597413)", 3000, MyFontEnum.Red);
                                     }
                                     break;
-                                case 8:
+                                case 9:
                                     showMenu = false;
                                     ReloadConfig(MOD_NAME);
                                     break;
@@ -697,6 +704,13 @@ namespace Digi.BuildInfo
         {
             try
             {
+                if(msg.StartsWith(CMD_MODLINK, CMD_COMPARE_TYPE))
+                {
+                    send = false;
+                    ShowModWorkshop();
+                    return;
+                }
+
                 if(msg.StartsWith(CMD_RELOAD, CMD_COMPARE_TYPE))
                 {
                     send = false;
@@ -838,6 +852,31 @@ namespace Digi.BuildInfo
             var help = string.Format(HELP_FORMAT, voxelHandSettingsInput);
 
             MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", help, null, "Close");
+        }
+
+        private void ShowModWorkshop()
+        {
+            if(selectedDef != null)
+            {
+                if(!selectedDef.Context.IsBaseGame)
+                {
+                    var id = selectedDef.Context.GetWorkshopID();
+
+                    if(id > 0)
+                    {
+                        // 0 in this method opens for the local client, hopefully they don't change that to "ALL" like they did on the chat message...
+                        MyVisualScriptLogicProvider.OpenSteamOverlay($"https://steamcommunity.com/sharedfiles/filedetails/?id={id}", 0);
+
+                        ShowChatMessage(CMD_MODLINK, "Opened workshop in steam overlay.", MyFontEnum.Green);
+                    }
+                    else
+                        ShowChatMessage(CMD_MODLINK, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
+                }
+                else
+                    ShowChatMessage(CMD_MODLINK, "This block is part of the game.", MyFontEnum.Red);
+            }
+            else
+                ShowChatMessage(CMD_MODLINK, "No block selected/equipped.", MyFontEnum.Red);
         }
 
         private void GuiControlRemoved(object obj)
@@ -1488,9 +1527,11 @@ namespace Digi.BuildInfo
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").ResetTextAPIColor().EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Add aimed block to toolbar").Color(COLOR_UNIMPORTANT).Append("   (/pick)").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Add aimed block to toolbar").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_GETBLOCK).Append(')').ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (/buildinfo help)").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').ResetTextAPIColor().EndLine();
+
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').ResetTextAPIColor().EndLine();
 
             if(TextAPIEnabled)
             {
@@ -1522,7 +1563,7 @@ namespace Digi.BuildInfo
                 GetLine().Append("OFF (Mod not detected)");
             GetLine().ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (/buildinfo reload)").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').ResetTextAPIColor().EndLine();
 
             if(TextAPIEnabled)
                 AddLine().EndLine();

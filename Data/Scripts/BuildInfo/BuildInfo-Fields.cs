@@ -139,6 +139,7 @@ namespace Digi.BuildInfo
         private const string CMD_HELP = "/bi help";
         private const string CMD_RELOAD = "/bi reload";
         private const string CMD_CLEARCACHE = "/bi clearcache";
+        private const string CMD_MODLINK = "/bi modlink";
         private const string CMD_LASERPOWER = "/bi laserpower";
         private const string CMD_GETBLOCK = "/bi getblock";
         private const StringComparison CMD_COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
@@ -151,13 +152,15 @@ namespace Digi.BuildInfo
             "    shows this window.\n" +
             "  /bi reload\n" +
             "    reloads the config.\n" +
-            "  /bi clearcache\n" +
-            "    clears the block info cache, not for normal use.\n" +
+            "  /bi getblock [1~9]\n" +
+            "    Picks the aimed block to be placed in toolbar.\n" +
+            "  /bi modlink\n" +
+            "    Opens steam overlay with workshop on the selected block's mod.\n" +
             "  /bi laserpower <km>\n" +
             "    Calculates power needed for equipped/aimed laser antenna\n" +
             "    at the specified range.\n" +
-            "  /bi getblock [1~9]\n" +
-            "    Picks the aimed block to be placed in toolbar.\n" +
+            "  /bi clearcache\n" +
+            "    clears the block info cache, not for normal use.\n" +
             "\n" +
             "\n" +
             "Hotkeys:\n" +
