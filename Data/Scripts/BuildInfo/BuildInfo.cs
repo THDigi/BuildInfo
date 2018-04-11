@@ -2835,12 +2835,7 @@ namespace Digi.BuildInfo
                 if(newLine >= 0)
                     name = name.Substring(0, newLine); // strip everything past new line (incl new line char)
 
-                if(name.Length > LENGTH_LIMIT)
-                    GetLine().AppendSubstring(name, 0, LENGTH_LIMIT - 3).Append("...");
-                else
-                    GetLine().Append(name);
-
-                GetLine().ResetTextAPIColor().Append('"').EndLine();
+                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetTextAPIColor().Append('"').EndLine();
             }
             #endregion
 
@@ -3095,16 +3090,12 @@ namespace Digi.BuildInfo
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(Color.GreenYellow).Append(context.ModName).ResetTextAPIColor().EndLine();
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, BuildInfo.MOD_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
 
-                    foreach(var mod in MyAPIGateway.Session.Mods)
-                    {
-                        if(mod.Name == context.ModId)
-                        {
-                            AddLine().Color(COLOR_MOD).Append("       | ").ResetTextAPIColor().Append("WorkshopID: ").Append(mod.PublishedFileId).EndLine();
-                            break;
-                        }
-                    }
+                    var id = context.GetWorkshopID();
+
+                    if(id > 0)
+                        AddLine().Color(COLOR_MOD).Append("       | ").ResetTextAPIColor().Append("Workshop ID: ").Append(id).EndLine();
                 }
                 else
                 {

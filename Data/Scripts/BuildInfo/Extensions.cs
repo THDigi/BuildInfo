@@ -4,8 +4,11 @@ using System.Linq;
 using System.Text;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -15,6 +18,22 @@ namespace Digi.BuildInfo
 {
     static class Extensions
     {
+        /// <summary>
+        /// Gets the workshop id from the mod context by iterating the mods to find it.
+        /// Returns 0 if not found.
+        /// </summary>
+        public static ulong GetWorkshopID(this MyModContext modContext)
+        {
+            // HACK workaround for MyModContext not having the actual workshop ID number.
+            foreach(var mod in MyAPIGateway.Session.Mods)
+            {
+                if(mod.Name == modContext.ModId)
+                    return mod.PublishedFileId;
+            }
+
+            return 0;
+        }
+
         // HACK copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
@@ -53,6 +72,16 @@ namespace Digi.BuildInfo
             }
 
             return sb;
+        }
+
+        public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength)
+        {
+            if(text.Length > maxLength)
+                s.AppendSubstring(text, 0, maxLength - 1).Append('…');
+            else
+                s.Append(text);
+
+            return s;
         }
 
         public static StringBuilder Separator(this StringBuilder s)
@@ -360,17 +389,12 @@ namespace Digi.BuildInfo
 
         public static StringBuilder ModFormat(this StringBuilder s, MyModContext context)
         {
-            s.Append(context.ModName);
+            s.Color(BuildInfo.Instance.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, BuildInfo.MOD_NAME_MAX_LENGTH);
 
-            // HACK workaround for MyModContext not having workshop ID as ulong... only filename which is unreliable in determining that
-            foreach(var mod in MyAPIGateway.Session.Mods)
-            {
-                if(mod.Name == context.ModId)
-                {
-                    s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append("(WorkshopID: ").Append(mod.PublishedFileId).Append(")");
-                    break;
-                }
-            }
+            var id = context.GetWorkshopID();
+
+            if(id > 0)
+                s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (id: ").Append(id).Append(")");
 
             return s;
         }
