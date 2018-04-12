@@ -2655,7 +2655,8 @@ namespace Digi.BuildInfo
             var jumpDrive = def as MyJumpDriveDefinition;
             if(jumpDrive != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(jumpDrive.RequiredPowerInput).Separator().Append("For jump: ").PowerFormat(jumpDrive.PowerNeededForJump).Separator().ResourcePriority(jumpDrive.ResourceSinkGroup).EndLine();
+                AddLine().Append("Power for charging: ").PowerFormat(jumpDrive.RequiredPowerInput).Separator().ResourcePriority(jumpDrive.ResourceSinkGroup).EndLine();
+                AddLine().Append("Stored power for jump: ").PowerStorageFormat(jumpDrive.PowerNeededForJump).EndLine();
                 AddLine().Append("Max distance: ").DistanceFormat((float)jumpDrive.MaxJumpDistance).EndLine();
                 AddLine().Append("Max mass: ").MassFormat((float)jumpDrive.MaxJumpMass).EndLine();
                 AddLine().Append("Jump delay: ").TimeFormat(jumpDrive.JumpDelay).EndLine();
