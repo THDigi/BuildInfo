@@ -76,6 +76,9 @@ namespace Digi.BuildInfo
 
         public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength)
         {
+            if(text == null)
+                return s.Append("(NULL)");
+
             if(text.Length > maxLength)
                 s.AppendSubstring(text, 0, maxLength - 1).Append('…');
             else
