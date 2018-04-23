@@ -557,16 +557,7 @@ namespace Digi.BuildInfo
                         hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
 
                         var worldPos = GameHUDToWorld(hud);
-                        var size = BLOCKINFO_SIZE;
-                        size.Y *= lines * settings.textAPIScale;
-                        size.Y += BLOCKINFO_TEXT_PADDING;
-                        size *= scaleFOV;
-
-                        if(Math.Abs(aspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
-                        {
-                            size.X *= ASPECT_RATIO_54_FIX;
-                        }
-
+                        var size = GetGameHUDBlockInfoSize(lines * settings.textAPIScale, scaleFOV);
                         worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
                         double cornerSize = Math.Min(0.0015 * scaleFOV, size.Y);
@@ -2526,8 +2517,6 @@ namespace Digi.BuildInfo
                 var maxField = GameData.Hardcoded.Sensor_MaxField(sensor.MaxRange);
                 AddLine().Append("Max required power*: ").PowerFormat(GameData.Hardcoded.Sensor_PowerReq(maxField)).Separator().ResourcePriority(sensor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Max area: ").VectorFormat(maxField).EndLine();
-
-                // TODO visualize max area?
                 return;
             }
 
@@ -2555,8 +2544,6 @@ namespace Digi.BuildInfo
                 AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
-
-                // TODO visualize damage radius?
                 return;
             }
 
@@ -2647,8 +2634,6 @@ namespace Digi.BuildInfo
                 }
 
                 AddLine().Append("Acceleration: ").ForceFormat(gravity.MinGravityAcceleration).Append(" to ").ForceFormat(gravity.MaxGravityAcceleration).EndLine();
-
-                // TODO visualize field?
                 return;
             }
 
@@ -3048,7 +3033,7 @@ namespace Digi.BuildInfo
                 {
                     GetLine().Append("Owner: ");
 
-                    // NOTE MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
+                    // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
                     var factionTag = selectedBlock.FatBlock.GetOwnerFactionTag();
 
                     if(!string.IsNullOrEmpty(factionTag))
@@ -3121,8 +3106,6 @@ namespace Digi.BuildInfo
                             AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING);
 
                         GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").EndLine();
-
-                        //GetLine().Append($"impulse={impulse};\ntest1={impulse / selectedBlock.CubeGrid.Physics.Mass};\ntest2={selectedBlock.CubeGrid.Physics.Mass / impulse}");
                     }
                 }
             }
@@ -3246,64 +3229,31 @@ namespace Digi.BuildInfo
             }
             else if(selectedBlock != null) // welder/grinder info attached to the game's block info
             {
-                // TODO: re-do in textAPI hud coords?
-
                 var cam = MyAPIGateway.Session.Camera;
                 var camMatrix = cam.WorldMatrix;
                 var scaleFOV = (float)Math.Tan(cam.FovWithZoom / 2);
 
-                UpdateCameraViewProjInvMatrix(); // required to get up2date camera data since it's before Draw() updates it
+                UpdateCameraViewProjInvMatrix(); // required to get up2date camera data for GameHUDToWorld() as this code executes before Draw() gets a chance to update it
                 var hud = GetGameHUDBlockInfoPos();
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET; // make the position top-right
 
                 var worldPos = GameHUDToWorld(hud);
-                var size = BLOCKINFO_SIZE;
+                var size = GetGameHUDBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f, scaleFOV);
+                var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * scaleFOV;
 
-                size.Y *= (float)Math.Abs(textSize.Y) / 0.03f;
-                size.Y += BLOCKINFO_TEXT_PADDING;
-                size *= scaleFOV;
+                worldPos += camMatrix.Left * (size.X + (size.X - offset.X)) + camMatrix.Up * (size.Y + (size.Y - offset.Y));
 
-                if(Math.Abs(aspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
-                {
-                    size.X *= ASPECT_RATIO_54_FIX;
-                }
-
-                worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
+                // using textAPI's math to convert from world to its local coords
                 double localScale = 0.1 * scaleFOV;
                 var local = Vector3D.Transform(worldPos, cam.ViewMatrix);
                 local.X = (local.X / (localScale * aspectRatio)) * 2;
                 local.Y = (local.Y / localScale) * 2;
 
-                var pos2D = new Vector2D(local.X, local.Y);
-
-                var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * scaleFOV;
-
-                worldPos += camMatrix.Left * (size.X - offset.X) + camMatrix.Up * (size.Y - offset.Y);
-
-                // using textAPI's math to convert from world to its local coords
-                local = Vector3D.Transform(worldPos, cam.ViewMatrix);
-                local.X = (local.X / (localScale * aspectRatio)) * 2;
-                local.Y = (local.Y / localScale) * 2;
-
-                textPos = new Vector2D(local.X, local.Y);
+                textPos.X = local.X;
+                textPos.Y = local.Y;
 
                 // not using textAPI's background for this as drawing my own manually is easier for the 3-part billboard that I need
                 bgObject.Visible = false;
-
-                // convert world size to textAPI-local size, using textAPI's math inversed
-                //float w = size.X;
-                //float h = size.Y;
-                //w /= (float)(localScale * aspectRatio);
-                //h /= (float)localScale;
-                //w *= 4;
-                //h *= 4;
-                //
-                //bgObject.Origin = pos2D;
-                //bgObject.Width = w;
-                //bgObject.Height = h;
-                //bgObject.Offset = Vector2D.Zero;
-                //bgObject.BillBoardColor = BLOCKINFO_BG_COLOR;
             }
             else if(settings.textAPIUseCustomStyling) // custom alignment and position
             {

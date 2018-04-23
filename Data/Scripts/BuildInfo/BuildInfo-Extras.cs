@@ -240,12 +240,28 @@ namespace Digi.BuildInfo
             return new Vector3D((vec4.X / vec4.W), (vec4.Y / vec4.W), (vec4.Z / vec4.W));
         }
 
+        Vector2 GetGameHUDBlockInfoSize(float Ymultiplier, float scaleFOV)
+        {
+            var size = BLOCKINFO_SIZE;
+            size.Y *= Ymultiplier;
+            size.Y += BLOCKINFO_TEXT_PADDING;
+            size *= scaleFOV;
+
+            if(Math.Abs(aspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
+            {
+                size.X *= ASPECT_RATIO_54_FIX;
+            }
+
+            return size;
+        }
+
         Vector2 GetGameHUDBlockInfoPos()
         {
+            // HACK hardcoded from MyGuiScreenHudSpace.Draw() with some fine adjustments
             Vector2 posHUD = new Vector2(0.9894f, 0.7487f);
 
             if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                posHUD.Y -= 0.1f; // HACK cockpits intentionally bump up the HUD
+                posHUD.Y -= 0.1f; // HACK cockpits intentionally bump up the block info
 
             if(aspectRatio > 5) // triple monitor
                 posHUD.X += 0.75f;
