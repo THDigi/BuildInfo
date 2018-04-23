@@ -30,6 +30,7 @@ namespace Digi.BuildInfo
         private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
         private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
         public const int MOD_NAME_MAX_LENGTH = 30;
+        public const int PLAYER_NAME_MAX_LENGTH = 18;
 
         private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.97, 0.8); // textAPI default left side position
         private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.97 / 3f, 0.8); // textAPI default left side position when using a really wide resolution

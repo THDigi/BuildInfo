@@ -3041,9 +3041,7 @@ namespace Digi.BuildInfo
                     if(!string.IsNullOrEmpty(factionTag))
                         GetLine().Append(factionTag).Append('.');
 
-                    // TODO: cap player name length?
-
-                    GetLine().Append(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId)).ResetTextAPIColor().EndLine();
+                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
                 }
             }
             #endregion
@@ -3119,7 +3117,7 @@ namespace Digi.BuildInfo
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, BuildInfo.MOD_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
 
                     var id = context.GetWorkshopID();
 
