@@ -857,10 +857,12 @@ namespace Digi.BuildInfo
 
                     if(id > 0)
                     {
-                        // 0 in this method opens for the local client, hopefully they don't change that to "ALL" like they did on the chat message...
-                        MyVisualScriptLogicProvider.OpenSteamOverlay($"https://steamcommunity.com/sharedfiles/filedetails/?id={id}", 0);
+                        var link = $"https://steamcommunity.com/sharedfiles/filedetails/?id={id}";
 
-                        ShowChatMessage(CMD_MODLINK, "Opened workshop in steam overlay.", MyFontEnum.Green);
+                        // 0 in this method opens for the local client, hopefully they don't change that to "ALL" like they did on the chat message...
+                        MyVisualScriptLogicProvider.OpenSteamOverlay(link, 0);
+
+                        ShowChatMessage(CMD_MODLINK, $"Opened steam overlay with {link}", MyFontEnum.Green);
                     }
                     else
                         ShowChatMessage(CMD_MODLINK, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
