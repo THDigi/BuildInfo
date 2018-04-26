@@ -121,6 +121,8 @@ namespace Digi.BuildInfo
 
             // from MyMissile.UpdateBeforeSimulation()
             public const float Missile_DesiredSpeedMultiplier = 0.7f;
+
+            public const string AirVent_DummyName = "vent_001";
         }
 
         /// <summary>

@@ -25,7 +25,8 @@ namespace Digi.BuildInfo
             if(b1 == b2)
                 return b1 != null && ((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight;
 
-            return (b1 != null && (((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight || IsPressurized(b1, startPos, endPos - startPos))) || (b2 != null && (((MyCubeBlockDefinition)b2.BlockDefinition).IsAirTight || IsPressurized(b2, endPos, startPos - endPos)));
+            return (b1 != null && (((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight || IsPressurized(b1, startPos, endPos - startPos)))
+                || (b2 != null && (((MyCubeBlockDefinition)b2.BlockDefinition).IsAirTight || IsPressurized(b2, endPos, startPos - endPos)));
         }
 
         public static bool IsPressurized(IMySlimBlock block, Vector3I gridPos, Vector3 normal)

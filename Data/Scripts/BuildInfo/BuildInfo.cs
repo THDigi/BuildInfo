@@ -36,11 +36,12 @@ namespace Digi.BuildInfo
 
         public bool Init() // called in first call of UpdateAfterSimulation()
         {
-            Log.Init();
-            init = true;
-            isThisDS = (MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
+            IsInitialized = true;
+            IsPlayer = !(MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
 
-            if(isThisDS) // not doing anything DS side so get rid of this component entirely
+            Log.Init();
+
+            if(!IsPlayer) // not needed DS side
             {
                 MyAPIGateway.Utilities.InvokeOnGameThread(DisposeComponent);
                 return false;
@@ -54,9 +55,9 @@ namespace Digi.BuildInfo
             ComputeResourceGroups();
             UpdateConfigValues();
 
-            settings = new Settings();
-            leakInfoComp = new LeakInfoComponent();
-            textAPI = new HudAPIv2();
+            Settings = new Settings();
+            LeakInfoComp = new LeakInfoComponent();
+            TextAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -66,9 +67,8 @@ namespace Digi.BuildInfo
         private void DisposeComponent()
         {
             Log.Close();
-            Instance = null;
             SetUpdateOrder(MyUpdateOrder.NoUpdate); // this throws exceptions if called in an update method, which is why the InvokeOnGameThread() is needed.
-            MyAPIGateway.Session.UnregisterComponent(this);
+            Instance = null;
         }
 
         protected override void UnloadData()
@@ -80,30 +80,21 @@ namespace Digi.BuildInfo
 
             try
             {
-                if(init)
+                if(IsInitialized)
                 {
-                    init = false;
+                    IsInitialized = false;
 
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
-                    if(settings != null)
-                    {
-                        settings.Close();
-                        settings = null;
-                    }
+                    Settings?.Close();
+                    Settings = null;
 
-                    if(leakInfoComp != null)
-                    {
-                        leakInfoComp.Close();
-                        leakInfoComp = null;
-                    }
+                    LeakInfoComp?.Close();
+                    LeakInfoComp = null;
 
-                    if(textAPI != null)
-                    {
-                        textAPI.Close();
-                        textAPI = null;
-                    }
+                    TextAPI?.Close();
+                    TextAPI = null;
                 }
             }
             catch(Exception e)
@@ -119,10 +110,10 @@ namespace Digi.BuildInfo
         {
             try
             {
-                if(isThisDS) // failsafe in case the component is still updating or not removed...
+                if(!IsPlayer) // failsafe in case the component is still updating
                     return;
 
-                if(!init)
+                if(!IsInitialized)
                 {
                     if(MyAPIGateway.Session == null)
                         return;
@@ -131,7 +122,7 @@ namespace Digi.BuildInfo
                         return;
                 }
 
-                if(!textAPIresponded && textAPI.Heartbeat)
+                if(!textAPIresponded && TextAPI.Heartbeat)
                 {
                     textAPIresponded = true;
                     HideText(); // force a re-check to make the HUD -> textAPI transition
@@ -143,21 +134,20 @@ namespace Digi.BuildInfo
 
                 unchecked // global ticker
                 {
-                    ++tick;
+                    ++Tick;
                 }
 
-                if(selectedBlock != null && tick % 10 == 0)
+                if(selectedBlock != null && Tick % 10 == 0)
                 {
                     aimInfoNeedsUpdate = true;
                 }
 
-                if(pickBlockDef != null && tick % 5 == 0)
+                if(pickBlockDef != null && Tick % 5 == 0)
                 {
                     MyAPIGateway.Utilities.ShowNotification($"Press a number key to place '{pickBlockDef.DisplayNameText}' in...", 16 * 5, MyFontEnum.Blue);
                 }
 
-                if(leakInfoComp != null)
-                    leakInfoComp.Update();
+                LeakInfoComp?.Update();
 
                 #region Cubebuilder, welder and grinder monitor
                 var prevSelectedToolDefId = selectedToolDefId;
@@ -218,10 +208,10 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        if(settings.showTextInfo && ((aimInfoNeedsUpdate && selectedBlock != null) || selectedDef.Id != lastDefId))
+                        if(Settings.showTextInfo && ((aimInfoNeedsUpdate && selectedBlock != null) || selectedDef.Id != lastDefId))
                         {
                             lastDefId = selectedDef.Id;
-                            blockDataCache = null;
+                            BlockDataCache = null;
 
                             if(selectedBlock != null) // text for welder/grinder
                             {
@@ -252,7 +242,7 @@ namespace Digi.BuildInfo
                 }
                 else // no block equipped
                 {
-                    blockDataCache = null;
+                    BlockDataCache = null;
                     showMenu = false;
 
                     if(MyAPIGateway.CubeBuilder.FreezeGizmo)
@@ -263,7 +253,7 @@ namespace Digi.BuildInfo
                 #endregion
 
                 #region Purge cache
-                if(tick % 60 == 0)
+                if(Tick % 60 == 0)
                 {
                     var haveNotifCache = cachedBuildInfoNotification.Count > 0;
                     var haveTextAPICache = cachedBuildInfoTextAPI.Count > 0;
@@ -319,7 +309,7 @@ namespace Digi.BuildInfo
         {
             try
             {
-                if(!init || MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible || MyParticlesManager.Paused)
+                if(!IsInitialized || !IsPlayer || MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible || MyParticlesManager.Paused)
                     return; // only monitor input when not in menu or chat, and not paused
 
                 #region Block picker
@@ -379,7 +369,7 @@ namespace Digi.BuildInfo
                             return;
                         }
 
-                        bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
+                        bool canUseTextAPI = (TextAPI != null && TextAPI.Heartbeat);
 
                         if(input.IsNewGameControlPressed(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE))
                         {
@@ -429,12 +419,12 @@ namespace Digi.BuildInfo
                                     ShowHelp();
                                     break;
                                 case 4:
-                                    settings.showTextInfo = !settings.showTextInfo;
-                                    settings.Save();
+                                    Settings.showTextInfo = !Settings.showTextInfo;
+                                    Settings.Save();
 
                                     if(buildInfoNotification == null)
                                         buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-                                    buildInfoNotification.Text = (settings.showTextInfo ? "Text info ON (saved to config)" : "Text info OFF (saved to config)");
+                                    buildInfoNotification.Text = (Settings.showTextInfo ? "Text info ON (saved to config)" : "Text info OFF (saved to config)");
                                     buildInfoNotification.Show();
                                     break;
                                 case 5:
@@ -520,16 +510,16 @@ namespace Digi.BuildInfo
         /// </summary>
         public override void Draw()
         {
-            if(!init || isThisDS)
+            if(!IsInitialized || !IsPlayer)
                 return;
 
             try
             {
                 DrawOverlays();
 
-                leakInfoComp?.Draw();
+                LeakInfoComp?.Draw();
 
-                if(!hudVisible && !settings.alwaysVisible)
+                if(!hudVisible && !Settings.alwaysVisible)
                     return;
 
                 if(MyAPIGateway.Gui.IsCursorVisible && textShown && textObject != null)
@@ -538,7 +528,7 @@ namespace Digi.BuildInfo
                 }
 
                 #region Block info UI additions
-                if(settings.showTextInfo && selectedDef != null && !MyAPIGateway.Gui.IsCursorVisible)
+                if(Settings.showTextInfo && selectedDef != null && !MyAPIGateway.Gui.IsCursorVisible)
                 {
                     // TODO: optimize?
 
@@ -557,7 +547,7 @@ namespace Digi.BuildInfo
                         hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
 
                         var worldPos = GameHUDToWorld(hud);
-                        var size = GetGameHUDBlockInfoSize(lines * settings.textAPIScale, scaleFOV);
+                        var size = GetGameHUDBlockInfoSize(lines * Settings.textAPIScale, scaleFOV);
                         worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
                         double cornerSize = Math.Min(0.0015 * scaleFOV, size.Y);
@@ -587,7 +577,7 @@ namespace Digi.BuildInfo
                         }
                     }
 
-                    bool isGrinder = IsGrinder;
+                    bool isGrinder = this.IsGrinder;
                     bool foundComputer = false;
 
                     for(int i = selectedDef.Components.Length - 1; i >= 0; --i)
@@ -813,12 +803,12 @@ namespace Digi.BuildInfo
         #region Various config/state helpers
         private void ReloadConfig(string caller)
         {
-            if(settings.Load())
+            if(Settings.Load())
                 ShowChatMessage(caller, "Reloaded and re-saved config.", MyFontEnum.Green);
             else
                 ShowChatMessage(caller, "Config created with the current settings.", MyFontEnum.Green);
 
-            settings.Save();
+            Settings.Save();
 
             HideText();
             cachedBuildInfoTextAPI.Clear();
@@ -827,7 +817,7 @@ namespace Digi.BuildInfo
             {
                 textObject.Scale = TextAPIScale;
 
-                if(settings.alwaysVisible)
+                if(Settings.alwaysVisible)
                 {
                     textObject.Options &= ~HudAPIv2.Options.HideHud;
                     bgObject.Options &= ~HudAPIv2.Options.HideHud;
@@ -948,7 +938,7 @@ namespace Digi.BuildInfo
         #region Overlay draw
         private void DrawOverlays()
         {
-            if(drawOverlay > 0 && (hudVisible || settings.alwaysVisible) && selectedDef != null)
+            if(drawOverlay > 0 && (hudVisible || Settings.alwaysVisible) && selectedDef != null)
             {
                 // TODO: use?
                 //overlayNotification.Text = $"Showing {DRAW_OVERLAY_NAME[drawOverlay]} overlays (Ctrl+{voxelHandSettingsInput} to cycle)";
@@ -971,6 +961,7 @@ namespace Digi.BuildInfo
 
                 overlaysDrawn = true;
 
+                #region DrawMatrix and other needed data
                 MatrixD drawMatrix = MatrixD.Identity;
 
                 if(selectedBlock == null) // using cubebuilder
@@ -1004,6 +995,7 @@ namespace Digi.BuildInfo
                 }
 
                 var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                #endregion
 
                 #region Draw mount points
                 if(TextAPIEnabled)
@@ -1033,7 +1025,7 @@ namespace Digi.BuildInfo
                     var center = def.Center;
                     var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * gridSize) * drawMatrix;
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-                    bool drawLabel = settings.allLabels && TextAPIEnabled;
+                    bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
                     if(drawOverlay == 1)
                     {
@@ -1108,7 +1100,7 @@ namespace Digi.BuildInfo
                     }
 
                     var cubeSize = def.Size * (gridSize * 0.5f);
-                    bool drawLabel = settings.allLabels && TextAPIEnabled;
+                    bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
                     if(drawLabel || doorAirtightBlink)
                     {
@@ -1171,7 +1163,7 @@ namespace Digi.BuildInfo
                     var colorMineFace = colorMine * 0.3f;
                     var colorCut = Color.Red;
                     var colorCutFace = colorCut * 0.3f;
-                    bool drawLabels = settings.allLabels && TextAPIEnabled;
+                    bool drawLabels = Settings.allLabels && TextAPIEnabled;
 
                     var mineMatrix = drawMatrix;
                     mineMatrix.Translation += mineMatrix.Forward * drill.SensorOffset;
@@ -1221,7 +1213,7 @@ namespace Digi.BuildInfo
 
                         MySimpleObjectDraw.DrawTransparentSphere(ref sphereMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
 
-                        if(settings.allLabels && TextAPIEnabled)
+                        if(Settings.allLabels && TextAPIEnabled)
                         {
                             var labelDir = sphereMatrix.Down;
                             var sphereEdge = sphereMatrix.Translation + (labelDir * radius);
@@ -1274,7 +1266,7 @@ namespace Digi.BuildInfo
                         //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
                         //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
 
-                        if(settings.allLabels && TextAPIEnabled)
+                        if(Settings.allLabels && TextAPIEnabled)
                         {
                             var labelDir = coneMatrix.Up;
                             var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
@@ -1301,7 +1293,7 @@ namespace Digi.BuildInfo
                         var color = Color.Red;
                         var colorFace = color * 0.5f;
                         var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
-                        bool drawLabel = settings.allLabels && TextAPIEnabled;
+                        bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
                         foreach(var flame in data.damageFlames)
                         {
@@ -1331,7 +1323,7 @@ namespace Digi.BuildInfo
                     {
                         var color = new Color(20, 255, 155);
                         var colorFace = color * 0.5f;
-                        bool drawLabel = settings.allLabels && TextAPIEnabled;
+                        bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
                         foreach(var obb in data.Magents)
                         {
@@ -1384,7 +1376,7 @@ namespace Digi.BuildInfo
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, 1f, lineThick, LABELS_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, LABEL_SHADOW_COLOR, start + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, direction, 1f, lineThick, LABELS_BLEND_TYPE);
 
-            if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
+            if(!Settings.allLabels || (!Settings.axisLabels && (int)id < 3))
                 return;
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, cm.Right, underlineLength, lineThick, LABELS_BLEND_TYPE);
@@ -1401,7 +1393,7 @@ namespace Digi.BuildInfo
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, start, direction, lineHeight, lineThick, LABELS_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, LABEL_SHADOW_COLOR, start + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, direction, lineHeight, lineThick, LABELS_BLEND_TYPE);
 
-            if(!settings.allLabels || (!settings.axisLabels && (int)id < 3))
+            if(!Settings.allLabels || (!Settings.axisLabels && (int)id < 3))
                 return;
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, end, cm.Right, underlineLength, lineThick, LABELS_BLEND_TYPE);
@@ -1503,7 +1495,7 @@ namespace Digi.BuildInfo
         {
             ResetLines();
 
-            bool canUseTextAPI = (textAPI != null && textAPI.Heartbeat);
+            bool canUseTextAPI = (TextAPI != null && TextAPI.Heartbeat);
 
             AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").ResetTextAPIColor().EndLine();
 
@@ -1534,7 +1526,7 @@ namespace Digi.BuildInfo
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").ResetTextAPIColor().EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
             if(voxelHandSettingsInput != null)
@@ -3188,12 +3180,12 @@ namespace Digi.BuildInfo
         {
             if(textObject == null)
             {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(), Vector2D.Zero, Scale: TextAPIScale, HideHud: !settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE);
             }
 
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             bgObject.Visible = true;
@@ -3255,14 +3247,14 @@ namespace Digi.BuildInfo
                 // not using textAPI's background for this as drawing my own manually is easier for the 3-part billboard that I need
                 bgObject.Visible = false;
             }
-            else if(settings.textAPIUseCustomStyling) // custom alignment and position
+            else if(Settings.textAPIUseCustomStyling) // custom alignment and position
             {
-                textPos = settings.textAPIScreenPos;
+                textPos = Settings.textAPIScreenPos;
 
-                if(settings.textAPIAlignRight)
+                if(Settings.textAPIAlignRight)
                     textOffset.X = -textSize.X;
 
-                if(settings.textAPIAlignBottom)
+                if(Settings.textAPIAlignBottom)
                     textOffset.Y = -textSize.Y;
             }
             else if(!rotationHints) // right side autocomputed for rotation hints off
@@ -3282,7 +3274,7 @@ namespace Digi.BuildInfo
             {
                 float edge = BACKGROUND_EDGE * TextAPIScale;
 
-                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * (showMenu ? 0.95f : (settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : settings.textAPIBackgroundOpacity));
+                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * (showMenu ? 0.95f : (Settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : Settings.textAPIBackgroundOpacity));
                 bgObject.Origin = textPos;
                 bgObject.Width = (float)Math.Abs(textSize.X) + edge;
                 bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
@@ -3297,7 +3289,7 @@ namespace Digi.BuildInfo
         {
             if(TextAPIEnabled)
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!settings.showTextInfo && !showMenu))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Settings.showTextInfo && !showMenu))
                 {
                     HideText();
                     return;
@@ -3327,7 +3319,7 @@ namespace Digi.BuildInfo
             }
             else
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!settings.showTextInfo && !showMenu))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Settings.showTextInfo && !showMenu))
                 {
                     return;
                 }
@@ -3523,7 +3515,7 @@ namespace Digi.BuildInfo
                 var m = controller.WorldMatrix;
                 casterComp.OnWorldPosChanged(ref m);
 
-                // TODO find a better way to get selected tool type
+                // HACK find a better way to get selected tool type
                 shipControllerObj = (MyObjectBuilder_ShipController)controller.GetObjectBuilderCubeBlock(false);
             }
 

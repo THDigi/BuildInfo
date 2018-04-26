@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Blocks
         {
             try
             {
-                if(BuildInfo.Instance != null && !BuildInfo.Instance.isThisDS) // only rendering players need to use this, DS has none so skipping it; also instance is null on DS but checking just in case
+                if(BuildInfo.Instance != null && BuildInfo.Instance.IsPlayer) // only rendering players need to use this
                 {
                     var block = (IMyCubeBlock)Entity;
                     BData_Base.TrySetData<T>(block);
@@ -63,12 +63,12 @@ namespace Digi.BuildInfo.Blocks
 
         public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
-            var data = BuildInfo.Instance.blockDataCache as T;
+            var data = BuildInfo.Instance.BlockDataCache as T;
 
             if(data == null)
                 data = TryGetData<T>(def);
 
-            BuildInfo.Instance.blockDataCache = data;
+            BuildInfo.Instance.BlockDataCache = data;
             return data;
         }
 

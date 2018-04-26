@@ -212,41 +212,47 @@ namespace Digi.BuildInfo
 
         #region Fields
         public static BuildInfo Instance = null;
-        public bool init = false;
-        public bool isThisDS = false;
-        public Settings settings = null;
-        public LeakInfoComponent leakInfoComp = null;
-        public short tick = 0; // global incrementing gamelogic tick
+
+        public bool IsInitialized = false;
+        public bool IsPlayer = true;
+        public Settings Settings = null;
+        public LeakInfoComponent LeakInfoComp = null;
+        public short Tick = 0; // global incrementing gamelogic tick
+        private string voxelHandSettingsInput;
+
         private int drawOverlay = 0;
         private bool overlaysDrawn = false;
         private bool doorAirtightBlink = false;
         private int doorAirtightBlinkTick = 0;
+        private MatrixD viewProjInv;
+
         private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
-        public IMySlimBlock selectedBlock = null; // non-null only when welder/grinder aims at a block
-        public MyCubeBlockDefinition selectedDef = null; // non-null when cubebuilder has a block AND welder/grinder aims at a block
-        public MyDefinitionId selectedToolDefId; // used to regenerate the text when changing equipped tools
-        public IMyEngineerToolBase selectedHandTool;
-        private MyObjectBuilder_ShipController shipControllerObj = null;
+        private IMySlimBlock selectedBlock = null; // non-null only when welder/grinder aims at a block
+        private MyCubeBlockDefinition selectedDef = null; // non-null when cubebuilder has a block AND welder/grinder aims at a block
+        private MyDefinitionId selectedToolDefId; // used to regenerate the text when changing equipped tools
+        private IMyEngineerToolBase selectedHandTool;
         private MyCasterComponent prevCasterComp = null;
-        public bool isToolSelected = false;
-        public bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
-        public bool canShowMenu = false;
-        public bool aimInfoNeedsUpdate = false;
-        public BData_Base blockDataCache = null;
+        private MyObjectBuilder_ShipController shipControllerObj = null;
+        private MyCubeBlockDefinition pickBlockDef = null; // used by the 'pick block from world' feature
+        private bool isToolSelected = false;
+        private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
+
+        public bool TextAPIEnabled { get { return (useTextAPI && TextAPI != null && TextAPI.Heartbeat); } }
+        public BData_Base BlockDataCache = null;
+
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
         private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
-        public bool TextAPIEnabled { get { return (useTextAPI && textAPI != null && textAPI.Heartbeat); } }
-        private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
         private bool textShown = false;
+        private bool canShowMenu = false;
+        private bool aimInfoNeedsUpdate = false;
         private Vector3D lastGizmoPosition;
-        private MatrixD viewProjInv;
-        private MyCubeBlockDefinition pickBlockDef = null;
+        private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
+
         private IMyHudNotification buildInfoNotification = null;
         private IMyHudNotification overlayNotification = null;
         private IMyHudNotification transparencyNotification = null;
         private IMyHudNotification freezeGizmoNotification = null;
         private IMyHudNotification unsupportedGridSizeNotification = null;
-        private string voxelHandSettingsInput;
 
         // menu specific stuff
         private bool showMenu = false;
@@ -254,7 +260,7 @@ namespace Digi.BuildInfo
         private int menuSelectedItem = 0;
 
         // used by the textAPI view mode
-        public HudAPIv2 textAPI = null;
+        public HudAPIv2 TextAPI = null;
         private bool rotationHints = true;
         private bool hudVisible = true;
         private double aspectRatio = 1;
@@ -266,7 +272,7 @@ namespace Digi.BuildInfo
         private HudAPIv2.SpaceMessage[] textAPILabels;
         private HudAPIv2.SpaceMessage[] textAPIShadows;
         private readonly Dictionary<MyDefinitionId, Cache> cachedBuildInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
-        private float TextAPIScale => settings.textAPIScale * TEXTAPI_SCALE_BASE;
+        private float TextAPIScale => Settings.textAPIScale * TEXTAPI_SCALE_BASE;
         private const float TEXTAPI_SCALE_BASE = 1.2f;
 
         // used by the HUD notification view mode
