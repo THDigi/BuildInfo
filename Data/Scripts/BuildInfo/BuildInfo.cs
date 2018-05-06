@@ -2470,7 +2470,7 @@ namespace Digi.BuildInfo
                 GetLine().ResetTextAPIColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").ResetTextAPIColor().EndLine();
 
                 AddLine().Append("Rotation Pitch: ").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
-                AddLine().Append("Rotation Speed: ").RotationSpeed(laserAntenna.RotationRate * 60).EndLine();
+                AddLine().Append("Rotation Speed: ").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
 
                 // TODO visualize angle limits?
                 return;
@@ -2688,14 +2688,14 @@ namespace Digi.BuildInfo
                     else
                         GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(largeTurret.MinElevationDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxElevationDegrees);
 
-                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.ElevationSpeed * 60).Separator();
+                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.ElevationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).Separator();
 
                     if(largeTurret.MinAzimuthDegrees <= -180 && largeTurret.MaxAzimuthDegrees >= 180)
                         GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
                     else
                         GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(largeTurret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxAzimuthDegrees);
 
-                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.RotationSpeed * 60).EndLine();
+                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
 
                     // TODO visualize angle limits?
                 }

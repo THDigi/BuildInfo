@@ -116,12 +116,19 @@ namespace Digi.BuildInfo
             // from MyLargeTurretBase
             public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET;
 
+            // from MyLargeTurretBase.RotationAndElevation() - rotation speed is radisans per milisecond(ish) (since it uses 16, not 1/60)
+            public const float Turret_RotationSpeedMul = MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS * 60;
+
+            // from MyLaserAntenna.RotationAndElevation() - rotation speed is radians per milisecond
+            public const float LaserAntenna_RotationSpeedMul = 1000;
+
             // from MySmallMissileLauncher & MySmallGatlingGun
             public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN;
 
             // from MyMissile.UpdateBeforeSimulation()
             public const float Missile_DesiredSpeedMultiplier = 0.7f;
 
+            // from MyAirVent.VentDummy getter
             public const string AirVent_DummyName = "vent_001";
         }
 
