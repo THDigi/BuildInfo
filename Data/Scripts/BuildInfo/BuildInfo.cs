@@ -238,7 +238,7 @@ namespace Digi.BuildInfo
 
                     // turn off frozen block preview if camera is too far away from it
                     if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
-                        SetFreezeGizmo(false);
+                        SetFreezePlacement(false);
                 }
                 else // no block equipped
                 {
@@ -246,7 +246,7 @@ namespace Digi.BuildInfo
                     showMenu = false;
 
                     if(MyAPIGateway.CubeBuilder.FreezeGizmo)
-                        SetFreezeGizmo(false);
+                        SetFreezePlacement(false);
 
                     HideText();
                 }
@@ -424,17 +424,17 @@ namespace Digi.BuildInfo
 
                                     if(buildInfoNotification == null)
                                         buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-                                    buildInfoNotification.Text = (Settings.showTextInfo ? "Text info ON (saved to config)" : "Text info OFF (saved to config)");
+                                    buildInfoNotification.Text = (Settings.showTextInfo ? "Text info ON + saved to config" : "Text info OFF + saved to config");
                                     buildInfoNotification.Show();
                                     break;
                                 case 5:
                                     CycleOverlay();
                                     break;
                                 case 6:
-                                    MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
+                                    SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
                                     break;
                                 case 7:
-                                    SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                                    SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo, showNotification: false);
                                     break;
                                 case 8:
                                     if(canUseTextAPI)
@@ -461,14 +461,8 @@ namespace Digi.BuildInfo
                     {
                         if(input.IsAnyShiftKeyPressed())
                         {
-                            MyCubeBuilder.Static.UseTransparency = !MyCubeBuilder.Static.UseTransparency;
+                            SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
                             menuNeedsUpdate = true;
-
-                            if(transparencyNotification == null)
-                                transparencyNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-                            transparencyNotification.Text = (MyCubeBuilder.Static.UseTransparency ? "Placement transparency ON" : "Placement transparency OFF");
-                            transparencyNotification.Show();
                         }
                         else if(input.IsAnyCtrlKeyPressed())
                         {
@@ -484,7 +478,7 @@ namespace Digi.BuildInfo
                         }
                         else if(input.IsAnyAltKeyPressed())
                         {
-                            SetFreezeGizmo(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                            SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
                         }
                         else
                         {
@@ -631,51 +625,6 @@ namespace Digi.BuildInfo
                     }
                 }
                 #endregion
-
-
-
-
-
-                // testing real time pressurization display
-#if false
-                {
-                    var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-
-                    if(def != null && MyCubeBuilder.Static.IsActivated)
-                    {
-                        var grid = MyCubeBuilder.Static.FindClosestGrid();
-
-                        Vector3D worldAdd;
-                        MyCubeBuilder.Static.GetAddPosition(out worldAdd);
-
-                        var bb = MyCubeBuilder.Static.GetBuildBoundingBox();
-                        var matrix = Matrix.CreateFromQuaternion(bb.Orientation);
-
-                        var startPos = grid.WorldToGridInteger(worldAdd);
-
-                        for(int i = 0; i < Base6Directions.IntDirections.Length; ++i)
-                        {
-                            var endPos = startPos + Base6Directions.IntDirections[i];
-                            bool airtight = def.IsAirTight || Pressurization.TestPressurize(startPos, endPos - startPos, matrix, def);
-
-                            //if(!airtight)
-                            //{
-                            //    IMySlimBlock b2 = grid.GetCubeBlock(startPos);
-                            //
-                            //    if(b2 != null)
-                            //    {
-                            //        var def2 = (MyCubeBlockDefinition)b2.BlockDefinition;
-                            //        airtight = def2.IsAirTight || Pressurization.IsPressurized(b2, endPos, startPos - endPos);
-                            //    }
-                            //}
-
-                            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), (airtight ? Color.Green : Color.Red), worldAdd, Vector3D.TransformNormal(Base6Directions.IntDirections[i], matrix), 1f, 0.1f);
-
-                            //MyAPIGateway.Utilities.ShowNotification($"{i}. airtight={airtight}", 16); // DEBUG print
-                        }
-                    }
-                }
-#endif
             }
             catch(Exception e)
             {
@@ -904,7 +853,7 @@ namespace Digi.BuildInfo
                 drawOverlay = 0;
         }
 
-        private void SetFreezeGizmo(bool freeze)
+        private void SetFreezePlacement(bool value, bool showNotification = true)
         {
             if(freezeGizmoNotification == null)
                 freezeGizmoNotification = MyAPIGateway.Utilities.CreateNotification("");
@@ -914,7 +863,7 @@ namespace Digi.BuildInfo
                 freezeGizmoNotification.Text = "Equip a block and aim at a grid.";
                 freezeGizmoNotification.Font = MyFontEnum.Red;
             }
-            else if(freeze && MyCubeBuilder.Static.DynamicMode)
+            else if(value && MyCubeBuilder.Static.DynamicMode) // requires a grid target to turn on
             {
                 freezeGizmoNotification.Text = "Aim at a grid.";
                 freezeGizmoNotification.Font = MyFontEnum.Red;
@@ -922,16 +871,32 @@ namespace Digi.BuildInfo
             else
             {
                 // HACK using this method instead of MyAPIGateway.CubeBuilder.FreezeGizmo's setter because that one ignores the value and sets it to true.
-                MyCubeBuilder.Static.FreezeGizmo = freeze;
+                MyCubeBuilder.Static.FreezeGizmo = value;
 
-                freezeGizmoNotification.Text = (freeze ? "Freeze placement position ON" : "Freeze placement position OFF");
+                freezeGizmoNotification.Text = (value ? "Freeze placement position ON" : "Freeze placement position OFF");
                 freezeGizmoNotification.Font = MyFontEnum.White;
 
-                if(freeze)
+                if(value) // store the frozen position to check distance for auto-unfreeze
                     MyCubeBuilder.Static.GetAddPosition(out lastGizmoPosition);
             }
 
-            freezeGizmoNotification.Show();
+            if(showNotification)
+                freezeGizmoNotification.Show();
+        }
+
+        private void SetPlacementTransparency(bool value, bool showNotification = true)
+        {
+            MyCubeBuilder.Static.UseTransparency = value;
+
+            if(showNotification)
+            {
+                if(transparencyNotification == null)
+                    transparencyNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                transparencyNotification.Text = (MyCubeBuilder.Static.UseTransparency ? "Placement transparency ON" : "Placement transparency OFF");
+                transparencyNotification.Font = MyFontEnum.White;
+                transparencyNotification.Show();
+            }
         }
         #endregion
 
@@ -996,6 +961,48 @@ namespace Digi.BuildInfo
 
                 var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
                 #endregion
+
+
+                // testing real time pressurization display
+#if false
+                {
+                    var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+
+                    if(def != null && MyCubeBuilder.Static.IsActivated)
+                    {
+                        var grid = MyCubeBuilder.Static.FindClosestGrid();
+
+                        Vector3D worldAdd;
+                        MyCubeBuilder.Static.GetAddPosition(out worldAdd);
+
+                        var bb = MyCubeBuilder.Static.GetBuildBoundingBox();
+                        var matrix = Matrix.CreateFromQuaternion(bb.Orientation);
+
+                        var startPos = grid.WorldToGridInteger(worldAdd);
+
+                        for(int i = 0; i < Base6Directions.IntDirections.Length; ++i)
+                        {
+                            var endPos = startPos + Base6Directions.IntDirections[i];
+                            bool airtight = def.IsAirTight || Pressurization.TestPressurize(startPos, endPos - startPos, matrix, def);
+
+                            //if(!airtight)
+                            //{
+                            //    IMySlimBlock b2 = grid.GetCubeBlock(startPos);
+                            //
+                            //    if(b2 != null)
+                            //    {
+                            //        var def2 = (MyCubeBlockDefinition)b2.BlockDefinition;
+                            //        airtight = def2.IsAirTight || Pressurization.IsPressurized(b2, endPos, startPos - endPos);
+                            //    }
+                            //}
+
+                            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), (airtight ? Color.Green : Color.Red), worldAdd, Vector3D.TransformNormal(Base6Directions.IntDirections[i], matrix), 1f, 0.1f);
+
+                            //MyAPIGateway.Utilities.ShowNotification($"{i}. airtight={airtight}", 16); // DEBUG print
+                        }
+                    }
+                }
+#endif
 
                 #region Draw mount points
                 if(TextAPIEnabled)
@@ -1533,7 +1540,7 @@ namespace Digi.BuildInfo
                 GetLine().Append("   (Ctrl+" + voxelHandSettingsInput + ")");
             GetLine().ResetTextAPIColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Transparent model: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
             if(voxelHandSettingsInput != null)
                 GetLine().Append("   (Shift+" + voxelHandSettingsInput + ")");
             GetLine().ResetTextAPIColor().EndLine();

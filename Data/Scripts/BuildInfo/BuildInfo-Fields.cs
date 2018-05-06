@@ -165,11 +165,11 @@ namespace Digi.BuildInfo
             "\n" +
             "\n" +
             "Hotkeys:\n" +
-            "  Ctrl+{0} and block equipped\n" +
+            "  Ctrl+{0} with block equipped/selected\n" +
             "    Cycles overlay draw.\n" +
-            "  Shift+{0} and block equipped\n" +
+            "  Shift+{0} with block equipped/selected\n" +
             "    Toggle transparent model.\n" +
-            "  Alt+{0} and block equipped\n" +
+            "  Alt+{0} with block equipped\n" +
             "    Toggle freeze position.\n" +
             "\n" +
             "\n" +
