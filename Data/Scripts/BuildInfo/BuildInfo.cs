@@ -8,7 +8,6 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
-using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Weapons;
 using VRage;
@@ -17,7 +16,6 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
-using VRage.ModAPI;
 using VRageMath;
 
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
@@ -417,13 +415,19 @@ namespace Digi.BuildInfo
                                         MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, MyFontEnum.Red);
                                     break;
                                 case 2:
-                                    if(selectedDef != null && !selectedDef.Context.IsBaseGame)
+                                    if(selectedDef == null)
+                                    {
+                                        MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, MyFontEnum.Red);
+                                    }
+                                    else if(selectedDef.Context.IsBaseGame)
+                                    {
+                                        MyAPIGateway.Utilities.ShowNotification($"{selectedDef.DisplayNameText} was not added by a mod.", 3000, MyFontEnum.Red);
+                                    }
+                                    else
                                     {
                                         showMenu = false;
                                         ShowModWorkshop();
                                     }
-                                    else
-                                        MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod to open its workshop link.", 3000, MyFontEnum.Red);
                                     break;
                                 case 3:
                                     showMenu = false;
@@ -439,7 +443,7 @@ namespace Digi.BuildInfo
                                     buildInfoNotification.Show();
                                     break;
                                 case 5:
-                                    CycleOverlay();
+                                    CycleOverlay(showNotification: false);
                                     break;
                                 case 6:
                                     SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
@@ -472,29 +476,23 @@ namespace Digi.BuildInfo
                     {
                         if(input.IsAnyShiftKeyPressed())
                         {
-                            SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
                             menuNeedsUpdate = true;
+                            SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
                         }
                         else if(input.IsAnyCtrlKeyPressed())
                         {
-                            CycleOverlay();
                             menuNeedsUpdate = true;
-
-                            if(overlayNotification == null)
-                                overlayNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-                            overlayNotification.Text = "Overlays: " + DRAW_OVERLAY_NAME[drawOverlay];
-                            overlayNotification.AliveTime = 2000;
-                            overlayNotification.Show();
+                            CycleOverlay();
                         }
                         else if(input.IsAnyAltKeyPressed())
                         {
+                            menuNeedsUpdate = true;
                             SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
                         }
                         else
                         {
-                            showMenu = !showMenu;
                             menuNeedsUpdate = true;
+                            showMenu = !showMenu;
                         }
                     }
                 }
@@ -818,7 +816,7 @@ namespace Digi.BuildInfo
                         ShowChatMessage(CMD_MODLINK, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
                 }
                 else
-                    ShowChatMessage(CMD_MODLINK, "This block is part of the game.", MyFontEnum.Red);
+                    ShowChatMessage(CMD_MODLINK, $"{selectedDef.DisplayNameText} is not added by a mod.", MyFontEnum.Red);
             }
             else
                 ShowChatMessage(CMD_MODLINK, "No block selected/equipped.", MyFontEnum.Red);
@@ -858,10 +856,19 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void CycleOverlay()
+        private void CycleOverlay(bool showNotification = true)
         {
             if(++drawOverlay >= DRAW_OVERLAY_NAME.Length)
                 drawOverlay = 0;
+
+            if(showNotification)
+            {
+                if(overlayNotification == null)
+                    overlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, MyFontEnum.White);
+
+                overlayNotification.Text = "Overlays: " + DRAW_OVERLAY_NAME[drawOverlay];
+                overlayNotification.Show();
+            }
         }
 
         private void SetFreezePlacement(bool value, bool showNotification = true)
