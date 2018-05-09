@@ -129,6 +129,7 @@
     <Compile Include="Blocks\Weapons.cs" />
     <Compile Include="BuildInfo-Extras.cs" />
     <Compile Include="BuildInfo-Fields.cs" />
+    <Compile Include="BuildInfo-Overlays.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameData.cs" />

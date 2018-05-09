@@ -234,6 +234,7 @@ namespace Digi.BuildInfo
         private MyCasterComponent prevCasterComp = null;
         private MyObjectBuilder_ShipController shipControllerObj = null;
         private MyCubeBlockDefinition pickBlockDef = null; // used by the 'pick block from world' feature
+        private float selectedGridSize;
         private bool isToolSelected = false;
         private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
 
