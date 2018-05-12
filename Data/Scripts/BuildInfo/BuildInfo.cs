@@ -215,7 +215,7 @@ namespace Digi.BuildInfo
                             if(changedBlock)
                             {
                                 selectedGridSize = MyDefinitionManager.Static.GetCubeSize(selectedDef.CubeSize);
-                                selectedOverlayDraw = overlayDelegates.GetValueOrDefault(selectedDef.Id.TypeId, null);
+                                selectedOverlayCall = overlayCalls.GetValueOrDefault(selectedDef.Id.TypeId, null);
                             }
 
                             lastDefId = selectedDef.Id;
@@ -251,7 +251,7 @@ namespace Digi.BuildInfo
                 else // no block equipped
                 {
                     BlockDataCache = null;
-                    selectedOverlayDraw = null;
+                    selectedOverlayCall = null;
                     showMenu = false;
 
                     if(MyAPIGateway.CubeBuilder.FreezeGizmo)
@@ -522,122 +522,123 @@ namespace Digi.BuildInfo
 
                 LeakInfoComp?.Draw();
 
-                if(!hudVisible && !Settings.alwaysVisible)
-                    return;
-
-                if(MyAPIGateway.Gui.IsCursorVisible && textShown && textObject != null)
-                {
-                    HideText();
-                }
-
-                #region Block info UI additions
-                if(Settings.showTextInfo && selectedDef != null && !MyAPIGateway.Gui.IsCursorVisible)
-                {
-                    // TODO: optimize?
-
-                    var cam = MyAPIGateway.Session.Camera;
-                    var camMatrix = cam.WorldMatrix;
-                    var scaleFOV = (float)Math.Tan(cam.FovWithZoom / 2);
-                    UpdateCameraViewProjInvMatrix();
-                    var posHUD = GetGameHUDBlockInfoPos();
-
-                    // draw the added top part's background only for aimed block (which requires textAPI)
-                    if(selectedBlock != null && !showMenu && textObject != null && useTextAPI)
-                    {
-                        var hud = posHUD;
-
-                        // make the position top-right
-                        hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
-
-                        var worldPos = GameHUDToWorld(hud);
-                        var size = GetGameHUDBlockInfoSize(lines * Settings.textAPIScale, scaleFOV);
-                        worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
-                        double cornerSize = Math.Min(0.0015 * scaleFOV, size.Y);
-                        float cornerW = (float)cornerSize;
-                        float cornerH = (float)cornerSize;
-
-                        {
-                            var finalW = size.X - cornerW;
-                            var finalH = cornerH;
-                            var finalWorldPos = worldPos + camMatrix.Left * cornerW + camMatrix.Up * (size.Y - cornerH);
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-
-                        // HACK NOTE: this custom topright corner material will draw above textAPI if textAPI is loaded after this mod
-                        {
-                            var finalW = cornerW;
-                            var finalH = cornerH;
-                            var finalWorldPos = worldPos + camMatrix.Right * (size.X - cornerW) + camMatrix.Up * (size.Y - cornerH);
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_TOPRIGHTCORNER, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-
-                        {
-                            var finalW = size.X;
-                            var finalH = size.Y - cornerH;
-                            var finalWorldPos = worldPos + camMatrix.Down * cornerH;
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-                    }
-
-                    bool isGrinder = this.IsGrinder;
-                    bool foundComputer = false;
-
-                    for(int i = selectedDef.Components.Length - 1; i >= 0; --i)
-                    {
-                        var comp = selectedDef.Components[i];
-
-                        // red functionality line
-                        if(selectedDef.CriticalGroup == i)
-                        {
-                            var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_RED_LINE_HEIGHT * scaleFOV);
-                            var hud = posHUD;
-                            hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
-
-                            var worldPos = GameHUDToWorld(hud);
-
-                            worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Red, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-
-                        // blue hacking line
-                        if(!foundComputer && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == COMPUTER) // HACK this is what the game checks internally, hardcoded to computer component.
-                        {
-                            foundComputer = true;
-
-                            var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_BLUE_LINE_HEIGHT * scaleFOV);
-                            var hud = posHUD;
-                            hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
-
-                            var worldPos = GameHUDToWorld(hud);
-
-                            worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Blue, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-
-                        // yellow highlight if returned component is not the same as grinded component
-                        if(isGrinder && comp.DeconstructItem != comp.Definition)
-                        {
-                            var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT * scaleFOV);
-
-                            var hud = posHUD;
-                            hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_Y_OFFSET_2;
-
-                            var worldPos = GameHUDToWorld(hud);
-
-                            worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
-                            MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Yellow, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                        }
-                    }
-                }
-                #endregion
+                DrawBlockInfo();
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        private void DrawBlockInfo()
+        {
+            if(!hudVisible && !Settings.alwaysVisible)
+                return;
+
+            if(textShown && textObject != null && MyAPIGateway.Gui.IsCursorVisible)
+                HideText();
+
+            if(!Settings.showTextInfo || selectedDef == null || MyAPIGateway.Gui.IsCursorVisible)
+                return;
+
+            // TODO: optimize?
+
+            var cam = MyAPIGateway.Session.Camera;
+            var camMatrix = cam.WorldMatrix;
+            var scaleFOV = (float)Math.Tan(cam.FovWithZoom / 2);
+            UpdateCameraViewProjInvMatrix();
+            var posHUD = GetGameHUDBlockInfoPos();
+
+            // draw the added top part's background only for aimed block (which requires textAPI)
+            if(selectedBlock != null && !showMenu && textObject != null && useTextAPI)
+            {
+                var hud = posHUD;
+
+                // make the position top-right
+                hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
+
+                var worldPos = GameHUDToWorld(hud);
+                var size = GetGameHUDBlockInfoSize(lines * Settings.textAPIScale, scaleFOV);
+                worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+
+                double cornerSize = Math.Min(0.0015 * scaleFOV, size.Y);
+                float cornerW = (float)cornerSize;
+                float cornerH = (float)cornerSize;
+
+                {
+                    var finalW = size.X - cornerW;
+                    var finalH = cornerH;
+                    var finalWorldPos = worldPos + camMatrix.Left * cornerW + camMatrix.Up * (size.Y - cornerH);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
+
+                // HACK NOTE: this custom topright corner material will draw above textAPI if textAPI is loaded after this mod
+                {
+                    var finalW = cornerW;
+                    var finalH = cornerH;
+                    var finalWorldPos = worldPos + camMatrix.Right * (size.X - cornerW) + camMatrix.Up * (size.Y - cornerH);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_TOPRIGHTCORNER, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
+
+                {
+                    var finalW = size.X;
+                    var finalH = size.Y - cornerH;
+                    var finalWorldPos = worldPos + camMatrix.Down * cornerH;
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
+            }
+
+            bool isGrinder = this.IsGrinder;
+            bool foundComputer = false;
+
+            for(int i = selectedDef.Components.Length - 1; i >= 0; --i)
+            {
+                var comp = selectedDef.Components[i];
+
+                // red functionality line
+                if(selectedDef.CriticalGroup == i)
+                {
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_RED_LINE_HEIGHT * scaleFOV);
+                    var hud = posHUD;
+                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
+
+                    var worldPos = GameHUDToWorld(hud);
+
+                    worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Red, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
+
+                // blue hacking line
+                if(!foundComputer && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == COMPUTER) // HACK this is what the game checks internally, hardcoded to computer component.
+                {
+                    foundComputer = true;
+
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_BLUE_LINE_HEIGHT * scaleFOV);
+                    var hud = posHUD;
+                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
+
+                    var worldPos = GameHUDToWorld(hud);
+
+                    worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Blue, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
+
+                // yellow highlight if returned component is not the same as grinded component
+                if(isGrinder && comp.DeconstructItem != comp.Definition)
+                {
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT * scaleFOV);
+
+                    var hud = posHUD;
+                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_Y_OFFSET_2;
+
+                    var worldPos = GameHUDToWorld(hud);
+
+                    worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.Yellow, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                }
             }
         }
 
@@ -937,7 +938,7 @@ namespace Digi.BuildInfo
 
             bool canUseTextAPI = (TextAPI != null && TextAPI.Heartbeat);
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").ResetTextAPIColor().EndLine();
+            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").ResetColor().EndLine();
 
             int i = 0;
 
@@ -946,59 +947,59 @@ namespace Digi.BuildInfo
             AddMenuItemLine(i++).Append("Close menu");
             if(voxelHandSettingsInput != null)
                 GetLine().Append("   (").Append(voxelHandSettingsInput).Append(")");
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
 
             if(TextAPIEnabled)
             {
                 AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").ResetTextAPIColor().EndLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").ResetColor().EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Add aimed block to toolbar").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_GETBLOCK).Append(')').ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Add aimed block to toolbar").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_GETBLOCK).Append(')').ResetColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').ResetColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').ResetColor().EndLine();
 
             if(TextAPIEnabled)
             {
                 AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").ResetTextAPIColor().EndLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").ResetColor().EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
             if(voxelHandSettingsInput != null)
                 GetLine().Append("   (Ctrl+" + voxelHandSettingsInput + ")");
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
             if(voxelHandSettingsInput != null)
                 GetLine().Append("   (Shift+" + voxelHandSettingsInput + ")");
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
             if(voxelHandSettingsInput != null)
                 GetLine().Append("   (Alt+" + voxelHandSettingsInput + ")");
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
             if(canUseTextAPI)
                 GetLine().Append(useTextAPI ? "ON" : "OFF");
             else
                 GetLine().Append("OFF (Mod not detected)");
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').ResetTextAPIColor().EndLine();
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').ResetColor().EndLine();
 
             if(TextAPIEnabled)
                 AddLine().EndLine();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetTextAPIColor().Append(' ', 10).EndLine();
+            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10).EndLine();
 
             if(voxelHandSettingsInput == null)
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("The 'Open voxel hand settings' control is not assigned!").ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("The 'Open voxel hand settings' control is not assigned!").ResetColor().EndLine();
 
             EndAddedLines();
         }
@@ -1041,7 +1042,7 @@ namespace Digi.BuildInfo
                     }
                 }
 
-                GetLine().ResetTextAPIColor().EndLine();
+                GetLine().ResetColor().EndLine();
             }
             #endregion
 
@@ -1052,7 +1053,7 @@ namespace Digi.BuildInfo
             {
                 if(comp.DeconstructItem != comp.Definition)
                 {
-                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetTextAPIColor().EndLine();
+                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
                 }
             }
             #endregion
@@ -1097,7 +1098,9 @@ namespace Digi.BuildInfo
                 GenerateAdvancedBlockText(def);
 
             if(!def.Context.IsBaseGame)
-                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).ResetColor().EndLine();
+
+            AddOverlaysHint(def);
 
             EndAddedLines();
             #endregion
@@ -1122,7 +1125,7 @@ namespace Digi.BuildInfo
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
             if(part)
-                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).ResetColor().EndLine();
 
             #region Line 1
             AddLine();
@@ -1130,15 +1133,15 @@ namespace Digi.BuildInfo
             if(part)
                 GetLine().Color(COLOR_PART).Append(padding);
 
-            GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetTextAPIColor().Separator()
+            GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetColor().Separator()
                 .VectorFormat(def.Size).Separator()
-                .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetTextAPIColor();
+                .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
 
             if(Math.Abs(grindRatio - 1) >= 0.0001f)
-                GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").PercentFormat(1f / grindRatio).ResetTextAPIColor();
+                GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").PercentFormat(1f / grindRatio).ResetColor();
 
             if(!buildModels)
-                GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetTextAPIColor();
+                GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
 
             GetLine().EndLine();
             #endregion
@@ -1147,7 +1150,7 @@ namespace Digi.BuildInfo
             AddLine();
 
             if(part)
-                GetLine().Color(COLOR_PART).Append(padding).ResetTextAPIColor();
+                GetLine().Color(COLOR_PART).Append(padding).ResetColor();
 
             GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
 
@@ -1157,14 +1160,14 @@ namespace Digi.BuildInfo
             else
                 GetLine().Append("No");
 
-            GetLine().ResetTextAPIColor();
+            GetLine().ResetColor();
 
             if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
                 GetLine().Separator()
                     .Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
                     .Append("Damage intake: ").PercentFormat(def.GeneralDamageMultiplier)
-                    .ResetTextAPIColor();
+                    .ResetColor();
             }
 
             GetLine().EndLine();
@@ -1183,7 +1186,7 @@ namespace Digi.BuildInfo
             else
                 GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
 
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
             #endregion
         }
 
@@ -1195,68 +1198,54 @@ namespace Digi.BuildInfo
             if(defTypeId == typeof(MyObjectBuilder_TerminalBlock)) // control panel block
             {
                 // HACK hardcoded; control panel doesn't use power
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").EndLine();
+                AddLine(MyFontEnum.Green).LabelHardcoded("Power required", COLOR_GOOD).Append("No").EndLine();
                 return;
             }
 
             // HACK: conveyor blocks have no definition
             if(defTypeId == typeof(MyObjectBuilder_Conveyor) || defTypeId == typeof(MyObjectBuilder_ConveyorConnector)) // conveyor hubs and tubes
             {
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.Conveyors_PowerReq).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.Conveyors_PowerReq).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
                 return;
             }
 
             var shipDrill = def as MyShipDrillDefinition;
             if(shipDrill != null)
             {
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipDrill_Power).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipDrill_Power).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
-                {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
-                }
+                    AddLine().Label("Inventory").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
                 else
-                {
-                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
-                }
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
 
-                AddLine().Append("Mining radius: ").DistanceFormat(shipDrill.SensorRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.SensorOffset).EndLine();
-                AddLine().Append("Cutout radius: ").DistanceFormat(shipDrill.CutOutRadius).Separator().Append("Front offset: ").DistanceFormat(shipDrill.CutOutOffset).EndLine();
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
+                AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).Separator().Label("Front offset").DistanceFormat(shipDrill.SensorOffset).EndLine();
+                AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).Separator().Label("Front offset").DistanceFormat(shipDrill.CutOutOffset).EndLine();
                 return;
             }
 
             // HACK: ship connector has no definition
             if(defTypeId == typeof(MyObjectBuilder_ShipConnector))
             {
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipConnector_PowerReq(def)).Separator().ResourcePriority(GameData.Hardcoded.ShipConnector_PowerGroup, hardcoded: true).EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipConnector_PowerReq(def)).Separator().ResourcePriority(GameData.Hardcoded.ShipConnector_PowerGroup, hardcoded: true).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
-                {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
-                }
+                    AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
                 else
-                {
-                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipConnector_InventoryVolume(def)).EndLine();
-                }
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipConnector_InventoryVolume(def)).EndLine();
 
                 var data = BData_Base.TryGetDataCached<BData_Connector>(def);
 
                 if(data != null)
                 {
                     if(data.Connector)
-                    {
                         AddLine().Append("Connectable: Yes");
-                    }
                     else
-                    {
-                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetTextAPIColor();
-                    }
+                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
 
-                    GetLine().Separator().Append("Can throw contents*: Yes").EndLine();
+                    GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes").EndLine();
                 }
 
                 return;
@@ -1266,16 +1255,16 @@ namespace Digi.BuildInfo
             var shipGrinder = def as MyShipGrinderDefinition;
             if(shipWelder != null || shipGrinder != null)
             {
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.ShipTool_PowerReq).Separator().ResourcePriority(GameData.Hardcoded.ShipTool_PowerGroup, hardcoded: true).EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipTool_PowerReq).Separator().ResourcePriority(GameData.Hardcoded.ShipTool_PowerGroup, hardcoded: true).EndLine();
 
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
                 {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
+                    AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
                 }
                 else
                 {
-                    AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
                 }
 
                 var data = BData_Base.TryGetDataCached<BData_ShipTool>(def);
@@ -1284,22 +1273,21 @@ namespace Digi.BuildInfo
                 {
                     float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                     var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    AddLine().Append("Weld speed*: ").PercentFormat(weld).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+                    AddLine().LabelHardcoded("Weld speed").PercentFormat(weld).Append(" split accross targets").MultiplierFormat(mul).EndLine();
 
                     if(data != null)
-                        AddLine().Append("Welding radius: ").DistanceFormat(data.SphereDummy.Radius).EndLine();
+                        AddLine().Label("Welding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
                 }
                 else
                 {
                     float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
                     var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    AddLine().Append("Grind speed*: ").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
+                    AddLine().LabelHardcoded("Grind speed").PercentFormat(grind * mul).Append(" split accross targets").MultiplierFormat(mul).EndLine();
 
                     if(data != null)
-                        AddLine().Append("Grinding radius: ").DistanceFormat(data.SphereDummy.Radius).EndLine();
+                        AddLine().Label("Grinding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
                 }
 
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize sensors)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -1384,14 +1372,16 @@ namespace Digi.BuildInfo
 
                     if(GetInventoryFromComponent(def, out volume))
                     {
-                        AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
+                        AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
                     }
                     else
                     {
-                        AddLine().Append("Inventory*: ").InventoryFormat(GameData.Hardcoded.Cockpit_InventoryVolume).EndLine();
+                        AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.Cockpit_InventoryVolume).EndLine();
                     }
 
-                    AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red)).Append("Pressurized: ");
+                    AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red))
+                       .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
+                       .Label("Pressurized");
 
                     if(cockpit.IsPressurized)
                         GetLine().Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
@@ -1407,7 +1397,7 @@ namespace Digi.BuildInfo
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetTextAPIColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
+                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
                         }
                         else
                         {
@@ -1439,7 +1429,7 @@ namespace Digi.BuildInfo
                     // thrust.NeedsAtmosphereForInfluence seems to be a pointless var
 
                     AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                        .PercentFormat(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetTextAPIColor();
+                        .PercentFormat(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetColor();
                     if(thrust.MaxPlanetaryInfluence < 1f)
                         GetLine().Append("in ").PercentFormat(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
                     else
@@ -1447,7 +1437,7 @@ namespace Digi.BuildInfo
                     GetLine().EndLine();
 
                     AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                        .PercentFormat(thrust.EffectivenessAtMinInfluence).Append(" max thrust ").ResetTextAPIColor();
+                        .PercentFormat(thrust.EffectivenessAtMinInfluence).Append(" max thrust ").ResetColor();
                     if(thrust.MinPlanetaryInfluence > 0f)
                         GetLine().Append("below ").PercentFormat(thrust.MinPlanetaryInfluence).Append(" atmosphere");
                     else
@@ -1482,8 +1472,6 @@ namespace Digi.BuildInfo
 
                     GetLine().DistanceFormat(flameDistance).Separator().Append("Damage: ").NumFormat(flameShipDamage, 1).Append("/s to ships").Separator().NumFormat(flameDamage, 1).Append("/s to other things").EndLine();
                 }
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize flames damage area)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -1491,10 +1479,8 @@ namespace Digi.BuildInfo
             if(lg != null)
             {
                 // HACK: hardcoded; LG doesn't require power
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
-                AddLine().Append("Max differential velocity for locking: ").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize magnets)").ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required", COLOR_GOOD).Append("No").ResetColor().EndLine();
+                AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
                 return;
             }
 
@@ -1520,23 +1506,23 @@ namespace Digi.BuildInfo
             var oreDetector = def as MyOreDetectorDefinition;
             if(oreDetector != null)
             {
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.OreDetector_PowerReq).Separator().ResourcePriority(oreDetector.ResourceSinkGroup).EndLine();
-                AddLine().Append("Max range: ").DistanceFormat(oreDetector.MaximumRange).EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.OreDetector_PowerReq).Separator().ResourcePriority(oreDetector.ResourceSinkGroup).EndLine();
+                AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange).EndLine();
                 return;
             }
 
             var gyro = def as MyGyroDefinition;
             if(gyro != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(gyro.RequiredPowerInput).Separator().ResourcePriority(gyro.ResourceSinkGroup).EndLine();
-                AddLine().Append("Force: ").ForceFormat(gyro.ForceMagnitude).EndLine();
+                AddLine().Label("Power required").PowerFormat(gyro.RequiredPowerInput).Separator().ResourcePriority(gyro.ResourceSinkGroup).EndLine();
+                AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude).EndLine();
                 return;
             }
 
             var projector = def as MyProjectorDefinition;
             if(projector != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(projector.RequiredPowerInput).Separator().ResourcePriority(projector.ResourceSinkGroup).EndLine();
+                AddLine().Label("Power required").PowerFormat(projector.RequiredPowerInput).Separator().ResourcePriority(projector.ResourceSinkGroup).EndLine();
                 return;
             }
 
@@ -1545,10 +1531,8 @@ namespace Digi.BuildInfo
             {
                 float moveTime = (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * door.OpeningSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
 
-                AddLine().Append("Power required*: ").PowerFormat(GameData.Hardcoded.Door_PowerReq).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
-                AddLine().Append("Move time: ").TimeFormat(moveTime).Separator().Append("Distance: ").DistanceFormat(door.MaxOpen).EndLine();
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
+                AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.Door_PowerReq).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
+                AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen).EndLine();
                 return;
             }
 
@@ -1559,8 +1543,6 @@ namespace Digi.BuildInfo
 
                 AddLine().Append("Power: ").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(airTightDoor.PowerConsumptionIdle).Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
                 AddLine().Append("Move time: ").TimeFormat(moveTime).EndLine();
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -1581,8 +1563,6 @@ namespace Digi.BuildInfo
                 }
 
                 AddLine().Append("Move time - Opening: ").TimeFormat(openTime).Separator().Append("Closing: ").TimeFormat(closeTime).EndLine();
-
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Ctrl+").Append(voxelHandSettingsInput).Append(" to visualize closed airtightness)").ResetTextAPIColor().EndLine();
                 return;
             }
 
@@ -1781,7 +1761,7 @@ namespace Digi.BuildInfo
                     if(invLimit != null)
                     {
                         AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
-                        AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").ResetTextAPIColor().EndLine();
+                        AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").ResetColor().EndLine();
 
                         foreach(var id in invLimit.ConstrainedIds)
                         {
@@ -1836,16 +1816,19 @@ namespace Digi.BuildInfo
             var medicalRoom = def as MyMedicalRoomDefinition;
             if(medicalRoom != null)
             {
-                AddLine().Append("Power*: ").PowerFormat(GameData.Hardcoded.MedicalRoom_PowerReq).Separator().ResourcePriority(medicalRoom.ResourceSinkGroup).EndLine();
+                AddLine().LabelHardcoded("Power").PowerFormat(GameData.Hardcoded.MedicalRoom_PowerReq).Separator().ResourcePriority(medicalRoom.ResourceSinkGroup).EndLine();
 
-                AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White)).Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).Separator();
+                AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White))
+                    .Color(medicalRoom.ForceSuitChangeOnRespawn ? COLOR_WARNING : COLOR_NORMAL)
+                    .Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).ResetColor().Separator();
+
                 if(medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn)
                 {
-                    GetLine().Append("Forced suit: ");
+                    GetLine().Color(COLOR_WARNING).Label("Forced suit");
 
                     if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
                     {
-                        GetLine().Append("(Error: empty)");
+                        GetLine().Color(COLOR_BAD).Append("(Error: empty)");
                     }
                     else
                     {
@@ -1853,28 +1836,36 @@ namespace Digi.BuildInfo
                         if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
                             GetLine().Append(charDef.Name);
                         else
-                            GetLine().Append(medicalRoom.RespawnSuitName).Append(" (Error: not found)");
+                            GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)");
                     }
                 }
                 else
                     GetLine().Append("Forced suit: No");
+
                 GetLine().EndLine();
 
-                AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red).Append("Healing: ").BoolFormat(medicalRoom.HealingAllowed).EndLine();
+                AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.HealingAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Append("Healing: ").BoolFormat(medicalRoom.HealingAllowed).EndLine();
 
-                AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red).Append("Recharge: ").BoolFormat(medicalRoom.RefuelAllowed).EndLine();
+                AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.RefuelAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Append("Recharge: ").BoolFormat(medicalRoom.RefuelAllowed).EndLine();
 
-                AddLine().Append("Suit change: ").BoolFormat(medicalRoom.SuitChangeAllowed).EndLine();
+                AddLine(medicalRoom.SuitChangeAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.SuitChangeAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Append("Suit change: ")
+                    .BoolFormat(medicalRoom.SuitChangeAllowed).EndLine();
 
                 if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
                 {
-                    AddLine(MyFontEnum.Blue).Append("Usable suits:");
+                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Suits:");
 
                     foreach(var charName in medicalRoom.CustomWardrobeNames)
                     {
                         MyCharacterDefinition charDef;
                         if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
-                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Append(" (not found in definitions)").EndLine();
+                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)").EndLine();
                         else
                             AddLine().Append("    ").Append(charDef.DisplayNameText).EndLine();
                     }
@@ -1907,7 +1898,7 @@ namespace Digi.BuildInfo
                 else
                     GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-                GetLine().ResetTextAPIColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").ResetTextAPIColor().EndLine();
+                GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").ResetColor().EndLine();
 
                 AddLine().Append("Rotation Pitch: ").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Append("Yaw: ").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
                 AddLine().Append("Rotation Speed: ").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
@@ -1966,7 +1957,7 @@ namespace Digi.BuildInfo
             if(spaceBall != null)
             {
                 // HACK: hardcoded; SpaceBall doesn't require power
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetColor().EndLine();
                 AddLine().Append("Max artificial mass: ").MassFormat(spaceBall.MaxVirtualMass).EndLine();
                 return;
             }
@@ -1975,7 +1966,7 @@ namespace Digi.BuildInfo
             if(warhead != null)
             {
                 // HACK: hardcoded; Warhead doesn't require power
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetColor().EndLine();
                 AddLine().Append("Radius: ").DistanceFormat(warhead.ExplosionRadius).EndLine();
                 AddLine().Append("Damage: ").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
                 return;
@@ -2086,7 +2077,7 @@ namespace Digi.BuildInfo
             if(merger != null)
             {
                 // HACK hardcoded; MergeBlock doesn't require power
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetTextAPIColor().EndLine();
+                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Power required*: No").ResetColor().EndLine();
                 AddLine().Append("Pull strength: ").AppendFormat("{0:###,###,##0.#######}", merger.Strength).EndLine();
                 return;
             }
@@ -2120,7 +2111,7 @@ namespace Digi.BuildInfo
                 var largeTurret = def as MyLargeTurretBaseDefinition;
                 if(largeTurret != null)
                 {
-                    AddLine().Color(largeTurret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Append("Auto-target: ").BoolFormat(largeTurret.AiEnabled).ResetTextAPIColor().Append(largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(largeTurret.MaxRangeMeters).ResetTextAPIColor().EndLine();
+                    AddLine().Color(largeTurret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Append("Auto-target: ").BoolFormat(largeTurret.AiEnabled).ResetColor().Append(largeTurret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(largeTurret.MaxRangeMeters).ResetColor().EndLine();
                     AddLine().Append("Rotation - ");
 
                     if(largeTurret.MinElevationDegrees <= -180 && largeTurret.MaxElevationDegrees >= 180)
@@ -2128,28 +2119,19 @@ namespace Digi.BuildInfo
                     else
                         GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(largeTurret.MinElevationDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxElevationDegrees);
 
-                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.ElevationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).Separator();
+                    GetLine().ResetColor().Append(" @ ").RotationSpeed(largeTurret.ElevationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).Separator();
 
                     if(largeTurret.MinAzimuthDegrees <= -180 && largeTurret.MaxAzimuthDegrees >= 180)
                         GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
                     else
                         GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(largeTurret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(largeTurret.MaxAzimuthDegrees);
 
-                    GetLine().ResetTextAPIColor().Append(" @ ").RotationSpeed(largeTurret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
+                    GetLine().ResetColor().Append(" @ ").RotationSpeed(largeTurret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
 
                     // TODO visualize angle limits?
                 }
 
-                AddLine().Append("Accuracy: ").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000);
-
-                // TODO find a way to refresh this?
-                //if(!drawBlockVolumes)
-                //{
-                //    var inputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetControlAssignedName();
-                //    GetLine().SetTextAPIColor(COLOR_UNIMPORTANT).Append(" (Ctrl+").Append(inputName).Append(" to see accuracy)").ResetTextAPIColor();
-                //}
-
-                GetLine().EndLine();
+                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
 
                 var ammoProjectiles = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
                 var ammoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
@@ -2187,14 +2169,14 @@ namespace Digi.BuildInfo
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(projectilesData.ShotsInBurst);
-                    GetLine().ResetTextAPIColor().EndLine();
+                    GetLine().ResetColor().EndLine();
 
-                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetTextAPIColor().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetTextAPIColor().Append(")").EndLine();
+                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
 
                     for(int i = 0; i < ammoProjectiles.Count; ++i)
                     {
@@ -2202,22 +2184,22 @@ namespace Digi.BuildInfo
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetTextAPIColor().Append(" (");
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (");
 
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
 
-                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetTextAPIColor().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetTextAPIColor().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetTextAPIColor().Append(", ");
+                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetColor().Append(", ");
 
                         if(ammo.SpeedVar > 0)
                             GetLine().Color(COLOR_STAT_SPEED).NumFormat(ammo.DesiredSpeed * (1f - ammo.SpeedVar), 2).Append("~").NumFormat(ammo.DesiredSpeed * (1f + ammo.SpeedVar), 2).Append(" m/s");
                         else
                             GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetTextAPIColor().Append(", ")
-                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * MIN_RANGE, ammo.MaxTrajectory * MAX_RANGE).ResetTextAPIColor().Append(")").EndLine();
+                        GetLine().ResetColor().Append(", ")
+                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * MIN_RANGE, ammo.MaxTrajectory * MAX_RANGE).ResetColor().Append(")").EndLine();
                     }
                 }
 
@@ -2229,13 +2211,13 @@ namespace Digi.BuildInfo
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(missileData.ShotsInBurst);
-                    GetLine().ResetTextAPIColor().EndLine();
+                    GetLine().ResetColor().EndLine();
 
-                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetTextAPIColor().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetTextAPIColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetTextAPIColor().Append(")").EndLine();
+                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -2243,9 +2225,9 @@ namespace Digi.BuildInfo
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetTextAPIColor().Append(" (")
-                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetTextAPIColor().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetTextAPIColor().Append(", ");
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (")
+                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetColor().Append(", ");
 
                         // SpeedVar is not used for missiles
 
@@ -2256,8 +2238,8 @@ namespace Digi.BuildInfo
                         else
                             GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
 
-                        GetLine().ResetTextAPIColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
-                            .ResetTextAPIColor().Append(")").EndLine();
+                        GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                            .ResetColor().Append(")").EndLine();
                     }
                 }
 
@@ -2298,7 +2280,7 @@ namespace Digi.BuildInfo
                 if(newLine >= 0)
                     name = name.Substring(0, newLine); // strip everything past new line (incl new line char)
 
-                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetTextAPIColor().Append('"').EndLine();
+                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetColor().Append('"').EndLine();
             }
             #endregion
 
@@ -2326,15 +2308,15 @@ namespace Digi.BuildInfo
 
             if(grid.Physics != null)
             {
-                GetLine().ResetTextAPIColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
+                GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
             }
 
             GetLine().EndLine();
             #endregion
 
             #region
-            AddLine().ResetTextAPIColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
-                .IntegrityFormat(selectedBlock.Integrity).ResetTextAPIColor()
+            AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
+                .IntegrityFormat(selectedBlock.Integrity).ResetColor()
                 .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
 
             if(selectedBlock.HasDeformation)
@@ -2342,13 +2324,13 @@ namespace Digi.BuildInfo
                 GetLine().Color(COLOR_BAD).Append(" (deformed)");
             }
 
-            GetLine().ResetTextAPIColor().EndLine();
+            GetLine().ResetColor().EndLine();
             #endregion
 
             #region
             if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
-                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").NumFormat(def.GeneralDamageMultiplier, 2).ResetTextAPIColor().EndLine();
+                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").NumFormat(def.GeneralDamageMultiplier, 2).ResetColor().EndLine();
             }
             #endregion
 
@@ -2448,7 +2430,7 @@ namespace Digi.BuildInfo
                     GetLine().Append("Access: owner");
                 }
 
-                GetLine().ResetTextAPIColor().Separator();
+                GetLine().ResetColor().Separator();
 
                 if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
                     GetLine().Color(COLOR_BAD);
@@ -2473,7 +2455,7 @@ namespace Digi.BuildInfo
                     if(!string.IsNullOrEmpty(factionTag))
                         GetLine().Append(factionTag).Append('.');
 
-                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
+                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).ResetColor().EndLine();
                 }
             }
             #endregion
@@ -2485,7 +2467,7 @@ namespace Digi.BuildInfo
                 {
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetTextAPIColor().EndLine();
+                        AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
                     }
                 }
             }
@@ -2514,7 +2496,7 @@ namespace Digi.BuildInfo
                         GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 5);
                     }
 
-                    GetLine().ResetTextAPIColor().EndLine();
+                    GetLine().ResetColor().EndLine();
                 }
             }
             #endregion
@@ -2549,12 +2531,12 @@ namespace Digi.BuildInfo
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).ResetTextAPIColor().EndLine();
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).ResetColor().EndLine();
 
                     var id = context.GetWorkshopID();
 
                     if(id > 0)
-                        AddLine().Color(COLOR_MOD).Append("       | ").ResetTextAPIColor().Append("Workshop ID: ").Append(id).EndLine();
+                        AddLine().Color(COLOR_MOD).Append("       | ").ResetColor().Append("Workshop ID: ").Append(id).EndLine();
                 }
                 else
                 {
@@ -2562,6 +2544,8 @@ namespace Digi.BuildInfo
                 }
             }
             #endregion
+
+            AddOverlaysHint(def);
 
             EndAddedLines();
         }
@@ -3085,6 +3069,14 @@ namespace Digi.BuildInfo
         private StringBuilder GetLine()
         {
             return (TextAPIEnabled ? textAPIlines : notificationLines[line].str);
+        }
+
+        private void AddOverlaysHint(MyCubeBlockDefinition def)
+        {
+            if(overlayCalls.ContainsKey(def.Id.TypeId))
+            {
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. Ctrl+").Append(voxelHandSettingsInput).Append(" to cycle)").EndLine();
+            }
         }
 
         public static int GetStringSizeNotif(StringBuilder builder)

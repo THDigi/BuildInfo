@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Sandbox.Definitions;
 using Sandbox.Game;
-using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
-using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -97,6 +93,21 @@ namespace Digi.BuildInfo
             BuildInfo.Instance.EndAddedLines();
         }
 
+        public static StringBuilder Label(this StringBuilder s, string label)
+        {
+            return s.Append(label).Append(": ");
+        }
+
+        public static StringBuilder LabelHardcoded(this StringBuilder s, string label, Color color)
+        {
+            return s.Append(label).Color(new Color(255, 255, 155)).Append('*').Color(color).Append(": ");
+        }
+
+        public static StringBuilder LabelHardcoded(this StringBuilder s, string label)
+        {
+            return s.LabelHardcoded(label, BuildInfo.Instance.COLOR_NORMAL);
+        }
+
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
         {
             return s.Append(b ? "Yes" : "No");
@@ -110,7 +121,7 @@ namespace Digi.BuildInfo
             return s;
         }
 
-        public static StringBuilder ResetTextAPIColor(this StringBuilder s)
+        public static StringBuilder ResetColor(this StringBuilder s)
         {
             if(BuildInfo.Instance.TextAPIEnabled)
             {
@@ -291,7 +302,7 @@ namespace Digi.BuildInfo
             MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
             if(Math.Abs(mul - 1) > 0.001f)
-                s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetTextAPIColor();
+                s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetColor();
 
             if(types == null && items == null)
                 types = BuildInfo.Instance.DEFAULT_ALLOWED_TYPES;
