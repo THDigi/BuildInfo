@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using ParallelTasks;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.Components;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -49,7 +52,7 @@ namespace Digi.BuildInfo.Blocks
 
             if(IsValid(block, def))
             {
-                BuildInfo.Instance.blockData.Add(def.Id, this);
+                BuildInfo.Instance.BlockData.Add(def.Id, this);
                 return true;
             }
 
@@ -68,86 +71,37 @@ namespace Digi.BuildInfo.Blocks
             if(data == null)
                 data = TryGetData<T>(def);
 
+            if(data == null)
+                BuildInfo.Instance.BlockDataCacheValid = false;
+
             BuildInfo.Instance.BlockDataCache = data;
             return data;
         }
 
-        public static T TryGetData<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
+        private static T TryGetData<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
-            var data = (T)BuildInfo.Instance.blockData.GetValueOrDefault(def.Id, null);
+            var mod = BuildInfo.Instance;
+            BData_Base data;
 
-            if(data == null)
+            if(mod.BlockData.TryGetValue(def.Id, out data))
+                return (T)data;
+
+            if(mod.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
             {
-                var fakeBlock = SpawnTemporaryBlock(def);
-
-                if(fakeBlock == null)
-                {
-                    var error = "Couldn't create fake block!";
-                    Log.Error(error, error);
-                    return null;
-                }
-
-                data = new T();
-
-                if(!data.CheckAndAdd(fakeBlock))
-                    return null;
+                new BlockSpawn<T>(def);
             }
 
-            if(data == null)
-            {
-                var error = "Couldn't get block data for: " + def.Id;
-                Log.Error(error, error);
-                return null;
-            }
-
-            return data;
+            return null;
         }
 
         public static void TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            if(BuildInfo.Instance.blockData.ContainsKey(def.Id) || block.Model.AssetName != def.Model)
+            if(BuildInfo.Instance.BlockData.ContainsKey(def.Id) || block.Model.AssetName != def.Model)
                 return;
 
             new T().CheckAndAdd(block);
-        }
-
-        /// <summary>
-        /// Spawns a ghost grid with the requested block definition, used for getting data that is only obtainable from a placed block.
-        /// </summary>
-        private static IMyCubeBlock SpawnTemporaryBlock(MyCubeBlockDefinition def)
-        {
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var spawnPos = camMatrix.Translation + camMatrix.Backward * 10;
-            var gridObj = new MyObjectBuilder_CubeGrid()
-            {
-                CreatePhysics = false,
-                PersistentFlags = MyPersistentEntityFlags2.None,
-                IsStatic = true,
-                GridSizeEnum = def.CubeSize,
-                Editable = false,
-                DestructibleBlocks = false,
-                IsRespawnGrid = false,
-                PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up),
-                CubeBlocks = new List<MyObjectBuilder_CubeBlock>(),
-            };
-
-            var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(def.Id);
-            gridObj.CubeBlocks.Add(blockObj);
-
-            MyEntities.RemapObjectBuilder(gridObj);
-            var ent = MyEntities.CreateFromObjectBuilderNoinit(gridObj);
-            ent.IsPreview = true;
-            ent.Save = false;
-            ent.Render.Visible = false;
-            ent.Flags = EntityFlags.None;
-            MyEntities.InitEntity(gridObj, ref ent);
-
-            var grid = (IMyCubeGrid)ent;
-            var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
-            grid.Close();
-            return block;
         }
     }
 }

@@ -120,6 +120,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="Blocks\Base.cs" />
     <Compile Include="Blocks\Connector.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="LeakInfoComponent.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TextAPIv2.cs" />
+    <Compile Include="BuildInfo-TextGeneration.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

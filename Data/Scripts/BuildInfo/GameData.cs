@@ -87,6 +87,23 @@ namespace Digi.BuildInfo
             // from MyDoor
             public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR;
             public const float Door_Closed_DisassembleRatioMultiplier = 3.3f; // both MyDoor and MyAdvanced door override DisassembleRatio and multiply by this when closed
+            public static float Door_MoveSpeed(float openingSpeed)
+            {
+                return (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * openingSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
+            }
+            public static void AdvDoor_MoveSpeed(MyAdvancedDoorDefinition advDoor, out float openTime, out float closeTime)
+            {
+                openTime = 0;
+                closeTime = 0;
+
+                foreach(var seq in advDoor.OpeningSequence)
+                {
+                    var moveTime = (seq.MaxOpen / seq.Speed);
+
+                    openTime = Math.Max(openTime, seq.OpenDelay + moveTime);
+                    closeTime = Math.Max(closeTime, seq.CloseDelay + moveTime);
+                }
+            }
 
             // from MyMedicalRoom
             public const float MedicalRoom_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_MEDICAL_ROOM;
@@ -130,6 +147,37 @@ namespace Digi.BuildInfo
 
             // from MyAirVent.VentDummy getter
             public const string AirVent_DummyName = "vent_001";
+
+            public static void Parachute_GetDetails(MyParachuteDefinition parachute, float targetDescendVelocity, out float maxMass, out float disreefAtmosphere)
+            {
+                // formulas from MyParachute.UpdateParachute()
+                float atmosphere = 1.0f;
+                float atmosMod = 10.0f * (atmosphere - parachute.ReefAtmosphereLevel);
+
+                if(atmosMod <= 0.5f || double.IsNaN(atmosMod))
+                {
+                    atmosMod = 0.5f;
+                }
+                else
+                {
+                    atmosMod = (float)Math.Log(atmosMod - 0.99f) + 5.0f;
+
+                    if(atmosMod < 0.5f || double.IsNaN(atmosMod))
+                        atmosMod = 0.5f;
+                }
+
+                float gridSize = MyDefinitionManager.Static.GetCubeSize(parachute.CubeSize);
+
+                // basically the atmosphere level at which atmosMod is above 0.5; finds real atmosphere level at which chute starts to fully open
+                // thanks to Equinox for helping with the math here and at maxMass :}
+                disreefAtmosphere = ((float)Math.Exp(-4.5) + 1f) / 10 + parachute.ReefAtmosphereLevel;
+
+                float chuteSize = (atmosMod * parachute.RadiusMultiplier * gridSize) / 2.0f;
+                float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
+                float realAirDensity = (atmosphere * 1.225f);
+
+                maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / 9.81f;
+            }
         }
 
         /// <summary>

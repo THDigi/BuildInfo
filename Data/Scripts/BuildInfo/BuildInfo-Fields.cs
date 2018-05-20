@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Digi.BuildInfo.Blocks;
-using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Weapons;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -58,10 +58,12 @@ namespace Digi.BuildInfo
         private const float BLOCKINFO_TEXT_PADDING = 0.001f;
         private const float BLOCKINFO_COMPONENT_LIST_WIDTH = 0.01777f;
         private const float BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT = 0.0015f;
-        private const float BLOCKINFO_RED_LINE_HEIGHT = 0.0001f;
-        private const float BLOCKINFO_BLUE_LINE_HEIGHT = 0.0002f; // slightly taller to be visible when they overlap
         private const float BLOCKINFO_Y_OFFSET = 0.12f;
         private const float BLOCKINFO_Y_OFFSET_2 = 0.0102f;
+        private const float BLOCKINFO_LINE_HEIGHT = 0.0001f;
+        private readonly Vector4 BLOCKINFO_LINE_FUNCTIONAL = Color.Red.ToVector4();
+        private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
+        private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = Color.Yellow.ToVector4();
         private const float ASPECT_RATIO_54_FIX = 0.938f;
 
         private const double MOUNTPOINT_THICKNESS = 0.05;
@@ -77,26 +79,7 @@ namespace Digi.BuildInfo
         private readonly Color LABEL_SHADOW_COLOR = Color.Black * 0.9f;
         private const BlendTypeEnum LABELS_BLEND_TYPE = BlendTypeEnum.Standard;
 
-        public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
-        public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
-        public readonly Color COLOR_NORMAL = Color.White;
-        public readonly Color COLOR_GOOD = Color.Lime;
-        public readonly Color COLOR_BAD = Color.Red;
-        public readonly Color COLOR_WARNING = Color.Yellow;
-        public readonly Color COLOR_UNIMPORTANT = Color.Gray;
-        public readonly Color COLOR_PART = new Color(55, 255, 155);
-        public readonly Color COLOR_MOD = Color.DeepSkyBlue;
-        public readonly Color COLOR_MOD_TITLE = Color.GreenYellow;
-        public readonly Color COLOR_OWNER = new Color(55, 255, 255);
-
-        public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
-        public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
-        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 155, 0);
-        public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
-        public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
-        public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
-
-        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>() // used in inventory formatting if type argument is null
+        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {
             typeof(MyObjectBuilder_Ore),
             typeof(MyObjectBuilder_Ingot),
@@ -218,7 +201,9 @@ namespace Digi.BuildInfo
         public Settings Settings = null;
         public LeakInfoComponent LeakInfoComp = null;
         public short Tick = 0; // global incrementing gamelogic tick
-        private string voxelHandSettingsInput;
+        private string voxelHandSettingsInputName;
+        private string voxelHandSettingsControlName;
+        private string voxelHandSettingsCollisionControlName;
 
         private int drawOverlay = 0;
         private bool overlaysDrawn = false;
@@ -231,15 +216,17 @@ namespace Digi.BuildInfo
         private MyCubeBlockDefinition selectedDef = null; // non-null when cubebuilder has a block AND welder/grinder aims at a block
         private MyDefinitionId selectedToolDefId; // used to regenerate the text when changing equipped tools
         private IMyEngineerToolBase selectedHandTool;
-        private MyCasterComponent prevCasterComp = null;
-        private MyObjectBuilder_ShipController shipControllerObj = null;
         private MyCubeBlockDefinition pickBlockDef = null; // used by the 'pick block from world' feature
+        private IMyEntity prevHeldTool;
+        private MyCasterComponent shipCasterComp;
+        private MyCasterComponent heldCasterComp;
         private float selectedGridSize;
         private bool isToolSelected = false;
         private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
 
         public bool TextAPIEnabled { get { return (useTextAPI && TextAPI != null && TextAPI.Heartbeat); } }
         public BData_Base BlockDataCache = null;
+        public bool BlockDataCacheValid = true;
 
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
         private bool textAPIresponded = false; // if textAPI.Heartbeat returned true yet
@@ -255,52 +242,21 @@ namespace Digi.BuildInfo
         private IMyHudNotification freezeGizmoNotification = null;
         private IMyHudNotification unsupportedGridSizeNotification = null;
 
-        // menu specific stuff
-        private bool showMenu = false;
-        private bool menuNeedsUpdate = true;
-        private int menuSelectedItem = 0;
-
-        // used by the textAPI view mode
-        public HudAPIv2 TextAPI = null;
-        private bool rotationHints = true;
-        private bool hudVisible = true;
-        private double aspectRatio = 1;
-        private float hudBackgroundOpacity = 1f;
-        private int lines = 0;
-        private StringBuilder textAPIlines = new StringBuilder();
-        private HudAPIv2.HUDMessage textObject = null;
-        private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private HudAPIv2.SpaceMessage[] textAPILabels;
-        private HudAPIv2.SpaceMessage[] textAPIShadows;
-        private readonly Dictionary<MyDefinitionId, Cache> cachedBuildInfoTextAPI = new Dictionary<MyDefinitionId, Cache>();
-        private float TextAPIScale => Settings.textAPIScale * TEXTAPI_SCALE_BASE;
-        private const float TEXTAPI_SCALE_BASE = 1.2f;
-
-        // used by the HUD notification view mode
-        private int atLine = SCROLL_FROM_LINE;
-        private long lastScroll = 0;
-        private int largestLineWidth = 0;
-        private List<HudLine> notificationLines = new List<HudLine>();
-        private readonly Dictionary<MyDefinitionId, Cache> cachedBuildInfoNotification = new Dictionary<MyDefinitionId, Cache>();
-        public readonly List<IMyHudNotification> hudNotifLines = new List<IMyHudNotification>();
-
-        // used in generating the block info text or menu for either view mode
-        private int line = -1;
-        private bool addLineCalled = false;
-
         // resource sink group cache
         public int resourceSinkGroups = 0;
         public int resourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority = new Dictionary<MyStringHash, ResourceGroupData>();
+        public readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority
+                  = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
 
         // character size cache for notifications; textAPI has its own.
         private readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
 
         // cached block data that is inaccessible via definitions (like thruster flames)
-        public readonly Dictionary<MyDefinitionId, BData_Base> blockData = new Dictionary<MyDefinitionId, BData_Base>();
+        public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
+        public readonly HashSet<MyDefinitionId> BlockSpawnInProgress = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         // various temporary caches
-        private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>();
+        private readonly HashSet<Vector3I> cubes = new HashSet<Vector3I>(Vector3I.Comparer);
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
         public readonly Dictionary<string, IMyModelDummy> dummies = new Dictionary<string, IMyModelDummy>();
         #endregion

@@ -84,7 +84,7 @@ namespace Digi.BuildInfo
         }
 
         #region Classes for storing generated info
-        class Cache
+        public class Cache
         {
             public long expires;
 
@@ -94,7 +94,7 @@ namespace Digi.BuildInfo
             }
         }
 
-        class CacheTextAPI : Cache
+        public class CacheTextAPI : Cache
         {
             public readonly StringBuilder Text = new StringBuilder();
             public readonly Vector2D TextSize;
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo
             }
         }
 
-        class CacheNotifications : Cache
+        public class CacheNotifications : Cache
         {
             public readonly List<IMyHudNotification> Lines = new List<IMyHudNotification>();
 
@@ -127,7 +127,7 @@ namespace Digi.BuildInfo
             }
         }
 
-        class HudLine
+        public class HudLine
         {
             public StringBuilder str = new StringBuilder();
             public string font;
