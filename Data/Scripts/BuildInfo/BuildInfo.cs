@@ -402,14 +402,26 @@ namespace Digi.BuildInfo
 
             if(shipControllerObj != null && shipControllerObj.Toolbar != null && shipControllerObj.Toolbar.SelectedSlot.HasValue)
             {
-                var item = shipControllerObj.Toolbar.Slots[shipControllerObj.Toolbar.SelectedSlot.Value];
-                var weapon = item.Data as MyObjectBuilder_ToolbarItemWeapon;
+                var slotIndex = shipControllerObj.Toolbar.SelectedSlot.Value;
 
-                if(weapon != null && (weapon.DefinitionId.TypeId == typeof(MyObjectBuilder_ShipWelder) || weapon.DefinitionId.TypeId == typeof(MyObjectBuilder_ShipGrinder)))
+                if(slotIndex >= 0)
                 {
-                    canShowMenu = true; // allow menu use without needing a target
-                    isToolSelected = true;
-                    selectedToolDefId = weapon.DefinitionId;
+                    foreach(var slot in shipControllerObj.Toolbar.Slots)
+                    {
+                        if(slot.Index != slotIndex)
+                            continue;
+
+                        var weapon = slot.Data as MyObjectBuilder_ToolbarItemWeapon;
+
+                        if(weapon != null && (weapon.DefinitionId.TypeId == typeof(MyObjectBuilder_ShipWelder) || weapon.DefinitionId.TypeId == typeof(MyObjectBuilder_ShipGrinder)))
+                        {
+                            canShowMenu = true; // allow menu use without needing a target
+                            isToolSelected = true;
+                            selectedToolDefId = weapon.DefinitionId;
+                        }
+
+                        break;
+                    }
                 }
             }
         }
