@@ -255,6 +255,12 @@ namespace Digi.BuildInfo
 
             var controlled = MyAPIGateway.Session.ControlledObject;
 
+            if(prevControlled != controlled)
+            {
+                isToolSelected = false;
+                prevControlled = controlled;
+            }
+
             selectedDef = null;
             selectedBlock = null;
 
@@ -356,6 +362,7 @@ namespace Digi.BuildInfo
 
         private void UpdateInShip(IMyShipController shipController)
         {
+            prevHeldTool = null;
             selectedHandTool = null;
 
             var casterComp = shipController.Components.Get<MyCasterComponent>(); // caster comp is added to ship controller by ship tools when character takes control

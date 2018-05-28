@@ -8,6 +8,7 @@ using Sandbox.ModAPI.Weapons;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ModAPI.Interfaces;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -220,6 +221,7 @@ namespace Digi.BuildInfo
         private IMyEntity prevHeldTool;
         private MyCasterComponent shipCasterComp;
         private MyCasterComponent heldCasterComp;
+        private IMyControllableEntity prevControlled;
         private float selectedGridSize;
         private bool isToolSelected = false;
         private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
