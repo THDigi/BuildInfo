@@ -147,7 +147,7 @@ namespace Digi.BuildInfo
                     MyAPIGateway.Utilities.ShowNotification($"Press a number key to place '{pickBlockDef.DisplayNameText}' in...", 16 * 5, MyFontEnum.Blue);
                 }
 
-                if(Tick % 60 == 0) // every second
+                if(Tick % CACHE_PURGE_TICKS == 0)
                 {
                     PurgeCache();
                 }

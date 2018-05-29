@@ -25,7 +25,8 @@ namespace Digi.BuildInfo
         private const ulong MOD_WORKSHOP_ID = 514062285;
         private const string MOD_SHORTNAME = "BuildInfo";
 
-        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged.
+        public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
+        public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
         private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
         private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
@@ -195,12 +196,12 @@ namespace Digi.BuildInfo
         #endregion
 
         #region Fields
-        public static BuildInfo Instance = null;
+        public static BuildInfo Instance;
 
         public bool IsInitialized = false;
         public bool IsPlayer = true;
-        public Settings Settings = null;
-        public LeakInfoComponent LeakInfoComp = null;
+        public Settings Settings;
+        public LeakInfoComponent LeakInfoComp;
         public short Tick = 0; // global incrementing gamelogic tick
         private string voxelHandSettingsInputName;
         private string voxelHandSettingsControlName;
@@ -213,11 +214,11 @@ namespace Digi.BuildInfo
         private MatrixD viewProjInv;
 
         private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
-        private IMySlimBlock selectedBlock = null; // non-null only when welder/grinder aims at a block
-        private MyCubeBlockDefinition selectedDef = null; // non-null when cubebuilder has a block AND welder/grinder aims at a block
+        private IMySlimBlock selectedBlock; // non-null only when welder/grinder aims at a block
+        private MyCubeBlockDefinition selectedDef; // non-null when cubebuilder has a block AND welder/grinder aims at a block
         private MyDefinitionId selectedToolDefId; // used to regenerate the text when changing equipped tools
         private IMyEngineerToolBase selectedHandTool;
-        private MyCubeBlockDefinition pickBlockDef = null; // used by the 'pick block from world' feature
+        private MyCubeBlockDefinition pickBlockDef; // used by the 'pick block from world' feature
         private IMyEntity prevHeldTool;
         private MyCasterComponent shipCasterComp;
         private MyCasterComponent heldCasterComp;
@@ -227,7 +228,7 @@ namespace Digi.BuildInfo
         private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
 
         public bool TextAPIEnabled { get { return (useTextAPI && TextAPI != null && TextAPI.Heartbeat); } }
-        public BData_Base BlockDataCache = null;
+        public BData_Base BlockDataCache;
         public bool BlockDataCacheValid = true;
 
         private bool useTextAPI = true; // the user's preference for textAPI or notification; use TextAPIEnabled to determine if you need to use textAPI or not!
@@ -238,11 +239,11 @@ namespace Digi.BuildInfo
         private Vector3D lastGizmoPosition;
         private Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
 
-        private IMyHudNotification buildInfoNotification = null;
-        private IMyHudNotification overlayNotification = null;
-        private IMyHudNotification transparencyNotification = null;
-        private IMyHudNotification freezeGizmoNotification = null;
-        private IMyHudNotification unsupportedGridSizeNotification = null;
+        private IMyHudNotification buildInfoNotification;
+        private IMyHudNotification overlayNotification;
+        private IMyHudNotification transparencyNotification;
+        private IMyHudNotification freezeGizmoNotification;
+        private IMyHudNotification unsupportedGridSizeNotification;
 
         // resource sink group cache
         public int resourceSinkGroups = 0;
