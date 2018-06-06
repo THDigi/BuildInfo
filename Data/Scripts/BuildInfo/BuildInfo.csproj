@@ -123,6 +123,7 @@
     <Compile Include="BlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="Blocks\Base.cs" />
+    <Compile Include="Blocks\Collector.cs" />
     <Compile Include="Blocks\Connector.cs" />
     <Compile Include="Blocks\LandingGear.cs" />
     <Compile Include="Blocks\ShipWelder.cs" />

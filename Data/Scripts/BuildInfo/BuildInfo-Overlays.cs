@@ -50,6 +50,8 @@ namespace Digi.BuildInfo
             overlayCalls.Add(typeof(MyObjectBuilder_Thrust), DrawOverlay_Thruster);
 
             overlayCalls.Add(typeof(MyObjectBuilder_LandingGear), DrawOverlay_LandingGear);
+
+            overlayCalls.Add(typeof(MyObjectBuilder_Collector), DrawOverlay_Collector);
         }
 
         private void DrawOverlays()
@@ -516,6 +518,30 @@ namespace Digi.BuildInfo
                     var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
                     DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, "Magnet", color, lineHeight: 0.5f, underlineLength: 0.7f);
                 }
+            }
+        }
+
+        private void DrawOverlay_Collector(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            var data = BData_Base.TryGetDataCached<BData_Collector>(def);
+
+            if(data == null)
+                return;
+
+            var color = new Color(20, 255, 100);
+            var colorFace = color * 0.5f;
+            bool drawLabel = Settings.allLabels && TextAPIEnabled;
+
+            var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
+            var m = data.boxLocalMatrix * drawMatrix;
+
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+
+            if(drawLabel)
+            {
+                var labelDir = drawMatrix.Down;
+                var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
+                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, "Collection Area", color, lineHeight: 0.5f, underlineLength: 0.7f);
             }
         }
         #endregion

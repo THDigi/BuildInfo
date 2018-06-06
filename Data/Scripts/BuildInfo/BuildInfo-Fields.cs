@@ -102,6 +102,7 @@ namespace Digi.BuildInfo
             DOOR_AIRTIGHT,
             THRUST_DAMAGE,
             MAGNET,
+            COLLECTOR,
         }
 
         private string[] AXIS_LABELS = new string[]
