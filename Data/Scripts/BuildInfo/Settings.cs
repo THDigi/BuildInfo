@@ -292,7 +292,7 @@ namespace Digi.BuildInfo
 
             if(comments)
             {
-                str.Append("// ").Append(Log.modName).Append(" mod config; this file gets automatically overwritten after being loaded so don't leave custom comments.").AppendLine();
+                str.Append("// ").Append(Log.ModName).Append(" mod config; this file gets automatically overwritten after being loaded so don't leave custom comments.").AppendLine();
                 str.Append("// You can reload this while the game is running by typing in chat: ").Append(COMMAND).AppendLine();
                 str.Append("// If this file doesn't exist, or one or all settings are missing, they will be reset to default when loaded or reloaded with the command.").AppendLine();
                 str.Append("// Lines starting with // are comments. All values are case and space insensitive unless otherwise specified.").AppendLine();

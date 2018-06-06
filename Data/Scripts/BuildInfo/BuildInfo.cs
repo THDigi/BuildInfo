@@ -28,15 +28,13 @@ namespace Digi.BuildInfo
         public override void LoadData()
         {
             Instance = this;
-            Log.SetUp(MOD_NAME, MOD_WORKSHOP_ID, MOD_SHORTNAME);
+            Log.ModName = MOD_NAME;
         }
 
         public bool Init() // called in first call of UpdateAfterSimulation()
         {
             IsInitialized = true;
             IsPlayer = !(MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
-
-            Log.Init();
 
             if(!IsPlayer) // not needed DS side
             {
@@ -66,7 +64,6 @@ namespace Digi.BuildInfo
 
         private void DisposeComponent()
         {
-            Log.Close();
             SetUpdateOrder(MyUpdateOrder.NoUpdate); // this throws exceptions if called in an update method, which is why the InvokeOnGameThread() is needed.
             IsInitialized = false;
             Instance = null;
@@ -102,8 +99,6 @@ namespace Digi.BuildInfo
             {
                 Log.Error(e);
             }
-
-            Log.Close();
         }
         #endregion
 

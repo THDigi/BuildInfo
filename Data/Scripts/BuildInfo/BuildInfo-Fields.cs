@@ -22,8 +22,6 @@ namespace Digi.BuildInfo
     {
         #region Constants
         private const string MOD_NAME = "Build Info";
-        private const ulong MOD_WORKSHOP_ID = 514062285;
-        private const string MOD_SHORTNAME = "BuildInfo";
 
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
