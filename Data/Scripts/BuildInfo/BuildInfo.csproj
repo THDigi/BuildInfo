@@ -120,7 +120,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BlockSpawn.cs" />
+    <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="Blocks\Base.cs" />
     <Compile Include="Blocks\Collector.cs" />

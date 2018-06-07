@@ -13,12 +13,12 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    public class BlockSpawn<T> where T : BData_Base, new()
+    public class TempBlockSpawn<T> where T : BData_Base, new()
     {
         private readonly MyCubeBlockDefinition def;
         private readonly long entityId;
 
-        public BlockSpawn(MyCubeBlockDefinition def)
+        public TempBlockSpawn(MyCubeBlockDefinition def)
         {
             this.def = def;
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
