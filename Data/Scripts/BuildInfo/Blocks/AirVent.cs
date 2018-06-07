@@ -193,6 +193,8 @@ namespace Digi.BuildInfo.Blocks
                             str.Append("Leak found and displayed.");
                             break;
                     }
+
+                    str.Append("\n\n");
                 }
             }
             catch(Exception e)
