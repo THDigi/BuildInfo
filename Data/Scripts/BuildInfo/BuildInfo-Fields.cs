@@ -5,7 +5,6 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Weapons;
-using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
@@ -21,7 +20,7 @@ namespace Digi.BuildInfo
     public partial class BuildInfo
     {
         #region Constants
-        private const string MOD_NAME = "Build Info";
+        public const string MOD_NAME = "Build Info";
 
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks

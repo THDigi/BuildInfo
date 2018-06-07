@@ -13,8 +13,9 @@ using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRage.Input;
+using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
@@ -27,20 +28,25 @@ namespace Digi.BuildInfo
         #region Init and unload
         public override void LoadData()
         {
-            Instance = this;
             Log.ModName = MOD_NAME;
         }
 
-        public bool Init() // called in first call of UpdateAfterSimulation()
+        public override void BeforeStart()
         {
-            IsInitialized = true;
             IsPlayer = !(MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
 
             if(!IsPlayer) // not needed DS side
             {
-                MyAPIGateway.Utilities.InvokeOnGameThread(DisposeComponent);
-                return false;
+                SetUpdateOrder(MyUpdateOrder.NoUpdate); // NOTE: SetUpdateOrder() throws exceptions if called in an update method.
+                return;
             }
+
+            Instance = this;
+            IsInitialized = true;
+
+            UpdateConfigValues();
+            ComputeCharacterSizes();
+            ComputeResourceGroups();
 
             InitOverlays();
             InitTextGeneration();
@@ -49,24 +55,12 @@ namespace Digi.BuildInfo
             textAPILabels = new HudAPIv2.SpaceMessage[count];
             textAPIShadows = new HudAPIv2.SpaceMessage[count];
 
-            ComputeCharacterSizes();
-            ComputeResourceGroups();
-            UpdateConfigValues();
-
             Settings = new Settings();
             LeakInfoComp = new LeakInfoComponent();
             TextAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
-            return true;
-        }
-
-        private void DisposeComponent()
-        {
-            SetUpdateOrder(MyUpdateOrder.NoUpdate); // this throws exceptions if called in an update method, which is why the InvokeOnGameThread() is needed.
-            IsInitialized = false;
-            Instance = null;
         }
 
         protected override void UnloadData()
@@ -106,21 +100,12 @@ namespace Digi.BuildInfo
         {
             try
             {
-                if(!IsPlayer) // failsafe in case the component is still updating
+                if(!IsInitialized)
                     return;
 
                 unchecked // global ticker
                 {
                     ++Tick;
-                }
-
-                if(!IsInitialized)
-                {
-                    if(MyAPIGateway.Session == null)
-                        return;
-
-                    if(!Init())
-                        return;
                 }
 
                 if(!textAPIresponded && TextAPI.Heartbeat)
