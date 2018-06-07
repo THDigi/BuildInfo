@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Digi.BuildInfo.Blocks;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -13,14 +12,16 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    public class TempBlockSpawn<T> where T : BData_Base, new()
+    public class TempBlockSpawn
     {
-        private readonly MyCubeBlockDefinition def;
-        private readonly long entityId;
+        public readonly long EntityId;
+        public readonly MyCubeBlockDefinition BlockDef;
+        public event Action<IMyCubeBlock> AfterSpawn;
 
         public TempBlockSpawn(MyCubeBlockDefinition def)
         {
-            this.def = def;
+            BlockDef = def;
+
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
@@ -42,20 +43,22 @@ namespace Digi.BuildInfo
 
             MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
 
-            this.entityId = gridObj.EntityId;
+            EntityId = gridObj.EntityId;
 
             MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
         }
 
         private void SpawnCompleted()
         {
+            IMyCubeGrid grid = null;
+
             try
             {
-                var ent = MyEntities.GetEntityById(entityId, true);
+                var ent = MyEntities.GetEntityById(EntityId, true);
 
                 if(ent == null)
                 {
-                    Log.Error($"Can't get spawned entity for block: {def.Id}");
+                    Log.Error($"Can't get spawned entity for block: {BlockDef.Id}");
                     return;
                 }
 
@@ -64,36 +67,24 @@ namespace Digi.BuildInfo
                 ent.Flags = EntityFlags.None;
                 ent.Render.Visible = false;
 
-                var grid = (IMyCubeGrid)ent;
+                grid = (IMyCubeGrid)ent;
                 var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
-                grid.Close();
 
                 if(block == null)
                 {
-                    Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
+                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id} (mod workshopId={BlockDef.Context.GetWorkshopID()})");
                     return;
                 }
 
-                var data = new T();
-                var added = data.CheckAndAdd(block);
-
-                var mod = BuildInfo.Instance;
-
-                mod.BlockSpawnInProgress.Remove(def.Id);
-
-                if(added)
-                {
-                    BuildInfo.Instance.BlockDataCache = null;
-                    BuildInfo.Instance.BlockDataCacheValid = true;
-
-                    // remove cache in order to use the newly aquired data
-                    mod.CachedBuildInfoTextAPI.Remove(def.Id);
-                    mod.CachedBuildInfoNotification.Remove(def.Id);
-                }
+                AfterSpawn?.Invoke(block);
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+            finally
+            {
+                grid?.Close();
             }
         }
     }

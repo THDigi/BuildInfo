@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using ParallelTasks;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.Components;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
-using VRageMath;
 
 namespace Digi.BuildInfo.Blocks
 {
@@ -88,10 +80,32 @@ namespace Digi.BuildInfo.Blocks
 
             if(mod.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
             {
-                new BlockSpawn<T>(def);
+                var spawn = new TempBlockSpawn(def);
+                spawn.AfterSpawn += SpawnComplete<T>;
             }
 
             return null;
+        }
+
+        private static void SpawnComplete<T>(IMyCubeBlock block) where T : BData_Base, new()
+        {
+            var defId = (MyDefinitionId)block.BlockDefinition;
+            var mod = BuildInfo.Instance;
+
+            var data = new T();
+            var added = data.CheckAndAdd(block);
+
+            mod.BlockSpawnInProgress.Remove(defId);
+
+            if(added)
+            {
+                mod.BlockDataCache = null;
+                mod.BlockDataCacheValid = true;
+
+                // remove cache in order to use the newly aquired data
+                mod.CachedBuildInfoTextAPI.Remove(defId);
+                mod.CachedBuildInfoNotification.Remove(defId);
+            }
         }
 
         public static void TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
