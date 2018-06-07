@@ -5,6 +5,7 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -159,12 +160,12 @@ namespace Digi.BuildInfo
         public static StringBuilder ForceFormat(this StringBuilder s, float N)
         {
             if(N >= 1000000)
-                return s.NumFormat(N / 1000000, 2).Append(" MN");
+                return s.Number(N / 1000000).Append(" MN");
 
             if(N >= 1000)
-                return s.NumFormat(N / 1000, 2).Append(" kN");
+                return s.Number(N / 1000).Append(" kN");
 
-            return s.NumFormat(N, 2).Append(" N");
+            return s.Number(N).Append(" N");
         }
 
         public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond, int digits = 2)
@@ -175,32 +176,32 @@ namespace Digi.BuildInfo
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)
         {
             if(N >= 1000000)
-                return s.NumFormat(N / 1000000, 2).Append(" MN-m");
+                return s.Number(N / 1000000).Append(" MN-m");
 
             if(N >= 1000)
-                return s.NumFormat(N / 1000, 2).Append(" kN-m");
+                return s.Number(N / 1000).Append(" kN-m");
 
-            return s.NumFormat(N, 2).Append("N-m");
+            return s.Number(N).Append("N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
             if(MW >= 1000000000)
-                return s.Append(MW / 1000000000).Append(" PetaWatts");
+                return s.Number(MW / 1000000000).Append(" PetaWatts");
 
             if(MW >= 1000000)
-                return s.NumFormat(MW / 1000000, 2).Append(" TerraWatts");
+                return s.Number(MW / 1000000).Append(" TerraWatts");
 
             if(MW >= 1000)
-                return s.NumFormat(MW / 1000, 2).Append(" GigaWatts");
+                return s.Number(MW / 1000).Append(" GigaWatts");
 
             if(MW >= 1)
-                return s.NumFormat(MW, 2).Append(" MW");
+                return s.Number(MW).Append(" MW");
 
             if(MW >= 0.001)
-                return s.NumFormat(MW * 1000f, 2).Append(" kW");
+                return s.Number(MW * 1000f).Append(" kW");
 
-            return s.NumFormat(MW * 1000000f, 2).Append(" W");
+            return s.Number(MW * 1000000f).Append(" W");
         }
 
         public static StringBuilder PowerStorageFormat(this StringBuilder s, float MWh)
@@ -211,10 +212,10 @@ namespace Digi.BuildInfo
         public static StringBuilder DistanceFormat(this StringBuilder s, float m)
         {
             if(m >= 1000)
-                return s.NumFormat(m / 1000, 2).Append("km");
+                return s.Number(m / 1000).Append("km");
 
             if(m < 10)
-                return s.NumFormat(m, 2).Append("m");
+                return s.Number(m).Append("m");
 
             return s.Append((int)m).Append("m");
         }
@@ -222,10 +223,10 @@ namespace Digi.BuildInfo
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
             if(m1 >= 1000)
-                return s.NumFormat(m1 / 1000, 2).Append("~").NumFormat(m2 / 1000, 2).Append(" km");
+                return s.Number(m1 / 1000).Append("~").Number(m2 / 1000).Append(" km");
 
             if(m1 < 10)
-                return s.NumFormat(m1, 2).Append("~").NumFormat(m2, 2).Append(" m");
+                return s.Number(m1).Append("~").Number(m2).Append(" m");
 
             return s.Append((int)m1).Append("~").Append((int)m2).Append(" m");
         }
@@ -233,37 +234,37 @@ namespace Digi.BuildInfo
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
             if(kg >= 1000000)
-                return s.Append(Math.Round(kg / 1000000, 2)).Append(" Mt");
+                return s.Number(kg / 1000000).Append(" Mt");
 
             if(kg >= 1000)
-                return s.Append(Math.Round(kg / 1000, 2)).Append(" t");
+                return s.Number(kg / 1000).Append(" t");
 
             if(kg < 1f)
                 return s.Append((int)(kg * 1000)).Append(" g");
 
-            return s.Append(Math.Round(kg, 2)).Append(" kg");
+            return s.Number(kg).Append(" kg");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
         {
             if(integrity >= 1000000000)
-                return s.Append(Math.Round(integrity / 1000000000, 2)).Append(" G");
+                return s.Number(integrity / 1000000000).Append(" G");
 
             if(integrity >= 1000000)
-                return s.Append(Math.Round(integrity / 1000000, 2)).Append(" M");
+                return s.Number(integrity / 1000000).Append(" M");
 
             if(integrity >= 1000)
-                return s.Append(Math.Round(integrity / 1000, 2)).Append(" k");
+                return s.Number(integrity / 1000).Append(" k");
 
-            return s.Append(Math.Round(integrity, 2));
+            return s.Number(integrity);
         }
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
             if(l >= 1000)
-                return s.NumFormat(l / 1000f, 2).Append(" m³");
+                return s.Number(l / 1000f).Append(" m³");
 
-            return s.NumFormat(l, 2).Append(" L");
+            return s.Number(l).Append(" L");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
@@ -369,20 +370,25 @@ namespace Digi.BuildInfo
             return s.Append(vec.X).Append('x').Append(vec.Y).Append('x').Append(vec.Z);
         }
 
-        public static StringBuilder SpeedFormat(this StringBuilder s, float mps, int digits = 2)
+        public static StringBuilder SpeedFormat(this StringBuilder s, float metersPerSecond, int digits = 2)
         {
-            return s.NumFormat(mps, digits).Append(" m/s");
+            return s.RoundedNumber(metersPerSecond, digits).Append(" m/s");
         }
 
-        public static StringBuilder PercentFormat(this StringBuilder s, float ratio)
+        public static StringBuilder AccelerationFormat(this StringBuilder s, float metersPerSecond)
         {
-            return s.Append((int)(ratio * 100)).Append('%');
+            return s.SpeedFormat(metersPerSecond).Append('²');
+        }
+
+        public static StringBuilder ProportionToPercent(this StringBuilder s, float proportion)
+        {
+            return s.Append((int)(proportion * 100)).Append('%');
         }
 
         public static StringBuilder MultiplierFormat(this StringBuilder s, float mul)
         {
             if(Math.Abs(mul - 1f) > 0.001f)
-                s.Append(" (x").NumFormat(mul, 2).Append(")");
+                s.Append(" (x").Number(mul).Append(")");
 
             return s;
         }
@@ -413,9 +419,29 @@ namespace Digi.BuildInfo
             return s;
         }
 
-        public static StringBuilder NumFormat(this StringBuilder s, float f, int d)
+        public static StringBuilder Number(this StringBuilder s, float value)
         {
-            return s.Append(Math.Round(f, d));
+            return s.AppendFormat("{0:###,###,###,###,###,##0.##}", value);
+        }
+
+        public static StringBuilder RoundedNumber(this StringBuilder s, float value, int digits)
+        {
+            return s.AppendFormat("{0:###,###,###,###,###,##0.##########}", Math.Round(value, digits));
+        }
+
+        public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
+        {
+            var modifier = Math.Round(upgrade.Modifier, 3);
+
+            switch(upgrade.ModifierType)
+            {
+                case MyUpgradeModifierType.Additive: s.Append('+').Append(modifier); break;
+                case MyUpgradeModifierType.Multiplicative: s.Append('x').Append(modifier); break;
+                default: s.Append(modifier).Append(' ').Append(upgrade.ModifierType); break;
+            }
+
+            s.Append(' ').Append(upgrade.UpgradeType);
+            return s;
         }
 
         public static string ToTextAPIColor(this Color color)

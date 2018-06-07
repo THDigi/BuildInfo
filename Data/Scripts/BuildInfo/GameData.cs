@@ -21,6 +21,8 @@ namespace Digi.BuildInfo
         // HACK: various hardcoded data from game sources
         public static class Hardcoded
         {
+            public const float GAME_EARTH_GRAVITY = 9.81f;
+
             // from MyGridConveyorSystem
             public const float Conveyors_PowerReq = MyEnergyConstants.REQUIRED_INPUT_CONVEYOR_LINE;
 
@@ -139,6 +141,33 @@ namespace Digi.BuildInfo
             // from MyLaserAntenna.RotationAndElevation() - rotation speed is radians per milisecond
             public const float LaserAntenna_RotationSpeedMul = 1000;
 
+            /// <summary>
+            /// Distance in meters, returns power in MW.
+            /// </summary>
+            public static float LaserAntenna_PowerUsage(MyLaserAntennaDefinition def, double distanceMeters)
+            {
+                // HACK copied and converted from MyLaserAntenna.UpdatePowerInput()
+
+                double powerRatio = def.PowerInputLasing;
+                double maxRange = (def.MaxRange < 0 ? double.MaxValue : def.MaxRange);
+
+                double A = powerRatio / 2.0 / 200000.0;
+                double B = powerRatio * 200000.0 - A * 200000.0 * 200000.0;
+                double distance = Math.Min(distanceMeters, maxRange);
+
+                if(distance > 200000)
+                {
+                    return (float)((distance * distance) * A + B) / 1000000f;
+                }
+                else
+                {
+                    return (float)(powerRatio * distance) / 1000000f;
+                }
+            }
+
+            // used to determine what range is considered infinite
+            public const float LaserAntenna_InfiniteRange = 100000000;
+
             // from MySmallMissileLauncher & MySmallGatlingGun
             public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN;
 
@@ -176,31 +205,7 @@ namespace Digi.BuildInfo
                 float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
                 float realAirDensity = (atmosphere * 1.225f);
 
-                maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / 9.81f;
-            }
-        }
-
-        /// <summary>
-        /// Distance in meters, returns power in MW.
-        /// </summary>
-        public static float LaserAntennaPowerUsage(MyLaserAntennaDefinition def, double distanceMeters)
-        {
-            // HACK copied and converted from MyLaserAntenna.UpdatePowerInput()
-
-            double powerRatio = def.PowerInputLasing;
-            double maxRange = (def.MaxRange < 0 ? double.MaxValue : def.MaxRange);
-
-            double A = powerRatio / 2.0 / 200000.0;
-            double B = powerRatio * 200000.0 - A * 200000.0 * 200000.0;
-            double distance = Math.Min(distanceMeters, maxRange);
-
-            if(distance > 200000)
-            {
-                return (float)((distance * distance) * A + B) / 1000000f;
-            }
-            else
-            {
-                return (float)(powerRatio * distance) / 1000000f;
+                maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / GAME_EARTH_GRAVITY;
             }
         }
 

@@ -716,7 +716,7 @@ namespace Digi.BuildInfo
             #region
             if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
-                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").NumFormat(def.GeneralDamageMultiplier, 2).ResetColor().EndLine();
+                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).ResetColor().EndLine();
             }
             #endregion
 
@@ -1081,7 +1081,7 @@ namespace Digi.BuildInfo
                 .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
 
             if(Math.Abs(grindRatio - 1) >= 0.0001f)
-                GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").PercentFormat(1f / grindRatio).ResetColor();
+                GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetColor();
 
             if(!buildModels)
                 GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
@@ -1099,7 +1099,7 @@ namespace Digi.BuildInfo
 
             GetLine().Color(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
             if(deformable)
-                GetLine().Append("Yes (").PercentFormat(def.DeformationRatio).Append(")");
+                GetLine().Append("Yes (").ProportionToPercent(def.DeformationRatio).Append(")");
             else
                 GetLine().Append("No");
 
@@ -1109,7 +1109,7 @@ namespace Digi.BuildInfo
             {
                 GetLine().Separator()
                     .Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
-                    .Append("Damage intake: ").PercentFormat(def.GeneralDamageMultiplier)
+                    .Append("Damage intake: ").ProportionToPercent(def.GeneralDamageMultiplier)
                     .ResetColor();
             }
 
@@ -1430,7 +1430,7 @@ namespace Digi.BuildInfo
             {
                 float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                 var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                AddLine().LabelHardcoded("Weld speed").PercentFormat(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
+                AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
 
                 if(data != null)
                     AddLine().Label("Welding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
@@ -1439,7 +1439,7 @@ namespace Digi.BuildInfo
             {
                 float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
                 var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                AddLine().LabelHardcoded("Grind speed").PercentFormat(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
+                AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
 
                 if(data != null)
                     AddLine().Label("Grinding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
@@ -1511,31 +1511,31 @@ namespace Digi.BuildInfo
             if(!thrust.FuelConverter.FuelId.IsNull())
             {
                 AddLine().Append("Requires power to be controlled").Separator().ResourcePriority(thrust.ResourceSinkGroup).EndLine();
-                AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").NumFormat(thrust.FuelConverter.Efficiency * 100, 2).Append("%").EndLine();
+                AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%").EndLine();
             }
             else
             {
                 AddLine().Append("Power: ").PowerFormat(thrust.MaxPowerConsumption).Separator().Append("Idle: ").PowerFormat(thrust.MinPowerConsumption).Separator().ResourcePriority(thrust.ResourceSinkGroup).EndLine();
             }
 
-            AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").NumFormat(thrust.SlowdownFactor, 3).EndLine();
+            AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 3).EndLine();
 
             if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
             {
                 // thrust.NeedsAtmosphereForInfluence seems to be a pointless var
 
                 AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .PercentFormat(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetColor();
+                    .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetColor();
                 if(thrust.MaxPlanetaryInfluence < 1f)
-                    GetLine().Append("in ").PercentFormat(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
+                    GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
                 else
                     GetLine().Append("in atmosphere");
                 GetLine().EndLine();
 
                 AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .PercentFormat(thrust.EffectivenessAtMinInfluence).Append(" max thrust ").ResetColor();
+                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ").ResetColor();
                 if(thrust.MinPlanetaryInfluence > 0f)
-                    GetLine().Append("below ").PercentFormat(thrust.MinPlanetaryInfluence).Append(" atmosphere");
+                    GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
                 else
                     GetLine().Append("in space");
                 GetLine().EndLine();
@@ -1546,7 +1546,7 @@ namespace Digi.BuildInfo
             }
 
             if(thrust.ConsumptionFactorPerG > 0)
-                AddLine(MyFontEnum.Red).Append("Extra consumption: +").PercentFormat(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
+                AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
 
             var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
 
@@ -1566,7 +1566,7 @@ namespace Digi.BuildInfo
                 else
                     GetLine().Append("Flame max distance: ");
 
-                GetLine().DistanceFormat(flameDistance).Separator().Append("Damage: ").NumFormat(flameShipDamage, 1).Append("/s to ships").Separator().NumFormat(flameDamage, 1).Append("/s to other things").EndLine();
+                GetLine().DistanceFormat(flameDistance).Separator().Append("Damage: ").Number(flameShipDamage).Append("/s to ships").Separator().Number(flameDamage).Append("/s to other things").EndLine();
             }
         }
 
@@ -1590,8 +1590,8 @@ namespace Digi.BuildInfo
 
             AddLine().Append("Power required: ").PowerFormat(light.RequiredPowerInput).Separator().ResourcePriority(light.ResourceSinkGroup).EndLine();
             AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default).EndLine();
-            AddLine().Append("Intensity: ").NumFormat(light.LightIntensity.Min, 3).Append(" to ").NumFormat(light.LightIntensity.Max, 3).Separator().Append("Default: ").NumFormat(light.LightIntensity.Default, 3).EndLine();
-            AddLine().Append("Falloff: ").NumFormat(light.LightFalloff.Min, 3).Append(" to ").NumFormat(light.LightFalloff.Max, 3).Separator().Append("Default: ").NumFormat(light.LightFalloff.Default, 3).EndLine();
+            AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 3).Append(" to ").RoundedNumber(light.LightIntensity.Max, 3).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 3).EndLine();
+            AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 3).Append(" to ").RoundedNumber(light.LightFalloff.Max, 3).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 3).EndLine();
 
             if(!isSpotlight)
                 AddLine(MyFontEnum.Blue).Append("Physical collisions: ").Append(light.HasPhysics ? "On" : "Off").EndLine();
@@ -1658,9 +1658,9 @@ namespace Digi.BuildInfo
 
             AddLine().Append("Power - Deploy: ").PowerFormat(parachute.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(parachute.PowerConsumptionIdle).Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
             AddLine().Append("Required item to deploy: ").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
-            AddLine().Append("Required atmosphere - Minimum: ").NumFormat(parachute.MinimumAtmosphereLevel, 2).Separator().Append("Fully open: ").NumFormat(disreefAtmosphere, 2).EndLine();
+            AddLine().Append("Required atmosphere - Minimum: ").Number(parachute.MinimumAtmosphereLevel).Separator().Append("Fully open: ").Number(disreefAtmosphere).EndLine();
             AddLine().Append("Drag coefficient: ").AppendFormat("{0:0.0####}", parachute.DragCoefficient).EndLine();
-            AddLine().Append("Load estimate: ").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in 9.81m/s² and 1.0 air density.").EndLine();
+            AddLine().Append("Load estimate: ").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(GameData.Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.").EndLine();
         }
 
         private void Format_MedicalRoom(MyCubeBlockDefinition def)
@@ -1738,7 +1738,7 @@ namespace Digi.BuildInfo
                 var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                 var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                AddLine().Append("Assembly speed: ").PercentFormat(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").PercentFormat(mulEff).MultiplierFormat(mulEff).EndLine();
+                AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff).EndLine();
             }
 
             var refinery = def as MyRefineryDefinition;
@@ -1746,7 +1746,7 @@ namespace Digi.BuildInfo
             {
                 var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
-                AddLine().Append("Refine speed: ").PercentFormat(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").PercentFormat(refinery.MaterialEfficiency).EndLine();
+                AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency).EndLine();
             }
 
             var gasTank = def as MyGasTankDefinition;
@@ -1843,7 +1843,7 @@ namespace Digi.BuildInfo
             var oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
 
             AddLine().Label("Power").PowerFormat(oxygenFarm.OperationalPowerConsumption).Separator().ResourcePriority(oxygenFarm.ResourceSinkGroup).EndLine();
-            AddLine().Label("Produces").NumFormat(oxygenFarm.MaxGasOutput, 3).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
+            AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 3).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
             AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
         }
 
@@ -1861,22 +1861,15 @@ namespace Digi.BuildInfo
 
             if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
             {
-                AddLine(MyFontEnum.Red).Append("Upgrade: N/A").EndLine();
+                AddLine(MyFontEnum.Red).Append("Upgrades: N/A").EndLine();
             }
             else
             {
+                AddLine().Append("Upgrades per slot:").EndLine();
+
                 foreach(var upgrade in upgradeModule.Upgrades)
                 {
-                    AddLine().Append("Upgrade: ").Append(upgrade.UpgradeType).Append(" ");
-
-                    switch(upgrade.ModifierType)
-                    {
-                        case MyUpgradeModifierType.Additive: GetLine().Append("+").Append(upgrade.Modifier).Append(" added"); break;
-                        case MyUpgradeModifierType.Multiplicative: GetLine().Append("multiplied by ").Append(upgrade.Modifier); break;
-                        default: GetLine().Append(upgrade.Modifier).Append(" (").Append(upgrade.ModifierType).Append(")"); break;
-                    }
-
-                    GetLine().Append(" per slot").EndLine();
+                    AddLine().Append("    - ").AppendUpgrade(upgrade).EndLine();
                 }
             }
         }
@@ -1921,7 +1914,7 @@ namespace Digi.BuildInfo
             if(battery != null)
             {
                 AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)").Separator().ResourcePriority(battery.ResourceSinkGroup).EndLine();
-                AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").NumFormat(battery.InitialStoredPowerRatio * 100, 2).Append("%)").EndLine();
+                AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')').EndLine();
                 AddLine().Append("Discharge time: ").TimeFormat((battery.MaxStoredPower / battery.MaxPowerOutput) * 3600f).Separator().Append("Recharge time: ").TimeFormat((battery.MaxStoredPower / battery.RequiredPowerInput) * 3600f);
                 return;
             }
@@ -1947,7 +1940,7 @@ namespace Digi.BuildInfo
         {
             var laserAntenna = (MyLaserAntennaDefinition)def;
 
-            float mWpKm = GameData.LaserAntennaPowerUsage(laserAntenna, 1000);
+            float mWpKm = GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000);
 
             AddLine().Label("Power - Active[1]").PowerFormat(mWpKm).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").ResetColor().EndLine();
             AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle).Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
@@ -1998,7 +1991,7 @@ namespace Digi.BuildInfo
 
             AddLine().Label("Power required").PowerFormat(lcd.RequiredPowerInput).Separator().ResourcePriority(lcd.ResourceSinkGroup).EndLine();
             AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution).EndLine();
-            AddLine().Label("Font size limits").NumFormat(lcd.MinFontSize, 4).Append(" to ").NumFormat(lcd.MaxFontSize, 4).EndLine();
+            AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4).EndLine();
         }
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
@@ -2035,7 +2028,7 @@ namespace Digi.BuildInfo
             else
                 GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-            GetLine().Separator().Label("Time multiplier").NumFormat(camera.RaycastTimeMultiplier, 3).EndLine();
+            GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 3).EndLine();
 
             // TODO visualize angle limits?
         }
@@ -2203,7 +2196,7 @@ namespace Digi.BuildInfo
                         .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetColor().Append(", ");
 
                     if(ammo.SpeedVar > 0)
-                        GetLine().Color(COLOR_STAT_SPEED).NumFormat(ammo.DesiredSpeed * (1f - ammo.SpeedVar), 2).Append("~").NumFormat(ammo.DesiredSpeed * (1f + ammo.SpeedVar), 2).Append(" m/s");
+                        GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
                     else
                         GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
@@ -2243,7 +2236,7 @@ namespace Digi.BuildInfo
                     GetLine().Color(COLOR_STAT_SPEED);
 
                     if(!ammo.MissileSkipAcceleration)
-                        GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").SpeedFormat(ammo.MissileAcceleration).Append("²");
+                        GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").AccelerationFormat(ammo.MissileAcceleration);
                     else
                         GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
 

@@ -846,7 +846,7 @@ namespace Digi.BuildInfo
                         if(float.TryParse(arg, out km))
                         {
                             var meters = (km * 1000);
-                            var megaWatts = GameData.LaserAntennaPowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
+                            var megaWatts = GameData.Hardcoded.LaserAntenna_PowerUsage((MyLaserAntennaDefinition)selectedDef, meters);
                             var s = new StringBuilder().Append(selectedDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
                             ShowChatMessage(CMD_LASERPOWER, s.ToString(), MyFontEnum.Green);
                         }
