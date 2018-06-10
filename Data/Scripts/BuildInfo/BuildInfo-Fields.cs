@@ -205,11 +205,11 @@ namespace Digi.BuildInfo
         private string voxelHandSettingsControlName;
         private string voxelHandSettingsCollisionControlName;
 
-        private int drawOverlay = 0;
-        private bool overlaysDrawn = false;
-        private bool doorAirtightBlink = false;
-        private int doorAirtightBlinkTick = 0;
-        private MatrixD viewProjInv;
+        private MatrixD viewProjInvCache;
+        private bool viewProjInvCompute = true;
+
+        private float scaleFovCache;
+        private bool scaleFovCompute = true;
 
         private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         private IMySlimBlock selectedBlock; // non-null only when welder/grinder aims at a block

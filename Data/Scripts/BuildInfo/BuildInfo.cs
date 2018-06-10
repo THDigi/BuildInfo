@@ -662,6 +662,8 @@ namespace Digi.BuildInfo
 
             try
             {
+                ResetDrawCaches();
+
                 DrawOverlays();
 
                 LeakInfoComp?.Draw();
@@ -685,13 +687,10 @@ namespace Digi.BuildInfo
             if(!Settings.showTextInfo || selectedDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
-            // TODO: optimize?
+            // TODO: optimize some more?
 
-            var cam = MyAPIGateway.Session.Camera;
-            var camMatrix = cam.WorldMatrix;
-            var scaleFOV = (float)Math.Tan(cam.FovWithZoom / 2);
-            UpdateCameraViewProjInvMatrix();
-            var posHUD = GetGameHUDBlockInfoPos();
+            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            var posHUD = GetGameHudBlockInfoPos();
 
             #region Block info addition background
             // draw the added top part's background only for aimed block (which requires textAPI)
@@ -702,11 +701,11 @@ namespace Digi.BuildInfo
                 // make the position top-right
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
 
-                var worldPos = GameHUDToWorld(hud);
-                var size = GetGameHUDBlockInfoSize(lines * Settings.textAPIScale, scaleFOV);
+                var worldPos = GameHudToWorld(hud);
+                var size = GetGameHudBlockInfoSize(lines * Settings.textAPIScale);
                 worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
-                double cornerSize = Math.Min(0.0015 * scaleFOV, size.Y);
+                double cornerSize = Math.Min(0.0015 * ScaleFOV, size.Y); // prevent corner from being larger than the height of the box
                 float cornerW = (float)cornerSize;
                 float cornerH = (float)cornerSize;
 
@@ -745,12 +744,12 @@ namespace Digi.BuildInfo
                 // red functionality line
                 if(selectedDef.CriticalGroup == i)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_LINE_HEIGHT * scaleFOV);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
 
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHUDToWorld(hud);
+                    var worldPos = GameHudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -762,12 +761,12 @@ namespace Digi.BuildInfo
                 {
                     foundComputer = true;
 
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_LINE_HEIGHT * scaleFOV);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
 
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHUDToWorld(hud);
+                    var worldPos = GameHudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 2); // extra offset to allow for red line to be visible
 
@@ -777,12 +776,12 @@ namespace Digi.BuildInfo
                 // yellow highlight if returned component is not the same as grinded component
                 if(isGrinder && comp.DeconstructItem != comp.Definition)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * scaleFOV, BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT * scaleFOV);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT * ScaleFOV);
 
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHUDToWorld(hud);
+                    var worldPos = GameHudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 

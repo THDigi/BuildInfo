@@ -180,20 +180,18 @@ namespace Digi.BuildInfo
             {
                 var cam = MyAPIGateway.Session.Camera;
                 var camMatrix = cam.WorldMatrix;
-                var scaleFOV = (float)Math.Tan(cam.FovWithZoom / 2);
 
-                UpdateCameraViewProjInvMatrix(); // required to get up2date camera data for GameHUDToWorld() as this code executes before Draw() gets a chance to update it
-                var hud = GetGameHUDBlockInfoPos();
+                var hud = GetGameHudBlockInfoPos();
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET; // make the position top-right
 
-                var worldPos = GameHUDToWorld(hud);
-                var size = GetGameHUDBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f, scaleFOV);
-                var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * scaleFOV;
+                var worldPos = GameHudToWorld(hud);
+                var size = GetGameHudBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f);
+                var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * ScaleFOV;
 
                 worldPos += camMatrix.Left * (size.X + (size.X - offset.X)) + camMatrix.Up * (size.Y + (size.Y - offset.Y));
 
                 // using textAPI's math to convert from world to its local coords
-                double localScale = 0.1 * scaleFOV;
+                double localScale = 0.1 * ScaleFOV;
                 var local = Vector3D.Transform(worldPos, cam.ViewMatrix);
                 local.X = (local.X / (localScale * aspectRatio)) * 2;
                 local.Y = (local.Y / localScale) * 2;

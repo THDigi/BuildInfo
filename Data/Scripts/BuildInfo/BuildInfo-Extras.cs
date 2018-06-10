@@ -227,25 +227,74 @@ namespace Digi.BuildInfo
         }
         #endregion
 
-        void UpdateCameraViewProjInvMatrix()
+        private void ResetDrawCaches()
         {
-            var cam = MyAPIGateway.Session.Camera;
-            viewProjInv = MatrixD.Invert(cam.ViewMatrix * cam.ProjectionMatrix);
+            viewProjInvCompute = true;
+            scaleFovCompute = true;
         }
 
-        public Vector3D GameHUDToWorld(Vector2 hud)
+        /// <summary>
+        /// This ensures the math is done at most once per frame, if ResetDrawCaches() is correctly called at the start of Draw().
+        /// </summary>
+        public MatrixD ViewProjectionInv
         {
-            var vec4 = new Vector4D((2d * hud.X - 1d), (1d - 2d * hud.Y), 0d, 1d);
-            Vector4D.Transform(ref vec4, ref viewProjInv, out vec4);
-            return new Vector3D((vec4.X / vec4.W), (vec4.Y / vec4.W), (vec4.Z / vec4.W));
+            get
+            {
+                if(viewProjInvCompute)
+                {
+                    var cam = MyAPIGateway.Session.Camera;
+
+                    // HACK ProjectionMatrix needs recomputing because camera's m_fovSpring is set after ProjectionMatrix is computed, MyCamera.Update(float updateStepTime) and MyCamera.FovWithZoom
+                    var aspectRatio = cam.ViewportSize.X / cam.ViewportSize.Y;
+                    var safeNear = Math.Min(4f, cam.NearPlaneDistance); // MyCamera.GetSafeNear()
+                    var projectionMatrix = MatrixD.CreatePerspectiveFieldOfView(cam.FovWithZoom, aspectRatio, safeNear, cam.FarPlaneDistance);
+                    viewProjInvCache = MatrixD.Invert(cam.ViewMatrix * projectionMatrix);
+                    viewProjInvCompute = false;
+                }
+
+                return viewProjInvCache;
+            }
         }
 
-        Vector2 GetGameHUDBlockInfoSize(float Ymultiplier, float scaleFOV)
+        /// <summary>
+        /// This ensures the math is done at most once per frame, if ResetDrawCaches() is correctly called at the start of Draw().
+        /// </summary>
+        public float ScaleFOV
+        {
+            get
+            {
+                if(scaleFovCompute)
+                {
+                    var cam = MyAPIGateway.Session.Camera;
+                    scaleFovCache = (float)Math.Tan(cam.FovWithZoom * 0.5);
+                    scaleFovCompute = false;
+                }
+
+                return scaleFovCache;
+            }
+        }
+
+        public Vector3D GameHudToWorld(Vector2 hud)
+        {
+            var hudX = (2.0 * hud.X - 1);
+            var hudY = (1 - 2.0 * hud.Y);
+
+            // Vector4D.Transform(new Vector4D(hud.X, hud.Y, 0d, 1d), ref ViewProjectionInv, out ...) 
+
+            var matrix = ViewProjectionInv;
+            var x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
+            var y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
+            var z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
+            var w = hudX * matrix.M14 + hudY * matrix.M24 + /* 0 * matrix.M34 + 1 * */ matrix.M44;
+            return new Vector3D(x / w, y / w, z / w);
+        }
+
+        public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
             var size = BLOCKINFO_SIZE;
             size.Y *= Ymultiplier;
             size.Y += BLOCKINFO_TEXT_PADDING;
-            size *= scaleFOV;
+            size *= ScaleFOV;
 
             if(Math.Abs(aspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
             {
@@ -255,7 +304,7 @@ namespace Digi.BuildInfo
             return size;
         }
 
-        Vector2 GetGameHUDBlockInfoPos()
+        public Vector2 GetGameHudBlockInfoPos()
         {
             // HACK hardcoded from MyGuiScreenHudSpace.Draw() with some fine adjustments
             Vector2 posHUD = new Vector2(0.9894f, 0.7487f);

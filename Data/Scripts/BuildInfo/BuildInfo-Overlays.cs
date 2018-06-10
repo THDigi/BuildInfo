@@ -20,12 +20,17 @@ namespace Digi.BuildInfo
 {
     public partial class BuildInfo
     {
-        private delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
+        private int drawOverlay = 0;
+        private bool overlaysDrawn = false;
+        private bool doorAirtightBlink = false;
+        private int doorAirtightBlinkTick = 0;
 
         private OverlayCall selectedOverlayCall;
 
         private readonly Dictionary<MyObjectBuilderType, OverlayCall> overlayCalls
                    = new Dictionary<MyObjectBuilderType, OverlayCall>(MyObjectBuilderType.Comparer);
+
+        private delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
 
         private void InitOverlays()
         {
