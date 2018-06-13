@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
@@ -443,6 +446,171 @@ namespace Digi.BuildInfo
             s.Append(' ').Append(upgrade.UpgradeType);
             return s;
         }
+
+        #region Detailed info formats
+        public static StringBuilder DetailInfo_Inventory(this StringBuilder s, IMyInventory inv, float definedMaxVolume = 0f, string customName = null)
+        {
+            if(inv == null)
+                return s;
+
+            float maxVolume = 0f;
+
+            if(inv.MaxVolume >= MyFixedPoint.MaxValue)
+            {
+                if(definedMaxVolume > 0)
+                    maxVolume = definedMaxVolume;
+            }
+            else
+            {
+                maxVolume = (float)inv.MaxVolume;
+            }
+
+            var volume = (float)inv.CurrentVolume;
+
+            if(maxVolume > 0)
+            {
+                s.Append(customName ?? "Inventory").Append(':').Append(' ').ProportionToPercent(volume / maxVolume).Append(" (").VolumeFormat(volume * 1000f).Append(" / ").VolumeFormat(maxVolume * 1000f).Append(')').Append('\n');
+            }
+            else
+            {
+                s.Append(customName ?? "Inventory").Append(':').Append(' ').VolumeFormat(volume * 1000f).Append(" / Infinite\n");
+            }
+
+            s.Append(customName ?? "Inventory").Append(" Mass: ").MassFormat((float)inv.CurrentMass).Append('\n');
+            return s;
+        }
+
+        public static StringBuilder DetailInfo_InputPower(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            var current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+            var max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+
+            return s.Append("Input Power: ").PowerFormat(current).Append(" / ").PowerFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_CurrentPowerUsage(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            var current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+
+            return s.Append("Current Power Usage: ").PowerFormat(current).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_MaxPowerUsage(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            var max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+
+            return s.Append("Max Power Usage: ").PowerFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_InputHydrogen(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            var current = sink.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+            var max = sink.RequiredInputByType(MyResourceDistributorComponent.HydrogenId);
+
+            return s.Append("Input H2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_OutputHydrogen(this StringBuilder s, MyResourceSourceComponent source)
+        {
+            if(source == null)
+                return s;
+
+            var current = source.CurrentOutputByType(MyResourceDistributorComponent.HydrogenId);
+            var max = source.MaxOutputByType(MyResourceDistributorComponent.HydrogenId);
+
+            return s.Append("Output H2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_InputOxygen(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            var current = sink.CurrentInputByType(MyResourceDistributorComponent.OxygenId);
+            var max = sink.RequiredInputByType(MyResourceDistributorComponent.OxygenId);
+
+            return s.Append("Input O2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_OutputOxygen(this StringBuilder s, MyResourceSourceComponent source)
+        {
+            if(source == null)
+                return s;
+
+            var current = source.CurrentOutputByType(MyResourceDistributorComponent.OxygenId);
+            var max = source.MaxOutputByType(MyResourceDistributorComponent.OxygenId);
+
+            return s.Append("Output O2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+        }
+
+        public static StringBuilder DetailInfo_InputGasList(this StringBuilder s, MyResourceSinkComponent sink)
+        {
+            if(sink == null)
+                return s;
+
+            foreach(var res in sink.AcceptedResources)
+            {
+                if(res == MyResourceDistributorComponent.ElectricityId)
+                    continue;
+
+                var current = sink.CurrentInputByType(res);
+                var max = sink.RequiredInputByType(res);
+
+                s.Append("Input ");
+
+                if(res == MyResourceDistributorComponent.HydrogenId)
+                    s.Append("H2");
+                else if(res == MyResourceDistributorComponent.OxygenId)
+                    s.Append("O2");
+                else
+                    s.Append(res.SubtypeName);
+
+                s.Append(": ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            }
+
+            return s;
+        }
+
+        public static StringBuilder DetailInfo_OutputGasList(this StringBuilder s, MyResourceSourceComponent source)
+        {
+            if(source == null)
+                return s;
+
+            foreach(var res in source.ResourceTypes)
+            {
+                if(res == MyResourceDistributorComponent.ElectricityId)
+                    continue;
+
+                var current = source.CurrentOutputByType(res);
+                var max = source.MaxOutputByType(res);
+
+                s.Append("Output ");
+
+                if(res == MyResourceDistributorComponent.HydrogenId)
+                    s.Append("H2");
+                else if(res == MyResourceDistributorComponent.OxygenId)
+                    s.Append("O2");
+                else
+                    s.Append(res.SubtypeName);
+
+                s.Append(": ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            }
+
+            return s;
+        }
+        #endregion
 
         public static string ToTextAPIColor(this Color color)
         {

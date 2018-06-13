@@ -57,6 +57,7 @@ namespace Digi.BuildInfo
 
             Settings = new Settings();
             LeakInfoComp = new LeakInfoComponent();
+            TerminalInfoComp = new TerminalInfoComponent(this);
             TextAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
@@ -84,6 +85,9 @@ namespace Digi.BuildInfo
 
                     LeakInfoComp?.Close();
                     LeakInfoComp = null;
+
+                    TerminalInfoComp?.Close();
+                    TerminalInfoComp = null;
 
                     TextAPI?.Close();
                     TextAPI = null;
@@ -119,6 +123,8 @@ namespace Digi.BuildInfo
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
                 LeakInfoComp?.Update();
+
+                TerminalInfoComp?.Update();
 
                 Update();
 
@@ -667,6 +673,8 @@ namespace Digi.BuildInfo
                 DrawOverlays();
 
                 LeakInfoComp?.Draw();
+
+                TerminalInfoComp?.Draw();
 
                 DrawBlockInfo();
             }

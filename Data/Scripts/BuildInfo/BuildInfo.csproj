@@ -133,6 +133,7 @@
     <Compile Include="BuildInfo-Fields.cs" />
     <Compile Include="BuildInfo-Overlays.cs" />
     <Compile Include="BuildInfo.cs" />
+    <Compile Include="TerminalInfoComponent.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameData.cs" />
     <Compile Include="Pressurization.cs" />

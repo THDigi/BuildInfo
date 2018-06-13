@@ -21,6 +21,7 @@ namespace Digi.BuildInfo
     {
         #region Constants
         public const string MOD_NAME = "Build Info";
+        public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
@@ -200,6 +201,7 @@ namespace Digi.BuildInfo
         public bool IsPlayer = true;
         public Settings Settings;
         public LeakInfoComponent LeakInfoComp;
+        public TerminalInfoComponent TerminalInfoComp;
         public short Tick = 0; // global incrementing gamelogic tick
         private string voxelHandSettingsInputName;
         private string voxelHandSettingsControlName;

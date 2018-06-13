@@ -1,0 +1,13 @@
+﻿This mod contains an API for other mods to use.
+
+Currently the only API feature is to disable this mod's detail info for certain block type+subtype.
+
+To use it, call:
+
+    MyAPIGateway.Utilities.SendModMessage(514062285, new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "YourSubtypeId"));
+
+
+The upgrade module being an example type, you can send any block type you want and you can send as many as you want.
+
+The method must be called on clients and server, and must be done after this mod's LoadData().
+Alternatively use MyAPIGateway.Utilities.InvokeOnGameThread() to execute it next tick.
