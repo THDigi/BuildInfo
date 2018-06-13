@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -15,17 +16,19 @@ namespace Digi.BuildInfo
     public class TempBlockSpawn
     {
         public readonly long EntityId;
+        public readonly bool DeleteGrid;
         public readonly MyCubeBlockDefinition BlockDef;
         public event Action<IMyCubeBlock> AfterSpawn;
 
-        public TempBlockSpawn(MyCubeBlockDefinition def)
+        public TempBlockSpawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true)
         {
             BlockDef = def;
+            DeleteGrid = deleteGridOnSpawn;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
-            var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(def.Id);
+            var blockObj = GetBlockObjectBuilder(def.Id);
 
             var gridObj = new MyObjectBuilder_CubeGrid()
             {
@@ -46,6 +49,38 @@ namespace Digi.BuildInfo
             EntityId = gridObj.EntityId;
 
             MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
+        }
+
+        private MyObjectBuilder_CubeBlock GetBlockObjectBuilder(MyDefinitionId defId)
+        {
+            var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(defId);
+
+            blockObj.EntityId = 0;
+            blockObj.Min = Vector3I.Zero;
+
+            // HACK these types do not check if their fields are null in their Remap() method.
+            var timer = blockObj as MyObjectBuilder_TimerBlock;
+            if(timer != null)
+            {
+                timer.Toolbar = new MyObjectBuilder_Toolbar();
+                return blockObj;
+            }
+
+            var button = blockObj as MyObjectBuilder_ButtonPanel;
+            if(button != null)
+            {
+                button.Toolbar = new MyObjectBuilder_Toolbar();
+                return blockObj;
+            }
+
+            var sensor = blockObj as MyObjectBuilder_SensorBlock;
+            if(sensor != null)
+            {
+                sensor.Toolbar = new MyObjectBuilder_Toolbar();
+                return blockObj;
+            }
+
+            return blockObj;
         }
 
         private void SpawnCompleted()
@@ -84,7 +119,8 @@ namespace Digi.BuildInfo
             }
             finally
             {
-                grid?.Close();
+                if(DeleteGrid && grid != null)
+                    grid.Close();
             }
         }
     }
