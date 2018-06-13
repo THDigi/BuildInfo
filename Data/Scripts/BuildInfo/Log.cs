@@ -99,8 +99,8 @@ namespace Digi
         public static ulong WorkshopId => handler?.WorkshopId ?? 0;
 
         /// <summary>
-        /// <para>Increases indentation by 1 tab character.</para>
-        /// Each indent adds a tab character before each of the future messages.
+        /// <para>Increases indentation by 4 spaces.</para>
+        /// Each indent adds 4 space characters before each of the future messages.
         /// </summary>
         public static void IncreaseIndent()
         {
@@ -109,7 +109,7 @@ namespace Digi
         }
 
         /// <summary>
-        /// <para>Decreases indentation by 1 tab character down to 0 indentation.</para>
+        /// <para>Decreases indentation by 4 space characters down to 0 indentation.</para>
         /// See <seealso cref="IncreaseIndent"/>
         /// </summary>
         public static void DecreaseIndent()
@@ -415,7 +415,7 @@ namespace Digi
                         sb.Append("(PRE-INIT) ");
 
                     for(int i = 0; i < indent; i++)
-                        sb.Append('\t');
+                        sb.Append(' ', 4);
 
                     if(prefix != null)
                         sb.Append(prefix);
