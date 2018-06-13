@@ -93,6 +93,12 @@ namespace Digi
         }
 
         /// <summary>
+        /// Gets the workshop id of the mod.
+        /// <para>Will return 0 if it's a local mod or if it's called before LoadData() executes on the logger.</para>
+        /// </summary>
+        public static ulong WorkshopId => handler?.WorkshopId ?? 0;
+
+        /// <summary>
         /// <para>Increases indentation by 1 tab character.</para>
         /// Each indent adds a tab character before each of the future messages.
         /// </summary>
@@ -202,6 +208,8 @@ namespace Digi
                 }
             }
 
+            public ulong WorkshopId => workshopId;
+
             public Handler()
             {
             }
@@ -246,27 +254,27 @@ namespace Digi
                 sb.Append("; defined=");
 
 #if STABLE
-            sb.Append("STABLE, ");
+                sb.Append("STABLE, ");
 #endif
 
 #if UNOFFICIAL
-            sb.Append("UNOFFICIAL, ");
+                sb.Append("UNOFFICIAL, ");
 #endif
 
 #if DEBUG
-            sb.Append("DEBUG, ");
+                sb.Append("DEBUG, ");
 #endif
 
 #if BRANCH_STABLE
-            sb.Append("BRANCH_STABLE, ");
+                sb.Append("BRANCH_STABLE, ");
 #endif
 
 #if BRANCH_DEVELOP
-            sb.Append("BRANCH_DEVELOP, ");
+                sb.Append("BRANCH_DEVELOP, ");
 #endif
 
 #if BRANCH_UNKNOWN
-            sb.Append("BRANCH_UNKNOWN, ");
+                sb.Append("BRANCH_UNKNOWN, ");
 #endif
 
                 Info(sb.ToString());
