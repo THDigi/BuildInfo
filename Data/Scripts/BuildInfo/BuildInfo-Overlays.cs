@@ -26,11 +26,9 @@ namespace Digi.BuildInfo
         private int doorAirtightBlinkTick = 0;
 
         private OverlayCall selectedOverlayCall;
-
+        private delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
         private readonly Dictionary<MyObjectBuilderType, OverlayCall> overlayCalls
                    = new Dictionary<MyObjectBuilderType, OverlayCall>(MyObjectBuilderType.Comparer);
-
-        private delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
 
         private void InitOverlays()
         {

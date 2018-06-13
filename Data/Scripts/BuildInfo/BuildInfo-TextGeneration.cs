@@ -54,8 +54,9 @@ namespace Digi.BuildInfo
         private bool addLineCalled = false;
 
         // used to quickly find the format method for block types
-        private readonly Dictionary<MyObjectBuilderType, Action<MyCubeBlockDefinition>> typeFormatMethods
-                   = new Dictionary<MyObjectBuilderType, Action<MyCubeBlockDefinition>>(MyObjectBuilderType.Comparer);
+        private delegate void TextGenerationCall(MyCubeBlockDefinition def);
+        private readonly Dictionary<MyObjectBuilderType, TextGenerationCall> typeFormatMethods
+                   = new Dictionary<MyObjectBuilderType, TextGenerationCall>(MyObjectBuilderType.Comparer);
 
         // caches
         private readonly List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>> ammoProjectiles
@@ -1024,9 +1025,10 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Details on last lines
+            
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
             {
-                Action<MyCubeBlockDefinition> action;
+                TextGenerationCall action;
 
                 if(typeFormatMethods.TryGetValue(def.Id.TypeId, out action))
                 {
@@ -1520,7 +1522,7 @@ namespace Digi.BuildInfo
 
             if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
             {
-                // thrust.NeedsAtmosphereForInfluence seems to be a pointless var
+                // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var, planetary influence is always considered atmosphere.
 
                 AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
                     .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetColor();
