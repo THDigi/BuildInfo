@@ -184,7 +184,7 @@ namespace Digi.BuildInfo
                 var hud = GetGameHudBlockInfoPos();
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET; // make the position top-right
 
-                var worldPos = GameHudToWorld(hud);
+                var worldPos = HudToWorld(hud);
                 var size = GetGameHudBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f);
                 var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * ScaleFOV;
 

@@ -274,18 +274,23 @@ namespace Digi.BuildInfo
             }
         }
 
-        public Vector3D GameHudToWorld(Vector2 hud)
+        /// <summary>
+        /// Transforms screen coordinates to world coordinates.
+        /// <para>-1,-1 = bottom-left, 0,0 = center, 1,1 = top-right.</para> 
+        /// <para>Set <paramref name="textAPIcoords"/>=false if you want 0,0 as top-left and 1,1 as bottom-right, no negative values.</para>
+        /// </summary>
+        public Vector3D HudToWorld(Vector2 hud, bool textAPIcoords = true)
         {
-            var hudX = (2.0 * hud.X - 1);
-            var hudY = (1 - 2.0 * hud.Y);
+            double hudX = (textAPIcoords ? (2.0 * hud.X - 1) : hud.X);
+            double hudY = (textAPIcoords ? (1 - 2.0 * hud.Y) : -hud.Y);
 
-            // Vector4D.Transform(new Vector4D(hud.X, hud.Y, 0d, 1d), ref ViewProjectionInv, out ...) 
+            // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...) 
 
             var matrix = ViewProjectionInv;
-            var x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
-            var y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
-            var z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
-            var w = hudX * matrix.M14 + hudY * matrix.M24 + /* 0 * matrix.M34 + 1 * */ matrix.M44;
+            double x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
+            double y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
+            double z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
+            double w = hudX * matrix.M14 + hudY * matrix.M24 + /* 0 * matrix.M34 + 1 * */ matrix.M44;
             return new Vector3D(x / w, y / w, z / w);
         }
 

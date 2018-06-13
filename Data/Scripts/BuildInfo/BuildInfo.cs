@@ -701,7 +701,7 @@ namespace Digi.BuildInfo
                 // make the position top-right
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
 
-                var worldPos = GameHudToWorld(hud);
+                var worldPos = HudToWorld(hud);
                 var size = GetGameHudBlockInfoSize(lines * Settings.textAPIScale);
                 worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -749,7 +749,7 @@ namespace Digi.BuildInfo
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHudToWorld(hud);
+                    var worldPos = HudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -766,7 +766,7 @@ namespace Digi.BuildInfo
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHudToWorld(hud);
+                    var worldPos = HudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 2); // extra offset to allow for red line to be visible
 
@@ -781,7 +781,7 @@ namespace Digi.BuildInfo
                     var hud = posHUD;
                     hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_Y_OFFSET_2;
 
-                    var worldPos = GameHudToWorld(hud);
+                    var worldPos = HudToWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
