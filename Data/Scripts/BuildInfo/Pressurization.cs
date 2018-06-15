@@ -13,9 +13,10 @@ namespace Digi.BuildInfo
 {
     public static class Pressurization
     {
-        // TODO update this code when changed in game
-        // all these are from Sandbox.Game.GameSystems.MyGridGasSystem
-        // since that namespace is prohibited I have to copy it and convert it to work with modAPI
+        // TODO update this code when changed in game.
+        // Last checked on v1.186.500.
+        // All these are from Sandbox.Game.GameSystems.MyGridGasSystem.
+        // Since that namespace is prohibited I have to copy it and convert it to work with modAPI.
 
         public static bool IsPressurized(IMyCubeGrid grid, Vector3I startPos, Vector3I endPos)
         {
@@ -45,21 +46,17 @@ namespace Digi.BuildInfo
             block.Orientation.GetMatrix(out matrix);
             matrix.TransposeRotationInPlace();
 
-            Vector3I normalLocal = Vector3I.Round(Vector3.Transform(normal, matrix));
-            Vector3 position = Vector3.Zero;
+            Vector3I cellNormal = Vector3I.Round(Vector3.Transform(normal, matrix));
+            Vector3 position = (block.FatBlock != null ? (gridPos - block.FatBlock.Position) : Vector3.Zero);
+            Vector3I cellPosition = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
 
-            if(block.FatBlock != null)
-                position = gridPos - block.FatBlock.Position;
-
-            Vector3I value = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
-
-            if(def.IsCubePressurized[value][normalLocal])
+            if(def.IsCubePressurized[cellPosition][cellNormal])
                 return true;
 
             var door = block.FatBlock as IMyDoor;
 
             if(door != null)
-                return IsDoorFacePressurized(def, normalLocal, door.OpenRatio <= 0.05f);
+                return IsDoorFacePressurized(def, cellNormal, door.OpenRatio <= 0.05f);
 
             return false;
         }
@@ -96,87 +93,5 @@ namespace Digi.BuildInfo
 
             return false;
         }
-
-#if false
-        public static bool TestPressurize(Vector3I pos, Vector3 normal, Matrix matrix, MyCubeBlockDefinition def, float buildLevelRatio = 1f)
-        {
-            if(def.BuildProgressModels.Length > 0)
-            {
-                MyCubeBlockDefinition.BuildProgressModel buildProgressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
-
-                if(buildLevelRatio < buildProgressModel.BuildRatioUpperBound)
-                    return false;
-            }
-
-            matrix.TransposeRotationInPlace();
-
-            Vector3 vector = Vector3.Transform(normal, matrix);
-            Vector3 position = Vector3.Zero;
-
-            //if(block.FatBlock != null)
-            //    position = pos - block.FatBlock.Position;
-
-            Vector3 value = Vector3.Transform(position, matrix) + def.Center;
-
-            // DEBUG
-            {
-                if(!def.IsCubePressurized.ContainsKey(Vector3I.Round(value)))
-                {
-                    MyAPIGateway.Utilities.ShowNotification($"can't find 1st: {Vector3I.Round(value)}", 16);
-                    return false;
-                }
-
-                if(!def.IsCubePressurized[Vector3I.Round(value)].ContainsKey(Vector3I.Round(vector)))
-                {
-                    MyAPIGateway.Utilities.ShowNotification($"can't find 2nd: {Vector3I.Round(vector)}", 16);
-                    return false;
-                }
-            }
-
-            if(def.IsCubePressurized[Vector3I.Round(value)][Vector3I.Round(vector)])
-                return true;
-
-            if(def is MyDoorDefinition)
-            {
-                // assuming door closed
-
-                for(int i = 0; i < def.MountPoints.Length; i++)
-                {
-                    if(vector == def.MountPoints[i].Normal)
-                        return false;
-                }
-
-                return true;
-            }
-            else if(def is MyAdvancedDoorDefinition)
-            {
-                // assuming door closed
-
-                for(int j = 0; j < def.MountPoints.Length; j++)
-                {
-                    if(vector == def.MountPoints[j].Normal)
-                        return false;
-                }
-
-                return true;
-            }
-            else if(def is MyAirtightSlideDoorDefinition)
-            {
-                // assuming door closed
-
-                if(vector == Vector3.Forward)
-                    return true;
-            }
-            else if(def is MyAirtightDoorGenericDefinition)
-            {
-                // assuming door closed
-
-                if(vector == Vector3.Forward || vector == Vector3.Backward)
-                    return true;
-            }
-
-            return false;
-        }
-#endif
     }
 }

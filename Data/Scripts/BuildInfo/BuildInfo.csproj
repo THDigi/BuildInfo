@@ -120,7 +120,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LOCAL_GameDataCheck.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="Blocks\Base.cs" />
@@ -143,6 +142,7 @@
     <Compile Include="Settings.cs" />
     <Compile Include="TextAPIv2.cs" />
     <Compile Include="BuildInfo-TextGeneration.cs" />
+    <Compile Include="VanillaDataCompare\LOCAL_GameDataCheck.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
