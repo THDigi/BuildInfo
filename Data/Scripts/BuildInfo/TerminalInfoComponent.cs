@@ -29,12 +29,12 @@ namespace Digi.BuildInfo
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
-        private readonly Dictionary<MyObjectBuilderType, CustomInfoCall> blockTypeFormat
+        private readonly Dictionary<MyObjectBuilderType, CustomInfoCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, CustomInfoCall>(MyObjectBuilderType.Comparer);
 
         private readonly HashSet<MyDefinitionId> ignoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
-        private readonly HashSet<long> longSetCache = new HashSet<long>();
+        private readonly HashSet<long> longSetTemp = new HashSet<long>();
 
         private MyResourceSinkComponent _sinkCache = null;
         private MyResourceSourceComponent _sourceCache = null;
@@ -64,90 +64,90 @@ namespace Digi.BuildInfo
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
 
             #region Registering formats
-            blockTypeFormat[typeof(MyObjectBuilder_InteriorLight)] = Format_LightingBlock;
-            blockTypeFormat[typeof(MyObjectBuilder_ReflectorLight)] = Format_LightingBlock;
+            formatLookup[typeof(MyObjectBuilder_InteriorLight)] = Format_LightingBlock;
+            formatLookup[typeof(MyObjectBuilder_ReflectorLight)] = Format_LightingBlock;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Door)] = Format_Doors;
-            blockTypeFormat[typeof(MyObjectBuilder_AdvancedDoor)] = Format_Doors;
-            blockTypeFormat[typeof(MyObjectBuilder_AirtightDoorGeneric)] = Format_Doors;
-            blockTypeFormat[typeof(MyObjectBuilder_AirtightHangarDoor)] = Format_Doors;
-            blockTypeFormat[typeof(MyObjectBuilder_AirtightSlideDoor)] = Format_Doors;
+            formatLookup[typeof(MyObjectBuilder_Door)] = Format_Doors;
+            formatLookup[typeof(MyObjectBuilder_AdvancedDoor)] = Format_Doors;
+            formatLookup[typeof(MyObjectBuilder_AirtightDoorGeneric)] = Format_Doors;
+            formatLookup[typeof(MyObjectBuilder_AirtightHangarDoor)] = Format_Doors;
+            formatLookup[typeof(MyObjectBuilder_AirtightSlideDoor)] = Format_Doors;
 
-            blockTypeFormat[typeof(MyObjectBuilder_CargoContainer)] = Format_CargoContainer;
+            formatLookup[typeof(MyObjectBuilder_CargoContainer)] = Format_CargoContainer;
 
-            blockTypeFormat[typeof(MyObjectBuilder_ConveyorSorter)] = Format_ConveyorSorter;
+            formatLookup[typeof(MyObjectBuilder_ConveyorSorter)] = Format_ConveyorSorter;
 
-            blockTypeFormat[typeof(MyObjectBuilder_ShipWelder)] = Format_ShipWelder;
+            formatLookup[typeof(MyObjectBuilder_ShipWelder)] = Format_ShipWelder;
 
-            blockTypeFormat[typeof(MyObjectBuilder_ShipGrinder)] = Format_ShipGrinder;
+            formatLookup[typeof(MyObjectBuilder_ShipGrinder)] = Format_ShipGrinder;
 
-            blockTypeFormat[typeof(MyObjectBuilder_PistonBase)] = Format_Piston; // this one is actually ancient and unused?
-            blockTypeFormat[typeof(MyObjectBuilder_ExtendedPistonBase)] = Format_Piston;
+            formatLookup[typeof(MyObjectBuilder_PistonBase)] = Format_Piston; // this one is actually ancient and unused?
+            formatLookup[typeof(MyObjectBuilder_ExtendedPistonBase)] = Format_Piston;
 
-            blockTypeFormat[typeof(MyObjectBuilder_ShipConnector)] = Format_Connector;
+            formatLookup[typeof(MyObjectBuilder_ShipConnector)] = Format_Connector;
 
-            blockTypeFormat[typeof(MyObjectBuilder_MotorAdvancedStator)] = Format_Rotor;
-            blockTypeFormat[typeof(MyObjectBuilder_MotorStator)] = Format_Rotor;
-            blockTypeFormat[typeof(MyObjectBuilder_MotorSuspension)] = Format_Rotor;
+            formatLookup[typeof(MyObjectBuilder_MotorAdvancedStator)] = Format_Rotor;
+            formatLookup[typeof(MyObjectBuilder_MotorStator)] = Format_Rotor;
+            formatLookup[typeof(MyObjectBuilder_MotorSuspension)] = Format_Rotor;
 
-            blockTypeFormat[typeof(MyObjectBuilder_TimerBlock)] = Format_TimerBlock;
+            formatLookup[typeof(MyObjectBuilder_TimerBlock)] = Format_TimerBlock;
 
-            blockTypeFormat[typeof(MyObjectBuilder_SoundBlock)] = Format_SoundBlock;
+            formatLookup[typeof(MyObjectBuilder_SoundBlock)] = Format_SoundBlock;
 
-            blockTypeFormat[typeof(MyObjectBuilder_ButtonPanel)] = Format_ButtonPanel;
+            formatLookup[typeof(MyObjectBuilder_ButtonPanel)] = Format_ButtonPanel;
 
-            blockTypeFormat[typeof(MyObjectBuilder_TurretBase)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_ConveyorTurretBase)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_SmallGatlingGun)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_SmallMissileLauncher)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_SmallMissileLauncherReload)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_InteriorTurret)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_LargeGatlingTurret)] = Format_Weapons;
-            blockTypeFormat[typeof(MyObjectBuilder_LargeMissileTurret)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_TurretBase)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_ConveyorTurretBase)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_SmallGatlingGun)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_SmallMissileLauncher)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_SmallMissileLauncherReload)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_InteriorTurret)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_LargeGatlingTurret)] = Format_Weapons;
+            formatLookup[typeof(MyObjectBuilder_LargeMissileTurret)] = Format_Weapons;
 
             // nothing useful to add, it also has a huge detail info text when a projection is loaded
             //blockTypeFormat[typeof(MyObjectBuilder_Projector)] = Format_Projector;
             //blockTypeFormat[typeof(MyObjectBuilder_ProjectorBase)] = Format_Projector;
 
-            blockTypeFormat[typeof(MyObjectBuilder_OreDetector)] = Format_OreDetector;
+            formatLookup[typeof(MyObjectBuilder_OreDetector)] = Format_OreDetector;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Parachute)] = Format_Parachute;
+            formatLookup[typeof(MyObjectBuilder_Parachute)] = Format_Parachute;
 
-            blockTypeFormat[typeof(MyObjectBuilder_GasTank)] = Format_GasTank;
-            blockTypeFormat[typeof(MyObjectBuilder_OxygenTank)] = Format_GasTank;
+            formatLookup[typeof(MyObjectBuilder_GasTank)] = Format_GasTank;
+            formatLookup[typeof(MyObjectBuilder_OxygenTank)] = Format_GasTank;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Cockpit)] = Format_Seats;
-            blockTypeFormat[typeof(MyObjectBuilder_CryoChamber)] = Format_Seats;
+            formatLookup[typeof(MyObjectBuilder_Cockpit)] = Format_Seats;
+            formatLookup[typeof(MyObjectBuilder_CryoChamber)] = Format_Seats;
 
-            blockTypeFormat[typeof(MyObjectBuilder_RemoteControl)] = Format_RemoteControl;
+            formatLookup[typeof(MyObjectBuilder_RemoteControl)] = Format_RemoteControl;
 
             // not needed, already contains current power usage, sort of
             //blockTypeFormat[typeof(MyObjectBuilder_Gyro)] = Format_Gyro;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Thrust)] = Format_Thruster;
+            formatLookup[typeof(MyObjectBuilder_Thrust)] = Format_Thruster;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Collector)] = Format_Collector;
+            formatLookup[typeof(MyObjectBuilder_Collector)] = Format_Collector;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Reactor)] = Format_Reactor;
+            formatLookup[typeof(MyObjectBuilder_Reactor)] = Format_Reactor;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Refinery)] = Format_Production;
-            blockTypeFormat[typeof(MyObjectBuilder_Assembler)] = Format_Production;
+            formatLookup[typeof(MyObjectBuilder_Refinery)] = Format_Production;
+            formatLookup[typeof(MyObjectBuilder_Assembler)] = Format_Production;
 
-            blockTypeFormat[typeof(MyObjectBuilder_UpgradeModule)] = Format_UpgradeModule;
+            formatLookup[typeof(MyObjectBuilder_UpgradeModule)] = Format_UpgradeModule;
 
-            blockTypeFormat[typeof(MyObjectBuilder_MedicalRoom)] = Format_MedicalRoom;
+            formatLookup[typeof(MyObjectBuilder_MedicalRoom)] = Format_MedicalRoom;
 
-            blockTypeFormat[typeof(MyObjectBuilder_OxygenGenerator)] = Format_GasGenerator;
+            formatLookup[typeof(MyObjectBuilder_OxygenGenerator)] = Format_GasGenerator;
 
-            blockTypeFormat[typeof(MyObjectBuilder_OxygenFarm)] = Format_OxygenFarm;
+            formatLookup[typeof(MyObjectBuilder_OxygenFarm)] = Format_OxygenFarm;
 
-            blockTypeFormat[typeof(MyObjectBuilder_AirVent)] = Format_AirVent;
+            formatLookup[typeof(MyObjectBuilder_AirVent)] = Format_AirVent;
 
-            blockTypeFormat[typeof(MyObjectBuilder_RadioAntenna)] = Format_RadioAntenna;
+            formatLookup[typeof(MyObjectBuilder_RadioAntenna)] = Format_RadioAntenna;
 
-            blockTypeFormat[typeof(MyObjectBuilder_LaserAntenna)] = Format_LaserAntenna;
+            formatLookup[typeof(MyObjectBuilder_LaserAntenna)] = Format_LaserAntenna;
 
-            blockTypeFormat[typeof(MyObjectBuilder_Beacon)] = Format_Beacon;
+            formatLookup[typeof(MyObjectBuilder_Beacon)] = Format_Beacon;
             #endregion
         }
 
@@ -196,23 +196,31 @@ namespace Digi.BuildInfo
             //}
         }
 
-        #region EXPERIMENT: clickable UI element for manual refresh of detail info panel
-#if false
-        // DEBUG draw
-        private Draygo.API.HudAPIv2.HUDMessage debugText = null;
-#endif
-
         public void Draw()
         {
+            //DrawTest();
+        }
+
+        // EXPERIMENT: clickable UI element for manual refresh of detail info panel
 #if false
+        private Draygo.API.HudAPIv2.HUDMessage debugText = null;
+        int clickCooldown = 0;
+
+        void DrawTest()
+        {
+            if(clickCooldown > 0)
+                clickCooldown--;
+
             if(viewedInTerminal == null || MyAPIGateway.Gui.GetCurrentScreen != MyTerminalPageEnum.ControlPanel)
                 return;
 
             var cam = MyAPIGateway.Session.Camera;
             var camMatrix = cam.WorldMatrix;
 
-            var hudPos = new Vector2(1, 1); // new Vector2(0.7f, -0.79f);
-            var hudSize = new Vector2(0.005f, 0.001f);
+            var hudPosStart = new Vector2(0.62f, 0.57f);
+            var hudPosEnd = new Vector2(0.84f, 0.91f);
+            var hudPos = hudPosStart + ((hudPosEnd - hudPosStart) * 0.5f);
+            var hudSize = new Vector2(0.02f, 0.02f);
 
             var worldPos = mod.HudToWorld(hudPos, textAPIcoords: false);
             var worldSize = hudSize * mod.ScaleFOV;
@@ -220,8 +228,6 @@ namespace Digi.BuildInfo
             var mouseArea = MyAPIGateway.Input.GetMouseAreaSize();
             var mousePos = MyAPIGateway.Input.GetMousePosition();
             var mouseHudPos = mousePos / mouseArea;
-            //mouseHudPos.X = (2f * mouseHudPos.X - 1f);
-            //mouseHudPos.Y = (1f - 2f * mouseHudPos.Y);
 
             // DEBUG draw
             if(mod.TextAPIEnabled)
@@ -235,15 +241,23 @@ namespace Digi.BuildInfo
             var color = Color.Red;
 
             // DEBUG TODO - it's bad on aspect ratios and resolutions
-            if(Math.Abs(mouseHudPos.X - hudPos.X) <= 0.06f && Math.Abs(mouseHudPos.Y - hudPos.Y) <= 0.02f)
+            if(mouseHudPos.X >= hudPosStart.X && mouseHudPos.X <= hudPosEnd.X
+            && mouseHudPos.Y >= hudPosStart.Y && mouseHudPos.Y <= hudPosEnd.Y)
             {
                 if(MyAPIGateway.Input.IsLeftMousePressed())
                 {
                     color = Color.Lime;
 
-                    viewedInTerminal.RefreshCustomInfo();
-                    viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                    viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
+                    if(clickCooldown == 0)
+                    {
+                        clickCooldown = 10;
+
+                        viewedInTerminal.RefreshCustomInfo();
+
+                        // HACK
+                        viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
+                        viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
+                    }
                 }
                 else
                 {
@@ -251,10 +265,9 @@ namespace Digi.BuildInfo
                 }
             }
 
-            MyTransparentGeometry.AddBillboardOriented(mod.MATERIAL_VANILLA_SQUARE, color, worldPos, camMatrix.Left, camMatrix.Up, worldSize.X, worldSize.Y, Vector2.Zero, blendType: BlendTypeEnum.SDR);
-#endif
+            MyTransparentGeometry.AddBillboardOriented(mod.MATERIAL_VANILLA_SQUARE, color * 0.3f, worldPos, camMatrix.Left, camMatrix.Up, worldSize.X, worldSize.Y, Vector2.Zero, blendType: BlendTypeEnum.SDR);
         }
-        #endregion
+#endif
 
         // Gets called when local client clicks on a block in the terminal.
         // Used to know the currently viewed block in the terminal.
@@ -281,7 +294,7 @@ namespace Digi.BuildInfo
 
             if(newBlock != null)
             {
-                if(!blockTypeFormat.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
+                if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
                     return; // ignore blocks that don't need stats
 
                 viewedInTerminal = newBlock;
@@ -307,10 +320,9 @@ namespace Digi.BuildInfo
                 if(currentFormatCall == null)
                     return;
 
-                // TODO power priorities? (resource group currently inaccessible from the sink/source)
-
-                // append other mod's info after my own.
-                // this is possible since this event is surely executed last as it's hooked when block is clicked
+                // Append other mod's info after my own.
+                // This is possible since this event is surely executed last as it's hooked when block is clicked
+                //   and because the same StringBuiler is given to all mods.
                 var otherModInfo = (info.Length > 0 ? info.ToString() : null);
 
                 info.Clear();
@@ -451,8 +463,6 @@ namespace Digi.BuildInfo
 
             info.Append("Ammo: ").Append(totalAmmo).Append(" (").Append(mags).Append(" mags)").Append('\n');
             info.Append("Magazine: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).Append('\n');
-
-            // TODO power, inventory, selected ammo, magazine left
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)
@@ -521,18 +531,19 @@ namespace Digi.BuildInfo
             {
                 info.Append('\n');
 
-                longSetCache.Clear();
-                var nearbyBlocks = upgradeModule.SlimBlock.Neighbours; // HACK since upgrade module doesn't expose what blocks it connects to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
+                // HACK since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
+                longSetTemp.Clear();
+                var nearbyBlocks = upgradeModule.SlimBlock.Neighbours;
 
                 foreach(var nearSlim in nearbyBlocks)
                 {
                     if(nearSlim?.FatBlock == null)
                         continue;
 
-                    if(longSetCache.Contains(nearSlim.FatBlock.EntityId)) // already processed this item
+                    if(longSetTemp.Contains(nearSlim.FatBlock.EntityId)) // already processed this item
                         continue;
 
-                    longSetCache.Add(nearSlim.FatBlock.EntityId);
+                    longSetTemp.Add(nearSlim.FatBlock.EntityId);
 
                     var nearCube = (MyCubeBlock)nearSlim.FatBlock;
 
@@ -555,7 +566,7 @@ namespace Digi.BuildInfo
                     }
                 }
 
-                longSetCache.Clear();
+                longSetTemp.Clear();
             }
             else
             {

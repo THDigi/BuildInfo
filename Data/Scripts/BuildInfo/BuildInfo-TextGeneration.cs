@@ -55,7 +55,7 @@ namespace Digi.BuildInfo
 
         // used to quickly find the format method for block types
         private delegate void TextGenerationCall(MyCubeBlockDefinition def);
-        private readonly Dictionary<MyObjectBuilderType, TextGenerationCall> typeFormatMethods
+        private readonly Dictionary<MyObjectBuilderType, TextGenerationCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, TextGenerationCall>(MyObjectBuilderType.Comparer);
 
         // caches
@@ -506,9 +506,9 @@ namespace Digi.BuildInfo
 
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
-            if(overlayCalls.ContainsKey(def.Id.TypeId))
+            if(drawLookup.ContainsKey(def.Id.TypeId))
             {
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. Ctrl+").Append(voxelHandSettingsInputName).Append(" to cycle)").EndLine();
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. Ctrl+").Append(controlInputName).Append(" to cycle)").EndLine();
             }
         }
 
@@ -556,8 +556,8 @@ namespace Digi.BuildInfo
             // HACK this must match the data from the HandleInput() which controls the actual actions of these
 
             AddMenuItemLine(i++).Append("Close menu");
-            if(voxelHandSettingsInputName != null)
-                GetLine().Append("   (").Append(voxelHandSettingsInputName).Append(")");
+            if(controlInputName != null)
+                GetLine().Append("   (").Append(controlInputName).Append(")");
             GetLine().ResetColor().EndLine();
 
             if(TextAPIEnabled)
@@ -581,18 +581,18 @@ namespace Digi.BuildInfo
             AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
-            if(voxelHandSettingsInputName != null)
-                GetLine().Append("   (Ctrl+" + voxelHandSettingsInputName + ")");
+            if(controlInputName != null)
+                GetLine().Append("   (Ctrl+" + controlInputName + ")");
             GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
-            if(voxelHandSettingsInputName != null)
-                GetLine().Append("   (Shift+" + voxelHandSettingsInputName + ")");
+            if(controlInputName != null)
+                GetLine().Append("   (Shift+" + controlInputName + ")");
             GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
-            if(voxelHandSettingsInputName != null)
-                GetLine().Append("   (Alt+" + voxelHandSettingsInputName + ")");
+            if(controlInputName != null)
+                GetLine().Append("   (Alt+" + controlInputName + ")");
             GetLine().ResetColor().EndLine();
 
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
@@ -609,23 +609,23 @@ namespace Digi.BuildInfo
 
             AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10).EndLine();
 
-            if(voxelHandSettingsInputName == null)
+            if(controlInputName == null)
             {
                 if(TextAPIEnabled)
                     AddLine().EndLine();
 
                 AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("WARNING:").EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Append(voxelHandSettingsControlName).Append("' control is not assigned!").ResetColor().EndLine();
+                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Append(controlDisplayName).Append("' control is not assigned!").ResetColor().EndLine();
                 AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("Go in game's Options -> Controls and assign it.").EndLine();
             }
 
-            if(voxelHandSettingsCollisionControlName != null)
+            if(controlCollissionDisplayName != null)
             {
                 if(TextAPIEnabled)
                     AddLine().EndLine();
 
                 AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("WARNING:").ResetColor().EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Color(COLOR_BAD).Append(voxelHandSettingsControlName).ResetColor().Append("' has same key as '").Color(COLOR_BAD).Append(voxelHandSettingsCollisionControlName).ResetColor().Append("'!").ResetColor().EndLine();
+                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Color(COLOR_BAD).Append(controlDisplayName).ResetColor().Append("' has same key as '").Color(COLOR_BAD).Append(controlCollissionDisplayName).ResetColor().Append("'!").ResetColor().EndLine();
                 AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("Go in game's Options -> Controls and change either of them to avoid collision.").EndLine();
             }
 
@@ -1030,7 +1030,7 @@ namespace Digi.BuildInfo
             {
                 TextGenerationCall action;
 
-                if(typeFormatMethods.TryGetValue(def.Id.TypeId, out action))
+                if(formatLookup.TryGetValue(def.Id.TypeId, out action))
                 {
                     action.Invoke(def);
                 }
@@ -1139,120 +1139,120 @@ namespace Digi.BuildInfo
         {
             textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_TerminalBlock), Format_TerminalBlock);
+            formatLookup.Add(typeof(MyObjectBuilder_TerminalBlock), Format_TerminalBlock);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Conveyor), Format_Conveyors);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ConveyorConnector), Format_Conveyors);
+            formatLookup.Add(typeof(MyObjectBuilder_Conveyor), Format_Conveyors);
+            formatLookup.Add(typeof(MyObjectBuilder_ConveyorConnector), Format_Conveyors);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
+            formatLookup.Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Collector), Format_CargoAndCollector);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoAndCollector);
+            formatLookup.Add(typeof(MyObjectBuilder_Collector), Format_CargoAndCollector);
+            formatLookup.Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoAndCollector);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
+            formatLookup.Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Drill), Format_Drill);
+            formatLookup.Add(typeof(MyObjectBuilder_Drill), Format_Drill);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ShipWelder), Format_WelderAndGrinder);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ShipGrinder), Format_WelderAndGrinder);
+            formatLookup.Add(typeof(MyObjectBuilder_ShipWelder), Format_WelderAndGrinder);
+            formatLookup.Add(typeof(MyObjectBuilder_ShipGrinder), Format_WelderAndGrinder);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_PistonBase), Format_Piston);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
+            formatLookup.Add(typeof(MyObjectBuilder_PistonBase), Format_Piston);
+            formatLookup.Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
+            formatLookup.Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
+            formatLookup.Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
+            formatLookup.Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MergeBlock), Format_MergeBlock);
+            formatLookup.Add(typeof(MyObjectBuilder_MergeBlock), Format_MergeBlock);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_LandingGear), Format_LandingGear);
+            formatLookup.Add(typeof(MyObjectBuilder_LandingGear), Format_LandingGear);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ShipController), Format_ShipController);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Cockpit), Format_ShipController);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_CryoChamber), Format_ShipController);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_RemoteControl), Format_ShipController);
+            formatLookup.Add(typeof(MyObjectBuilder_ShipController), Format_ShipController);
+            formatLookup.Add(typeof(MyObjectBuilder_Cockpit), Format_ShipController);
+            formatLookup.Add(typeof(MyObjectBuilder_CryoChamber), Format_ShipController);
+            formatLookup.Add(typeof(MyObjectBuilder_RemoteControl), Format_ShipController);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Thrust), Format_Thrust);
+            formatLookup.Add(typeof(MyObjectBuilder_Thrust), Format_Thrust);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
+            formatLookup.Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_LightingBlock), Format_Light);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_InteriorLight), Format_Light);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ReflectorLight), Format_Light);
+            formatLookup.Add(typeof(MyObjectBuilder_LightingBlock), Format_Light);
+            formatLookup.Add(typeof(MyObjectBuilder_InteriorLight), Format_Light);
+            formatLookup.Add(typeof(MyObjectBuilder_ReflectorLight), Format_Light);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
+            formatLookup.Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Projector), Format_Projector);
+            formatLookup.Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
+            formatLookup.Add(typeof(MyObjectBuilder_Projector), Format_Projector);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Door), Format_Door);
+            formatLookup.Add(typeof(MyObjectBuilder_Door), Format_Door);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_AirtightDoor);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_AirtightDoor);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_AirtightDoor);
+            formatLookup.Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_AirtightDoor);
+            formatLookup.Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_AirtightDoor);
+            formatLookup.Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_AirtightDoor);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_AdvancedDoor), Format_AdvancedDoor);
+            formatLookup.Add(typeof(MyObjectBuilder_AdvancedDoor), Format_AdvancedDoor);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
+            formatLookup.Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
+            formatLookup.Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Refinery), Format_Production);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Assembler), Format_Production);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_GasTank), Format_Production);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_Refinery), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_Assembler), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_GasTank), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
+            formatLookup.Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
+            formatLookup.Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
+            formatLookup.Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
+            formatLookup.Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
+            formatLookup.Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
+            formatLookup.Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
+            formatLookup.Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
+            formatLookup.Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
+            formatLookup.Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_TimerBlock), Format_Timer);
+            formatLookup.Add(typeof(MyObjectBuilder_TimerBlock), Format_Timer);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
+            formatLookup.Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
+            formatLookup.Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
+            formatLookup.Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SensorBlock), Format_Sensor);
+            formatLookup.Add(typeof(MyObjectBuilder_SensorBlock), Format_Sensor);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
+            formatLookup.Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
+            formatLookup.Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_GravityGeneratorBase), Format_GravityGenerator);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_GravityGenerator), Format_GravityGenerator);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_GravityGeneratorSphere), Format_GravityGenerator);
+            formatLookup.Add(typeof(MyObjectBuilder_GravityGeneratorBase), Format_GravityGenerator);
+            formatLookup.Add(typeof(MyObjectBuilder_GravityGenerator), Format_GravityGenerator);
+            formatLookup.Add(typeof(MyObjectBuilder_GravityGeneratorSphere), Format_GravityGenerator);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_VirtualMass), Format_ArtificialMass);
+            formatLookup.Add(typeof(MyObjectBuilder_VirtualMass), Format_ArtificialMass);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SpaceBall), Format_SpaceBall);
+            formatLookup.Add(typeof(MyObjectBuilder_SpaceBall), Format_SpaceBall);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
+            formatLookup.Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_UserControllableGun), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapon);
-            typeFormatMethods.Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_UserControllableGun), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapon);
+            formatLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
 
-            typeFormatMethods.Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
+            formatLookup.Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
         }
 
         private void Format_TerminalBlock(MyCubeBlockDefinition def)

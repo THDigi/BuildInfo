@@ -179,7 +179,7 @@ namespace Digi.BuildInfo
                         if(changedBlock)
                         {
                             selectedGridSize = MyDefinitionManager.Static.GetCubeSize(selectedDef.CubeSize);
-                            selectedOverlayCall = overlayCalls.GetValueOrDefault(selectedDef.Id.TypeId, null);
+                            selectedOverlayCall = drawLookup.GetValueOrDefault(selectedDef.Id.TypeId, null);
 
                             BlockDataCache = null;
                             BlockDataCacheValid = true;
@@ -622,7 +622,7 @@ namespace Digi.BuildInfo
                         }
                     }
 
-                    if(input.IsNewGameControlPressed(MyControlsSpace.VOXEL_HAND_SETTINGS))
+                    if(input.IsNewGameControlPressed(CONTROL))
                     {
                         if(input.IsAnyShiftKeyPressed())
                         {
@@ -938,18 +938,18 @@ namespace Digi.BuildInfo
             hudVisible = !cfg.MinimalHud;
             hudBackgroundOpacity = cfg.HUDBkOpacity;
 
-            var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+            var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(CONTROL);
 
-            voxelHandSettingsInputName = MyControlsSpace.VOXEL_HAND_SETTINGS.GetAssignedInputName();
-            voxelHandSettingsControlName = MyTexts.GetString(voxelHandSettingsControl.GetControlName());
-            voxelHandSettingsCollisionControlName = null;
+            controlInputName = CONTROL.GetAssignedInputName();
+            controlDisplayName = MyTexts.GetString(voxelHandSettingsControl.GetControlName());
+            controlCollissionDisplayName = null;
 
             if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None)
             {
                 var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetKeyboardControl());
 
                 if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    voxelHandSettingsCollisionControlName = MyTexts.GetString(collissionControl.GetControlName());
+                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
             }
 
             if(voxelHandSettingsControl.GetSecondKeyboardControl() != MyKeys.None)
@@ -957,7 +957,7 @@ namespace Digi.BuildInfo
                 var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetSecondKeyboardControl());
 
                 if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    voxelHandSettingsCollisionControlName = MyTexts.GetString(collissionControl.GetControlName());
+                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
             }
 
             if(voxelHandSettingsControl.GetMouseControl() != MyMouseButtonsEnum.None)
@@ -965,7 +965,7 @@ namespace Digi.BuildInfo
                 var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetMouseControl());
 
                 if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    voxelHandSettingsCollisionControlName = MyTexts.GetString(collissionControl.GetControlName());
+                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
             }
 
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
@@ -1011,7 +1011,7 @@ namespace Digi.BuildInfo
 
         private void ShowHelp()
         {
-            var help = string.Format(HELP_FORMAT, voxelHandSettingsInputName);
+            var help = string.Format(HELP_FORMAT, controlInputName);
 
             MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", help, null, "Close");
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Digi.BuildInfo.Blocks;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI.Weapons;
 using VRage.Game;
@@ -23,6 +24,7 @@ namespace Digi.BuildInfo
         public const string MOD_NAME = "Build Info";
         public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
+        public MyStringId CONTROL = MyControlsSpace.VOXEL_HAND_SETTINGS; // game control used for menu and key combinations
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
@@ -203,9 +205,9 @@ namespace Digi.BuildInfo
         public LeakInfoComponent LeakInfoComp;
         public TerminalInfoComponent TerminalInfoComp;
         public short Tick = 0; // global incrementing gamelogic tick
-        private string voxelHandSettingsInputName;
-        private string voxelHandSettingsControlName;
-        private string voxelHandSettingsCollisionControlName;
+        private string controlInputName;
+        private string controlDisplayName;
+        private string controlCollissionDisplayName;
 
         private MatrixD viewProjInvCache;
         private bool viewProjInvCompute = true;
