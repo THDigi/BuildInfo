@@ -15,7 +15,6 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
-using VRage.Utils;
 using VRageMath;
 
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
@@ -286,6 +285,7 @@ namespace Digi.BuildInfo
                 {
                     selectedBlock = heldCasterComp.HitBlock as IMySlimBlock;
                     selectedDef = (selectedBlock == null ? null : (MyCubeBlockDefinition)selectedBlock.BlockDefinition);
+                    willSplitGrid = TriState.None;
                 }
                 else // equipped block
                 {
@@ -374,6 +374,7 @@ namespace Digi.BuildInfo
 
                 selectedBlock = casterComp.HitBlock as IMySlimBlock;
                 selectedDef = (selectedBlock == null ? null : (MyCubeBlockDefinition)selectedBlock.BlockDefinition);
+                willSplitGrid = TriState.None;
             }
         }
 

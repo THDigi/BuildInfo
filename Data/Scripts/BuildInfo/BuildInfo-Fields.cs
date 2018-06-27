@@ -194,6 +194,8 @@ namespace Digi.BuildInfo
             Vector3.Backward,
             Vector3.Forward,
         };
+
+        public enum TriState { None, Off, On }
         #endregion
 
         #region Fields

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -41,8 +40,9 @@ namespace Digi.BuildInfo
                 DestructibleBlocks = false,
                 IsRespawnGrid = false,
                 Name = "BuildInfo_TemporaryGrid",
-                CubeBlocks = new List<MyObjectBuilder_CubeBlock>(1) { blockObj },
             };
+
+            gridObj.CubeBlocks.Add(blockObj);
 
             MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
 

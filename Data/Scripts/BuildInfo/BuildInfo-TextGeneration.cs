@@ -19,6 +19,8 @@ namespace Digi.BuildInfo
 {
     public partial class BuildInfo
     {
+        private TriState willSplitGrid;
+
         // menu specific stuff
         private bool showMenu = false;
         private bool menuNeedsUpdate = true;
@@ -904,9 +906,20 @@ namespace Digi.BuildInfo
                         else
                             AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING);
 
-                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").EndLine();
+                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").ResetColor().EndLine();
                     }
                 }
+            }
+            #endregion
+
+            #region
+            if(IsGrinder)
+            {
+                if(willSplitGrid == TriState.None)
+                    willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? TriState.On : TriState.Off;
+
+                if(willSplitGrid == TriState.On)
+                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("Grid will split if this block is removed!").ResetColor().EndLine();
             }
             #endregion
 
@@ -1025,7 +1038,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Details on last lines
-            
+
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
             {
                 TextGenerationCall action;
