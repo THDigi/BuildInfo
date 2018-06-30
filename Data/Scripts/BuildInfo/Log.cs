@@ -14,7 +14,7 @@ namespace Digi
 {
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
-    /// <para>You can set the mod name to be shorter instead of being the workshop/folder name.</para>
+    /// <para>Mod name is automatically set from workshop name or folder name, can be manually defined using <see cref="ModName"/>.</para>
     /// <para>Version 1.5 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
