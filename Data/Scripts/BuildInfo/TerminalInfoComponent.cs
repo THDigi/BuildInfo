@@ -519,6 +519,10 @@ namespace Digi.BuildInfo
             //      (nothing)
 
             var upgradeModule = (IMyUpgradeModule)block;
+            var def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
+
+            if(def.Upgrades == null) // HACK required as UpgradeCount throws NRE if block has no Upgrades tag at all (empty tag would be fine)
+                return;
 
             if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
                 return;
