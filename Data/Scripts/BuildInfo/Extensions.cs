@@ -92,6 +92,11 @@ namespace Digi.BuildInfo
             return s.Append(", ");
         }
 
+        public static StringBuilder NewLine(this StringBuilder s)
+        {
+            return s.Append('\n');
+        }
+
         public static void EndLine(this StringBuilder s)
         {
             BuildInfo.Instance.EndAddedLines();

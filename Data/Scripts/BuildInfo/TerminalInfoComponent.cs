@@ -331,7 +331,7 @@ namespace Digi.BuildInfo
 
                 if(otherModInfo != null)
                 {
-                    info.Append('\n');
+                    info.NewLine();
                     info.Append(otherModInfo);
                 }
             }
@@ -431,20 +431,20 @@ namespace Digi.BuildInfo
                 if(connector.Status == MyShipConnectorStatus.Connectable)
                 {
                     info.Append("Status: Ready to connect\n");
-                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
-                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
+                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).NewLine();
+                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).NewLine();
                 }
                 else if(connector.Status == MyShipConnectorStatus.Connected)
                 {
                     info.Append("Status: Connected\n");
-                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
-                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
+                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).NewLine();
+                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).NewLine();
                 }
                 else
                 {
                     info.Append("Status: Not connected\n");
-                    info.Append("Target: ").Append("N/A").Append('\n');
-                    info.Append("Ship: ").Append("N/A").Append('\n');
+                    info.Append("Target: ").Append("N/A").NewLine();
+                    info.Append("Ship: ").Append("N/A").NewLine();
                 }
             }
         }
@@ -461,8 +461,8 @@ namespace Digi.BuildInfo
             int mags = gun.GetAmmunitionAmount();
             int totalAmmo = gun.GunBase.GetTotalAmmunitionAmount();
 
-            info.Append("Ammo: ").Append(totalAmmo).Append(" (").Append(mags).Append(" mags)").Append('\n');
-            info.Append("Magazine: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).Append('\n');
+            info.Append("Ammo: ").Append(totalAmmo).Append(" (").Append(mags).Append(" mags)").NewLine();
+            info.Append("Magazine: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)
@@ -476,22 +476,22 @@ namespace Digi.BuildInfo
             //      Power efficiency: <n>%
             //      Used upgrade module slots: <n> / <n>
 
-            info.Append('\n');
+            info.NewLine();
 
             var productionDef = (MyProductionBlockDefinition)block.SlimBlock.BlockDefinition;
             var volume = (productionDef.InventoryMaxVolume > 0 ? productionDef.InventoryMaxVolume : productionDef.InventorySize.Volume);
             info.DetailInfo_Inventory(Inv, volume, "Inventory In");
             info.DetailInfo_Inventory(Inv2, volume, "Inventory Out");
 
-            info.Append('\n');
+            info.NewLine();
 
             var production = (IMyProductionBlock)block;
             var assembler = block as IMyAssembler;
 
             if(assembler != null)
             {
-                info.Append("Mode: ").Append(assembler.Mode).Append('\n');
-                info.Append("Loop queue: ").Append(assembler.Repeating ? "On" : "Off").Append('\n');
+                info.Append("Mode: ").Append(assembler.Mode).NewLine();
+                info.Append("Loop queue: ").Append(assembler.Repeating ? "On" : "Off").NewLine();
             }
 
             if(production.IsQueueEmpty)
@@ -500,7 +500,7 @@ namespace Digi.BuildInfo
             }
             else
             {
-                info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").Append('\n');
+                info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").NewLine();
 
                 var queue = production.GetQueue();
 
@@ -508,7 +508,7 @@ namespace Digi.BuildInfo
                 {
                     var item = queue[i];
 
-                    info.Append("• ").Number((float)item.Amount).Append("x ").Append(item.Blueprint.DisplayNameText).Append('\n');
+                    info.Append("• ").Number((float)item.Amount).Append("x ").Append(item.Blueprint.DisplayNameText).NewLine();
                 }
             }
         }
@@ -529,7 +529,7 @@ namespace Digi.BuildInfo
 
             if(upgradeModule.Connections > 0)
             {
-                info.Append('\n');
+                info.NewLine();
 
                 // HACK since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
                 longSetTemp.Clear();
@@ -560,7 +560,7 @@ namespace Digi.BuildInfo
                             if(!module.Compatible)
                                 info.Append(" (incompatible)");
 
-                            info.Append('\n');
+                            info.NewLine();
                             break;
                         }
                     }
@@ -580,7 +580,7 @@ namespace Digi.BuildInfo
 
             foreach(var item in upgrades)
             {
-                info.Append("• ").AppendUpgrade(item).Append('\n');
+                info.Append("• ").AppendUpgrade(item).NewLine();
             }
         }
 
@@ -604,7 +604,7 @@ namespace Digi.BuildInfo
             // TODO charging power stats?
 
             if(cockpit.OxygenCapacity > 0)
-                info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(')').Append('\n');
+                info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(')').NewLine();
 
             Suffix_ShipController(block, info);
         }
@@ -651,10 +651,10 @@ namespace Digi.BuildInfo
                     case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
                 }
 
-                info.Append('\n');
+                info.NewLine();
 
-                info.Append("  Total required: ").PowerFormat(required).Append('\n');
-                info.Append("  Total available: ").PowerFormat(available).Append('\n');
+                info.Append("  Total required: ").PowerFormat(required).NewLine();
+                info.Append("  Total available: ").PowerFormat(available).NewLine();
 
                 info.Append("  Reactors: ");
                 if(reactors == 0)
@@ -834,7 +834,7 @@ namespace Digi.BuildInfo
             if(Inv == null)
                 return;
 
-            info.Append('\n');
+            info.NewLine();
 
             var reactorDef = (MyReactorDefinition)block.SlimBlock.BlockDefinition;
             var maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
@@ -847,10 +847,10 @@ namespace Digi.BuildInfo
             float kgPerSec = GameData.Hardcoded.Reactor_KgPerSec(Source, reactorDef);
             float seconds = (kgPerSec > 0 ? ((float)Inv.CurrentMass / kgPerSec) : 0);
 
-            info.Append('\n');
-            info.Append("Requires fuel: ").Append(reactorDef.FuelId.SubtypeName).Append('\n');
-            info.Append("Current kg/s: ").AppendFormat("{0:0.##########}", kgPerSec).Append('\n');
-            info.Append("Current time left: ").TimeFormat(seconds).Append('\n');
+            info.NewLine();
+            info.Append("Requires fuel: ").Append(reactorDef.FuelId.SubtypeName).NewLine();
+            info.Append("Current kg/s: ").AppendFormat("{0:0.##########}", kgPerSec).NewLine();
+            info.Append("Current time left: ").TimeFormat(seconds).NewLine();
         }
 
         void Format_Thruster(IMyTerminalBlock block, StringBuilder info)
@@ -866,7 +866,7 @@ namespace Digi.BuildInfo
             float currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
             float maxPowerUsage = thrustInternal.MaxPowerConsumption;
 
-            info.Append('\n');
+            info.NewLine();
 
             if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
             {
@@ -875,43 +875,42 @@ namespace Digi.BuildInfo
                 float currentFuelUsage = currentPowerUsage / eff;
                 float maxFuelUsage = maxPowerUsage / eff;
 
-                info.Append("Requires: ").Append(thrustInternal.FuelDefinition.Id.SubtypeName).Append('\n');
-                info.Append("Current Usage: ").VolumeFormat(currentFuelUsage).Append("/s").Append('\n');
-                info.Append("Max Usage: ").VolumeFormat(maxFuelUsage).Append("/s").Append('\n');
+                info.Append("Requires: ").Append(thrustInternal.FuelDefinition.Id.SubtypeName).NewLine();
+                info.Append("Current Usage: ").VolumeFormat(currentFuelUsage).Append("/s").NewLine();
+                info.Append("Max Usage: ").VolumeFormat(maxFuelUsage).Append("/s").NewLine();
             }
             else
             {
-                info.Append("Requires: Electricity").Append('\n');
-                info.Append("Current Usage: ").PowerFormat(currentPowerUsage).Append('\n');
-                info.Append("Max Usage: ").PowerFormat(maxPowerUsage).Append('\n');
+                info.Append("Requires: Electricity").NewLine();
+                info.Append("Current Usage: ").PowerFormat(currentPowerUsage).NewLine();
+                info.Append("Max Usage: ").PowerFormat(maxPowerUsage).NewLine();
             }
 
-            info.Append('\n');
+            info.NewLine();
 
             if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
             {
-                info.Append("Current effective Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).Append('\n');
-                info.Append("Optimal Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
+                info.Append("Current effective Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).NewLine();
+                info.Append("Optimal Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
 
-                info.Append("Atmospheric effects:").Append('\n');
-                info.Append(' ').ProportionToPercent(def.EffectivenessAtMaxInfluence).Append(" max thrust ");
+                info.ProportionToPercent(def.EffectivenessAtMaxInfluence).Append(" max thrust ");
                 if(def.MaxPlanetaryInfluence < 1f)
-                    info.Append("in ").ProportionToPercent(def.MaxPlanetaryInfluence).Append(" atmosphere");
+                    info.Append("in ").ProportionToPercent(def.MaxPlanetaryInfluence).Append(" atmosphere.");
                 else
-                    info.Append("in atmosphere");
-                info.Append('\n');
+                    info.Append("in atmosphere.");
+                info.NewLine();
 
-                info.Append(' ').ProportionToPercent(def.EffectivenessAtMinInfluence).Append(" max thrust ");
+                info.ProportionToPercent(def.EffectivenessAtMinInfluence).Append(" max thrust ");
                 if(def.MinPlanetaryInfluence > 0f)
-                    info.Append("below ").ProportionToPercent(def.MinPlanetaryInfluence).Append(" atmosphere");
+                    info.Append("below ").ProportionToPercent(def.MinPlanetaryInfluence).Append(" atmosphere.");
                 else
-                    info.Append("in space");
-                info.Append('\n');
+                    info.Append("in space.");
+                info.NewLine();
             }
             else
             {
-                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
-                info.Append("No effect from atmosphere or ");
+                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
+                info.Append("No thrust limits in space or planets");
             }
         }
 
@@ -923,7 +922,7 @@ namespace Digi.BuildInfo
 
             var def = (MyRadioAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(GameData.Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).Append('\n');
+            info.Append("Max Power Usage: ").PowerFormat(GameData.Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).NewLine();
         }
 
         void Format_LaserAntenna(IMyTerminalBlock block, StringBuilder info)
@@ -936,24 +935,24 @@ namespace Digi.BuildInfo
             var antenna = (IMyLaserAntenna)block;
             var def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append('\n');
+            info.NewLine();
             info.Append("Power Usage:\n");
 
-            info.Append("  Current: ").PowerFormat(Sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId)).Append('\n');
+            info.Append("  Current: ").PowerFormat(Sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId)).NewLine();
 
             info.Append("  At Range: ");
             if(antenna.Range < 1E+08f)
                 info.PowerFormat(GameData.Hardcoded.LaserAntenna_PowerUsage(def, antenna.Range));
             else
                 info.Append("Infinite.");
-            info.Append('\n');
+            info.NewLine();
 
             info.Append("  Max: ");
             if(def.MaxRange > 0)
                 info.PowerFormat(GameData.Hardcoded.LaserAntenna_PowerUsage(def, def.MaxRange));
             else
                 info.Append("Infinite.");
-            info.Append('\n');
+            info.NewLine();
         }
 
         void Format_Beacon(IMyTerminalBlock block, StringBuilder info)
@@ -964,7 +963,7 @@ namespace Digi.BuildInfo
 
             var def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(GameData.Hardcoded.Beacon_PowerReq(def.MaxBroadcastRadius)).Append('\n');
+            info.Append("Max Power Usage: ").PowerFormat(GameData.Hardcoded.Beacon_PowerReq(def.MaxBroadcastRadius)).NewLine();
         }
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
@@ -1021,7 +1020,7 @@ namespace Digi.BuildInfo
             var parachute = (IMyParachute)block;
 
             info.DetailInfo_Inventory(Inv);
-            info.Append("Atmosphere density: ").ProportionToPercent(parachute.Atmosphere).Append('\n');
+            info.Append("Atmosphere density: ").ProportionToPercent(parachute.Atmosphere).NewLine();
         }
 
         void Format_Collector(IMyTerminalBlock block, StringBuilder info)
