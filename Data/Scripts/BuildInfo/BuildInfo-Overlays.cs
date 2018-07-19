@@ -377,7 +377,7 @@ namespace Digi.BuildInfo
             var accuracyAtMaxRange = tanShotAngle * (height * 2);
             var coneMatrix = data.muzzleLocalMatrix * drawMatrix;
 
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_VANILLA_DOT, color, coneMatrix.Translation, 0.025f, 0, blendType: BlendTypeEnum.SDR); // this is drawn always on top on purpose
+            MyTransparentGeometry.AddPointBillboard(MATERIAL_VANILLA_DOT, color, coneMatrix.Translation, 0.025f, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
             MySimpleObjectDraw.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref colorFace, wireDivideRatio, faceMaterial: MATERIAL_SQUARE);
 
             //const int circleWireDivideRatio = 20;
@@ -477,7 +477,7 @@ namespace Digi.BuildInfo
             var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
             bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
-            foreach(var flame in data.damageFlames)
+            foreach(var flame in data.Flames)
             {
                 var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
 

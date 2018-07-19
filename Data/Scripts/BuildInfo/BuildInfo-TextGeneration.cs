@@ -1565,17 +1565,18 @@ namespace Digi.BuildInfo
 
             if(data != null)
             {
-                var flameDistance = data.distance * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... not sure if this scaling is correct though
+                var flameDistance = data.HighestLength * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... 
+                var flamesCount = data.Flames.Count;
 
                 // HACK hardcoded; from MyThrust.ThrustDamageDealDamage() and MyThrust.DamageGrid()
-                var damage = thrust.FlameDamage * data.flamesCount * 60; // 60 = ticks in a second
+                var damage = thrust.FlameDamage * flamesCount * 60; // 60 = ticks in a second
                 var flameShipDamage = damage;
-                var flameDamage = damage * data.radius;
+                var flameDamage = damage * data.HighestRadius;
 
                 AddLine();
 
-                if(data.flamesCount > 1)
-                    GetLine().Append("Flames: ").Append(data.flamesCount).Separator().Append("Max distance: ");
+                if(flamesCount > 1)
+                    GetLine().Append("Flames: ").Append(flamesCount).Separator().Append("Max distance: ");
                 else
                     GetLine().Append("Flame max distance: ");
 

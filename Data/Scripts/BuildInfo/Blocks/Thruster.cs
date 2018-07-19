@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -14,10 +15,9 @@ namespace Digi.BuildInfo.Blocks
 
     public class BData_Thrust : BData_Base
     {
-        public float radius;
-        public float distance;
-        public int flamesCount;
-        public List<FlameInfo> damageFlames = new List<FlameInfo>();
+        public float HighestRadius;
+        public float HighestLength;
+        public List<FlameInfo> Flames = new List<FlameInfo>();
 
         public struct FlameInfo
         {
@@ -40,39 +40,40 @@ namespace Digi.BuildInfo.Blocks
 
         public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            double distSq = 0;
-
+            var thrust = (IMyThrust)block;
             var thrustDef = (MyThrustDefinition)def;
-            var thrust = (MyThrust)block;
             var thrustMatrix = thrust.WorldMatrix;
             var invMatrix = block.WorldMatrixInvScaled;
 
-            // HACK copied from MyThrust.UpdateThrustFlame()
+            // HACK copied from MyThrust's ThrustDamageAsync(), UpdateThrustFlame(), GetDamageCapsuleLine()
+            var thrustLength = /* CurrentStrength * */ 10f * /* MyUtils.GetRandomFloat(0.6f, 1f) * */ thrustDef.FlameLengthScale;
 
-            // HACK make the GetDamageCapsuleLine() method think it thrusts at max and with no random
-            thrust.ThrustLengthRand = /* CurrentStrength * */ 10f * /* MyUtils.GetRandomFloat(0.6f, 1f) * */ thrustDef.FlameLengthScale;
+            var dummies = BuildInfo.Instance.dummies;
+            dummies.Clear();
+            Flames.Clear();
+            HighestLength = 0;
+            HighestRadius = 0;
 
-            damageFlames.Clear();
+            thrust.Model.GetDummies(dummies);
 
-            // HACK hardcoded; from MyThrust.ThrustDamageAsync()
-            foreach(var flame in thrust.Flames)
+            foreach(var dummy in dummies.Values)
             {
-                var flameLine = thrust.GetDamageCapsuleLine(flame, ref thrustMatrix);
-
-                //var capsule = new CapsuleD(Vector3D.Transform(flameLine.From, block.WorldMatrixInvScaled), Vector3D.Transform(flameLine.To, block.WorldMatrixInvScaled), flame.Radius * thrustDef.FlameDamageLengthScale);
-                damageFlames.Add(new FlameInfo(Vector3D.Transform(flameLine.From, invMatrix), Vector3D.Transform(flameLine.To, invMatrix), flame.Radius * thrustDef.FlameDamageLengthScale));
-
-                var flameDistSq = (flameLine.From - flameLine.To).LengthSquared();
-
-                if(flameDistSq > distSq)
+                if(dummy.Name.StartsWith("thruster_flame", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    distSq = flameDistSq;
-                    radius = flame.Radius;
+                    var startPosition = dummy.Matrix.Translation;
+                    var direction = Vector3.Normalize(dummy.Matrix.Forward);
+                    var radius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f;
+                    var length = thrustLength * radius * thrustDef.FlameDamageLengthScale - radius;
+                    var endPosition = startPosition + direction * length;
+
+                    Flames.Add(new FlameInfo(startPosition, endPosition, radius));
+
+                    HighestLength = Math.Max(HighestLength, length);
+                    HighestRadius = Math.Max(HighestRadius, radius);
                 }
             }
 
-            distance = (float)Math.Sqrt(distSq);
-            flamesCount = thrust.Flames.Count;
+            dummies.Clear();
             return true;
         }
     }

@@ -70,6 +70,7 @@ namespace Digi.BuildInfo
 
         private const double MOUNTPOINT_THICKNESS = 0.05;
         private const float MOUNTPOINT_ALPHA = 0.65f;
+        private const BlendTypeEnum OVERLAY_BLEND_TYPE = BlendTypeEnum.SDR;
         private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.Standard;
         private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_DEFAULT_COLOR = new Color(255, 200, 0) * MOUNTPOINT_ALPHA;
