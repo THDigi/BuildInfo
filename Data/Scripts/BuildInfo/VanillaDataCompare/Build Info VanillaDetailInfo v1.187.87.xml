@@ -9,7 +9,7 @@ Max Required Input: 12.00 MW
 Max Stored Power: 3.00 MWh
 Current Input: 0 W
 Current Output: 0 W
-Stored power: 900.00 kWh
+Stored power: 1.19 MWh
 Fully depleted in: -</DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -102,7 +102,7 @@ Current Input: 0 W</DetailInfo>
       <Id>MyObjectBuilder_OxygenTank/OxygenTankSmall</Id>
       <DetailInfo>Type: Oxygen Tank
 Max Required Input: 1.00 kW
-Filled: 0.0% (0L/50000L)</DetailInfo>
+Filled: 50.0% (25000L/50000L)</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_RemoteControl/LargeBlockRemoteControl</Id>

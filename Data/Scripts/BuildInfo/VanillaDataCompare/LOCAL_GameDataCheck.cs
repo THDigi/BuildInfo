@@ -24,7 +24,7 @@ namespace Digi.BuildInfo
     public class GameDataCheck : MySessionComponentBase
     {
         const string NAME = "GameChecks";
-        const string LAST_CHECKED_VERSION = "v1.186.500";
+        const string LAST_CHECKED_VERSION = "v1.187.87";
 
         string readFile;
         string writeFile;
