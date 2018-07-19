@@ -117,6 +117,17 @@ namespace Digi.BuildInfo
             return s.LabelHardcoded(label, BuildInfo.Instance.COLOR_NORMAL);
         }
 
+        public static StringBuilder PCUFormat(this StringBuilder s, int PCU)
+        {
+            if(PCU >= 500)
+                s.Color(BuildInfo.Instance.COLOR_BAD);
+            else if(PCU >= 200)
+                s.Color(BuildInfo.Instance.COLOR_WARNING);
+
+            s.Append("PCU: ").Append(PCU).ResetColor();
+            return s;
+        }
+
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
         {
             return s.Append(b ? "Yes" : "No");

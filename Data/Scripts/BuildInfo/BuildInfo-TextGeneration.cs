@@ -654,7 +654,7 @@ namespace Digi.BuildInfo
             var terminalBlock = selectedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
-            #region
+            #region Block name
             if(terminalBlock != null)
             {
                 const int LENGTH_LIMIT = 35;
@@ -671,7 +671,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Mass, grid mass
             var mass = def.Mass;
             var massColor = Color.GreenYellow;
 
@@ -698,10 +698,12 @@ namespace Digi.BuildInfo
                 GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
             }
 
+            GetLine().Separator().PCUFormat(def.PCU);
+
             GetLine().EndLine();
             #endregion
 
-            #region
+            #region Integrity
             AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
                 .IntegrityFormat(selectedBlock.Integrity).ResetColor()
                 .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
@@ -714,14 +716,14 @@ namespace Digi.BuildInfo
             GetLine().ResetColor().EndLine();
             #endregion
 
-            #region
+            #region Optional: intake damage multiplier
             if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
                 AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).ResetColor().EndLine();
             }
             #endregion
 
-            #region
+            #region Time to complete/grind
             float toolMul = 1;
 
             if(selectedHandTool != null)
@@ -777,7 +779,7 @@ namespace Digi.BuildInfo
             GetLine().EndLine();
             #endregion
 
-            #region
+            #region Optional: ownership
             if(hasComputer)
             {
                 AddLine();
@@ -847,7 +849,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Optional: item changes on grind
             if(IsGrinder)
             {
                 foreach(var comp in def.Components)
@@ -860,7 +862,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Optional: grid moving
             if(grid.Physics != null)
             {
                 bool hasLinearVel = !Vector3.IsZero(grid.Physics.LinearVelocity, 0.00001f);
@@ -888,7 +890,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Optional: ship grinder apply force
             if(selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
@@ -912,7 +914,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Optional: grinder makes grid split
             if(IsGrinder)
             {
                 if(willSplitGrid == TriState.None)
@@ -923,7 +925,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region
+            #region Optional: added by mod
             var context = def.Context;
             if(!context.IsBaseGame)
             {
@@ -1098,6 +1100,8 @@ namespace Digi.BuildInfo
 
             if(!buildModels)
                 GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
+
+            GetLine().Separator().PCUFormat(def.PCU);
 
             GetLine().EndLine();
             #endregion
