@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using ParallelTasks;
 using Sandbox.Definitions;
 using Sandbox.Engine.Utils;
@@ -6,8 +8,6 @@ using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
-using System;
-using System.Collections.Generic;
 using VRage;
 using VRage.Game;
 using VRage.Input;
@@ -117,8 +117,8 @@ namespace Sandbox.Game.GameSystems
 		public MyGridGasSystem(MyCubeGrid cubeGrid)
 		{
 			this.m_cubeGrid = cubeGrid;
-			cubeGrid.OnBlockAdded += new Action<MySlimBlock>(this.cubeGrid_OnBlockAdded);
-			cubeGrid.OnBlockRemoved += new Action<MySlimBlock>(this.cubeGrid_OnBlockRemoved);
+			cubeGrid.OnBlockAdded += this.cubeGrid_OnBlockAdded;
+			cubeGrid.OnBlockRemoved += this.cubeGrid_OnBlockRemoved;
 			this.m_lastUpdateTime = MySandboxGame.TotalGamePlayTimeInMilliseconds;
 		}
 
@@ -129,21 +129,21 @@ namespace Sandbox.Game.GameSystems
 			{
 				try
 				{
-					this.m_backgroundTask.WaitOrExecute();
+					this.m_backgroundTask.WaitOrExecute(false);
 				}
 				catch (Exception ex)
 				{
 					MySandboxGame.Log.WriteLineAndConsole("MyGridGasSystem.OnGridClosing: " + ex.Message + ", " + ex.StackTrace);
 				}
 			}
-			this.m_cubeGrid.OnBlockAdded -= new Action<MySlimBlock>(this.cubeGrid_OnBlockAdded);
-			this.m_cubeGrid.OnBlockRemoved -= new Action<MySlimBlock>(this.cubeGrid_OnBlockRemoved);
-			foreach (MyCubeBlock current in this.m_cubeGrid.GetFatBlocks())
+			this.m_cubeGrid.OnBlockAdded -= this.cubeGrid_OnBlockAdded;
+			this.m_cubeGrid.OnBlockRemoved -= this.cubeGrid_OnBlockRemoved;
+			foreach (MyCubeBlock myCubeBlock in this.m_cubeGrid.GetFatBlocks())
 			{
-				IMyDoor myDoor = current as IMyDoor;
+				IMyDoor myDoor = myCubeBlock as IMyDoor;
 				if (myDoor != null)
 				{
-					myDoor.DoorStateChanged -= new Action<bool>(this.OnDoorStateChanged);
+					myDoor.DoorStateChanged -= this.OnDoorStateChanged;
 				}
 			}
 			if (this.m_OxygenRoomLinkPool != null && this.m_OxygenRoomLinkPool.pool != null)
@@ -156,10 +156,11 @@ namespace Sandbox.Game.GameSystems
 		{
 			if (addedBlock.FatBlock is IMyDoor)
 			{
-				((IMyDoor)addedBlock.FatBlock).DoorStateChanged += new Action<bool>(this.OnDoorStateChanged);
+				((IMyDoor)addedBlock.FatBlock).DoorStateChanged += this.OnDoorStateChanged;
 			}
 			this.m_gasBlockCounter += ((addedBlock.FatBlock is IMyGasBlock) ? 1 : 0);
 			this.m_pressurizationPending = true;
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		private void cubeGrid_OnBlockRemoved(MySlimBlock deletedBlock)
@@ -167,20 +168,23 @@ namespace Sandbox.Game.GameSystems
 			IMyDoor myDoor = deletedBlock.FatBlock as IMyDoor;
 			if (myDoor != null)
 			{
-				myDoor.DoorStateChanged -= new Action<bool>(this.OnDoorStateChanged);
+				myDoor.DoorStateChanged -= this.OnDoorStateChanged;
 			}
 			this.m_gasBlockCounter -= ((deletedBlock.FatBlock is IMyGasBlock) ? 1 : 0);
 			this.m_deletedBlocks.Add(deletedBlock.Position);
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		private void OnDoorStateChanged(bool status)
 		{
 			this.m_pressurizationPending = true;
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		public void OnCubeGridShrinked()
 		{
 			this.m_pressurizationPending = true;
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		private bool ShouldPressurize()
@@ -225,6 +229,14 @@ namespace Sandbox.Game.GameSystems
 			return false;
 		}
 
+		public bool NeedsPerFrameUpdate
+		{
+			get
+			{
+				return this.m_bgTaskRunning || this.m_pressurizationPending || this.m_isPressurizing || this.m_deletedBlocks.Count > 0;
+			}
+		}
+
 		public void UpdateBeforeSimulation()
 		{
 			if (MyFakes.BACKGROUND_OXYGEN && this.m_bgTaskRunning)
@@ -254,9 +266,9 @@ namespace Sandbox.Game.GameSystems
 			}
 			if (!this.m_isPressurizing && this.m_deletedBlocks.Count > 0)
 			{
-				foreach (Vector3I current in this.m_deletedBlocks)
+				foreach (Vector3I deletedBlockPosition in this.m_deletedBlocks)
 				{
-					this.RemoveBlock(current);
+					this.RemoveBlock(deletedBlockPosition);
 				}
 				this.m_deletedBlocks.Clear();
 			}
@@ -281,7 +293,7 @@ namespace Sandbox.Game.GameSystems
 			}
 			MySimpleProfiler.Begin("Oxygen", MySimpleProfiler.ProfilingBlockType.BLOCK, "UpdateBeforeSimulation100");
 			int totalGamePlayTimeInMilliseconds = MySandboxGame.TotalGamePlayTimeInMilliseconds;
-			float arg_2E_0 = (float)(totalGamePlayTimeInMilliseconds - this.m_lastUpdateTime) / 1000f;
+			float num = (float)(totalGamePlayTimeInMilliseconds - this.m_lastUpdateTime) / 1000f;
 			this.m_lastUpdateTime = totalGamePlayTimeInMilliseconds;
 			if (Sync.IsServer && !this.m_isPressurizing && this.m_rooms != null)
 			{
@@ -298,6 +310,7 @@ namespace Sandbox.Game.GameSystems
 		public void Pressurize()
 		{
 			this.m_pressurizationPending = true;
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		private void PressurizeInternal()
@@ -309,7 +322,7 @@ namespace Sandbox.Game.GameSystems
 		{
 			if (this.m_cubeRoom[x, y, z].Room == null)
 			{
-				return 2147483647;
+				return int.MaxValue;
 			}
 			return this.m_cubeRoom[x, y, z].Room.Index;
 		}
@@ -347,6 +360,7 @@ namespace Sandbox.Game.GameSystems
 			this.m_tempRooms.Add(this.m_cubeRoom[0, 0, 0].Room);
 			this.m_deletedBlocks.Clear();
 			this.m_isPressurizing = true;
+			this.m_cubeGrid.MarkForUpdate();
 		}
 
 		private bool PressurizeProcessQueue(int count, bool useCount = false)
@@ -494,12 +508,12 @@ namespace Sandbox.Game.GameSystems
 			}
 			this.m_rooms = new List<MyOxygenRoom>();
 			int num = 0;
-			foreach (MyOxygenRoom current in this.m_tempRooms)
+			foreach (MyOxygenRoom myOxygenRoom2 in this.m_tempRooms)
 			{
-				if (current.blockCount > 1)
+				if (myOxygenRoom2.blockCount > 1)
 				{
-					current.Index = num;
-					this.m_rooms.Add(current);
+					myOxygenRoom2.Index = num;
+					this.m_rooms.Add(myOxygenRoom2);
 					num++;
 				}
 			}
@@ -573,8 +587,8 @@ namespace Sandbox.Game.GameSystems
 											}
 										}
 									}
-									float num11 = 3.40282347E+38f;
-									float num12 = -3.40282347E+38f;
+									float num11 = float.MaxValue;
+									float num12 = float.MinValue;
 									float num13 = (room3 != null) ? room3.OxygenLevel(this.m_cubeGrid.GridSize) : 0f;
 									Vector3I a2 = Vector3I.Zero;
 									Vector3I a3 = Vector3I.Zero;
@@ -620,11 +634,11 @@ namespace Sandbox.Game.GameSystems
 						}
 					}
 				}
-				foreach (MyOxygenRoom current2 in this.m_rooms)
+				foreach (MyOxygenRoom myOxygenRoom3 in this.m_rooms)
 				{
-					if ((double)current2.OxygenLevel(this.m_cubeGrid.GridSize) > 1.0)
+					if ((double)myOxygenRoom3.OxygenLevel(this.m_cubeGrid.GridSize) > 1.0)
 					{
-						current2.OxygenAmount = current2.MaxOxygen(this.m_cubeGrid.GridSize);
+						myOxygenRoom3.OxygenAmount = myOxygenRoom3.MaxOxygen(this.m_cubeGrid.GridSize);
 					}
 				}
 			}
@@ -633,13 +647,12 @@ namespace Sandbox.Game.GameSystems
 
 		private void AddDepressurizationEffects(Vector3D from, Vector3D to)
 		{
+			MatrixD matrixD = MatrixD.CreateFromDir(to - from);
+			matrixD = MatrixD.Normalize(matrixD);
+			matrixD.Translation = from;
 			MyParticleEffect myParticleEffect;
-			if (MyParticlesManager.TryCreateParticleEffect("OxyLeakLarge", out myParticleEffect, false))
+			if (MyParticlesManager.TryCreateParticleEffect("OxyLeakLarge", matrixD, out myParticleEffect))
 			{
-				MatrixD matrixD = MatrixD.CreateFromDir(to - from);
-				matrixD = MatrixD.Normalize(matrixD);
-				matrixD.Translation = from;
-				myParticleEffect.WorldMatrix = matrixD;
 				MyEntity3DSoundEmitter myEntity3DSoundEmitter = MyAudioComponent.TryGetSoundEmitter();
 				if (myEntity3DSoundEmitter != null)
 				{
@@ -724,20 +737,16 @@ namespace Sandbox.Game.GameSystems
 			if (block.FatBlock != null)
 			{
 				MyCubeBlock fatBlock = block.FatBlock;
-				bool result;
 				if (fatBlock is MyDoor)
 				{
 					MyDoor myDoor = fatBlock as MyDoor;
 					if (!myDoor.Open)
 					{
-						MyCubeBlockDefinition.MountPoint[] mountPoints = block.BlockDefinition.MountPoints;
-						for (int i = 0; i < mountPoints.Length; i++)
+						foreach (MyCubeBlockDefinition.MountPoint mountPoint in block.BlockDefinition.MountPoints)
 						{
-							MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
 							if (vector == mountPoint.Normal)
 							{
-								result = false;
-								return result;
+								return false;
 							}
 						}
 						return true;
@@ -749,14 +758,11 @@ namespace Sandbox.Game.GameSystems
 					MyAdvancedDoor myAdvancedDoor = fatBlock as MyAdvancedDoor;
 					if (myAdvancedDoor.FullyClosed)
 					{
-						MyCubeBlockDefinition.MountPoint[] mountPoints2 = block.BlockDefinition.MountPoints;
-						for (int j = 0; j < mountPoints2.Length; j++)
+						foreach (MyCubeBlockDefinition.MountPoint mountPoint2 in block.BlockDefinition.MountPoints)
 						{
-							MyCubeBlockDefinition.MountPoint mountPoint2 = mountPoints2[j];
 							if (vector == mountPoint2.Normal)
 							{
-								result = false;
-								return result;
+								return false;
 							}
 						}
 						return true;
@@ -785,6 +791,7 @@ namespace Sandbox.Game.GameSystems
 					}
 					return false;
 				}
+				bool result;
 				return result;
 			}
 			return false;
@@ -936,10 +943,10 @@ namespace Sandbox.Game.GameSystems
 				{
 					list.Add(new Vector3D(0.0, 0.0, 1.0));
 				}
-				foreach (Vector3D current in list)
+				foreach (Vector3D value in list)
 				{
 					Vector3D vector3D2 = vector3D;
-					vector3D2 += current;
+					vector3D2 += value;
 					vector3D2 *= (double)this.m_cubeGrid.GridSize;
 					vector3D2 = Vector3D.Transform(vector3D2, this.m_cubeGrid.PositionComp.WorldMatrix);
 					MyOxygenBlock oxygenBlock2 = this.GetOxygenBlock(vector3D2);
