@@ -616,9 +616,9 @@ namespace Digi.BuildInfo
                 if(TextAPIEnabled)
                     AddLine().EndLine();
 
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("WARNING:").EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Append(controlDisplayName).Append("' control is not assigned!").ResetColor().EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("Go in game's Options -> Controls and assign it.").EndLine();
+                AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("WARNING:").EndLine();
+                AddLine(MyFontEnum.Red).Append("'").Append(controlDisplayName).Append("' control is not assigned!").ResetColor().EndLine();
+                AddLine(MyFontEnum.Red).Append("Go in game's Options -> Controls and assign it.").EndLine();
             }
 
             if(controlCollissionDisplayName != null)
@@ -626,9 +626,9 @@ namespace Digi.BuildInfo
                 if(TextAPIEnabled)
                     AddLine().EndLine();
 
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("WARNING:").ResetColor().EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("'").Color(COLOR_BAD).Append(controlDisplayName).ResetColor().Append("' has same key as '").Color(COLOR_BAD).Append(controlCollissionDisplayName).ResetColor().Append("'!").ResetColor().EndLine();
-                AddLine(MyFontEnum.ErrorMessageBoxCaption).Append("Go in game's Options -> Controls and change either of them to avoid collision.").EndLine();
+                AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("WARNING:").ResetColor().EndLine();
+                AddLine(MyFontEnum.Red).Append("'").Color(COLOR_BAD).Append(controlDisplayName).ResetColor().Append("' has same key as '").Color(COLOR_BAD).Append(controlCollissionDisplayName).ResetColor().Append("'!").ResetColor().EndLine();
+                AddLine(MyFontEnum.Red).Append("Go in game's Options -> Controls and change either of them to avoid collision.").EndLine();
             }
 
             EndAddedLines();
@@ -856,7 +856,7 @@ namespace Digi.BuildInfo
                 {
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
                     }
                 }
             }
@@ -904,9 +904,9 @@ namespace Digi.BuildInfo
                         var speed = impulse / selectedBlock.CubeGrid.Physics.Mass;
 
                         if(speed >= 0.5f)
-                            AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD);
+                            AddLine(MyFontEnum.Red).Color(COLOR_BAD);
                         else
-                            AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING);
+                            AddLine(MyFontEnum.Red).Color(COLOR_WARNING);
 
                         GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").ResetColor().EndLine();
                     }
@@ -921,7 +921,7 @@ namespace Digi.BuildInfo
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? TriState.On : TriState.Off;
 
                 if(willSplitGrid == TriState.On)
-                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_BAD).Append("Grid will split if this block is removed!").ResetColor().EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Grid will split if this block is removed!").ResetColor().EndLine();
             }
             #endregion
 
@@ -999,7 +999,7 @@ namespace Digi.BuildInfo
             {
                 if(comp.DeconstructItem != comp.Definition)
                 {
-                    AddLine(MyFontEnum.ErrorMessageBoxCaption).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
                 }
             }
             #endregion
