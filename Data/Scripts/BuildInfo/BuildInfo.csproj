@@ -120,6 +120,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\InputExtensions.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="Blocks\Base.cs" />
@@ -134,7 +135,7 @@
     <Compile Include="BuildInfo-Overlays.cs" />
     <Compile Include="BuildInfo.cs" />
     <Compile Include="TerminalInfoComponent.cs" />
-    <Compile Include="Extensions.cs" />
+    <Compile Include="Extensions\StringBuilderExtensions.cs" />
     <Compile Include="GameData.cs" />
     <Compile Include="Pressurization.cs" />
     <Compile Include="Log.cs" />

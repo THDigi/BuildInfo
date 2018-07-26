@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Blocks;
+using Digi.BuildInfo.Extensions;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;

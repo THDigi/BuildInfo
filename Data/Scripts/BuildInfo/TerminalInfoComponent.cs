@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Blocks;
+using Digi.BuildInfo.Extensions;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -14,9 +15,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
-using VRageMath;
 
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo

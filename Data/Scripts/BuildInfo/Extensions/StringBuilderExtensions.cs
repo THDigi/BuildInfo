@@ -9,14 +9,13 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.Extensions
 {
-    static class Extensions
+    public static class StringBuilderExtensions
     {
         /// <summary>
         /// Gets the workshop id from the mod context by iterating the mods to find it.
@@ -627,22 +626,5 @@ namespace Digi.BuildInfo
             return s;
         }
         #endregion
-        
-        /// <summary>
-        /// Gets the key/button name assigned to this control.
-        /// </summary>
-        public static string GetAssignedInputName(this MyStringId controlId)
-        {
-            var control = MyAPIGateway.Input.GetGameControl(controlId);
-
-            if(control.GetKeyboardControl() != MyKeys.None)
-                return control.GetKeyboardControl().ToString();
-            else if(control.GetSecondKeyboardControl() != MyKeys.None)
-                return control.GetSecondKeyboardControl().ToString();
-            else if(control.GetMouseControl() != MyMouseButtonsEnum.None)
-                return MyAPIGateway.Input.GetName(control.GetMouseControl());
-
-            return null;
-        }
     }
 }

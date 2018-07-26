@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Timers;
+using Digi.BuildInfo.Extensions;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
