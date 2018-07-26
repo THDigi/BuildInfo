@@ -277,16 +277,15 @@ namespace Digi.BuildInfo
 
         /// <summary>
         /// Transforms screen coordinates to world coordinates.
-        /// <para>-1,-1 = bottom-left, 0,0 = center, 1,1 = top-right.</para> 
-        /// <para>Set <paramref name="textAPIcoords"/>=false if you want 0,0 as top-left and 1,1 as bottom-right, no negative values.</para>
+        /// <para><paramref name="textAPIcoords"/>=true => 0,0 as top-left and 1,1 as bottom-right, no negative values.</para>
+        /// <para><paramref name="textAPIcoords"/>=false => -1,-1 = bottom-left, 0,0 = center, 1,1 = top-right.</para> 
         /// </summary>
-        public Vector3D HudToWorld(Vector2 hud, bool textAPIcoords = true)
+        public Vector3D HudToWorld(Vector2 hud, bool textAPIcoords = false)
         {
-            double hudX = (textAPIcoords ? (2.0 * hud.X - 1) : hud.X);
-            double hudY = (textAPIcoords ? (1 - 2.0 * hud.Y) : -hud.Y);
+            double hudX = (textAPIcoords ? hud.X : (2.0 * hud.X - 1));
+            double hudY = (textAPIcoords ? -hud.Y : (1 - 2.0 * hud.Y));
 
-            // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...) 
-
+            // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
             var matrix = ViewProjectionInv;
             double x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
             double y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
