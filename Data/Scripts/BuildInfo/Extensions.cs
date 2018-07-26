@@ -627,12 +627,7 @@ namespace Digi.BuildInfo
             return s;
         }
         #endregion
-
-        public static string ToTextAPIColor(this Color color)
-        {
-            return $"<color={color.R},{color.G},{color.B}>";
-        }
-
+        
         /// <summary>
         /// Gets the key/button name assigned to this control.
         /// </summary>

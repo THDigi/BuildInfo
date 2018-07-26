@@ -604,8 +604,8 @@ namespace Digi.BuildInfo
 
             if(updateText)
             {
-                msgObj.Message.Clear().Append(textColor.ToTextAPIColor()).Append(text);
-                shadowObj.Message.Clear().Append(LABEL_SHADOW_COLOR.ToTextAPIColor()).Append(text);
+                msgObj.Message.Clear().Color(textColor).Append(text);
+                shadowObj.Message.Clear().Color(LABEL_SHADOW_COLOR).Append(text);
             }
 
             msgObj.Visible = true;
