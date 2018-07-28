@@ -1536,7 +1536,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power: ").PowerFormat(thrust.MaxPowerConsumption).Separator().Append("Idle: ").PowerFormat(thrust.MinPowerConsumption).Separator().ResourcePriority(thrust.ResourceSinkGroup).EndLine();
             }
 
-            AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 3).EndLine();
+            AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2).EndLine();
 
             if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
             {
@@ -1609,8 +1609,8 @@ namespace Digi.BuildInfo
 
             AddLine().Append("Power required: ").PowerFormat(light.RequiredPowerInput).Separator().ResourcePriority(light.ResourceSinkGroup).EndLine();
             AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default).EndLine();
-            AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 3).Append(" to ").RoundedNumber(light.LightIntensity.Max, 3).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 3).EndLine();
-            AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 3).Append(" to ").RoundedNumber(light.LightFalloff.Max, 3).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 3).EndLine();
+            AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2).EndLine();
+            AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2).EndLine();
 
             if(!isSpotlight)
                 AddLine(MyFontEnum.Blue).Append("Physical collisions: ").Append(light.HasPhysics ? "On" : "Off").EndLine();
@@ -1862,7 +1862,7 @@ namespace Digi.BuildInfo
             var oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
 
             AddLine().Label("Power").PowerFormat(oxygenFarm.OperationalPowerConsumption).Separator().ResourcePriority(oxygenFarm.ResourceSinkGroup).EndLine();
-            AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 3).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
+            AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
             AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
         }
 
@@ -2047,7 +2047,7 @@ namespace Digi.BuildInfo
             else
                 GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-            GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 3).EndLine();
+            GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).EndLine();
 
             // TODO visualize angle limits?
         }
