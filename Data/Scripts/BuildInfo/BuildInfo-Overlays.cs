@@ -345,7 +345,7 @@ namespace Digi.BuildInfo
 
         private void DrawOverlay_Weapons(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = BData_Base.TryGetDataCached<BData_Weapons>(def);
+            var data = BData_Base.TryGetDataCached<BData_Weapon>(def);
 
             if(data == null)
                 return;

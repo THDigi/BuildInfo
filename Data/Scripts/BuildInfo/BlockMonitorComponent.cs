@@ -32,12 +32,12 @@ namespace Digi.BuildInfo
 
             AddType<BData_Thrust>(typeof(MyObjectBuilder_Thrust));
 
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_SmallGatlingGun));
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_SmallMissileLauncher));
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_SmallMissileLauncherReload));
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_LargeGatlingTurret));
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_LargeMissileTurret));
-            AddType<BData_Weapons>(typeof(MyObjectBuilder_InteriorTurret));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallGatlingGun));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallMissileLauncher));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallMissileLauncherReload));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeGatlingTurret));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeMissileTurret));
+            AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
 
             MyAPIGateway.Entities.OnEntityAdd += OnEntitySpawned;
         }

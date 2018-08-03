@@ -6,7 +6,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.BlockData
 {
-    public class BData_Weapons : BData_Base
+    public class BData_Weapon : BData_Base
     {
         public Matrix muzzleLocalMatrix;
 

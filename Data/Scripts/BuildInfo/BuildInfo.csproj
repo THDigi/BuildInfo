@@ -124,13 +124,13 @@
     <Compile Include="Extensions\InputExtensions.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
-    <Compile Include="Blocks\Base.cs" />
-    <Compile Include="Blocks\Collector.cs" />
-    <Compile Include="Blocks\Connector.cs" />
-    <Compile Include="Blocks\LandingGear.cs" />
-    <Compile Include="Blocks\ShipWelder.cs" />
-    <Compile Include="Blocks\Thruster.cs" />
-    <Compile Include="Blocks\Weapons.cs" />
+    <Compile Include="BlockData\Base.cs" />
+    <Compile Include="BlockData\Collector.cs" />
+    <Compile Include="BlockData\Connector.cs" />
+    <Compile Include="BlockData\LandingGear.cs" />
+    <Compile Include="BlockData\ShipTools.cs" />
+    <Compile Include="BlockData\Thruster.cs" />
+    <Compile Include="BlockData\Weapons.cs" />
     <Compile Include="BuildInfo-Extras.cs" />
     <Compile Include="BuildInfo-Fields.cs" />
     <Compile Include="BuildInfo-Overlays.cs" />
@@ -146,8 +146,6 @@
     <Compile Include="BuildInfo-TextGeneration.cs" />
     <Compile Include="VanillaDataCompare\LOCAL_GameDataCheck.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="BlockData\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
