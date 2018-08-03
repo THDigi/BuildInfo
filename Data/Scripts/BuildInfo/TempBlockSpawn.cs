@@ -6,6 +6,7 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -15,7 +16,7 @@ namespace Digi.BuildInfo
 {
     public class TempBlockSpawn
     {
-        public readonly long EntityId;
+        public readonly MyCubeGrid SpawnedGrid;
         public readonly bool DeleteGrid;
         public readonly MyCubeBlockDefinition BlockDef;
         public event Action<IMyCubeBlock> AfterSpawn;
@@ -47,9 +48,11 @@ namespace Digi.BuildInfo
 
             MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
 
-            EntityId = gridObj.EntityId;
-
-            MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
+            SpawnedGrid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
+            SpawnedGrid.IsPreview = true;
+            SpawnedGrid.Save = false;
+            SpawnedGrid.Flags = EntityFlags.None;
+            SpawnedGrid.Render.Visible = false;
         }
 
         private MyObjectBuilder_CubeBlock GetBlockObjectBuilder(MyDefinitionId defId)
@@ -86,25 +89,9 @@ namespace Digi.BuildInfo
 
         private void SpawnCompleted()
         {
-            IMyCubeGrid grid = null;
-
             try
             {
-                var ent = MyEntities.GetEntityById(EntityId, true);
-
-                if(ent == null)
-                {
-                    Log.Error($"Can't get spawned entity for block: {BlockDef.Id}");
-                    return;
-                }
-
-                ent.IsPreview = true;
-                ent.Save = false;
-                ent.Flags = EntityFlags.None;
-                ent.Render.Visible = false;
-
-                grid = (IMyCubeGrid)ent;
-                var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
+                var block = ((IMyCubeGrid)SpawnedGrid).GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
 
                 if(block == null)
                 {
@@ -120,8 +107,10 @@ namespace Digi.BuildInfo
             }
             finally
             {
-                if(DeleteGrid && grid != null)
-                    grid.Close();
+                if(DeleteGrid && SpawnedGrid != null)
+                {
+                    SpawnedGrid.Close();
+                }
             }
         }
     }

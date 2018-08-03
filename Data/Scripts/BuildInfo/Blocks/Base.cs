@@ -92,20 +92,7 @@ namespace Digi.BuildInfo.Blocks
             var defId = (MyDefinitionId)block.BlockDefinition;
             var mod = BuildInfo.Instance;
 
-            var data = new T();
-            var added = data.CheckAndAdd(block);
-
             mod.BlockSpawnInProgress.Remove(defId);
-
-            if(added)
-            {
-                mod.BlockDataCache = null;
-                mod.BlockDataCacheValid = true;
-
-                // remove cache in order to use the newly aquired data
-                mod.CachedBuildInfoTextAPI.Remove(defId);
-                mod.CachedBuildInfoNotification.Remove(defId);
-            }
         }
 
         public static void TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
