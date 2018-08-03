@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.BlockData;
 using Digi.BuildInfo.Extensions;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
@@ -58,6 +59,7 @@ namespace Digi.BuildInfo
             Settings = new Settings();
             LeakInfoComp = new LeakInfoComponent();
             TerminalInfoComp = new TerminalInfoComponent(this);
+            BlockMonitorComp = new BlockMonitorComponent(this);
             TextAPI = new HudAPIv2();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
@@ -88,6 +90,9 @@ namespace Digi.BuildInfo
 
                     TerminalInfoComp?.Close();
                     TerminalInfoComp = null;
+
+                    BlockMonitorComp?.Close();
+                    BlockMonitorComp = null;
 
                     TextAPI?.Close();
                     TextAPI = null;

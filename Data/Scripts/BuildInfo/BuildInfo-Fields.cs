@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.BlockData;
 using Digi.BuildInfo.Blocks;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -207,6 +208,7 @@ namespace Digi.BuildInfo
         public Settings Settings;
         public LeakInfoComponent LeakInfoComp;
         public TerminalInfoComponent TerminalInfoComp;
+        public BlockMonitorComponent BlockMonitorComp;
         public short Tick = 0; // global incrementing gamelogic tick
         private string controlInputName;
         private string controlDisplayName;

@@ -1,22 +1,14 @@
-﻿using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using VRage.Game.Components;
+﻿using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipWelder), useEntityUpdate: false)]
-    public class BlockShipWelder : BlockBase<BData_ShipTool> { }
-
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipGrinder), useEntityUpdate: false)]
-    public class BlockShipGrinder : BlockBase<BData_ShipTool> { }
-
     public class BData_ShipTool : BData_Base
     {
         public BoundingSphere SphereDummy;
 
-        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             bool success = false;
             var dummies = BuildInfo.Instance.dummies;

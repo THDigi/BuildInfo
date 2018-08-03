@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), useEntityUpdate: false)]
-    public class BlockThruster : BlockBase<BData_Thrust> { }
-
     public class BData_Thrust : BData_Base
     {
         public float HighestRadius;
@@ -38,7 +32,7 @@ namespace Digi.BuildInfo.Blocks
             }
         }
 
-        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             var thrust = (IMyThrust)block;
             var thrustDef = (MyThrustDefinition)def;

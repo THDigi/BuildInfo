@@ -1,37 +1,9 @@
-﻿using System;
-using Sandbox.Definitions;
+﻿using Sandbox.Definitions;
 using VRage.Game;
-using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    public class BlockBase<T> : MyGameLogicComponent where T : BData_Base, new()
-    {
-        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
-        {
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
-
-        public override void UpdateOnceBeforeFrame()
-        {
-            try
-            {
-                if(BuildInfo.Instance != null && BuildInfo.Instance.IsPlayer) // only rendering players need to use this
-                {
-                    var block = (IMyCubeBlock)Entity;
-                    BData_Base.TrySetData<T>(block);
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-    }
-
     public class BData_Base
     {
         public BData_Base()
@@ -51,7 +23,7 @@ namespace Digi.BuildInfo.Blocks
             return false;
         }
 
-        public virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             return false;
         }
@@ -95,14 +67,18 @@ namespace Digi.BuildInfo.Blocks
             mod.BlockSpawnInProgress.Remove(defId);
         }
 
-        public static void TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
+        public static bool TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            if(BuildInfo.Instance.BlockData.ContainsKey(def.Id) || block.Model.AssetName != def.Model)
-                return;
+            if(BuildInfo.Instance.BlockData.ContainsKey(def.Id))
+                return true;
 
-            new T().CheckAndAdd(block);
+            if(block.Model.AssetName != def.Model)
+                return false;
+
+            var data = new T();
+            return data.CheckAndAdd(block);
         }
     }
 }

@@ -14,7 +14,7 @@ using VRageMath;
 namespace Digi.BuildInfo.Blocks
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
-    public class BlockAirVent : MyGameLogicComponent
+    public class AirVent : MyGameLogicComponent
     {
         private IMyAirVent block;
         private LeakInfoComponent leakInfoComp;

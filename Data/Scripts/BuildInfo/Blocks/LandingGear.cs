@@ -1,21 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_LandingGear), useEntityUpdate: false)]
-    public class BlockLandingGear : BlockBase<BData_LandingGear> { }
-
     public class BData_LandingGear : BData_Base
     {
         public readonly List<MyOrientedBoundingBoxD> Magents = new List<MyOrientedBoundingBoxD>();
 
-        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();

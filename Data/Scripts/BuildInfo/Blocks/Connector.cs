@@ -1,21 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using VRage.Game.Components;
+﻿using Sandbox.Definitions;
 using VRage.Game.ModAPI;
-using VRageMath;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipConnector), useEntityUpdate: false)]
-    public class BlockConnector : BlockBase<BData_Connector> { }
-
     public class BData_Connector : BData_Base
     {
         public bool Connector = false;
 
-        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();

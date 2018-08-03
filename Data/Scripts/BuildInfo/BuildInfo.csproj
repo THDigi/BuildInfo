@@ -120,6 +120,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockMonitorComponent.cs" />
     <Compile Include="Extensions\InputExtensions.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
@@ -144,6 +145,9 @@
     <Compile Include="TextAPIv2.cs" />
     <Compile Include="BuildInfo-TextGeneration.cs" />
     <Compile Include="VanillaDataCompare\LOCAL_GameDataCheck.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BlockData\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

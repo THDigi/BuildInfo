@@ -1,20 +1,14 @@
-﻿using System.Linq;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using VRage.Game.Components;
+﻿using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Blocks
+namespace Digi.BuildInfo.BlockData
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Collector), useEntityUpdate: false)]
-    public class BlockCollector : BlockBase<BData_Collector> { }
-
     public class BData_Collector : BData_Base
     {
         public Matrix boxLocalMatrix;
 
-        public override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();
