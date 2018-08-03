@@ -23,24 +23,28 @@ namespace Digi.BuildInfo.BlockData
 
             dummies.Clear();
 
-            if(lockPositions.Length == 0)
-                return false;
+            bool success = false;
 
-            for(int i = 0; i < lockPositions.Length; ++i)
+            if(lockPositions.Length > 0)
             {
-                var m = lockPositions[i];
+                for(int i = 0; i < lockPositions.Length; ++i)
+                {
+                    var m = lockPositions[i];
 
-                // HACK copied from MyLandingGear.GetBoxFromMatrix()
-                var mn = MatrixD.Normalize(m);
-                var orientation = Quaternion.CreateFromRotationMatrix(mn);
-                var halfExtents = Vector3.Abs(m.Scale) / 2f;
-                halfExtents *= new Vector3(2f, 1f, 2f);
-                orientation.Normalize();
+                    // HACK copied from MyLandingGear.GetBoxFromMatrix()
+                    var mn = MatrixD.Normalize(m);
+                    var orientation = Quaternion.CreateFromRotationMatrix(mn);
+                    var halfExtents = Vector3.Abs(m.Scale) / 2f;
+                    halfExtents *= new Vector3(2f, 1f, 2f);
+                    orientation.Normalize();
 
-                Magents.Add(new MyOrientedBoundingBoxD(mn.Translation, halfExtents, orientation));
+                    Magents.Add(new MyOrientedBoundingBoxD(mn.Translation, halfExtents, orientation));
+                }
+
+                success = true;
             }
 
-            return true;
+            return base.IsValid(block, def) || success;
         }
     }
 }

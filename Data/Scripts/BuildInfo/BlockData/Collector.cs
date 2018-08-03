@@ -33,7 +33,7 @@ namespace Digi.BuildInfo.BlockData
                 }
             }
 
-            return true;
+            return base.IsValid(block, def) || true;
         }
     }
 }

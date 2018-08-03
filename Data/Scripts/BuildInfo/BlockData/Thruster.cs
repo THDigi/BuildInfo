@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.BlockData
             }
 
             dummies.Clear();
-            return true;
+            return base.IsValid(block, def) || true;
         }
     }
 }

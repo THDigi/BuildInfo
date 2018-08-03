@@ -10,10 +10,11 @@ namespace Digi.BuildInfo.BlockData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            bool success = false;
             var dummies = BuildInfo.Instance.dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
+
+            bool success = false;
 
             foreach(var kv in dummies)
             {
@@ -29,7 +30,7 @@ namespace Digi.BuildInfo.BlockData
             }
 
             dummies.Clear();
-            return success;
+            return base.IsValid(block, def) || success;
         }
     }
 }

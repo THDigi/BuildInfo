@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.BlockData
 {
-    public class BData_Base
+    public abstract class BData_Base
     {
         public BData_Base()
         {

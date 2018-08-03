@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.BlockData
         {
             var gun = (IMyGunObject<MyGunBase>)block;
             muzzleLocalMatrix = gun.GunBase.GetMuzzleLocalMatrix();
-            return true;
+            return base.IsValid(block, def) || true;
         }
     }
 }
