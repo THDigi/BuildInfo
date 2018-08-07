@@ -22,9 +22,12 @@ namespace Digi.BuildInfo
 {
     public class TerminalInfoComponent
     {
+        private const int REFRESH_MIN_TICKS = 15; // minimum amount of ticks between refresh calls
+
         private BuildInfo mod;
         private IMyTerminalBlock viewedInTerminal;
         private int delayCursorCheck = 0;
+        private int refreshWaitForTick = 0;
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
@@ -181,18 +184,20 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            //if(mod.Tick % 6 == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
-            //{
-            //    // HACK: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
-            //    viewedInTerminal.RefreshCustomInfo();
-            //
-            //    // HACK: force refresh terminal UI by changing a property
-            //    // ISSUE: causes network traffic
-            //    // ISSUE: prevents scrolling in drop down lists
-            //    // ISSUE: due to it being sync'd, it causes the above issues to other players as well.
-            //    viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-            //    viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-            //}
+            if(mod.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
+            {
+                // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
+                RefreshCustomInfo();
+
+#if false
+                // HACK: force refresh terminal UI by changing a property
+                // ISSUE: causes network traffic
+                // ISSUE: prevents scrolling in drop down lists
+                // ISSUE: due to it being sync'd, it causes the above issues to other players as well.
+                viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
+                viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
+#endif
+            }
         }
 
         public void Draw()
@@ -286,6 +291,7 @@ namespace Digi.BuildInfo
             if(oldBlock != null)
             {
                 oldBlock.AppendingCustomInfo -= CustomInfo;
+                oldBlock.PropertiesChanged -= PropertiesChanged;
             }
 
             viewedInTerminal = null;
@@ -307,8 +313,23 @@ namespace Digi.BuildInfo
                 ClearCaches(); // block changed so caches are no longer relevant
 
                 newBlock.AppendingCustomInfo += CustomInfo;
+                newBlock.PropertiesChanged += PropertiesChanged;
                 newBlock.RefreshCustomInfo(); // invokes AppendingCustomInfo 
             }
+        }
+
+        void RefreshCustomInfo()
+        {
+            if(refreshWaitForTick > mod.Tick)
+                return;
+
+            refreshWaitForTick = (mod.Tick + REFRESH_MIN_TICKS);
+            viewedInTerminal.RefreshCustomInfo();
+        }
+
+        void PropertiesChanged(IMyTerminalBlock block)
+        {
+            RefreshCustomInfo();
         }
 
         // Called by AppendingCustomInfo's invoker: RefreshCustomInfo()
