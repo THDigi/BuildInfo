@@ -150,6 +150,8 @@ namespace Digi.BuildInfo
             formatLookup[typeof(MyObjectBuilder_LaserAntenna)] = Format_LaserAntenna;
 
             formatLookup[typeof(MyObjectBuilder_Beacon)] = Format_Beacon;
+
+            formatLookup[typeof(MyObjectBuilder_MyProgrammableBlock)] = Format_ProgrammableBlock;
             #endregion
         }
 
@@ -1061,6 +1063,24 @@ namespace Digi.BuildInfo
             //     (nothing)
 
             info.DetailInfo_InputPower(Sink);
+        }
+
+        void Format_ProgrammableBlock(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.186.5:
+            //     (nothing)
+
+            if(block.DetailedInfo.Length != 0)
+                return; // only print something if PB it self doesnt print anything.
+
+            if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
+            {
+                info.Append("In-game Scripts are disabled in world settings!\n");
+            }
+            else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+            {
+                info.Append("Scripter role is required to use in-game scripts.\n");
+            }
         }
         #endregion
 
