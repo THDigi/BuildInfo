@@ -82,7 +82,7 @@ namespace Digi.BuildInfo
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
-                    Settings?.Close();
+                    Settings?.Dispose();
                     Settings = null;
 
                     LeakInfoComp?.Close();
@@ -990,9 +990,9 @@ namespace Digi.BuildInfo
         private void ReloadConfig(string caller)
         {
             if(Settings.Load())
-                ShowChatMessage(caller, "Reloaded and re-saved config.", MyFontEnum.Green);
+                ShowChatMessage(caller, "Config loaded.", MyFontEnum.Green);
             else
-                ShowChatMessage(caller, "Config created with the current settings.", MyFontEnum.Green);
+                ShowChatMessage(caller, "Config created and loaded default settings.", MyFontEnum.Green);
 
             Settings.Save();
 

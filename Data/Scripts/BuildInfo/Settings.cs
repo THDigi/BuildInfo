@@ -6,7 +6,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    public class Settings
+    public class Settings : IDisposable
     {
         public bool showTextInfo;
         public bool alwaysVisible;
@@ -31,7 +31,8 @@ namespace Digi.BuildInfo
         public const bool default_allLabels = true;
         public const bool default_axisLabels = true;
 
-        public const int LATEST_CONFIG_VERSION = 1; // controls reset/ignore of settings
+        public const int CFGVERSION_BAD_DEFAULTS = 0;
+        public const int LATEST_CONFIG_VERSION = 2; // controls reset/ignore of settings
 
         private void SetDefaults()
         {
@@ -48,26 +49,21 @@ namespace Digi.BuildInfo
             // don't reset configVersion, only read
         }
 
-        public bool firstLoad = false;
-
         private const string COMMAND = "/buildinfo reload";
         private const string FILE = "settings.cfg";
-        private readonly char[] CHARS = new char[] { '=' };
+        private readonly char[] CHARS = { '=' };
 
         public Settings()
         {
             // load the settings if they exist
-            if(!Load())
-            {
-                firstLoad = true; // config didn't exist, assume it's the first time the mod is loaded
-            }
+            Load();
 
-            // HACK because of an issue with new configs being created with wrong default values, they need to be wiped :(
+            // because of an issue with new configs being created with wrong default values, they need to be wiped :(
             if(Math.Abs(textAPIScale) < 0.0001f)
             {
-                if(configVersion == 0)
+                if(configVersion == CFGVERSION_BAD_DEFAULTS)
                 {
-                    Log.Info("NOTE: Config version 0 and scale 0 -> the mod will reset all settings due to a default config generation issue.");
+                    Log.Info($"NOTE: Config version is {configVersion} and scale is 0: the mod will reset all settings due to a default config generation issue.");
                     SetDefaults();
                 }
                 else
@@ -81,7 +77,7 @@ namespace Digi.BuildInfo
             Save(); // refresh config in case of any missing or extra settings
         }
 
-        public void Close()
+        public void Dispose()
         {
         }
 
@@ -93,9 +89,11 @@ namespace Digi.BuildInfo
 
                 if(MyAPIGateway.Utilities.FileExistsInLocalStorage(FILE, typeof(Settings)))
                 {
-                    var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FILE, typeof(Settings));
-                    ReadSettings(file);
-                    file.Close();
+                    using(var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FILE, typeof(Settings)))
+                    {
+                        ReadSettings(file);
+                    }
+
                     return true;
                 }
             }
@@ -111,6 +109,7 @@ namespace Digi.BuildInfo
         {
             try
             {
+                const StringComparison COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
                 string line;
                 string[] args;
                 int i;
@@ -122,7 +121,7 @@ namespace Digi.BuildInfo
                     if(line.Length == 0)
                         continue;
 
-                    var index = line.IndexOf("//", StringComparison.Ordinal);
+                    var index = line.IndexOf("//");
 
                     if(index > -1)
                         line = (index == 0 ? "" : line.Substring(0, index));
@@ -142,6 +141,7 @@ namespace Digi.BuildInfo
                     var val = args[1].Trim();
 
                     if(key.Equals("ShowTextInfo", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("ShowTextInfo", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
                             showTextInfo = b;
@@ -151,7 +151,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("AlwaysVisible", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("AlwaysVisible", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
                             alwaysVisible = b;
@@ -161,8 +161,8 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("UseCustomStyling", StringComparison.CurrentCultureIgnoreCase)
-                    || key.Equals("UseScreenPos", StringComparison.CurrentCultureIgnoreCase)) // backwards compatibility
+                    if(key.Equals("UseCustomStyling", COMPARE_TYPE)
+                    || key.Equals("UseScreenPos", COMPARE_TYPE)) // backwards compatibility
                     {
                         if(bool.TryParse(val, out b))
                             textAPIUseCustomStyling = b;
@@ -172,7 +172,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("ScreenPos", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("ScreenPos", COMPARE_TYPE))
                     {
                         var vars = val.Split(',');
                         double x, y;
@@ -185,7 +185,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("Alignment", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("Alignment", COMPARE_TYPE))
                     {
                         var vars = args[1].Split(',');
 
@@ -210,7 +210,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("Scale", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("Scale", COMPARE_TYPE))
                     {
                         if(float.TryParse(val, out f))
                             textAPIScale = MathHelper.Clamp(f, 0f, 10f);
@@ -220,9 +220,9 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("BackgroundOpacity", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("BackgroundOpacity", COMPARE_TYPE))
                     {
-                        if(val.Trim().Equals("HUD", StringComparison.CurrentCultureIgnoreCase))
+                        if(val.Trim().Equals("HUD", COMPARE_TYPE))
                             textAPIBackgroundOpacity = -1;
                         else if(float.TryParse(val, out f))
                             textAPIBackgroundOpacity = MathHelper.Clamp(f, 0, 1);
@@ -232,7 +232,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("AllLabels", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("AllLabels", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
                             allLabels = b;
@@ -242,7 +242,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("AxisLabels", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("AxisLabels", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
                             axisLabels = b;
@@ -252,7 +252,7 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
-                    if(key.Equals("ConfigVersion", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("ConfigVersion", COMPARE_TYPE))
                     {
                         if(int.TryParse(val, out i))
                             configVersion = i;
@@ -275,10 +275,12 @@ namespace Digi.BuildInfo
         {
             try
             {
-                var file = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE, typeof(Settings));
-                file.Write(GetSettingsString(true));
-                file.Flush();
-                file.Close();
+                var text = GetSettingsString(true);
+
+                using(var file = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE, typeof(Settings)))
+                {
+                    file.Write(text);
+                }
             }
             catch(Exception e)
             {
