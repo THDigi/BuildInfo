@@ -115,19 +115,17 @@ namespace Digi.BuildInfo.Blocks
             block.AppendingCustomInfo -= CustomInfo;
         }
 
-        private bool Terminal_Enabled(IMyTerminalBlock b)
+        private bool Terminal_Enabled(IMyTerminalBlock not_used)
         {
             return leakInfoComp.Enabled;
         }
 
-        private void Terminal_Setter(IMyTerminalBlock b, bool v)
+        private void Terminal_Setter(IMyTerminalBlock not_used, bool v)
         {
             try
             {
                 if(BuildInfo.Instance == null || !BuildInfo.Instance.IsPlayer || leakInfoComp == null || !leakInfoComp.Enabled)
                     return;
-
-                var block = (IMyAirVent)b;
 
                 if(leakInfoComp.Status != LeakInfoComponent.ThreadStatus.IDLE)
                 {
@@ -154,17 +152,15 @@ namespace Digi.BuildInfo.Blocks
             }
         }
 
-        private bool Terminal_Getter(IMyTerminalBlock b)
+        private bool Terminal_Getter(IMyTerminalBlock not_used)
         {
             return leakInfoComp != null && leakInfoComp.Status != LeakInfoComponent.ThreadStatus.IDLE;
         }
 
-        private void CustomInfo(IMyTerminalBlock b, StringBuilder str)
+        private void CustomInfo(IMyTerminalBlock not_used, StringBuilder str)
         {
             try
             {
-                var block = (IMyAirVent)b;
-
                 if(leakInfoComp != null)
                 {
                     str.Append('\n');
