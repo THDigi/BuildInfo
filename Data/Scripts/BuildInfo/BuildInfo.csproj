@@ -121,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlockMonitorComponent.cs" />
+    <Compile Include="Blocks\MergeBlock.cs" />
     <Compile Include="Extensions\InputExtensions.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
