@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.BlockData;
-using Digi.BuildInfo.Blocks;
 using Digi.BuildInfo.Extensions;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
@@ -512,7 +511,9 @@ namespace Digi.BuildInfo
         {
             if(drawLookup.ContainsKey(def.Id.TypeId))
             {
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. Ctrl+").Append(controlInputName).Append(" to cycle)").EndLine();
+                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
+                Settings.CycleOverlaysBind.GetBinds(GetLine());
+                GetLine().Append(" to cycle)").EndLine();
             }
         }
 
@@ -560,9 +561,15 @@ namespace Digi.BuildInfo
             // HACK this must match the data from the HandleInput() which controls the actual actions of these
 
             AddMenuItemLine(i++).Append("Close menu");
-            if(controlInputName != null)
-                GetLine().Append("   (").Append(controlInputName).Append(")");
-            GetLine().ResetColor().EndLine();
+
+            if(Settings.MenuBind.IsAssigned())
+            {
+                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+                Settings.MenuBind.GetBinds(GetLine());
+                GetLine().Append(")").ResetColor();
+            }
+
+            GetLine().EndLine();
 
             if(TextAPIEnabled)
             {
@@ -585,19 +592,37 @@ namespace Digi.BuildInfo
             AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
-            if(controlInputName != null)
-                GetLine().Append("   (Ctrl+" + controlInputName + ")");
-            GetLine().ResetColor().EndLine();
+
+            if(Settings.CycleOverlaysBind.IsAssigned())
+            {
+                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+                Settings.CycleOverlaysBind.GetBinds(GetLine());
+                GetLine().Append(")").ResetColor();
+            }
+
+            GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
-            if(controlInputName != null)
-                GetLine().Append("   (Shift+" + controlInputName + ")");
-            GetLine().ResetColor().EndLine();
+
+            if(Settings.ToggleTransparencyBind.IsAssigned())
+            {
+                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+                Settings.ToggleTransparencyBind.GetBinds(GetLine());
+                GetLine().Append(")").ResetColor();
+            }
+
+            GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
-            if(controlInputName != null)
-                GetLine().Append("   (Alt+" + controlInputName + ")");
-            GetLine().ResetColor().EndLine();
+
+            if(Settings.FreezePlacementBind.IsAssigned())
+            {
+                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+                Settings.FreezePlacementBind.GetBinds(GetLine());
+                GetLine().Append(")").ResetColor();
+            }
+
+            GetLine().EndLine();
 
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
             if(canUseTextAPI)
@@ -612,26 +637,6 @@ namespace Digi.BuildInfo
                 AddLine().EndLine();
 
             AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10).EndLine();
-
-            if(controlInputName == null)
-            {
-                if(TextAPIEnabled)
-                    AddLine().EndLine();
-
-                AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("WARNING:").EndLine();
-                AddLine(MyFontEnum.Red).Append("'").Append(controlDisplayName).Append("' control is not assigned!").ResetColor().EndLine();
-                AddLine(MyFontEnum.Red).Append("Go in game's Options -> Controls and assign it.").EndLine();
-            }
-
-            if(controlCollissionDisplayName != null)
-            {
-                if(TextAPIEnabled)
-                    AddLine().EndLine();
-
-                AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("WARNING:").ResetColor().EndLine();
-                AddLine(MyFontEnum.Red).Append("'").Color(COLOR_BAD).Append(controlDisplayName).ResetColor().Append("' has same key as '").Color(COLOR_BAD).Append(controlCollissionDisplayName).ResetColor().Append("'!").ResetColor().EndLine();
-                AddLine(MyFontEnum.Red).Append("Go in game's Options -> Controls and change either of them to avoid collision.").EndLine();
-            }
 
             EndAddedLines();
         }

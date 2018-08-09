@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Digi.BuildInfo.BlockData;
+using Digi.Input;
 using Digi.BuildInfo.Extensions;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
@@ -11,7 +11,6 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Weapons;
-using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
@@ -56,6 +55,9 @@ namespace Digi.BuildInfo
             textAPILabels = new HudAPIv2.SpaceMessage[count];
             textAPIShadows = new HudAPIv2.SpaceMessage[count];
 
+            InputHandler = new InputHandler();
+            InputHandler.AddCustomInput(new InputCustomMenuBind());
+
             Settings = new Settings();
             LeakInfoComp = new LeakInfoComponent();
             TerminalInfoComp = new TerminalInfoComponent(this);
@@ -81,6 +83,9 @@ namespace Digi.BuildInfo
 
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
+
+                    InputHandler?.Dispose();
+                    InputHandler = null;
 
                     Settings?.Dispose();
                     Settings = null;
@@ -126,6 +131,8 @@ namespace Digi.BuildInfo
                 // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
+
+                InputHandler?.Update();
 
                 LeakInfoComp?.Update();
 
@@ -629,28 +636,27 @@ namespace Digi.BuildInfo
                         }
                     }
 
-                    if(input.IsNewGameControlPressed(CONTROL))
+                    var context = InputHandler.GetCurrentInputContext();
+
+                    if(Settings.ToggleTransparencyBind.IsJustPressed(context))
                     {
-                        if(input.IsAnyShiftKeyPressed())
-                        {
-                            menuNeedsUpdate = true;
-                            SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
-                        }
-                        else if(input.IsAnyCtrlKeyPressed())
-                        {
-                            menuNeedsUpdate = true;
-                            CycleOverlay();
-                        }
-                        else if(input.IsAnyAltKeyPressed())
-                        {
-                            menuNeedsUpdate = true;
-                            SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
-                        }
-                        else
-                        {
-                            menuNeedsUpdate = true;
-                            showMenu = !showMenu;
-                        }
+                        menuNeedsUpdate = true;
+                        SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
+                    }
+                    else if(Settings.CycleOverlaysBind.IsJustPressed(context))
+                    {
+                        menuNeedsUpdate = true;
+                        CycleOverlay();
+                    }
+                    else if(Settings.FreezePlacementBind.IsJustPressed(context))
+                    {
+                        menuNeedsUpdate = true;
+                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                    }
+                    else if(Settings.MenuBind.IsJustPressed(context))
+                    {
+                        menuNeedsUpdate = true;
+                        showMenu = !showMenu;
                     }
                 }
                 else if(showMenu)
@@ -701,8 +707,6 @@ namespace Digi.BuildInfo
 
             if(!Settings.showTextInfo || selectedDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;
-
-            // TODO: optimize some more?
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var posHUD = GetGameHudBlockInfoPos();
@@ -945,36 +949,6 @@ namespace Digi.BuildInfo
             hudVisible = !cfg.MinimalHud;
             hudBackgroundOpacity = cfg.HUDBkOpacity;
 
-            var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(CONTROL);
-
-            controlInputName = CONTROL.GetAssignedInputName();
-            controlDisplayName = MyTexts.GetString(voxelHandSettingsControl.GetControlName());
-            controlCollissionDisplayName = null;
-
-            if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None)
-            {
-                var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetKeyboardControl());
-
-                if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
-            }
-
-            if(voxelHandSettingsControl.GetSecondKeyboardControl() != MyKeys.None)
-            {
-                var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetSecondKeyboardControl());
-
-                if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
-            }
-
-            if(voxelHandSettingsControl.GetMouseControl() != MyMouseButtonsEnum.None)
-            {
-                var collissionControl = MyAPIGateway.Input.GetControl(voxelHandSettingsControl.GetMouseControl());
-
-                if(collissionControl != null && collissionControl != voxelHandSettingsControl)
-                    controlCollissionDisplayName = MyTexts.GetString(collissionControl.GetControlName());
-            }
-
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             aspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
 
@@ -1018,7 +992,11 @@ namespace Digi.BuildInfo
 
         private void ShowHelp()
         {
-            var help = string.Format(HELP_FORMAT, controlInputName);
+            var help = string.Format(HELP_FORMAT,
+                Settings.MenuBind.GetBinds(),
+                Settings.CycleOverlaysBind.GetBinds(),
+                Settings.ToggleTransparencyBind.GetBinds(),
+                Settings.FreezePlacementBind.GetBinds());
 
             MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", help, null, "Close");
         }

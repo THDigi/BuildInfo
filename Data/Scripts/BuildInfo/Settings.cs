@@ -1,13 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Digi.Input;
+using Sandbox.Game;
 using Sandbox.ModAPI;
+using VRage.Input;
 using VRageMath;
 
 namespace Digi.BuildInfo
 {
     public class Settings : IDisposable
     {
+        public InputHandler.Combination MenuBind;
+        public InputHandler.Combination CycleOverlaysBind;
+        public InputHandler.Combination ToggleTransparencyBind;
+        public InputHandler.Combination FreezePlacementBind;
         public bool showTextInfo;
         public bool alwaysVisible;
         public bool textAPIUseCustomStyling;
@@ -19,6 +27,13 @@ namespace Digi.BuildInfo
         public bool allLabels;
         public bool axisLabels;
         public int configVersion;
+
+        public readonly InputHandler.Combination default_menuBind = InputHandler.Combination.Create("plus");
+        public readonly InputHandler.Combination default_cycleOverlaysBind = InputHandler.Combination.Create($"ctrl {MENU_BIND_INPUT_NAME}");
+        public readonly InputHandler.Combination default_toggleTransparencyBind = InputHandler.Combination.Create($"shift {MENU_BIND_INPUT_NAME}");
+        public readonly InputHandler.Combination default_freezePlacementBind = InputHandler.Combination.Create($"alt {MENU_BIND_INPUT_NAME}");
+
+        public const string MENU_BIND_INPUT_NAME = "bi.menu";
 
         public const bool default_showTextInfo = true;
         public const bool default_alwaysVisible = false;
@@ -32,10 +47,18 @@ namespace Digi.BuildInfo
         public const bool default_axisLabels = true;
 
         public const int CFGVERSION_BAD_DEFAULTS = 0;
+        public const int CFGVERSION_MENU_BIND_CHANGE = 1;
         public const int LATEST_CONFIG_VERSION = 2; // controls reset/ignore of settings
+
+        private readonly List<string> menuBindInvalidInputs = new List<string>() { MENU_BIND_INPUT_NAME };
 
         private void SetDefaults()
         {
+            MenuBind = default_menuBind;
+            CycleOverlaysBind = default_cycleOverlaysBind;
+            ToggleTransparencyBind = default_toggleTransparencyBind;
+            FreezePlacementBind = default_freezePlacementBind;
+
             showTextInfo = default_showTextInfo;
             alwaysVisible = default_alwaysVisible;
             textAPIUseCustomStyling = default_textAPIUseCustomStyling;
@@ -69,6 +92,21 @@ namespace Digi.BuildInfo
                 else
                 {
                     textAPIScale = MathHelper.Clamp(textAPIScale, 0.0001f, 10f);
+                }
+            }
+
+            // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
+            if(configVersion == CFGVERSION_MENU_BIND_CHANGE)
+            {
+                var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+                var terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
+
+                // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
+                if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
+                {
+                    MenuBind = InputHandler.Combination.Create("c.VoxelHandSettings");
+
+                    Log.Info("NOTE: Configurable binds were added and it seems your VoxelHandSettings isn't colliding so I'm setting MenuBind to that instead so you don't need to change anything.");
                 }
             }
 
@@ -140,7 +178,58 @@ namespace Digi.BuildInfo
                     var key = args[0].Trim();
                     var val = args[1].Trim();
 
-                    if(key.Equals("ShowTextInfo", StringComparison.CurrentCultureIgnoreCase))
+                    if(key.Equals("MenuBind", COMPARE_TYPE))
+                    {
+                        string error;
+                        var input = InputHandler.Combination.Create(val, out error, menuBindInvalidInputs);
+
+                        if(input != null)
+                            MenuBind = input;
+                        else
+                            Log.Error(error);
+
+                        continue;
+                    }
+
+                    if(key.Equals("CycleOverlaysBind", COMPARE_TYPE))
+                    {
+                        string error;
+                        var input = InputHandler.Combination.Create(val, out error);
+
+                        if(input != null)
+                            CycleOverlaysBind = input;
+                        else
+                            Log.Error(error);
+
+                        continue;
+                    }
+
+                    if(key.Equals("ToggleTransparencyBind", COMPARE_TYPE))
+                    {
+                        string error;
+                        var input = InputHandler.Combination.Create(val, out error);
+
+                        if(input != null)
+                            ToggleTransparencyBind = input;
+                        else
+                            Log.Error(error);
+
+                        continue;
+                    }
+
+                    if(key.Equals("FreezePlacementBind", COMPARE_TYPE))
+                    {
+                        string error;
+                        var input = InputHandler.Combination.Create(val, out error);
+
+                        if(input != null)
+                            FreezePlacementBind = input;
+                        else
+                            Log.Error(error);
+
+                        continue;
+                    }
+
                     if(key.Equals("ShowTextInfo", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
@@ -305,6 +394,17 @@ namespace Digi.BuildInfo
             if(comments)
             {
                 str.AppendLine();
+                str.Append("// The key/button to use for accessing the menu and key combinations.").AppendLine();
+                str.Append("// Separate multiple keys/buttons/controls with spaces to form a combination, example: rightctrl w r").AppendLine();
+                str.Append("// The list of keys/buttons/controls can be found at the bottom of this file.").AppendLine();
+                str.Append("// Default: ").Append(default_menuBind.CombinationString).AppendLine();
+            }
+
+            str.Append("MenuBind = ").Append(MenuBind.CombinationString).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
                 str.Append("// Whether to show the build info when having a block equipped.").AppendLine();
                 str.Append("// This can be chaned in-game in the menu as well.").AppendLine();
                 str.Append("// Default: ").Append(default_showTextInfo ? "true" : "false").AppendLine();
@@ -387,6 +487,15 @@ namespace Digi.BuildInfo
 
             str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
             str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.AppendLine();
+                str.AppendLine();
+                InputHandler.AppendInputsList(str);
+                str.AppendLine();
+            }
 
             if(comments)
             {

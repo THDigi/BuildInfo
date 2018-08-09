@@ -125,6 +125,16 @@
     <Compile Include="BlockMonitorComponent.cs" />
     <Compile Include="Blocks\MergeBlock.cs" />
     <Compile Include="Extensions\InputExtensions.cs" />
+    <Compile Include="InputCustomMenuBind.cs" />
+    <Compile Include="Input\Devices\GamepadBinds.cs" />
+    <Compile Include="Input\Devices\InputBase.cs" />
+    <Compile Include="Input\Devices\GamepadInputs.cs" />
+    <Compile Include="Input\Devices\GameControlInputs.cs" />
+    <Compile Include="Input\Devices\MouseInputs.cs" />
+    <Compile Include="Input\Devices\InputAdvancedBases.cs" />
+    <Compile Include="Input\InputHandler.cs" />
+    <Compile Include="Input\Devices\InputKey.cs" />
+    <Compile Include="Input\InputReleaseKey.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="BlockData\Base.cs" />

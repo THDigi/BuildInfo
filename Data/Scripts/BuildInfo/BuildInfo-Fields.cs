@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.BlockData;
 using Digi.BuildInfo.Blocks;
+using Digi.Input;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -25,7 +26,6 @@ namespace Digi.BuildInfo
         public const string MOD_NAME = "Build Info";
         public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
-        public MyStringId CONTROL = MyControlsSpace.VOXEL_HAND_SETTINGS; // game control used for menu and key combinations
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
@@ -153,11 +153,13 @@ namespace Digi.BuildInfo
             "\n" +
             "\n" +
             "Hotkeys:\n" +
-            "  Ctrl+{0} with block equipped/selected\n" +
+            "  {0} show/hide menu\n" +
+            "    Can be changed in config.\n" +
+            "  {1} with block equipped/selected\n" +
             "    Cycles overlay draw.\n" +
-            "  Shift+{0} with block equipped/selected\n" +
+            "  {2} with block equipped/selected\n" +
             "    Toggle transparent model.\n" +
-            "  Alt+{0} with block equipped\n" +
+            "  {3} with block equipped\n" +
             "    Toggle freeze position.\n" +
             "\n" +
             "\n" +
@@ -205,14 +207,12 @@ namespace Digi.BuildInfo
 
         public bool IsInitialized = false;
         public bool IsPlayer = true;
+        public InputHandler InputHandler;
         public Settings Settings;
         public LeakInfoComponent LeakInfoComp;
         public TerminalInfoComponent TerminalInfoComp;
         public BlockMonitorComponent BlockMonitorComp;
         public short Tick = 0; // global incrementing gamelogic tick
-        private string controlInputName;
-        private string controlDisplayName;
-        private string controlCollissionDisplayName;
 
         private MatrixD viewProjInvCache;
         private bool viewProjInvCompute = true;
