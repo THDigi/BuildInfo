@@ -46,10 +46,12 @@
     <Optimize>false</Optimize>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <LangVersion>6</LangVersion>
+    <CodeAnalysisRuleSet>BuildInfo.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <Prefer32Bit>false</Prefer32Bit>
     <LangVersion>6</LangVersion>
+    <CodeAnalysisRuleSet>BuildInfo.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -147,6 +149,11 @@
     <Compile Include="BuildInfo-TextGeneration.cs" />
     <Compile Include="VanillaDataCompare\LOCAL_GameDataCheck.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Analyzer Include="..\..\..\..\..\_SharedCode\SEWhitelistChecker.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildInfo.ruleset" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
