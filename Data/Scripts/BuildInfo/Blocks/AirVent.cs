@@ -20,8 +20,8 @@ namespace Digi.BuildInfo.Blocks
         private LeakInfoComponent leakInfoComp;
         private bool init = false;
         private byte skip = 0;
-        private Vector3 dummyLocalPosition;
         private bool dummyIsSet = false;
+        private Vector3 dummyLocalPosition;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -115,16 +115,25 @@ namespace Digi.BuildInfo.Blocks
             block.AppendingCustomInfo -= CustomInfo;
         }
 
-        private bool Terminal_Enabled(IMyTerminalBlock not_used)
+        #region Terminal control handling
+        private static bool Terminal_Enabled(IMyTerminalBlock block)
         {
-            return leakInfoComp.Enabled;
+            var logic = block.GameLogic.GetAs<AirVent>();
+            return (logic?.leakInfoComp?.Enabled ?? false);
         }
 
-        private void Terminal_Setter(IMyTerminalBlock not_used, bool v)
+        private static void Terminal_Setter(IMyTerminalBlock block, bool v)
         {
             try
             {
-                if(BuildInfo.Instance == null || !BuildInfo.Instance.IsPlayer || leakInfoComp == null || !leakInfoComp.Enabled)
+                if(BuildInfo.Instance == null || !BuildInfo.Instance.IsPlayer)
+                    return;
+
+                var vent = (IMyAirVent)block;
+                var logic = block.GameLogic.GetAs<AirVent>();
+                var leakInfoComp = logic?.leakInfoComp;
+
+                if(leakInfoComp == null || !leakInfoComp.Enabled)
                     return;
 
                 if(leakInfoComp.Status != LeakInfoComponent.ThreadStatus.IDLE)
@@ -134,15 +143,15 @@ namespace Digi.BuildInfo.Blocks
                 }
                 else
                 {
-                    if(!block.IsWorking || block.CanPressurize)
+                    if(!block.IsWorking || vent.CanPressurize)
                     {
                         leakInfoComp.TerminalControl.UpdateVisual();
                         return;
                     }
 
-                    var startPosition = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(dummyLocalPosition, block.WorldMatrix));
+                    var startPosition = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(logic.dummyLocalPosition, block.WorldMatrix));
 
-                    leakInfoComp.StartThread(block, startPosition);
+                    leakInfoComp.StartThread(vent, startPosition);
                     leakInfoComp.ViewedVentControlPanel?.RefreshCustomInfo();
                 }
             }
@@ -152,51 +161,57 @@ namespace Digi.BuildInfo.Blocks
             }
         }
 
-        private bool Terminal_Getter(IMyTerminalBlock not_used)
+        private static bool Terminal_Getter(IMyTerminalBlock block)
         {
-            return leakInfoComp != null && leakInfoComp.Status != LeakInfoComponent.ThreadStatus.IDLE;
+            var logic = block.GameLogic.GetAs<AirVent>();
+            return (logic?.leakInfoComp != null && logic.leakInfoComp.Status != LeakInfoComponent.ThreadStatus.IDLE);
         }
 
-        private void CustomInfo(IMyTerminalBlock not_used, StringBuilder str)
+        private static void CustomInfo(IMyTerminalBlock block, StringBuilder str)
         {
             try
             {
-                if(leakInfoComp != null)
+                var vent = (IMyAirVent)block;
+                var logic = block.GameLogic.GetAs<AirVent>();
+                var leakInfoComp = logic?.leakInfoComp;
+
+                if(leakInfoComp == null)
+                    return;
+
+                str.Append('\n');
+                str.Append("Air leak scan status:\n");
+
+                if(!leakInfoComp.Enabled)
                 {
-                    str.Append('\n');
-                    str.Append("Air leak scan status:\n");
-
-                    if(!leakInfoComp.Enabled)
-                    {
-                        str.Append("Disabled.");
-                        return;
-                    }
-
-                    switch(leakInfoComp.Status)
-                    {
-                        case LeakInfoComponent.ThreadStatus.IDLE:
-                            if(!block.IsWorking)
-                                str.Append("Air vent not working.");
-                            else if(block.CanPressurize)
-                                str.Append("Area is sealed.");
-                            else
-                                str.Append("Ready to scan.");
-                            break;
-                        case LeakInfoComponent.ThreadStatus.RUNNING:
-                            str.Append("Computing...");
-                            break;
-                        case LeakInfoComponent.ThreadStatus.DRAW:
-                            str.Append("Leak found and displayed.");
-                            break;
-                    }
-
-                    str.Append("\n\n");
+                    str.Append("Disabled.");
+                    return;
                 }
+
+                switch(leakInfoComp.Status)
+                {
+                    case LeakInfoComponent.ThreadStatus.IDLE:
+                        if(!vent.IsWorking)
+                            str.Append("Air vent not working.");
+                        else if(vent.CanPressurize)
+                            str.Append("Area is sealed.");
+                        else
+                            str.Append("Ready to scan.");
+                        break;
+                    case LeakInfoComponent.ThreadStatus.RUNNING:
+                        str.Append("Computing...");
+                        break;
+                    case LeakInfoComponent.ThreadStatus.DRAW:
+                        str.Append("Leak found and displayed.");
+                        break;
+                }
+
+                str.Append("\n\n");
             }
             catch(Exception e)
             {
                 Log.Error(e);
             }
         }
+        #endregion
     }
 }
