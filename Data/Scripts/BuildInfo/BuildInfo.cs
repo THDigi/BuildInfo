@@ -142,7 +142,7 @@ namespace Digi.BuildInfo
 
                 if(pickBlockDef != null && Tick % 5 == 0)
                 {
-                    MyAPIGateway.Utilities.ShowNotification($"Press a number key to place '{pickBlockDef.DisplayNameText}' in...", 16 * 5, MyFontEnum.Blue);
+                    MyAPIGateway.Utilities.ShowNotification($"Press SLOT number for '{pickBlockDef.DisplayNameText}'; or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
                 }
 
                 if(Tick % CACHE_PURGE_TICKS == 0)
@@ -486,36 +486,56 @@ namespace Digi.BuildInfo
                     return; // only monitor input when not in menu or chat, and not paused
 
                 #region Block picker
-                // TODO: block picker could use a hotkey...
-                //if(pickBlockDef == null && selectedBlock != null && MyAPIGateway.Input.IsAnyCtrlKeyPressed() && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.BUILD_SCREEN))
-                //{
-                //    pickBlockDef = selectedDef;
-                //}
+                if(pickBlockDef == null && selectedBlock != null && Settings.BlockPickerBind.IsJustPressed())
+                {
+                    pickBlockDef = selectedDef;
+                }
 
                 if(pickBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
                 {
+                    if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
+                    {
+                        pickBlockDef = null;
+                        MyAPIGateway.Utilities.ShowNotification("Block picking cancelled.", 2000);
+                        return;
+                    }
+
                     int slot = 0;
 
-                    for(MyKeys k = MyKeys.D1; k <= MyKeys.D9; k++)
+                    for(int i = 1; i < CONTROL_SLOTS.Length; ++i)
                     {
-                        if(MyAPIGateway.Input.IsKeyPress(k))
+                        var controlId = CONTROL_SLOTS[i];
+
+                        if(MyAPIGateway.Input.IsNewGameControlPressed(controlId))
                         {
-                            slot = (k - MyKeys.D0);
+                            slot = i;
                             break;
                         }
                     }
 
-                    if(slot == 0)
-                    {
-                        for(MyKeys k = MyKeys.NumPad1; k <= MyKeys.NumPad9; k++)
-                        {
-                            if(MyAPIGateway.Input.IsKeyPress(k))
-                            {
-                                slot = (k - MyKeys.NumPad0);
-                                break;
-                            }
-                        }
-                    }
+                    //if(slot == 0)
+                    //{
+                    //    for(MyKeys k = MyKeys.D1; k <= MyKeys.D9; k++)
+                    //    {
+                    //        if(MyAPIGateway.Input.IsKeyPress(k))
+                    //        {
+                    //            slot = (k - MyKeys.D0);
+                    //            break;
+                    //        }
+                    //    }
+                    //}
+
+                    //if(slot == 0)
+                    //{
+                    //    for(MyKeys k = MyKeys.NumPad1; k <= MyKeys.NumPad9; k++)
+                    //    {
+                    //        if(MyAPIGateway.Input.IsKeyPress(k))
+                    //        {
+                    //            slot = (k - MyKeys.NumPad0);
+                    //            break;
+                    //        }
+                    //    }
+                    //}
 
                     if(slot != 0)
                     {

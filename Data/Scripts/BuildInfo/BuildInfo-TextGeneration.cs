@@ -562,14 +562,16 @@ namespace Digi.BuildInfo
 
             AddMenuItemLine(i++).Append("Close menu");
 
+            GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
             if(Settings.MenuBind.IsAssigned())
             {
-                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Settings.MenuBind.GetBinds(GetLine());
-                GetLine().Append(")").ResetColor();
             }
-
-            GetLine().EndLine();
+            else
+            {
+                GetLine().Append(CMD_BUILDINFO);
+            }
+            GetLine().Append(")").ResetColor().EndLine();
 
             if(TextAPIEnabled)
             {
@@ -577,7 +579,17 @@ namespace Digi.BuildInfo
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").ResetColor().EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Add aimed block to toolbar").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_GETBLOCK).Append(')').ResetColor().EndLine();
+            AddMenuItemLine(i++).Append("Add aimed block to toolbar");
+            GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+            if(Settings.BlockPickerBind.IsAssigned())
+            {
+                Settings.BlockPickerBind.GetBinds(GetLine());
+            }
+            else
+            {
+                GetLine().Append(CMD_GETBLOCK);
+            }
+            GetLine().Append(")").ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').ResetColor().EndLine();
 
@@ -592,36 +604,30 @@ namespace Digi.BuildInfo
             AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetColor().EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
-
             if(Settings.CycleOverlaysBind.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Settings.CycleOverlaysBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-
             GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
-
             if(Settings.ToggleTransparencyBind.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Settings.ToggleTransparencyBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-
             GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
-
             if(Settings.FreezePlacementBind.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Settings.FreezePlacementBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-
             GetLine().EndLine();
 
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");

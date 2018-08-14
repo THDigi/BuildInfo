@@ -109,14 +109,14 @@ namespace Digi.BuildInfo
             COLLECTOR,
         }
 
-        private string[] AXIS_LABELS = new string[]
+        private readonly string[] AXIS_LABELS = new string[]
         {
             "Forward",
             "Right",
             "Up",
         };
 
-        private string[] DRAW_OVERLAY_NAME = new string[]
+        public readonly string[] DRAW_OVERLAY_NAME = new string[]
         {
             "OFF",
             "Airtightness",
@@ -200,6 +200,20 @@ namespace Digi.BuildInfo
         };
 
         public enum TriState { None, Off, On }
+
+        private readonly MyStringId[] CONTROL_SLOTS = new MyStringId[]
+        {
+            MyControlsSpace.SLOT0,
+            MyControlsSpace.SLOT1,
+            MyControlsSpace.SLOT2,
+            MyControlsSpace.SLOT3,
+            MyControlsSpace.SLOT4,
+            MyControlsSpace.SLOT5,
+            MyControlsSpace.SLOT6,
+            MyControlsSpace.SLOT7,
+            MyControlsSpace.SLOT8,
+            MyControlsSpace.SLOT9,
+        };
         #endregion
 
         #region Fields

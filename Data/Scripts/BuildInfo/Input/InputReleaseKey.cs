@@ -5,32 +5,32 @@ namespace Digi.Input
 {
     public struct InputReleaseKey : IEquatable<InputReleaseKey>
     {
-        private readonly InputHandler.Combination combination;
-        private readonly ControlContext contextId;
-        private readonly int hash;
+        public readonly int Tick;
+        public readonly InputHandler.Combination Combination;
+        public readonly ControlContext ContextId;
 
-        public InputReleaseKey(InputHandler.Combination combination, ControlContext contextId)
+        public InputReleaseKey(InputHandler.Combination combination, ControlContext contextId, int tick)
         {
-            this.combination = combination;
-            this.contextId = contextId;
-
-            hash = 17;
-            hash = hash * 31 + combination.GetHashCode();
-            hash = hash * 31 + contextId.GetHashCode();
+            Combination = combination;
+            ContextId = contextId;
+            Tick = tick;
         }
 
         public bool ShouldKeep()
         {
-            return combination.IsPressed(contextId);
+            return Combination.IsPressed(ContextId);
         }
 
         public bool Equals(InputReleaseKey other)
         {
-            return (contextId == other.contextId && combination.CombinationString == other.combination.CombinationString);
+            return (ContextId == other.ContextId && Combination.CombinationString == other.Combination.CombinationString);
         }
 
         public override int GetHashCode()
         {
+            int hash = 17;
+            hash = hash * 31 + Combination.GetHashCode();
+            hash = hash * 31 + ContextId.GetHashCode();
             return hash;
         }
     }

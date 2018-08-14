@@ -56,15 +56,16 @@ namespace Digi.Input
 
                 if(string.IsNullOrWhiteSpace(combinationString))
                 {
-                    error = "combinationString is null or whitespace!";
-                    return null;
+                    error = null;
+                    return new Combination(); // valid empty combination
                 }
 
                 string[] inputStrings = combinationString.ToLowerInvariant().Split(InputHandler.instance.CHAR_ARRAY, StringSplitOptions.RemoveEmptyEntries);
 
-                var combination = new Combination();
                 var str = InputHandler.instance.str;
                 str.Clear();
+
+                var combInputs = new List<InputBase>();
 
                 foreach(var inputId in inputStrings)
                 {
@@ -82,7 +83,7 @@ namespace Digi.Input
                         return null;
                     }
 
-                    combination.combination.Add(input);
+                    combInputs.Add(input);
 
                     if(str.Length > 0)
                         str.Append(' ');
@@ -90,27 +91,36 @@ namespace Digi.Input
                     str.Append(inputId);
                 }
 
-                combination.CombinationString = str.ToString();
+                if(combInputs.Count == 0)
+                    combInputs = null;
+
+                var combination = new Combination(combInputs, str.ToString());
+
                 str.Clear();
+
                 error = null;
                 return combination;
             }
             #endregion
 
-            private readonly List<InputBase> combination = new List<InputBase>();
-            public string CombinationString { get; private set; } = string.Empty;
+            private readonly List<InputBase> inputs = null;
+            public readonly string CombinationString;
 
             /// <summary>
             /// Use <see cref="Combination.Create(string, out string)"/>.
             /// </summary>
-            private Combination() { }
+            private Combination(List<InputBase> inputs = null, string combinationString = "")
+            {
+                this.inputs = inputs;
+                CombinationString = combinationString;
+            }
 
             public bool IsAssigned(ControlContext contextId = ControlContext.CHARACTER)
             {
-                if(combination.Count == 0)
+                if(inputs == null)
                     return false;
 
-                foreach(var input in combination)
+                foreach(var input in inputs)
                 {
                     if(!input.IsAssigned())
                         return false;
@@ -124,10 +134,10 @@ namespace Digi.Input
             /// </summary>
             public bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
             {
-                if(combination.Count == 0)
+                if(inputs == null)
                     return false;
 
-                foreach(var input in combination)
+                foreach(var input in inputs)
                 {
                     if(!input.IsPressed(contextId))
                         return false;
@@ -142,14 +152,17 @@ namespace Digi.Input
             /// </summary>
             public bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
             {
-                if(combination.Count == 0)
+                if(inputs == null)
                     return false;
 
-                var key = new InputReleaseKey(this, contextId);
+                var key = new InputReleaseKey(this, contextId, InputHandler.instance.tick);
 
-                if(InputHandler.instance.pressedCombinations.Contains(key))
+                foreach(var irk in InputHandler.instance.pressedCombinations)
                 {
-                    return false;
+                    if(irk.Equals(key))
+                    {
+                        return (irk.Tick == key.Tick); // same tick multiple-check fix
+                    }
                 }
 
                 bool allHeld = IsPressed(contextId);
@@ -189,9 +202,15 @@ namespace Digi.Input
                 if(output == null)
                     throw new ArgumentNullException("output must not be null.");
 
+                if(inputs == null)
+                {
+                    output.Append("[NotBound]");
+                    return;
+                }
+
                 bool first = true;
 
-                foreach(var input in combination)
+                foreach(var input in inputs)
                 {
                     if(!first)
                         output.Append(' ');
@@ -224,6 +243,7 @@ namespace Digi.Input
 
         public readonly char[] CHAR_ARRAY = { ' ' };
 
+        private int tick;
         private List<InputReleaseKey> pressedCombinations = new List<InputReleaseKey>(); // Used by InputCombination to monitor releases for IsJustPressed().
 
         #region Required methods
@@ -513,6 +533,12 @@ namespace Digi.Input
 
         public void Update()
         {
+            // used for identifying same-tick combination checks to not return different values
+            unchecked
+            {
+                ++tick;
+            }
+
             // monitor the release of combinations that used IsJustPressed() recently
             if(pressedCombinations.Count > 0)
             {
@@ -649,33 +675,35 @@ namespace Digi.Input
             return MyAPIGateway.Input.GetPositionDelta();
         }
 
-        public static void AppendInputsList(StringBuilder str)
+        public static void AppendInputBindingInstructions(StringBuilder str)
         {
-            str.AppendLine().Append("// List of inputs, generated from game data.");
+            str.AppendLine().Append("// === Input binding ===");
+            str.AppendLine().Append("// Separate multiple keys/buttons/controls with spaces to form a combination, example: rightctrl w r");
+            str.AppendLine().Append("// To unassign simply leave it empty.");
+            str.AppendLine().Append("// The available inputs are listed below:");
             str.AppendLine().Append("//");
-            AppendInputTypes(str, InputTypeEnum.KEY, "Keys");
-            AppendInputTypes(str, InputTypeEnum.MOUSE, "Mouse buttons/axes");
-            AppendInputTypes(str, InputTypeEnum.GAMEPAD, "Gamepad/joystick");
-            AppendInputTypes(str, InputTypeEnum.CONTROL, "Game controls", true);
-            AppendInputTypes(str, InputTypeEnum.CUSTOM, "Custom inputs (mod-added)", true);
+
+            var cacheList = new List<InputBase>();
+            AppendInputTypes(str, cacheList, InputTypeEnum.CUSTOM, "Custom inputs (mod-added)", true);
+            AppendInputTypes(str, cacheList, InputTypeEnum.KEY, "Keys");
+            AppendInputTypes(str, cacheList, InputTypeEnum.MOUSE, "Mouse buttons/axes");
+            AppendInputTypes(str, cacheList, InputTypeEnum.GAMEPAD, "Gamepad/joystick");
+            AppendInputTypes(str, cacheList, InputTypeEnum.CONTROL, "Game controls", true);
         }
 
-        private static void AppendInputTypes(StringBuilder str, InputTypeEnum type, string title, bool sortAlphabetically = false)
+        private static void AppendInputTypes(StringBuilder str, List<InputBase> list, InputTypeEnum type, string title, bool sortAlphabetically = false)
         {
-            var dictValues = instance.inputs.Values;
-
-            if(dictValues.Count == 0)
-                return;
-
-            var list = new List<InputBase>();
-
-            foreach(var input in dictValues)
+            list.Clear();
+            foreach(var input in instance.inputs.Values)
             {
                 if(input.Type != type)
                     continue;
 
                 list.Add(input);
             }
+
+            if(list.Count == 0)
+                return; // nothing to print for this type
 
             if(sortAlphabetically)
                 list.Sort((a, b) => a.Id.CompareTo(b.Id));

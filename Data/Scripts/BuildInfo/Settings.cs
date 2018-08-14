@@ -16,6 +16,7 @@ namespace Digi.BuildInfo
         public InputHandler.Combination CycleOverlaysBind;
         public InputHandler.Combination ToggleTransparencyBind;
         public InputHandler.Combination FreezePlacementBind;
+        public InputHandler.Combination BlockPickerBind;
         public bool showTextInfo;
         public bool alwaysVisible;
         public bool textAPIUseCustomStyling;
@@ -32,6 +33,7 @@ namespace Digi.BuildInfo
         public readonly InputHandler.Combination default_cycleOverlaysBind = InputHandler.Combination.Create($"ctrl {MENU_BIND_INPUT_NAME}");
         public readonly InputHandler.Combination default_toggleTransparencyBind = InputHandler.Combination.Create($"shift {MENU_BIND_INPUT_NAME}");
         public readonly InputHandler.Combination default_freezePlacementBind = InputHandler.Combination.Create($"alt {MENU_BIND_INPUT_NAME}");
+        public readonly InputHandler.Combination default_blockPickerBind = InputHandler.Combination.Create("ctrl c.cubesizemode");
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
 
@@ -58,6 +60,7 @@ namespace Digi.BuildInfo
             CycleOverlaysBind = default_cycleOverlaysBind;
             ToggleTransparencyBind = default_toggleTransparencyBind;
             FreezePlacementBind = default_freezePlacementBind;
+            BlockPickerBind = default_blockPickerBind;
 
             showTextInfo = default_showTextInfo;
             alwaysVisible = default_alwaysVisible;
@@ -230,6 +233,19 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
+                    if(key.Equals("BlockPickerBind", COMPARE_TYPE))
+                    {
+                        string error;
+                        var input = InputHandler.Combination.Create(val, out error);
+
+                        if(input != null)
+                            BlockPickerBind = input;
+                        else
+                            Log.Error(error);
+
+                        continue;
+                    }
+
                     if(key.Equals("ShowTextInfo", COMPARE_TYPE))
                     {
                         if(bool.TryParse(val, out b))
@@ -383,24 +399,13 @@ namespace Digi.BuildInfo
 
             if(comments)
             {
-                str.Append("// ").Append(Log.ModName).Append(" mod config; this file gets automatically overwritten after being loaded so don't leave custom comments.").AppendLine();
-                str.Append("// You can reload this while the game is running by typing in chat: ").Append(COMMAND).AppendLine();
-                str.Append("// If this file doesn't exist, or one or all settings are missing, they will be reset to default when loaded or reloaded with the command.").AppendLine();
+                str.Append("// ").Append(Log.ModName).Append(" mod config.").AppendLine();
                 str.Append("// Lines starting with // are comments. All values are case and space insensitive unless otherwise specified.").AppendLine();
+                str.Append("// You can reload this while the game is running, by typing in chat: ").Append(COMMAND).AppendLine();
+                str.Append("// NOTE: This file gets automatically overwritten after being loaded, only edit the values.").AppendLine();
                 str.AppendLine();
                 str.AppendLine();
             }
-
-            if(comments)
-            {
-                str.AppendLine();
-                str.Append("// The key/button to use for accessing the menu and key combinations.").AppendLine();
-                str.Append("// Separate multiple keys/buttons/controls with spaces to form a combination, example: rightctrl w r").AppendLine();
-                str.Append("// The list of keys/buttons/controls can be found at the bottom of this file.").AppendLine();
-                str.Append("// Default: ").Append(default_menuBind.CombinationString).AppendLine();
-            }
-
-            str.Append("MenuBind = ").Append(MenuBind.CombinationString).AppendLine();
 
             if(comments)
             {
@@ -409,7 +414,6 @@ namespace Digi.BuildInfo
                 str.Append("// This can be chaned in-game in the menu as well.").AppendLine();
                 str.Append("// Default: ").Append(default_showTextInfo ? "true" : "false").AppendLine();
             }
-
             str.Append("ShowTextInfo = ").Append(showTextInfo ? "true" : "false").AppendLine();
 
             if(comments)
@@ -419,8 +423,52 @@ namespace Digi.BuildInfo
                 str.Append("// Set to true to draw info regardless of HUD visible state.").AppendLine();
                 str.Append("// Default: ").Append(default_alwaysVisible ? "true" : "false").AppendLine();
             }
-
             str.Append("AlwaysVisible = ").Append(alwaysVisible ? "true" : "false").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// The key/button to use for accessing the buildinfo menu.").AppendLine();
+                str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
+                str.Append("// Default: ").Append(default_menuBind.CombinationString).AppendLine();
+            }
+            str.Append("MenuBind = ").Append(MenuBind.CombinationString).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// The bind for cycling through block info overlays (").Append(string.Join(", ", BuildInfo.Instance.DRAW_OVERLAY_NAME)).Append(").").AppendLine();
+                str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
+                str.Append("// Default: ").Append(default_cycleOverlaysBind.CombinationString).AppendLine();
+            }
+            str.Append("CycleOverlaysBind = ").Append(CycleOverlaysBind.CombinationString).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// The bind for toggling block transparency when equipped.").AppendLine();
+                str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
+                str.Append("// Default: ").Append(default_toggleTransparencyBind.CombinationString).AppendLine();
+            }
+            str.Append("ToggleTransparencyBind = ").Append(ToggleTransparencyBind.CombinationString).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// The key/button to use for accessing the menu and key combinations.").AppendLine();
+                str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
+                str.Append("// Default: ").Append(default_freezePlacementBind.CombinationString).AppendLine();
+            }
+            str.Append("FreezePlacementBind = ").Append(FreezePlacementBind.CombinationString).AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// The bind for adding the aimed block to the toolbar. Note: it does request a number press afterwards.").AppendLine();
+                str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
+                str.Append("// Default: ").Append(default_blockPickerBind.CombinationString).AppendLine();
+            }
+            str.Append("BlockPickerBind = ").Append(BlockPickerBind.CombinationString).AppendLine();
 
             if(comments)
             {
@@ -432,7 +480,6 @@ namespace Digi.BuildInfo
                 str.Append("// (If false) With rotation hints off, text info will be set top-left, otherwise top-right.").AppendLine();
                 str.Append("// Default: ").Append(default_textAPIUseCustomStyling ? "true" : "false").AppendLine();
             }
-
             str.Append("UseCustomStyling = ").Append(textAPIUseCustomStyling ? "true" : "false").AppendLine();
 
             if(comments)
@@ -443,7 +490,6 @@ namespace Digi.BuildInfo
                 str.Append("// NOTE: UseCustomStyling needs to be true for this to be used!").AppendLine();
                 str.Append("// Default: ").Append(default_textAPIScreenPos.X).Append(", ").Append(default_textAPIScreenPos.Y).AppendLine();
             }
-
             str.Append("ScreenPos = ").Append(Math.Round(textAPIScreenPos.X, 5)).Append(", ").Append(Math.Round(textAPIScreenPos.Y, 5)).AppendLine();
 
             if(comments)
@@ -455,7 +501,6 @@ namespace Digi.BuildInfo
                 str.Append("// NOTE: UseCustomStyling needs to be true for this to be used!").AppendLine();
                 str.Append("// Default: ").Append(default_textAPIAlignRight ? "right" : "left").Append(", ").Append(default_textAPIAlignBottom ? "bottom" : "top").AppendLine();
             }
-
             str.Append("Alignment = ").Append(textAPIAlignRight ? "right" : "left").Append(", ").Append(textAPIAlignBottom ? "bottom" : "top").AppendLine();
 
             if(comments)
@@ -464,7 +509,6 @@ namespace Digi.BuildInfo
                 str.Append("// The overall text info scale. Works regardless of UseCustomStyling's value.").AppendLine();
                 str.Append("// Minimum value is 0.0001, max 10. Default: ").AppendFormat("{0:0.0#####}", default_textAPIScale).AppendLine();
             }
-
             str.Append("Scale = ").AppendFormat("{0:0.0#####}", textAPIScale).AppendLine();
 
             if(comments)
@@ -474,7 +518,6 @@ namespace Digi.BuildInfo
                 str.Append("// The HUD value will use the game's UI background opacity.").AppendLine();
                 str.Append("// Default: ").Append(default_textAPIBackgroundOpacity < 0 ? "HUD" : default_textAPIBackgroundOpacity.ToString()).AppendLine();
             }
-
             str.Append("BackgroundOpacity = ").Append(textAPIBackgroundOpacity < 0 ? "HUD" : Math.Round(textAPIBackgroundOpacity, 5).ToString()).AppendLine();
 
             if(comments)
@@ -484,7 +527,6 @@ namespace Digi.BuildInfo
                 str.Append("// You can toggle those labels here.").AppendLine();
                 str.Append("// Everything is default true").AppendLine();
             }
-
             str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
             str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
 
@@ -493,7 +535,7 @@ namespace Digi.BuildInfo
                 str.AppendLine();
                 str.AppendLine();
                 str.AppendLine();
-                InputHandler.AppendInputsList(str);
+                InputHandler.AppendInputBindingInstructions(str);
                 str.AppendLine();
             }
 
@@ -504,7 +546,6 @@ namespace Digi.BuildInfo
                 str.AppendLine();
                 str.Append("// Config version; should not be edited.").AppendLine();
             }
-
             str.Append("ConfigVersion = ").Append(configVersion).AppendLine();
 
             return str.ToString();
