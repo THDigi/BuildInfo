@@ -72,17 +72,17 @@ namespace Digi.BuildInfo
         [ProtoContract]
         public class VanillaDetailInfo
         {
-            [ProtoMember]
+            [ProtoMember(1)]
             public List<InfoEntry> Blocks;
         }
 
         [ProtoContract]
         public struct InfoEntry
         {
-            [ProtoMember]
+            [ProtoMember(1)]
             public string Id;
 
-            [ProtoMember]
+            [ProtoMember(2)]
             public string DetailInfo;
         }
 
