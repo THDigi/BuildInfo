@@ -55,8 +55,8 @@ namespace Digi.BuildInfo
             textAPILabels = new HudAPIv2.SpaceMessage[count];
             textAPIShadows = new HudAPIv2.SpaceMessage[count];
 
-            InputHandler = new InputHandler();
-            InputHandler.AddCustomInput(new InputCustomMenuBind());
+            InputLib = new InputLib();
+            InputLib.AddCustomInput(new InputCustomMenuBind());
 
             Settings = new Settings();
             LeakInfoComp = new LeakInfoComponent();
@@ -84,8 +84,8 @@ namespace Digi.BuildInfo
                     MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
                     MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
 
-                    InputHandler?.Dispose();
-                    InputHandler = null;
+                    InputLib?.Dispose();
+                    InputLib = null;
 
                     Settings?.Dispose();
                     Settings = null;
@@ -132,7 +132,7 @@ namespace Digi.BuildInfo
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
-                InputHandler?.Update();
+                InputLib?.Update();
 
                 LeakInfoComp?.Update();
 
@@ -656,7 +656,7 @@ namespace Digi.BuildInfo
                         }
                     }
 
-                    var context = InputHandler.GetCurrentInputContext();
+                    var context = InputLib.GetCurrentInputContext();
 
                     if(Settings.ToggleTransparencyBind.IsJustPressed(context))
                     {

@@ -20,7 +20,7 @@ namespace Digi.Input.Devices
 
             if(MyAPIGateway.Input.IsJoystickLastUsed)
             {
-                name = InputHandler.GetInputDisplayName(contextId, ControlId, specialChars);
+                name = InputLib.GetInputDisplayName(contextId, ControlId, specialChars);
             }
 
             // using kb/m or unassigned for gamepad/joystick
@@ -30,15 +30,15 @@ namespace Digi.Input.Devices
 
                 if(control.GetMouseControl() != MyMouseButtonsEnum.None)
                 {
-                    name = InputHandler.GetInputDisplayName(control.GetMouseControl());
+                    name = InputLib.GetInputDisplayName(control.GetMouseControl());
                 }
                 else if(control.GetKeyboardControl() != MyKeys.None)
                 {
-                    name = InputHandler.GetInputDisplayName(control.GetKeyboardControl());
+                    name = InputLib.GetInputDisplayName(control.GetKeyboardControl());
                 }
                 else if(control.GetSecondKeyboardControl() != MyKeys.None)
                 {
-                    name = InputHandler.GetInputDisplayName(control.GetSecondKeyboardControl());
+                    name = InputLib.GetInputDisplayName(control.GetSecondKeyboardControl());
                 }
             }
 
@@ -59,24 +59,24 @@ namespace Digi.Input.Devices
 
         public override bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            return InputHandler.GetGameControlPressed(contextId, ControlId);
+            return InputLib.GetGameControlPressed(contextId, ControlId);
         }
 
         public override bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            return InputHandler.GetGameControlJustPressed(contextId, ControlId);
+            return InputLib.GetGameControlJustPressed(contextId, ControlId);
         }
     }
 
     public class InputGameControlMovement : InputAdvancedBase
     {
-        public InputGameControlMovement() : base(InputTypeEnum.CONTROL, InputHandler.CONTROL_PREFIX + "move", "Movement (analog)", analog: true)
+        public InputGameControlMovement() : base(InputTypeEnum.CONTROL, InputLib.CONTROL_PREFIX + "move", "Movement (analog)", analog: true)
         {
         }
 
         public override bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            var input = InputHandler.GetMovementInput();
+            var input = InputLib.GetMovementInput();
             return !Vector3.IsZero(input);
         }
 
@@ -88,13 +88,13 @@ namespace Digi.Input.Devices
 
     public class InputGameControlRotation : InputAdvancedBase
     {
-        public InputGameControlRotation() : base(InputTypeEnum.CONTROL, InputHandler.CONTROL_PREFIX + "view", "Rotation (analog)", analog: true)
+        public InputGameControlRotation() : base(InputTypeEnum.CONTROL, InputLib.CONTROL_PREFIX + "view", "Rotation (analog)", analog: true)
         {
         }
 
         public override bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            var input = InputHandler.GetRotationInput();
+            var input = InputLib.GetRotationInput();
             return !Vector3.IsZero(input);
         }
 

@@ -25,7 +25,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseAnalog : InputAdvancedBase
     {
-        public InputMouseAnalog() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "analog", "Mouse X/Y/Scroll (analog)", analog: true)
+        public InputMouseAnalog() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "analog", "Mouse X/Y/Scroll (analog)", analog: true)
         {
         }
 
@@ -42,7 +42,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseScroll : InputAdvancedBase
     {
-        public InputMouseScroll() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "scroll", "Mouse Scroll (analog)", analog: true)
+        public InputMouseScroll() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "scroll", "Mouse Scroll (analog)", analog: true)
         {
         }
 
@@ -59,7 +59,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseScrollUp : InputAdvancedBase
     {
-        public InputMouseScrollUp() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "scrollup", "Mouse Scroll Up")
+        public InputMouseScrollUp() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "scrollup", "Mouse Scroll Up")
         {
         }
 
@@ -76,7 +76,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseScrollDown : InputAdvancedBase
     {
-        public InputMouseScrollDown() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "scrolldown", "Mouse Scroll Down")
+        public InputMouseScrollDown() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "scrolldown", "Mouse Scroll Down")
         {
         }
 
@@ -93,7 +93,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseX : InputAdvancedBase
     {
-        public InputMouseX() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "x", "Mouse X (analog)", analog: true)
+        public InputMouseX() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "x", "Mouse X (analog)", analog: true)
         {
         }
 
@@ -110,7 +110,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseY : InputAdvancedBase
     {
-        public InputMouseY() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "y", "Mouse Y (analog)", analog: true)
+        public InputMouseY() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "y", "Mouse Y (analog)", analog: true)
         {
         }
 
@@ -127,7 +127,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseXPos : InputAdvancedBase
     {
-        public InputMouseXPos() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "x+", "Mouse X+")
+        public InputMouseXPos() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "x+", "Mouse X+")
         {
         }
 
@@ -144,7 +144,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseXNeg : InputAdvancedBase
     {
-        public InputMouseXNeg() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "x-", "Mouse X-")
+        public InputMouseXNeg() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "x-", "Mouse X-")
         {
         }
 
@@ -161,7 +161,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseYPos : InputAdvancedBase
     {
-        public InputMouseYPos() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "y+", "Mouse Y+")
+        public InputMouseYPos() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "y+", "Mouse Y+")
         {
         }
 
@@ -178,7 +178,7 @@ namespace Digi.Input.Devices
 
     public class InputMouseYNeg : InputAdvancedBase
     {
-        public InputMouseYNeg() : base(InputTypeEnum.MOUSE, InputHandler.MOUSE_PREFIX + "y-", "Mouse Y-")
+        public InputMouseYNeg() : base(InputTypeEnum.MOUSE, InputLib.MOUSE_PREFIX + "y-", "Mouse Y-")
         {
         }
 

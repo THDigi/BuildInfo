@@ -16,7 +16,7 @@ namespace Digi.Input
     /// <summary>
     /// <para>Usage: create an instance in BeforeStart(), call Update() in any simulation update, Dispose() in UnloadData().</para>
     /// </summary> 
-    public class InputHandler : IDisposable
+    public class InputLib : IDisposable
     {
         #region Input combination inner class
         /// <summary>
@@ -51,8 +51,8 @@ namespace Digi.Input
             /// <returns>null if there are any errors.</returns>
             public static Combination Create(string combinationString, out string error, List<string> invalidInputs = null)
             {
-                if(InputHandler.instance == null)
-                    throw new Exception("InputHandler was not initialized! Create an instance of it in your mod first.");
+                if(InputLib.instance == null)
+                    throw new Exception($"{typeof(InputLib).Name} was not initialized! Create an instance of it in your mod first.");
 
                 if(string.IsNullOrWhiteSpace(combinationString))
                 {
@@ -60,9 +60,9 @@ namespace Digi.Input
                     return new Combination(); // valid empty combination
                 }
 
-                string[] inputStrings = combinationString.ToLowerInvariant().Split(InputHandler.instance.CHAR_ARRAY, StringSplitOptions.RemoveEmptyEntries);
+                string[] inputStrings = combinationString.ToLowerInvariant().Split(InputLib.instance.CHAR_ARRAY, StringSplitOptions.RemoveEmptyEntries);
 
-                var str = InputHandler.instance.str;
+                var str = InputLib.instance.str;
                 str.Clear();
 
                 var combInputs = new List<InputBase>();
@@ -77,7 +77,7 @@ namespace Digi.Input
                         return null;
                     }
 
-                    if(!InputHandler.instance.inputs.TryGetValue(inputId, out input))
+                    if(!InputLib.instance.inputs.TryGetValue(inputId, out input))
                     {
                         error = $"Can't find inputId: {inputId}";
                         return null;
@@ -148,16 +148,16 @@ namespace Digi.Input
 
             /// <summary>
             /// Returns true the first time this gets called while all inputs are being held, gets reset when any of them are released (updated outside of this method)
-            /// <para>NOTE: InputHandler requires Update() to be called for this method to work properly.</para>
+            /// <para>NOTE: <see cref="InputLib"/> requires <see cref="Update"/> to be called for this method to work properly.</para>
             /// </summary>
             public bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
             {
                 if(inputs == null)
                     return false;
 
-                var key = new InputReleaseKey(this, contextId, InputHandler.instance.tick);
+                var key = new InputReleaseKey(this, contextId, InputLib.instance.tick);
 
-                foreach(var irk in InputHandler.instance.pressedCombinations)
+                foreach(var irk in InputLib.instance.pressedCombinations)
                 {
                     if(irk.Equals(key))
                     {
@@ -169,7 +169,7 @@ namespace Digi.Input
 
                 if(allHeld)
                 {
-                    InputHandler.instance.pressedCombinations.Add(key);
+                    InputLib.instance.pressedCombinations.Add(key);
                     return true;
                 }
 
@@ -179,11 +179,11 @@ namespace Digi.Input
             /// <summary>
             /// Same as <seealso cref="GetBinds(StringBuilder, ControlContext, bool)"/> but with a string allocation.
             /// </summary>
-            /// <param name="contextId">Control context, <see cref="InputHandler.GetCurrentInputContext"/></param>
+            /// <param name="contextId">Control context, <see cref="InputLib.GetCurrentInputContext"/></param>
             /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public string GetBinds(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
-                var str = InputHandler.instance.str;
+                var str = InputLib.instance.str;
                 str.Clear();
                 GetBinds(str, contextId, specialChars);
                 var text = str.ToString();
@@ -195,7 +195,7 @@ namespace Digi.Input
             /// Gets the combination into a parseable format.
             /// </summary>
             /// <param name="output">What to append the info to</param>
-            /// <param name="contextId">Control context, <see cref="InputHandler.GetCurrentInputContext"/></param>
+            /// <param name="contextId">Control context, <see cref="InputLib.GetCurrentInputContext"/></param>
             /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public void GetBinds(StringBuilder output, ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
@@ -228,7 +228,7 @@ namespace Digi.Input
 
         public const float EPSILON = 0.000001f;
 
-        private static InputHandler instance;
+        private static InputLib instance;
 
         private readonly Dictionary<string, InputBase> inputs = new Dictionary<string, InputBase>();
         private readonly Dictionary<MyKeys, InputBase> keyToInput = new Dictionary<MyKeys, InputBase>();
@@ -247,10 +247,10 @@ namespace Digi.Input
         private List<InputReleaseKey> pressedCombinations = new List<InputReleaseKey>(); // Used by InputCombination to monitor releases for IsJustPressed().
 
         #region Required methods
-        public InputHandler()
+        public InputLib()
         {
             if(instance != null)
-                throw new Exception("Multiple instances of InputHandler are not supported!");
+                throw new Exception($"Multiple instances of {typeof(InputLib).Name} are not supported!");
 
             instance = this;
             gamepadBindings = new GamepadBindings();

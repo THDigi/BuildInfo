@@ -6,10 +6,10 @@ namespace Digi.Input
     public struct InputReleaseKey : IEquatable<InputReleaseKey>
     {
         public readonly int Tick;
-        public readonly InputHandler.Combination Combination;
+        public readonly InputLib.Combination Combination;
         public readonly ControlContext ContextId;
 
-        public InputReleaseKey(InputHandler.Combination combination, ControlContext contextId, int tick)
+        public InputReleaseKey(InputLib.Combination combination, ControlContext contextId, int tick)
         {
             Combination = combination;
             ContextId = contextId;

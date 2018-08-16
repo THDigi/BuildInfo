@@ -201,7 +201,7 @@ namespace Digi.Input.Devices
                 Axis = axis;
             }
 
-            public string GetBind(bool specialChars = true) => InputHandler.GetInputDisplayName(Axis, specialChars);
+            public string GetBind(bool specialChars = true) => InputLib.GetInputDisplayName(Axis, specialChars);
             public bool IsPressed() => MyAPIGateway.Input.IsJoystickAxisPressed(Axis);
             public bool IsJustPressed() => MyAPIGateway.Input.IsJoystickAxisNewPressed(Axis);
         }
@@ -215,7 +215,7 @@ namespace Digi.Input.Devices
                 Button = button;
             }
 
-            public string GetBind(bool specialChars = true) => InputHandler.GetInputDisplayName(Button, specialChars);
+            public string GetBind(bool specialChars = true) => InputLib.GetInputDisplayName(Button, specialChars);
             public bool IsPressed() => MyAPIGateway.Input.IsJoystickButtonPressed(Button);
             public bool IsJustPressed() => MyAPIGateway.Input.IsJoystickButtonNewPressed(Button);
         }

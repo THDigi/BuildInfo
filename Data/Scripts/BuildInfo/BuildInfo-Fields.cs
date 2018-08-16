@@ -221,7 +221,7 @@ namespace Digi.BuildInfo
 
         public bool IsInitialized = false;
         public bool IsPlayer = true;
-        public InputHandler InputHandler;
+        public InputLib InputLib;
         public Settings Settings;
         public LeakInfoComponent LeakInfoComp;
         public TerminalInfoComponent TerminalInfoComp;

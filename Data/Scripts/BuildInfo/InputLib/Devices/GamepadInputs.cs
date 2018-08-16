@@ -46,7 +46,7 @@ namespace Digi.Input.Devices
 
     public class InputGamepadLeftTrigger : InputAdvancedBase
     {
-        public InputGamepadLeftTrigger() : base(InputTypeEnum.GAMEPAD, InputHandler.GAMEPAD_PREFIX + "ltanalog", "Left Trigger (analog)", analog: true, printChar: '\xe008')
+        public InputGamepadLeftTrigger() : base(InputTypeEnum.GAMEPAD, InputLib.GAMEPAD_PREFIX + "ltanalog", "Left Trigger (analog)", analog: true, printChar: '\xe008')
         {
         }
 
@@ -63,7 +63,7 @@ namespace Digi.Input.Devices
 
     public class InputGamepadRightTrigger : InputAdvancedBase
     {
-        public InputGamepadRightTrigger() : base(InputTypeEnum.GAMEPAD, InputHandler.GAMEPAD_PREFIX + "rtanalog", "Right Trigger (analog)", analog: true, printChar: '\xe007')
+        public InputGamepadRightTrigger() : base(InputTypeEnum.GAMEPAD, InputLib.GAMEPAD_PREFIX + "rtanalog", "Right Trigger (analog)", analog: true, printChar: '\xe007')
         {
         }
 
@@ -80,7 +80,7 @@ namespace Digi.Input.Devices
 
     public class InputGamepadLeftStick : InputAdvancedBase
     {
-        public InputGamepadLeftStick() : base(InputTypeEnum.GAMEPAD, InputHandler.GAMEPAD_PREFIX + "lsanalog", "Left Stick (analog)", analog: true, printChar: '\xe00b')
+        public InputGamepadLeftStick() : base(InputTypeEnum.GAMEPAD, InputLib.GAMEPAD_PREFIX + "lsanalog", "Left Stick (analog)", analog: true, printChar: '\xe00b')
         {
         }
 
@@ -89,7 +89,7 @@ namespace Digi.Input.Devices
             var x = -MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.Xneg) + MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.Xpos);
             var y = -MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.Yneg) + MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.Ypos);
 
-            return (Math.Abs(x) > InputHandler.EPSILON || Math.Abs(y) > InputHandler.EPSILON);
+            return (Math.Abs(x) > InputLib.EPSILON || Math.Abs(y) > InputLib.EPSILON);
         }
 
         public override bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
@@ -100,7 +100,7 @@ namespace Digi.Input.Devices
 
     public class InputGamepadRightStick : InputAdvancedBase
     {
-        public InputGamepadRightStick() : base(InputTypeEnum.GAMEPAD, InputHandler.GAMEPAD_PREFIX + "rsanalog", "Right Stick (analog)", analog: true, printChar: '\xe00c')
+        public InputGamepadRightStick() : base(InputTypeEnum.GAMEPAD, InputLib.GAMEPAD_PREFIX + "rsanalog", "Right Stick (analog)", analog: true, printChar: '\xe00c')
         {
         }
 
@@ -109,7 +109,7 @@ namespace Digi.Input.Devices
             var x = -MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.RotationXneg) + MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.RotationXpos);
             var y = -MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.RotationYneg) + MyAPIGateway.Input.GetJoystickAxisStateForGameplay(MyJoystickAxesEnum.RotationYpos);
 
-            return (Math.Abs(x) > InputHandler.EPSILON || Math.Abs(y) > InputHandler.EPSILON);
+            return (Math.Abs(x) > InputLib.EPSILON || Math.Abs(y) > InputLib.EPSILON);
         }
 
         public override bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
