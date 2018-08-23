@@ -148,7 +148,7 @@ namespace Digi.Input
 
             /// <summary>
             /// Returns true the first time this gets called while all inputs are being held, gets reset when any of them are released (updated outside of this method)
-            /// <para>NOTE: <see cref="InputLib"/> requires <see cref="Update"/> to be called for this method to work properly.</para>
+            /// <para>NOTE: <see cref="InputLib"/> requires <see cref="UpdateInput"/> to be called for this method to work properly.</para>
             /// </summary>
             public bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
             {
@@ -531,7 +531,7 @@ namespace Digi.Input
             instance = null;
         }
 
-        public void Update()
+        public void UpdateInput()
         {
             // used for identifying same-tick combination checks to not return different values
             unchecked

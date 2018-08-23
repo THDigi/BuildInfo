@@ -132,8 +132,6 @@ namespace Digi.BuildInfo
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
                     hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
 
-                InputLib?.Update();
-
                 LeakInfoComp?.Update();
 
                 TerminalInfoComp?.Update();
@@ -487,6 +485,8 @@ namespace Digi.BuildInfo
             {
                 if(!IsInitialized || !IsPlayer || MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible || MyParticlesManager.Paused)
                     return; // only monitor input when not in menu or chat, and not paused
+
+                InputLib?.UpdateInput();
 
                 #region Block picker
                 if(pickBlockDef == null && selectedBlock != null && Settings.BlockPickerBind.IsJustPressed())
