@@ -172,6 +172,10 @@ namespace Digi.BuildInfo
             // from MyMissile.UpdateBeforeSimulation()
             public const float Missile_DesiredSpeedMultiplier = 0.7f;
 
+            // from Sandbox.Game.Weapons.MyProjectile.Start()
+            public const float Projectile_RangeMultiplier_Min = 0.8f;
+            public const float Projectile_RangeMultiplier_Max = 1f;
+
             // from MyAirVent.VentDummy getter
             public const string AirVent_DummyName = "vent_001";
 

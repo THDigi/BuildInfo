@@ -2187,10 +2187,6 @@ namespace Digi.BuildInfo
 
             if(ammoProjectiles.Count > 0)
             {
-                // HACK hardcoded; from Sandbox.Game.Weapons.MyProjectile.Start()
-                const float MIN_RANGE = 0.8f;
-                const float MAX_RANGE = 1.2f;
-
                 // TODO check if wepDef.DamageMultiplier is used for weapons (right now in 1.186.5 it's not)
 
                 AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
@@ -2229,7 +2225,7 @@ namespace Digi.BuildInfo
                         GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
                     GetLine().ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * MIN_RANGE, ammo.MaxTrajectory * MAX_RANGE).ResetColor().Append(")").EndLine();
+                        .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")").EndLine();
                 }
             }
 
