@@ -168,6 +168,9 @@ namespace Digi.BuildInfo
                 lastDefId = default(MyDefinitionId);
             }
 
+            if(showMenu && !canShowMenu)
+                showMenu = false;
+
             if(selectedDef != null || showMenu)
             {
                 if(showMenu)
