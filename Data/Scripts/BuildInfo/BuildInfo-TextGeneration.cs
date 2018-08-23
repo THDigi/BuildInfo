@@ -1444,6 +1444,7 @@ namespace Digi.BuildInfo
 
         private void Format_WelderAndGrinder(MyCubeBlockDefinition def)
         {
+            var shipTool = (MyShipToolDefinition)def;
             var isWelder = def is MyShipWelderDefinition;
 
             AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipTool_PowerReq).Separator().ResourcePriority(GameData.Hardcoded.ShipTool_PowerGroup, hardcoded: true).EndLine();
@@ -1454,16 +1455,13 @@ namespace Digi.BuildInfo
             else
                 AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
 
-            var data = BData_Base.TryGetDataCached<BData_ShipTool>(def);
-
             if(isWelder)
             {
                 float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                 var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
                 AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
 
-                if(data != null)
-                    AddLine().Label("Welding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
+                AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
             }
             else
             {
@@ -1471,8 +1469,7 @@ namespace Digi.BuildInfo
                 var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
                 AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
 
-                if(data != null)
-                    AddLine().Label("Grinding radius").DistanceFormat(data.SphereDummy.Radius).EndLine();
+                AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
             }
         }
         #endregion

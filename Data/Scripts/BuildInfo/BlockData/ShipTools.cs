@@ -6,7 +6,7 @@ namespace Digi.BuildInfo.BlockData
 {
     public class BData_ShipTool : BData_Base
     {
-        public BoundingSphere SphereDummy;
+        public Matrix DummyMatrix;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -21,9 +21,7 @@ namespace Digi.BuildInfo.BlockData
                 // HACK: copied from Sandbox.Game.Weapons.MyShipToolBase.LoadDummies()
                 if(kv.Key.ToUpper().Contains("DETECTOR_SHIPTOOL"))
                 {
-                    var matrix = kv.Value.Matrix;
-                    var radius = matrix.Scale.AbsMin();
-                    SphereDummy = new BoundingSphere(matrix.Translation, radius);
+                    DummyMatrix = kv.Value.Matrix;
                     success = true;
                     break;
                 }

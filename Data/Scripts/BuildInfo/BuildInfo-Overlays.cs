@@ -447,9 +447,12 @@ namespace Digi.BuildInfo
             const int wireDivRatio = 20;
             var color = Color.Lime;
             var colorFace = color * 0.3f;
-            var radius = data.SphereDummy.Radius;
 
-            drawMatrix.Translation = Vector3D.Transform(data.SphereDummy.Center, drawMatrix);
+            var toolDef = (MyShipToolDefinition)def;
+            var matrix = data.DummyMatrix;
+            var sensorCenter = matrix.Translation + matrix.Forward * toolDef.SensorOffset;
+            drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
+            var radius = toolDef.SensorRadius;
 
             MySimpleObjectDraw.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: MATERIAL_SQUARE);
 
