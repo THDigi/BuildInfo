@@ -43,7 +43,8 @@ namespace Digi.BuildInfo
 
         // constants
         public enum ThreadStatus { IDLE, RUNNING, DRAW }
-        private const int MAX_DRAW_SECONDS = 300; // a cap for the dynamically calculated line lifetime
+        private const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated line lifetime
+        private const int MAX_DRAW_SECONDS = 300;
         private const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
         private const float DRAW_DEPTH_F = 0.01f; // float version of the above value
         private const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
@@ -389,7 +390,7 @@ namespace Digi.BuildInfo
             else
             {
                 Status = ThreadStatus.DRAW;
-                drawTicks = (int)Math.Min(lines.Count * 60 * 2 * selectedGrid.GridSize, 60 * MAX_DRAW_SECONDS);
+                drawTicks = (int)MathHelper.Clamp((lines.Count * 60 * 2 * selectedGrid.GridSize), 60 * MIN_DRAW_SECONDS, 60 * MAX_DRAW_SECONDS);
 
                 NotifyHUD("Found leak, path rendered.", 2000, MyFontEnum.White);
             }
