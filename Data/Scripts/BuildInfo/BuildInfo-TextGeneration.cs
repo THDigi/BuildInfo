@@ -721,7 +721,7 @@ namespace Digi.BuildInfo
                 .IntegrityFormat(selectedBlock.Integrity).ResetColor()
                 .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
 
-            if(selectedBlock.HasDeformation)
+            if(def.BlockTopology == MyBlockTopology.Cube && selectedBlock.HasDeformation)
             {
                 GetLine().Color(COLOR_BAD).Append(" (deformed)");
             }
