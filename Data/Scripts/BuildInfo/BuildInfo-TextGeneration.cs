@@ -2202,7 +2202,7 @@ namespace Digi.BuildInfo
                     .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
                     .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
                     .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
+                    .Color(COLOR_STAT_TRAVEL).Append("travel").Hardcoded().ResetColor().Append(")").EndLine();
 
                 for(int i = 0; i < ammoProjectiles.Count; ++i)
                 {

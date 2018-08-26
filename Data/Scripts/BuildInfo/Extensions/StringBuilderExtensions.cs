@@ -108,12 +108,17 @@ namespace Digi.BuildInfo.Extensions
 
         public static StringBuilder LabelHardcoded(this StringBuilder s, string label, Color color)
         {
-            return s.Append(label).Color(new Color(255, 255, 155)).Append('*').Color(color).Append(": ");
+            return s.Append(label).Hardcoded().Color(color).Append(": ");
         }
 
         public static StringBuilder LabelHardcoded(this StringBuilder s, string label)
         {
             return s.LabelHardcoded(label, BuildInfo.Instance.COLOR_NORMAL);
+        }
+
+        public static StringBuilder Hardcoded(this StringBuilder s)
+        {
+            return s.Color(new Color(255, 255, 155)).Append('*');
         }
 
         public static StringBuilder PCUFormat(this StringBuilder s, int PCU)
