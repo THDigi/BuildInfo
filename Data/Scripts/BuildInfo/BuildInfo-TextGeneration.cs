@@ -878,8 +878,8 @@ namespace Digi.BuildInfo
             #region Optional: grid moving
             if(grid.Physics != null)
             {
-                bool hasLinearVel = !Vector3.IsZero(grid.Physics.LinearVelocity, 0.00001f);
-                bool hasAngularVel = !Vector3.IsZero(grid.Physics.AngularVelocity, 0.00001f);
+                bool hasLinearVel = !Vector3.IsZero(grid.Physics.LinearVelocity, 0.01f);
+                bool hasAngularVel = !Vector3.IsZero(grid.Physics.AngularVelocity, 0.01f);
 
                 if(hasLinearVel || hasAngularVel)
                 {
@@ -887,7 +887,7 @@ namespace Digi.BuildInfo
 
                     if(hasLinearVel)
                     {
-                        GetLine().Append("Moving: ").SpeedFormat(grid.Physics.LinearVelocity.Length(), 5);
+                        GetLine().Append("Moving: ").SpeedFormat(grid.Physics.LinearVelocity.Length(), 2);
                     }
 
                     if(hasAngularVel)
@@ -895,7 +895,7 @@ namespace Digi.BuildInfo
                         if(hasLinearVel)
                             GetLine().Separator();
 
-                        GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 5);
+                        GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 2);
                     }
 
                     GetLine().ResetColor().EndLine();
