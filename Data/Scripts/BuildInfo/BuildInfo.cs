@@ -385,10 +385,10 @@ namespace Digi.BuildInfo
                     selectedDef = def;
                 }
 
-                isToolSelected = true;
                 return;
             }
 
+            selectedDef = null;
             var casterComp = shipController.Components.Get<MyCasterComponent>(); // caster comp is added to ship controller by ship tools when character takes control
 
             if(shipCasterComp != casterComp)
