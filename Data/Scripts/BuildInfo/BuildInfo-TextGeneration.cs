@@ -146,7 +146,7 @@ namespace Digi.BuildInfo
 
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             bgObject.Visible = true;
