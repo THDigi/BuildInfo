@@ -26,6 +26,11 @@ namespace Digi.BuildInfo
         public const string MOD_NAME = "Build Info";
         public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
+        public const float CUBEBUILDER_PLACE_DIST_MIN = 1;
+        public const float CUBEBUILDER_PLACE_DIST_MAX = 50;
+        public const float CUBEBUILDER_PLACE_DIST_ADD = 5;
+        public const float CUBEBUILDER_PLACE_MIN_SIZE = 2.5f;
+
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.

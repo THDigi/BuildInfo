@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <!--Definition for Cube Builder Component (Building cubes)-->
+  <Definition xsi:type="MyObjectBuilder_CubeBuilderDefinition">
+    <Id>
+      <TypeId>MyObjectBuilder_CubeBuilderDefinition</TypeId>
+      <SubtypeId>CubeBuilderBase</SubtypeId>
+    </Id>
+    
+    <!--Building distance settings-->
+    <DefaultBlockBuildingDistance>20</DefaultBlockBuildingDistance>
+    <MaxBlockBuildingDistance>100</MaxBlockBuildingDistance>
+    <MinBlockBuildingDistance>1</MinBlockBuildingDistance>
+    <BuildingDistLargeSurvivalCharacter>50</BuildingDistLargeSurvivalCharacter>
+    <BuildingDistSmallSurvivalCharacter>50</BuildingDistSmallSurvivalCharacter>
+    <BuildingDistLargeSurvivalShip>50</BuildingDistLargeSurvivalShip>
+    <BuildingDistSmallSurvivalShip>50</BuildingDistSmallSurvivalShip>
+
+    <!--Placement settings-->
+    <BuildingSettings>
+      <StaticGridAlignToCenter>false</StaticGridAlignToCenter>
+      <SmallStaticGrid>
+        <SnapMode>OneFreeAxis</SnapMode>
+        <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
+        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
+        <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
+        <!--Voxel Placement Settings: Possible settings Both,InVoxel,OutsideVoxel,Volumetric. If volumetric set than MaxAllowed and MinAllowed will be used.-->
+        <VoxelPlacement>
+          <PlacementMode>OutsideVoxel</PlacementMode>
+        </VoxelPlacement>
+      </SmallStaticGrid>
+      <SmallGrid>
+        <SnapMode>OneFreeAxis</SnapMode>
+        <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
+        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
+        <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
+        <VoxelPlacement>
+          <PlacementMode>OutsideVoxel</PlacementMode>
+        </VoxelPlacement>
+      </SmallGrid>
+      <LargeStaticGrid>
+        <SnapMode>Base6Directions</SnapMode>
+        <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
+        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
+        <EnablePreciseRotationWhenSnapped>true</EnablePreciseRotationWhenSnapped>
+        <VoxelPlacement>
+          <PlacementMode>Both</PlacementMode>
+        </VoxelPlacement>
+      </LargeStaticGrid>
+      <LargeGrid>
+        <SnapMode>OneFreeAxis</SnapMode>
+        <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
+        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
+        <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
+        <VoxelPlacement>
+          <PlacementMode>OutsideVoxel</PlacementMode>
+        </VoxelPlacement>
+      </LargeGrid>
+    </BuildingSettings>
+  </Definition>
+</Definitions>

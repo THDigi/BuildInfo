@@ -514,6 +514,38 @@ namespace Digi.BuildInfo
                     pickBlockDef = selectedDef;
                 }
 
+                // FEATURE: allow survival mode to use scroll to change block distance.
+                if(MyAPIGateway.Session.SurvivalMode
+                && !MyAPIGateway.Session.EnableCopyPaste
+                && !MyCubeBuilder.SpectatorIsBuilding
+                && selectedDef != null
+                && selectedBlock == null)
+                {
+                    float blockLen = Math.Max(selectedDef.Size.AbsMax() * selectedGridSize, CUBEBUILDER_PLACE_MIN_SIZE);
+                    float add = CUBEBUILDER_PLACE_DIST_ADD;
+
+                    float tooLarge = 3 * selectedGridSize;
+                    if(blockLen > tooLarge)
+                        add = Math.Max(add - (blockLen - tooLarge), 0);
+
+                    float maxRange = Math.Min(blockLen + add, CUBEBUILDER_PLACE_DIST_MAX);
+
+                    int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+
+                    if(scroll != 0 && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+                    {
+                        if(scroll > 0)
+                            MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
+                        else
+                            MyCubeBuilder.IntersectionDistance /= 1.1f;
+                    }
+
+                    if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_DIST_MIN)
+                        MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_DIST_MIN;
+                    else if(MyCubeBuilder.IntersectionDistance > maxRange)
+                        MyCubeBuilder.IntersectionDistance = maxRange;
+                }
+
                 if(pickBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
                 {
                     if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
