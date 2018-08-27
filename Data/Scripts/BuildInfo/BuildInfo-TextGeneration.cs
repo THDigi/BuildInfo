@@ -1438,8 +1438,8 @@ namespace Digi.BuildInfo
             else
                 AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
 
-            AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).Separator().Label("Front offset").DistanceFormat(shipDrill.SensorOffset).EndLine();
-            AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).Separator().Label("Front offset").DistanceFormat(shipDrill.CutOutOffset).EndLine();
+            AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).EndLine();
+            AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).EndLine();
         }
 
         private void Format_WelderAndGrinder(MyCubeBlockDefinition def)
