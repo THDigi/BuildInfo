@@ -157,14 +157,11 @@ namespace Digi.BuildInfo
         private void Update()
         {
             var prevSelectedToolDefId = selectedToolDefId;
-            bool prevToolSelected = isToolSelected;
 
             UpdateSelectedTool();
 
             if(selectedToolDefId != prevSelectedToolDefId)
-            {
                 lastDefId = default(MyDefinitionId);
-            }
 
             if(showMenu && !canShowMenu)
                 showMenu = false;
@@ -229,7 +226,7 @@ namespace Digi.BuildInfo
                     SetFreezePlacement(false);
                 }
             }
-            else if(prevToolSelected) // just unequipped
+            else if(textShown)
             {
                 BlockDataCache = null;
                 BlockDataCacheValid = true;
