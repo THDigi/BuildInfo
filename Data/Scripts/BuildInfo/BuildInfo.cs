@@ -401,10 +401,6 @@ namespace Digi.BuildInfo
             if(casterComp == null)
                 return;
 
-            // HACK fix for SE-7575 - Cockpit's welder/grinder aim only updates when ship moves
-            var m = shipController.WorldMatrix;
-            casterComp.OnWorldPosChanged(ref m);
-
             // HACK find a better way to get selected tool type
             var shipControllerObj = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
 
