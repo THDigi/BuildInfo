@@ -365,6 +365,30 @@ namespace Digi.BuildInfo
             prevHeldTool = null;
             selectedHandTool = null;
 
+            var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+
+            if(def != null && MyCubeBuilder.Static.IsActivated)
+            {
+                var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
+                var grid = hit?.HitEntity as IMyCubeGrid;
+
+                if(grid != null && grid.GridSizeEnum != def.CubeSize) // if aimed grid is supported by definition size
+                {
+                    if(unsupportedGridSizeNotification == null)
+                        unsupportedGridSizeNotification = MyAPIGateway.Utilities.CreateNotification("", 100, MyFontEnum.Red);
+
+                    unsupportedGridSizeNotification.Text = $"{def.DisplayNameText} can't be placed on {grid.GridSizeEnum} grid size.";
+                    unsupportedGridSizeNotification.Show();
+                }
+                else
+                {
+                    selectedDef = def;
+                }
+
+                isToolSelected = true;
+                return;
+            }
+
             var casterComp = shipController.Components.Get<MyCasterComponent>(); // caster comp is added to ship controller by ship tools when character takes control
 
             if(shipCasterComp != casterComp)
