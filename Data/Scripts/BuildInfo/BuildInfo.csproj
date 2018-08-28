@@ -124,7 +124,6 @@
   <ItemGroup>
     <Compile Include="BlockMonitorComponent.cs" />
     <Compile Include="Blocks\MergeBlock.cs" />
-    <Compile Include="Extensions\InputExtensions.cs" />
     <Compile Include="InputCustomMenuBind.cs" />
     <Compile Include="InputLib\Devices\GameControlInputs.cs" />
     <Compile Include="InputLib\Devices\GamepadBinds.cs" />
@@ -133,6 +132,7 @@
     <Compile Include="InputLib\Devices\InputBase.cs" />
     <Compile Include="InputLib\Devices\InputKey.cs" />
     <Compile Include="InputLib\Devices\MouseInputs.cs" />
+    <Compile Include="InputLib\InputExtensions.cs" />
     <Compile Include="InputLib\InputLib.cs" />
     <Compile Include="InputLib\InputReleaseKey.cs" />
     <Compile Include="TempBlockSpawn.cs" />
