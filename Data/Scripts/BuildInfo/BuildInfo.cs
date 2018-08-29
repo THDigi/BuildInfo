@@ -804,7 +804,7 @@ namespace Digi.BuildInfo
                     var finalW = size.X - cornerW;
                     var finalH = cornerH;
                     var finalWorldPos = worldPos + camMatrix.Left * cornerW + camMatrix.Up * (size.Y - cornerH);
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
                 }
 
                 // HACK NOTE: this custom topright corner material will draw above textAPI if textAPI is loaded after this mod
@@ -819,7 +819,7 @@ namespace Digi.BuildInfo
                     var finalW = size.X;
                     var finalH = size.Y - cornerH;
                     var finalWorldPos = worldPos + camMatrix.Down * cornerH;
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
                 }
             }
             #endregion
