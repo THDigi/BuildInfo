@@ -508,6 +508,12 @@ namespace Digi.BuildInfo
                 #region Block picker
                 if(pickBlockDef == null && selectedBlock != null && Settings.BlockPickerBind.IsJustPressed())
                 {
+                    if(MyAPIGateway.Multiplayer.MultiplayerActive)
+                    {
+                        ShowChatMessage(CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                        return;
+                    }
+
                     pickBlockDef = selectedDef;
                 }
 
@@ -545,6 +551,13 @@ namespace Digi.BuildInfo
 
                 if(pickBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
                 {
+                    if(MyAPIGateway.Multiplayer.MultiplayerActive)
+                    {
+                        pickBlockDef = null;
+                        ShowChatMessage(CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                        return;
+                    }
+
                     if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
                     {
                         pickBlockDef = null;
@@ -591,7 +604,7 @@ namespace Digi.BuildInfo
 
                     if(slot != 0)
                     {
-                        MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, pickBlockDef.Id, -1);
+                        MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, pickBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
                         MyAPIGateway.Utilities.ShowNotification($"{pickBlockDef.DisplayNameText} placed in slot {slot}.", 2000, MyFontEnum.Green);
 
@@ -942,6 +955,12 @@ namespace Digi.BuildInfo
                 {
                     send = false;
 
+                    if(MyAPIGateway.Multiplayer.MultiplayerActive)
+                    {
+                        ShowChatMessage(CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                        return;
+                    }
+
                     if(selectedBlock != null)
                     {
                         if(msg.Length > CMD_GETBLOCK.Length)
@@ -954,7 +973,7 @@ namespace Digi.BuildInfo
 
                                 if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
                                 {
-                                    MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, selectedDef.Id, -1);
+                                    MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, selectedDef.Id, MyAPIGateway.Session.Player.IdentityId);
                                     ShowChatMessage(CMD_GETBLOCK, $"{pickBlockDef.DisplayNameText} placed in slot {slot}.", MyFontEnum.Green);
                                 }
                                 else
@@ -971,7 +990,7 @@ namespace Digi.BuildInfo
                     }
                     else
                     {
-                        ShowChatMessage(CMD_GETBLOCK, $"Aim at a block with a welder or grinder first.", MyFontEnum.Red);
+                        ShowChatMessage(CMD_GETBLOCK, "Aim at a block with a welder or grinder first.", MyFontEnum.Red);
                     }
 
                     return;
