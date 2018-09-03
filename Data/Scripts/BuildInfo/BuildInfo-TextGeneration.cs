@@ -1581,7 +1581,7 @@ namespace Digi.BuildInfo
             if(data != null)
             {
                 AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2).EndLine();
-                AddLine().Append("Block Damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Damage to other:").Number(data.TotalOtherDamage).Append("/s").EndLine();
+                AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s").EndLine();
             }
         }
 
