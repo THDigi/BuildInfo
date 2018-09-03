@@ -28,6 +28,7 @@ namespace Digi
         public const int PRINT_TIME_ERROR = 10000;
         public const string PRINT_ERROR = "error";
         public const string PRINT_MSG = "msg";
+        public const int UNLOAD_TIMEOUT_MS = 1000;
 
         #region Handling of handler
         public override void LoadData()
@@ -39,7 +40,7 @@ namespace Digi
         protected override void UnloadData()
         {
             // safety in case InvokeOnGameThread does not get called
-            var timer = new Timer(5000);
+            var timer = new Timer(UNLOAD_TIMEOUT_MS);
             timer.Elapsed += EnsureUnloaded;
             timer.Start();
 
