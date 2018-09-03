@@ -491,7 +491,7 @@ namespace Digi.BuildInfo
 
             if(TextAPIEnabled)
             {
-                textAPIlines.Append('\n');
+                textAPIlines.ResetColor().Append('\n');
             }
             else
             {
@@ -555,7 +555,7 @@ namespace Digi.BuildInfo
 
             bool canUseTextAPI = (TextAPI != null && TextAPI.Heartbeat);
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").ResetColor().EndLine();
+            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").EndLine();
 
             int i = 0;
 
@@ -572,12 +572,12 @@ namespace Digi.BuildInfo
             {
                 GetLine().Append(CMD_BUILDINFO);
             }
-            GetLine().Append(")").ResetColor().EndLine();
+            GetLine().Append(")").EndLine();
 
             if(TextAPIEnabled)
             {
                 AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").ResetColor().EndLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").EndLine();
             }
 
             AddMenuItemLine(i++).Append("Add aimed block to toolbar");
@@ -590,19 +590,19 @@ namespace Digi.BuildInfo
             {
                 GetLine().Append(CMD_GETBLOCK);
             }
-            GetLine().Append(")").ResetColor().EndLine();
+            GetLine().Append(")").EndLine();
 
-            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').ResetColor().EndLine();
+            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').EndLine();
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').ResetColor().EndLine();
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').EndLine();
 
             if(TextAPIEnabled)
             {
                 AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").ResetColor().EndLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").EndLine();
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").ResetColor().EndLine();
+            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").EndLine();
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
             if(Settings.CycleOverlaysBind.IsAssigned())
@@ -636,9 +636,9 @@ namespace Digi.BuildInfo
                 GetLine().Append(useTextAPI ? "ON" : "OFF");
             else
                 GetLine().Append("OFF (Mod not detected)");
-            GetLine().ResetColor().EndLine();
+            GetLine().EndLine();
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').ResetColor().EndLine();
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').EndLine();
 
             if(TextAPIEnabled)
                 AddLine().EndLine();
@@ -727,13 +727,13 @@ namespace Digi.BuildInfo
                 GetLine().Color(COLOR_BAD).Append(" (deformed)");
             }
 
-            GetLine().ResetColor().EndLine();
+            GetLine().EndLine();
             #endregion
 
             #region Optional: intake damage multiplier
             if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
-                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).ResetColor().EndLine();
+                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).EndLine();
             }
             #endregion
 
@@ -858,7 +858,7 @@ namespace Digi.BuildInfo
                     if(!string.IsNullOrEmpty(factionTag))
                         GetLine().Append(factionTag).Append('.');
 
-                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).ResetColor().EndLine();
+                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).EndLine();
                 }
             }
             #endregion
@@ -870,7 +870,7 @@ namespace Digi.BuildInfo
                 {
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
                     }
                 }
             }
@@ -899,7 +899,7 @@ namespace Digi.BuildInfo
                         GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 2);
                     }
 
-                    GetLine().ResetColor().EndLine();
+                    GetLine().EndLine();
                 }
             }
             #endregion
@@ -922,7 +922,7 @@ namespace Digi.BuildInfo
                         else
                             AddLine(MyFontEnum.Red).Color(COLOR_WARNING);
 
-                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").ResetColor().EndLine();
+                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").EndLine();
                     }
                 }
             }
@@ -935,7 +935,7 @@ namespace Digi.BuildInfo
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? TriState.On : TriState.Off;
 
                 if(willSplitGrid == TriState.On)
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Grid will split if this block is removed!").ResetColor().EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Grid will split if this block is removed!").EndLine();
             }
             #endregion
 
@@ -945,7 +945,7 @@ namespace Digi.BuildInfo
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).ResetColor().EndLine();
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).EndLine();
 
                     var id = context.GetWorkshopID();
 
@@ -1002,7 +1002,7 @@ namespace Digi.BuildInfo
                     }
                 }
 
-                GetLine().ResetColor().EndLine();
+                GetLine().EndLine();
             }
             #endregion
 
@@ -1013,7 +1013,7 @@ namespace Digi.BuildInfo
             {
                 if(comp.DeconstructItem != comp.Definition)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).ResetColor().EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
                 }
             }
             #endregion
@@ -1067,7 +1067,7 @@ namespace Digi.BuildInfo
 
             if(!def.Context.IsBaseGame)
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).ResetColor().EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).EndLine();
             }
 
             AddOverlaysHint(def);
@@ -1097,7 +1097,7 @@ namespace Digi.BuildInfo
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
             if(part)
-                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).ResetColor().EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).EndLine();
 
             #region Line 1
             AddLine();
@@ -1160,7 +1160,7 @@ namespace Digi.BuildInfo
             else
                 GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
 
-            GetLine().ResetColor().EndLine();
+            GetLine().EndLine();
             #endregion
         }
         #endregion
@@ -1413,7 +1413,7 @@ namespace Digi.BuildInfo
             var merge = (MyMergeBlockDefinition)def;
 
             // HACK hardcoded; MergeBlock doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").ResetColor().EndLine();
+            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
             AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength).EndLine();
         }
 
@@ -1422,7 +1422,7 @@ namespace Digi.BuildInfo
             var lg = (MyLandingGearDefinition)def;
 
             // HACK: hardcoded; LG doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required", COLOR_GOOD).Append("No").ResetColor().EndLine();
+            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required", COLOR_GOOD).Append("No").EndLine();
             AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
         }
 
@@ -1460,7 +1460,7 @@ namespace Digi.BuildInfo
             {
                 float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                 var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
+                AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
 
                 AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
             }
@@ -1468,7 +1468,7 @@ namespace Digi.BuildInfo
             {
                 float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
                 var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().EndLine();
+                AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
 
                 AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
             }
@@ -1553,7 +1553,7 @@ namespace Digi.BuildInfo
                 // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var, planetary influence is always considered atmosphere.
 
                 AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ").ResetColor();
+                    .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ");
                 if(thrust.MaxPlanetaryInfluence < 1f)
                     GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
                 else
@@ -1561,7 +1561,7 @@ namespace Digi.BuildInfo
                 GetLine().EndLine();
 
                 AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ").ResetColor();
+                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
                 if(thrust.MinPlanetaryInfluence > 0f)
                     GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
                 else
@@ -1907,7 +1907,7 @@ namespace Digi.BuildInfo
                 if(invLimit != null)
                 {
                     AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
-                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").ResetColor().EndLine();
+                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").EndLine();
 
                     foreach(var id in invLimit.ConstrainedIds)
                     {
@@ -1957,7 +1957,7 @@ namespace Digi.BuildInfo
 
             float mWpKm = GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000);
 
-            AddLine().Label("Power - Active[1]").PowerFormat(mWpKm).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").ResetColor().EndLine();
+            AddLine().Label("Power - Active[1]").PowerFormat(mWpKm).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").EndLine();
             AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle).Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
 
             AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green)
@@ -1968,7 +1968,7 @@ namespace Digi.BuildInfo
             else
                 GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-            GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").ResetColor().EndLine();
+            GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").EndLine();
 
             AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
             AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
@@ -2093,7 +2093,7 @@ namespace Digi.BuildInfo
             var spaceBall = (MySpaceBallDefinition)def; // this doesn't extend MyVirtualMassDefinition
 
             // HACK: hardcoded; SpaceBall doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").ResetColor().EndLine();
+            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
             AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass).EndLine();
         }
 
@@ -2128,7 +2128,7 @@ namespace Digi.BuildInfo
 
             if(turret != null)
             {
-                AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters).ResetColor().EndLine();
+                AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters).EndLine();
                 AddLine().Append("Rotation - ");
 
                 if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
@@ -2182,7 +2182,7 @@ namespace Digi.BuildInfo
                     GetLine().Append("No reloading");
                 else
                     GetLine().Append(projectilesData.ShotsInBurst);
-                GetLine().ResetColor().EndLine();
+                GetLine().EndLine();
 
                 AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
                     .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
@@ -2224,7 +2224,7 @@ namespace Digi.BuildInfo
                     GetLine().Append("No reloading");
                 else
                     GetLine().Append(missileData.ShotsInBurst);
-                GetLine().ResetColor().EndLine();
+                GetLine().EndLine();
 
                 AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
                     .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
@@ -2265,7 +2265,7 @@ namespace Digi.BuildInfo
             var warhead = (MyWarheadDefinition)def; // does not extend MyWeaponBlockDefinition
 
             // HACK: hardcoded; Warhead doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").ResetColor().EndLine();
+            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
             AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).EndLine();
             AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
         }
