@@ -239,7 +239,7 @@ namespace Digi.BuildInfo
         private float scaleFovCache;
         private bool scaleFovCompute = true;
 
-        private MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
+        public MyDefinitionId lastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         private IMySlimBlock selectedBlock; // non-null only when welder/grinder aims at a block
         private MyCubeBlockDefinition selectedDef; // non-null when cubebuilder has a block AND welder/grinder aims at a block
         private MyDefinitionId selectedToolDefId; // used to regenerate the text when changing equipped tools

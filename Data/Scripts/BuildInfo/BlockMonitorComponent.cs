@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Digi.BuildInfo.BlockData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -97,7 +98,13 @@ namespace Digi.BuildInfo
                 if(method == null)
                     return;
 
-                method.Invoke(slim.FatBlock);
+                if(method.Invoke(slim.FatBlock))
+                {
+                    // reset caches and force block text recalc
+                    BuildInfo.Instance.CachedBuildInfoTextAPI.Remove(slim.BlockDefinition.Id);
+                    BuildInfo.Instance.CachedBuildInfoNotification.Remove(slim.BlockDefinition.Id);
+                    BuildInfo.Instance.lastDefId = default(MyDefinitionId);
+                }
             }
             catch(Exception e)
             {
