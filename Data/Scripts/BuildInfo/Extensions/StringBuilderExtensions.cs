@@ -232,15 +232,22 @@ namespace Digi.BuildInfo.Extensions
             return s.PowerFormat(MWh).Append("h");
         }
 
-        public static StringBuilder DistanceFormat(this StringBuilder s, float m)
+        public static StringBuilder DistanceFormat(this StringBuilder s, float m, int digits = -1)
         {
             if(m >= 1000)
                 return s.Number(m / 1000).Append("km");
 
-            if(m < 10)
-                return s.Number(m).Append("m");
+            if(digits <= -1)
+            {
+                if(m < 10)
+                    return s.RoundedNumber(m, 2).Append("m");
 
-            return s.Append((int)m).Append("m");
+                return s.Append((int)m).Append("m");
+            }
+            else
+            {
+                return s.RoundedNumber(m, digits).Append("m");
+            }
         }
 
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)

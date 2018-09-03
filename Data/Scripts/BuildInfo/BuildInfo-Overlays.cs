@@ -482,9 +482,9 @@ namespace Digi.BuildInfo
             foreach(var flame in data.Flames)
             {
                 var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
+                capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Length * 0.5)); // capsule's position is in the center
 
-                capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Height * 0.5));
-                MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.Radius, flame.Height, ref colorFace, wireDivideRatio, MATERIAL_SQUARE);
+                MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.CapsuleRadius, flame.Length, ref colorFace, wireDivideRatio, MATERIAL_SQUARE);
 
                 if(drawLabel)
                 {

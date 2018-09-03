@@ -1580,22 +1580,8 @@ namespace Digi.BuildInfo
 
             if(data != null)
             {
-                var flameDistance = data.HighestLength * Math.Max(1, thrust.SlowdownFactor); // if dampeners are stronger than normal thrust then the flame will be longer... 
-                var flamesCount = data.Flames.Count;
-
-                // HACK hardcoded; from MyThrust.ThrustDamageDealDamage() and MyThrust.DamageGrid()
-                var damage = thrust.FlameDamage * flamesCount * 60; // 60 = ticks in a second
-                var flameShipDamage = damage;
-                var flameDamage = damage * data.HighestRadius;
-
-                AddLine();
-
-                if(flamesCount > 1)
-                    GetLine().Append("Flames: ").Append(flamesCount).Separator().Append("Max distance: ");
-                else
-                    GetLine().Append("Flame max distance: ");
-
-                GetLine().DistanceFormat(flameDistance).Separator().Append("Damage: ").Number(flameShipDamage).Append("/s to ships").Separator().Number(flameDamage).Append("/s to other things").EndLine();
+                AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2).EndLine();
+                AddLine().Append("Block Damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Damage to other:").Number(data.TotalOtherDamage).Append("/s").EndLine();
             }
         }
 
