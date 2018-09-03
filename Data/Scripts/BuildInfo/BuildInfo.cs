@@ -616,6 +616,8 @@ namespace Digi.BuildInfo
                 #region Hotkeys and menu
                 if(canShowMenu)
                 {
+                    UpdateHotkeys();
+
                     var input = MyAPIGateway.Input;
 
                     if(showMenu)
@@ -720,29 +722,6 @@ namespace Digi.BuildInfo
                             }
                         }
                     }
-
-                    var context = InputLib.GetCurrentInputContext();
-
-                    if(Settings.ToggleTransparencyBind.IsJustPressed(context))
-                    {
-                        menuNeedsUpdate = true;
-                        SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
-                    }
-                    else if(Settings.CycleOverlaysBind.IsJustPressed(context))
-                    {
-                        menuNeedsUpdate = true;
-                        CycleOverlay();
-                    }
-                    else if(Settings.FreezePlacementBind.IsJustPressed(context))
-                    {
-                        menuNeedsUpdate = true;
-                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
-                    }
-                    else if(Settings.MenuBind.IsJustPressed(context))
-                    {
-                        menuNeedsUpdate = true;
-                        showMenu = !showMenu;
-                    }
                 }
                 else if(showMenu)
                 {
@@ -753,6 +732,55 @@ namespace Digi.BuildInfo
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        private void UpdateHotkeys()
+        {
+            var context = InputLib.GetCurrentInputContext();
+
+            if(Settings.ToggleTransparencyBind.IsPressed(context))
+            {
+                if(Settings.ToggleTransparencyBind.IsJustPressed(context))
+                {
+                    menuNeedsUpdate = true;
+                    SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
+                }
+
+                return;
+            }
+
+            if(Settings.CycleOverlaysBind.IsPressed(context))
+            {
+                if(Settings.CycleOverlaysBind.IsJustPressed(context))
+                {
+                    menuNeedsUpdate = true;
+                    CycleOverlay();
+                }
+
+                return;
+            }
+
+            if(Settings.FreezePlacementBind.IsPressed(context))
+            {
+                if(Settings.FreezePlacementBind.IsJustPressed(context))
+                {
+                    menuNeedsUpdate = true;
+                    SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
+                }
+
+                return;
+            }
+
+            if(Settings.MenuBind.IsPressed(context))
+            {
+                if(Settings.MenuBind.IsJustPressed(context))
+                {
+                    menuNeedsUpdate = true;
+                    showMenu = !showMenu;
+                }
+
+                return;
             }
         }
 
