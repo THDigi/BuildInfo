@@ -29,6 +29,7 @@ namespace Digi.BuildInfo
         public override void LoadData()
         {
             Log.ModName = MOD_NAME;
+            Log.AutoClose = false;
         }
 
         public override void BeforeStart()
@@ -107,6 +108,8 @@ namespace Digi.BuildInfo
             {
                 Log.Error(e);
             }
+
+            Log.Close();
         }
         #endregion
 

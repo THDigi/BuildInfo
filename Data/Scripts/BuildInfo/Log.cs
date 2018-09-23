@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Timers;
 using ParallelTasks;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -14,12 +13,13 @@ namespace Digi
 {
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
-    /// <para>Mod name is automatically set from workshop name or folder name, can be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.5 by Digi</para>
+    /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
+    /// <para>Version 1.51 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
     {
+        private static Log instance;
         private static Handler handler;
         private static bool unloaded = false;
 
@@ -28,40 +28,41 @@ namespace Digi
         public const int PRINT_TIME_ERROR = 10000;
         public const string PRINT_ERROR = "error";
         public const string PRINT_MSG = "msg";
-        public const int UNLOAD_TIMEOUT_MS = 1000;
 
         #region Handling of handler
         public override void LoadData()
         {
+            instance = this;
             EnsureHandlerCreated();
             handler.Init(this);
         }
 
         protected override void UnloadData()
         {
-            // safety in case InvokeOnGameThread does not get called
-            var timer = new Timer(UNLOAD_TIMEOUT_MS);
-            timer.Elapsed += EnsureUnloaded;
-            timer.Start();
+            instance = null;
 
-            // delaying the unload to allow the mod's session component(s) to unload first
-            MyAPIGateway.Utilities.InvokeOnGameThread(Unload, "Digi.Log.Unload()");
-        }
-
-        private void EnsureUnloaded(object sender, ElapsedEventArgs e)
-        {
-            if(!unloaded)
+            if(handler != null && handler.AutoClose)
+            {
                 Unload();
-
-            var timer = (Timer)sender;
-            timer.Stop();
+            }
         }
 
         private void Unload()
         {
-            unloaded = true;
-            handler?.Close();
-            handler = null;
+            try
+            {
+                if(unloaded)
+                    return;
+
+                unloaded = true;
+                handler?.Close();
+                handler = null;
+            }
+            catch(Exception e)
+            {
+                MyLog.Default.WriteLine($"Error in {ModContext.ModName} ({ModContext.ModId}): {e.Message}\n{e.StackTrace}");
+                throw new ModCrashedException(e, ModContext);
+            }
         }
 
         private static void EnsureHandlerCreated()
@@ -75,6 +76,32 @@ namespace Digi
         #endregion
 
         #region Publicly accessible properties and methods
+        /// <summary>
+        /// Manually unload the logger. Works regardless of <see cref="AutoClose"/>, but if that property is false then this method must be called!
+        /// </summary>
+        public static void Close()
+        {
+            instance?.Unload();
+        }
+
+        /// <summary>
+        /// Defines if the component self-unloads next tick or after <see cref="UNLOAD_TIMEOUT_MS"/>.
+        /// <para>If set to false, you must call <see cref="Close"/> manually!</para>
+        /// </summary>
+        public static bool AutoClose
+        {
+            get
+            {
+                EnsureHandlerCreated();
+                return handler.AutoClose;
+            }
+            set
+            {
+                EnsureHandlerCreated();
+                handler.AutoClose = value;
+            }
+        }
+
         /// <summary>
         /// Sets/gets the mod name.
         /// <para>This is optional as the mod name is generated from the folder/workshop name, but those can be weird or long.</para>
@@ -133,7 +160,7 @@ namespace Digi
         /// Writes an exception to custom log file, game's log file and by default writes a generic error message to player's HUD.
         /// </summary>
         /// <param name="exception">The exception to write to custom log and game's log.</param>
-        /// <param name="printText">HUD notification text, can be set to null to disable, to "msg" to use the exception message, "error" to use the predefined error message, or any other custom string.</param>
+        /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the exception message, <see cref="PRINT_ERROR"/> to use the predefined error message, or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Error(Exception exception, string printText = PRINT_ERROR, int printTimeMs = PRINT_TIME_ERROR)
         {
@@ -145,7 +172,7 @@ namespace Digi
         /// Writes a message to custom log file, game's log file and by default writes a generic error message to player's HUD.
         /// </summary>
         /// <param name="message">The message printed to custom log and game log.</param>
-        /// <param name="printText">HUD notification text, can be set to null to disable, to "msg" to use the message arg, "error" to use the predefined error message, or any other custom string.</param>
+        /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the message arg, <see cref="PRINT_ERROR"/> to use the predefined error message, or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Error(string message, string printText = PRINT_ERROR, int printTimeMs = PRINT_TIME_ERROR)
         {
@@ -158,7 +185,7 @@ namespace Digi
         /// <para>Optionally prints a different message (or same message) in player's HUD.</para>
         /// </summary>
         /// <param name="message">The text that's written to log.</param>
-        /// <param name="printText">HUD notification text, can be set to null to disable, to "msg" to use the message arg or any other custom string.</param>
+        /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the message arg or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Info(string message, string printText = null, int printTimeMs = PRINT_TIME_INFO)
         {
@@ -183,7 +210,6 @@ namespace Digi
         {
             private Log sessionComp;
             private string modName = string.Empty;
-            private ulong workshopId = 0;
 
             private TextWriter writer;
             private int indent = 0;
@@ -195,6 +221,10 @@ namespace Digi
             private StringBuilder sb = new StringBuilder(64);
 
             private List<string> preInitMessages;
+
+            public bool AutoClose { get; set; } = true;
+
+            public ulong WorkshopId { get; private set; } = 0;
 
             public string ModName
             {
@@ -208,8 +238,6 @@ namespace Digi
                     ComputeErrorPrintText();
                 }
             }
-
-            public ulong WorkshopId => workshopId;
 
             public Handler()
             {
@@ -231,7 +259,7 @@ namespace Digi
                 if(string.IsNullOrWhiteSpace(ModName))
                     ModName = sessionComp.ModContext.ModName;
 
-                workshopId = GetWorkshopID(sessionComp.ModContext.ModId);
+                WorkshopId = GetWorkshopID(sessionComp.ModContext.ModId);
 
                 writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE, typeof(Log));
 
