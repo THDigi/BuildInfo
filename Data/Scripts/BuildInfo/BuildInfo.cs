@@ -350,8 +350,6 @@ namespace Digi.BuildInfo
                         return;
                 }
 
-                Sandbox.Game.Gui.MyHud.BlockInfo.BlockBuiltBy = 0; // HACK fix for game's inability to clear this when you equip cubebuilder
-
                 canShowMenu = true; // allow menu use without needing a target
                 isToolSelected = true;
                 selectedHandTool = (IMyEngineerToolBase)tool;
