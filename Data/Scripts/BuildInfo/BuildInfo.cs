@@ -315,7 +315,7 @@ namespace Digi.BuildInfo
                             if(unsupportedGridSizeNotification == null)
                                 unsupportedGridSizeNotification = MyAPIGateway.Utilities.CreateNotification("", 100, MyFontEnum.Red);
 
-                            unsupportedGridSizeNotification.Text = $"{def.DisplayNameText} can't be placed on {grid.GridSizeEnum} grid size.";
+                            unsupportedGridSizeNotification.Text = $"Can't place a {def.CubeSize}Grid block on a {grid.GridSizeEnum}Grid ship!";
                             unsupportedGridSizeNotification.Show();
                         }
                         else
