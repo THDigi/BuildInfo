@@ -146,15 +146,20 @@ namespace Digi.BuildInfo
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
                     bool drawLabel = Settings.allLabels && TextAPIEnabled;
 
-                    if(drawOverlay == 1)
+                    if(drawOverlay == 1 && blockFunctionalForPressure)
                     {
-                        if(def.IsAirTight) // HACK IsAirTight makes it airtight even if the block is not fully built.
+                        // TODO have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
+
+                        if(def.IsAirTight.HasValue)
                         {
-                            var halfExtents = def.Size * (selectedGridSize * 0.5);
-                            var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
-                            MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+                            if(def.IsAirTight.Value)
+                            {
+                                var halfExtents = def.Size * (selectedGridSize * 0.5);
+                                var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
+                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MATERIAL_SQUARE);
+                            }
                         }
-                        else if(blockFunctionalForPressure && mountPoints != null)
+                        else if(mountPoints != null)
                         {
                             var half = Vector3D.One * -(0.5f * selectedGridSize);
                             var corner = (Vector3D)def.Size * -(0.5f * selectedGridSize);
@@ -308,8 +313,9 @@ namespace Digi.BuildInfo
             for(int i = 0; i < 6; ++i)
             {
                 var normal = DIRECTIONS[i];
+                var normalI = (Vector3I)normal;
 
-                if(Pressurization.IsDoorFacePressurized(def, (Vector3I)normal, fullyClosed))
+                if(Pressurization.IsDoorAirtight(def, ref normalI, fullyClosed))
                 {
                     var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
                     var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);

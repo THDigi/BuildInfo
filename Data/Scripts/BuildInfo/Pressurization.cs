@@ -3,6 +3,8 @@ using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
 
+using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
+
 namespace Digi.BuildInfo
 {
     public static class Pressurization
@@ -12,52 +14,88 @@ namespace Digi.BuildInfo
         // All these are from Sandbox.Game.GameSystems.MyGridGasSystem.
         // Since that namespace is prohibited I have to copy it and convert it to work with modAPI.
 
-        public static bool IsPressurized(IMyCubeGrid grid, Vector3I startPos, Vector3I endPos)
+        enum AirTightMode
         {
-            IMySlimBlock b1 = grid.GetCubeBlock(startPos);
-            IMySlimBlock b2 = grid.GetCubeBlock(endPos);
-
-            if(b1 == b2)
-                return b1 != null && ((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight;
-
-            return (b1 != null && (((MyCubeBlockDefinition)b1.BlockDefinition).IsAirTight || IsPressurized(b1, startPos, endPos - startPos)))
-                || (b2 != null && (((MyCubeBlockDefinition)b2.BlockDefinition).IsAirTight || IsPressurized(b2, endPos, startPos - endPos)));
+            USE_MOUNTS,
+            SEALED,
+            NOT_SEALED
         }
 
-        public static bool IsPressurized(IMySlimBlock block, Vector3I gridPos, Vector3 normal)
+        private static AirTightMode IsAirtightFromDefinition(MyCubeBlockDefinition def, float buildLevelRatio)
+        {
+            if(def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
+            {
+                var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
+
+                if(buildLevelRatio < progressModel.BuildRatioUpperBound)
+                    return AirTightMode.NOT_SEALED;
+            }
+
+            if(!def.IsAirTight.HasValue)
+                return AirTightMode.USE_MOUNTS;
+
+            return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
+        }
+
+        public static bool IsAirtightBetweenPositions(IMyCubeGrid grid, Vector3I startPos, Vector3I endPos)
+        {
+            var b1 = grid.GetCubeBlock(startPos);
+            var b2 = grid.GetCubeBlock(endPos);
+
+            if(b1 != b2)
+            {
+                return (b1 != null && IsAirtightBlock(b1, startPos, endPos - startPos))
+                    || (b2 != null && IsAirtightBlock(b2, endPos, startPos - endPos));
+            }
+
+            if(b1 != null)
+            {
+                var isAirTight = IsAirtightFromDefinition((MyCubeBlockDefinition)b1.BlockDefinition, b1.BuildLevelRatio);
+
+                return (isAirTight == AirTightMode.SEALED);
+            }
+
+            return false;
+        }
+
+        private static bool IsAirtightBlock(IMySlimBlock block, Vector3I pos, Vector3 normal)
         {
             var def = (MyCubeBlockDefinition)block.BlockDefinition;
+            var isAirTight = IsAirtightFromDefinition(def, block.BuildLevelRatio);
 
-            if(def.BuildProgressModels.Length > 0)
-            {
-                MyCubeBlockDefinition.BuildProgressModel buildProgressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
-
-                if(block.BuildLevelRatio < buildProgressModel.BuildRatioUpperBound)
-                    return false;
-            }
+            if(isAirTight != AirTightMode.USE_MOUNTS)
+                return (isAirTight == AirTightMode.SEALED);
 
             Matrix matrix;
             block.Orientation.GetMatrix(out matrix);
             matrix.TransposeRotationInPlace();
 
-            Vector3I cellNormal = Vector3I.Round(Vector3.Transform(normal, matrix));
-            Vector3 position = (block.FatBlock != null ? (gridPos - block.FatBlock.Position) : Vector3.Zero);
-            Vector3I cellPosition = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
+            var position = (block.FatBlock != null ? pos - block.FatBlock.Position : Vector3.Zero);
+            var cell = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
+            var side = Vector3I.Round(Vector3.Transform(normal, matrix));
 
-            if(def.IsCubePressurized[cellPosition][cellNormal])
+            if(def.IsCubePressurized[cell][side])
                 return true;
 
             var door = block.FatBlock as IMyDoor;
 
             if(door != null)
-                return IsDoorFacePressurized(def, cellNormal, door.OpenRatio <= 0.05f);
+                return IsDoorAirtight(def, ref side, (door.Status == DoorStatus.Closed));
 
             return false;
         }
 
-        public static bool IsDoorFacePressurized(MyCubeBlockDefinition def, Vector3I normalLocal, bool fullyClosed)
+        public static bool IsDoorAirtight(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
         {
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
+            if(def is MyAirtightSlideDoorDefinition)
+            {
+                return (fullyClosed && normalLocal == Vector3I.Forward);
+            }
+            else if(def is MyAirtightDoorGenericDefinition)
+            {
+                return (fullyClosed && (normalLocal == Vector3I.Forward || normalLocal == Vector3I.Backward));
+            }
+            else // any other door
             {
                 if(fullyClosed)
                 {
@@ -66,9 +104,7 @@ namespace Digi.BuildInfo
                     for(int i = 0; i < mountPoints.Length; i++)
                     {
                         if(normalLocal == mountPoints[i].Normal)
-                        {
                             return false;
-                        }
                     }
 
                     return true;
@@ -76,16 +112,6 @@ namespace Digi.BuildInfo
 
                 return false;
             }
-            else if(def is MyAirtightSlideDoorDefinition)
-            {
-                return (fullyClosed && normalLocal == Vector3I.Forward);
-            }
-            else if(def is MyAirtightDoorGenericDefinition)
-            {
-                return (fullyClosed && (normalLocal == Vector3I.Forward || normalLocal == Vector3I.Backward));
-            }
-
-            return false;
         }
     }
 }

@@ -1082,7 +1082,7 @@ namespace Digi.BuildInfo
         {
             int airTightFaces = 0;
             int totalFaces = 0;
-            var airTight = IsAirTight(def, ref airTightFaces, ref totalFaces);
+            var airTight = GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
             var deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
             var assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
             var buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);

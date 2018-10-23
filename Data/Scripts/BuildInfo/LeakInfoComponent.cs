@@ -205,7 +205,7 @@ namespace Digi.BuildInfo
                         if(distToOutside < 0) // gone outside of edge already, exit
                             return crumb;
 
-                        if(IsInInflatedBounds(grid, target) && !Pressurization.IsPressurized(grid, crumb.Position, target))
+                        if(IsInInflatedBounds(grid, target) && !Pressurization.IsAirtightBetweenPositions(grid, crumb.Position, target))
                         {
                             int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
                             int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
