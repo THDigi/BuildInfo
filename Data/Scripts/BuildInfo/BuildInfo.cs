@@ -959,7 +959,7 @@ namespace Digi.BuildInfo
                 {
                     const double LEFT_OFFSET = 0.021;
                     const double TEXT_SCALE = 0.0006;
-                    const int MAX_CHARACTERS = 33;
+                    const int MAX_CHARACTERS = 14 + 33; // 14 for the <color=yellow> to be ignored
 
                     worldPos += camMatrix.Left * (LEFT_OFFSET * ScaleFOV);
 
@@ -968,7 +968,10 @@ namespace Digi.BuildInfo
                         var text = new StringBuilder().Append("<color=yellow>Grinds to: ").Append(data.Replaced.DisplayNameText);
 
                         if(text.Length > MAX_CHARACTERS)
+                        {
                             text.Length = MAX_CHARACTERS;
+                            text.Append('…');
+                        }
 
                         data.Msg = new HudAPIv2.SpaceMessage(text, worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLOCKINFO_BLEND_TYPE);
                     }
