@@ -368,6 +368,9 @@ namespace Digi.BuildInfo.Extensions
 
         public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
         {
+            if(seconds > (60 * 60 * 24 * 365))
+                return s.Append("1y+");
+
             var span = TimeSpan.FromSeconds(seconds);
 
             if(span.Days > 7)
