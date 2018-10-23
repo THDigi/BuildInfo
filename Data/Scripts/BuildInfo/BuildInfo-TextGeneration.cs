@@ -712,8 +712,6 @@ namespace Digi.BuildInfo
                 GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
             }
 
-            GetLine().Separator().PCUFormat(def.PCU);
-
             GetLine().EndLine();
             #endregion
 
@@ -1114,8 +1112,6 @@ namespace Digi.BuildInfo
 
             if(!buildModels)
                 GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
-
-            GetLine().Separator().PCUFormat(def.PCU);
 
             GetLine().EndLine();
             #endregion
