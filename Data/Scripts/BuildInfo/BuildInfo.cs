@@ -133,7 +133,9 @@ namespace Digi.BuildInfo
 
                 // HUD toggle monitor; required here because it gets the previous value if used in HandleInput()
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
-                    hudVisible = !MyAPIGateway.Session.Config.MinimalHud;
+                {
+                    UpdateHudState();
+                }
 
                 LeakInfoComp?.Update();
 
@@ -192,10 +194,35 @@ namespace Digi.BuildInfo
                         if(changedBlock)
                         {
                             selectedGridSize = MyDefinitionManager.Static.GetCubeSize(selectedDef.CubeSize);
+
                             selectedOverlayCall = drawLookup.GetValueOrDefault(selectedDef.Id.TypeId, null);
 
                             BlockDataCache = null;
                             BlockDataCacheValid = true;
+
+                            computerCompIndex = -1;
+
+                            foreach(var data in componentLossIndexes)
+                            {
+                                data.Close();
+                            }
+
+                            componentLossIndexes.Clear();
+
+                            for(int i = 0; i < selectedDef.Components.Length; ++i)
+                            {
+                                var comp = selectedDef.Components[i];
+
+                                if(computerCompIndex == -1 && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == COMPUTER) // HACK this is what the game checks internally, hardcoded to computer component.
+                                {
+                                    computerCompIndex = i;
+                                }
+
+                                if(comp.DeconstructItem != comp.Definition)
+                                {
+                                    componentLossIndexes.Add(new CompLoss(i, comp.DeconstructItem));
+                                }
+                            }
                         }
 
                         lastDefId = selectedDef.Id;
@@ -813,7 +840,7 @@ namespace Digi.BuildInfo
 
         private void DrawBlockInfo()
         {
-            if(!hudVisible && !Settings.alwaysVisible)
+            if(hudState == HudMode.OFF && !Settings.alwaysVisible)
                 return;
 
             if(textShown && textObject != null && MyAPIGateway.Gui.IsCursorVisible)
@@ -823,8 +850,8 @@ namespace Digi.BuildInfo
                 return;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var posHUD = GetGameHudBlockInfoPos();
 
+#if false
             #region Block info addition background
             // draw the added top part's background only for aimed block (which requires textAPI)
             if(selectedBlock != null && !showMenu && textObject != null && useTextAPI)
@@ -865,56 +892,97 @@ namespace Digi.BuildInfo
                 }
             }
             #endregion
+#endif
 
             #region Lines on top of block info
-            bool isGrinder = this.IsGrinder;
-            bool foundComputer = false;
+            var posCompList = GetHudComponentListStart();
+            var totalComps = selectedDef.Components.Length;
 
-            for(int i = selectedDef.Components.Length - 1; i >= 0; --i)
+            //if(MyAPIGateway.Input.IsKeyPress(MyKeys.Shift))
+            //{
+            //    for(int i = totalComps - 1; i >= 0; --i)
+            //    {
+            //        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * ScaleFOV);
+            //
+            //        var hud = posCompList;
+            //        hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - i - 1);
+            //
+            //        var worldPos = HudToWorld(hud);
+            //
+            //        worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+            //
+            //        MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+            //    }
+            //}
+
+            // red functionality line
+            if(selectedDef.CriticalGroup >= 0 && selectedDef.CriticalGroup < totalComps)
             {
-                var comp = selectedDef.Components[i];
+                var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
 
-                // red functionality line
-                if(selectedDef.CriticalGroup == i)
+                var hud = posCompList;
+                hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - selectedDef.CriticalGroup - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+
+                var worldPos = HudToWorld(hud);
+
+                worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+
+                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_FUNCTIONAL, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+            }
+
+            // blue hacking line
+            if(computerCompIndex != -1)
+            {
+                var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
+
+                var hud = posCompList;
+                hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - computerCompIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+
+                var worldPos = HudToWorld(hud);
+
+                worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
+
+                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+            }
+
+            // different return item on grind
+            for(int i = componentLossIndexes.Count - 1; i >= 0; --i)
+            {
+                var data = componentLossIndexes[i];
+
+                var hud = posCompList;
+                hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - data.Index - 1);
+
+                var worldPos = HudToWorld(hud);
+
+                if(TextAPIEnabled)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
+                    const double LEFT_OFFSET = 0.021;
+                    const double TEXT_SCALE = 0.0006;
+                    const int MAX_CHARACTERS = 33;
 
-                    var hud = posHUD;
-                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
+                    worldPos += camMatrix.Left * (LEFT_OFFSET * ScaleFOV);
 
-                    var worldPos = HudToWorld(hud);
+                    if(data.Msg == null)
+                    {
+                        var text = new StringBuilder().Append("<color=yellow>Grinds to: ").Append(data.Replaced.DisplayNameText);
 
-                    worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+                        if(text.Length > MAX_CHARACTERS)
+                            text.Length = MAX_CHARACTERS;
 
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_FUNCTIONAL, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                        data.Msg = new HudAPIv2.SpaceMessage(text, worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLOCKINFO_BLEND_TYPE);
+                    }
+                    else
+                    {
+                        data.Msg.WorldPosition = worldPos;
+                        data.Msg.Left = camMatrix.Left;
+                        data.Msg.Up = camMatrix.Up;
+                        data.Msg.TimeToLive = 2;
+                    }
                 }
-
-                // blue hacking line
-                if(!foundComputer && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == COMPUTER) // HACK this is what the game checks internally, hardcoded to computer component.
+                else
                 {
-                    foundComputer = true;
-
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_LINE_HEIGHT * ScaleFOV);
-
-                    var hud = posHUD;
-                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_ITEM_HEIGHT_UNDERLINE + BLOCKINFO_Y_OFFSET_2;
-
-                    var worldPos = HudToWorld(hud);
-
-                    worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 2); // extra offset to allow for red line to be visible
-
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                }
-
-                // yellow highlight if returned component is not the same as grinded component
-                if(isGrinder && comp.DeconstructItem != comp.Definition)
-                {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_LIST_WIDTH * ScaleFOV, BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT * ScaleFOV);
-
-                    var hud = posHUD;
-                    hud.Y -= BLOCKINFO_ITEM_HEIGHT * i + BLOCKINFO_Y_OFFSET_2;
-
-                    var worldPos = HudToWorld(hud);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * ScaleFOV);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -1065,18 +1133,27 @@ namespace Digi.BuildInfo
 
         private void UpdateConfigValues()
         {
-            var cfg = MyAPIGateway.Session.Config;
-            hudVisible = !cfg.MinimalHud;
-            hudBackgroundOpacity = cfg.HUDBkOpacity;
+            UpdateHudState();
+
+            hudBackgroundOpacity = MyAPIGateway.Session.Config.HUDBkOpacity;
 
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
-            aspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
+            var newAspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
 
-            bool newRotationHints = cfg.RotationHints;
-
-            if(rotationHints != newRotationHints)
+            if(Math.Abs(aspectRatio - newAspectRatio) > 0.0001)
             {
-                rotationHints = newRotationHints;
+                CachedBuildInfoTextAPI.Clear();
+            }
+        }
+
+        private void UpdateHudState()
+        {
+            hudState = (HudMode)MyAPIGateway.Session.Config.HudState;
+            bool shouldUseLeftSide = (hudState == HudMode.HINTS && MyAPIGateway.Session.Config.RotationHints);
+
+            if(useLeftSide != shouldUseLeftSide)
+            {
+                useLeftSide = shouldUseLeftSide;
                 HideText();
             }
         }

@@ -310,14 +310,17 @@ namespace Digi.BuildInfo
             return size;
         }
 
-        public Vector2 GetGameHudBlockInfoPos()
+        public Vector2 GetHudComponentListStart()
         {
-            // HACK hardcoded from MyGuiScreenHudSpace.Draw() with some fine adjustments
-            Vector2 posHUD = new Vector2(0.9894f, 0.7487f);
+            Vector2 posHUD = new Vector2(0.9894f, 0.678f);
 
             if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                posHUD.Y -= 0.1f; // HACK cockpits intentionally bump up the block info
+                posHUD.Y = 0.498f;
 
+            if(hudState == HudMode.NO_HINTS)
+                posHUD.Y = 0.558f;
+
+            // FIXME vanilla UI is all over the place with this, needs tweaking
             if(aspectRatio > 5) // triple monitor
                 posHUD.X += 0.75f;
 

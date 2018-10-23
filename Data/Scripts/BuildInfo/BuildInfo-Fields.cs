@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Digi.BuildInfo.BlockData;
 using Digi.BuildInfo.Blocks;
 using Digi.Input;
+using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -40,10 +41,10 @@ namespace Digi.BuildInfo
         public const int MOD_NAME_MAX_LENGTH = 30;
         public const int PLAYER_NAME_MAX_LENGTH = 18;
 
-        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.97, 0.8); // textAPI default left side position
-        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.97 / 3f, 0.8); // textAPI default left side position when using a really wide resolution
-        private readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.97, 0.97); // textAPI default right side position
-        private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.97); // textAPI default right side position when using a really wide resolution
+        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9675, 0.49); // textAPI default left side position
+        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9675 / 3f, 0.49); // textAPI default left side position when using a really wide resolution
+        private readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.97, 0.8); // textAPI default right side position
+        private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.8); // textAPI default right side position when using a really wide resolution
 
         private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
         public readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_UI_Background");
@@ -61,17 +62,17 @@ namespace Digi.BuildInfo
         private const BlendTypeEnum BLOCKINFO_BLEND_TYPE = BlendTypeEnum.SDR; // allows sprites to be rendered on HUD-level, unaffected by flares or post processing
         private readonly Color BLOCKINFO_BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
         private readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
-        private const float BLOCKINFO_ITEM_HEIGHT = 0.037f; // component height in the vanilla block info
-        private const float BLOCKINFO_ITEM_HEIGHT_UNDERLINE = BLOCKINFO_ITEM_HEIGHT * 0.88f;
         private const float BLOCKINFO_TEXT_PADDING = 0.001f;
-        private const float BLOCKINFO_COMPONENT_LIST_WIDTH = 0.01777f;
-        private const float BLOCKINFO_COMPONENT_LIST_SELECT_HEIGHT = 0.0015f;
+        private const float BLOCKINFO_COMPONENT_HEIGHT = 0.037f; // component height in the vanilla block info
+        private const float BLOCKINFO_COMPONENT_WIDTH = 0.011f;
+        private const float BLOCKINFO_COMPONENT_UNDERLINE_OFFSET = 0.0062f;
+        private const float BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT = 0.0014f;
         private const float BLOCKINFO_Y_OFFSET = 0.12f;
         private const float BLOCKINFO_Y_OFFSET_2 = 0.0102f;
         private const float BLOCKINFO_LINE_HEIGHT = 0.0001f;
         private readonly Vector4 BLOCKINFO_LINE_FUNCTIONAL = Color.Red.ToVector4();
         private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
-        private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = Color.Yellow.ToVector4();
+        private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = (Color.Yellow * 0.75f).ToVector4();
         private const float ASPECT_RATIO_54_FIX = 0.938f;
 
         private const double MOUNTPOINT_THICKNESS = 0.05;
@@ -87,6 +88,8 @@ namespace Digi.BuildInfo
         private const double LABEL_SHADOW_OFFSET_Z = 0.01;
         private readonly Color LABEL_SHADOW_COLOR = Color.Black * 0.9f;
         private const BlendTypeEnum LABELS_BLEND_TYPE = BlendTypeEnum.Standard;
+
+        public enum HudMode { OFF, HINTS, NO_HINTS }
 
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {
@@ -252,6 +255,26 @@ namespace Digi.BuildInfo
         private float selectedGridSize;
         private bool isToolSelected = false;
         private bool IsGrinder => (selectedToolDefId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder));
+        private int computerCompIndex = -1;
+        private List<CompLoss> componentLossIndexes = new List<CompLoss>();
+
+        private class CompLoss
+        {
+            public readonly int Index;
+            public readonly MyPhysicalItemDefinition Replaced;
+            public HudAPIv2.SpaceMessage Msg;
+
+            public CompLoss(int index, MyPhysicalItemDefinition item)
+            {
+                Index = index;
+                Replaced = item;
+            }
+
+            public void Close()
+            {
+                Msg?.DeleteMessage();
+            }
+        }
 
         public bool TextAPIEnabled { get { return (useTextAPI && TextAPI != null && TextAPI.Heartbeat); } }
         public BData_Base BlockDataCache;

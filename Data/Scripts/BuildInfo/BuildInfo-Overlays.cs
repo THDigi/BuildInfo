@@ -58,7 +58,7 @@ namespace Digi.BuildInfo
 
         private void DrawOverlays()
         {
-            if(drawOverlay > 0 && (hudVisible || Settings.alwaysVisible) && selectedDef != null)
+            if(drawOverlay > 0 && (hudState != HudMode.OFF || Settings.alwaysVisible) && selectedDef != null)
             {
                 // TODO: use?
                 //overlayNotification.Text = $"Showing {DRAW_OVERLAY_NAME[drawOverlay]} overlays (Ctrl+{voxelHandSettingsInput} to cycle)";

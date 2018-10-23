@@ -30,8 +30,8 @@ namespace Digi.BuildInfo
 
         // used by the textAPI view mode
         public HudAPIv2 TextAPI = null;
-        private bool rotationHints = true;
-        private bool hudVisible = true;
+        private bool useLeftSide = true;
+        private HudMode hudState;
         private double aspectRatio = 1;
         private float hudBackgroundOpacity = 1f;
         private int lines;
@@ -181,6 +181,7 @@ namespace Digi.BuildInfo
             {
                 textOffset = new Vector2D(-textSize.X, textSize.Y / -2);
             }
+#if false
             else if(selectedBlock != null) // welder/grinder info attached to the game's block info
             {
                 var cam = MyAPIGateway.Session.Camera;
@@ -207,6 +208,7 @@ namespace Digi.BuildInfo
                 // not using textAPI's background for this as drawing my own manually is easier for the 3-part billboard that I need
                 bgObject.Visible = false;
             }
+#endif
             else if(Settings.textAPIUseCustomStyling) // custom alignment and position
             {
                 textPos = Settings.textAPIScreenPos;
@@ -217,7 +219,7 @@ namespace Digi.BuildInfo
                 if(Settings.textAPIAlignBottom)
                     textOffset.Y = -textSize.Y;
             }
-            else if(!rotationHints) // right side autocomputed for rotation hints off
+            else if(!useLeftSide) // right side autocomputed
             {
                 textPos = (aspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
                 textOffset = new Vector2D(-textSize.X, 0);
@@ -230,7 +232,9 @@ namespace Digi.BuildInfo
             textObject.Origin = textPos;
             textObject.Offset = textOffset;
 
+#if false
             if(showMenu || selectedBlock == null)
+#endif
             {
                 float edge = BACKGROUND_EDGE * TextAPIScale;
 
