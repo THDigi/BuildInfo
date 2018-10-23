@@ -14,7 +14,7 @@ namespace Digi.BuildInfo
         // All these are from Sandbox.Game.GameSystems.MyGridGasSystem.
         // Since that namespace is prohibited I have to copy it and convert it to work with modAPI.
 
-        enum AirTightMode
+        public enum AirTightMode
         {
             USE_MOUNTS,
             SEALED,

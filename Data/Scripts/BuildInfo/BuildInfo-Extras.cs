@@ -11,6 +11,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
+using static Digi.BuildInfo.Pressurization;
 
 namespace Digi.BuildInfo
 {
@@ -22,13 +23,13 @@ namespace Digi.BuildInfo
         /// An fully airtight face means it keeps the grid airtight when the face is the only obstacle between empty void and the ship's interior.
         /// Due to the complexity of airtightness when connecting blocks, this method simply can not indicate that, that's what the mount points view is for.
         /// </summary>
-        private bool GetAirTightFaces(MyCubeBlockDefinition def, ref int airTightFaces, ref int totalFaces)
+        private AirTightMode GetAirTightFaces(MyCubeBlockDefinition def, ref int airTightFaces, ref int totalFaces)
         {
             airTightFaces = 0;
             totalFaces = 0;
 
             if(def.IsAirTight.HasValue)
-                return def.IsAirTight.Value;
+                return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
 
             cubes.Clear();
 
@@ -52,7 +53,14 @@ namespace Digi.BuildInfo
             }
 
             cubes.Clear();
-            return (airTightFaces == totalFaces);
+
+            if(airTightFaces == 0)
+                return AirTightMode.NOT_SEALED;
+
+            if(airTightFaces == totalFaces)
+                return AirTightMode.SEALED;
+
+            return AirTightMode.USE_MOUNTS;
         }
 
         /// <summary>

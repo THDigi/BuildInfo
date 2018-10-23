@@ -16,6 +16,7 @@ using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRageMath;
+using static Digi.BuildInfo.Pressurization;
 
 namespace Digi.BuildInfo
 {
@@ -1148,17 +1149,19 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Line 3
-            AddLine(font: (airTight ? MyFontEnum.Green : (airTightFaces == 0 ? MyFontEnum.Red : MyFontEnum.Blue)));
+            AddLine(font: (airTight == AirTightMode.SEALED ? MyFontEnum.Green : (airTight == AirTightMode.NOT_SEALED ? MyFontEnum.Red : MyFontEnum.Blue)));
 
             if(part)
                 GetLine().Color(COLOR_PART).Append(padding);
 
-            GetLine().Color(airTight ? COLOR_GOOD : (airTightFaces == 0 ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight faces: ");
+            GetLine().Color(airTight == AirTightMode.SEALED ? COLOR_GOOD : (airTight == AirTightMode.NOT_SEALED ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight: ");
 
-            if(airTight)
-                GetLine().Append("all");
+            if(airTight == AirTightMode.SEALED)
+                GetLine().Append("Sealed");
+            else if(airTight == AirTightMode.NOT_SEALED)
+                GetLine().Append("Not sealed");
             else
-                GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces);
+                GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
 
             GetLine().EndLine();
             #endregion
