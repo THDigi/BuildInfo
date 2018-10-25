@@ -745,8 +745,8 @@ namespace Digi.BuildInfo
 
             if(selectedHandTool != null)
             {
-                var toolDef = (MyEngineerToolBaseDefinition)MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(selectedHandTool.PhysicalItemDefinition.Id);
-                toolMul = toolDef.SpeedMultiplier;
+                var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(selectedHandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+                toolMul = (toolDef == null ? 1 : toolDef.SpeedMultiplier);
             }
             else // assuming ship tool
             {
