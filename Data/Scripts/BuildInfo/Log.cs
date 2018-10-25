@@ -14,7 +14,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.51 by Digi</para>
+    /// <para>Version 1.52 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -202,7 +202,18 @@ namespace Digi
         public static bool TaskHasErrors(Task task, string taskName)
         {
             EnsureHandlerCreated();
-            return handler.TaskHasErrors(task, taskName);
+
+            if(task.Exceptions != null && task.Exceptions.Length > 0)
+            {
+                foreach(var e in task.Exceptions)
+                {
+                    Error($"Error in {taskName} thread!\n{e}");
+                }
+
+                return true;
+            }
+
+            return false;
         }
         #endregion
 
@@ -268,10 +279,14 @@ namespace Digi
                 {
                     string warning = $"{modName} WARNING: there are log messages before the mod initialized!";
 
+                    Info($"--- pre-init messages ---");
+
                     foreach(var msg in preInitMessages)
                     {
-                        Error(msg, warning);
+                        Info(msg, warning);
                     }
+
+                    Info("--- end pre-init messages ---");
 
                     preInitMessages = null;
                 }
@@ -279,8 +294,12 @@ namespace Digi
 
                 #region Init message
                 sb.Clear();
-                sb.Append("Initialized\nDS=").Append(MyAPIGateway.Utilities.IsDedicated);
-                sb.Append("; defined=");
+                sb.Append("Initialized");
+                sb.Append("\nGameMode=").Append(MyAPIGateway.Session.SessionSettings.GameMode);
+                sb.Append("\nOnlineMode=").Append(MyAPIGateway.Session.SessionSettings.OnlineMode);
+                sb.Append("\nServer=").Append(MyAPIGateway.Session.IsServer);
+                sb.Append("\nDS=").Append(MyAPIGateway.Utilities.IsDedicated);
+                sb.Append("\nDefined=");
 
 #if STABLE
                 sb.Append("STABLE, ");
@@ -346,94 +365,58 @@ namespace Digi
 
             public void Error(string message, string printText = PRINT_ERROR, int printTime = PRINT_TIME_ERROR)
             {
-                WriteMessage(message, "ERROR: "); // write to custom log
-
                 MyLog.Default.WriteLineAndConsole(modName + " error/exception: " + message); // write to game's log
 
+                LogMessage(message, "ERROR: "); // write to custom log
+
                 if(printText != null) // printing to HUD is optional
-                {
-                    try
-                    {
-                        if(MyAPIGateway.Utilities != null && MyAPIGateway.Session?.Player != null) // print on screen if applicable
-                        {
-                            if(printText == PRINT_ERROR)
-                                printText = errorPrintText;
-                            else if(printText == PRINT_MSG)
-                                printText = message;
-
-                            if(notifyError == null)
-                            {
-                                notifyError = MyAPIGateway.Utilities.CreateNotification(printText, printTime, MyFontEnum.Red);
-                            }
-                            else
-                            {
-                                notifyError.Text = printText;
-                                notifyError.AliveTime = printTime;
-                                notifyError.ResetAliveTime();
-                            }
-
-                            notifyError.Show();
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        Info("ERROR: Could not send notification to local client: " + e);
-                        MyLog.Default.WriteLineAndConsole(modName + " logger error/exception: Could not send notification to local client: " + e);
-                    }
-                }
+                    ShowHudMessage(ref notifyError, message, printText, printTime, MyFontEnum.Red);
             }
 
             public void Info(string message, string printText = null, int printTime = PRINT_TIME_INFO)
             {
-                WriteMessage(message); // write to custom log
+                LogMessage(message); // write to custom log
 
                 if(printText != null) // printing to HUD is optional
-                {
-                    try
-                    {
-                        if(MyAPIGateway.Utilities != null && MyAPIGateway.Session?.Player != null) // print on screen if applicable
-                        {
-                            if(printText == PRINT_MSG)
-                                printText = message;
-
-                            if(notifyInfo == null)
-                            {
-                                notifyInfo = MyAPIGateway.Utilities.CreateNotification(printText, printTime, MyFontEnum.White);
-                            }
-                            else
-                            {
-                                notifyInfo.Text = printText;
-                                notifyInfo.AliveTime = printTime;
-                                notifyInfo.ResetAliveTime();
-                            }
-
-                            notifyInfo.Show();
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        Info("ERROR: Could not send notification to local client: " + e);
-                        MyLog.Default.WriteLineAndConsole(modName + " logger error/exception: Could not send notification to local client: " + e);
-                    }
-                }
+                    ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.White);
             }
 
-            public bool TaskHasErrors(Task task, string taskName)
+            private void ShowHudMessage(ref IMyHudNotification notify, string message, string printText, int printTime, string font)
             {
-                if(task.Exceptions != null && task.Exceptions.Length > 0)
+                if(printText == null)
+                    return;
+
+                try
                 {
-                    foreach(var e in task.Exceptions)
+                    if(MyAPIGateway.Utilities != null && !MyAPIGateway.Utilities.IsDedicated) // print on screen if applicable
                     {
-                        Error($"Error in {taskName} thread!\n{e}");
+                        if(printText == PRINT_ERROR)
+                            printText = errorPrintText;
+                        else if(printText == PRINT_MSG)
+                            printText = message;
+
+                        if(notify == null)
+                        {
+                            notify = MyAPIGateway.Utilities.CreateNotification(printText, printTime, font);
+                        }
+                        else
+                        {
+                            notify.Text = printText;
+                            notify.AliveTime = printTime;
+                            notify.ResetAliveTime();
+                        }
+
+                        notify.Show();
                     }
-
-                    return true;
                 }
-
-                return false;
+                catch(Exception e)
+                {
+                    Info("ERROR: Could not send notification to local client: " + e);
+                    MyLog.Default.WriteLineAndConsole(modName + " logger error/exception: Could not send notification to local client: " + e);
+                }
             }
 
-            private void WriteMessage(string msg, string prefix = null)
+            private void LogMessage(string message, string prefix = null)
             {
                 try
                 {
@@ -449,7 +432,7 @@ namespace Digi
                     if(prefix != null)
                         sb.Append(prefix);
 
-                    sb.Append(msg);
+                    sb.Append(message);
 
                     if(writer == null)
                     {
@@ -468,7 +451,7 @@ namespace Digi
                 }
                 catch(Exception e)
                 {
-                    MyLog.Default.WriteLineAndConsole($"{modName} had an error while logging message = '{msg}'\nLogger error: {e.Message}\n{e.StackTrace}");
+                    MyLog.Default.WriteLineAndConsole($"{modName} had an error while logging message = '{message}'\nLogger error: {e.Message}\n{e.StackTrace}");
                 }
             }
 
