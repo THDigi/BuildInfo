@@ -2115,15 +2115,16 @@ namespace Digi.BuildInfo
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
             var weapon = (MyWeaponBlockDefinition)def;
-            var turret = def as MyLargeTurretBaseDefinition;
             var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
 
-            float requiredPowerInput = -1;
+            if(wepDef == null)
+            {
+                AddLine(MyFontEnum.Red).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString()).EndLine();
+                return;
+            }
 
-            if(turret != null)
-                requiredPowerInput = GameData.Hardcoded.Turret_PowerReq;
-            else
-                requiredPowerInput = GameData.Hardcoded.ShipGun_PowerReq;
+            var turret = def as MyLargeTurretBaseDefinition;
+            float requiredPowerInput = (turret != null ? GameData.Hardcoded.Turret_PowerReq : GameData.Hardcoded.ShipGun_PowerReq);
 
             AddLine().LabelHardcoded("Power required").PowerFormat(requiredPowerInput).Separator().ResourcePriority(weapon.ResourceSinkGroup).EndLine();
 
