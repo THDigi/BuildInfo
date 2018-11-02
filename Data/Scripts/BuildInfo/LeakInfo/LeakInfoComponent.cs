@@ -43,15 +43,15 @@ namespace Digi.BuildInfo.LeakInfo
 
         // constants
         public enum ThreadStatus { IDLE, RUNNING, DRAW }
-        private const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated line lifetime
-        private const int MAX_DRAW_SECONDS = 300;
-        private const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
-        private const float DRAW_DEPTH_F = 0.01f; // float version of the above value
-        private const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
-        private const float DRAW_TRANSPARENCY = 1f; // drawn line alpha
-        private const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the line alpha
-        private readonly Color COLOR_PARTICLES = new Color(0, 155, 255); // particles color
-        private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
+        public const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated line lifetime
+        public const int MAX_DRAW_SECONDS = 300;
+        public const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
+        public const float DRAW_DEPTH_F = 0.01f; // float version of the above value
+        public const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
+        public const float DRAW_TRANSPARENCY = 1f; // drawn line alpha
+        public const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the line alpha
+        public readonly Color COLOR_PARTICLES = new Color(0, 155, 255); // particles color
+        public readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
         private readonly ParticleData[] particleDataGridSize = new ParticleData[]
         {
             new ParticleData(size: 0.05f, spawnDelay: 6, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
@@ -219,130 +219,6 @@ namespace Digi.BuildInfo.LeakInfo
             return null;
         }
 
-        /// <summary>
-        /// Used by the pathfinding algorithm to... I'm not sure xD
-        /// </summary>
-        class MinHeap
-        {
-            private Breadcrumb ListHead;
-
-            public bool HasNext()
-            {
-                return ListHead != null;
-            }
-
-            public void Add(Breadcrumb item)
-            {
-                if(ListHead == null)
-                {
-                    ListHead = item;
-                }
-                else if(ListHead.Next == null && item.Cost <= ListHead.Cost)
-                {
-                    item.NextListElem = ListHead;
-                    ListHead = item;
-                }
-                else
-                {
-                    var pointer = ListHead;
-
-                    while(pointer.NextListElem != null && pointer.NextListElem.Cost < item.Cost)
-                    {
-                        pointer = pointer.NextListElem;
-                    }
-
-                    item.NextListElem = pointer.NextListElem;
-                    pointer.NextListElem = item;
-                }
-            }
-
-            public Breadcrumb GetFirst()
-            {
-                var result = ListHead;
-                ListHead = ListHead.NextListElem;
-                return result;
-            }
-
-            public void Clear()
-            {
-                ListHead = null;
-            }
-        }
-
-        /// <summary>
-        /// Used by the pathfinding algorithm to keep track of checked path cost and route.
-        /// </summary>
-        class Breadcrumb
-        {
-            public Vector3I Position;
-            public int Cost;
-            public int PathCost;
-            public Breadcrumb Next;
-            public Breadcrumb NextListElem;
-
-            public Breadcrumb(Vector3I position)
-            {
-                Position = position;
-            }
-
-            public Breadcrumb(Vector3I position, int cost, int pathCost, Breadcrumb next)
-            {
-                Position = position;
-                Cost = cost;
-                PathCost = pathCost;
-                Next = next;
-            }
-        }
-
-        /// <summary>
-        /// Identifier for block position combined with direction.
-        /// <para>Used for pathfinding to mark a certain move (from position towards direction) as already explored or not due to how the pressurization system works.</para>
-        /// </summary>
-        struct MoveId
-        {
-            public readonly Vector3I Position;
-            public readonly Vector3I Direction;
-            public readonly int HashCode;
-
-            public MoveId(ref Vector3I position, ref Vector3I direction)
-            {
-                Position = position;
-                Direction = direction;
-
-                unchecked
-                {
-                    HashCode = 17;
-                    HashCode = HashCode * 31 + position.GetHashCode();
-                    HashCode = HashCode * 31 + direction.GetHashCode();
-                }
-            }
-        }
-
-        class MoveIdEqualityComparer : IEqualityComparer<MoveId>
-        {
-            public bool Equals(MoveId x, MoveId y)
-            {
-                return x.Position.Equals(y.Position) && x.Direction.Equals(y.Direction);
-            }
-
-            public int GetHashCode(MoveId x)
-            {
-                return x.HashCode;
-            }
-        }
-
-        struct LineI
-        {
-            public readonly Vector3I Start;
-            public readonly Vector3I End;
-
-            public LineI(Vector3I start, Vector3I end)
-            {
-                Start = start;
-                End = end;
-            }
-        }
-
         private bool IsInInflatedBounds(IMyCubeGrid grid, Vector3I pos)
         {
             var min = grid.Min - Vector3I.One;
@@ -422,78 +298,6 @@ namespace Digi.BuildInfo.LeakInfo
         }
 
         #region Drawing
-        class ParticleData
-        {
-            public readonly float Size;
-            public readonly int SpawnDelay;
-            public readonly double LerpPos;
-            public readonly float WalkSpeed;
-
-            public ParticleData(float size, int spawnDelay, double lerpPos, float walkSpeed)
-            {
-                Size = size;
-                SpawnDelay = spawnDelay;
-                LerpPos = lerpPos;
-                WalkSpeed = walkSpeed;
-            }
-        }
-
-        class Particle
-        {
-            private Vector3D position;
-            private float walk;
-
-            public Particle(IMyCubeGrid grid, List<LineI> lines)
-            {
-                var l = lines[lines.Count - 1];
-                position = grid.GridIntegerToWorld(l.Start);
-                walk = lines.Count - 1;
-            }
-
-            /// <summary>
-            /// Returns true if it should spawn more particles, false otherwise (reached the end and looping back)
-            /// </summary>
-            public bool Draw(IMyCubeGrid grid, List<LineI> lines, ref Color color, ParticleData pd, ref Vector3D camPos, ref Vector3D camFw)
-            {
-                var i = (walk < 0 ? 0 : (int)Math.Floor(walk));
-                var l = lines[i];
-                var lineStart = grid.GridIntegerToWorld(l.Start);
-                var lineEnd = grid.GridIntegerToWorld(l.End);
-
-                if(IsVisibleFast(ref camPos, ref camFw, ref lineStart) || IsVisibleFast(ref camPos, ref camFw, ref lineEnd))
-                {
-                    var lineDir = (lineEnd - lineStart);
-                    var fraction = (1 - (walk - i));
-                    var targetPosition = lineStart + lineDir * fraction;
-
-                    if(!MyParticlesManager.Paused)
-                        position = Vector3D.Lerp(position, targetPosition, pd.LerpPos);
-
-                    var drawPosition = camPos + ((position - camPos) * DRAW_DEPTH);
-
-                    if(walk < 0)
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.Instance.LeakInfoComp.MATERIAL_DOT, color * (1f - Math.Abs(walk)), drawPosition, pd.Size * DRAW_DEPTH_F, 0);
-                    else
-                        MyTransparentGeometry.AddPointBillboard(BuildInfo.Instance.LeakInfoComp.MATERIAL_DOT, color, drawPosition, pd.Size * DRAW_DEPTH_F, 0);
-                }
-
-                if(!MyParticlesManager.Paused)
-                {
-                    walk -= pd.WalkSpeed; // walk on the lines
-
-                    if(walk < -1) // go back to the start and tell the component to stop spawning new ones
-                    {
-                        l = lines[lines.Count - 1];
-                        position = grid.GridIntegerToWorld(l.Start);
-                        walk = lines.Count - 1;
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-        }
-
         public void Draw()
         {
             if(Status != ThreadStatus.DRAW)
@@ -538,7 +342,7 @@ namespace Digi.BuildInfo.LeakInfo
             }
         }
 
-        private static bool IsVisibleFast(ref Vector3D camPos, ref Vector3D camFw, ref Vector3D point)
+        public static bool IsVisibleFast(ref Vector3D camPos, ref Vector3D camFw, ref Vector3D point)
         {
             return (((camPos.X * point.X + camPos.Y * point.Y + camPos.Z * point.Z) - (camPos.X * camFw.X + camPos.Y * camFw.Y + camPos.Z * camFw.Z)) > 0);
         }

@@ -135,6 +135,8 @@
     <Compile Include="InputLib\InputExtensions.cs" />
     <Compile Include="InputLib\InputLib.cs" />
     <Compile Include="InputLib\InputReleaseKey.cs" />
+    <Compile Include="LeakInfo\PathfindingObjects.cs" />
+    <Compile Include="LeakInfo\DrawObjects.cs" />
     <Compile Include="TempBlockSpawn.cs" />
     <Compile Include="Blocks\AirVent.cs" />
     <Compile Include="BlockData\Base.cs" />
