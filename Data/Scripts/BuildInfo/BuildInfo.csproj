@@ -153,7 +153,7 @@
     <Compile Include="GameData.cs" />
     <Compile Include="Pressurization.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="LeakInfoComponent.cs" />
+    <Compile Include="LeakInfo\LeakInfoComponent.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TextAPIv2.cs" />
     <Compile Include="BuildInfo-TextGeneration.cs" />

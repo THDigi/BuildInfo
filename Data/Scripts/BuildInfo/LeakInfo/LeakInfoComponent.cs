@@ -9,7 +9,7 @@ using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
-namespace Digi.BuildInfo
+namespace Digi.BuildInfo.LeakInfo
 {
     public class LeakInfoComponent
     {

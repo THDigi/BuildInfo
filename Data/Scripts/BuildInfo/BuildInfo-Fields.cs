@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.BlockData;
-using Digi.BuildInfo.Blocks;
+using Digi.BuildInfo.LeakInfo;
 using Digi.Input;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
