@@ -196,13 +196,16 @@ namespace Digi.BuildInfo.Blocks
                         else if(vent.CanPressurize)
                             str.Append("Area is sealed.");
                         else
-                            str.Append("Ready to scan.");
+                            str.Append("Ready.");
                         break;
                     case LeakInfoComponent.ThreadStatus.RUNNING:
                         str.Append("Computing...");
                         break;
                     case LeakInfoComponent.ThreadStatus.DRAW:
-                        str.Append("Leak found and displayed.");
+                        if(leakInfoComp.UsedFromVent != null && leakInfoComp.UsedFromVent.CubeGrid != block.CubeGrid)
+                            str.Append("Leak found and displayed on another grid.");
+                        else
+                            str.Append("Leak found and displayed.");
                         break;
                 }
 
