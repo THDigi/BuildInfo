@@ -43,19 +43,24 @@ namespace Digi.BuildInfo.LeakInfo
 
         // constants
         public enum ThreadStatus { IDLE, RUNNING, DRAW }
-        public const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated line lifetime
+        public const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated particle lifetime
         public const int MAX_DRAW_SECONDS = 300;
-        public const double DRAW_DEPTH = 0.01; // how far from the camera to draw the lines/dots (always on top trick)
+        public const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the particles alpha
+        public const float DRAW_TRANSPARENCY = 1f; // starting particle alpha
+        public const float DRAW_POINT_SIZE = 0.15f; // the start and end point's size
+        public const double DRAW_DEPTH = 0.01; // camera distance for overlay particles
         public const float DRAW_DEPTH_F = 0.01f; // float version of the above value
-        public const float DRAW_POINT_SIZE = 0.09f; // the start and end point's size
-        public const float DRAW_TRANSPARENCY = 1f; // drawn line alpha
-        public const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the line alpha
-        public readonly Color COLOR_PARTICLES = new Color(0, 155, 255); // particles color
-        public readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
+        public readonly Color COLOR_PARTICLE_OVERLAY = new Color(0, 155, 255); // particle color shown through walls
+        public readonly Color COLOR_PARTICLE_WORLD = new Color(0, 255, 255); // particle color shown at the world position, gets mixed with the OVERLAY color since they both render.
+        public readonly Color COLOR_START_OVERLAY = new Color(0, 255, 0); // color of the starting point sprite
+        public readonly Color COLOR_START_WORLD = new Color(0, 155, 0);
+        public readonly Color COLOR_END_OVERLAY = new Color(255, 0, 0); // color of the ending point sprite
+        public readonly Color COLOR_END_WORLD = new Color(155, 0, 0);
+        public readonly MyStringId MATERIAL_PARTICLE = MyStringId.GetOrCompute("BuildInfo_LeakInfo_Particle");
         private readonly ParticleData[] particleDataGridSize = new ParticleData[]
         {
-            new ParticleData(size: 0.05f, spawnDelay: 6, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
-            new ParticleData(size: 0.05f, spawnDelay: 6, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
+            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
+            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
         };
 
         #region Init and close
@@ -87,7 +92,9 @@ namespace Digi.BuildInfo.LeakInfo
             }
 
             if(Status == ThreadStatus.RUNNING) // notify the player that a background task is running.
+            {
                 NotifyHUD("Computing path...", 100, MyFontEnum.Blue);
+            }
 
             if(++skipUpdates > 30) // every half a second, update the custom detail info on the currently selected air vent in the terminal.
             {
@@ -307,29 +314,40 @@ namespace Digi.BuildInfo.LeakInfo
             var camPos = camMatrix.Translation;
             var camFw = camMatrix.Forward;
             var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
-            var particleColor = COLOR_PARTICLES * alpha;
+            var particleColorWorld = COLOR_PARTICLE_WORLD * alpha;
+            var particleColorOverlay = COLOR_PARTICLE_OVERLAY * alpha;
 
             // start dot
             var startPointWorld = selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start);
             if(IsVisibleFast(ref camPos, ref camFw, ref startPointWorld))
             {
-                var startPos = camPos + ((startPointWorld - camPos) * DRAW_DEPTH);
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Green * alpha, startPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_START_WORLD * alpha, startPointWorld, DRAW_POINT_SIZE, 0);
+
+                var posOverlay = camPos + ((startPointWorld - camPos) * DRAW_DEPTH);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_START_OVERLAY * alpha, posOverlay, DRAW_POINT_SIZE * 0.5f * DRAW_DEPTH_F, 0);
             }
 
-            var pd = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
+            var particleData = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
 
-            // spawning particles
-            if(!stopSpawning && !MyParticlesManager.Paused && ++delayParticles > pd.SpawnDelay)
+            bool spawnSync = false;
+
+            // timing particles
+            if(!MyParticlesManager.Paused && ++delayParticles > particleData.SpawnDelay)
             {
                 delayParticles = 0;
-                particles.Add(new Particle(selectedGrid, lines));
+
+                if(stopSpawning)
+                    spawnSync = true;
+                else
+                    particles.Add(new Particle(selectedGrid, lines));
             }
 
             // draw/move particles
             for(int i = particles.Count - 1; i >= 0; --i)
             {
-                if(!particles[i].Draw(selectedGrid, lines, ref particleColor, pd, ref camPos, ref camFw))
+                var drawReturn = particles[i].Draw(selectedGrid, lines, particleColorWorld, particleColorOverlay, particleData, ref camPos, ref camFw, ref delayParticles, spawnSync);
+
+                if(drawReturn == DrawReturn.STOP_SPAWNING)
                     stopSpawning = true;
             }
 
@@ -337,8 +355,10 @@ namespace Digi.BuildInfo.LeakInfo
             var endPointWorld = selectedGrid.GridIntegerToWorld(lines[0].End);
             if(IsVisibleFast(ref camPos, ref camFw, ref endPointWorld))
             {
-                var endPos = camPos + ((endPointWorld - camPos) * DRAW_DEPTH);
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, Color.Red * alpha, endPos, DRAW_POINT_SIZE * DRAW_DEPTH_F, 0);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_END_WORLD * alpha, endPointWorld, DRAW_POINT_SIZE, 0);
+
+                var posOverlay = camPos + ((endPointWorld - camPos) * DRAW_DEPTH);
+                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_END_OVERLAY * alpha, posOverlay, DRAW_POINT_SIZE * 0.5f * DRAW_DEPTH_F, 0);
             }
         }
 
