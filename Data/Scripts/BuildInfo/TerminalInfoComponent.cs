@@ -22,12 +22,15 @@ namespace Digi.BuildInfo
 {
     public class TerminalInfoComponent
     {
-        private const int REFRESH_MIN_TICKS = 15; // minimum amount of ticks between refresh calls
+        private const int REFRESH_MIN_TICKS = 30; // minimum amount of ticks between refresh calls
+
+        private readonly string[] tickerText = { "–––", "•––", "–•–", "––•" };
 
         private BuildInfo mod;
         private IMyTerminalBlock viewedInTerminal;
         private int delayCursorCheck = 0;
         private int refreshWaitForTick = 0;
+        private int ticker;
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
@@ -188,17 +191,20 @@ namespace Digi.BuildInfo
 
             if(mod.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
             {
-                // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
-                RefreshCustomInfo();
+                UpdateDetailInfo();
 
-#if false
-                // HACK: force refresh terminal UI by changing a property
-                // ISSUE: causes network traffic
-                // ISSUE: prevents scrolling in drop down lists
-                // ISSUE: due to it being sync'd, it causes the above issues to other players as well.
-                viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-#endif
+                // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
+                // HACK: force refresh terminal UI by changing ownership share mode
+                var block = (MyCubeBlock)viewedInTerminal;
+
+                if(block.IDModule != null)
+                {
+                    var ownerId = block.IDModule.Owner;
+                    var shareMode = block.IDModule.ShareMode;
+
+                    block.ChangeOwner(ownerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
+                    block.ChangeOwner(ownerId, shareMode);
+                }
             }
         }
 
@@ -316,13 +322,14 @@ namespace Digi.BuildInfo
 
                 newBlock.AppendingCustomInfo += CustomInfo;
                 newBlock.PropertiesChanged += PropertiesChanged;
-                newBlock.RefreshCustomInfo(); // invokes AppendingCustomInfo 
+
+                UpdateDetailInfo(force: true);
             }
         }
 
-        void RefreshCustomInfo()
+        void UpdateDetailInfo(bool force = false)
         {
-            if(refreshWaitForTick > mod.Tick)
+            if(!force && refreshWaitForTick > mod.Tick)
                 return;
 
             refreshWaitForTick = (mod.Tick + REFRESH_MIN_TICKS);
@@ -331,7 +338,7 @@ namespace Digi.BuildInfo
 
         void PropertiesChanged(IMyTerminalBlock block)
         {
-            RefreshCustomInfo();
+            UpdateDetailInfo();
         }
 
         // Called by AppendingCustomInfo's invoker: RefreshCustomInfo()
@@ -349,12 +356,24 @@ namespace Digi.BuildInfo
 
                 info.Clear();
                 currentFormatCall.Invoke(block, info);
-                info.TrimEndWhitespace();
+
+                bool hasExtraInfo = (info.Length > 0);
+
+                if(hasExtraInfo)
+                    info.TrimEndWhitespace();
 
                 if(otherModInfo != null)
                 {
                     info.NewLine();
                     info.Append(otherModInfo);
+                }
+
+                if(hasExtraInfo)
+                {
+                    info.NewLine().Append(tickerText[ticker]);
+
+                    if(++ticker >= tickerText.Length)
+                        ticker = 0;
                 }
             }
             catch(Exception e)
