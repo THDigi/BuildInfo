@@ -104,8 +104,9 @@ namespace Digi.BuildInfo.LeakInfo
                 {
                     if(ViewedVentControlPanel.Closed || MyAPIGateway.Gui.ActiveGamePlayScreen == null)
                         ViewedVentControlPanel = null;
-                    else
-                        ViewedVentControlPanel.RefreshCustomInfo();
+                    // no need to update since TerminalInfoComponent already does for airvent
+                    //else
+                    //    ViewedVentControlPanel.RefreshCustomInfo();
                 }
             }
         }
