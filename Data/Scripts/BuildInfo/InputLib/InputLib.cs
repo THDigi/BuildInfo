@@ -466,7 +466,6 @@ namespace Digi.Input
             AddInput(MyControlsSpace.LOOKAROUND, null, "Look Around");
             AddInput(MyControlsSpace.CAMERA_MODE, CONTROL_PREFIX + "cameramode", "Camera Mode");
             AddInput(MyControlsSpace.BUILD_SCREEN, CONTROL_PREFIX + "buildmenu", "Build Screen");
-            AddInput(MyControlsSpace.COCKPIT_BUILD_MODE, CONTROL_PREFIX + "cockpitbuild", "Cockpit Build Mode");
             AddInput(MyControlsSpace.CUBE_COLOR_CHANGE, CONTROL_PREFIX + "paint", "Paint/Weapon Mode");
             AddInput(MyControlsSpace.SWITCH_LEFT, CONTROL_PREFIX + "switchleft", "Prev Color/Camera");
             AddInput(MyControlsSpace.SWITCH_RIGHT, CONTROL_PREFIX + "switchright", "Next Color/Camera");
@@ -875,7 +874,6 @@ namespace Digi.Input
                 MyControlsSpace.SWITCH_BUILDING_MODE,
                 MyControlsSpace.VOXEL_HAND_SETTINGS,
                 MyControlsSpace.MISSION_SETTINGS,
-                MyControlsSpace.COCKPIT_BUILD_MODE,
                 MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE,
                 MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT,
                 MyControlsSpace.SLOT1,
