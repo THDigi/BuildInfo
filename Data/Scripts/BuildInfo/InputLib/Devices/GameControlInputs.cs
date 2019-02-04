@@ -1,4 +1,5 @@
-﻿using Sandbox.ModAPI;
+﻿using System.Text;
+using Sandbox.ModAPI;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
@@ -14,38 +15,38 @@ namespace Digi.Input.Devices
             ControlId = controlId;
         }
 
-        public override string GetBind(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
+        public override void GetBind(StringBuilder output, ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
         {
-            string name = null;
+            string bind = null;
 
             if(MyAPIGateway.Input.IsJoystickLastUsed)
             {
-                name = InputLib.GetInputDisplayName(contextId, ControlId, specialChars);
+                bind = InputLib.GetInputDisplayName(contextId, ControlId, specialChars);
             }
 
-            // using kb/m or unassigned for gamepad/joystick
-            if(name == null)
+            // using kb/m or it's unassigned for gamepad/joystick
+            if(bind == null)
             {
                 var control = MyAPIGateway.Input.GetGameControl(ControlId);
 
                 if(control.GetMouseControl() != MyMouseButtonsEnum.None)
                 {
-                    name = InputLib.GetInputDisplayName(control.GetMouseControl());
+                    bind = InputLib.GetInputDisplayName(control.GetMouseControl());
                 }
                 else if(control.GetKeyboardControl() != MyKeys.None)
                 {
-                    name = InputLib.GetInputDisplayName(control.GetKeyboardControl());
+                    bind = InputLib.GetInputDisplayName(control.GetKeyboardControl());
                 }
                 else if(control.GetSecondKeyboardControl() != MyKeys.None)
                 {
-                    name = InputLib.GetInputDisplayName(control.GetSecondKeyboardControl());
+                    bind = InputLib.GetInputDisplayName(control.GetSecondKeyboardControl());
                 }
             }
 
-            if(name != null)
-                return name;
-
-            return $"[Unassigned:{GetDisplayName(specialChars)}]";
+            if(bind != null)
+                output.Append(bind);
+            else
+                output.Append("<Unassigned:").Append(GetDisplayName(specialChars)).Append('>');
         }
 
         public override bool IsAssigned(ControlContext contextId = ControlContext.CHARACTER)

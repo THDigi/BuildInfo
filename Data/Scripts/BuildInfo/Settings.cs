@@ -31,13 +31,17 @@ namespace Digi.BuildInfo
         public bool debug;
         public int configVersion;
 
-        public readonly InputLib.Combination default_menuBind = InputLib.Combination.Create("plus");
-        public readonly InputLib.Combination default_cycleOverlaysBind = InputLib.Combination.Create($"ctrl {MENU_BIND_INPUT_NAME}");
-        public readonly InputLib.Combination default_toggleTransparencyBind = InputLib.Combination.Create($"shift {MENU_BIND_INPUT_NAME}");
-        public readonly InputLib.Combination default_freezePlacementBind = InputLib.Combination.Create($"alt {MENU_BIND_INPUT_NAME}");
-        public readonly InputLib.Combination default_blockPickerBind = InputLib.Combination.Create("ctrl c.cubesizemode");
-
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
+        public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
+        public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";
+        public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
+        public const string BLOCK_PICKER_INPUT_NAME = "bi.blockPicker";
+
+        public readonly InputLib.Combination default_menuBind = InputLib.Combination.Create(MENU_BIND_INPUT_NAME, "plus");
+        public readonly InputLib.Combination default_cycleOverlaysBind = InputLib.Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, $"ctrl {MENU_BIND_INPUT_NAME}");
+        public readonly InputLib.Combination default_toggleTransparencyBind = InputLib.Combination.Create(TOGGLE_TRANSPARENCY_INPUT_NAME, $"shift {MENU_BIND_INPUT_NAME}");
+        public readonly InputLib.Combination default_freezePlacementBind = InputLib.Combination.Create(FREEZE_PLACEMENT_INPUT_NAME, $"alt {MENU_BIND_INPUT_NAME}");
+        public readonly InputLib.Combination default_blockPickerBind = InputLib.Combination.Create(BLOCK_PICKER_INPUT_NAME, "ctrl c.cubesizemode");
 
         public const bool default_showTextInfo = true;
         public const bool default_alwaysVisible = false;
@@ -113,7 +117,7 @@ namespace Digi.BuildInfo
                 // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
                 if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
                 {
-                    MenuBind = InputLib.Combination.Create("c.VoxelHandSettings");
+                    MenuBind = InputLib.Combination.Create(default_menuBind.DisplayName, "c.VoxelHandSettings");
 
                     Log.Info("NOTE: Configurable binds were added and it seems your VoxelHandSettings isn't colliding so I'm setting MenuBind to that instead so you don't need to change anything.");
                 }
@@ -190,7 +194,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("MenuBind", COMPARE_TYPE))
                     {
                         string error;
-                        var input = InputLib.Combination.Create(val, out error, menuBindInvalidInputs);
+                        var input = InputLib.Combination.Create(default_menuBind.DisplayName, val, out error, menuBindInvalidInputs);
 
                         if(input != null)
                             MenuBind = input;
@@ -203,7 +207,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("CycleOverlaysBind", COMPARE_TYPE))
                     {
                         string error;
-                        var input = InputLib.Combination.Create(val, out error);
+                        var input = InputLib.Combination.Create(default_cycleOverlaysBind.DisplayName, val, out error);
 
                         if(input != null)
                             CycleOverlaysBind = input;
@@ -216,7 +220,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("ToggleTransparencyBind", COMPARE_TYPE))
                     {
                         string error;
-                        var input = InputLib.Combination.Create(val, out error);
+                        var input = InputLib.Combination.Create(default_toggleTransparencyBind.DisplayName, val, out error);
 
                         if(input != null)
                             ToggleTransparencyBind = input;
@@ -229,7 +233,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("FreezePlacementBind", COMPARE_TYPE))
                     {
                         string error;
-                        var input = InputLib.Combination.Create(val, out error);
+                        var input = InputLib.Combination.Create(default_freezePlacementBind.DisplayName, val, out error);
 
                         if(input != null)
                             FreezePlacementBind = input;
@@ -242,7 +246,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("BlockPickerBind", COMPARE_TYPE))
                     {
                         string error;
-                        var input = InputLib.Combination.Create(val, out error);
+                        var input = InputLib.Combination.Create(default_blockPickerBind.DisplayName, val, out error);
 
                         if(input != null)
                             BlockPickerBind = input;

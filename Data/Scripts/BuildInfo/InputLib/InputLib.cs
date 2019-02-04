@@ -14,7 +14,7 @@ using VRageMath;
 namespace Digi.Input
 {
     /// <summary>
-    /// <para>Usage: create an instance in BeforeStart(), call Update() in any simulation update, Dispose() in UnloadData().</para>
+    /// <para>Usage: create an instance in BeforeStart(); call Update() in any simulation update; Dispose() in UnloadData().</para>
     /// </summary> 
     public class InputLib : IDisposable
     {
@@ -29,12 +29,13 @@ namespace Digi.Input
             /// Creates an input combination object which can be used to easily check if that combination is pressed.
             /// <para>Throws an exception for errors, if you want the errors as a string instead use <seealso cref="Create(string, out string)"/></para>.
             /// </summary>
+            /// <param name="displayName">Name of combination, shown when has no bindings.</param>
             /// <param name="combinationString">Space separated input IDs (not case sensitive).</param>
             /// <param name="invalidInputs">supply inputs that can't be used in this combination, for example custom mod-added ones in themselves!</param>
-            public static Combination Create(string combinationString, List<string> invalidInputs = null)
+            public static Combination Create(string displayName, string combinationString, List<string> invalidInputs = null)
             {
                 string error;
-                var combination = Create(combinationString, out error, invalidInputs);
+                var combination = Create(displayName, combinationString, out error, invalidInputs);
 
                 if(error != null)
                     throw new Exception(error);
@@ -45,11 +46,12 @@ namespace Digi.Input
             /// <summary>
             /// Creates an input combination object which can be used to easily check if that combination is pressed.
             /// </summary>
+            /// <param name="displayName">Name of combination, shown when has no bindings.</param>
             /// <param name="combinationString">Space separated input IDs (not case sensitive).</param>
             /// <param name="error">If an error occurs this will be non-null.</param>
             /// <param name="invalidInputs">supply inputs that can't be used in this combination, for example custom mod-added ones in themselves!</param>
             /// <returns>null if there are any errors.</returns>
-            public static Combination Create(string combinationString, out string error, List<string> invalidInputs = null)
+            public static Combination Create(string displayName, string combinationString, out string error, List<string> invalidInputs = null)
             {
                 if(InputLib.instance == null)
                     throw new Exception($"{typeof(InputLib).Name} was not initialized! Create an instance of it in your mod first.");
@@ -57,14 +59,12 @@ namespace Digi.Input
                 if(string.IsNullOrWhiteSpace(combinationString))
                 {
                     error = null;
-                    return new Combination(); // valid empty combination
+                    return new Combination(displayName); // valid empty combination
                 }
 
                 string[] inputStrings = combinationString.ToLowerInvariant().Split(InputLib.instance.CHAR_ARRAY, StringSplitOptions.RemoveEmptyEntries);
 
-                var str = InputLib.instance.str;
-                str.Clear();
-
+                var str = new StringBuilder();
                 var combInputs = new List<InputBase>();
 
                 foreach(var inputId in inputStrings)
@@ -94,9 +94,7 @@ namespace Digi.Input
                 if(combInputs.Count == 0)
                     combInputs = null;
 
-                var combination = new Combination(combInputs, str.ToString());
-
-                str.Clear();
+                var combination = new Combination(displayName, combInputs, str.ToString());
 
                 error = null;
                 return combination;
@@ -105,16 +103,22 @@ namespace Digi.Input
 
             private readonly List<InputBase> inputs = null;
             public readonly string CombinationString;
+            public readonly string DisplayName;
 
             /// <summary>
-            /// Use <see cref="Combination.Create(string, out string)"/>.
+            /// Not to be used directly.
+            /// Instead, use <see cref="Create(string, string, List{string})"/> or <seealso cref="Create(string, string, out string, List{string})"/>.
             /// </summary>
-            private Combination(List<InputBase> inputs = null, string combinationString = "")
+            private Combination(string displayName, List<InputBase> inputs = null, string combinationString = "")
             {
                 this.inputs = inputs;
+                DisplayName = displayName;
                 CombinationString = combinationString;
             }
 
+            /// <summary>
+            /// Checks if combination has inputs and if all of them are binded to anything.
+            /// </summary>
             public bool IsAssigned(ControlContext contextId = ControlContext.CHARACTER)
             {
                 if(inputs == null)
@@ -183,12 +187,9 @@ namespace Digi.Input
             /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public string GetBinds(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
-                var str = InputLib.instance.str;
-                str.Clear();
+                var str = new StringBuilder();
                 GetBinds(str, contextId, specialChars);
-                var text = str.ToString();
-                str.Clear();
-                return text;
+                return str.ToString();
             }
 
             /// <summary>
@@ -204,7 +205,7 @@ namespace Digi.Input
 
                 if(inputs == null)
                 {
-                    output.Append("[NotBound]");
+                    output.Append("<Unassigned>");
                     return;
                 }
 
@@ -213,9 +214,9 @@ namespace Digi.Input
                 foreach(var input in inputs)
                 {
                     if(!first)
-                        output.Append(' ');
+                        output.Append(InputLib.INPUT_PRINT_SEPARATOR);
 
-                    output.Append(input.GetBind(contextId, specialChars));
+                    input.GetBind(output, contextId, specialChars);
                     first = false;
                 }
             }
@@ -225,6 +226,8 @@ namespace Digi.Input
         public const string MOUSE_PREFIX = "m.";
         public const string GAMEPAD_PREFIX = "g.";
         public const string CONTROL_PREFIX = "c.";
+
+        public const string INPUT_PRINT_SEPARATOR = "»";
 
         public const float EPSILON = 0.000001f;
 
@@ -238,8 +241,6 @@ namespace Digi.Input
         private readonly Dictionary<MyStringId, InputBase> gameControlToInput = new Dictionary<MyStringId, InputBase>(MyStringId.Comparer);
 
         private readonly GamepadBindings gamepadBindings;
-
-        private readonly StringBuilder str = new StringBuilder();
 
         public readonly char[] CHAR_ARRAY = { ' ' };
 

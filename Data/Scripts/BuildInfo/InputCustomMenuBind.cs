@@ -1,4 +1,5 @@
-﻿using Digi.Input.Devices;
+﻿using System.Text;
+using Digi.Input.Devices;
 
 namespace Digi.BuildInfo
 {
@@ -28,9 +29,9 @@ namespace Digi.BuildInfo
             return BuildInfo.Instance.Settings.MenuBind.IsPressed(contextId);
         }
 
-        public override string GetBind(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
+        public override void GetBind(StringBuilder output, ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
         {
-            return BuildInfo.Instance.Settings.MenuBind.GetBinds(contextId, specialChars);
+            BuildInfo.Instance.Settings.MenuBind.GetBinds(output, contextId, specialChars);
         }
     }
 }

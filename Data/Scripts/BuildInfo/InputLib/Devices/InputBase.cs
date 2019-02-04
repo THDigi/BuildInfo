@@ -1,4 +1,6 @@
-﻿namespace Digi.Input.Devices
+﻿using System.Text;
+
+namespace Digi.Input.Devices
 {
     public enum InputTypeEnum
     {
@@ -20,7 +22,7 @@
         {
             Type = type;
             Id = id;
-            DisplayName = displayName;
+            DisplayName = displayName ?? id;
         }
 
         public virtual bool IsAssigned(ControlContext contextId = ControlContext.CHARACTER)
@@ -33,9 +35,9 @@
             return DisplayName;
         }
 
-        public virtual string GetBind(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
+        public virtual void GetBind(StringBuilder output, ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
         {
-            return DisplayName;
+            output.Append(DisplayName);
         }
 
         public abstract bool IsPressed(ControlContext contextId = ControlContext.CHARACTER);
