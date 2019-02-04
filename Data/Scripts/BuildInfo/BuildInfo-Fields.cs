@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         public readonly MyStringId MATERIAL_VANILLA_SQUARE = MyStringId.GetOrCompute("Square");
 
         private const int MENU_TOTAL_ITEMS = 9;
+        private const float MENU_BG_OPACITY = 0.7f;
         private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
         private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
         private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
