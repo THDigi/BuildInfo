@@ -31,6 +31,7 @@ namespace Digi.BuildInfo
         private int delayCursorCheck = 0;
         private int refreshWaitForTick = 0;
         private int ticker;
+        private StringBuilder tmp = new StringBuilder();
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
