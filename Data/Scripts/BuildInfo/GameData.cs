@@ -111,9 +111,6 @@ namespace Digi.BuildInfo
             // from MyBeacon
             public static float Beacon_PowerReq(float maxRange) => (maxRange / 100000f) * MyEnergyConstants.MAX_REQUIRED_POWER_BEACON;
 
-            // from MyReactor
-            public static float Reactor_KgPerSec(MyResourceSourceComponent source, MyReactorDefinition reactorDef) => ((source.CurrentOutput / (source.ProductionToCapacityMultiplier * 1000f)) / reactorDef.FuelDefinition.Mass) * 1000;
-
             // from MyTimerBlock
             public const float Timer_PowerReq = 1E-07f;
 

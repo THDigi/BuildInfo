@@ -1902,8 +1902,23 @@ namespace Digi.BuildInfo
             var reactor = def as MyReactorDefinition;
             if(reactor != null)
             {
-                if(reactor.FuelDefinition != null)
-                    AddLine().Append("Requires fuel: ").IdTypeSubtypeFormat(reactor.FuelId).EndLine();
+                if(reactor.FuelInfos != null && reactor.FuelInfos.Length > 0)
+                {
+                    bool hasOneFuel = (reactor.FuelInfos.Length == 1);
+
+                    if(hasOneFuel)
+                        AddLine().Append("Needs fuel: ");
+                    else
+                        AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor().EndLine();
+
+                    foreach(var fuel in reactor.FuelInfos)
+                    {
+                        if(!hasOneFuel)
+                            AddLine().Append("       - ");
+
+                        GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)").EndLine();
+                    }
+                }
 
                 var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
                 var invLimit = reactor.InventoryConstraint;

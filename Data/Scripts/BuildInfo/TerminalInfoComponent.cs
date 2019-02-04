@@ -879,23 +879,54 @@ namespace Digi.BuildInfo
             if(Inv == null)
                 return;
 
+            var reactorDef = (MyReactorDefinition)block.SlimBlock.BlockDefinition;
+
+            if(reactorDef.FuelInfos != null && reactorDef.FuelInfos.Length > 0)
+            {
+                info.NewLine();
+
+                var ratio = Source.CurrentOutput / reactorDef.MaxPowerOutput;
+
+                if(reactorDef.FuelInfos.Length == 1)
+                {
+                    var fuel = reactorDef.FuelInfos[0];
+                    float perSec = ratio * fuel.ConsumptionPerSecond_Items;
+                    float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
+
+                    info.Append("Current Usage: ").RoundedNumber(perSec, 5).Append("/s").NewLine();
+                    info.Append("Time Left: ").TimeFormat(seconds).NewLine();
+                    info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).NewLine();
+                }
+                else
+                {
+                    tmp.Clear();
+                    float perSec = 0;
+
+                    foreach(var fuel in reactorDef.FuelInfos)
+                    {
+                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append(" kg/s)").NewLine();
+
+                        perSec += ratio * fuel.ConsumptionPerSecond_Items;
+                    }
+
+                    float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
+
+                    info.Append("Current Usage: ").RoundedNumber(perSec, 5).Append("/s").NewLine();
+                    info.Append("Time Left: ").TimeFormat(seconds).NewLine();
+                    info.Append("Uses Combined Fuels: ").NewLine();
+                    info.Append(tmp);
+                    tmp.Clear();
+                }
+            }
+
             info.NewLine();
 
-            var reactorDef = (MyReactorDefinition)block.SlimBlock.BlockDefinition;
             var maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
 
             if(maxVolume <= 0)
                 BuildInfo.GetInventoryFromComponent(reactorDef, out maxVolume);
 
             info.DetailInfo_Inventory(Inv, maxVolume);
-
-            float kgPerSec = GameData.Hardcoded.Reactor_KgPerSec(Source, reactorDef);
-            float seconds = (kgPerSec > 0 ? ((float)Inv.CurrentMass / kgPerSec) : 0);
-
-            info.NewLine();
-            info.Append("Requires fuel: ").Append(reactorDef.FuelId.SubtypeName).NewLine();
-            info.Append("Current kg/s: ").AppendFormat("{0:0.##########}", kgPerSec).NewLine();
-            info.Append("Current time left: ").TimeFormat(seconds).NewLine();
         }
 
         void Format_Thruster(IMyTerminalBlock block, StringBuilder info)
