@@ -47,7 +47,6 @@ namespace Digi.BuildInfo
         private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.97 / 3f, 0.8); // textAPI default right side position when using a really wide resolution
 
         private const float BACKGROUND_EDGE = 0.02f; // added padding edge around the text boundary for the background image
-        public readonly MyStringId MATERIAL_BACKGROUND = MyStringId.GetOrCompute("BuildInfo_UI_Background");
         public readonly MyStringId MATERIAL_TOPRIGHTCORNER = MyStringId.GetOrCompute("BuildInfo_UI_TopRightCorner");
         public readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("BuildInfo_Square");
         public readonly MyStringId MATERIAL_VANILLA_DOT = MyStringId.GetOrCompute("WhiteDot");

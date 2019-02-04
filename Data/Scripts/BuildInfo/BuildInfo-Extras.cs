@@ -244,6 +244,7 @@ namespace Digi.BuildInfo
         }
 
         /// <summary>
+        /// <para>Camera view matrix and projection matrix multiplied and inverted.</para>
         /// This ensures the math is done at most once per frame, if ResetDrawCaches() is correctly called at the start of Draw().
         /// </summary>
         public MatrixD ViewProjectionInv
@@ -267,6 +268,7 @@ namespace Digi.BuildInfo
         }
 
         /// <summary>
+        /// <para>Tangent of (FOV with zoom / 2).</para>
         /// This ensures the math is done at most once per frame, if ResetDrawCaches() is correctly called at the start of Draw().
         /// </summary>
         public float ScaleFOV
