@@ -964,19 +964,22 @@ namespace Digi.BuildInfo
 
             info.NewLine();
 
+            // HACK NOTE: def.NeedsAtmosphereForInfluence does nothing, influence is always air density
+
             if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
             {
-                info.Append("Current effective Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).NewLine();
-                info.Append("Optimal Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
+                info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).NewLine();
+                info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
 
-                info.ProportionToPercent(def.EffectivenessAtMaxInfluence).Append(" max thrust ");
+                info.Append("Limits: ").NewLine();
+                info.Append("  ").ProportionToPercent(def.EffectivenessAtMaxInfluence).Append(" thrust ");
                 if(def.MaxPlanetaryInfluence < 1f)
                     info.Append("in ").ProportionToPercent(def.MaxPlanetaryInfluence).Append(" atmosphere.");
                 else
                     info.Append("in atmosphere.");
                 info.NewLine();
 
-                info.ProportionToPercent(def.EffectivenessAtMinInfluence).Append(" max thrust ");
+                info.Append("  ").ProportionToPercent(def.EffectivenessAtMinInfluence).Append(" thrust ");
                 if(def.MinPlanetaryInfluence > 0f)
                     info.Append("below ").ProportionToPercent(def.MinPlanetaryInfluence).Append(" atmosphere.");
                 else
@@ -986,7 +989,7 @@ namespace Digi.BuildInfo
             else
             {
                 info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
-                info.Append("No thrust limits in space or planets");
+                info.Append("No thrust limits in space or atmosphere");
             }
         }
 
