@@ -148,8 +148,7 @@ namespace Digi.BuildInfo
 
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BG_BLEND_TYPE); // scale on bg must always remain 1
-                bgObject.Options |= HudAPIv2.Options.Shadowing; // gets moved physically under the text
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Shadowing: true, Blend: BLOCKINFO_BG_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             bgObject.Visible = true;
@@ -240,7 +239,7 @@ namespace Digi.BuildInfo
             {
                 float edge = BACKGROUND_EDGE * TextAPIScale;
 
-                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * (showMenu ? MENU_BG_OPACITY : (Settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : Settings.textAPIBackgroundOpacity));
+                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * Math.Min(BG_OPACITY_CAP, showMenu ? MENU_BG_OPACITY : (Settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : Settings.textAPIBackgroundOpacity));
                 bgObject.Origin = textPos;
                 bgObject.Width = (float)Math.Abs(textSize.X) + edge;
                 bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
