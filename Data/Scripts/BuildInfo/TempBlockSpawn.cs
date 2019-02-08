@@ -6,7 +6,6 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -16,7 +15,6 @@ namespace Digi.BuildInfo
 {
     public class TempBlockSpawn
     {
-        public readonly MyCubeGrid SpawnedGrid;
         public readonly bool DeleteGrid;
         public readonly MyCubeBlockDefinition BlockDef;
         public event Action<IMyCubeBlock> AfterSpawn;
@@ -48,11 +46,11 @@ namespace Digi.BuildInfo
 
             MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
 
-            SpawnedGrid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
-            SpawnedGrid.IsPreview = true;
-            SpawnedGrid.Save = false;
-            SpawnedGrid.Flags = EntityFlags.None;
-            SpawnedGrid.Render.Visible = false;
+            var grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
+            grid.IsPreview = true;
+            grid.Save = false;
+            grid.Flags = EntityFlags.None;
+            grid.Render.Visible = false;
         }
 
         private MyObjectBuilder_CubeBlock GetBlockObjectBuilder(MyDefinitionId defId)
@@ -87,15 +85,17 @@ namespace Digi.BuildInfo
             return blockObj;
         }
 
-        private void SpawnCompleted()
+        private void SpawnCompleted(IMyEntity ent)
         {
+            var grid = ent as IMyCubeGrid;
+
             try
             {
-                var block = ((IMyCubeGrid)SpawnedGrid).GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
+                var block = grid?.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
 
                 if(block == null)
                 {
-                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id} (mod workshopId={BlockDef.Context.GetWorkshopID()})");
+                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id}; grid={grid?.EntityId.ToString() ?? "(NULL)"} (mod workshopId={BlockDef.Context.GetWorkshopID()})");
                     return;
                 }
 
@@ -107,9 +107,9 @@ namespace Digi.BuildInfo
             }
             finally
             {
-                if(DeleteGrid && SpawnedGrid != null)
+                if(DeleteGrid && grid != null)
                 {
-                    SpawnedGrid.Close();
+                    grid.Close();
                 }
             }
         }
