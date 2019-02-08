@@ -269,8 +269,11 @@ namespace Digi.BuildInfo.Extensions
             if(kg >= 1000)
                 return s.Number(kg / 1000).Append(" t");
 
-            if(kg < 1f)
-                return s.Append((int)(kg * 1000)).Append(" g");
+            if(kg >= 0.001f)
+                return s.Number(kg * 1000).Append(" g");
+
+            if(kg < 0.001f)
+                return s.Number(kg * 1000000).Append(" mg");
 
             return s.Number(kg).Append(" kg");
         }
