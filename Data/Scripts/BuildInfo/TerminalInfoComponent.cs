@@ -940,7 +940,7 @@ namespace Digi.BuildInfo
                     float perSec = ratio * fuel.ConsumptionPerSecond_Items;
                     float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
 
-                    info.Append("Current Usage: ").RoundedNumber(perSec, 5).Append("/s").NewLine();
+                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s").NewLine();
                     info.Append("Time Left: ").TimeFormat(seconds).NewLine();
                     info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).NewLine();
                 }
@@ -951,14 +951,14 @@ namespace Digi.BuildInfo
 
                     foreach(var fuel in reactorDef.FuelInfos)
                     {
-                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append(" kg/s)").NewLine();
+                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)").NewLine();
 
                         perSec += ratio * fuel.ConsumptionPerSecond_Items;
                     }
 
                     float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
 
-                    info.Append("Current Usage: ").RoundedNumber(perSec, 5).Append("/s").NewLine();
+                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s").NewLine();
                     info.Append("Time Left: ").TimeFormat(seconds).NewLine();
                     info.Append("Uses Combined Fuels: ").NewLine();
                     info.Append(tmp);
