@@ -195,7 +195,7 @@ namespace Digi.BuildInfo
                 UpdateDetailInfo();
 
                 // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
-                // HACK: force refresh terminal UI by changing ownership share mode
+                // HACK: force refresh terminal UI by changing ownership share mode; does not work for unownable blocks
                 var block = (MyCubeBlock)viewedInTerminal;
 
                 if(block.IDModule != null)
@@ -306,6 +306,12 @@ namespace Digi.BuildInfo
             viewedInTerminal = null;
             currentFormatCall = null;
 
+            fullScan = true;
+            powerSourcesCooldown = 0; // remove cooldown to instantly rescan
+            powerSources.Clear();
+
+            ClearCaches(); // block changed so caches are no longer relevant
+
             if(newBlock != null)
             {
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
@@ -314,12 +320,6 @@ namespace Digi.BuildInfo
                 viewedInTerminal = newBlock;
 
                 delayCursorCheck = 10;
-
-                fullScan = true;
-                powerSourcesCooldown = 0; // remove cooldown to instantly rescan
-                powerSources.Clear();
-
-                ClearCaches(); // block changed so caches are no longer relevant
 
                 newBlock.AppendingCustomInfo += CustomInfo;
                 newBlock.PropertiesChanged += PropertiesChanged;
@@ -708,6 +708,12 @@ namespace Digi.BuildInfo
                 else
                     info.Append(reactorsWorking).Append(" of ").Append(reactors).Append(" working\n");
 
+                info.Append("  Engines: ");
+                if(engines == 0)
+                    info.Append("N/A\n");
+                else
+                    info.Append(enginesWorking).Append(" of ").Append(engines).Append(" working\n");
+
                 info.Append("  Batteries: ");
                 if(batteries == 0)
                     info.Append("N/A\n");
@@ -720,6 +726,12 @@ namespace Digi.BuildInfo
                 else
                     info.Append(solarPanelsWorking).Append(" of ").Append(solarPanels).Append(" working\n");
 
+                info.Append("  Wind Turbines: ");
+                if(windTurbines == 0)
+                    info.Append("N/A\n");
+                else
+                    info.Append(windTurbinesWorking).Append(" of ").Append(windTurbines).Append(" working\n");
+
                 if(otherSources > 0)
                     info.Append("  Other power sources: ").Append(otherSourcesWorking).Append(" of ").Append(otherSources).Append(" working\n");
             }
@@ -731,11 +743,17 @@ namespace Digi.BuildInfo
         private int reactors = 0;
         private int reactorsWorking = 0;
 
+        private int engines = 0;
+        private int enginesWorking = 0;
+
         private int batteries = 0;
         private int batteriesWorking = 0;
 
         private int solarPanels = 0;
         private int solarPanelsWorking = 0;
+
+        private int windTurbines = 0;
+        private int windTurbinesWorking = 0;
 
         private int otherSources = 0;
         private int otherSourcesWorking = 0;
@@ -753,28 +771,38 @@ namespace Digi.BuildInfo
             {
                 reactors = 0;
                 reactorsWorking = 0;
+                engines = 0;
+                enginesWorking = 0;
                 batteries = 0;
                 batteriesWorking = 0;
                 solarPanels = 0;
                 solarPanelsWorking = 0;
+                windTurbines = 0;
+                windTurbinesWorking = 0;
                 otherSources = 0;
                 otherSourcesWorking = 0;
+
                 powerSources.Clear();
 
-                // TODO avoid GTS?
                 var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
                 gts.GetBlocksOfType(powerSources, ComputePowerSourceBlock);
             }
             else
             {
                 reactorsWorking = 0;
+                enginesWorking = 0;
                 batteriesWorking = 0;
                 solarPanelsWorking = 0;
+                windTurbinesWorking = 0;
                 otherSourcesWorking = 0;
 
                 foreach(var block in powerSources)
                 {
                     var source = block.Components.Get<MyResourceSourceComponent>();
+
+                    if(source == null)
+                        continue;
+
                     bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
 
                     if(!working)
@@ -782,10 +810,14 @@ namespace Digi.BuildInfo
 
                     if(block is IMyReactor)
                         reactorsWorking++;
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO use the interface when one is added
+                        enginesWorking++;
                     else if(block is IMyBatteryBlock)
                         batteriesWorking++;
                     else if(block is IMySolarPanel)
                         solarPanelsWorking++;
+                    else if(block.BlockDefinition.TypeIdString == "MyObjectBuilder_WindTurbine") // TODO use the interface when one is added
+                        windTurbinesWorking++;
                     else
                         otherSourcesWorking++;
                 }
@@ -812,6 +844,13 @@ namespace Digi.BuildInfo
                         if(working)
                             reactorsWorking++;
                     }
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO use the interface when one is added
+                    {
+                        engines++;
+
+                        if(working)
+                            enginesWorking++;
+                    }
                     else if(block is IMyBatteryBlock)
                     {
                         batteries++;
@@ -825,6 +864,13 @@ namespace Digi.BuildInfo
 
                         if(working)
                             solarPanelsWorking++;
+                    }
+                    else if(block.BlockDefinition.TypeIdString == "MyObjectBuilder_WindTurbine") // TODO use the interface when one is added
+                    {
+                        windTurbines++;
+
+                        if(working)
+                            windTurbinesWorking++;
                     }
                     else
                     {

@@ -5,6 +5,7 @@ using Digi.BuildInfo.BlockData;
 using Digi.BuildInfo.Extensions;
 using Digi.Input;
 using Draygo.API;
+using ObjectBuilders;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -1066,6 +1067,11 @@ namespace Digi.BuildInfo
                 {
                     action.Invoke(def);
                 }
+                // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine")
+                {
+                    Format_PowerProducer(def);
+                }
             }
 
             if(!def.Context.IsBaseGame)
@@ -1244,8 +1250,11 @@ namespace Digi.BuildInfo
             formatLookup.Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
             formatLookup.Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
+            formatLookup.Add(typeof(MyObjectBuilder_HydrogenEngine), Format_PowerProducer);
             formatLookup.Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
             formatLookup.Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
+            //formatLookup.Add(typeof(MyObjectBuilder_WindTurbine), Format_PowerProducer);
+            // DEBUG ^^^ when whitelisting is fixed
 
             formatLookup.Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
@@ -1898,6 +1907,16 @@ namespace Digi.BuildInfo
 
             AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput).Separator().ResourcePriority(powerProducer.ResourceSourceGroup).EndLine();
 
+            // TODO MyFueledPowerProducerDefinition.FuelProductionToCapacityMultiplier ???
+
+            var h2Engine = def as MyHydrogenEngineDefinition;
+            if(h2Engine != null)
+            {
+                AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId).Separator().Label("Consumption").VolumeFormat(h2Engine.Fuel.Ratio * h2Engine.FuelProductionToCapacityMultiplier * 2f).Append("/s").Separator().ResourcePriority(h2Engine.ResourceSinkGroup).EndLine();
+                AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity).EndLine();
+                return;
+            }
+
             var reactor = def as MyReactorDefinition;
             if(reactor != null)
             {
@@ -1941,6 +1960,8 @@ namespace Digi.BuildInfo
                 {
                     AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
                 }
+
+                return;
             }
 
             var battery = def as MyBatteryBlockDefinition;
@@ -1956,6 +1977,16 @@ namespace Digi.BuildInfo
             if(solarPanel != null)
             {
                 AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+                return;
+            }
+
+            var windTurbine = def as MyWindTurbineDefinition;
+            if(windTurbine != null)
+            {
+                AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize).EndLine();
+                AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2).EndLine();
+                // TODO wind speed unit?
+                return;
             }
         }
         #endregion
