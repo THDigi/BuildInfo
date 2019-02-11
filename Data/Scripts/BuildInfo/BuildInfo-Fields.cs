@@ -27,8 +27,6 @@ namespace Digi.BuildInfo
         public const string MOD_NAME = "Build Info";
         public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
-        private const float BG_OPACITY_CAP = 0.5f; // HACK due to SDR/LDR being randomly ordered on game load, backgrounds could entirely block text
-
         public const float CUBEBUILDER_PLACE_MINRANGE = 1;
         public const float CUBEBUILDER_PLACE_MAXRANGE = 50;
         public const float CUBEBUILDER_PLACE_DIST_ADD = 5;
