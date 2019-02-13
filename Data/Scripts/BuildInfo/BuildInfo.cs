@@ -336,7 +336,7 @@ namespace Digi.BuildInfo
                 {
                     selectedBlock = heldCasterComp.HitBlock as IMySlimBlock;
                     selectedDef = (selectedBlock == null ? null : (MyCubeBlockDefinition)selectedBlock.BlockDefinition);
-                    willSplitGrid = TriState.None;
+                    willSplitGrid = GridSplitType.Recalculate;
                 }
                 else // equipped block
                 {
@@ -447,7 +447,7 @@ namespace Digi.BuildInfo
 
                 selectedBlock = casterComp.HitBlock as IMySlimBlock;
                 selectedDef = (selectedBlock == null ? null : (MyCubeBlockDefinition)selectedBlock.BlockDefinition);
-                willSplitGrid = TriState.None;
+                willSplitGrid = GridSplitType.Recalculate;
             }
         }
 

@@ -208,7 +208,13 @@ namespace Digi.BuildInfo
             Vector3.Forward,
         };
 
-        public enum TriState { None, Off, On }
+        public enum GridSplitType
+        {
+            Recalculate,
+            NoSplit,
+            Split,
+
+        }
 
         private readonly MyStringId[] CONTROL_SLOTS = new MyStringId[]
         {

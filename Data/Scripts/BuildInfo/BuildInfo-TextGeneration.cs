@@ -23,7 +23,7 @@ namespace Digi.BuildInfo
 {
     public partial class BuildInfo
     {
-        private TriState willSplitGrid;
+        private GridSplitType willSplitGrid;
 
         // menu specific stuff
         private bool showMenu = false;
@@ -943,11 +943,13 @@ namespace Digi.BuildInfo
             #region Optional: grinder makes grid split
             if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.GrindGridSplit) && IsGrinder)
             {
-                if(willSplitGrid == TriState.None)
-                    willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? TriState.On : TriState.Off;
+                if(willSplitGrid == GridSplitType.Recalculate)
+                    willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
-                if(willSplitGrid == TriState.On)
+                if(willSplitGrid == GridSplitType.Split)
                     AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Grid will split if this block is removed!").EndLine();
+
+                // TODO find if split blocks will vanish due to no physics/no standalone
             }
             #endregion
 
