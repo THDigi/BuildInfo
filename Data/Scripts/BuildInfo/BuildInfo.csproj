@@ -124,6 +124,7 @@
   <ItemGroup>
     <Compile Include="BlockMonitorComponent.cs" />
     <Compile Include="Blocks\MergeBlock.cs" />
+    <Compile Include="Extensions\FlagExtensions.cs" />
     <Compile Include="InputCustomMenuBind.cs" />
     <Compile Include="InputLib\Devices\GameControlInputs.cs" />
     <Compile Include="InputLib\Devices\GamepadBinds.cs" />

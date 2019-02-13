@@ -15,6 +15,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 using static Digi.BuildInfo.Pressurization;
 
@@ -661,20 +662,12 @@ namespace Digi.BuildInfo
 
             var integrityRatio = selectedBlock.Integrity / selectedBlock.MaxIntegrity;
             var grid = selectedBlock.CubeGrid;
-            var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-            var grindMul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-            var grindRatio = def.DisassembleRatio;
-
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
-            {
-                grindRatio *= GameData.Hardcoded.Door_Closed_DisassembleRatioMultiplier;
-            }
 
             var terminalBlock = selectedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
             #region Block name
-            if(terminalBlock != null)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.BlockName) && terminalBlock != null)
             {
                 const int LENGTH_LIMIT = 35;
 
@@ -691,113 +684,63 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Mass, grid mass
-            var mass = def.Mass;
-            var massColor = Color.GreenYellow;
-
-            if(selectedBlock.FatBlock != null)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.Mass))
             {
-                var inv = selectedBlock.FatBlock.GetInventory();
+                var mass = def.Mass;
+                var massColor = Color.GreenYellow;
 
-                if(inv != null)
+                if(selectedBlock.FatBlock != null)
                 {
-                    var invMass = (float)inv.CurrentMass;
+                    var inv = selectedBlock.FatBlock.GetInventory();
 
-                    if(invMass > 0)
+                    if(inv != null)
                     {
-                        mass += invMass;
-                        massColor = COLOR_WARNING;
+                        var invMass = (float)inv.CurrentMass;
+
+                        if(invMass > 0)
+                        {
+                            mass += invMass;
+                            massColor = COLOR_WARNING;
+                        }
                     }
                 }
+
+                AddLine().Color(massColor).MassFormat(mass);
+
+                if(grid.Physics != null)
+                {
+                    GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
+                }
+
+                GetLine().EndLine();
             }
-
-            AddLine().Color(massColor).MassFormat(mass);
-
-            if(grid.Physics != null)
-            {
-                GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
-            }
-
-            GetLine().EndLine();
             #endregion
 
             #region Integrity
-            AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.Integrity))
+            {
+                AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
                 .IntegrityFormat(selectedBlock.Integrity).ResetColor()
                 .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
 
-            if(def.BlockTopology == MyBlockTopology.Cube && selectedBlock.HasDeformation)
-            {
-                GetLine().Color(COLOR_BAD).Append(" (deformed)");
-            }
+                if(def.BlockTopology == MyBlockTopology.Cube && selectedBlock.HasDeformation)
+                {
+                    GetLine().Color(COLOR_BAD).Append(" (deformed)");
+                }
 
-            GetLine().EndLine();
+                GetLine().EndLine();
+            }
             #endregion
 
             #region Optional: intake damage multiplier
-            if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.DamageMultiplier) && Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
             {
                 AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).EndLine();
             }
             #endregion
 
-            #region Time to complete/grind
-            float toolMul = 1;
-
-            if(selectedHandTool != null)
-            {
-                var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(selectedHandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
-                toolMul = (toolDef == null ? 1 : toolDef.SpeedMultiplier);
-            }
-            else // assuming ship tool
-            {
-                toolMul = GameData.Hardcoded.ShipWelder_WeldPerSecond;
-            }
-
-            var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
-            var grindTime = ((buildTime / (1f / grindRatio)) / grindMul);
-
-            AddLine();
-
-            if(!IsGrinder)
-            {
-                GetLine().Append("Complete: ").TimeFormat(buildTime * (1 - integrityRatio));
-
-                if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
-                {
-                    var funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
-
-                    GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
-                }
-            }
-            else
-            {
-                bool hackable = hasComputer && selectedBlock.OwnerId != MyAPIGateway.Session.Player.IdentityId && (integrityRatio >= def.OwnershipIntegrityRatio);
-                float hackTime = 0f;
-
-                if(hackable)
-                {
-                    var noOwnershipTime = (grindTime * def.OwnershipIntegrityRatio);
-                    hackTime = (grindTime * ((1 - def.OwnershipIntegrityRatio) - (1 - integrityRatio))) / MyAPIGateway.Session.HackSpeedMultiplier;
-                    grindTime = noOwnershipTime + hackTime;
-                }
-                else
-                {
-                    grindTime *= integrityRatio;
-                }
-
-                GetLine().Append("Dismantled: ").TimeFormat(grindTime);
-
-                if(hackable)
-                {
-                    GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime);
-                }
-            }
-
-            GetLine().EndLine();
-            #endregion
-
             #region Optional: ownership
-            if(hasComputer)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.Ownership) && hasComputer)
             {
                 AddLine();
 
@@ -866,8 +809,74 @@ namespace Digi.BuildInfo
             }
             #endregion
 
+            #region Time to complete/grind
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.ToolUseTime))
+            {
+                float toolMul = 1;
+
+                if(selectedHandTool != null)
+                {
+                    var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(selectedHandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+                    toolMul = (toolDef == null ? 1 : toolDef.SpeedMultiplier);
+                }
+                else // assuming ship tool
+                {
+                    toolMul = GameData.Hardcoded.ShipWelder_WeldPerSecond;
+                }
+
+                var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                var grindMul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+                var grindRatio = def.DisassembleRatio;
+
+                if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
+                    grindRatio *= GameData.Hardcoded.Door_Closed_DisassembleRatioMultiplier;
+
+                var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
+                var grindTime = ((buildTime / (1f / grindRatio)) / grindMul);
+
+                AddLine();
+
+                if(!IsGrinder)
+                {
+                    GetLine().Append("Complete: ").TimeFormat(buildTime * (1 - integrityRatio));
+
+                    if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
+                    {
+                        var funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
+
+                        GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
+                    }
+                }
+                else
+                {
+                    bool hackable = hasComputer && selectedBlock.OwnerId != MyAPIGateway.Session.Player.IdentityId && (integrityRatio >= def.OwnershipIntegrityRatio);
+                    float hackTime = 0f;
+
+                    if(hackable)
+                    {
+                        var noOwnershipTime = (grindTime * def.OwnershipIntegrityRatio);
+                        hackTime = (grindTime * ((1 - def.OwnershipIntegrityRatio) - (1 - integrityRatio))) / MyAPIGateway.Session.HackSpeedMultiplier;
+                        grindTime = noOwnershipTime + hackTime;
+                    }
+                    else
+                    {
+                        grindTime *= integrityRatio;
+                    }
+
+                    GetLine().Append("Dismantled: ").TimeFormat(grindTime);
+
+                    if(hackable)
+                    {
+                        GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime);
+                    }
+                }
+
+                GetLine().EndLine();
+            }
+            #endregion
+
             #region Optional: item changes on grind
-            if(IsGrinder)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.GrindChangeWarning) && IsGrinder)
             {
                 foreach(var comp in def.Components)
                 {
@@ -880,7 +889,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Optional: grid moving
-            if(grid.Physics != null)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.GridMoving) && grid.Physics != null)
             {
                 bool hasLinearVel = !Vector3.IsZero(grid.Physics.LinearVelocity, 0.01f);
                 bool hasAngularVel = !Vector3.IsZero(grid.Physics.AngularVelocity, 0.01f);
@@ -908,7 +917,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Optional: ship grinder apply force
-            if(selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.ShipGrinderImpulse) && selectedToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
 
@@ -932,7 +941,7 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Optional: grinder makes grid split
-            if(IsGrinder)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.GrindGridSplit) && IsGrinder)
             {
                 if(willSplitGrid == TriState.None)
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? TriState.On : TriState.Off;
@@ -944,7 +953,7 @@ namespace Digi.BuildInfo
 
             #region Optional: added by mod
             var context = def.Context;
-            if(!context.IsBaseGame)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.AddedByMod) && !context.IsBaseGame)
             {
                 if(TextAPIEnabled)
                 {
@@ -962,7 +971,12 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            AddOverlaysHint(def);
+            #region Overlay hints
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.OverlayHint))
+            {
+                AddOverlaysHint(def);
+            }
+            #endregion
 
             EndAddedLines();
         }
@@ -974,7 +988,7 @@ namespace Digi.BuildInfo
             ResetLines();
 
             #region Block name line only for textAPI
-            if(TextAPIEnabled)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.BlockName) && TextAPIEnabled)
             {
                 AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
@@ -1012,11 +1026,14 @@ namespace Digi.BuildInfo
             AppendBasics(def, part: false);
 
             #region Optional - different item gain on grinding
-            foreach(var comp in def.Components)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.GrindChangeWarning))
             {
-                if(comp.DeconstructItem != comp.Definition)
+                foreach(var comp in def.Components)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
+                    if(comp.DeconstructItem != comp.Definition)
+                    {
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
+                    }
                 }
             }
             #endregion
@@ -1043,7 +1060,7 @@ namespace Digi.BuildInfo
             //}
 
             #region Optional - creative-only stuff
-            if(MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste) // HACK Session.EnableCopyPaste used as spacemaster check
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Mirroring) && (MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste)) // HACK Session.EnableCopyPaste used as spacemaster check
             {
                 if(def.MirroringBlock != null)
                 {
@@ -1056,8 +1073,7 @@ namespace Digi.BuildInfo
             }
             #endregion
 
-            #region Details on last lines
-
+            #region Per-block info
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
             {
                 TextGenerationCall action;
@@ -1072,16 +1088,23 @@ namespace Digi.BuildInfo
                     Format_PowerProducer(def);
                 }
             }
+            #endregion
 
-            if(!def.Context.IsBaseGame)
+            #region Added by mod
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
                 AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).EndLine();
             }
+            #endregion
 
-            AddOverlaysHint(def);
+            #region Overlay hints
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.OverlayHint))
+            {
+                AddOverlaysHint(def);
+            }
+            #endregion
 
             EndAddedLines();
-            #endregion
         }
         #endregion
 
@@ -1107,68 +1130,79 @@ namespace Digi.BuildInfo
             if(part)
                 AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).EndLine();
 
-            #region Line 1
-            AddLine();
-
-            if(part)
-                GetLine().Color(COLOR_PART).Append(padding);
-
-            GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetColor().Separator()
-                .VectorFormat(def.Size).Separator()
-                .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
-
-            if(Math.Abs(grindRatio - 1) >= 0.0001f)
-                GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetColor();
-
-            if(!buildModels)
-                GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
-
-            GetLine().EndLine();
-            #endregion
-
-            #region Line 2
-            AddLine();
-
-            if(part)
-                GetLine().Color(COLOR_PART).Append(padding).ResetColor();
-
-            GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
-
-            GetLine().Color(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
-            if(deformable)
-                GetLine().Append("Yes (").ProportionToPercent(def.DeformationRatio).Append(")");
-            else
-                GetLine().Append("No");
-
-            GetLine().ResetColor();
-
-            if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
+            #region Mass/size/build time/deconstruct time/no models
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Line1))
             {
-                GetLine().Separator()
-                    .Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
-                    .Append("Damage intake: ").ProportionToPercent(def.GeneralDamageMultiplier)
-                    .ResetColor();
-            }
+                AddLine();
 
-            GetLine().EndLine();
+                if(part)
+                    GetLine().Color(COLOR_PART).Append(padding);
+
+                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetColor().Separator()
+                    .VectorFormat(def.Size).Separator()
+                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
+
+                if(Math.Abs(grindRatio - 1) >= 0.0001f)
+                    GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetColor();
+
+                if(!buildModels)
+                    GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
+
+                GetLine().EndLine();
+            }
             #endregion
 
-            #region Line 3
-            AddLine(font: (airTight == AirTightMode.SEALED ? MyFontEnum.Green : (airTight == AirTightMode.NOT_SEALED ? MyFontEnum.Red : MyFontEnum.Blue)));
+            #region Integrity, deformable, damage intake
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Line2))
+            {
+                AddLine();
 
-            if(part)
-                GetLine().Color(COLOR_PART).Append(padding);
+                if(part)
+                    GetLine().Color(COLOR_PART).Append(padding).ResetColor();
 
-            GetLine().Color(airTight == AirTightMode.SEALED ? COLOR_GOOD : (airTight == AirTightMode.NOT_SEALED ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight: ");
+                GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
 
-            if(airTight == AirTightMode.SEALED)
-                GetLine().Append("Sealed");
-            else if(airTight == AirTightMode.NOT_SEALED)
-                GetLine().Append("Not sealed");
-            else
-                GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
+                GetLine().Color(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
+                if(deformable)
+                    GetLine().Append("Yes (").ProportionToPercent(def.DeformationRatio).Append(")");
+                else
+                    GetLine().Append("No");
 
-            GetLine().EndLine();
+                GetLine().ResetColor();
+
+                if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
+                {
+                    GetLine().Separator()
+                        .Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
+                        .Append("Damage intake: ").ProportionToPercent(def.GeneralDamageMultiplier)
+                        .ResetColor();
+                }
+
+                // DEBUG TODO add HasPhysics and IsStandAlone
+
+                GetLine().EndLine();
+            }
+            #endregion
+
+            #region Airtightness
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Airtight))
+            {
+                AddLine(font: (airTight == AirTightMode.SEALED ? MyFontEnum.Green : (airTight == AirTightMode.NOT_SEALED ? MyFontEnum.Red : MyFontEnum.Blue)));
+
+                if(part)
+                    GetLine().Color(COLOR_PART).Append(padding);
+
+                GetLine().Color(airTight == AirTightMode.SEALED ? COLOR_GOOD : (airTight == AirTightMode.NOT_SEALED ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight: ");
+
+                if(airTight == AirTightMode.SEALED)
+                    GetLine().Append("Sealed");
+                else if(airTight == AirTightMode.NOT_SEALED)
+                    GetLine().Append("Not sealed");
+                else
+                    GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
+
+                GetLine().EndLine();
+            }
             #endregion
         }
         #endregion
@@ -1300,35 +1334,34 @@ namespace Digi.BuildInfo
         private void Format_TerminalBlock(MyCubeBlockDefinition def)
         {
             // HACK hardcoded; control panel doesn't use power
-            AddLine(MyFontEnum.Green).LabelHardcoded("Power required", COLOR_GOOD).Append("No").EndLine();
+            PowerRequired(0, null, powerHardcoded: true);
         }
 
         #region Conveyors
         private void Format_Conveyors(MyCubeBlockDefinition def)
         {
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.Conveyors_PowerReq).Separator().ResourcePriority("Conveyors", hardcoded: true).EndLine();
+            PowerRequired(GameData.Hardcoded.Conveyors_PowerReq, GameData.Hardcoded.Conveyors_PowerGroup, powerHardcoded: true, groupHardcoded: true);
         }
 
         private void Format_Connector(MyCubeBlockDefinition def)
         {
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipConnector_PowerReq(def)).Separator().ResourcePriority(GameData.Hardcoded.ShipConnector_PowerGroup, hardcoded: true).EndLine();
+            PowerRequired(GameData.Hardcoded.ShipConnector_PowerReq(def), GameData.Hardcoded.ShipConnector_PowerGroup, powerHardcoded: true, groupHardcoded: true);
 
-            float volume;
-            if(GetInventoryFromComponent(def, out volume))
-                AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
-            else
-                AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipConnector_InventoryVolume(def)).EndLine();
+            InventoryStats(def, 0, GameData.Hardcoded.ShipConnector_InventoryVolume(def));
 
-            var data = BData_Base.TryGetDataCached<BData_Connector>(def);
-
-            if(data != null)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                if(data.Connector)
-                    AddLine().Append("Connectable: Yes");
-                else
-                    AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
+                var data = BData_Base.TryGetDataCached<BData_Connector>(def);
 
-                GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes").EndLine();
+                if(data != null)
+                {
+                    if(data.Connector)
+                        AddLine().Append("Connectable: Yes");
+                    else
+                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
+
+                    GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes").EndLine();
+                }
             }
         }
 
@@ -1339,29 +1372,19 @@ namespace Digi.BuildInfo
             var poweredCargo = def as MyPoweredCargoContainerDefinition; // collector
             if(poweredCargo != null)
             {
-                AddLine().Label("Power required").PowerFormat(poweredCargo.RequiredPowerInput).Separator().ResourcePriority(poweredCargo.ResourceSinkGroup).EndLine();
+                PowerRequired(poweredCargo.RequiredPowerInput, poweredCargo.ResourceSinkGroup);
             }
 
-            float volume;
-            if(!GetInventoryFromComponent(def, out volume))
-                volume = cargo.InventorySize.Volume;
-
-            if(Math.Abs(volume) > 0)
-            {
-                AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
-            }
-            else
-            {
-                AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.CargoContainer_InventoryVolume(def)).EndLine();
-            }
+            InventoryStats(def, cargo.InventorySize.Volume, GameData.Hardcoded.CargoContainer_InventoryVolume(def));
         }
 
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             var sorter = (MyConveyorSorterDefinition)def; // does not extend MyPoweredCargoContainerDefinition
 
-            AddLine().Label("Power required").PowerFormat(sorter.PowerInput).Separator().ResourcePriority(sorter.ResourceSinkGroup).EndLine();
-            AddLine().Label("Inventory").InventoryFormat(sorter.InventorySize.Volume).EndLine();
+            PowerRequired(sorter.PowerInput, sorter.ResourceSinkGroup);
+
+            InventoryStats(def, sorter.InventorySize.Volume, 0);
         }
         #endregion
 
@@ -1369,8 +1392,12 @@ namespace Digi.BuildInfo
         {
             var piston = (MyPistonBaseDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(piston.RequiredPowerInput).Separator().ResourcePriority(piston.ResourceSinkGroup).EndLine();
-            AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity).EndLine();
+            PowerRequired(piston.RequiredPowerInput, piston.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity).EndLine();
+            }
 
             Suffix_Mechanical(def, piston.TopPart);
         }
@@ -1379,28 +1406,31 @@ namespace Digi.BuildInfo
         {
             var motor = (MyMotorStatorDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(motor.RequiredPowerInput).Separator().ResourcePriority(motor.ResourceSinkGroup).EndLine();
+            PowerRequired(motor.RequiredPowerInput, motor.ResourceSinkGroup);
 
-            var suspension = def as MyMotorSuspensionDefinition;
-
-            if(suspension != null)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
-                AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
-                AddLine().Label("Ride height").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
-            }
-            else
-            {
-                AddLine().Label("Max torque").TorqueFormat(motor.MaxForceMagnitude).EndLine();
+                var suspension = def as MyMotorSuspensionDefinition;
 
-                if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
+                if(suspension != null)
                 {
-                    AddLine().Label("Displacement Large Top").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
+                    AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
+                    AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
+                    AddLine().Label("Ride height").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
                 }
-
-                if(motor.RotorDisplacementMinSmall < motor.RotorDisplacementMaxSmall)
+                else
                 {
-                    AddLine().Label("Displacement Small Top").DistanceFormat(motor.RotorDisplacementMinSmall).Append(" to ").DistanceFormat(motor.RotorDisplacementMaxSmall).EndLine();
+                    AddLine().Label("Max torque").TorqueFormat(motor.MaxForceMagnitude).EndLine();
+
+                    if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
+                    {
+                        AddLine().Label("Displacement Large Top").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
+                    }
+
+                    if(motor.RotorDisplacementMinSmall < motor.RotorDisplacementMaxSmall)
+                    {
+                        AddLine().Label("Displacement Small Top").DistanceFormat(motor.RotorDisplacementMinSmall).Append(" to ").DistanceFormat(motor.RotorDisplacementMaxSmall).EndLine();
+                    }
                 }
             }
 
@@ -1409,14 +1439,17 @@ namespace Digi.BuildInfo
 
         private void Suffix_Mechanical(MyCubeBlockDefinition def, string topPart)
         {
-            var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PartStats))
+            {
+                var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
 
-            if(group == null)
-                return;
+                if(group == null)
+                    return;
 
-            var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
+                var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
 
-            AppendBasics(partDef, part: true);
+                AppendBasics(partDef, part: true);
+            }
         }
 
         private void Format_MergeBlock(MyCubeBlockDefinition def)
@@ -1424,8 +1457,12 @@ namespace Digi.BuildInfo
             var merge = (MyMergeBlockDefinition)def;
 
             // HACK hardcoded; MergeBlock doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
-            AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength).EndLine();
+            PowerRequired(0, null, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength).EndLine();
+            }
         }
 
         private void Format_LandingGear(MyCubeBlockDefinition def)
@@ -1433,8 +1470,12 @@ namespace Digi.BuildInfo
             var lg = (MyLandingGearDefinition)def;
 
             // HACK: hardcoded; LG doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required", COLOR_GOOD).Append("No").EndLine();
-            AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
+            PowerRequired(0, null, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
+            }
         }
 
         #region Ship tools
@@ -1442,16 +1483,22 @@ namespace Digi.BuildInfo
         {
             var shipDrill = (MyShipDrillDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipDrill_Power).Separator().ResourcePriority(shipDrill.ResourceSinkGroup).EndLine();
+            PowerRequired(GameData.Hardcoded.ShipDrill_Power, shipDrill.ResourceSinkGroup, powerHardcoded: true);
 
-            float volume;
-            if(GetInventoryFromComponent(def, out volume))
-                AddLine().Label("Inventory").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
-            else
-                AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+            {
+                float volume;
+                if(GetInventoryFromComponent(def, out volume))
+                    AddLine().Label("Inventory").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
+                else
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
+            }
 
-            AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).EndLine();
-            AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).EndLine();
+                AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).EndLine();
+            }
         }
 
         private void Format_WelderAndGrinder(MyCubeBlockDefinition def)
@@ -1459,29 +1506,28 @@ namespace Digi.BuildInfo
             var shipTool = (MyShipToolDefinition)def;
             var isWelder = def is MyShipWelderDefinition;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ShipTool_PowerReq).Separator().ResourcePriority(GameData.Hardcoded.ShipTool_PowerGroup, hardcoded: true).EndLine();
+            PowerRequired(GameData.Hardcoded.ShipTool_PowerReq, GameData.Hardcoded.ShipTool_PowerGroup, powerHardcoded: true, groupHardcoded: true);
 
-            float volume;
-            if(GetInventoryFromComponent(def, out volume))
-                AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
-            else
-                AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipTool_InventoryVolume(def)).EndLine();
+            InventoryStats(def, 0, GameData.Hardcoded.ShipTool_InventoryVolume(def));
 
-            if(isWelder)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
-                var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
+                if(isWelder)
+                {
+                    float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
+                    var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                    AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
 
-                AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
-            }
-            else
-            {
-                float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
-                var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
+                    AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
+                }
+                else
+                {
+                    float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
+                    var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+                    AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
 
-                AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
+                    AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
+                }
             }
         }
         #endregion
@@ -1493,51 +1539,74 @@ namespace Digi.BuildInfo
             var rc = def as MyRemoteControlDefinition;
             if(rc != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(rc.RequiredPowerInput).Separator().ResourcePriority(rc.ResourceSinkGroup).EndLine();
+                PowerRequired(rc.RequiredPowerInput, rc.ResourceSinkGroup);
             }
 
             var cryo = def as MyCryoChamberDefinition;
             if(cryo != null)
             {
-                AddLine().Append("Power required: ").PowerFormat(cryo.IdlePowerConsumption).Separator().ResourcePriority(cryo.ResourceSinkGroup).EndLine();
+                PowerRequired(cryo.IdlePowerConsumption, cryo.ResourceSinkGroup);
             }
 
-            AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No").EndLine();
-            AddLine((shipController.EnableFirstPerson ? MyFontEnum.Green : MyFontEnum.Red)).Append("First person view: ").Append(shipController.EnableFirstPerson ? "Yes" : "No").EndLine();
-            AddLine((shipController.EnableBuilderCockpit ? MyFontEnum.Green : MyFontEnum.Red)).Append("Can build: ").Append(shipController.EnableBuilderCockpit ? "Yes" : "No").EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Append("Abilities: ");
+
+                var preLen = GetLine().Length;
+
+                if(shipController.EnableShipControl)
+                    GetLine().Append("Ship control, ");
+
+                if(shipController.EnableBuilderCockpit)
+                    GetLine().Append("Place blocks, ");
+
+                if(!shipController.EnableFirstPerson)
+                    GetLine().Append("3rd person view only, ");
+
+                if(preLen == GetLine().Length)
+                {
+                    GetLine().Append("None.");
+                }
+                else
+                {
+                    GetLine().Length -= 2; // remove last comma
+                    GetLine().Append(".");
+                }
+
+                //AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No").EndLine();
+                //AddLine((shipController.EnableFirstPerson ? MyFontEnum.Green : MyFontEnum.Red)).Append("First person view: ").Append(shipController.EnableFirstPerson ? "Yes" : "No").EndLine();
+                //AddLine((shipController.EnableBuilderCockpit ? MyFontEnum.Green : MyFontEnum.Red)).Append("Can build: ").Append(shipController.EnableBuilderCockpit ? "Yes" : "No").EndLine();
+            }
 
             var cockpit = def as MyCockpitDefinition;
             if(cockpit != null)
             {
-                float volume;
-                if(GetInventoryFromComponent(def, out volume))
-                    AddLine().Label("Inventory").InventoryFormat(volume).EndLine();
-                else
-                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.Cockpit_InventoryVolume).EndLine();
+                InventoryStats(def, 0, GameData.Hardcoded.Cockpit_InventoryVolume);
 
-                AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red))
-                   .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
-                   .Label("Pressurized");
-
-                if(cockpit.IsPressurized)
-                    GetLine().Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
-                else
-                    GetLine().Append("No");
-
-                GetLine().EndLine();
-
-                if(cockpit.HUD != null)
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
                 {
-                    MyDefinitionBase defHUD;
-                    if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
-                    {
-                        // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
-                        //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                        AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
-                    }
+                    AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red))
+                       .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
+                       .Label("Pressurized");
+
+                    if(cockpit.IsPressurized)
+                        GetLine().Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
                     else
+                        GetLine().Append("No");
+
+                    if(cockpit.HUD != null)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)").EndLine();
+                        MyDefinitionBase defHUD;
+                        if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
+                        {
+                            // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
+                            //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
+                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
+                        }
+                        else
+                        {
+                            AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)").EndLine();
+                        }
                     }
                 }
             }
@@ -1549,50 +1618,72 @@ namespace Digi.BuildInfo
 
             if(!thrust.FuelConverter.FuelId.IsNull())
             {
-                AddLine().Append("Requires power to be controlled").Separator().ResourcePriority(thrust.ResourceSinkGroup).EndLine();
-                AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%").EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+                {
+                    AddLine().Append("Requires power to be controlled");
+
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                        GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
+                }
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
+                {
+                    AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%").EndLine();
+                }
             }
             else
             {
-                AddLine().Append("Power: ").PowerFormat(thrust.MaxPowerConsumption).Separator().Append("Idle: ").PowerFormat(thrust.MinPowerConsumption).Separator().ResourcePriority(thrust.ResourceSinkGroup).EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+                {
+                    AddLine().Append("Power: ").PowerFormat(thrust.MaxPowerConsumption).Separator().Append("Idle: ").PowerFormat(thrust.MinPowerConsumption);
+
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                        GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
+                }
             }
 
-            AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2).EndLine();
-
-            if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var, planetary influence is always considered atmosphere.
+                AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2).EndLine();
 
-                AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ");
-                if(thrust.MaxPlanetaryInfluence < 1f)
-                    GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
+                if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
+                {
+                    // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var, planetary influence is always considered atmosphere.
+
+                    AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
+                        .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ");
+                    if(thrust.MaxPlanetaryInfluence < 1f)
+                        GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
+                    else
+                        GetLine().Append("in atmosphere");
+                    GetLine().EndLine();
+
+                    AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
+                                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
+                    if(thrust.MinPlanetaryInfluence > 0f)
+                        GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
+                    else
+                        GetLine().Append("in space");
+                    GetLine().EndLine();
+                }
                 else
-                    GetLine().Append("in atmosphere");
-                GetLine().EndLine();
-
-                AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
-                if(thrust.MinPlanetaryInfluence > 0f)
-                    GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
-                else
-                    GetLine().Append("in space");
-                GetLine().EndLine();
-            }
-            else
-            {
-                AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets").EndLine();
+                {
+                    AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets").EndLine();
+                }
             }
 
-            if(thrust.ConsumptionFactorPerG > 0)
-                AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
-
-            var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
-
-            if(data != null)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2).EndLine();
-                AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s").EndLine();
+                if(thrust.ConsumptionFactorPerG > 0)
+                    AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
+
+                var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
+
+                if(data != null)
+                {
+                    AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2).EndLine();
+                    AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s").EndLine();
+                }
             }
         }
 
@@ -1600,8 +1691,12 @@ namespace Digi.BuildInfo
         {
             var gyro = (MyGyroDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(gyro.RequiredPowerInput).Separator().ResourcePriority(gyro.ResourceSinkGroup).EndLine();
-            AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude).EndLine();
+            PowerRequired(gyro.RequiredPowerInput, gyro.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude).EndLine();
+            }
         }
 
         private void Format_Light(MyCubeBlockDefinition def)
@@ -1614,28 +1709,33 @@ namespace Digi.BuildInfo
             if(isSpotlight)
                 radius = light.LightReflectorRadius;
 
-            AddLine().Append("Power required: ").PowerFormat(light.RequiredPowerInput).Separator().ResourcePriority(light.ResourceSinkGroup).EndLine();
-            AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default).EndLine();
-            AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2).EndLine();
-            AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2).EndLine();
+            PowerRequired(light.RequiredPowerInput, light.ResourceSinkGroup);
 
-            if(!isSpotlight)
-                AddLine(MyFontEnum.Blue).Append("Physical collisions: ").Append(light.HasPhysics ? "On" : "Off").EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default).EndLine();
+                AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2).EndLine();
+                AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2).EndLine();
+            }
         }
 
         private void Format_OreDetector(MyCubeBlockDefinition def)
         {
             var oreDetector = (MyOreDetectorDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.OreDetector_PowerReq).Separator().ResourcePriority(oreDetector.ResourceSinkGroup).EndLine();
-            AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange).EndLine();
+            PowerRequired(GameData.Hardcoded.OreDetector_PowerReq, oreDetector.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange).EndLine();
+            }
         }
 
         private void Format_Projector(MyCubeBlockDefinition def)
         {
             var projector = (MyProjectorDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(projector.RequiredPowerInput).Separator().ResourcePriority(projector.ResourceSinkGroup).EndLine();
+            PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
         }
 
         #region Doors
@@ -1643,10 +1743,13 @@ namespace Digi.BuildInfo
         {
             var door = (MyDoorDefinition)def;
 
-            float moveTime = GameData.Hardcoded.Door_MoveSpeed(door.OpeningSpeed);
+            PowerRequired(GameData.Hardcoded.Door_PowerReq, door.ResourceSinkGroup, powerHardcoded: true);
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.Door_PowerReq).Separator().ResourcePriority(door.ResourceSinkGroup).EndLine();
-            AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                float moveTime = GameData.Hardcoded.Door_MoveSpeed(door.OpeningSpeed);
+                AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen).EndLine();
+            }
         }
 
         private void Format_AirtightDoor(MyCubeBlockDefinition def)
@@ -1655,22 +1758,40 @@ namespace Digi.BuildInfo
 
             // MyAirtightHangarDoorDefinition and MyAirtightSlideDoorDefinition are empty
 
-            float moveTime = GameData.Hardcoded.Door_MoveSpeed(airTightDoor.OpeningSpeed);
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(airTightDoor.PowerConsumptionIdle);
 
-            AddLine().Label("Power").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(airTightDoor.PowerConsumptionIdle).Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
-            AddLine().Label("Move time").TimeFormat(moveTime).EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                float moveTime = GameData.Hardcoded.Door_MoveSpeed(airTightDoor.OpeningSpeed);
+                AddLine().Label("Move time").TimeFormat(moveTime).EndLine();
+            }
         }
 
         private void Format_AdvancedDoor(MyCubeBlockDefinition def)
         {
             var advDoor = (MyAdvancedDoorDefinition)def; // does not extend MyDoorDefinition
 
-            AddLine().Label("Power - Moving").PowerFormat(advDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(advDoor.PowerConsumptionIdle).Separator().ResourcePriority(advDoor.ResourceSinkGroup).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power - Moving").PowerFormat(advDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(advDoor.PowerConsumptionIdle);
 
-            float openTime, closeTime;
-            GameData.Hardcoded.AdvDoor_MoveSpeed(advDoor, out openTime, out closeTime);
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(advDoor.ResourceSinkGroup).EndLine();
+            }
 
-            AddLine().Label("Move time - Opening").TimeFormat(openTime).Separator().Label("Closing").TimeFormat(closeTime).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                float openTime, closeTime;
+                GameData.Hardcoded.AdvDoor_MoveSpeed(advDoor, out openTime, out closeTime);
+
+                AddLine().Label("Move time - Opening").TimeFormat(openTime).Separator().Label("Closing").TimeFormat(closeTime).EndLine();
+            }
         }
         #endregion
 
@@ -1678,77 +1799,104 @@ namespace Digi.BuildInfo
         {
             var parachute = (MyParachuteDefinition)def;
 
-            const float TARGET_DESCEND_VELOCITY = 10;
-            float maxMass, disreefAtmosphere;
-            GameData.Hardcoded.Parachute_GetDetails(parachute, TARGET_DESCEND_VELOCITY, out maxMass, out disreefAtmosphere);
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power - Deploy").PowerFormat(parachute.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(parachute.PowerConsumptionIdle);
 
-            AddLine().Append("Power - Deploy: ").PowerFormat(parachute.PowerConsumptionMoving).Separator().Append("Idle: ").PowerFormat(parachute.PowerConsumptionIdle).Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
-            AddLine().Append("Required item to deploy: ").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
-            AddLine().Append("Required atmosphere - Minimum: ").Number(parachute.MinimumAtmosphereLevel).Separator().Append("Fully open: ").Number(disreefAtmosphere).EndLine();
-            AddLine().Append("Drag coefficient: ").AppendFormat("{0:0.0####}", parachute.DragCoefficient).EndLine();
-            AddLine().Append("Load estimate: ").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(GameData.Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.").EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo) || Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
+            {
+                const float TARGET_DESCEND_VELOCITY = 10;
+                float maxMass, disreefAtmosphere;
+                GameData.Hardcoded.Parachute_GetDetails(parachute, TARGET_DESCEND_VELOCITY, out maxMass, out disreefAtmosphere);
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
+                {
+                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
+                }
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+                {
+                    AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere).EndLine();
+                    AddLine().Label("Drag coefficient").AppendFormat("{0:0.0####}", parachute.DragCoefficient).EndLine();
+                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(GameData.Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.").EndLine();
+                }
+            }
         }
 
         private void Format_MedicalRoom(MyCubeBlockDefinition def)
         {
             var medicalRoom = (MyMedicalRoomDefinition)def;
 
-            AddLine().LabelHardcoded("Power").PowerFormat(GameData.Hardcoded.MedicalRoom_PowerReq).Separator().ResourcePriority(medicalRoom.ResourceSinkGroup).EndLine();
+            PowerRequired(GameData.Hardcoded.MedicalRoom_PowerReq, medicalRoom.ResourceSinkGroup, powerHardcoded: true);
 
-            AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White))
-                .Color(medicalRoom.ForceSuitChangeOnRespawn ? COLOR_WARNING : COLOR_NORMAL)
-                .Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).ResetColor().Separator();
-
-            if(medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                GetLine().Color(COLOR_WARNING).Label("Forced suit");
+                AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White))
+                    .Color(medicalRoom.ForceSuitChangeOnRespawn ? COLOR_WARNING : COLOR_NORMAL)
+                    .Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).ResetColor().Separator();
 
-                if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
+                if(medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn)
                 {
-                    GetLine().Color(COLOR_BAD).Append("(Error: empty)");
+                    GetLine().Color(COLOR_WARNING).Label("Forced suit");
+
+                    if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
+                    {
+                        GetLine().Color(COLOR_BAD).Append("(Error: empty)");
+                    }
+                    else
+                    {
+                        MyCharacterDefinition charDef;
+                        if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
+                            GetLine().Append(charDef.Name);
+                        else
+                            GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)");
+                    }
                 }
                 else
-                {
-                    MyCharacterDefinition charDef;
-                    if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
-                        GetLine().Append(charDef.Name);
-                    else
-                        GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)");
-                }
+                    GetLine().Append("Forced suit: No");
+
+                GetLine().EndLine();
             }
-            else
-                GetLine().Append("Forced suit: No");
 
-            GetLine().EndLine();
-
-            AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                .Color(medicalRoom.HealingAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                .Append("Healing: ").BoolFormat(medicalRoom.HealingAllowed).EndLine();
-
-            AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                .Color(medicalRoom.RefuelAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                .Append("Recharge: ").BoolFormat(medicalRoom.RefuelAllowed).EndLine();
-
-            AddLine(medicalRoom.SuitChangeAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                .Color(medicalRoom.SuitChangeAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                .Append("Suit change: ")
-                .BoolFormat(medicalRoom.SuitChangeAllowed).EndLine();
-
-            if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Suits:");
+                // DEBUG TODO make these as "abilities" like in cockpit
+                // DEBUG TODO energy recharge is x5, need exact charge rate though... also heal rate
+                AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.HealingAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Label("Healing").BoolFormat(medicalRoom.HealingAllowed).EndLine();
 
-                foreach(var charName in medicalRoom.CustomWardrobeNames)
-                {
-                    MyCharacterDefinition charDef;
-                    if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
-                        AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)").EndLine();
-                    else
-                        AddLine().Append("    ").Append(charDef.DisplayNameText).EndLine();
-                }
+                AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.RefuelAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Label("Recharge").BoolFormat(medicalRoom.RefuelAllowed).EndLine();
+
+                AddLine(medicalRoom.SuitChangeAllowed ? MyFontEnum.White : MyFontEnum.Red)
+                    .Color(medicalRoom.SuitChangeAllowed ? COLOR_NORMAL : COLOR_WARNING)
+                    .Label("Suit change").BoolFormat(medicalRoom.SuitChangeAllowed).EndLine();
             }
-            else
-                AddLine().Append("Usable suits: (all)").EndLine();
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
+                {
+                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Suits:");
+
+                    foreach(var charName in medicalRoom.CustomWardrobeNames)
+                    {
+                        MyCharacterDefinition charDef;
+                        if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
+                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)").EndLine();
+                        else
+                            AddLine().Append("    ").Append(charDef.DisplayNameText).EndLine();
+                    }
+                }
+                else
+                    AddLine().Append("Usable suits: (all)").EndLine();
+            }
         }
 
         #region Production
@@ -1756,70 +1904,103 @@ namespace Digi.BuildInfo
         {
             var production = (MyProductionBlockDefinition)def;
 
-            AddLine().Append("Power: ").PowerFormat(production.OperationalPowerConsumption).Separator().Append("Idle: ").PowerFormat(production.StandbyPowerConsumption).Separator().ResourcePriority(production.ResourceSinkGroup).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Append("Power: ").PowerFormat(production.OperationalPowerConsumption).Separator().Append("Idle: ").PowerFormat(production.StandbyPowerConsumption);
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(production.ResourceSinkGroup).EndLine();
+            }
 
             var assembler = def as MyAssemblerDefinition;
             if(assembler != null)
             {
-                var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
-                var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                {
+                    var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
+                    var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff).EndLine();
+                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff).EndLine();
+                }
+
+                var survivalKit = def as MySurvivalKitDefinition;
+
+                if(survivalKit != null)
+                {
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                    {
+                        // DEBUG TODO energy recharge is x1, need exact charge rate though... also heal rate
+                        AddLine().LabelHardcoded("Healing").BoolFormat(true).EndLine();
+                        AddLine().LabelHardcoded("Recharge").BoolFormat(true).EndLine();
+                    }
+                }
             }
 
             var refinery = def as MyRefineryDefinition;
             if(refinery != null)
             {
-                var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                {
+                    var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
-                AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency).EndLine();
+                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency).EndLine();
+                }
             }
 
             var gasTank = def as MyGasTankDefinition;
             if(gasTank != null)
             {
-                AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity).EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                {
+                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity).EndLine();
+                }
             }
 
             var oxygenGenerator = def as MyOxygenGeneratorDefinition;
             if(oxygenGenerator != null)
             {
-                AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s").EndLine();
-
-                if(oxygenGenerator.ProducedGases.Count > 0)
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
-                    AddLine().Append("Produces: ");
+                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s").EndLine();
 
-                    foreach(var gas in oxygenGenerator.ProducedGases)
+                    if(oxygenGenerator.ProducedGases.Count > 0)
                     {
-                        GetLine().Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(oxygenGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
-                    }
+                        AddLine().Append("Produces: ");
 
-                    GetLine().Length -= 2;
-                    GetLine().EndLine();
+                        foreach(var gas in oxygenGenerator.ProducedGases)
+                        {
+                            GetLine().Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(oxygenGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
+                        }
+
+                        GetLine().Length -= 2;
+                        GetLine().EndLine();
+                    }
+                    else
+                    {
+                        AddLine(MyFontEnum.Red).Append("Produces: <N/A>").EndLine();
+                    }
+                }
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+            {
+                var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
+
+                if(refinery != null || assembler != null)
+                {
+                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint).EndLine();
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Red).Append("Produces: <N/A>").EndLine();
+                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint).EndLine();
                 }
             }
 
-            var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
-
-            if(refinery != null || assembler != null)
-            {
-                AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint).EndLine();
-            }
-            else
-            {
-                AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint).EndLine();
-            }
-
-            if(production.BlueprintClasses != null)
+            if(production.BlueprintClasses != null && Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
                 if(production.BlueprintClasses.Count == 0)
                 {
-                    AddLine(MyFontEnum.Red).Append("Has no blueprint classes.").EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Has no blueprint classes.").EndLine();
                 }
                 else
                 {
@@ -1868,34 +2049,61 @@ namespace Digi.BuildInfo
         {
             var oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
 
-            AddLine().Label("Power").PowerFormat(oxygenFarm.OperationalPowerConsumption).Separator().ResourcePriority(oxygenFarm.ResourceSinkGroup).EndLine();
-            AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s").Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
-            AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+            PowerRequired(oxygenFarm.OperationalPowerConsumption, oxygenFarm.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s");
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+            }
         }
 
         private void Format_AirVent(MyCubeBlockDefinition def)
         {
             var vent = (MyAirVentDefinition)def; // does not extend MyProductionBlockDefinition
 
-            AddLine().Label("Power - Idle").PowerFormat(vent.StandbyPowerConsumption).Separator().Label("Operational").PowerFormat(vent.OperationalPowerConsumption).Separator().ResourcePriority(vent.ResourceSinkGroup).EndLine();
-            AddLine().Label("Output - Rate").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s").Separator().ResourcePriority(vent.ResourceSourceGroup).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power - Idle").PowerFormat(vent.StandbyPowerConsumption).Separator().Label("Operational").PowerFormat(vent.OperationalPowerConsumption);
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(vent.ResourceSinkGroup).EndLine();
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Label("Output - Rate").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s");
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup).EndLine();
+            }
         }
 
         private void Format_UpgradeModule(MyCubeBlockDefinition def)
         {
             var upgradeModule = (MyUpgradeModuleDefinition)def;
 
-            if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine(MyFontEnum.Red).Append("Upgrades: N/A").EndLine();
-            }
-            else
-            {
-                AddLine().Append("Upgrades per slot:").EndLine();
-
-                foreach(var upgrade in upgradeModule.Upgrades)
+                if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                 {
-                    AddLine().Append("    - ").AppendUpgrade(upgrade).EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Upgrades: N/A").EndLine();
+                }
+                else
+                {
+                    AddLine().Append("Upgrades per slot:").EndLine();
+
+                    foreach(var upgrade in upgradeModule.Upgrades)
+                    {
+                        AddLine().Append("    - ").AppendUpgrade(upgrade).EndLine();
+                    }
                 }
             }
         }
@@ -1904,60 +2112,83 @@ namespace Digi.BuildInfo
         {
             var powerProducer = (MyPowerProducerDefinition)def;
 
-            AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput).Separator().ResourcePriority(powerProducer.ResourceSourceGroup).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput);
 
-            // TODO MyFueledPowerProducerDefinition.FuelProductionToCapacityMultiplier ???
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup).EndLine();
+            }
 
             var h2Engine = def as MyHydrogenEngineDefinition;
             if(h2Engine != null)
             {
-                AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId).Separator().Label("Consumption").VolumeFormat(h2Engine.Fuel.Ratio * h2Engine.FuelProductionToCapacityMultiplier * 2f).Append("/s").Separator().ResourcePriority(h2Engine.ResourceSinkGroup).EndLine();
-                AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity).EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
+                {
+                    AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId);
+                    AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
+
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                        GetLine().Separator().ResourcePriority(h2Engine.ResourceSinkGroup).EndLine();
+
+                    AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity).EndLine();
+                }
+
                 return;
             }
 
             var reactor = def as MyReactorDefinition;
             if(reactor != null)
             {
-                if(reactor.FuelInfos != null && reactor.FuelInfos.Length > 0)
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
                 {
-                    bool hasOneFuel = (reactor.FuelInfos.Length == 1);
+                    if(reactor.FuelInfos != null && reactor.FuelInfos.Length > 0)
+                    {
+                        bool hasOneFuel = (reactor.FuelInfos.Length == 1);
 
-                    if(hasOneFuel)
-                        AddLine().Append("Needs fuel: ");
+                        if(hasOneFuel)
+                            AddLine().Append("Needs fuel: ");
+                        else
+                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor().EndLine();
+
+                        foreach(var fuel in reactor.FuelInfos)
+                        {
+                            if(!hasOneFuel)
+                                AddLine().Append("       - ");
+
+                            GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)").EndLine();
+                        }
+                    }
+                }
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+                {
+                    var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
+                    var invLimit = reactor.InventoryConstraint;
+
+                    if(invLimit != null)
+                    {
+                        AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
+
+                        if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryExtras))
+                        {
+                            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").EndLine();
+
+                            foreach(var id in invLimit.ConstrainedIds)
+                            {
+                                AddLine().Append("       - ").IdTypeSubtypeFormat(id).EndLine();
+                            }
+
+                            foreach(var type in invLimit.ConstrainedTypes)
+                            {
+                                AddLine().Append("       - All of type: ").IdTypeFormat(type).EndLine();
+                            }
+                        }
+                    }
                     else
-                        AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor().EndLine();
-
-                    foreach(var fuel in reactor.FuelInfos)
                     {
-                        if(!hasOneFuel)
-                            AddLine().Append("       - ");
-
-                        GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)").EndLine();
+                        AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
                     }
-                }
-
-                var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
-                var invLimit = reactor.InventoryConstraint;
-
-                if(invLimit != null)
-                {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
-                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").EndLine();
-
-                    foreach(var id in invLimit.ConstrainedIds)
-                    {
-                        AddLine().Append("       - ").IdTypeSubtypeFormat(id).EndLine();
-                    }
-
-                    foreach(var type in invLimit.ConstrainedTypes)
-                    {
-                        AddLine().Append("       - All of type: ").IdTypeFormat(type).EndLine();
-                    }
-                }
-                else
-                {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
                 }
 
                 return;
@@ -1966,25 +2197,48 @@ namespace Digi.BuildInfo
             var battery = def as MyBatteryBlockDefinition;
             if(battery != null)
             {
-                AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)").Separator().ResourcePriority(battery.ResourceSinkGroup).EndLine();
-                AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')').EndLine();
-                AddLine().Append("Discharge time: ").TimeFormat((battery.MaxStoredPower / battery.MaxPowerOutput) * 3600f).Separator().Append("Recharge time: ").TimeFormat((battery.MaxStoredPower / battery.RequiredPowerInput) * 3600f);
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+                {
+                    AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
+
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                        GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup).EndLine();
+                }
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+                {
+                    AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')').EndLine();
+                }
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+                {
+                    AddLine().Append("Discharge time: ").TimeFormat((battery.MaxStoredPower / battery.MaxPowerOutput) * 3600f).Separator().Append("Recharge time: ").TimeFormat((battery.MaxStoredPower / battery.RequiredPowerInput) * 3600f);
+                }
+
                 return;
             }
 
             var solarPanel = def as MySolarPanelDefinition;
             if(solarPanel != null)
             {
-                AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+                {
+                    AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+                }
+
                 return;
             }
 
             var windTurbine = def as MyWindTurbineDefinition;
             if(windTurbine != null)
             {
-                AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize).EndLine();
-                AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2).EndLine();
-                // TODO wind speed unit?
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+                {
+                    AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize).EndLine();
+                    AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2).EndLine();
+                    // TODO wind speed unit?
+                }
+
                 return;
             }
         }
@@ -1995,41 +2249,56 @@ namespace Digi.BuildInfo
         {
             var radioAntenna = (MyRadioAntennaDefinition)def;
 
-            AddLine().LabelHardcoded("Max required power").PowerFormat(GameData.Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius)).Separator().ResourcePriority(radioAntenna.ResourceSinkGroup).EndLine();
-            AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius).EndLine();
+            PowerRequired(GameData.Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius), radioAntenna.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius).EndLine();
+            }
         }
 
         private void Format_LaserAntenna(MyCubeBlockDefinition def)
         {
             var laserAntenna = (MyLaserAntennaDefinition)def;
 
-            float mWpKm = GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000);
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power - Active[1]").PowerFormat(GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").EndLine();
+                AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
-            AddLine().Label("Power - Active[1]").PowerFormat(mWpKm).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").EndLine();
-            AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle).Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
+            }
 
-            AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green)
-                .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green)
+                    .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
 
-            if(laserAntenna.MaxRange < 0)
-                GetLine().Append("Infinite");
-            else
-                GetLine().DistanceFormat(laserAntenna.MaxRange);
+                if(laserAntenna.MaxRange < 0)
+                    GetLine().Append("Infinite");
+                else
+                    GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-            GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").EndLine();
+                GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").EndLine();
 
-            AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
-            AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
+                AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
+                AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
 
-            // TODO visualize angle limits?
+                // TODO visualize angle limits?
+            }
         }
 
         private void Format_Beacon(MyCubeBlockDefinition def)
         {
             var beacon = (MyBeaconDefinition)def;
 
-            AddLine().LabelHardcoded("Max required power").PowerFormat(GameData.Hardcoded.Beacon_PowerReq(beacon.MaxBroadcastRadius)).Separator().ResourcePriority(beacon.ResourceSinkGroup).EndLine();
-            AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius).EndLine();
+            PowerRequired(GameData.Hardcoded.Beacon_PowerReq(beacon.MaxBroadcastRadius), beacon.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius).EndLine();
+            }
         }
         #endregion
 
@@ -2037,36 +2306,47 @@ namespace Digi.BuildInfo
         {
             var timer = (MyTimerBlockDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.Timer_PowerReq).Separator().ResourcePriority(timer.ResourceSinkGroup).EndLine();
-            AddLine().Label("Timer range").TimeFormat(timer.MinDelay / 1000f).Append(" to ").TimeFormat(timer.MaxDelay / 1000f).EndLine();
+            PowerRequired(GameData.Hardcoded.Timer_PowerReq, timer.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Timer range").TimeFormat(timer.MinDelay / 1000f).Append(" to ").TimeFormat(timer.MaxDelay / 1000f).EndLine();
+            }
         }
 
         private void Format_ProgrammableBlock(MyCubeBlockDefinition def)
         {
             var pb = (MyProgrammableBlockDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ProgrammableBlock_PowerReq).Separator().ResourcePriority(pb.ResourceSinkGroup).EndLine();
+            PowerRequired(GameData.Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
         }
 
         private void Format_LCD(MyCubeBlockDefinition def)
         {
             var lcd = (MyTextPanelDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(lcd.RequiredPowerInput).Separator().ResourcePriority(lcd.ResourceSinkGroup).EndLine();
-            AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution).EndLine();
-            AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4).EndLine();
+            PowerRequired(lcd.RequiredPowerInput, lcd.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution).EndLine();
+                AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4).EndLine();
+            }
         }
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
         {
             var sound = (MySoundBlockDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.SoundBlock_PowerReq).Separator().ResourcePriority(sound.ResourceSinkGroup).EndLine();
-            AddLine().Label("Range").DistanceRangeFormat(sound.MinRange, sound.MaxRange).EndLine();
-            AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod).EndLine();
+            PowerRequired(GameData.Hardcoded.SoundBlock_PowerReq, sound.ResourceSinkGroup, powerHardcoded: true);
 
-            // sound.EmitterNumber ???
-            // sound.LoopUpdateThreshold ???
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Range").DistanceRangeFormat(sound.MinRange, sound.MaxRange).EndLine();
+                AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod).EndLine();
+
+                // EmitterNumber and LoopUpdateThreshold seem unused
+            }
         }
 
         private void Format_Sensor(MyCubeBlockDefinition def)
@@ -2074,37 +2354,56 @@ namespace Digi.BuildInfo
             var sensor = (MySensorBlockDefinition)def;
 
             var maxField = GameData.Hardcoded.Sensor_MaxField(sensor.MaxRange);
-            AddLine().LabelHardcoded("Max required power").PowerFormat(GameData.Hardcoded.Sensor_PowerReq(maxField)).Separator().ResourcePriority(sensor.ResourceSinkGroup).EndLine();
-            AddLine().Label("Max area").VectorFormat(maxField).EndLine();
+
+            PowerRequired(GameData.Hardcoded.Sensor_PowerReq(maxField), sensor.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Max area").VectorFormat(maxField).EndLine();
+            }
         }
 
         private void Format_Camera(MyCubeBlockDefinition def)
         {
             var camera = (MyCameraBlockDefinition)def;
 
-            AddLine().Label("Power - Normal use").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast charging").PowerFormat(camera.RequiredChargingInput).Separator().ResourcePriority(camera.ResourceSinkGroup).EndLine();
-            AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov).EndLine();
-            AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power - Normal use").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast charging").PowerFormat(camera.RequiredChargingInput);
 
-            if(camera.RaycastDistanceLimit < 0)
-                GetLine().Append("Infinite");
-            else
-                GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(camera.ResourceSinkGroup).EndLine();
+            }
 
-            GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov).EndLine();
+                AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
 
-            // TODO visualize angle limits?
+                if(camera.RaycastDistanceLimit < 0)
+                    GetLine().Append("Infinite");
+                else
+                    GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
+
+                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).EndLine();
+
+                // TODO visualize angle limits?
+            }
         }
 
         private void Format_Button(MyCubeBlockDefinition def)
         {
             var button = (MyButtonPanelDefinition)def;
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(GameData.Hardcoded.ButtonPanel_PowerReq).Separator().ResourcePriority(button.ResourceSinkGroup).EndLine();
-            AddLine().Label("Button count").Append(button.ButtonCount).EndLine();
+            PowerRequired(GameData.Hardcoded.ButtonPanel_PowerReq, button.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Button count").Append(button.ButtonCount).EndLine();
+            }
         }
 
-        #region Magic
+        #region Magic blocks
         private void Format_GravityGenerator(MyCubeBlockDefinition def)
         {
             var gravGen = (MyGravityGeneratorBaseDefinition)def;
@@ -2112,28 +2411,43 @@ namespace Digi.BuildInfo
             var flatGravGen = def as MyGravityGeneratorDefinition;
             if(flatGravGen != null)
             {
-                AddLine().Label("Max power use").PowerFormat(flatGravGen.RequiredPowerInput).Separator().ResourcePriority(flatGravGen.ResourceSinkGroup).EndLine();
-                AddLine().Label("Field size").VectorFormat(flatGravGen.MinFieldSize).Append(" to ").VectorFormat(flatGravGen.MaxFieldSize).EndLine();
+                PowerRequired(flatGravGen.RequiredPowerInput, flatGravGen.ResourceSinkGroup);
+
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                {
+                    AddLine().Label("Field size").VectorFormat(flatGravGen.MinFieldSize).Append(" to ").VectorFormat(flatGravGen.MaxFieldSize).EndLine();
+                }
             }
             else
             {
                 var sphereGravGen = def as MyGravityGeneratorSphereDefinition;
                 if(sphereGravGen != null)
                 {
-                    AddLine().Label("Base power use").PowerFormat(sphereGravGen.BasePowerInput).Separator().Label("Consumption").PowerFormat(sphereGravGen.ConsumptionPower).Separator().ResourcePriority(sphereGravGen.ResourceSinkGroup).EndLine();
-                    AddLine().Label("Radius").DistanceFormat(sphereGravGen.MinRadius).Append(" to ").DistanceFormat(sphereGravGen.MaxRadius).EndLine();
+                    PowerRequired(GameData.Hardcoded.SphericalGravGen_PowerReq(sphereGravGen, sphereGravGen.MaxRadius, sphereGravGen.MaxGravityAcceleration), sphereGravGen.ResourceSinkGroup, powerHardcoded: true);
+
+                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+                    {
+                        AddLine().Label("Radius").DistanceFormat(sphereGravGen.MinRadius).Append(" to ").DistanceFormat(sphereGravGen.MaxRadius).EndLine();
+                    }
                 }
             }
 
-            AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration).EndLine();
+            }
         }
 
         private void Format_ArtificialMass(MyCubeBlockDefinition def)
         {
             var artificialMass = (MyVirtualMassDefinition)def;
 
-            AddLine().Label("Power required").PowerFormat(artificialMass.RequiredPowerInput).Separator().ResourcePriority(artificialMass.ResourceSinkGroup).EndLine();
-            AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass).EndLine();
+            PowerRequired(artificialMass.RequiredPowerInput, artificialMass.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass).EndLine();
+            }
         }
 
         private void Format_SpaceBall(MyCubeBlockDefinition def)
@@ -2141,19 +2455,31 @@ namespace Digi.BuildInfo
             var spaceBall = (MySpaceBallDefinition)def; // this doesn't extend MyVirtualMassDefinition
 
             // HACK: hardcoded; SpaceBall doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
-            AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass).EndLine();
+            PowerRequired(0, null, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
+            {
+                AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass).EndLine();
+            }
         }
 
         private void Format_JumpDrive(MyCubeBlockDefinition def)
         {
             var jumpDrive = (MyJumpDriveDefinition)def;
 
-            AddLine().Label("Power for charging").PowerFormat(jumpDrive.RequiredPowerInput).Separator().ResourcePriority(jumpDrive.ResourceSinkGroup).EndLine();
-            AddLine().Label("Stored power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump).EndLine();
-            AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance).EndLine();
-            AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass).EndLine();
-            AddLine().Label("Jump delay").TimeFormat(jumpDrive.JumpDelay).EndLine();
+            PowerRequired(jumpDrive.RequiredPowerInput, jumpDrive.ResourceSinkGroup);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+            {
+                AddLine().Label("Stored power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump).EndLine();
+            }
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Jump delay").TimeFormat(jumpDrive.JumpDelay).EndLine();
+                AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance).EndLine();
+                AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass).EndLine();
+            }
         }
         #endregion
 
@@ -2171,142 +2497,155 @@ namespace Digi.BuildInfo
             var turret = def as MyLargeTurretBaseDefinition;
             float requiredPowerInput = (turret != null ? GameData.Hardcoded.Turret_PowerReq : GameData.Hardcoded.ShipGun_PowerReq);
 
-            AddLine().LabelHardcoded("Power required").PowerFormat(requiredPowerInput).Separator().ResourcePriority(weapon.ResourceSinkGroup).EndLine();
+            PowerRequired(requiredPowerInput, weapon.ResourceSinkGroup, powerHardcoded: true);
 
-            AddLine().Label("Inventory").InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId).EndLine();
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+            {
+                AddLine().Label("Inventory").InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId).EndLine();
+            }
 
             if(turret != null)
             {
-                AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters).EndLine();
-                AddLine().Append("Rotation - ");
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
+                {
+                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters).EndLine();
+                    AddLine().Append("Rotation - ");
 
-                if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
-                    GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(360);
-                else
-                    GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(turret.MinElevationDegrees).Append(" to ").AngleFormatDeg(turret.MaxElevationDegrees);
+                    if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
+                        GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(360);
+                    else
+                        GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(turret.MinElevationDegrees).Append(" to ").AngleFormatDeg(turret.MaxElevationDegrees);
 
-                GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.ElevationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).Separator();
+                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.ElevationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).Separator();
 
-                if(turret.MinAzimuthDegrees <= -180 && turret.MaxAzimuthDegrees >= 180)
-                    GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
-                else
-                    GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
+                    if(turret.MinAzimuthDegrees <= -180 && turret.MaxAzimuthDegrees >= 180)
+                        GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
+                    else
+                        GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
 
-                GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
+                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
 
-                // TODO visualize angle limits?
+                    // TODO visualize angle limits?
+                }
             }
 
-            AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
-
-            ammoProjectiles.Clear();
-            ammoMissiles.Clear();
-
-            for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
-                var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
-                int ammoType = (int)ammo.AmmoType;
+                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
+            }
 
-                if(wepDef.WeaponAmmoDatas[ammoType] != null)
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AmmoDetails))
+            {
+                ammoProjectiles.Clear();
+                ammoMissiles.Clear();
+
+                for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
                 {
-                    switch(ammoType)
+                    var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
+                    var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
+                    int ammoType = (int)ammo.AmmoType;
+
+                    if(wepDef.WeaponAmmoDatas[ammoType] != null)
                     {
-                        case 0: ammoProjectiles.Add(MyTuple.Create(mag, (MyProjectileAmmoDefinition)ammo)); break;
-                        case 1: ammoMissiles.Add(MyTuple.Create(mag, (MyMissileAmmoDefinition)ammo)); break;
+                        switch(ammoType)
+                        {
+                            case 0: ammoProjectiles.Add(MyTuple.Create(mag, (MyProjectileAmmoDefinition)ammo)); break;
+                            case 1: ammoMissiles.Add(MyTuple.Create(mag, (MyMissileAmmoDefinition)ammo)); break;
+                        }
                     }
                 }
-            }
 
-            var projectilesData = wepDef.WeaponAmmoDatas[0];
-            var missileData = wepDef.WeaponAmmoDatas[1];
-
-            if(ammoProjectiles.Count > 0)
-            {
-                // TODO check if wepDef.DamageMultiplier is used for weapons (right now in 1.186.5 it's not)
-
-                AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
-                    .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
-                if(projectilesData.ShotsInBurst == 0)
-                    GetLine().Append("No reloading");
-                else
-                    GetLine().Append(projectilesData.ShotsInBurst);
-                GetLine().EndLine();
-
-                AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
-                    .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
-
-                for(int i = 0; i < ammoProjectiles.Count; ++i)
+                if(ammoProjectiles.Count > 0)
                 {
-                    var data = ammoProjectiles[i];
-                    var mag = data.Item1;
-                    var ammo = data.Item2;
+                    // TODO check if wepDef.DamageMultiplier is used for weapons (right now in 1.186.5 it's not)
 
-                    AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (");
+                    var projectilesData = wepDef.WeaponAmmoDatas[0];
 
-                    if(ammo.ProjectileCount > 1)
-                        GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
-
-                    GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetColor().Append(", ")
-                        .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetColor().Append(", ");
-
-                    if(ammo.SpeedVar > 0)
-                        GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
+                    AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
+                        .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    if(projectilesData.ShotsInBurst == 0)
+                        GetLine().Append("No reloading");
                     else
-                        GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
+                        GetLine().Append(projectilesData.ShotsInBurst);
+                    GetLine().EndLine();
 
-                    GetLine().ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")").EndLine();
+                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
+
+                    for(int i = 0; i < ammoProjectiles.Count; ++i)
+                    {
+                        var data = ammoProjectiles[i];
+                        var mag = data.Item1;
+                        var ammo = data.Item2;
+
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (");
+
+                        if(ammo.ProjectileCount > 1)
+                            GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
+
+                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetColor().Append(", ");
+
+                        if(ammo.SpeedVar > 0)
+                            GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
+                        else
+                            GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
+
+                        GetLine().ResetColor().Append(", ")
+                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")").EndLine();
+                    }
                 }
-            }
 
-            if(ammoMissiles.Count > 0)
-            {
-                AddLine().Label("Missiles - Fire rate").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
-                    .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
-                if(missileData.ShotsInBurst == 0)
-                    GetLine().Append("No reloading");
-                else
-                    GetLine().Append(missileData.ShotsInBurst);
-                GetLine().EndLine();
-
-                AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
-                    .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                    .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
-
-                for(int i = 0; i < ammoMissiles.Count; ++i)
+                if(ammoMissiles.Count > 0)
                 {
-                    var data = ammoMissiles[i];
-                    var mag = data.Item1;
-                    var ammo = data.Item2;
+                    var missileData = wepDef.WeaponAmmoDatas[1];
 
-                    AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetColor().Append(", ");
-
-                    // SpeedVar is not used for missiles
-
-                    GetLine().Color(COLOR_STAT_SPEED);
-
-                    if(!ammo.MissileSkipAcceleration)
-                        GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").AccelerationFormat(ammo.MissileAcceleration);
+                    AddLine().Label("Missiles - Fire rate").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
+                        .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    if(missileData.ShotsInBurst == 0)
+                        GetLine().Append("No reloading");
                     else
-                        GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
+                        GetLine().Append(missileData.ShotsInBurst);
+                    GetLine().EndLine();
 
-                    GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
-                        .ResetColor().Append(")").EndLine();
+                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
+
+                    for(int i = 0; i < ammoMissiles.Count; ++i)
+                    {
+                        var data = ammoMissiles[i];
+                        var mag = data.Item1;
+                        var ammo = data.Item2;
+
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (")
+                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetColor().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetColor().Append(", ");
+
+                        // SpeedVar is not used for missiles
+
+                        GetLine().Color(COLOR_STAT_SPEED);
+
+                        if(!ammo.MissileSkipAcceleration)
+                            GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").AccelerationFormat(ammo.MissileAcceleration);
+                        else
+                            GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
+
+                        GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                            .ResetColor().Append(")").EndLine();
+                    }
                 }
-            }
 
-            ammoProjectiles.Clear();
-            ammoMissiles.Clear();
+                ammoProjectiles.Clear();
+                ammoMissiles.Clear();
+            }
         }
 
         private void Format_Warhead(MyCubeBlockDefinition def)
@@ -2314,10 +2653,60 @@ namespace Digi.BuildInfo
             var warhead = (MyWarheadDefinition)def; // does not extend MyWeaponBlockDefinition
 
             // HACK: hardcoded; Warhead doesn't require power
-            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).LabelHardcoded("Power required").Append("No").EndLine();
-            AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).EndLine();
-            AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
+            PowerRequired(0, null, powerHardcoded: true);
+
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AmmoDetails))
+            {
+                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).EndLine();
+                AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
+            }
         }
         #endregion
+
+        private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
+        {
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                var groupNameHash = (groupName != null ? MyStringHash.GetOrCompute(groupName) : MyStringHash.NullOrEmpty);
+                PowerRequired(mw, groupNameHash, powerHardcoded);
+            }
+        }
+
+        private void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false)
+        {
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
+            {
+                var color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
+
+                if(powerHardcoded)
+                    AddLine().Color(color).Label("Power required");
+                else
+                    AddLine().Color(color).LabelHardcoded("Power required", color);
+
+                if(mw <= 0)
+                    GetLine().Append("No");
+                else
+                    GetLine().PowerFormat(mw);
+
+                if(groupName != MyStringHash.NullOrEmpty && Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
+                    GetLine().ResetColor().Separator().ResourcePriority(groupName);
+            }
+        }
+
+        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume, float hardcodedVolume)
+        {
+            if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
+            {
+                float volume;
+                if(!GetInventoryFromComponent(def, out volume))
+                    volume = alternateVolume;
+
+                if(volume > 0)
+                    AddLine().Label("Inventory").InventoryFormat(volume);
+                else if(hardcodedVolume > 0)
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume);
+                // else unknown inventory /shrug
+            }
+        }
     }
 }

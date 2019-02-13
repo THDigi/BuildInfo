@@ -20,6 +20,7 @@ namespace Digi.BuildInfo
 
             // from MyGridConveyorSystem
             public const float Conveyors_PowerReq = MyEnergyConstants.REQUIRED_INPUT_CONVEYOR_LINE;
+            public const string Conveyors_PowerGroup = "Conveyors";
 
             // from MyShipConnector
             public const string ShipConnector_PowerGroup = "Conveyors";
@@ -172,6 +173,14 @@ namespace Digi.BuildInfo
             // from Sandbox.Game.Weapons.MyProjectile.Start()
             public const float Projectile_RangeMultiplier_Min = 0.8f;
             public const float Projectile_RangeMultiplier_Max = 1f;
+
+            // from MyGravityGeneratorSphere.CalculateRequiredPowerInputForRadius()
+            public static float SphericalGravGen_PowerReq(MyGravityGeneratorSphereDefinition def, float radius, float gravityAcceleration)
+            {
+                float currentVolume = (float)(Math.Pow(radius, def.ConsumptionPower) * Math.PI * 0.75);
+                float defaultVolume = (float)(Math.Pow(100, def.ConsumptionPower) * Math.PI * 0.75);
+                return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / 9.81f);
+            }
 
             // from MyAirVent.VentDummy getter
             public const string AirVent_DummyName = "vent_001";

@@ -31,6 +31,53 @@ namespace Digi.BuildInfo
         public bool debug;
         public int configVersion;
 
+        [Flags]
+        public enum AimInfoFlags
+        {
+            None = 0,
+            All = int.MaxValue,
+            BlockName = (1 << 0),
+            Mass = (1 << 1),
+            Integrity = (1 << 2),
+            DamageMultiplier = (1 << 3),
+            ToolUseTime = (1 << 4),
+            Ownership = (1 << 5),
+            GrindChangeWarning = (1 << 6),
+            GridMoving = (1 << 7),
+            ShipGrinderImpulse = (1 << 8),
+            GrindGridSplit = (1 << 9),
+            AddedByMod = (1 << 10),
+            OverlayHint = (1 << 11),
+        }
+
+        [Flags]
+        public enum HeldInfoFlags
+        {
+            None = 0,
+            All = int.MaxValue,
+            BlockName = (1 << 0),
+            Line1 = (1 << 1),
+            Line2 = (1 << 2),
+            Airtight = (1 << 3),
+            GrindChangeWarning = (1 << 4),
+            Mirroring = (1 << 5),
+            AddedByMod = (1 << 6),
+            OverlayHint = (1 << 7),
+            ExtraInfo = (1 << 8),
+            PartStats = (1 << 9),
+            PowerStats = (1 << 10),
+            ResourcePriorities = (1 << 11),
+            InventoryStats = (1 << 12),
+            InventoryVolumeMultiplied = (1 << 13),
+            InventoryExtras = (1 << 14),
+            Production = (1 << 15),
+            ItemInputs = (1 << 16),
+            AmmoDetails = (1 << 17),
+        }
+
+        public AimInfoFlags AimInfo = AimInfoFlags.All;
+        public HeldInfoFlags HeldInfo = HeldInfoFlags.All;
+
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
         public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
         public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";

@@ -232,20 +232,26 @@ namespace Digi.BuildInfo
                         {
                             if(selectedBlock != null) // text for welder/grinder
                             {
-                                aimInfoNeedsUpdate = false;
-                                GenerateAimBlockText(selectedDef);
-                                PostProcessText(selectedDef.Id, false);
+                                if(Settings.AimInfo != 0)
+                                {
+                                    aimInfoNeedsUpdate = false;
+                                    GenerateAimBlockText(selectedDef);
+                                    PostProcessText(selectedDef.Id, false);
+                                }
                             }
                             else // text for holding the block
                             {
-                                if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(selectedDef.Id, out cache) : CachedBuildInfoNotification.TryGetValue(selectedDef.Id, out cache))
+                                if(Settings.HeldInfo != 0)
                                 {
-                                    textShown = false; // make the textAPI update
-                                }
-                                else
-                                {
-                                    GenerateBlockText(selectedDef);
-                                    PostProcessText(selectedDef.Id, true);
+                                    if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(selectedDef.Id, out cache) : CachedBuildInfoNotification.TryGetValue(selectedDef.Id, out cache))
+                                    {
+                                        textShown = false; // make the textAPI update
+                                    }
+                                    else
+                                    {
+                                        GenerateBlockText(selectedDef);
+                                        PostProcessText(selectedDef.Id, true);
+                                    }
                                 }
                             }
                         }

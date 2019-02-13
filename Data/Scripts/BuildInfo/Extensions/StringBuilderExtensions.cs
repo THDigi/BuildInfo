@@ -331,39 +331,49 @@ namespace Digi.BuildInfo.Extensions
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
-            var mul = MyAPIGateway.Session.InventoryMultiplier;
-
-            MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
-
-            if(Math.Abs(mul - 1) > 0.001f)
-                s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetColor();
-
-            if(types == null && items == null)
-                types = BuildInfo.Instance.DEFAULT_ALLOWED_TYPES;
-
-            var physicalItems = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
-            var minMass = float.MaxValue;
-            var maxMass = 0f;
-
-            foreach(var item in physicalItems)
+            if(BuildInfo.Instance.Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryVolumeMultiplied))
             {
-                if(!item.Public || item.Mass <= 0 || item.Volume <= 0)
-                    continue; // skip hidden and physically impossible items
+                var mul = MyAPIGateway.Session.InventoryMultiplier;
 
-                if((types != null && isWhitelist == types.Contains(item.Id.TypeId)) || (items != null && isWhitelist == items.Contains(item.Id)))
-                {
-                    var fillMass = item.Mass * (volume / item.Volume);
-                    minMass = Math.Min(fillMass, minMass);
-                    maxMass = Math.Max(fillMass, maxMass);
-                }
+                MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
+
+                if(Math.Abs(mul - 1) > 0.001f)
+                    s.Color(BuildInfo.Instance.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetColor();
+            }
+            else
+            {
+                MyValueFormatter.AppendVolumeInBestUnit(volume, s);
             }
 
-            if(minMass != float.MaxValue && maxMass != 0)
+            if(BuildInfo.Instance.Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryExtras))
             {
-                if(Math.Abs(minMass - maxMass) > 0.00001f)
-                    s.Append(", Cargo mass: ").MassFormat(minMass).Append(" to ").MassFormat(maxMass);
-                else
-                    s.Append(", Max cargo mass: ").MassFormat(minMass);
+                if(types == null && items == null)
+                    types = BuildInfo.Instance.DEFAULT_ALLOWED_TYPES;
+
+                var physicalItems = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
+                var minMass = float.MaxValue;
+                var maxMass = 0f;
+
+                foreach(var item in physicalItems)
+                {
+                    if(!item.Public || item.Mass <= 0 || item.Volume <= 0)
+                        continue; // skip hidden and physically impossible items
+
+                    if((types != null && isWhitelist == types.Contains(item.Id.TypeId)) || (items != null && isWhitelist == items.Contains(item.Id)))
+                    {
+                        var fillMass = item.Mass * (volume / item.Volume);
+                        minMass = Math.Min(fillMass, minMass);
+                        maxMass = Math.Max(fillMass, maxMass);
+                    }
+                }
+
+                if(minMass != float.MaxValue && maxMass != 0)
+                {
+                    if(Math.Abs(minMass - maxMass) > 0.00001f)
+                        s.Append(", Cargo mass: ").MassFormat(minMass).Append(" to ").MassFormat(maxMass);
+                    else
+                        s.Append(", Max cargo mass: ").MassFormat(minMass);
+                }
             }
 
             return s;
