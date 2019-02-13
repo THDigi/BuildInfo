@@ -2005,7 +2005,7 @@ namespace Digi.BuildInfo
 
                     foreach(var bp in production.BlueprintClasses)
                     {
-                        var name = bp.DisplayNameText;
+                        var name = bp.Id.SubtypeName; // bp.DisplayNameText; // some are really badly named, like BasicIngots -> Ingots, ugh.
                         var newLineIndex = name.IndexOf('\n');
 
                         if(newLineIndex != -1) // name contains a new line, ignore everything after that
