@@ -344,6 +344,8 @@ namespace Digi.BuildInfo
 
                     if(def != null && MyCubeBuilder.Static.IsActivated)
                     {
+                        selectedDef = def;
+
                         var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
                         var grid = hit?.HitEntity as IMyCubeGrid;
 
@@ -352,12 +354,8 @@ namespace Digi.BuildInfo
                             if(unsupportedGridSizeNotification == null)
                                 unsupportedGridSizeNotification = MyAPIGateway.Utilities.CreateNotification("", 100, MyFontEnum.Red);
 
-                            unsupportedGridSizeNotification.Text = $"Can't place a {def.CubeSize}Grid block on a {grid.GridSizeEnum}Grid ship!";
+                            unsupportedGridSizeNotification.Text = $"Can't place a {def.CubeSize}Grid block on a {grid.GridSizeEnum}Grid!";
                             unsupportedGridSizeNotification.Show();
-                        }
-                        else
-                        {
-                            selectedDef = def;
                         }
                     }
                 }
