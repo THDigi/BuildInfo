@@ -36,7 +36,7 @@ namespace Digi.BuildInfo
         {
             None = 0,
             All = int.MaxValue,
-            BlockName = (1 << 0),
+            TerminalName = (1 << 0),
             Mass = (1 << 1),
             Integrity = (1 << 2),
             DamageMultiplier = (1 << 3),

@@ -192,6 +192,8 @@ namespace Digi.BuildInfo
             "    then that face is airtight.\n" +
             "\n" +
             "\n" +
+            "\nNumbered markings in text explained:" +
+            "\n" +
             "[1] Laser antenna power usage is linear up to 200km, after\n" +
             "   that it's a quadratic ecuation.\n" +
             "   To calculate it at your needed distance, hold a laser antenna\n" +

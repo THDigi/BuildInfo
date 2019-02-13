@@ -185,9 +185,9 @@ namespace Digi.BuildInfo
             // from MyAirVent.VentDummy getter
             public const string AirVent_DummyName = "vent_001";
 
-            public static void Parachute_GetDetails(MyParachuteDefinition parachute, float targetDescendVelocity, out float maxMass, out float disreefAtmosphere)
+            // from from MyParachute.UpdateParachute() 
+            public static void Parachute_GetLoadEstimate(MyParachuteDefinition parachute, float targetDescendVelocity, out float maxMass, out float disreefAtmosphere)
             {
-                // formulas from MyParachute.UpdateParachute()
                 float atmosphere = 1.0f;
                 float atmosMod = 10.0f * (atmosphere - parachute.ReefAtmosphereLevel);
 

@@ -667,7 +667,7 @@ namespace Digi.BuildInfo
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
             #region Block name
-            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.BlockName) && terminalBlock != null)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.TerminalName) && terminalBlock != null)
             {
                 const int LENGTH_LIMIT = 35;
 
@@ -720,12 +720,12 @@ namespace Digi.BuildInfo
             if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.Integrity))
             {
                 AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
-                .IntegrityFormat(selectedBlock.Integrity).ResetColor()
-                .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
+                    .IntegrityFormat(selectedBlock.Integrity).ResetColor()
+                    .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
 
                 if(def.BlockTopology == MyBlockTopology.Cube && selectedBlock.HasDeformation)
                 {
-                    GetLine().Color(COLOR_BAD).Append(" (deformed)");
+                    GetLine().Color(COLOR_WARNING).Append(" (deformed)");
                 }
 
                 GetLine().EndLine();
@@ -733,9 +733,19 @@ namespace Digi.BuildInfo
             #endregion
 
             #region Optional: intake damage multiplier
-            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.DamageMultiplier) && Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
+            if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.DamageMultiplier))
             {
-                AddLine().Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Damage multiplier: ").Number(def.GeneralDamageMultiplier).EndLine();
+                // MySlimBlock.BlockGeneralDamageModifier is inaccessible
+                int dmgResPercent = (int)((1 - (selectedBlock.DamageRatio * def.GeneralDamageMultiplier)) * 100);
+
+                AddLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
+
+                int gridDamageRes = (int)((1 - ((MyCubeGrid)grid).GridGeneralDamageModifier) * 100);
+
+                if(gridDamageRes != 0)
+                    GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDamageRes > 0 ? "+" : "").Append(gridDamageRes).Append("%)").ResetColor();
+
+                // TODO impact resistance? wheels in particular...
             }
             #endregion
 
@@ -951,7 +961,7 @@ namespace Digi.BuildInfo
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
                 if(willSplitGrid == GridSplitType.Split)
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Grid will split if this block is removed!").EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("Grid will split if removed!").EndLine();
 
                 // TODO find if split blocks will vanish due to no physics/no standalone
             }
@@ -1164,27 +1174,17 @@ namespace Digi.BuildInfo
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding).ResetColor();
 
-                GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity).Separator();
+                GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity);
 
-                GetLine().Color(deformable ? COLOR_WARNING : COLOR_NORMAL).Append("Deformable: ");
                 if(deformable)
-                    GetLine().Append("Yes (").ProportionToPercent(def.DeformationRatio).Append(")");
-                else
-                    GetLine().Append("No");
+                    GetLine().Separator().Append("Deformable: ").RoundedNumber(def.DeformationRatio, 2);
 
-                GetLine().ResetColor();
+                var dmgResPercent = (int)((1 - def.GeneralDamageMultiplier) * 100);
 
-                if(Math.Abs(def.GeneralDamageMultiplier - 1) >= 0.0001f)
-                {
-                    GetLine().Separator()
-                        .Color(def.GeneralDamageMultiplier > 1 ? COLOR_BAD : (def.GeneralDamageMultiplier < 1 ? COLOR_GOOD : COLOR_NORMAL))
-                        .Append("Damage intake: ").ProportionToPercent(def.GeneralDamageMultiplier)
-                        .ResetColor();
-                }
+                if(dmgResPercent != 0)
+                    GetLine().Separator().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
 
                 // DEBUG TODO add HasPhysics and IsStandAlone
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -1815,7 +1815,7 @@ namespace Digi.BuildInfo
             {
                 const float TARGET_DESCEND_VELOCITY = 10;
                 float maxMass, disreefAtmosphere;
-                GameData.Hardcoded.Parachute_GetDetails(parachute, TARGET_DESCEND_VELOCITY, out maxMass, out disreefAtmosphere);
+                GameData.Hardcoded.Parachute_GetLoadEstimate(parachute, TARGET_DESCEND_VELOCITY, out maxMass, out disreefAtmosphere);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
                 {
