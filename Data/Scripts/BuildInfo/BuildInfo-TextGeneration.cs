@@ -520,7 +520,7 @@ namespace Digi.BuildInfo
             {
                 AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
                 Settings.CycleOverlaysBind.GetBinds(GetLine());
-                GetLine().Append(" to cycle)").EndLine();
+                GetLine().Append(" to cycle)");
             }
         }
 
@@ -561,7 +561,7 @@ namespace Digi.BuildInfo
 
             bool canUseTextAPI = (TextAPI != null && TextAPI.Heartbeat);
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod").EndLine();
+            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod");
 
             int i = 0;
 
@@ -578,12 +578,12 @@ namespace Digi.BuildInfo
             {
                 GetLine().Append(CMD_BUILDINFO);
             }
-            GetLine().Append(")").EndLine();
+            GetLine().Append(")");
 
             if(TextAPIEnabled)
             {
-                AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:").EndLine();
+                AddLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:");
             }
 
             AddMenuItemLine(i++).Append("Add aimed block to toolbar");
@@ -596,19 +596,19 @@ namespace Digi.BuildInfo
             {
                 GetLine().Append(CMD_GETBLOCK);
             }
-            GetLine().Append(")").EndLine();
+            GetLine().Append(")");
 
-            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')').EndLine();
+            AddMenuItemLine(i++).Append("Open block's mod workshop link").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_MODLINK).Append(')');
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')').EndLine();
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_HELP).Append(')');
 
             if(TextAPIEnabled)
             {
-                AddLine().EndLine();
-                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:").EndLine();
+                AddLine();
+                AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:");
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF").EndLine();
+            AddMenuItemLine(i++).Append("Text info: ").Append(Settings.showTextInfo ? "ON" : "OFF");
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(DRAW_OVERLAY_NAME[drawOverlay]);
             if(Settings.CycleOverlaysBind.IsAssigned())
@@ -617,7 +617,6 @@ namespace Digi.BuildInfo
                 Settings.CycleOverlaysBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-            GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
             if(Settings.ToggleTransparencyBind.IsAssigned())
@@ -626,7 +625,6 @@ namespace Digi.BuildInfo
                 Settings.ToggleTransparencyBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-            GetLine().EndLine();
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
             if(Settings.FreezePlacementBind.IsAssigned())
@@ -635,21 +633,19 @@ namespace Digi.BuildInfo
                 Settings.FreezePlacementBind.GetBinds(GetLine());
                 GetLine().Append(")").ResetColor();
             }
-            GetLine().EndLine();
 
             AddMenuItemLine(i++, canUseTextAPI).Append("Use TextAPI: ");
             if(canUseTextAPI)
                 GetLine().Append(useTextAPI ? "ON" : "OFF");
             else
                 GetLine().Append("OFF (Mod not detected)");
-            GetLine().EndLine();
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')').EndLine();
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(CMD_RELOAD).Append(')');
 
             if(TextAPIEnabled)
-                AddLine().EndLine();
+                AddLine();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10).EndLine();
+            AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10);
 
             EndAddedLines();
         }
@@ -679,7 +675,7 @@ namespace Digi.BuildInfo
                 if(newLine >= 0)
                     name = name.Substring(0, newLine); // strip everything past new line (incl new line char)
 
-                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetColor().Append('"').EndLine();
+                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetColor().Append('"');
             }
             #endregion
 
@@ -711,8 +707,6 @@ namespace Digi.BuildInfo
                 {
                     GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(selectedBlock.CubeGrid.Physics.Mass);
                 }
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -724,11 +718,7 @@ namespace Digi.BuildInfo
                     .Append(" / ").IntegrityFormat(selectedBlock.MaxIntegrity);
 
                 if(def.BlockTopology == MyBlockTopology.Cube && selectedBlock.HasDeformation)
-                {
                     GetLine().Color(COLOR_WARNING).Append(" (deformed)");
-                }
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -898,7 +888,7 @@ namespace Digi.BuildInfo
                 {
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
                 }
             }
@@ -926,8 +916,6 @@ namespace Digi.BuildInfo
 
                         GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 2);
                     }
-
-                    GetLine().EndLine();
                 }
             }
             #endregion
@@ -950,7 +938,7 @@ namespace Digi.BuildInfo
                         else
                             AddLine(MyFontEnum.Red).Color(COLOR_WARNING);
 
-                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")").EndLine();
+                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")");
                     }
                 }
             }
@@ -963,7 +951,7 @@ namespace Digi.BuildInfo
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(selectedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
                 if(willSplitGrid == GridSplitType.Split)
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("Grid will split if removed!").EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("Grid will split if removed!");
 
                 // TODO find if split blocks will vanish due to no physics/no standalone
             }
@@ -975,16 +963,16 @@ namespace Digi.BuildInfo
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH).EndLine();
+                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
                     var id = context.GetWorkshopID();
 
                     if(id > 0)
-                        AddLine().Color(COLOR_MOD).Append("       | ").ResetColor().Append("Workshop ID: ").Append(id).EndLine();
+                        AddLine().Color(COLOR_MOD).Append("       | ").ResetColor().Append("Workshop ID: ").Append(id);
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(context).EndLine();
+                    AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(context);
                 }
             }
             #endregion
@@ -1036,8 +1024,6 @@ namespace Digi.BuildInfo
                         GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
                     }
                 }
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -1050,7 +1036,7 @@ namespace Digi.BuildInfo
                 {
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText).EndLine();
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
                 }
             }
@@ -1074,7 +1060,7 @@ namespace Digi.BuildInfo
             //    if(vp.StaticMode.PlacementMode == VoxelPlacementMode.Volumetric)
             //        GetLine().Append(" (").Append(vp.StaticMode.MinAllowed).Append(" to ").Append(vp.StaticMode.MaxAllowed).Append(")");
             //
-            //    GetLine().ResetTextAPIColor().EndLine();
+            //    GetLine().ResetTextAPIColor();
             //}
 
             #region Optional - creative-only stuff
@@ -1084,9 +1070,9 @@ namespace Digi.BuildInfo
                 {
                     MyCubeBlockDefinition mirrorDef;
                     if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(new MyDefinitionId(def.Id.TypeId, def.MirroringBlock), out mirrorDef))
-                        AddLine(MyFontEnum.Blue).Color(COLOR_GOOD).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText).EndLine();
+                        AddLine(MyFontEnum.Blue).Color(COLOR_GOOD).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText);
                     else
-                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)").EndLine();
+                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)");
                 }
             }
             #endregion
@@ -1111,7 +1097,7 @@ namespace Digi.BuildInfo
             #region Added by mod
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context).EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
             }
             #endregion
 
@@ -1144,7 +1130,7 @@ namespace Digi.BuildInfo
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
             if(part)
-                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText).EndLine();
+                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText);
 
             #region Mass/size/build time/deconstruct time/no models
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Line1))
@@ -1163,8 +1149,6 @@ namespace Digi.BuildInfo
 
                 if(!buildModels)
                     GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -1206,8 +1190,6 @@ namespace Digi.BuildInfo
                     GetLine().Append("Not sealed");
                 else
                     GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
-
-                GetLine().EndLine();
             }
             #endregion
         }
@@ -1366,7 +1348,7 @@ namespace Digi.BuildInfo
                     else
                         AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
 
-                    GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes").EndLine();
+                    GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes");
                 }
             }
         }
@@ -1402,7 +1384,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity).EndLine();
+                AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity);
             }
 
             Suffix_Mechanical(def, piston.TopPart);
@@ -1420,22 +1402,22 @@ namespace Digi.BuildInfo
 
                 if(suspension != null)
                 {
-                    AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction).EndLine();
-                    AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60).EndLine();
-                    AddLine().Label("Ride height").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight).EndLine();
+                    AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction);
+                    AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60);
+                    AddLine().Label("Ride height").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight);
                 }
                 else
                 {
-                    AddLine().Label("Max torque").TorqueFormat(motor.MaxForceMagnitude).EndLine();
+                    AddLine().Label("Max torque").TorqueFormat(motor.MaxForceMagnitude);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
-                        AddLine().Label("Displacement Large Top").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax).EndLine();
+                        AddLine().Label("Displacement Large Top").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax);
                     }
 
                     if(motor.RotorDisplacementMinSmall < motor.RotorDisplacementMaxSmall)
                     {
-                        AddLine().Label("Displacement Small Top").DistanceFormat(motor.RotorDisplacementMinSmall).Append(" to ").DistanceFormat(motor.RotorDisplacementMaxSmall).EndLine();
+                        AddLine().Label("Displacement Small Top").DistanceFormat(motor.RotorDisplacementMinSmall).Append(" to ").DistanceFormat(motor.RotorDisplacementMaxSmall);
                     }
                 }
             }
@@ -1467,7 +1449,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength).EndLine();
+                AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength);
             }
         }
 
@@ -1480,7 +1462,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity).EndLine();
+                AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity);
             }
         }
 
@@ -1495,15 +1477,15 @@ namespace Digi.BuildInfo
             {
                 float volume;
                 if(GetInventoryFromComponent(def, out volume))
-                    AddLine().Label("Inventory").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
+                    AddLine().Label("Inventory").InventoryFormat(volume, GameData.Hardcoded.ShipDrill_InventoryConstraint);
                 else
-                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint).EndLine();
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(GameData.Hardcoded.ShipDrill_InventoryVolume(def), GameData.Hardcoded.ShipDrill_InventoryConstraint);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius).EndLine();
-                AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius).EndLine();
+                AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius);
+                AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius);
             }
         }
 
@@ -1522,17 +1504,17 @@ namespace Digi.BuildInfo
                 {
                     float weld = GameData.Hardcoded.ShipWelder_WeldPerSecond;
                     var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
+                    AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul);
 
-                    AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
+                    AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius);
                 }
                 else
                 {
                     float grind = GameData.Hardcoded.ShipGrinder_GrindPerSecond;
                     var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).EndLine();
+                    AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul);
 
-                    AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius).EndLine();
+                    AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius);
                 }
             }
         }
@@ -1579,9 +1561,9 @@ namespace Digi.BuildInfo
                     GetLine().Append(".");
                 }
 
-                //AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No").EndLine();
-                //AddLine((shipController.EnableFirstPerson ? MyFontEnum.Green : MyFontEnum.Red)).Append("First person view: ").Append(shipController.EnableFirstPerson ? "Yes" : "No").EndLine();
-                //AddLine((shipController.EnableBuilderCockpit ? MyFontEnum.Green : MyFontEnum.Red)).Append("Can build: ").Append(shipController.EnableBuilderCockpit ? "Yes" : "No").EndLine();
+                //AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No");
+                //AddLine((shipController.EnableFirstPerson ? MyFontEnum.Green : MyFontEnum.Red)).Append("First person view: ").Append(shipController.EnableFirstPerson ? "Yes" : "No");
+                //AddLine((shipController.EnableBuilderCockpit ? MyFontEnum.Green : MyFontEnum.Red)).Append("Can build: ").Append(shipController.EnableBuilderCockpit ? "Yes" : "No");
             }
 
             var cockpit = def as MyCockpitDefinition;
@@ -1607,11 +1589,11 @@ namespace Digi.BuildInfo
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context).EndLine();
+                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
                         }
                         else
                         {
-                            AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)").EndLine();
+                            AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)");
                         }
                     }
                 }
@@ -1634,7 +1616,7 @@ namespace Digi.BuildInfo
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
                 {
-                    AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%").EndLine();
+                    AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%");
                 }
             }
             else
@@ -1650,7 +1632,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2).EndLine();
+                AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2);
 
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
@@ -1662,7 +1644,6 @@ namespace Digi.BuildInfo
                         GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
                     else
                         GetLine().Append("in atmosphere");
-                    GetLine().EndLine();
 
                     AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
                                     .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
@@ -1670,25 +1651,24 @@ namespace Digi.BuildInfo
                         GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
                     else
                         GetLine().Append("in space");
-                    GetLine().EndLine();
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets").EndLine();
+                    AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets");
                 }
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
                 if(thrust.ConsumptionFactorPerG > 0)
-                    AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration").EndLine();
+                    AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration");
 
                 var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
 
                 if(data != null)
                 {
-                    AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2).EndLine();
-                    AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s").EndLine();
+                    AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2);
+                    AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s");
                 }
             }
         }
@@ -1701,7 +1681,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude).EndLine();
+                AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude);
             }
         }
 
@@ -1719,9 +1699,9 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default).EndLine();
-                AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2).EndLine();
-                AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2).EndLine();
+                AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
+                AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2);
+                AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2);
             }
         }
 
@@ -1733,7 +1713,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange).EndLine();
+                AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange);
             }
         }
 
@@ -1754,7 +1734,7 @@ namespace Digi.BuildInfo
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
                 float moveTime = GameData.Hardcoded.Door_MoveSpeed(door.OpeningSpeed);
-                AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen).EndLine();
+                AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen);
             }
         }
 
@@ -1769,13 +1749,13 @@ namespace Digi.BuildInfo
                 AddLine().Label("Power").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(airTightDoor.PowerConsumptionIdle);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(airTightDoor.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(airTightDoor.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
                 float moveTime = GameData.Hardcoded.Door_MoveSpeed(airTightDoor.OpeningSpeed);
-                AddLine().Label("Move time").TimeFormat(moveTime).EndLine();
+                AddLine().Label("Move time").TimeFormat(moveTime);
             }
         }
 
@@ -1788,7 +1768,7 @@ namespace Digi.BuildInfo
                 AddLine().Label("Power - Moving").PowerFormat(advDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(advDoor.PowerConsumptionIdle);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(advDoor.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(advDoor.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -1796,7 +1776,7 @@ namespace Digi.BuildInfo
                 float openTime, closeTime;
                 GameData.Hardcoded.AdvDoor_MoveSpeed(advDoor, out openTime, out closeTime);
 
-                AddLine().Label("Move time - Opening").TimeFormat(openTime).Separator().Label("Closing").TimeFormat(closeTime).EndLine();
+                AddLine().Label("Move time - Opening").TimeFormat(openTime).Separator().Label("Closing").TimeFormat(closeTime);
             }
         }
         #endregion
@@ -1810,7 +1790,7 @@ namespace Digi.BuildInfo
                 AddLine().Label("Power - Deploy").PowerFormat(parachute.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(parachute.PowerConsumptionIdle);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(parachute.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(parachute.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo) || Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
@@ -1821,14 +1801,14 @@ namespace Digi.BuildInfo
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ItemInputs))
                 {
-                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId).EndLine();
+                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId);
                 }
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere).EndLine();
-                    AddLine().Label("Drag coefficient").AppendFormat("{0:0.0####}", parachute.DragCoefficient).EndLine();
-                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(GameData.Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.").EndLine();
+                    AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere);
+                    AddLine().Label("Drag coefficient").AppendFormat("{0:0.0####}", parachute.DragCoefficient);
+                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(GameData.Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.");
                 }
             }
         }
@@ -1864,8 +1844,6 @@ namespace Digi.BuildInfo
                 }
                 else
                     GetLine().Append("Forced suit: No");
-
-                GetLine().EndLine();
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
@@ -1874,15 +1852,15 @@ namespace Digi.BuildInfo
                 // DEBUG TODO energy recharge is x5, need exact charge rate though... also heal rate
                 AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red)
                     .Color(medicalRoom.HealingAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Healing").BoolFormat(medicalRoom.HealingAllowed).EndLine();
+                    .Label("Healing").BoolFormat(medicalRoom.HealingAllowed);
 
                 AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red)
                     .Color(medicalRoom.RefuelAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Recharge").BoolFormat(medicalRoom.RefuelAllowed).EndLine();
+                    .Label("Recharge").BoolFormat(medicalRoom.RefuelAllowed);
 
                 AddLine(medicalRoom.SuitChangeAllowed ? MyFontEnum.White : MyFontEnum.Red)
                     .Color(medicalRoom.SuitChangeAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Suit change").BoolFormat(medicalRoom.SuitChangeAllowed).EndLine();
+                    .Label("Suit change").BoolFormat(medicalRoom.SuitChangeAllowed);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -1895,13 +1873,13 @@ namespace Digi.BuildInfo
                     {
                         MyCharacterDefinition charDef;
                         if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
-                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)").EndLine();
+                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)");
                         else
-                            AddLine().Append("    ").Append(charDef.DisplayNameText).EndLine();
+                            AddLine().Append("    ").Append(charDef.DisplayNameText);
                     }
                 }
                 else
-                    AddLine().Append("Usable suits: (all)").EndLine();
+                    AddLine().Append("Usable suits: (all)");
             }
         }
 
@@ -1915,7 +1893,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power: ").PowerFormat(production.OperationalPowerConsumption).Separator().Append("Idle: ").PowerFormat(production.StandbyPowerConsumption);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(production.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(production.ResourceSinkGroup);
             }
 
             var assembler = def as MyAssemblerDefinition;
@@ -1926,7 +1904,7 @@ namespace Digi.BuildInfo
                     var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff).EndLine();
+                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
                 }
 
                 var survivalKit = def as MySurvivalKitDefinition;
@@ -1936,8 +1914,8 @@ namespace Digi.BuildInfo
                     if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                     {
                         // DEBUG TODO energy recharge is x1, need exact charge rate though... also heal rate
-                        AddLine().LabelHardcoded("Healing").BoolFormat(true).EndLine();
-                        AddLine().LabelHardcoded("Recharge").BoolFormat(true).EndLine();
+                        AddLine().LabelHardcoded("Healing").BoolFormat(true);
+                        AddLine().LabelHardcoded("Recharge").BoolFormat(true);
                     }
                 }
             }
@@ -1949,7 +1927,7 @@ namespace Digi.BuildInfo
                 {
                     var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
-                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency).EndLine();
+                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
                 }
             }
 
@@ -1958,7 +1936,7 @@ namespace Digi.BuildInfo
             {
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
-                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity).EndLine();
+                    AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity);
                 }
             }
 
@@ -1967,7 +1945,7 @@ namespace Digi.BuildInfo
             {
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
-                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s").EndLine();
+                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s");
 
                     if(oxygenGenerator.ProducedGases.Count > 0)
                     {
@@ -1979,11 +1957,10 @@ namespace Digi.BuildInfo
                         }
 
                         GetLine().Length -= 2;
-                        GetLine().EndLine();
                     }
                     else
                     {
-                        AddLine(MyFontEnum.Red).Append("Produces: <N/A>").EndLine();
+                        AddLine(MyFontEnum.Red).Append("Produces: <N/A>");
                     }
                 }
             }
@@ -1994,11 +1971,11 @@ namespace Digi.BuildInfo
 
                 if(refinery != null || assembler != null)
                 {
-                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint).EndLine();
+                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint);
                 }
                 else
                 {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint).EndLine();
+                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint);
                 }
             }
 
@@ -2006,7 +1983,7 @@ namespace Digi.BuildInfo
             {
                 if(production.BlueprintClasses.Count == 0)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Has no blueprint classes.").EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Has no blueprint classes.");
                 }
                 else
                 {
@@ -2046,7 +2023,6 @@ namespace Digi.BuildInfo
                     }
 
                     GetLine().Length -= 2;
-                    GetLine().EndLine();
                 }
             }
         }
@@ -2062,12 +2038,12 @@ namespace Digi.BuildInfo
                 AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s");
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+                AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided");
             }
         }
 
@@ -2080,7 +2056,7 @@ namespace Digi.BuildInfo
                 AddLine().Label("Power - Idle").PowerFormat(vent.StandbyPowerConsumption).Separator().Label("Operational").PowerFormat(vent.OperationalPowerConsumption);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(vent.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(vent.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
@@ -2088,7 +2064,7 @@ namespace Digi.BuildInfo
                 AddLine().Label("Output - Rate").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s");
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup);
             }
         }
 
@@ -2100,15 +2076,15 @@ namespace Digi.BuildInfo
             {
                 if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Upgrades: N/A").EndLine();
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Upgrades: N/A");
                 }
                 else
                 {
-                    AddLine().Append("Upgrades per slot:").EndLine();
+                    AddLine().Append("Upgrades per slot:");
 
                     foreach(var upgrade in upgradeModule.Upgrades)
                     {
-                        AddLine().Append("    - ").AppendUpgrade(upgrade).EndLine();
+                        AddLine().Append("    - ").AppendUpgrade(upgrade);
                     }
                 }
             }
@@ -2123,7 +2099,7 @@ namespace Digi.BuildInfo
                 AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup);
             }
 
             var h2Engine = def as MyHydrogenEngineDefinition;
@@ -2135,9 +2111,9 @@ namespace Digi.BuildInfo
                     AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
 
                     if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority(h2Engine.ResourceSinkGroup).EndLine();
+                        GetLine().Separator().ResourcePriority(h2Engine.ResourceSinkGroup);
 
-                    AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity).EndLine();
+                    AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity);
                 }
 
                 return;
@@ -2155,14 +2131,14 @@ namespace Digi.BuildInfo
                         if(hasOneFuel)
                             AddLine().Append("Needs fuel: ");
                         else
-                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor().EndLine();
+                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor();
 
                         foreach(var fuel in reactor.FuelInfos)
                         {
                             if(!hasOneFuel)
                                 AddLine().Append("       - ");
 
-                            GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)").EndLine();
+                            GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)");
                         }
                     }
                 }
@@ -2174,26 +2150,26 @@ namespace Digi.BuildInfo
 
                     if(invLimit != null)
                     {
-                        AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint).EndLine();
+                        AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint);
 
                         if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryExtras))
                         {
-                            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":").EndLine();
+                            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":");
 
                             foreach(var id in invLimit.ConstrainedIds)
                             {
-                                AddLine().Append("       - ").IdTypeSubtypeFormat(id).EndLine();
+                                AddLine().Append("       - ").IdTypeSubtypeFormat(id);
                             }
 
                             foreach(var type in invLimit.ConstrainedTypes)
                             {
-                                AddLine().Append("       - All of type: ").IdTypeFormat(type).EndLine();
+                                AddLine().Append("       - All of type: ").IdTypeFormat(type);
                             }
                         }
                     }
                     else
                     {
-                        AddLine().Append("Inventory: ").InventoryFormat(volume).EndLine();
+                        AddLine().Append("Inventory: ").InventoryFormat(volume);
                     }
                 }
 
@@ -2208,12 +2184,12 @@ namespace Digi.BuildInfo
                     AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
 
                     if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup).EndLine();
+                        GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup);
                 }
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
                 {
-                    AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')').EndLine();
+                    AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')');
                 }
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -2229,7 +2205,7 @@ namespace Digi.BuildInfo
             {
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
                 {
-                    AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided").EndLine();
+                    AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided");
                 }
 
                 return;
@@ -2240,8 +2216,8 @@ namespace Digi.BuildInfo
             {
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize).EndLine();
-                    AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2).EndLine();
+                    AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize);
+                    AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2);
                     // TODO wind speed unit?
                 }
 
@@ -2259,7 +2235,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius).EndLine();
+                AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius);
             }
         }
 
@@ -2269,11 +2245,11 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.PowerStats))
             {
-                AddLine().Label("Power - Active[1]").PowerFormat(GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)").EndLine();
+                AddLine().Label("Power - Active[1]").PowerFormat(GameData.Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)");
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(laserAntenna.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(laserAntenna.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -2286,10 +2262,10 @@ namespace Digi.BuildInfo
                 else
                     GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-                GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required").EndLine();
+                GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
 
-                AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees).EndLine();
-                AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul).EndLine();
+                AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees);
+                AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * GameData.Hardcoded.LaserAntenna_RotationSpeedMul);
 
                 // TODO visualize angle limits?
             }
@@ -2303,7 +2279,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius).EndLine();
+                AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius);
             }
         }
         #endregion
@@ -2316,7 +2292,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Timer range").TimeFormat(timer.MinDelay / 1000f).Append(" to ").TimeFormat(timer.MaxDelay / 1000f).EndLine();
+                AddLine().Label("Timer range").TimeFormat(timer.MinDelay / 1000f).Append(" to ").TimeFormat(timer.MaxDelay / 1000f);
             }
         }
 
@@ -2335,8 +2311,8 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution).EndLine();
-                AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4).EndLine();
+                AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution);
+                AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
             }
         }
 
@@ -2348,8 +2324,8 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Range").DistanceRangeFormat(sound.MinRange, sound.MaxRange).EndLine();
-                AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod).EndLine();
+                AddLine().Label("Range").DistanceRangeFormat(sound.MinRange, sound.MaxRange);
+                AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod);
 
                 // EmitterNumber and LoopUpdateThreshold seem unused
             }
@@ -2365,7 +2341,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max area").VectorFormat(maxField).EndLine();
+                AddLine().Label("Max area").VectorFormat(maxField);
             }
         }
 
@@ -2378,12 +2354,12 @@ namespace Digi.BuildInfo
                 AddLine().Label("Power - Normal use").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast charging").PowerFormat(camera.RequiredChargingInput);
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(camera.ResourceSinkGroup).EndLine();
+                    GetLine().Separator().ResourcePriority(camera.ResourceSinkGroup);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov).EndLine();
+                AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov);
                 AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
 
                 if(camera.RaycastDistanceLimit < 0)
@@ -2391,7 +2367,7 @@ namespace Digi.BuildInfo
                 else
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).EndLine();
+                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
 
                 // TODO visualize angle limits?
             }
@@ -2405,7 +2381,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Button count").Append(button.ButtonCount).EndLine();
+                AddLine().Label("Button count").Append(button.ButtonCount);
             }
         }
 
@@ -2421,7 +2397,7 @@ namespace Digi.BuildInfo
 
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
-                    AddLine().Label("Field size").VectorFormat(flatGravGen.MinFieldSize).Append(" to ").VectorFormat(flatGravGen.MaxFieldSize).EndLine();
+                    AddLine().Label("Field size").VectorFormat(flatGravGen.MinFieldSize).Append(" to ").VectorFormat(flatGravGen.MaxFieldSize);
                 }
             }
             else
@@ -2433,14 +2409,14 @@ namespace Digi.BuildInfo
 
                     if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                     {
-                        AddLine().Label("Radius").DistanceFormat(sphereGravGen.MinRadius).Append(" to ").DistanceFormat(sphereGravGen.MaxRadius).EndLine();
+                        AddLine().Label("Radius").DistanceFormat(sphereGravGen.MinRadius).Append(" to ").DistanceFormat(sphereGravGen.MaxRadius);
                     }
                 }
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration).EndLine();
+                AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration);
             }
         }
 
@@ -2452,7 +2428,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass).EndLine();
+                AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass);
             }
         }
 
@@ -2465,7 +2441,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass).EndLine();
+                AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass);
             }
         }
 
@@ -2477,14 +2453,14 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
             {
-                AddLine().Label("Stored power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump).EndLine();
+                AddLine().Label("Stored power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Jump delay").TimeFormat(jumpDrive.JumpDelay).EndLine();
-                AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance).EndLine();
-                AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass).EndLine();
+                AddLine().Label("Jump delay").TimeFormat(jumpDrive.JumpDelay);
+                AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance);
+                AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
             }
         }
         #endregion
@@ -2496,7 +2472,7 @@ namespace Digi.BuildInfo
 
             if(wepDef == null)
             {
-                AddLine(MyFontEnum.Red).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString()).EndLine();
+                AddLine(MyFontEnum.Red).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString());
                 return;
             }
 
@@ -2507,14 +2483,14 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryStats))
             {
-                AddLine().Label("Inventory").InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId).EndLine();
+                AddLine().Label("Inventory").InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId);
             }
 
             if(turret != null)
             {
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
                 {
-                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters).EndLine();
+                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
                     if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
@@ -2529,7 +2505,7 @@ namespace Digi.BuildInfo
                     else
                         GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
 
-                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul).EndLine();
+                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * GameData.Hardcoded.Turret_RotationSpeedMul);
 
                     // TODO visualize angle limits?
                 }
@@ -2537,7 +2513,7 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000).EndLine();
+                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000);
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AmmoDetails))
@@ -2573,14 +2549,13 @@ namespace Digi.BuildInfo
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(projectilesData.ShotsInBurst);
-                    GetLine().EndLine();
 
                     AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
                         .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
                         .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")");
 
                     for(int i = 0; i < ammoProjectiles.Count; ++i)
                     {
@@ -2603,7 +2578,7 @@ namespace Digi.BuildInfo
                             GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
                         GetLine().ResetColor().Append(", ")
-                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")").EndLine();
+                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * GameData.Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")");
                     }
                 }
 
@@ -2617,13 +2592,12 @@ namespace Digi.BuildInfo
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(missileData.ShotsInBurst);
-                    GetLine().EndLine();
 
                     AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
                         .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetColor().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")").EndLine();
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")");
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -2645,7 +2619,7 @@ namespace Digi.BuildInfo
                             GetLine().SpeedFormat(ammo.DesiredSpeed * GameData.Hardcoded.Missile_DesiredSpeedMultiplier);
 
                         GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
-                            .ResetColor().Append(")").EndLine();
+                            .ResetColor().Append(")");
                     }
                 }
 
@@ -2663,8 +2637,8 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.AmmoDetails))
             {
-                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).EndLine();
-                AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage).EndLine();
+                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius);
+                AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage);
             }
         }
         #endregion
