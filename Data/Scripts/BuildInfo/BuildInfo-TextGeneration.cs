@@ -9,6 +9,7 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
@@ -1160,17 +1161,19 @@ namespace Digi.BuildInfo
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding).ResetColor();
 
-                GetLine().Append("Integrity: ").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity);
+                GetLine().Label("Integrity").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity);
 
                 if(deformable)
-                    GetLine().Separator().Append("Deformable: ").RoundedNumber(def.DeformationRatio, 2);
+                    GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
 
                 var dmgResPercent = (int)((1 - def.GeneralDamageMultiplier) * 100);
 
                 if(dmgResPercent != 0)
-                    GetLine().Separator().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
+                    GetLine().Separator().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label("Resistance").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
 
-                // DEBUG TODO add HasPhysics and IsStandAlone
+                //if(!def.IsStandAlone)
+                //    GetLine().Separator().Color(COLOR_WARNING).Label("Not standalone");
+                // TODO add HasPhysics and IsStandAlone?
             }
             #endregion
 
@@ -1261,6 +1264,7 @@ namespace Digi.BuildInfo
             formatLookup.Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
             formatLookup.Add(typeof(MyObjectBuilder_Refinery), Format_Production);
             formatLookup.Add(typeof(MyObjectBuilder_Assembler), Format_Production);
+            formatLookup.Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
             formatLookup.Add(typeof(MyObjectBuilder_GasTank), Format_Production);
             formatLookup.Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
             formatLookup.Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
@@ -1848,19 +1852,20 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
             {
-                // DEBUG TODO make these as "abilities" like in cockpit
-                // DEBUG TODO energy recharge is x5, need exact charge rate though... also heal rate
-                AddLine(medicalRoom.HealingAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                    .Color(medicalRoom.HealingAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Healing").BoolFormat(medicalRoom.HealingAllowed);
+                if(medicalRoom.HealingAllowed)
+                    AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.MedRoomHeal * 60), 2).Append("hp/s");
+                else
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Healing").Append("No").ResetColor();
 
-                AddLine(medicalRoom.RefuelAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                    .Color(medicalRoom.RefuelAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Recharge").BoolFormat(medicalRoom.RefuelAllowed);
+                if(medicalRoom.RefuelAllowed)
+                    AddLine().Label("Refuel").Append("Yes (x5)");
+                else
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Refuel").Append("No").ResetColor();
 
-                AddLine(medicalRoom.SuitChangeAllowed ? MyFontEnum.White : MyFontEnum.Red)
-                    .Color(medicalRoom.SuitChangeAllowed ? COLOR_NORMAL : COLOR_WARNING)
-                    .Label("Suit change").BoolFormat(medicalRoom.SuitChangeAllowed);
+                if(medicalRoom.SuitChangeAllowed)
+                    AddLine().Label("Suit Change").Append("Yes");
+                else
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetColor();
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -1906,17 +1911,15 @@ namespace Digi.BuildInfo
 
                     AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
                 }
+            }
 
-                var survivalKit = def as MySurvivalKitDefinition;
-
-                if(survivalKit != null)
+            var survivalKit = def as MySurvivalKitDefinition; // this extends MyAssemblerDefinition
+            if(survivalKit != null)
+            {
+                if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
-                    if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
-                    {
-                        // DEBUG TODO energy recharge is x1, need exact charge rate though... also heal rate
-                        AddLine().LabelHardcoded("Healing").BoolFormat(true);
-                        AddLine().LabelHardcoded("Recharge").BoolFormat(true);
-                    }
+                    AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
+                    AddLine().LabelHardcoded("Recharge").Append("Yes (x1)");
                 }
             }
 
