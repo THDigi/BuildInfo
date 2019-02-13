@@ -348,7 +348,7 @@ namespace Digi.BuildInfo
                 {
                     // HACK this must match the data from the menu
                     const int itemsStartAt = 1;
-                    const int itemsEndAt = 9;
+                    const int itemsEndAt = MENU_TOTAL_ITEMS;
 
                     var selected = itemsStartAt + menuSelectedItem;
 
