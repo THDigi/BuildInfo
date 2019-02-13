@@ -737,13 +737,15 @@ namespace Digi.BuildInfo
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
                 int dmgResPercent = (int)((1 - (selectedBlock.DamageRatio * def.GeneralDamageMultiplier)) * 100);
-
-                AddLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
-
                 int gridDamageRes = (int)((1 - ((MyCubeGrid)grid).GridGeneralDamageModifier) * 100);
 
-                if(gridDamageRes != 0)
-                    GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDamageRes > 0 ? "+" : "").Append(gridDamageRes).Append("%)").ResetColor();
+                if(dmgResPercent != 0 || gridDamageRes != 0)
+                {
+                    AddLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
+
+                    if(gridDamageRes != 0)
+                        GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDamageRes > 0 ? "+" : "").Append(gridDamageRes).Append("%)").ResetColor();
+                }
 
                 // TODO impact resistance? wheels in particular...
             }
@@ -752,44 +754,10 @@ namespace Digi.BuildInfo
             #region Optional: ownership
             if(Settings.AimInfo.IsSet(Settings.AimInfoFlags.Ownership) && hasComputer)
             {
-                AddLine();
-
                 var relation = (selectedBlock.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(selectedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
                 var shareMode = GameData.GetBlockShareMode(selectedBlock.FatBlock);
 
-                if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                {
-                    GetLine().Color(COLOR_GOOD).Append("Access: all");
-                }
-                else if(shareMode == MyOwnershipShareModeEnum.All)
-                {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
-                        GetLine().Color(COLOR_GOOD);
-                    else
-                        GetLine().Color(COLOR_WARNING);
-
-                    GetLine().Append("Access: all");
-                }
-                else if(shareMode == MyOwnershipShareModeEnum.Faction)
-                {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                        GetLine().Color(COLOR_GOOD);
-                    else
-                        GetLine().Color(COLOR_BAD);
-
-                    GetLine().Append("Access: faction");
-                }
-                else if(shareMode == MyOwnershipShareModeEnum.None)
-                {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                        GetLine().Color(COLOR_WARNING);
-                    else
-                        GetLine().Color(COLOR_BAD);
-
-                    GetLine().Append("Access: owner");
-                }
-
-                GetLine().ResetColor().Separator();
+                AddLine();
 
                 if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
                     GetLine().Color(COLOR_BAD);
@@ -814,7 +782,41 @@ namespace Digi.BuildInfo
                     if(!string.IsNullOrEmpty(factionTag))
                         GetLine().Append(factionTag).Append('.');
 
-                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH).EndLine();
+                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(selectedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                }
+
+                GetLine().ResetColor().Separator();
+
+                if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                {
+                    GetLine().Color(COLOR_GOOD).Append("Access: All");
+                }
+                else if(shareMode == MyOwnershipShareModeEnum.All)
+                {
+                    if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
+                        GetLine().Color(COLOR_GOOD);
+                    else
+                        GetLine().Color(COLOR_WARNING);
+
+                    GetLine().Append("Access: All");
+                }
+                else if(shareMode == MyOwnershipShareModeEnum.Faction)
+                {
+                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                        GetLine().Color(COLOR_GOOD);
+                    else
+                        GetLine().Color(COLOR_BAD);
+
+                    GetLine().Append("Access: Faction");
+                }
+                else if(shareMode == MyOwnershipShareModeEnum.None)
+                {
+                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                        GetLine().Color(COLOR_WARNING);
+                    else
+                        GetLine().Color(COLOR_BAD);
+
+                    GetLine().Append("Access: Owner");
                 }
             }
             #endregion
