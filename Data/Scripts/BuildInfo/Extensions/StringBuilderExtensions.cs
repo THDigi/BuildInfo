@@ -328,7 +328,7 @@ namespace Digi.BuildInfo.Extensions
         {
             if(BuildInfo.Instance.Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.InventoryVolumeMultiplied))
             {
-                var mul = MyAPIGateway.Session.InventoryMultiplier;
+                var mul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
 
                 MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
