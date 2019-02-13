@@ -434,13 +434,16 @@ namespace Digi.BuildInfo.Extensions
             var typeName = type.ToString();
             var index = typeName.IndexOf('_') + 1;
             s.Append(typeName, index, typeName.Length - index);
+
+            if(typeName.EndsWith("GasProperties")) // manually fixing "GasProperties" to just "Gas"
+                s.Length -= "Properties".Length;
+
             return s;
         }
 
         public static StringBuilder IdTypeSubtypeFormat(this StringBuilder s, MyDefinitionId id)
         {
-            s.IdTypeFormat(id.TypeId).Append("/").Append(id.SubtypeName);
-            return s;
+            return s.Append(id.SubtypeName).Append(' ').IdTypeFormat(id.TypeId);
         }
 
         public static StringBuilder ModFormat(this StringBuilder s, MyModContext context)
