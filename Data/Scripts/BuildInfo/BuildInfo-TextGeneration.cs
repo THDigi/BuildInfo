@@ -1825,29 +1825,34 @@ namespace Digi.BuildInfo
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                AddLine(medicalRoom.ForceSuitChangeOnRespawn ? MyFontEnum.Blue : (!medicalRoom.RespawnAllowed ? MyFontEnum.Red : MyFontEnum.White))
-                    .Color(medicalRoom.ForceSuitChangeOnRespawn ? COLOR_WARNING : COLOR_NORMAL)
-                    .Append("Respawn: ").BoolFormat(medicalRoom.RespawnAllowed).ResetColor().Separator();
-
-                if(medicalRoom.RespawnAllowed && medicalRoom.ForceSuitChangeOnRespawn)
+                if(medicalRoom.RespawnAllowed)
                 {
-                    GetLine().Color(COLOR_WARNING).Label("Forced suit");
+                    AddLine().Label("Respawn");
 
-                    if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
+                    if(medicalRoom.ForceSuitChangeOnRespawn)
                     {
-                        GetLine().Color(COLOR_BAD).Append("(Error: empty)");
+                        GetLine().Append("Yes").Separator().Label("Forced suit");
+
+                        if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
+                        {
+                            GetLine().Color(COLOR_BAD).Append("(Error: empty)").ResetColor();
+                        }
+                        else
+                        {
+                            MyCharacterDefinition charDef;
+                            if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
+                                GetLine().Append(charDef.Name).ResetColor();
+                            else
+                                GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)").ResetColor();
+                        }
                     }
                     else
-                    {
-                        MyCharacterDefinition charDef;
-                        if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
-                            GetLine().Append(charDef.Name);
-                        else
-                            GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)");
-                    }
+                        GetLine().Append("Yes");
                 }
                 else
-                    GetLine().Append("Forced suit: No");
+                {
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Respawn").Append("No");
+                }
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
@@ -1861,30 +1866,30 @@ namespace Digi.BuildInfo
                     AddLine().Label("Refuel").Append("Yes (x5)");
                 else
                     AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Refuel").Append("No").ResetColor();
-
-                if(medicalRoom.SuitChangeAllowed)
-                    AddLine().Label("Suit Change").Append("Yes");
-                else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetColor();
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
             {
-                if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
+                if(medicalRoom.SuitChangeAllowed)
                 {
-                    AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Suits:");
+                    AddLine().Label("Suit Change");
 
-                    foreach(var charName in medicalRoom.CustomWardrobeNames)
+                    if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
                     {
-                        MyCharacterDefinition charDef;
-                        if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
-                            AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)");
-                        else
-                            AddLine().Append("    ").Append(charDef.DisplayNameText);
+                        foreach(var charName in medicalRoom.CustomWardrobeNames)
+                        {
+                            MyCharacterDefinition charDef;
+                            if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
+                                AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)");
+                            else
+                                AddLine().Append("    ").Append(charDef.DisplayNameText);
+                        }
                     }
+                    else
+                        GetLine().Append("(all)");
                 }
                 else
-                    AddLine().Append("Usable suits: (all)");
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetColor();
             }
         }
 
