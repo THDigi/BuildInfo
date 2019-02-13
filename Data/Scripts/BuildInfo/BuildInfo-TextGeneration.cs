@@ -834,17 +834,20 @@ namespace Digi.BuildInfo
                 var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
                 var grindTime = ((buildTime / (1f / grindRatio)) / grindMul);
 
-                AddLine();
-
                 if(!IsGrinder)
                 {
-                    GetLine().Append("Complete: ").TimeFormat(buildTime * (1 - integrityRatio));
+                    var time = buildTime * (1 - integrityRatio);
 
-                    if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
+                    if(time > 0)
                     {
-                        var funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
+                        AddLine().Append("Complete: ").TimeFormat(buildTime * (1 - integrityRatio));
 
-                        GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
+                        if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
+                        {
+                            var funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
+
+                            GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
+                        }
                     }
                 }
                 else
@@ -863,15 +866,16 @@ namespace Digi.BuildInfo
                         grindTime *= integrityRatio;
                     }
 
-                    GetLine().Append("Dismantled: ").TimeFormat(grindTime);
-
-                    if(hackable)
+                    if(grindTime > 0)
                     {
-                        GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime);
+                        AddLine().Append("Dismantled: ").TimeFormat(grindTime);
+
+                        if(hackable)
+                        {
+                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime);
+                        }
                     }
                 }
-
-                GetLine().EndLine();
             }
             #endregion
 
@@ -1123,9 +1127,7 @@ namespace Digi.BuildInfo
             var grindRatio = def.DisassembleRatio;
 
             if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
-            {
                 grindRatio *= GameData.Hardcoded.Door_Closed_DisassembleRatioMultiplier;
-            }
 
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
