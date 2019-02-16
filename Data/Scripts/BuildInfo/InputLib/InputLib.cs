@@ -220,6 +220,14 @@ namespace Digi.Input
                     first = false;
                 }
             }
+
+            /// <summary>
+            /// Returns the combination string.
+            /// </summary>
+            public override string ToString()
+            {
+                return (string.IsNullOrWhiteSpace(CombinationString) ? "<Unassigned>" : CombinationString);
+            }
         }
         #endregion
 
@@ -598,6 +606,31 @@ namespace Digi.Input
             // TODO: what context when spectating?
 
             return ControlContext.BASE;
+        }
+
+        public static InputKey GetInput(MyKeys key)
+        {
+            return (InputKey)instance.keyToInput.GetValueOrDefault(key, null);
+        }
+
+        public static InputMouseButton GetInput(MyMouseButtonsEnum button)
+        {
+            return (InputMouseButton)instance.mouseButtonToInput.GetValueOrDefault(button, null);
+        }
+
+        public static InputGamepadAxis GetInput(MyJoystickAxesEnum axis)
+        {
+            return (InputGamepadAxis)instance.gamepadAxisToInput.GetValueOrDefault(axis, null);
+        }
+
+        public static InputGamepadButton GetInput(MyJoystickButtonsEnum button)
+        {
+            return (InputGamepadButton)instance.gamepadButtonToInput.GetValueOrDefault(button, null);
+        }
+
+        public static InputGameControl GetInput(ControlContext contextId, MyStringId controlId)
+        {
+            return (InputGameControl)instance.gameControlToInput.GetValueOrDefault(controlId);
         }
 
         public static string GetInputDisplayName(MyKeys key)

@@ -154,7 +154,6 @@ namespace Digi.BuildInfo
             }
 
             bgObject.Visible = true;
-
             textObject.Visible = true;
 
             #region Update text and count lines
@@ -241,7 +240,7 @@ namespace Digi.BuildInfo
             {
                 float edge = BACKGROUND_EDGE * TextAPIScale;
 
-                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * Math.Min(BG_OPACITY_CAP, showMenu ? MENU_BG_OPACITY : (Settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : Settings.textAPIBackgroundOpacity));
+                bgObject.BillBoardColor = BLOCKINFO_BG_COLOR * (showMenu ? MENU_BG_OPACITY : (Settings.textAPIBackgroundOpacity < 0 ? hudBackgroundOpacity : Settings.textAPIBackgroundOpacity));
                 bgObject.Origin = textPos;
                 bgObject.Width = (float)Math.Abs(textSize.X) + edge;
                 bgObject.Height = (float)Math.Abs(textSize.Y) + edge;

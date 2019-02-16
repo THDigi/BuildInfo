@@ -10,6 +10,20 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
+    public struct FloatRange
+    {
+        public readonly float Default;
+        public readonly float Min;
+        public readonly float Max;
+
+        public FloatRange(float defaultValue, float min, float max)
+        {
+            Default = defaultValue;
+            Min = min;
+            Max = max;
+        }
+    }
+
     public class Settings : IDisposable
     {
         public InputLib.Combination MenuBind;
@@ -90,14 +104,14 @@ namespace Digi.BuildInfo
         public readonly InputLib.Combination default_freezePlacementBind = InputLib.Combination.Create(FREEZE_PLACEMENT_INPUT_NAME, $"alt {MENU_BIND_INPUT_NAME}");
         public readonly InputLib.Combination default_blockPickerBind = InputLib.Combination.Create(BLOCK_PICKER_INPUT_NAME, "ctrl c.cubesizemode");
 
-        public const bool default_showTextInfo = true;
-        public const bool default_alwaysVisible = false;
-        public const bool default_textAPIUseCustomStyling = false;
+        public readonly bool default_showTextInfo = true;
+        public readonly bool default_alwaysVisible = false;
+        public readonly bool default_textAPIUseCustomStyling = false;
         public readonly Vector2D default_textAPIScreenPos = new Vector2D(-0.9825, 0.8);
         public const bool default_textAPIAlignRight = false;
         public const bool default_textAPIAlignBottom = false;
-        public const float default_textAPIScale = 1f;
-        public const float default_textAPIBackgroundOpacity = -1f;
+        public readonly FloatRange default_textAPIScale = new FloatRange(1f, 0.01f, 5f);
+        public readonly FloatRange default_textAPIBackgroundOpacity = new FloatRange(-0.1f, -0.1f, 1f);
         public const bool default_allLabels = true;
         public const bool default_axisLabels = true;
         public const bool default_adjustBuildDistance = true;
@@ -123,8 +137,8 @@ namespace Digi.BuildInfo
             textAPIScreenPos = default_textAPIScreenPos;
             textAPIAlignRight = default_textAPIAlignRight;
             textAPIAlignBottom = default_textAPIAlignBottom;
-            textAPIScale = default_textAPIScale;
-            textAPIBackgroundOpacity = default_textAPIBackgroundOpacity;
+            textAPIScale = default_textAPIScale.Default;
+            textAPIBackgroundOpacity = default_textAPIBackgroundOpacity.Default;
             allLabels = default_allLabels;
             axisLabels = default_axisLabels;
             adjustBuildDistance = default_adjustBuildDistance;
@@ -375,7 +389,7 @@ namespace Digi.BuildInfo
                     if(key.Equals("Scale", COMPARE_TYPE))
                     {
                         if(float.TryParse(val, out f))
-                            textAPIScale = MathHelper.Clamp(f, 0f, 10f);
+                            textAPIScale = MathHelper.Clamp(f, default_textAPIScale.Min, default_textAPIScale.Max);
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -385,9 +399,9 @@ namespace Digi.BuildInfo
                     if(key.Equals("BackgroundOpacity", COMPARE_TYPE))
                     {
                         if(val.Trim().Equals("HUD", COMPARE_TYPE))
-                            textAPIBackgroundOpacity = -1;
+                            textAPIBackgroundOpacity = -0.1f;
                         else if(float.TryParse(val, out f))
-                            textAPIBackgroundOpacity = MathHelper.Clamp(f, 0, 1);
+                            textAPIBackgroundOpacity = MathHelper.Clamp(f, default_textAPIBackgroundOpacity.Min, default_textAPIBackgroundOpacity.Max);
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -509,7 +523,7 @@ namespace Digi.BuildInfo
                 str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
                 str.Append("// Default: ").Append(default_menuBind.CombinationString).AppendLine();
             }
-            str.Append("MenuBind = ").Append(MenuBind.CombinationString).AppendLine();
+            str.Append("MenuBind = ").Append(MenuBind?.CombinationString ?? string.Empty).AppendLine();
 
             if(comments)
             {
@@ -527,7 +541,7 @@ namespace Digi.BuildInfo
                 str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
                 str.Append("// Default: ").Append(default_toggleTransparencyBind.CombinationString).AppendLine();
             }
-            str.Append("ToggleTransparencyBind = ").Append(ToggleTransparencyBind.CombinationString).AppendLine();
+            str.Append("ToggleTransparencyBind = ").Append(ToggleTransparencyBind?.CombinationString ?? string.Empty).AppendLine();
 
             if(comments)
             {
@@ -536,7 +550,7 @@ namespace Digi.BuildInfo
                 str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
                 str.Append("// Default: ").Append(default_freezePlacementBind.CombinationString).AppendLine();
             }
-            str.Append("FreezePlacementBind = ").Append(FreezePlacementBind.CombinationString).AppendLine();
+            str.Append("FreezePlacementBind = ").Append(FreezePlacementBind?.CombinationString ?? string.Empty).AppendLine();
 
             if(comments)
             {
@@ -545,7 +559,7 @@ namespace Digi.BuildInfo
                 str.Append("// (see inputs and instructions at the bottom of this file)").AppendLine();
                 str.Append("// Default: ").Append(default_blockPickerBind.CombinationString).AppendLine();
             }
-            str.Append("BlockPickerBind = ").Append(BlockPickerBind.CombinationString).AppendLine();
+            str.Append("BlockPickerBind = ").Append(BlockPickerBind?.CombinationString ?? string.Empty).AppendLine();
 
             if(comments)
             {
@@ -593,7 +607,7 @@ namespace Digi.BuildInfo
                 str.AppendLine();
                 str.Append("// Text info's background opacity percent scale (0.0 to 1.0 value) or the word HUD.").AppendLine();
                 str.Append("// The HUD value will use the game's UI background opacity.").AppendLine();
-                str.Append("// Default: ").Append(default_textAPIBackgroundOpacity < 0 ? "HUD" : default_textAPIBackgroundOpacity.ToString()).AppendLine();
+                str.Append("// Default: ").Append(default_textAPIBackgroundOpacity.Default < 0 ? "HUD" : default_textAPIBackgroundOpacity.Default.ToString()).AppendLine();
             }
             str.Append("BackgroundOpacity = ").Append(textAPIBackgroundOpacity < 0 ? "HUD" : Math.Round(textAPIBackgroundOpacity, 5).ToString()).AppendLine();
 
