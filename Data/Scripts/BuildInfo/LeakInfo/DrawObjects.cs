@@ -95,8 +95,11 @@ namespace Digi.BuildInfo.LeakInfo
                 if(walk < 0)
                     alpha = (1f - Math.Abs(walk));
 
-                MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorWorld * alpha).ToVector4() * 2, posWorld, particleData.Size, 0);
-                MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorOverlay * alpha), posOverlay, particleData.Size * LeakInfoComponent.DRAW_DEPTH_F, 0);
+                if(colorWorld.A > 0)
+                    MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorWorld * alpha).ToVector4() * 2, posWorld, particleData.Size, 0);
+
+                if(colorOverlay.A > 0)
+                    MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorOverlay * alpha), posOverlay, particleData.Size * LeakInfoComponent.DRAW_DEPTH_F, 0);
             }
 
             for(int t = trails.Count - 1; t >= 0; --t)
@@ -121,8 +124,11 @@ namespace Digi.BuildInfo.LeakInfo
                     var alpha = lifeRatio * 0.75f;
                     var size = 0.8f + (lifeRatio * 0.2f);
 
-                    MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorWorld * alpha).ToVector4() * 2, trailPosWorld, particleData.Size * size, 0);
-                    MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorOverlay * alpha), trailPosOverlay, particleData.Size * size * LeakInfoComponent.DRAW_DEPTH_F, 0);
+                    if(colorWorld.A > 0)
+                        MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorWorld * alpha).ToVector4() * 2, trailPosWorld, particleData.Size * size, 0);
+
+                    if(colorOverlay.A > 0)
+                        MyTransparentGeometry.AddPointBillboard(leakInfoComp.MATERIAL_PARTICLE, (colorOverlay * alpha), trailPosOverlay, particleData.Size * size * LeakInfoComponent.DRAW_DEPTH_F, 0);
                 }
             }
 

@@ -50,8 +50,6 @@ namespace Digi.BuildInfo.LeakInfo
         public const float DRAW_POINT_SIZE = 0.15f; // the start and end point's size
         public const double DRAW_DEPTH = 0.01; // camera distance for overlay particles
         public const float DRAW_DEPTH_F = 0.01f; // float version of the above value
-        public readonly Color COLOR_PARTICLE_OVERLAY = new Color(0, 155, 255); // particle color shown through walls
-        public readonly Color COLOR_PARTICLE_WORLD = new Color(0, 255, 255); // particle color shown at the world position, gets mixed with the OVERLAY color since they both render.
         public readonly Color COLOR_START_OVERLAY = new Color(0, 255, 0); // color of the starting point sprite
         public readonly Color COLOR_START_WORLD = new Color(0, 155, 0);
         public readonly Color COLOR_END_OVERLAY = new Color(255, 0, 0); // color of the ending point sprite
@@ -315,8 +313,8 @@ namespace Digi.BuildInfo.LeakInfo
             var camPos = camMatrix.Translation;
             var camFw = camMatrix.Forward;
             var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
-            var particleColorWorld = COLOR_PARTICLE_WORLD * alpha;
-            var particleColorOverlay = COLOR_PARTICLE_OVERLAY * alpha;
+            var particleColorWorld = BuildInfo.Instance.Settings.leakParticleColorWorld * alpha;
+            var particleColorOverlay = BuildInfo.Instance.Settings.leakParticleColorOverlay * alpha;
 
             // start dot
             var startPointWorld = selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start);

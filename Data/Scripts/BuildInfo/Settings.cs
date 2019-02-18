@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Digi.BuildInfo.Extensions;
 using Digi.Input;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -41,6 +42,10 @@ namespace Digi.BuildInfo
         public float textAPIBackgroundOpacity;
         public bool allLabels;
         public bool axisLabels;
+        public AimInfoFlags AimInfo = AimInfoFlags.All; // not yet exposed in config
+        public HeldInfoFlags HeldInfo = HeldInfoFlags.All; // not yet exposed in config
+        public Color leakParticleColorWorld;
+        public Color leakParticleColorOverlay;
         public bool adjustBuildDistance;
         public bool debug;
         public int configVersion;
@@ -89,9 +94,6 @@ namespace Digi.BuildInfo
             AmmoDetails = (1 << 17),
         }
 
-        public AimInfoFlags AimInfo = AimInfoFlags.All;
-        public HeldInfoFlags HeldInfo = HeldInfoFlags.All;
-
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
         public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
         public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";
@@ -108,14 +110,18 @@ namespace Digi.BuildInfo
         public readonly bool default_alwaysVisible = false;
         public readonly bool default_textAPIUseCustomStyling = false;
         public readonly Vector2D default_textAPIScreenPos = new Vector2D(-0.9825, 0.8);
-        public const bool default_textAPIAlignRight = false;
-        public const bool default_textAPIAlignBottom = false;
+        public readonly bool default_textAPIAlignRight = false;
+        public readonly bool default_textAPIAlignBottom = false;
         public readonly FloatRange default_textAPIScale = new FloatRange(1f, 0.01f, 5f);
         public readonly FloatRange default_textAPIBackgroundOpacity = new FloatRange(-0.1f, -0.1f, 1f);
-        public const bool default_allLabels = true;
-        public const bool default_axisLabels = true;
-        public const bool default_adjustBuildDistance = true;
-        public const bool default_debug = false;
+        public readonly bool default_allLabels = true;
+        public readonly bool default_axisLabels = true;
+        public readonly AimInfoFlags default_aimInfo = AimInfoFlags.All;
+        public readonly HeldInfoFlags default_heldInfo = HeldInfoFlags.All;
+        public readonly Color default_leakInfoParticleColorWorld = new Color(0, 255, 255);
+        public readonly Color default_leakInfoParticleColorOverlay = new Color(0, 155, 255);
+        public readonly bool default_adjustBuildDistance = true;
+        public readonly bool default_debug = false;
 
         public const int CFGVERSION_BAD_DEFAULTS = 0;
         public const int CFGVERSION_MENU_BIND_CHANGE = 1;
@@ -141,6 +147,10 @@ namespace Digi.BuildInfo
             textAPIBackgroundOpacity = default_textAPIBackgroundOpacity.Default;
             allLabels = default_allLabels;
             axisLabels = default_axisLabels;
+            AimInfo = default_aimInfo;
+            HeldInfo = default_heldInfo;
+            leakParticleColorWorld = default_leakInfoParticleColorWorld;
+            leakParticleColorOverlay = default_leakInfoParticleColorOverlay;
             adjustBuildDistance = default_adjustBuildDistance;
             debug = default_debug;
             // don't reset configVersion, only read
@@ -225,8 +235,9 @@ namespace Digi.BuildInfo
                 string line;
                 string[] args;
                 int i;
-                bool b;
+                bool toggle;
                 float f;
+                byte r, g, b, a;
 
                 while((line = file.ReadLine()) != null)
                 {
@@ -319,8 +330,8 @@ namespace Digi.BuildInfo
 
                     if(key.Equals("ShowTextInfo", COMPARE_TYPE))
                     {
-                        if(bool.TryParse(val, out b))
-                            showTextInfo = b;
+                        if(bool.TryParse(val, out toggle))
+                            showTextInfo = toggle;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -329,8 +340,8 @@ namespace Digi.BuildInfo
 
                     if(key.Equals("AlwaysVisible", COMPARE_TYPE))
                     {
-                        if(bool.TryParse(val, out b))
-                            alwaysVisible = b;
+                        if(bool.TryParse(val, out toggle))
+                            alwaysVisible = toggle;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -340,8 +351,8 @@ namespace Digi.BuildInfo
                     if(key.Equals("UseCustomStyling", COMPARE_TYPE)
                     || key.Equals("UseScreenPos", COMPARE_TYPE)) // backwards compatibility
                     {
-                        if(bool.TryParse(val, out b))
-                            textAPIUseCustomStyling = b;
+                        if(bool.TryParse(val, out toggle))
+                            textAPIUseCustomStyling = toggle;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -410,8 +421,8 @@ namespace Digi.BuildInfo
 
                     if(key.Equals("AllLabels", COMPARE_TYPE))
                     {
-                        if(bool.TryParse(val, out b))
-                            allLabels = b;
+                        if(bool.TryParse(val, out toggle))
+                            allLabels = toggle;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
@@ -420,11 +431,34 @@ namespace Digi.BuildInfo
 
                     if(key.Equals("AxisLabels", COMPARE_TYPE))
                     {
-                        if(bool.TryParse(val, out b))
-                            axisLabels = b;
+                        if(bool.TryParse(val, out toggle))
+                            axisLabels = toggle;
                         else
                             Log.Error($"Invalid {key} value: {val}");
 
+                        continue;
+                    }
+
+                    // TODO add AimInfo and HeldInfo
+
+                    bool colorWorld = key.Equals("LeakParticleColorWorld", COMPARE_TYPE);
+                    if(colorWorld || key.Equals("LeakParticleColorOverlay", COMPARE_TYPE))
+                    {
+                        var split = args[1].Split(',');
+                        if(split.Length >= 3 && byte.TryParse(split[0].Trim(), out r) && byte.TryParse(split[1].Trim(), out g) && byte.TryParse(split[2].Trim(), out b))
+                        {
+                            a = 255; // default alpha if not defined
+                            if(split.Length == 3 || byte.TryParse(split[3].Trim(), out a))
+                            {
+                                if(colorWorld)
+                                    leakParticleColorWorld = new Color(r, g, b, a);
+                                else
+                                    leakParticleColorOverlay = new Color(r, g, b, a);
+                                continue;
+                            }
+                        }
+
+                        Log.Error("Invalid " + args[0] + " value: " + args[1]);
                         continue;
                     }
 
@@ -620,6 +654,18 @@ namespace Digi.BuildInfo
             }
             str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
             str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
+
+            // TODO add AimInfo and HeldInfo
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// Colors for leak info particles").AppendLine();
+                str.Append("// Format is R,G,B or R,G,B,A with values from 0 to 255.").AppendLine();
+                str.Append("// Overlay particle is applied on top of world color but world particle gets clipped with world geometry.").AppendLine();
+            }
+            str.Append("LeakParticleColorWorld = ").AppendRGBA(leakParticleColorWorld).AppendLine();
+            str.Append("LeakParticleColorOverlay = ").AppendRGBA(leakParticleColorOverlay).AppendLine();
 
             if(comments)
             {

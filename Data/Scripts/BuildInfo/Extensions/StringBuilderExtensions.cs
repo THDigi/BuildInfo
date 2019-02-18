@@ -61,6 +61,11 @@ namespace Digi.BuildInfo.Extensions
             return sb;
         }
 
+        public static StringBuilder AppendRGBA(this StringBuilder sb, Color color)
+        {
+            return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
+        }
+
         public static StringBuilder AppendSubstring(this StringBuilder sb, string text, int start, int count)
         {
             sb.EnsureCapacity(sb.Length + count);
