@@ -1862,9 +1862,9 @@ namespace Digi.BuildInfo
                     AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Healing").Append("No").ResetColor();
 
                 if(medicalRoom.RefuelAllowed)
-                    AddLine().Label("Refuel").Append("Yes (x5)");
+                    AddLine().LabelHardcoded("Refuel").Append("Yes (x5)");
                 else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Refuel").Append("No").ResetColor();
+                    AddLine(MyFontEnum.Red).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetColor();
             }
 
             if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.ExtraInfo))
@@ -1923,7 +1923,7 @@ namespace Digi.BuildInfo
                 if(Settings.HeldInfo.IsSet(Settings.HeldInfoFlags.Production))
                 {
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
-                    AddLine().LabelHardcoded("Recharge").Append("Yes (x1)");
+                    AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
                 }
             }
 
