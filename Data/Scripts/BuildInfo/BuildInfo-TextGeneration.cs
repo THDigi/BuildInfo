@@ -149,6 +149,7 @@ namespace Digi.BuildInfo
             if(bgObject == null)
             {
                 bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BG_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject.Options |= HudAPIv2.Options.Shadowing; // gets moved physically under the text
             }
 
             bgObject.Visible = true;
