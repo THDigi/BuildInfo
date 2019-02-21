@@ -27,6 +27,8 @@ namespace Digi.BuildInfo
         public float textAPIBackgroundOpacity;
         public bool allLabels;
         public bool axisLabels;
+        public bool adjustBuildDistance;
+        public bool debug;
         public int configVersion;
 
         public readonly InputLib.Combination default_menuBind = InputLib.Combination.Create("plus");
@@ -47,6 +49,8 @@ namespace Digi.BuildInfo
         public const float default_textAPIBackgroundOpacity = -1f;
         public const bool default_allLabels = true;
         public const bool default_axisLabels = true;
+        public const bool default_adjustBuildDistance = true;
+        public const bool default_debug = false;
 
         public const int CFGVERSION_BAD_DEFAULTS = 0;
         public const int CFGVERSION_MENU_BIND_CHANGE = 1;
@@ -72,6 +76,8 @@ namespace Digi.BuildInfo
             textAPIBackgroundOpacity = default_textAPIBackgroundOpacity;
             allLabels = default_allLabels;
             axisLabels = default_axisLabels;
+            adjustBuildDistance = default_adjustBuildDistance;
+            debug = default_debug;
             // don't reset configVersion, only read
         }
 
@@ -357,6 +363,26 @@ namespace Digi.BuildInfo
                         continue;
                     }
 
+                    if(key.Equals("AdjustBuildDistance", COMPARE_TYPE))
+                    {
+                        if(bool.TryParse(val, out b))
+                            adjustBuildDistance = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
+                    if(key.Equals("Debug", COMPARE_TYPE))
+                    {
+                        if(bool.TryParse(val, out b))
+                            debug = b;
+                        else
+                            Log.Error($"Invalid {key} value: {val}");
+
+                        continue;
+                    }
+
                     if(key.Equals("ConfigVersion", COMPARE_TYPE))
                     {
                         if(int.TryParse(val, out i))
@@ -529,6 +555,24 @@ namespace Digi.BuildInfo
             }
             str.Append("AllLabels = ").Append(allLabels ? "true" : "false").Append(comments ? "  // a single toggle for all of them, if this is false then the values below are ignored" : "").AppendLine();
             str.Append("AxisLabels = ").Append(axisLabels ? "true" : "false").Append(comments ? "  // axes are colored in X/Y/Z = R/G/B, labels aren't really needed" : "").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// Survival build ghost can be adjusted with Ctrl+Scroll, you can turn it off here if you don't want it (or it has issues).").AppendLine();
+                str.Append("// Default: ").Append(default_adjustBuildDistance ? "true" : "false").AppendLine();
+            }
+            str.Append("AdjustBuildDistance = ").Append(adjustBuildDistance ? "true" : "false").AppendLine();
+
+            if(comments)
+            {
+                str.AppendLine();
+                str.Append("// Enable/disable debug logging/printing, various stuff written to log/screen for debugging.").AppendLine();
+                str.Append("// Currently it only logs values of build distance.").AppendLine();
+                str.Append("// Not for regular use.").AppendLine();
+                str.Append("// Default: ").Append(default_debug ? "true" : "false").AppendLine();
+            }
+            str.Append("Debug = ").Append(debug ? "true" : "false").AppendLine();
 
             if(comments)
             {

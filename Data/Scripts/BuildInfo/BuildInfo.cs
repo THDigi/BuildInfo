@@ -652,35 +652,55 @@ namespace Digi.BuildInfo
                 }
 
                 // FEATURE: allow survival mode to use scroll to change block distance.
-                if(MyAPIGateway.Session.SurvivalMode
-                && !MyAPIGateway.Session.EnableCopyPaste
-                && !MyCubeBuilder.SpectatorIsBuilding
-                && selectedDef != null
-                && selectedBlock == null)
+                if(selectedBlock == null && selectedDef != null)
                 {
-                    float blockLen = Math.Max(selectedDef.Size.AbsMax() * selectedGridSize, CUBEBUILDER_PLACE_MIN_SIZE);
-                    float add = CUBEBUILDER_PLACE_DIST_ADD;
-
-                    float tooLarge = 3 * selectedGridSize;
-                    if(blockLen > tooLarge)
-                        add = Math.Max(add - (blockLen - tooLarge), 0);
-
-                    float maxRange = Math.Min(blockLen + add, CUBEBUILDER_PLACE_DIST_MAX);
-
-                    int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
-
-                    if(scroll != 0 && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+                    if(MyAPIGateway.Session.SurvivalMode && !MyAPIGateway.Session.EnableCopyPaste && !MyCubeBuilder.SpectatorIsBuilding)
                     {
-                        if(scroll > 0)
-                            MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
-                        else
-                            MyCubeBuilder.IntersectionDistance /= 1.1f;
-                    }
+                        if(Settings.adjustBuildDistance)
+                        {
+                            float blockLen = Math.Max(selectedDef.Size.AbsMax() * selectedGridSize, CUBEBUILDER_PLACE_MIN_SIZE);
+                            float add = CUBEBUILDER_PLACE_DIST_ADD;
 
-                    if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_DIST_MIN)
-                        MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_DIST_MIN;
-                    else if(MyCubeBuilder.IntersectionDistance > maxRange)
-                        MyCubeBuilder.IntersectionDistance = maxRange;
+                            float tooLarge = 3 * selectedGridSize;
+                            if(blockLen > tooLarge)
+                                add = Math.Max(add - (blockLen - tooLarge), 0);
+
+                            float maxRange = Math.Min(blockLen + add, CUBEBUILDER_PLACE_DIST_MAX);
+
+                            int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+
+                            if(scroll != 0 && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+                            {
+                                if(scroll > 0)
+                                    MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
+                                else
+                                    MyCubeBuilder.IntersectionDistance /= 1.1f;
+                            }
+
+                            if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_DIST_MIN)
+                                MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_DIST_MIN;
+                            else if(MyCubeBuilder.IntersectionDistance > maxRange)
+                                MyCubeBuilder.IntersectionDistance = maxRange;
+
+                            if(Settings.debug)
+                            {
+                                MyAPIGateway.Utilities.ShowNotification($"(DEBUG: Enabled IntersectionDistance set to {MyCubeBuilder.IntersectionDistance:0.##}; max={maxRange:0.##})", 17);
+                            }
+                        }
+                        else
+                        {
+                            MyCubeBuilder.IntersectionDistance = 12.5f; // largest of the vanilla ones
+
+                            if(Settings.debug)
+                            {
+                                MyAPIGateway.Utilities.ShowNotification($"(DEBUG: Disabled IntersectionDistance set to {MyCubeBuilder.IntersectionDistance:0.##})", 17);
+                            }
+                        }
+                    }
+                    else if(Settings.debug)
+                    {
+                        MyAPIGateway.Utilities.ShowNotification($"(DEBUG: Creative/specbuild/copypaste enabled; no manual scroll adjust)", 17);
+                    }
                 }
 
                 if(pickBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
