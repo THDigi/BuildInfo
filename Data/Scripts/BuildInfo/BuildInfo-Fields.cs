@@ -59,7 +59,8 @@ namespace Digi.BuildInfo
         private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
         private readonly MyStringHash COMPUTER = MyStringHash.GetOrCompute("Computer");
 
-        private const BlendTypeEnum BLOCKINFO_BLEND_TYPE = BlendTypeEnum.SDR; // allows sprites to be rendered on HUD-level, unaffected by flares or post processing
+        private const BlendTypeEnum BLOCKINFO_FG_BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum BLOCKINFO_BG_BLEND_TYPE = BlendTypeEnum.Standard;
         private readonly Color BLOCKINFO_BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
         private readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
         private const float BLOCKINFO_TEXT_PADDING = 0.001f;

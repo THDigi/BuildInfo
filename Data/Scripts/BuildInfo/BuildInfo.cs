@@ -1053,7 +1053,7 @@ namespace Digi.BuildInfo
 
                 worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
-                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_FUNCTIONAL, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_FUNCTIONAL, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_FG_BLEND_TYPE);
             }
 
             // blue hacking line
@@ -1068,7 +1068,7 @@ namespace Digi.BuildInfo
 
                 worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
 
-                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_FG_BLEND_TYPE);
             }
 
             // different return item on grind
@@ -1099,7 +1099,7 @@ namespace Digi.BuildInfo
                             text.Append('…');
                         }
 
-                        data.Msg = new HudAPIv2.SpaceMessage(text, worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLOCKINFO_BLEND_TYPE);
+                        data.Msg = new HudAPIv2.SpaceMessage(text, worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLOCKINFO_FG_BLEND_TYPE);
                     }
                     else
                     {
@@ -1115,7 +1115,7 @@ namespace Digi.BuildInfo
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_COMPLOSS, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, BLOCKINFO_LINE_COMPLOSS, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_FG_BLEND_TYPE);
                 }
             }
             #endregion

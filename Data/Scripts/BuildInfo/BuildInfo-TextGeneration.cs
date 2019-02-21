@@ -143,12 +143,12 @@ namespace Digi.BuildInfo
         {
             if(textObject == null)
             {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_FG_BLEND_TYPE);
             }
 
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(MATERIAL_VANILLA_SQUARE, Vector2D.Zero, Color.White, HideHud: !Settings.alwaysVisible, Blend: BLOCKINFO_BG_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             bgObject.Visible = true;
