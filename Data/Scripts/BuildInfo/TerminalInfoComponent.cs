@@ -196,16 +196,17 @@ namespace Digi.BuildInfo
 
                 // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
                 // HACK: force refresh terminal UI by changing ownership share mode; does not work for unownable blocks
-                var block = (MyCubeBlock)viewedInTerminal;
-
-                if(block.IDModule != null)
-                {
-                    var ownerId = block.IDModule.Owner;
-                    var shareMode = block.IDModule.ShareMode;
-
-                    block.ChangeOwner(ownerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
-                    block.ChangeOwner(ownerId, shareMode);
-                }
+                // NAH: It will screw with other mods that hook ownership change, also with PB
+                //var block = (MyCubeBlock)viewedInTerminal;
+                //
+                //if(block.IDModule != null)
+                //{
+                //    var ownerId = block.IDModule.Owner;
+                //    var shareMode = block.IDModule.ShareMode;
+                //
+                //    block.ChangeOwner(ownerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
+                //    block.ChangeOwner(ownerId, shareMode);
+                //}
             }
         }
 
