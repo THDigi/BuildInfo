@@ -27,8 +27,8 @@ namespace Digi.BuildInfo
         public const string MOD_NAME = "Build Info";
         public const long MOD_API_ID = 514062285; // API id for other mods to use, see "API Information"
 
-        public const float CUBEBUILDER_PLACE_DIST_MIN = 1;
-        public const float CUBEBUILDER_PLACE_DIST_MAX = 50;
+        public const float CUBEBUILDER_PLACE_MINRANGE = 1;
+        public const float CUBEBUILDER_PLACE_MAXRANGE = 50;
         public const float CUBEBUILDER_PLACE_DIST_ADD = 5;
         public const float CUBEBUILDER_PLACE_MIN_SIZE = 2.5f;
 

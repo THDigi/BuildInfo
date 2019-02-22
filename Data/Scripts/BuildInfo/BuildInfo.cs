@@ -295,7 +295,7 @@ namespace Digi.BuildInfo
                 {
                     bool changedBlock = (selectedDef.Id != lastDefId);
 
-                    if(Settings.showTextInfo && (changedBlock || (aimInfoNeedsUpdate && selectedBlock != null)))
+                    if(changedBlock || (aimInfoNeedsUpdate && selectedBlock != null))
                     {
                         if(changedBlock)
                         {
@@ -333,22 +333,25 @@ namespace Digi.BuildInfo
 
                         lastDefId = selectedDef.Id;
 
-                        if(selectedBlock != null) // text for welder/grinder
+                        if(Settings.showTextInfo)
                         {
-                            aimInfoNeedsUpdate = false;
-                            GenerateAimBlockText(selectedDef);
-                            PostProcessText(selectedDef.Id, false);
-                        }
-                        else // text for holding the block
-                        {
-                            if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(selectedDef.Id, out cache) : CachedBuildInfoNotification.TryGetValue(selectedDef.Id, out cache))
+                            if(selectedBlock != null) // text for welder/grinder
                             {
-                                textShown = false; // make the textAPI update
+                                aimInfoNeedsUpdate = false;
+                                GenerateAimBlockText(selectedDef);
+                                PostProcessText(selectedDef.Id, false);
                             }
-                            else
+                            else // text for holding the block
                             {
-                                GenerateBlockText(selectedDef);
-                                PostProcessText(selectedDef.Id, true);
+                                if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(selectedDef.Id, out cache) : CachedBuildInfoNotification.TryGetValue(selectedDef.Id, out cache))
+                                {
+                                    textShown = false; // make the textAPI update
+                                }
+                                else
+                                {
+                                    GenerateBlockText(selectedDef);
+                                    PostProcessText(selectedDef.Id, true);
+                                }
                             }
                         }
                     }
@@ -665,7 +668,10 @@ namespace Digi.BuildInfo
                             if(blockLen > tooLarge)
                                 add = Math.Max(add - (blockLen - tooLarge), 0);
 
-                            float maxRange = Math.Min(blockLen + add, CUBEBUILDER_PLACE_DIST_MAX);
+                            // vanilla default ranges
+                            float min = (MyAPIGateway.Session.ControlledObject is IMyShipController ? 12.5f : (selectedDef.CubeSize == MyCubeSize.Large ? 10 : 5));
+
+                            float maxRange = MathHelper.Clamp(blockLen + add, min, CUBEBUILDER_PLACE_MAXRANGE);
 
                             int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
 
@@ -677,8 +683,8 @@ namespace Digi.BuildInfo
                                     MyCubeBuilder.IntersectionDistance /= 1.1f;
                             }
 
-                            if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_DIST_MIN)
-                                MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_DIST_MIN;
+                            if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_MINRANGE)
+                                MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_MINRANGE;
                             else if(MyCubeBuilder.IntersectionDistance > maxRange)
                                 MyCubeBuilder.IntersectionDistance = maxRange;
 
