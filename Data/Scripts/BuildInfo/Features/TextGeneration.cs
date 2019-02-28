@@ -1879,6 +1879,9 @@ namespace Digi.BuildInfo.Features
                     AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2);
                     AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s");
                 }
+
+                if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)
+                    AddLine().Color(Color.Green).Append("Thruster damage is disabled in this world");
             }
         }
 
@@ -2279,6 +2282,14 @@ namespace Digi.BuildInfo.Features
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup);
             }
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
+            {
+                if(!MyAPIGateway.Session.SessionSettings.EnableOxygenPressurization)
+                    AddLine().Color(Color.Red).Append("Airtightness is disabled in this world");
+                else if(!MyAPIGateway.Session.SessionSettings.EnableOxygen)
+                    AddLine().Color(Color.Red).Append("Oxygen is disabled in this world");
+            }
         }
 
         private void Format_UpgradeModule(MyCubeBlockDefinition def)
@@ -2514,6 +2525,18 @@ namespace Digi.BuildInfo.Features
             var pb = (MyProgrammableBlockDefinition)def;
 
             PowerRequired(Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
+            {
+                if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
+                {
+                    AddLine().Color(Color.Red).Append("In-game Scripts are disabled in this world");
+                }
+                else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+                {
+                    AddLine().Color(Color.Red).Append("Scripter role required to use In-game Scripts");
+                }
+            }
         }
 
         private void Format_LCD(MyCubeBlockDefinition def)
@@ -2839,6 +2862,11 @@ namespace Digi.BuildInfo.Features
 
                 ammoProjectiles.Clear();
                 ammoMissiles.Clear();
+            }
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings) && !MyAPIGateway.Session.SessionSettings.WeaponsEnabled)
+            {
+                AddLine().Color(Color.Red).Append("Weapons are disabled in this world");
             }
         }
 

@@ -44,6 +44,7 @@ namespace Digi.BuildInfo.Features.Config
         Production = (1 << 15),
         ItemInputs = (1 << 16),
         AmmoDetails = (1 << 17),
+        Warnings = (1 << 18),
     }
 
     [Flags]
