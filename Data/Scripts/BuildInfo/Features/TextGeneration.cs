@@ -178,7 +178,7 @@ namespace Digi.BuildInfo.Features
 
         private void ReCheckSide()
         {
-            bool shouldUseLeftSide = (state == HudState.HINTS && GameConfig.RotationHints);
+            bool shouldUseLeftSide = (GameConfig.HudState == HudState.HINTS);
 
             if(useLeftSide != shouldUseLeftSide)
             {
