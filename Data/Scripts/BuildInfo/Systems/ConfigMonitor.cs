@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Systems
 
     public class GameConfig : ClientComponent
     {
-        public delegate void EventHandlerHudStateChanged(HudState prevState, HudState newState);
+        public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);
         public event EventHandlerHudStateChanged HudStateChanged;
 
         public event Action OptionsMenuClosed;

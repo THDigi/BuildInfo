@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Features
             GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
             EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
 
-            ReCheckSide(GameConfig.HudState);
+            ReCheckSide();
         }
 
         public override void UnregisterComponent()
@@ -155,13 +155,15 @@ namespace Digi.BuildInfo.Features
             TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
         }
 
-        private void GameConfig_HudStateChanged(HudState prevState, HudState newState)
+        private void GameConfig_HudStateChanged(HudState prevState, HudState state)
         {
-            ReCheckSide(newState);
+            ReCheckSide();
         }
 
         private void GameConfig_OptionsMenuClosed()
         {
+            ReCheckSide();
+
             if(Math.Abs(prevAspectRatio - GameConfig.AspectRatio) > 0.0001)
             {
                 prevAspectRatio = GameConfig.AspectRatio;
@@ -174,7 +176,7 @@ namespace Digi.BuildInfo.Features
             willSplitGrid = GridSplitType.Recalculate;
         }
 
-        private void ReCheckSide(HudState state)
+        private void ReCheckSide()
         {
             bool shouldUseLeftSide = (state == HudState.HINTS && GameConfig.RotationHints);
 
