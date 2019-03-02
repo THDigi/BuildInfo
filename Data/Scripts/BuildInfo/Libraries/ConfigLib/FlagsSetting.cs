@@ -83,6 +83,14 @@ namespace Digi.ConfigLib
             }
         }
 
+        public void Set(int flag, bool set)
+        {
+            if(set)
+                Value |= flag;
+            else
+                Value &= ~flag;
+        }
+
         public bool IsSet(int flag)
         {
             return (flag & Value) != 0;
