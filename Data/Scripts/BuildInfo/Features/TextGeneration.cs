@@ -99,7 +99,7 @@ namespace Digi.BuildInfo.Features
         private StringBuilder textAPIlines = null;
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private float TextAPIScale => Config.TextAPIScale * 1.2f; // DEBUG TODO remove multiplication when textAPI preview is merged to live version
+        private float TextAPIScale => Config.TextAPIScale;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
