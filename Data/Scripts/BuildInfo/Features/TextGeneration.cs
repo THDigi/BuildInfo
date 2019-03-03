@@ -1398,14 +1398,48 @@ namespace Digi.BuildInfo.Features
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding);
 
-                GetLine().Color(airTight == AirTightMode.SEALED ? COLOR_GOOD : (airTight == AirTightMode.NOT_SEALED ? COLOR_BAD : COLOR_WARNING)).Append("Air-tight: ");
+                bool isDoor = (def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition);
+                bool sealsOnClose = false;
 
-                if(airTight == AirTightMode.SEALED)
-                    GetLine().Append("Sealed");
-                else if(airTight == AirTightMode.NOT_SEALED)
-                    GetLine().Append("Not sealed");
+                if(isDoor)
+                {
+                    if(airTight == AirTightMode.SEALED)
+                    {
+                        sealsOnClose = true;
+                    }
+                    else
+                    {
+                        for(int i = 0; i < 6; ++i)
+                        {
+                            var normal = (Vector3I)Overlays.DIRECTIONS[i];
+
+                            if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
+                            {
+                                sealsOnClose = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if(isDoor && sealsOnClose)
+                {
+                    if(airTight == AirTightMode.SEALED)
+                        GetLine().Color(COLOR_GOOD).Label("Air-tight").Append("Sealed, even if open");
+                    else if(airTight == AirTightMode.NOT_SEALED)
+                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append("Not sealed, unless closed (see overlay)");
+                    else
+                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed, unless closed (see overlay)");
+                }
                 else
-                    GetLine().Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
+                {
+                    if(airTight == AirTightMode.SEALED)
+                        GetLine().Color(COLOR_GOOD).Label("Air-tight").Append("Sealed");
+                    else if(airTight == AirTightMode.NOT_SEALED)
+                        GetLine().Color(COLOR_BAD).Label("Air-tight").Append("Not sealed").Append(isDoor ? ", even if closed" : "");
+                    else
+                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
+                }
             }
             #endregion
         }
