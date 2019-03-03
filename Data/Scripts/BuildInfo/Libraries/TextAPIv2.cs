@@ -1,7 +1,8 @@
+﻿using Sandbox.ModAPI;
 using System;
 using System.Text;
-using Sandbox.ModAPI;
 using VRage;
+using VRage.Input;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -14,11 +15,27 @@ namespace Draygo.API
         private static HudAPIv2 instance;
         private const long REGISTRATIONID = 573804956;
         private bool registered = false;
+        private Action m_onRegisteredAction;
 
         private Func<int, object> MessageFactory;
         private Action<object, int, object> MessageSetter;
         private Func<object, int, object> MessageGetter;
         private Action<object> RemoveMessage;
+
+        private Action m_onScreenDimensionsChanged;
+
+        public Action OnScreenDimensionsChanged
+        {
+            get
+            {
+                return m_onScreenDimensionsChanged;
+            }
+
+            set
+            {
+                m_onScreenDimensionsChanged = value;
+            }
+        }
 
         public enum TextOrientation : byte
         {
@@ -27,8 +44,11 @@ namespace Draygo.API
             rtl = 3
         }
 
-        //call in init. 
-        public HudAPIv2()
+        /// <summary>
+        /// Create a HudAPI Instance. Please only create one per mod. 
+        /// </summary>
+        /// <param name="onRegisteredAction">Callback once the HudAPI is active. You can Instantiate HudAPI objects in this Action</param>
+        public HudAPIv2(Action onRegisteredAction = null)
         {
             if(instance != null)
             {
@@ -36,7 +56,7 @@ namespace Draygo.API
                 return;
             }
             instance = this;
-
+            m_onRegisteredAction = onRegisteredAction;
             MyAPIGateway.Utilities.RegisterMessageHandler(REGISTRATIONID, RegisterComponents);
         }
 
@@ -44,7 +64,9 @@ namespace Draygo.API
         {
             Unload();
         }
-
+        /// <summary>
+        /// Unregisters mod and frees references. 
+        /// </summary>
         public void Unload()
         {
             MyAPIGateway.Utilities.UnregisterMessageHandler(REGISTRATIONID, RegisterComponents);
@@ -53,8 +75,13 @@ namespace Draygo.API
             MessageGetter = null;
             RemoveMessage = null;
             registered = false;
+            m_onRegisteredAction = null;
+            instance = null;
         }
-
+        private enum RegistrationEnum : int
+        {
+            OnScreenUpdate = 2000
+        }
         private void RegisterComponents(object obj)
         {
             if(registered)
@@ -66,7 +93,11 @@ namespace Draygo.API
                 MessageSetter = Handlers.Item2;
                 MessageGetter = Handlers.Item3;
                 RemoveMessage = Handlers.Item4;
+
                 registered = true;
+                if(m_onRegisteredAction != null)
+                    m_onRegisteredAction();
+                MessageSet(null, (int)RegistrationEnum.OnScreenUpdate, new MyTuple<Action>(ScreenChangedHandle));
             }
         }
 
@@ -81,32 +112,26 @@ namespace Draygo.API
             }
         }
 
+
+
         #region Intercomm
         private void DeleteMessage(object BackingObject)
         {
             if(BackingObject != null)
                 RemoveMessage(BackingObject);
         }
-
         private object CreateMessage(MessageTypes type)
         {
             return MessageFactory((int)type);
         }
-
         private object MessageGet(object BackingObject, int Member)
         {
-            if(BackingObject != null)
-                return MessageGetter(BackingObject, Member);
-            else
-                return null;
+            return MessageGetter(BackingObject, Member);
         }
-
         private void MessageSet(object BackingObject, int Member, object Value)
         {
-            if(BackingObject != null)
-                MessageSetter(BackingObject, Member, Value);
+            MessageSetter(BackingObject, Member, Value);
         }
-
         private void RegisterCheck()
         {
             if(instance.registered == false)
@@ -114,16 +139,52 @@ namespace Draygo.API
                 throw new InvalidOperationException("HudAPI: Failed to create backing object. Do not instantiate without checking if heartbeat is true.");
             }
         }
+        private void ScreenChangedHandle()
+        {
+            if(m_onScreenDimensionsChanged != null)
+            {
+                m_onScreenDimensionsChanged();
+            }
+        }
         #endregion
-
         private enum MessageTypes : int
         {
             HUDMessage = 0,
             BillBoardHUDMessage,
             EntityMessage,
-            SpaceMessage
+            SpaceMessage,
+            MenuItem = 20,
+            MenuSubCategory,
+            MenuRootCategory,
+            MenuScreenInput,
+            MenuSliderItem,
+            MenuTextInput,
+            MenuKeybindInput
         }
+        #region Info
+        public static class APIinfo
+        {
+            private enum APIinfoMembers : int
+            {
+                ScreenPositionOnePX = 1000,
+                OnScreenUpdate
 
+            }
+            /// <summary>
+            /// Returns the distance for one pixel in x and y directions, can be multiplied and fed into Origin, Offset, and Size parameters for precise manipulation of HUD objects. 
+            /// </summary>
+            public static Vector2D ScreenPositionOnePX
+            {
+                get
+                {
+                    return (Vector2D)instance.MessageGet(null, (int)APIinfoMembers.ScreenPositionOnePX);
+                }
+            }
+
+
+        }
+        #endregion
+        #region Messages
         public enum Options : byte
         {
             None = 0x0,
@@ -131,7 +192,6 @@ namespace Draygo.API
             Shadowing = 0x2,
             Fixed = 0x4
         }
-
         private enum MessageBaseMembers : int
         {
             Message = 0,
@@ -140,9 +200,9 @@ namespace Draygo.API
             Scale,
             TextLength,
             Offset,
-            BlendType
+            BlendType,
+            Draw
         }
-
         public abstract class MessageBase
         {
             internal object BackingObject;
@@ -252,6 +312,12 @@ namespace Draygo.API
             {
                 return (Vector2D)(instance.MessageGet(BackingObject, (int)MessageBaseMembers.TextLength));
             }
+
+            public void Draw()
+            {
+                instance.MessageGet(BackingObject, (int)MessageBaseMembers.Draw);
+            }
+
         }
         public class EntityMessage : MessageBase
         {
@@ -263,7 +329,8 @@ namespace Draygo.API
                 Forward,
                 Orientation,
                 Max,
-                TransformMatrix
+                TransformMatrix,
+                Font
             }
 
             #region Properties
@@ -373,8 +440,22 @@ namespace Draygo.API
                     instance.MessageSet(BackingObject, (int)EntityMembers.TransformMatrix, value);
                 }
             }
+            /// <summary>
+            /// Font, default is "white", "monospace" also supported, modded fonts will be supported in the future.
+            /// </summary>
+            public string Font
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)EntityMembers.Font));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.Font, value);
+                }
+            }
             #endregion
-            public EntityMessage(StringBuilder Message, IMyEntity Entity, MatrixD TransformMatrix, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null)
+            public EntityMessage(StringBuilder Message, IMyEntity Entity, MatrixD TransformMatrix, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, string Font = "white")
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.EntityMessage);
@@ -397,11 +478,11 @@ namespace Draygo.API
                     {
                         this.Offset = Vector2D.Zero;
                     }
-
+                    this.Font = Font;
                 }
 
             }
-            public EntityMessage(StringBuilder Message, IMyEntity Entity, Vector3D LocalPosition, Vector3D Forward, Vector3D Up, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, BlendTypeEnum Blend = BlendTypeEnum.Standard)
+            public EntityMessage(StringBuilder Message, IMyEntity Entity, Vector3D LocalPosition, Vector3D Forward, Vector3D Up, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, BlendTypeEnum Blend = BlendTypeEnum.Standard, string Font = "white")
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.EntityMessage);
@@ -427,7 +508,7 @@ namespace Draygo.API
                     {
                         this.Offset = Vector2D.Zero;
                     }
-
+                    this.Font = Font;
                 }
 
             }
@@ -448,9 +529,6 @@ namespace Draygo.API
                 BackingObject = null;
             }
         }
-
-
-
         public class HUDMessage : MessageBase
         {
             private enum EntityMembers : int
@@ -458,6 +536,7 @@ namespace Draygo.API
                 Origin = 10,
                 Options,
                 ShadowColor,
+                Font
             }
             #region Properties
             /// <summary>
@@ -505,9 +584,23 @@ namespace Draygo.API
                     instance.MessageSet(BackingObject, (int)EntityMembers.ShadowColor, value);
                 }
             }
+            /// <summary>
+            /// Font, default is "white", "monospace" also supported, modded fonts will be supported in the future.
+            /// </summary>
+            public string Font
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)EntityMembers.Font));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.Font, value);
+                }
+            }
             #endregion
 
-            public HUDMessage(StringBuilder Message, Vector2D Origin, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1.0d, bool HideHud = true, bool Shadowing = false, Color? ShadowColor = null, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public HUDMessage(StringBuilder Message, Vector2D Origin, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1.0d, bool HideHud = true, bool Shadowing = false, Color? ShadowColor = null, BlendTypeEnum Blend = BlendTypeEnum.SDR, string Font = "white")
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.HUDMessage);
@@ -534,6 +627,7 @@ namespace Draygo.API
                     {
                         this.Offset = Vector2D.Zero;
                     }
+                    this.Font = Font;
                 }
             }
             public HUDMessage()
@@ -565,7 +659,7 @@ namespace Draygo.API
 
             #region Properties
             /// <summary>
-            /// top left is -100, 100, bottom right is 100 -100
+            /// top left is -1, 1, bottom right is 1 -1
             /// </summary>
             public Vector2D Origin
             {
@@ -728,7 +822,8 @@ namespace Draygo.API
                 WorldPosition = 10,
                 Up,
                 Left,
-                TxtOrientation
+                TxtOrientation,
+                Font
 
             }
             #region Properties
@@ -778,7 +873,20 @@ namespace Draygo.API
                     instance.MessageSet(BackingObject, (int)EntityMembers.Left, value);
                 }
             }
-
+            /// <summary>
+            /// Font, default is "white", "monospace" also supported, modded fonts will be supported in the future.
+            /// </summary>
+            public string Font
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)EntityMembers.Font));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.Font, value);
+                }
+            }
 
             /// <summary>
             /// Text orientation, from what edge text is aligned.
@@ -797,7 +905,7 @@ namespace Draygo.API
             #endregion
 
 
-            public SpaceMessage(StringBuilder Message, Vector3D WorldPosition, Vector3D Up, Vector3D Left, double Scale = 1, Vector2D? Offset = null, int TimeToLive = -1, TextOrientation TxtOrientation = TextOrientation.ltr, BlendTypeEnum Blend = BlendTypeEnum.Standard)
+            public SpaceMessage(StringBuilder Message, Vector3D WorldPosition, Vector3D Up, Vector3D Left, double Scale = 1, Vector2D? Offset = null, int TimeToLive = -1, TextOrientation TxtOrientation = TextOrientation.ltr, BlendTypeEnum Blend = BlendTypeEnum.Standard, string Font = "white")
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.SpaceMessage);
@@ -819,6 +927,7 @@ namespace Draygo.API
                     {
                         this.Offset = Vector2D.Zero;
                     }
+                    this.Font = Font;
                 }
 
             }
@@ -835,5 +944,595 @@ namespace Draygo.API
                 BackingObject = null;
             }
         }
+        #endregion
+
+        #region Menu
+        public abstract class MenuItemBase
+        {
+            private enum MenuItemBaseMembers : int
+            {
+                Text = 0,
+                Interactable
+            }
+            internal object BackingObject;
+
+            /// <summary>
+            /// Text displayed in the category list
+            /// </summary>
+            public string Text
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuItemBaseMembers.Text));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuItemBaseMembers.Text, value);
+                }
+            }
+            /// <summary>
+            /// User can select this item. true by default
+            /// </summary>
+            public bool Interactable
+            {
+                get
+                {
+                    return (bool)(instance.MessageGet(BackingObject, (int)MenuItemBaseMembers.Interactable));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuItemBaseMembers.Interactable, value);
+                }
+            }
+        }
+        public class MenuItem : MenuItemBase
+        {
+            private enum MenuItemMembers : int
+            {
+                OnClickAction = 100,
+                Parent
+            }
+            /// <summary>
+            /// On click event that will be fired if the user selects this item.
+            /// </summary>
+            public Action OnClick
+            {
+                get
+                {
+                    return (Action)(instance.MessageGet(BackingObject, (int)MenuItemMembers.OnClickAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuItemMembers.OnClickAction, value);
+                }
+            }
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuItemMembers.Parent, value.BackingObject);
+                }
+            }
+            /// <summary>
+            /// Basic toggle. You can use this to create on/off toggles, checkbox lists or option lists. 
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="OnClick">On click event that will be fired if the user selects this item.</param>
+            /// <param name="Interactable">User can select this item. true by default</param>
+            public MenuItem(string Text, MenuCategoryBase Parent, Action OnClick = null, bool Interactable = true)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuItem);
+
+                this.Text = Text;
+                this.Parent = Parent;
+                this.OnClick = OnClick;
+                this.Interactable = Interactable;
+            }
+        }
+
+        public abstract class MenuCategoryBase : MenuItemBase
+        {
+            private enum MenuBaseCategoryMembers : int
+            {
+                Header = 100
+            }
+            /// <summary>
+            /// Header text of the menu list.
+            /// </summary>
+            public string Header
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuBaseCategoryMembers.Header));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuBaseCategoryMembers.Header, value);
+                }
+            }
+        }
+        public class MenuRootCategory : MenuCategoryBase
+        {
+            public enum MenuFlag : int
+            {
+                None = 0,
+                PlayerMenu = 1,
+                AdminMenu = 2
+            }
+            private enum MenuRootCategoryMembers : int
+            {
+                MenuFlag = 200
+
+            }
+            /// <summary>
+            /// Which menu to attach to, either Player or Admin menus. 
+            /// </summary>
+            public MenuFlag Menu
+            {
+                get
+                {
+                    return (MenuFlag)(instance.MessageGet(BackingObject, (int)MenuRootCategoryMembers.MenuFlag));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuRootCategoryMembers.MenuFlag, (int)value);
+                }
+            }
+            /// <summary>
+            /// Create only one of these per mod. Automatically attaches to parent lists. 
+            /// </summary>
+            /// <param name="Text">Text displayed in the root menu list</param>
+            /// <param name="AttachedMenu">Which menu to attach to, either Player or Admin menus. </param>
+            /// <param name="HeaderText">Header text of this menu list.</param>
+            public MenuRootCategory(string Text, MenuFlag AttachedMenu = MenuFlag.None, string HeaderText = "Default Header")
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuRootCategory);
+                this.Text = Text;
+                Header = HeaderText;
+                Menu = AttachedMenu;
+            }
+        }
+        public class MenuSubCategory : MenuCategoryBase
+        {
+            private enum MenuSubCategoryMembers : int
+            {
+                Parent = 200
+            }
+
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory objectMust be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSubCategoryMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Creates a sub category, must attach to either Root or another Sub Category.
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory objectMust be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="HeaderText">Header text of this menu list.</param>
+            public MenuSubCategory(string Text, MenuCategoryBase Parent, string HeaderText = "Default Header")
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuSubCategory);
+                this.Text = Text;
+                this.Header = HeaderText;
+                this.Parent = Parent;
+            }
+        }
+        public class MenuTextInput : MenuItemBase
+        {
+            private enum MenuTextInputMembers : int
+            {
+                OnSubmitAction = 100,
+                Parent,
+                InputDialogTitle
+            }
+
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuTextInputMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Titlebar of the Dialog window. 
+            /// </summary>
+            public string InputDialogTitle
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuTextInputMembers.InputDialogTitle));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuTextInputMembers.InputDialogTitle, value);
+                }
+            }
+
+            /// <summary>
+            /// Returns inputted string on submit. 
+            /// </summary>
+            public Action<string> OnSubmitAction
+            {
+                get
+                {
+                    return (Action<string>)(instance.MessageGet(BackingObject, (int)MenuTextInputMembers.OnSubmitAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuTextInputMembers.OnSubmitAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Opens a text input dialog box when user selects this item.
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="InputDialogTitle">Titlebar of the Dialog window. </param>
+            /// <param name="onSubmit">Returns inputted string on submit. </param>
+            public MenuTextInput(string Text, MenuCategoryBase Parent, string InputDialogTitle = "Enter text value", Action<string> onSubmit = null)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuTextInput);
+                this.Text = Text;
+                this.InputDialogTitle = InputDialogTitle;
+                this.OnSubmitAction = onSubmit;
+                this.Parent = Parent;
+            }
+        }
+        public class MenuKeybindInput : MenuItemBase
+        {
+            private enum MenuKeybindInputMembers : int
+            {
+                OnSubmitAction = 100,
+                Parent,
+                InputDialogTitle
+            }
+
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuKeybindInputMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Titlebar of the Dialog window. 
+            /// </summary>
+            public string InputDialogTitle
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuKeybindInputMembers.InputDialogTitle));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuKeybindInputMembers.InputDialogTitle, value);
+                }
+            }
+
+            /// <summary>
+            /// Called with Key pressed, Shift Pressed, Ctrl Pressed, Alt Pressed when user Submits the dialog. 
+            /// </summary>
+            public Action<MyKeys, bool, bool, bool> OnSubmitAction
+            {
+                get
+                {
+                    return (Action<MyKeys, bool, bool, bool>)(instance.MessageGet(BackingObject, (int)MenuKeybindInputMembers.OnSubmitAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuKeybindInputMembers.OnSubmitAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Opens up a keybind dialog box which lets the user submit a Key + Modifiers.
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="InputDialogTitle">Titlebar of the Dialog window. </param>
+            /// <param name="onSubmit">Called with Key pressed, Shift Pressed, Ctrl Pressed, Alt Pressed when user Submits the dialog. </param>
+            public MenuKeybindInput(string Text, MenuCategoryBase Parent, string InputDialogTitle = "Keybind - Press any key", Action<MyKeys, bool, bool, bool> onSubmit = null)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuKeybindInput);
+                this.Text = Text;
+                this.InputDialogTitle = InputDialogTitle;
+                this.OnSubmitAction = onSubmit;
+                this.Parent = Parent;
+            }
+        }
+        public class MenuScreenInput : MenuItemBase
+        {
+            private enum MenuScreenInputMembers : int
+            {
+                OnSubmitAction = 100,
+                Parent,
+                InputDialogTitle,
+                Origin,
+                Size,
+                OnUpdateAction,
+                Cancel,
+                OnSelect
+            }
+
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Titlebar of the Dialog window. 
+            /// </summary>
+            public string InputDialogTitle
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.InputDialogTitle));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.InputDialogTitle, value);
+                }
+            }
+            /// <summary>
+            /// Called when user does not click the dialog box window to move it and cancels out of the dialog box. 
+            /// </summary>
+            public Action OnCancel
+            {
+                get
+                {
+                    return (Action)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.Cancel));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.Cancel, value);
+                }
+            }
+            /// <summary>
+            /// Screen position origin of the dialog box. 
+            /// </summary>
+            public Vector2D Origin
+            {
+                get
+                {
+                    return (Vector2D)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.Origin));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.Origin, value);
+                }
+            }
+            /// <summary>
+            /// Size of the dialog box. Use GetTextLength() on a Hud Object to manipulate this. Or you can specify a manual width and height APIinfo can get you the width and height of a single PX.
+            /// </summary>
+            public Vector2D Size
+            {
+                get
+                {
+                    return (Vector2D)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.Size));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.Size, value);
+                }
+            }
+            /// <summary>
+            /// Called when user lets go of the dialog box with the final position. Please note that the result may be off the screen. Recommend clamping between -1 and 1 on each axis. 
+            /// </summary>
+            public Action<Vector2D> OnSubmitAction
+            {
+                get
+                {
+                    return (Action<Vector2D>)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.OnSubmitAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.OnSubmitAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Called every tick while the user is manipulating the dialog. 
+            /// </summary>
+            public Action<Vector2D> UpdateAction
+            {
+                get
+                {
+                    return (Action<Vector2D>)(instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.OnUpdateAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.OnUpdateAction, value);
+                }
+            }
+
+            public Action OnSelect
+            {
+                get
+                {
+                    return (Action)instance.MessageGet(BackingObject, (int)MenuScreenInputMembers.OnSelect);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuScreenInputMembers.OnSelect, value);
+                }
+            }
+
+            /// <summary>
+            /// Summons a dialog box that gives you a screen position when completed. 
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="Origin">Screen position origin of the dialog box. </param>
+            /// <param name="Size">Size of the dialog box. Use GetTextLength() on a Hud Object to manipulate this. Or you can specify a manual width and height APIinfo can get you the width and height of a single PX.</param>
+            /// <param name="InputDialogTitle">Titlebar of the Dialog window. </param>
+            /// <param name="OnSubmit"> Called when user lets go of the dialog box with the final position. </param>
+            /// <param name="Update">Called every tick while the user is manipulating the dialog. </param>
+            /// <param name="Cancel">Called when user does not click the dialog box window to move it and cancels out of the dialog box.</param>
+            /// <param name="OnSelect">Called when user invokes this dialog box use to refresh the Size property</param>
+            public MenuScreenInput(string Text, MenuCategoryBase Parent, Vector2D Origin, Vector2D Size, string InputDialogTitle = "Move this element", Action<Vector2D> OnSubmit = null, Action<Vector2D> Update = null, Action Cancel = null, Action OnSelect = null)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuScreenInput);
+                this.Text = Text;
+                this.InputDialogTitle = InputDialogTitle;
+                this.OnSubmitAction = OnSubmit;
+                this.UpdateAction = Update;
+                this.Origin = Origin;
+                this.Size = Size;
+                this.OnCancel = Cancel;
+                this.OnSelect = OnSelect;
+                this.Parent = Parent;
+
+            }
+        }
+        public class MenuSliderInput : MenuItemBase
+        {
+            private enum MenuSliderItemMembers : int
+            {
+                OnSubmitAction = 100,
+                Parent,
+                InputDialogTitle,
+                InitialPercent,
+                SliderPercentToValue,
+                OnCancel
+            }
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Titlebar of the Dialog window. 
+            /// </summary>
+            public string InputDialogTitle
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuSliderItemMembers.InputDialogTitle));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.InputDialogTitle, value);
+                }
+            }
+            /// <summary>
+            /// When the dialog box first opens set the position as a percentage based on this number. Expected value between 0 and 1. 
+            /// </summary>
+            public float InitialPercent
+            {
+                get
+                {
+                    return (float)(instance.MessageGet(BackingObject, (int)MenuSliderItemMembers.InitialPercent));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.InitialPercent, value);
+                }
+            }
+            /// <summary>
+            /// Percentage value of the slider when the user submits the dialog
+            /// </summary>
+            public Action<float> OnSubmitAction
+            {
+                get
+                {
+                    return (Action<float>)(instance.MessageGet(BackingObject, (int)MenuSliderItemMembers.OnSubmitAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.OnSubmitAction, value);
+                }
+            }
+            /// <summary>
+            /// Called when the user cancels the dialog window or otherwise closes the dialog box without confirming. 
+            /// </summary>
+            public Action OnCancel
+            {
+                get
+                {
+                    return (Action)(instance.MessageGet(BackingObject, (int)MenuSliderItemMembers.OnCancel));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.OnCancel, value);
+                }
+            }
+
+            /// <summary>
+            /// Returned value calls toString to print the text in the dialog box. Value fed to this function is the slider percentage value. 
+            /// </summary>
+            public Func<float, object> SliderPercentToValue
+            {
+                get
+                {
+                    return (Func<float, object>)(instance.MessageGet(BackingObject, (int)MenuSliderItemMembers.SliderPercentToValue));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuSliderItemMembers.SliderPercentToValue, value);
+                }
+            }
+
+            /// <summary>
+            /// Creates a dialog object and adds it to the Parent list. 
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="InitialPercent">When the dialog box first opens set the position as a percentage based on this number. Expected value between 0 and 1.</param>
+            /// <param name="InputDialogTitle">Titlebar of the Dialog window. </param>
+            /// <param name="onSubmitAction">Percentage value of the slider when the user submits the dialog</param>
+            /// <param name="SliderPercentToValue">Returned value calls toString to print the text in the dialog box. Value fed to this function is the slider percentage value.</param>
+            /// <param name="OnCancel">Called when the user cancels the dialog window or otherwise closes the dialog box without confirming.</param>
+            public MenuSliderInput(string Text, MenuCategoryBase Parent, float InitialPercent, string InputDialogTitle = "Adjust Slider to modify value", Action<float> OnSubmitAction = null, Func<float, object> SliderPercentToValue = null, Action OnCancel = null)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuSliderItem);
+                this.Text = Text;
+                this.InputDialogTitle = InputDialogTitle;
+                this.OnSubmitAction = OnSubmitAction;
+                this.SliderPercentToValue = SliderPercentToValue;
+                this.InitialPercent = InitialPercent;
+                this.OnCancel = OnCancel;
+                this.Parent = Parent;
+            }
+        }
+        #endregion
     }
 }

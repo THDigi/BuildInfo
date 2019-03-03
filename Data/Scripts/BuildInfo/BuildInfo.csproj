@@ -130,6 +130,16 @@
     <Compile Include="Features\Config\BackgroundOpacitySetting.cs" />
     <Compile Include="Features\Config\TextAlignSetting.cs" />
     <Compile Include="Features\LiveData\LiveDataHandler.cs" />
+    <Compile Include="Features\TextAPIMenu\IItem.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemColor.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemInput.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemFlags.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemBoxMove.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemSlider.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemButton.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemToggle.cs" />
+    <Compile Include="Features\TextAPIMenu\ItemGroup.cs" />
+    <Compile Include="Features\TextAPIMenu\ModMenu.cs" />
     <Compile Include="Libraries\ConfigLib\BoolSetting.cs" />
     <Compile Include="Libraries\ConfigLib\FlagsSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ColorSetting.cs" />

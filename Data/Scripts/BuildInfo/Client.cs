@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.TextAPIMenu;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 
@@ -22,6 +23,7 @@ namespace Digi.BuildInfo
         // Features
         public Config Config;
         public LegacyConfig LegacyConfig;
+        public ModMenu ModMenu;
         public LeakInfo LeakInfo;
         public Overlays Overlays;
         public PickBlock PickBlock;
@@ -51,6 +53,7 @@ namespace Digi.BuildInfo
             // Features
             Config = new Config(this);
             LegacyConfig = new LegacyConfig(this);
+            ModMenu = new ModMenu(this);
             LeakInfo = new LeakInfo(this);
             Overlays = new Overlays(this);
             PickBlock = new PickBlock(this);

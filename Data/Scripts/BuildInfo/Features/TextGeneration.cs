@@ -3032,7 +3032,7 @@ namespace Digi.BuildInfo.Features
             Refresh();
         }
 
-        public void Refresh(bool redraw = false)
+        public void Refresh(bool redraw = false, StringBuilder write = null)
         {
             HideText();
             CachedBuildInfoTextAPI.Clear();
@@ -3054,7 +3054,12 @@ namespace Digi.BuildInfo.Features
             }
 
             if(redraw)
-                UpdateTextAPIvisuals(textAPIlines);
+            {
+                if(EquipmentMonitor.BlockDef != null || QuickMenu.Shown)
+                    UpdateTextAPIvisuals(textAPIlines);
+                else
+                    UpdateTextAPIvisuals(write ?? textAPIlines);
+            }
         }
 
         #region Classes for storing generated info

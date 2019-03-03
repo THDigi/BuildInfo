@@ -6,6 +6,7 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Utils
 {
@@ -128,6 +129,11 @@ namespace Digi.BuildInfo.Utils
             }
 
             return false;
+        }
+
+        public static string ColorTag(Color color)
+        {
+            return $"<color={color.R},{color.G},{color.B}>";
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Digi.BuildInfo.Features
             COLLECTOR,
         }
 
-        private readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
+        public readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
         {
             Vector3.Right,
             Vector3.Left,
@@ -409,7 +409,7 @@ namespace Digi.BuildInfo.Features
 #endif
         }
 
-        private void HideLabels()
+        public void HideLabels()
         {
             if(!anyLabelShown)
                 return;

@@ -46,12 +46,11 @@ namespace Digi.BuildInfo.Systems
 
         public TextAPI(Client mod) : base(mod)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         public override void RegisterComponent()
         {
-            api = new HudAPIv2();
+            api = new HudAPIv2(TextAPIDetected);
         }
 
         public override void UnregisterComponent()
@@ -60,16 +59,16 @@ namespace Digi.BuildInfo.Systems
             api = null;
         }
 
-        public override void UpdateAfterSim(int tick)
+        private void TextAPIDetected()
         {
-            if(!WasDetected && api.Heartbeat)
+            if(WasDetected)
             {
-                WasDetected = true;
-
-                SetFlag(UpdateFlags.UPDATE_AFTER_SIM, false);
-
-                Detected?.Invoke();
+                Log.Error("TextAPI sent the register event twice now! Please report to TextAPI author.", Log.PRINT_MSG);
+                return;
             }
+
+            WasDetected = true;
+            Detected?.Invoke();
         }
     }
 }
