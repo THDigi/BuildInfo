@@ -210,69 +210,21 @@ namespace Digi.BuildInfo.Features
             if(EquipmentMonitor.ToolDefId != prevToolDefId)
                 LastDefId = default(MyDefinitionId);
 
+            // turn off frozen block preview if camera is too far away from it
+            if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
+            {
+                QuickMenu.SetFreezePlacement(false);
+            }
+
             var def = EquipmentMonitor.BlockDef;
 
             if(def != null || QuickMenu.Shown)
             {
-                if(QuickMenu.Shown)
-                {
-                    if(QuickMenu.NeedsUpdate)
-                    {
-                        LastDefId = DEFID_MENU;
-                        QuickMenu.NeedsUpdate = false;
-                        textShown = false;
-
-                        GenerateMenuText();
-                        PostProcessText(DEFID_MENU, false);
-                    }
-                }
-                else
-                {
-                    bool changedBlock = (def.Id != LastDefId);
-
-                    if(changedBlock || (aimInfoNeedsUpdate && EquipmentMonitor.AimedBlock != null))
-                    {
-                        LastDefId = def.Id;
-
-                        if(Config.TextShow)
-                        {
-                            if(EquipmentMonitor.IsCubeBuilder)
-                            {
-                                if(Config.PlaceInfo.Value != 0)
-                                {
-                                    if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(def.Id, out cache) : CachedBuildInfoNotification.TryGetValue(def.Id, out cache))
-                                    {
-                                        textShown = false; // make the textAPI update
-                                    }
-                                    else
-                                    {
-                                        GenerateBlockText(def);
-                                        PostProcessText(def.Id, true);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if(Config.AimInfo.Value != 0)
-                                {
-                                    aimInfoNeedsUpdate = false;
-                                    GenerateAimBlockText(def);
-                                    PostProcessText(def.Id, false);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                UpdateVisualText();
-
-                // turn off frozen block preview if camera is too far away from it
-                if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
-                {
-                    QuickMenu.SetFreezePlacement(false);
-                }
+                if(UpdateWithDef(def))
+                    return;
             }
-            else if(textShown)
+
+            if(textShown)
             {
                 QuickMenu.Shown = false;
 
@@ -283,6 +235,63 @@ namespace Digi.BuildInfo.Features
 
                 HideText();
             }
+        }
+
+        private bool UpdateWithDef(MyCubeBlockDefinition def)
+        {
+            if(QuickMenu.Shown)
+            {
+                if(QuickMenu.NeedsUpdate)
+                {
+                    LastDefId = DEFID_MENU;
+                    QuickMenu.NeedsUpdate = false;
+                    textShown = false;
+
+                    GenerateMenuText();
+                    PostProcessText(DEFID_MENU, false);
+                }
+            }
+            else
+            {
+                bool changedBlock = (def.Id != LastDefId);
+
+                if(Config.PlaceInfo.Value == 0 && EquipmentMonitor.IsCubeBuilder)
+                    return false;
+
+                if(Config.AimInfo.Value == 0 && EquipmentMonitor.AimedBlock != null)
+                    return false;
+
+                if(changedBlock || (aimInfoNeedsUpdate && EquipmentMonitor.AimedBlock != null))
+                {
+                    LastDefId = def.Id;
+
+                    if(Config.TextShow)
+                    {
+                        if(EquipmentMonitor.IsCubeBuilder)
+                        {
+                            if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(def.Id, out cache) : CachedBuildInfoNotification.TryGetValue(def.Id, out cache))
+                            {
+                                textShown = false; // make the textAPI update
+                            }
+                            else
+                            {
+                                GenerateBlockText(def);
+                                PostProcessText(def.Id, true);
+                            }
+                        }
+                        else
+                        {
+                            aimInfoNeedsUpdate = false;
+                            GenerateAimBlockText(def);
+                            PostProcessText(def.Id, false);
+                        }
+                    }
+                }
+            }
+
+            UpdateVisualText();
+
+            return true;
         }
 
         #region Text handling
@@ -639,6 +648,8 @@ namespace Digi.BuildInfo.Features
                     bgObject.Visible = false;
 
                 // HUD notifications don't need hiding, they expire in one frame.
+
+                Overlays.HideLabels();
             }
         }
 
@@ -851,6 +862,9 @@ namespace Digi.BuildInfo.Features
         public void GenerateAimBlockText(MyCubeBlockDefinition def)
         {
             ResetLines();
+
+            if(Config.AimInfo.Value == 0)
+                return;
 
             var aimedBlock = EquipmentMonitor.AimedBlock;
             var integrityRatio = aimedBlock.Integrity / aimedBlock.MaxIntegrity;
@@ -1189,6 +1203,9 @@ namespace Digi.BuildInfo.Features
         public void GenerateBlockText(MyCubeBlockDefinition def)
         {
             ResetLines();
+
+            if(Config.PlaceInfo.Value == 0)
+                return;
 
             #region Block name line only for textAPI
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.BlockName) && TextAPIEnabled)
