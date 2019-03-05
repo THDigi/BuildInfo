@@ -16,8 +16,6 @@ namespace Digi.BuildInfo.Features
     {
         private bool show = false;
         private float filledRatio = 0f;
-        private float volume = 0;
-        private float maxVolume = 0;
         private int skippedTicks = SKIP_TICKS;
         private const int SKIP_TICKS = 10; // how many ticks to skip to run one fill ratio update
         private readonly List<IMyShipDrill> drills = new List<IMyShipDrill>();
@@ -90,8 +88,6 @@ namespace Digi.BuildInfo.Features
         private void ComputeFillRatio()
         {
             filledRatio = 0;
-            volume = 0;
-            maxVolume = 0;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
 
@@ -100,28 +96,25 @@ namespace Digi.BuildInfo.Features
 
             if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
             {
-                FindFilledRatio(shipController, drills);
+                filledRatio = GetFilledRatio(shipController.CubeGrid, drills);
             }
             else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
-                FindFilledRatio(shipController, grinders);
+                filledRatio = GetFilledRatio(shipController.CubeGrid, grinders);
             }
             //else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipWelder))
             //{
             //    FindFilledRatio(shipController, welders);
             //}
-
-            if(maxVolume > 0)
-                filledRatio = MathHelper.Clamp(volume / maxVolume, 0, 1);
         }
 
-        private void FindFilledRatio<T>(IMyShipController shipController, List<T> blocks) where T : class, IMyTerminalBlock
+        private static float GetFilledRatio<T>(IMyCubeGrid grid, List<T> blocks) where T : class, IMyTerminalBlock
         {
-            volume = 0;
-            maxVolume = 0;
+            float volume = 0;
+            float maxVolume = 0;
 
             // ship tool toolbar actuates tools beyond rotors/pistons and connectors!
-            var GTS = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(shipController.CubeGrid);
+            var GTS = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             GTS.GetBlocksOfType(blocks);
 
             foreach(T block in blocks)
@@ -136,6 +129,8 @@ namespace Digi.BuildInfo.Features
             }
 
             blocks.Clear();
+
+            return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
         }
 
         public override void UpdateDraw()
