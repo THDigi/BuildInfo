@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features
         private int skippedTicks = SKIP_TICKS;
         private const int SKIP_TICKS = 10; // how many ticks to skip to run one fill ratio update
         private readonly List<IMyShipDrill> drills = new List<IMyShipDrill>();
-        private readonly List<IMyShipWelder> welders = new List<IMyShipWelder>();
+        //private readonly List<IMyShipWelder> welders = new List<IMyShipWelder>();
         private readonly List<IMyShipGrinder> grinders = new List<IMyShipGrinder>();
 
         private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
@@ -77,6 +77,16 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        private void UpdateShow()
+        {
+            show = (GameConfig.HudState != HudState.OFF && (EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
+
+            //show = (EquipmentMonitor.IsAnyTool
+            //    && !EquipmentMonitor.IsCubeBuilder
+            //    && EquipmentMonitor.HandEntity == null
+            //    && GameConfig.HudState != HudState.OFF);
+        }
+
         private void ComputeFillRatio()
         {
             filledRatio = 0;
@@ -92,14 +102,14 @@ namespace Digi.BuildInfo.Features
             {
                 FindFilledRatio(shipController, drills);
             }
-            else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipWelder))
-            {
-                FindFilledRatio(shipController, welders);
-            }
             else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 FindFilledRatio(shipController, grinders);
             }
+            //else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipWelder))
+            //{
+            //    FindFilledRatio(shipController, welders);
+            //}
 
             if(maxVolume > 0)
                 filledRatio = MathHelper.Clamp(volume / maxVolume, 0, 1);
@@ -128,27 +138,10 @@ namespace Digi.BuildInfo.Features
             blocks.Clear();
         }
 
-        private void UpdateShow()
-        {
-            show = (EquipmentMonitor.IsAnyTool
-                && !EquipmentMonitor.IsCubeBuilder
-                && EquipmentMonitor.HandEntity == null
-                && GameConfig.HudState != HudState.OFF);
-        }
-
         public override void UpdateDraw()
         {
             if(!show || !TextAPIEnabled || !Mod.Config.ShipToolInventoryBar || MyAPIGateway.Gui.IsCursorVisible)
                 return;
-
-            //if(!TextAPIEnabled
-            //|| !EquipmentMonitor.IsAnyTool
-            //|| EquipmentMonitor.IsCubeBuilder
-            //|| EquipmentMonitor.HandEntity != null
-            //|| !Mod.Config.TextShow
-            //|| GameConfig.HudState == HudState.OFF
-            //|| MyAPIGateway.Gui.IsCursorVisible)
-            //    return;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var worldPos = DrawUtils.HUDtoWorld(BAR_HUDPOS);
