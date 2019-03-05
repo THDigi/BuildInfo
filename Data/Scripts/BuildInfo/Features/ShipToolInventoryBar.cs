@@ -105,14 +105,14 @@ namespace Digi.BuildInfo.Features
                 filledRatio = MathHelper.Clamp(volume / maxVolume, 0, 1);
         }
 
-        private void FindFilledRatio<T>(IMyShipController shipController, List<T> blocks) where T : IMyTerminalBlock
+        private void FindFilledRatio<T>(IMyShipController shipController, List<T> blocks) where T : class, IMyTerminalBlock
         {
             volume = 0;
             maxVolume = 0;
 
             // ship tool toolbar actuates tools beyond rotors/pistons and connectors!
             var GTS = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(shipController.CubeGrid);
-            GTS.GetBlocksOfType(grinders);
+            GTS.GetBlocksOfType(blocks);
 
             foreach(T block in blocks)
             {
