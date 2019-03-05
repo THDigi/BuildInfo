@@ -16,8 +16,8 @@ namespace Digi.BuildInfo.Features
         private const int SKIP_TICKS = 5; // ticks between text updates, min value 1.
 
         private bool visible = false;
-        private HudAPIv2.HUDMessage msg;
-        private StringBuilder msgStr;
+        //private HudAPIv2.HUDMessage msg;
+        //private StringBuilder msgStr;
         private IMyHudNotification notify;
 
         public TurretAmmoPrint(Client mod) : base(mod)
@@ -99,8 +99,8 @@ namespace Digi.BuildInfo.Features
                 {
                     visible = false;
 
-                    if(msg != null)
-                        msg.Visible = false;
+                    //if(msg != null)
+                    //    msg.Visible = false;
 
                     if(notify != null)
                         notify.Hide();
