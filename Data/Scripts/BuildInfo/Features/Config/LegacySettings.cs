@@ -30,7 +30,9 @@ namespace Digi.BuildInfo.Features.Config
         {
             try
             {
-                if(newConfigExists)
+                bool oldConfigExists = MyAPIGateway.Utilities.FileExistsInLocalStorage(FILE, typeof(LegacyConfig));
+
+                if(newConfigExists && oldConfigExists)
                 {
                     Log.Info($"Found {FILE} while the new config also already existed, deleting {FILE}.");
 
@@ -38,7 +40,7 @@ namespace Digi.BuildInfo.Features.Config
                     return;
                 }
 
-                if(MyAPIGateway.Utilities.FileExistsInLocalStorage(FILE, typeof(LegacyConfig)))
+                if(oldConfigExists)
                 {
                     Log.Info($"Found legacy {FILE} loading and deleting...");
 
@@ -50,6 +52,7 @@ namespace Digi.BuildInfo.Features.Config
                     Log.Info($"All loaded, deleting {FILE}.");
 
                     MyAPIGateway.Utilities.DeleteFileInLocalStorage(FILE, typeof(LegacyConfig));
+                    return;
                 }
             }
             catch(Exception e)
