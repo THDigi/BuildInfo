@@ -1,21 +1,32 @@
 ﻿using System;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
-using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
-using VRage.Game.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    /// <summary>
+    /// Adds the ctrl+scroll block distance adjust to in-ship mode in creative and creative tools as well as survival (ship or character).
+    /// It also overwrites the behavior for creative tools to allow maximum placement distance like in creative mode.
+    /// </summary>
     public class PlacementDistance : ClientComponent
     {
-        public const float CUBEBUILDER_PLACE_MINRANGE = 1;
-        public const float CUBEBUILDER_PLACE_MAXRANGE = 50;
-        public const float CUBEBUILDER_PLACE_DIST_ADD = 5;
-        public const float CUBEBUILDER_PLACE_MIN_SIZE = 2.5f;
+        private const float PLACE_MINRANGE = 1;
+        private const float PLACE_MAXRANGE = 50;
+        private const float PLACE_DIST_ADD = 5;
+        private const float PLACE_MIN_SIZE = 2.5f;
+        private const float VANILLA_CREATIVE_MAXDIST = 100f;
+        private const float VANILLA_SURVIVAL_CREATIVETOOLS_MAXDIST = 12.5f;
+
+        private float VanillaSurvivalDistance => (InShip ? 12.5f : (EquipmentMonitor.BlockDef.CubeSize == MyCubeSize.Large ? 10 : 5));
+
+        private bool InShip => MyAPIGateway.Session.ControlledObject is IMyShipController;
+        private bool SurvivalCreativeTools => MyAPIGateway.Session.SurvivalMode && MyAPIGateway.Session.EnableCopyPaste;
+        private bool CreativeGameMode => MyAPIGateway.Session.CreativeMode;
 
         public PlacementDistance(Client mod) : base(mod)
         {
@@ -24,43 +35,22 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         public override void UnregisterComponent()
         {
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             SetFlag(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
-        }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
-        {
-            if(def == null)
-                return;
-
-            if(EquipmentMonitor.IsCubeBuilder && !ShouldOverrideDistance()) // applies to creative too
+            // reset survival distance if this feature is disabled
+            if(EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival && !CreativeGameMode && !SurvivalCreativeTools)
             {
-                MyCubeBuilder.IntersectionDistance = GetVanillaSurvivalDistance();
+                MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance;
             }
-        }
-
-        private float GetVanillaSurvivalDistance()
-        {
-            return (MyAPIGateway.Session.ControlledObject is IMyShipController ? 12.5f : (EquipmentMonitor.BlockDef.CubeSize == MyCubeSize.Large ? 10 : 5));
-        }
-
-        private bool ShouldOverrideDistance()
-        {
-            // these are the same checks as the game for determining if ctrl+scroll should not work
-            // EnableCopyPaste is used as SpaceMaster creative tools toggle check.
-            bool survival = MyAPIGateway.Session.SurvivalMode && !MyAPIGateway.Session.EnableCopyPaste && !MyCubeBuilder.SpectatorIsBuilding;
-
-            return (Config.AdjustBuildDistanceSurvival && survival) || (Config.AdjustBuildDistanceShipCreative && !survival);
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
@@ -68,39 +58,76 @@ namespace Digi.BuildInfo.Features
             if(inMenu || paused || !EquipmentMonitor.IsCubeBuilder || EquipmentMonitor.BlockDef == null)
                 return;
 
-            if(ShouldOverrideDistance())
+            float maxRange = 0f;
+            bool inShip = InShip;
+
+            if(CreativeGameMode)
             {
-                float blockSizeMeters = Math.Max(EquipmentMonitor.BlockDef.Size.AbsMax() * EquipmentMonitor.BlockGridSize, CUBEBUILDER_PLACE_MIN_SIZE);
+                if(!inShip)
+                    return;
+
+                if(!Config.AdjustBuildDistanceShipCreative)
+                    return;
+
+                maxRange = VANILLA_CREATIVE_MAXDIST;
+            }
+            else if(SurvivalCreativeTools)
+            {
+                if(!Config.AdjustBuildDistanceShipCreative)
+                    return;
+
+                maxRange = VANILLA_CREATIVE_MAXDIST;
+            }
+            else
+            {
+                if(!Config.AdjustBuildDistanceSurvival)
+                    return;
+
+                float blockSizeMeters = Math.Max(EquipmentMonitor.BlockDef.Size.AbsMax() * EquipmentMonitor.BlockGridSize, PLACE_MIN_SIZE);
 
                 // add some extra distance only if the block isn't huge
-                float add = CUBEBUILDER_PLACE_DIST_ADD;
+                float add = PLACE_DIST_ADD;
                 float tooLarge = 3 * EquipmentMonitor.BlockGridSize;
                 if(blockSizeMeters > tooLarge)
                     add = Math.Max(add - (blockSizeMeters - tooLarge), 0);
 
-                float min = GetVanillaSurvivalDistance();
-                float maxRange = MathHelper.Clamp(blockSizeMeters + add, min, CUBEBUILDER_PLACE_MAXRANGE);
-
-                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
-
-                if(scroll != 0 && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-                {
-                    if(scroll > 0)
-                        MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
-                    else
-                        MyCubeBuilder.IntersectionDistance /= 1.1f;
-                }
-
-                if(MyCubeBuilder.IntersectionDistance < CUBEBUILDER_PLACE_MINRANGE)
-                    MyCubeBuilder.IntersectionDistance = CUBEBUILDER_PLACE_MINRANGE;
-                else if(MyCubeBuilder.IntersectionDistance > maxRange)
-                    MyCubeBuilder.IntersectionDistance = maxRange;
-
-                if(Config.Debug)
-                    MyAPIGateway.Utilities.ShowNotification($"(DEBUG: Enabled IntersectionDistance set to {MyCubeBuilder.IntersectionDistance:0.##}; max={maxRange:0.##})", 17);
+                maxRange = MathHelper.Clamp(blockSizeMeters + add, VanillaSurvivalDistance, PLACE_MAXRANGE);
             }
-            else if(Config.Debug)
-                MyAPIGateway.Utilities.ShowNotification($"(DEBUG: no manual scroll adjust override)", 17);
+
+            int move = GetDistanceAdjustInputValue();
+
+            if(move != 0)
+            {
+                if(move > 0)
+                    MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
+                else
+                    MyCubeBuilder.IntersectionDistance /= 1.1f;
+            }
+
+            MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, PLACE_MINRANGE, maxRange);
+
+            if(Config.Debug)
+                MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance:0.##}; max={maxRange:0.##})", 17);
+        }
+
+        private int GetDistanceAdjustInputValue()
+        {
+            int move = 0;
+
+            if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            {
+                move = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+            }
+
+            if(move == 0)
+            {
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.MOVE_FURTHER))
+                    move = 1;
+                else if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.MOVE_CLOSER))
+                    move = -1;
+            }
+
+            return move;
         }
     }
 }
