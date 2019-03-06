@@ -69,9 +69,9 @@ namespace Digi.BuildInfo.Systems
         {
             UpdateHudState();
 
-            HudBackgroundOpacity = MyAPIGateway.Session.Config.HUDBkOpacity;
+            HudBackgroundOpacity = MyAPIGateway.Session.Config?.HUDBkOpacity ?? 0.75f;
 
-            RotationHints = MyAPIGateway.Session.Config.RotationHints;
+            RotationHints = MyAPIGateway.Session.Config?.RotationHints ?? true;
 
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Systems
         {
             var prevState = HudState;
 
-            HudState = (HudState)MyAPIGateway.Session.Config.HudState;
+            HudState = (HudState)(MyAPIGateway.Session.Config?.HudState ?? (int)HudState.HINTS);
 
             HudStateChanged?.Invoke(prevState, HudState);
         }
