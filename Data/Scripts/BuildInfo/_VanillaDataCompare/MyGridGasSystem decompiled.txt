@@ -1,0 +1,1540 @@
+// v1.189.41
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using ParallelTasks;
+using Sandbox.Definitions;
+using Sandbox.Engine.Multiplayer;
+using Sandbox.Engine.Platform;
+using Sandbox.Engine.Utils;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.World;
+using Sandbox.ModAPI;
+using Sandbox.ModAPI.Ingame;
+using VRage;
+using VRage.Collections;
+using VRage.Game;
+using VRage.Game.ModAPI;
+using VRage.Input;
+using VRage.Network;
+using VRage.Utils;
+using VRageMath;
+using VRageRender;
+
+namespace Sandbox.Game.GameSystems
+{
+	public class MyGridGasSystem
+	{
+		public const float OXYGEN_UNIFORMIZATION_TIME_MS = 1500f;
+
+		private static bool DEBUG_MODE = false;
+
+		private readonly Vector3I[] m_neighbours = new Vector3I[]
+		{
+			new Vector3I(1, 0, 0),
+			new Vector3I(-1, 0, 0),
+			new Vector3I(0, 1, 0),
+			new Vector3I(0, -1, 0),
+			new Vector3I(0, 0, 1),
+			new Vector3I(0, 0, -1)
+		};
+
+		private readonly Vector3I[] m_neighboursForDelete = new Vector3I[]
+		{
+			new Vector3I(1, 0, 0),
+			new Vector3I(-1, 0, 0),
+			new Vector3I(0, 1, 0),
+			new Vector3I(0, -1, 0),
+			new Vector3I(0, 0, 1),
+			new Vector3I(0, 0, -1),
+			new Vector3I(0, 0, 0)
+		};
+
+		private readonly IMyCubeGrid m_cubeGrid;
+
+		private static readonly MySoundPair m_airleakSound = new MySoundPair("EventAirVent", true);
+
+		private bool m_isProcessingData;
+
+		private MyOxygenCube m_cubeRoom;
+
+		private MyConcurrentList<MyOxygenRoom> m_rooms;
+
+		private int m_lastRoomIndex;
+
+		private Queue<Vector3I> m_blockQueue = new Queue<Vector3I>();
+
+		private Vector3I m_storedGridMin;
+
+		private Vector3I m_storedGridMax;
+
+		private Vector3I m_previousGridMin;
+
+		private Vector3I m_previousGridMax;
+
+		private OxygenRoom[] m_savedRooms;
+
+		private List<IMySlimBlock> m_gasBlocks = new List<IMySlimBlock>();
+
+		private List<IMySlimBlock> m_gasBlocksForUpdate = new List<IMySlimBlock>();
+
+		private bool m_generatedDataPending;
+
+		private bool m_gridExpanded;
+
+		private bool m_gridShrinked;
+
+		private List<IMySlimBlock> m_deletedBlocks = new List<IMySlimBlock>();
+
+		private List<IMySlimBlock> m_deletedBlocksSwap = new List<IMySlimBlock>();
+
+		private List<IMySlimBlock> m_addedBlocks = new List<IMySlimBlock>();
+
+		private List<IMySlimBlock> m_addedBlocksSwap = new List<IMySlimBlock>();
+
+		private Task m_backgroundTask;
+
+		private int m_lastUpdateTime;
+
+		private bool isClosing;
+
+		private HashSet<Vector3I> m_visitedBlocks = new HashSet<Vector3I>();
+
+		private HashSet<Vector3I> m_initializedBlocks = new HashSet<Vector3I>();
+
+		private readonly float m_debugTextlineSize = 17f;
+
+		private bool m_debugShowTopRoom;
+
+		private bool m_debugShowRoomIndex = true;
+
+		private bool m_debugShowPositions;
+
+		private int m_debugRoomIndex;
+
+		private bool m_debugShowBlockCount;
+
+		private bool m_debugShowOxygenAmount;
+
+		private bool m_debugToggleView;
+
+		[CompilerGenerated]
+		private static Func<IMyEventOwner, Action<long, Vector3I, Vector3I>> CS$<>9__CachedAnonymousMethodDelegate1;
+
+		public MyGridGasSystem(IMyCubeGrid cubeGrid)
+		{
+			this.m_cubeGrid = cubeGrid;
+			cubeGrid.OnBlockAdded += this.cubeGrid_OnBlockAdded;
+			cubeGrid.OnBlockRemoved += this.cubeGrid_OnBlockRemoved;
+			this.m_lastUpdateTime = this.GetTotalGamePlayTimeInMilliseconds();
+		}
+
+		private int GetTotalGamePlayTimeInMilliseconds()
+		{
+			return MySandboxGame.TotalGamePlayTimeInMilliseconds;
+		}
+
+		private void MarkCubeGridForUpdate()
+		{
+			MyCubeGrid myCubeGrid = this.m_cubeGrid as MyCubeGrid;
+			if (myCubeGrid != null)
+			{
+				myCubeGrid.MarkForUpdate();
+			}
+		}
+
+		public void OnGridClosing()
+		{
+			this.isClosing = true;
+			if (this.m_isProcessingData)
+			{
+				try
+				{
+					this.m_backgroundTask.WaitOrExecute(false);
+				}
+				catch (Exception ex)
+				{
+					MySandboxGame.Log.WriteLineAndConsole("MyGridGasSystem.OnGridClosing: " + ex.Message + ", " + ex.StackTrace);
+				}
+			}
+			this.m_cubeGrid.OnBlockAdded -= this.cubeGrid_OnBlockAdded;
+			this.m_cubeGrid.OnBlockRemoved -= this.cubeGrid_OnBlockRemoved;
+			MyCubeGrid myCubeGrid = this.m_cubeGrid as MyCubeGrid;
+			if (myCubeGrid != null)
+			{
+				foreach (MyCubeBlock myCubeBlock in myCubeGrid.GetFatBlocks())
+				{
+					Sandbox.ModAPI.IMyDoor myDoor = myCubeBlock as Sandbox.ModAPI.IMyDoor;
+					if (myDoor != null)
+					{
+						myDoor.OnDoorStateChanged -= this.OnDoorStateChanged;
+					}
+				}
+			}
+			this.Clear();
+		}
+
+		private void Clear()
+		{
+			this.m_rooms = null;
+			this.m_cubeRoom = null;
+			this.m_lastRoomIndex = 0;
+			this.m_visitedBlocks.Clear();
+			this.m_initializedBlocks.Clear();
+		}
+
+		private void cubeGrid_OnBlockAdded(IMySlimBlock addedBlock)
+		{
+			if (addedBlock.FatBlock is Sandbox.ModAPI.IMyDoor)
+			{
+				((Sandbox.ModAPI.IMyDoor)addedBlock.FatBlock).OnDoorStateChanged += this.OnDoorStateChanged;
+			}
+			IMyGasBlock myGasBlock = addedBlock.FatBlock as IMyGasBlock;
+			if (myGasBlock != null && myGasBlock.CanPressurizeRoom)
+			{
+				this.m_gasBlocks.Add(addedBlock);
+			}
+			if (this.m_gasBlocks.Count != 0)
+			{
+				this.m_addedBlocks.Add(addedBlock);
+				Vector3I vector3I = (!this.m_isProcessingData) ? this.m_storedGridMin : this.m_previousGridMin;
+				Vector3I vector3I2 = (!this.m_isProcessingData) ? this.m_storedGridMax : this.m_previousGridMax;
+				if (Vector3I.Min(this.GridMin(), vector3I) != vector3I || Vector3I.Max(this.GridMax(), vector3I2) != vector3I2)
+				{
+					this.m_gridExpanded = true;
+				}
+				if (this.m_rooms == null)
+				{
+					this.m_generatedDataPending = true;
+				}
+				this.MarkCubeGridForUpdate();
+			}
+		}
+
+		internal void OnSlimBlockBuildRatioRaised(IMySlimBlock block)
+		{
+			MyCubeBlockDefinition myCubeBlockDefinition = block.BlockDefinition as MyCubeBlockDefinition;
+			if (myCubeBlockDefinition == null)
+			{
+				return;
+			}
+			if (myCubeBlockDefinition.BuildProgressModels != null && myCubeBlockDefinition.BuildProgressModels.Length > 0)
+			{
+				MyCubeBlockDefinition.BuildProgressModel buildProgressModel = myCubeBlockDefinition.BuildProgressModels[myCubeBlockDefinition.BuildProgressModels.Length - 1];
+				if (block.BuildLevelRatio >= buildProgressModel.BuildRatioUpperBound)
+				{
+					this.cubeGrid_OnBlockAdded(block);
+				}
+			}
+		}
+
+		private void cubeGrid_OnBlockRemoved(IMySlimBlock deletedBlock)
+		{
+			Sandbox.ModAPI.IMyDoor myDoor = deletedBlock.FatBlock as Sandbox.ModAPI.IMyDoor;
+			if (myDoor != null)
+			{
+				myDoor.OnDoorStateChanged -= this.OnDoorStateChanged;
+			}
+			IMyGasBlock myGasBlock = deletedBlock.FatBlock as IMyGasBlock;
+			if (myGasBlock != null && myGasBlock.CanPressurizeRoom)
+			{
+				this.m_gasBlocks.Remove(deletedBlock);
+			}
+			if (this.m_gasBlocks.Count != 0 || myGasBlock != null)
+			{
+				this.m_deletedBlocks.Add(deletedBlock);
+				this.MarkCubeGridForUpdate();
+			}
+		}
+
+		internal void OnSlimBlockBuildRatioLowered(IMySlimBlock block)
+		{
+			MyCubeBlockDefinition myCubeBlockDefinition = block.BlockDefinition as MyCubeBlockDefinition;
+			if (myCubeBlockDefinition == null)
+			{
+				return;
+			}
+			if (myCubeBlockDefinition.BuildProgressModels != null && myCubeBlockDefinition.BuildProgressModels.Length > 0)
+			{
+				int num = 0;
+				for (int i = myCubeBlockDefinition.BuildProgressModels.Length - 1; i >= 0; i--)
+				{
+					float buildRatioUpperBound = myCubeBlockDefinition.BuildProgressModels[i].BuildRatioUpperBound;
+					if (buildRatioUpperBound > block.BuildLevelRatio)
+					{
+						num = i;
+					}
+				}
+				if (num == myCubeBlockDefinition.BuildProgressModels.Length - 1)
+				{
+					this.cubeGrid_OnBlockRemoved(block);
+				}
+			}
+		}
+
+		private void OnDoorStateChanged(Sandbox.ModAPI.IMyDoor door, bool areOpen)
+		{
+			if (this.m_gasBlocks.Count == 0)
+			{
+				return;
+			}
+			MySlimBlock mySlimBlock = door.SlimBlock as MySlimBlock;
+			if (mySlimBlock != null)
+			{
+				if (areOpen)
+				{
+					this.m_deletedBlocks.Add(mySlimBlock);
+				}
+				else
+				{
+					this.m_addedBlocks.Add(mySlimBlock);
+				}
+			}
+			this.MarkCubeGridForUpdate();
+		}
+
+		public void OnCubeGridShrinked()
+		{
+			if (this.m_rooms == null)
+			{
+				this.m_generatedDataPending = true;
+			}
+			else
+			{
+				this.m_gridShrinked = true;
+			}
+			this.MarkCubeGridForUpdate();
+		}
+
+		public bool NeedsPerFrameUpdate
+		{
+			get
+			{
+				return !this.m_isProcessingData && (this.m_generatedDataPending || this.m_gridShrinked || this.m_gridExpanded || this.m_deletedBlocks.Count > 0 || this.m_addedBlocks.Count > 0);
+			}
+		}
+
+		public void UpdateBeforeSimulation()
+		{
+			if (!MyFakes.BACKGROUND_OXYGEN || this.m_isProcessingData)
+			{
+				return;
+			}
+			MySimpleProfiler.Begin("Gas System", MySimpleProfiler.ProfilingBlockType.BLOCK, "UpdateBeforeSimulation");
+			if (this.m_generatedDataPending)
+			{
+				if (MyFakes.BACKGROUND_OXYGEN && this.ShouldPressurize())
+				{
+					this.StartGenerateAirtightData();
+				}
+				this.m_generatedDataPending = false;
+			}
+			if (this.m_gridShrinked)
+			{
+				this.StartShrinkData();
+			}
+			if (this.m_addedBlocks.Count > 0)
+			{
+				this.StartRefreshRoomData();
+			}
+			if (this.m_deletedBlocks.Count > 0)
+			{
+				this.StartRemoveBlocks();
+			}
+			MySimpleProfiler.End("UpdateBeforeSimulation");
+		}
+
+		public void UpdateBeforeSimulation100()
+		{
+		}
+
+		public void OnAltitudeChanged()
+		{
+			if (this.m_rooms == null)
+			{
+				return;
+			}
+			foreach (MyOxygenRoom myOxygenRoom in this.m_rooms)
+			{
+				myOxygenRoom.EnvironmentOxygen = MyOxygenProviderSystem.GetOxygenInPoint(this.m_cubeGrid.GridIntegerToWorld(myOxygenRoom.StartingPosition));
+			}
+			this.MarkCubeGridForUpdate();
+		}
+
+		private bool ShouldPressurize()
+		{
+			if (this.m_cubeGrid.Physics == null)
+			{
+				return false;
+			}
+			if (this.m_gasBlocks.Count > 0)
+			{
+				return true;
+			}
+			if (this.m_rooms == null)
+			{
+				return false;
+			}
+			for (int i = 0; i < this.m_rooms.Count; i++)
+			{
+				MyOxygenRoom myOxygenRoom = this.m_rooms[i];
+				if (myOxygenRoom.IsAirtight && myOxygenRoom.OxygenAmount > 1f)
+				{
+					return true;
+				}
+				if (!myOxygenRoom.IsAirtight)
+				{
+					float num = (float)(this.GetTotalGamePlayTimeInMilliseconds() - myOxygenRoom.DepressurizationTime);
+					if (num < 1500f)
+					{
+						return true;
+					}
+				}
+			}
+			this.m_rooms = null;
+			this.m_lastRoomIndex = 0;
+			this.m_cubeRoom = null;
+			return false;
+		}
+
+		private void StartShrinkData()
+		{
+			if (this.m_isProcessingData)
+			{
+				return;
+			}
+			this.m_previousGridMin = this.m_storedGridMin;
+			this.m_previousGridMax = this.m_storedGridMax;
+			this.m_isProcessingData = true;
+			this.m_gridShrinked = false;
+			this.m_backgroundTask = Parallel.Start(new Action(this.ShrinkData), new Action(this.OnBackgroundTaskFinished));
+		}
+
+		private void ShrinkData()
+		{
+			if (this.m_cubeRoom == null)
+			{
+				return;
+			}
+			Vector3I vector3I = this.GridMin();
+			Vector3I vector3I2 = this.GridMax();
+			Vector3I a = vector3I - this.m_storedGridMin;
+			Vector3I a2 = this.m_storedGridMax - vector3I2;
+			if (a != Vector3I.Zero || a2 != Vector3I.Zero)
+			{
+				this.m_storedGridMin = vector3I;
+				this.m_storedGridMax = vector3I2;
+				MyOxygenRoom myOxygenRoom = this.m_rooms[0];
+				HashSet<Vector3I> hashSet = new HashSet<Vector3I>();
+				foreach (Vector3I vector3I3 in myOxygenRoom.Blocks)
+				{
+					if (!this.IsInBounds(vector3I3))
+					{
+						hashSet.Add(vector3I3);
+					}
+				}
+				if (hashSet.Count > 0)
+				{
+					myOxygenRoom.Blocks.ExceptWith(hashSet);
+					myOxygenRoom.BlockCount = myOxygenRoom.Blocks.Count;
+					myOxygenRoom.StartingPosition = this.m_storedGridMin;
+				}
+			}
+		}
+
+		private void StartRefreshRoomData()
+		{
+			if (this.m_isProcessingData)
+			{
+				return;
+			}
+			if (this.m_cubeRoom == null)
+			{
+				this.m_addedBlocks.Clear();
+				this.m_gridExpanded = false;
+				return;
+			}
+			if (this.m_gridExpanded)
+			{
+				this.m_previousGridMin = this.m_storedGridMin;
+				this.m_previousGridMax = this.m_storedGridMax;
+			}
+			List<IMySlimBlock> addedBlocksSwap = this.m_addedBlocksSwap;
+			this.m_addedBlocksSwap = this.m_addedBlocks;
+			this.m_addedBlocks = addedBlocksSwap;
+			this.m_gasBlocksForUpdate.Clear();
+			this.m_gasBlocksForUpdate.AddRange(this.m_gasBlocks);
+			this.m_isProcessingData = true;
+			this.m_backgroundTask = Parallel.Start(new Action(this.RefreshRoomData), new Action(this.OnBackgroundTaskFinished));
+		}
+
+		private void RefreshRoomData()
+		{
+			if (this.m_cubeRoom == null)
+			{
+				return;
+			}
+			if (this.m_gridExpanded)
+			{
+				this.m_gridExpanded = false;
+				this.ExpandAirtightData();
+			}
+			foreach (IMySlimBlock block in this.m_addedBlocksSwap)
+			{
+				this.AddBlock(block);
+			}
+			this.m_addedBlocksSwap.Clear();
+			this.RefreshTopRoom();
+			this.RefreshDirtyRooms();
+			this.m_initializedBlocks.Clear();
+			this.GenerateGasBlockRooms();
+			this.GenerateEmptyRooms();
+			this.m_initializedBlocks.Clear();
+		}
+
+		private void RefreshTopRoom()
+		{
+			MyOxygenRoom myOxygenRoom = this.m_rooms[0];
+			if (myOxygenRoom.IsDirty)
+			{
+				HashSet<Vector3I> roomBlocks = this.GetRoomBlocks(this.m_storedGridMin, myOxygenRoom);
+				HashSet<Vector3I> blocks = myOxygenRoom.Blocks;
+				blocks.ExceptWith(roomBlocks);
+				if (blocks.Count != 0)
+				{
+					MyOxygenRoom myOxygenRoom2 = this.CreateAirtightRoom(blocks, 0f, blocks.FirstElement<Vector3I>());
+					myOxygenRoom2.IsDirty = true;
+				}
+				myOxygenRoom.BlockCount = roomBlocks.Count;
+				myOxygenRoom.Blocks = roomBlocks;
+				myOxygenRoom.IsDirty = false;
+				myOxygenRoom.StartingPosition = this.m_storedGridMin;
+			}
+		}
+
+		private void ExpandAirtightData()
+		{
+			Vector3I vector3I = this.GridMin();
+			Vector3I vector3I2 = this.GridMax();
+			Vector3I a = this.m_storedGridMin - vector3I;
+			Vector3I a2 = vector3I2 - this.m_storedGridMax;
+			if (a != Vector3I.Zero || a2 != Vector3I.Zero)
+			{
+				Vector3I a3 = vector3I2 - vector3I;
+				a3 + Vector3I.One;
+				MyOxygenRoom myOxygenRoom = this.m_rooms[0];
+				myOxygenRoom.IsDirty = true;
+				this.m_storedGridMin = vector3I;
+				this.m_storedGridMax = vector3I2;
+			}
+		}
+
+		private void AddBlock(IMySlimBlock block)
+		{
+			Vector3I min = block.Min;
+			Vector3I min2 = block.Min;
+			Vector3I max = block.Max;
+			Vector3I_RangeIterator vector3I_RangeIterator = new Vector3I_RangeIterator(ref min2, ref max);
+			while (vector3I_RangeIterator.IsValid())
+			{
+				MyOxygenRoom oxygenRoomForCubeGridPosition = this.GetOxygenRoomForCubeGridPosition(ref min);
+				if (oxygenRoomForCubeGridPosition != null)
+				{
+					oxygenRoomForCubeGridPosition.IsDirty = true;
+					bool flag = false;
+					Sandbox.ModAPI.IMyDoor myDoor = block.FatBlock as Sandbox.ModAPI.IMyDoor;
+					if (myDoor != null)
+					{
+						flag = true;
+						if (myDoor is MyAirtightSlideDoor)
+						{
+							return;
+						}
+					}
+					MyCubeBlockDefinition myCubeBlockDefinition = block.BlockDefinition as MyCubeBlockDefinition;
+					bool? flag2 = this.IsAirtightFromDefinition(myCubeBlockDefinition, block.BuildLevelRatio);
+					if ((myCubeBlockDefinition != null && flag2 == true) || flag)
+					{
+						Vector3I item = min;
+						oxygenRoomForCubeGridPosition.BlockCount--;
+						oxygenRoomForCubeGridPosition.Blocks.Remove(item);
+						this.m_cubeRoom[item.X, item.Y, item.Z].RoomLink = null;
+					}
+				}
+				vector3I_RangeIterator.GetNext(out min);
+			}
+		}
+
+		private void RefreshDirtyRooms()
+		{
+			int count = this.m_rooms.Count;
+			for (int i = 0; i < count; i++)
+			{
+				MyOxygenRoom myOxygenRoom = this.m_rooms[i];
+				if (myOxygenRoom.Index != 0)
+				{
+					this.RefreshRoomBlocks(myOxygenRoom);
+				}
+			}
+		}
+
+		private void RefreshRoomBlocks(MyOxygenRoom room)
+		{
+			if (room == null || (room.IsAirtight && !room.IsDirty))
+			{
+				return;
+			}
+			MyOxygenRoom myOxygenRoom = this.m_rooms[0];
+			Vector3I startingPosition = room.StartingPosition;
+			Vector3I vector3I = startingPosition;
+			this.m_blockQueue.Clear();
+			this.m_blockQueue.Enqueue(vector3I);
+			HashSet<Vector3I> hashSet = new HashSet<Vector3I>();
+			hashSet.Add(vector3I);
+			bool flag = true;
+			while (this.m_blockQueue.Count > 0)
+			{
+				vector3I = this.m_blockQueue.Dequeue();
+				for (int i = 0; i < this.m_neighbours.Length; i++)
+				{
+					Vector3I vector3I2 = vector3I + this.m_neighbours[i];
+					if (!hashSet.Contains(vector3I2))
+					{
+						if (Vector3I.Min(vector3I2, this.m_storedGridMin) != this.m_storedGridMin || Vector3I.Max(vector3I2, this.m_storedGridMax) != this.m_storedGridMax)
+						{
+							flag = false;
+							break;
+						}
+						bool flag2 = this.IsAirtightBetweenPositions(vector3I, vector3I2);
+						if (!flag2)
+						{
+							hashSet.Add(vector3I2);
+							IMySlimBlock cubeBlock = this.m_cubeGrid.GetCubeBlock(vector3I2);
+							if (cubeBlock != null)
+							{
+								Sandbox.ModAPI.IMyDoor myDoor = cubeBlock.FatBlock as Sandbox.ModAPI.IMyDoor;
+								if (myDoor != null)
+								{
+									if (myDoor.Status == DoorStatus.Open || !flag2)
+									{
+										this.m_blockQueue.Enqueue(vector3I2);
+										goto IL_16B;
+									}
+									goto IL_16B;
+								}
+							}
+							MyOxygenBlock myOxygenBlock = this.m_cubeRoom[vector3I2.X, vector3I2.Y, vector3I2.Z];
+							if ((myOxygenBlock != null && myOxygenBlock.Room != null) || cubeBlock == null)
+							{
+								this.m_blockQueue.Enqueue(vector3I2);
+							}
+						}
+					}
+					IL_16B:;
+				}
+			}
+			if (flag)
+			{
+				MyOxygenRoomLink roomLink;
+				if (myOxygenRoom == room)
+				{
+					this.m_lastRoomIndex++;
+					room = new MyOxygenRoom(this.m_lastRoomIndex);
+					this.m_rooms.Add(room);
+					roomLink = new MyOxygenRoomLink(room);
+					room.StartingPosition = startingPosition;
+					using (HashSet<Vector3I>.Enumerator enumerator = hashSet.GetEnumerator())
+					{
+						while (enumerator.MoveNext())
+						{
+							Vector3I item = enumerator.Current;
+							if (this.m_cubeRoom[item.X, item.Y, item.Z].Room == myOxygenRoom)
+							{
+								this.m_cubeRoom[item.X, item.Y, item.Z].RoomLink = roomLink;
+								room.BlockCount++;
+								myOxygenRoom.BlockCount--;
+								myOxygenRoom.Blocks.Remove(item);
+							}
+						}
+						goto IL_34E;
+					}
+				}
+				roomLink = room.Link;
+				int blockCount = room.BlockCount;
+				room.BlockCount = hashSet.Count;
+				foreach (Vector3I key in hashSet)
+				{
+					MyOxygenBlock myOxygenBlock2;
+					if (!this.m_cubeRoom.TryGetValue(key, out myOxygenBlock2))
+					{
+						myOxygenBlock2 = new MyOxygenBlock();
+						this.m_cubeRoom.Add(key, myOxygenBlock2);
+					}
+					myOxygenBlock2.RoomLink = roomLink;
+				}
+				if (blockCount > hashSet.Count)
+				{
+					HashSet<Vector3I> blocks = room.Blocks;
+					blocks.ExceptWith(hashSet);
+					float num = room.OxygenAmount / (float)blockCount * (float)blocks.Count;
+					this.CreateAirtightRoom(blocks, num, blocks.FirstElement<Vector3I>());
+					room.OxygenAmount -= num;
+				}
+				IL_34E:
+				room.Blocks = hashSet;
+			}
+			room.IsAirtight = flag;
+			room.IsDirty = false;
+		}
+
+		private void OnBackgroundTaskFinished()
+		{
+			this.m_isProcessingData = false;
+		}
+
+		private void StartGenerateAirtightData()
+		{
+			this.m_isProcessingData = true;
+			this.m_cubeRoom = new MyOxygenCube();
+			this.m_previousGridMin = this.m_storedGridMin;
+			this.m_previousGridMax = this.m_storedGridMax;
+			this.m_storedGridMin = this.GridMin();
+			this.m_storedGridMax = this.GridMax();
+			this.m_addedBlocks.Clear();
+			this.m_deletedBlocks.Clear();
+			this.m_gasBlocksForUpdate.Clear();
+			this.m_gasBlocksForUpdate.AddRange(this.m_gasBlocks);
+			this.MarkCubeGridForUpdate();
+			this.m_backgroundTask = Parallel.Start(new Action(this.GenerateAirtightData), new Action(this.OnBackgroundTaskFinished));
+		}
+
+		private void GenerateAirtightData()
+		{
+			if (this.m_rooms == null)
+			{
+				this.m_rooms = new MyConcurrentList<MyOxygenRoom>();
+			}
+			else
+			{
+				this.m_lastRoomIndex = 0;
+				this.m_rooms.Clear();
+			}
+			this.m_initializedBlocks.Clear();
+			this.GenerateTopRoom();
+			this.GenerateGasBlockRooms();
+			this.GenerateEmptyRooms();
+			if (this.m_savedRooms != null)
+			{
+				foreach (OxygenRoom oxygenRoom in this.m_savedRooms)
+				{
+					if (!(Vector3I.Min(oxygenRoom.StartingPosition, this.m_storedGridMin) != this.m_storedGridMin) && !(Vector3I.Max(oxygenRoom.StartingPosition, this.m_storedGridMax) != this.m_storedGridMax))
+					{
+						MyOxygenBlock myOxygenBlock = this.m_cubeRoom[oxygenRoom.StartingPosition.X, oxygenRoom.StartingPosition.Y, oxygenRoom.StartingPosition.Z];
+						if (myOxygenBlock != null && myOxygenBlock.RoomLink != null && myOxygenBlock.RoomLink.Room != null)
+						{
+							myOxygenBlock.RoomLink.Room.OxygenAmount = oxygenRoom.OxygenAmount;
+						}
+					}
+				}
+				this.m_savedRooms = null;
+			}
+			this.m_initializedBlocks.Clear();
+			this.m_gridExpanded = false;
+		}
+
+		private void GenerateEmptyRooms()
+		{
+			Vector3I storedGridMin = this.m_storedGridMin;
+			Vector3I_RangeIterator vector3I_RangeIterator = new Vector3I_RangeIterator(ref this.m_storedGridMin, ref this.m_storedGridMax);
+			while (vector3I_RangeIterator.IsValid())
+			{
+				this.CheckPositionForEmptyRoom(storedGridMin);
+				vector3I_RangeIterator.GetNext(out storedGridMin);
+			}
+		}
+
+		private void CheckPositionForEmptyRoom(Vector3I position)
+		{
+			if (this.m_initializedBlocks.Contains(position))
+			{
+				return;
+			}
+			MyOxygenBlock myOxygenBlock;
+			if (!this.m_cubeRoom.TryGetValue(position, out myOxygenBlock))
+			{
+				myOxygenBlock = new MyOxygenBlock();
+				this.m_cubeRoom.Add(position, myOxygenBlock);
+			}
+			if (myOxygenBlock != null && myOxygenBlock.Room != null)
+			{
+				return;
+			}
+			IMySlimBlock cubeBlock = this.m_cubeGrid.GetCubeBlock(position);
+			if (cubeBlock != null)
+			{
+				MyCubeBlockDefinition myCubeBlockDefinition = cubeBlock.BlockDefinition as MyCubeBlockDefinition;
+				bool? flag = this.IsAirtightFromDefinition(myCubeBlockDefinition, cubeBlock.BuildLevelRatio);
+				if (myCubeBlockDefinition != null && flag == true)
+				{
+					return;
+				}
+				Sandbox.ModAPI.IMyDoor myDoor = cubeBlock.FatBlock as Sandbox.ModAPI.IMyDoor;
+				if (myDoor != null && (myDoor.Status == DoorStatus.Closed || myDoor.Status == DoorStatus.Closing) && !(myDoor is MyAirtightSlideDoor))
+				{
+					return;
+				}
+			}
+			HashSet<Vector3I> roomBlocks = this.GetRoomBlocks(position, null);
+			if (roomBlocks.Count > 0)
+			{
+				this.CreateAirtightRoom(roomBlocks, 0f, position);
+				this.m_initializedBlocks.UnionWith(roomBlocks);
+			}
+		}
+
+		private void GenerateGasBlockRooms()
+		{
+			foreach (IMySlimBlock mySlimBlock in this.m_gasBlocksForUpdate)
+			{
+				Vector3I position = mySlimBlock.Position;
+				MyOxygenBlock myOxygenBlock = this.m_cubeRoom[position.X, position.Y, position.Z];
+				if (myOxygenBlock == null || myOxygenBlock.Room == null)
+				{
+					HashSet<Vector3I> roomBlocks = this.GetRoomBlocks(mySlimBlock.Position, null);
+					this.CreateAirtightRoom(roomBlocks, 0f, position);
+					this.m_initializedBlocks.UnionWith(roomBlocks);
+				}
+			}
+		}
+
+		private MyOxygenRoom CreateAirtightRoom(HashSet<Vector3I> roomBlocks, float oxygenAmount, Vector3I startingPosition)
+		{
+			this.m_lastRoomIndex++;
+			MyOxygenRoom myOxygenRoom = new MyOxygenRoom(this.m_lastRoomIndex);
+			myOxygenRoom.IsAirtight = true;
+			myOxygenRoom.OxygenAmount = oxygenAmount;
+			myOxygenRoom.EnvironmentOxygen = MyOxygenProviderSystem.GetOxygenInPoint(this.m_cubeGrid.GridIntegerToWorld(startingPosition));
+			myOxygenRoom.DepressurizationTime = this.GetTotalGamePlayTimeInMilliseconds();
+			myOxygenRoom.BlockCount = roomBlocks.Count;
+			myOxygenRoom.Blocks = roomBlocks;
+			myOxygenRoom.StartingPosition = startingPosition;
+			float num = myOxygenRoom.OxygenLevel(this.m_cubeGrid.GridSize);
+			if (myOxygenRoom.EnvironmentOxygen > num)
+			{
+				myOxygenRoom.OxygenAmount = myOxygenRoom.MaxOxygen(this.m_cubeGrid.GridSize) * myOxygenRoom.EnvironmentOxygen;
+			}
+			this.m_rooms.Add(myOxygenRoom);
+			MyOxygenRoomLink roomPointer = new MyOxygenRoomLink(myOxygenRoom);
+			foreach (Vector3I key in roomBlocks)
+			{
+				MyOxygenBlock value = new MyOxygenBlock(roomPointer);
+				this.m_cubeRoom.Add(key, value);
+			}
+			return myOxygenRoom;
+		}
+
+		private void GenerateTopRoom()
+		{
+			HashSet<Vector3I> roomBlocks = this.GetRoomBlocks(this.m_storedGridMin, null);
+			MyOxygenRoom myOxygenRoom = new MyOxygenRoom(0);
+			myOxygenRoom.IsAirtight = false;
+			myOxygenRoom.EnvironmentOxygen = MyOxygenProviderSystem.GetOxygenInPoint(this.m_cubeGrid.GridIntegerToWorld(this.m_storedGridMin));
+			myOxygenRoom.DepressurizationTime = this.GetTotalGamePlayTimeInMilliseconds();
+			myOxygenRoom.BlockCount = roomBlocks.Count;
+			myOxygenRoom.Blocks = roomBlocks;
+			myOxygenRoom.StartingPosition = this.m_storedGridMin;
+			this.m_rooms.Add(myOxygenRoom);
+			MyOxygenRoomLink roomPointer = new MyOxygenRoomLink(myOxygenRoom);
+			foreach (Vector3I vector3I in roomBlocks)
+			{
+				MyOxygenBlock value = new MyOxygenBlock(roomPointer);
+				this.m_cubeRoom.Add(vector3I, value);
+				this.m_initializedBlocks.Add(vector3I);
+			}
+		}
+
+		private HashSet<Vector3I> GetRoomBlocks(Vector3I startPosition, MyOxygenRoom initRoom = null)
+		{
+			this.m_blockQueue.Clear();
+			this.m_blockQueue.Enqueue(startPosition);
+			this.m_visitedBlocks.Clear();
+			this.m_visitedBlocks.Add(startPosition);
+			HashSet<Vector3I> hashSet = new HashSet<Vector3I>();
+			hashSet.Add(startPosition);
+			if (initRoom != null)
+			{
+				MyOxygenBlock myOxygenBlock;
+				if (!this.m_cubeRoom.TryGetValue(startPosition, out myOxygenBlock))
+				{
+					myOxygenBlock = new MyOxygenBlock();
+					this.m_cubeRoom.Add(startPosition, myOxygenBlock);
+				}
+				myOxygenBlock.RoomLink = initRoom.Link;
+			}
+			while (this.m_blockQueue.Count > 0)
+			{
+				Vector3I vector3I = this.m_blockQueue.Dequeue();
+				for (int i = 0; i < this.m_neighbours.Length; i++)
+				{
+					Vector3I vector3I2 = vector3I + this.m_neighbours[i];
+					if (!(Vector3I.Min(vector3I2, this.m_storedGridMin) != this.m_storedGridMin) && !(Vector3I.Max(vector3I2, this.m_storedGridMax) != this.m_storedGridMax) && !this.m_visitedBlocks.Contains(vector3I2) && !this.IsAirtightBetweenPositions(vector3I, vector3I2))
+					{
+						this.m_visitedBlocks.Add(vector3I2);
+						this.m_blockQueue.Enqueue(vector3I2);
+						Vector3I vector3I3 = vector3I2;
+						hashSet.Add(vector3I3);
+						if (initRoom != null)
+						{
+							MyOxygenBlock myOxygenBlock2;
+							if (!this.m_cubeRoom.TryGetValue(vector3I3, out myOxygenBlock2))
+							{
+								myOxygenBlock2 = new MyOxygenBlock();
+								this.m_cubeRoom.Add(vector3I3, myOxygenBlock2);
+							}
+							myOxygenBlock2.RoomLink = initRoom.Link;
+						}
+					}
+				}
+			}
+			return hashSet;
+		}
+
+		public static MatrixD CreateAxisAlignedMatrix(ref Vector3I vec)
+		{
+			MatrixD zero = MatrixD.Zero;
+			if (vec.X != 0)
+			{
+				if (vec.X > 0)
+				{
+					zero.M31 = (zero.M22 = 1.0);
+				}
+				else
+				{
+					zero.M31 = (zero.M22 = -1.0);
+				}
+				zero.M13 = 1.0;
+			}
+			else if (vec.Y != 0)
+			{
+				if (vec.Y > 0)
+				{
+					zero.M32 = (zero.M21 = 1.0);
+				}
+				else
+				{
+					zero.M32 = (zero.M21 = -1.0);
+				}
+				zero.M13 = 1.0;
+			}
+			else
+			{
+				if (vec.Z == 0)
+				{
+					return MatrixD.Identity;
+				}
+				if (vec.Z > 0)
+				{
+					zero.M33 = (zero.M21 = 1.0);
+				}
+				else
+				{
+					zero.M33 = (zero.M21 = -1.0);
+				}
+				zero.M12 = 1.0;
+			}
+			return zero;
+		}
+
+		public static void AddDepressurizationEffects(MyCubeGrid grid, Vector3I from, Vector3I to)
+		{
+			if (Sandbox.Engine.Platform.Game.IsDedicated || from == to)
+			{
+				return;
+			}
+			Vector3D vector3D = grid.GridIntegerToWorld(from);
+			Vector3D value = Vector3D.Zero;
+			Vector3I vector3I = to - from;
+			MatrixD matrixD;
+			if (vector3I.IsAxisAligned())
+			{
+				matrixD = MyGridGasSystem.CreateAxisAlignedMatrix(ref vector3I);
+				matrixD.Translation = from * ((grid.GridSizeEnum == MyCubeSize.Small) ? 0.5f : 2.5f);
+			}
+			else
+			{
+				value = grid.GridIntegerToWorld(to);
+				matrixD = MatrixD.CreateFromDir(vector3D - value);
+				matrixD = MatrixD.Normalize(matrixD);
+				matrixD.Translation = vector3D;
+				matrixD *= grid.PositionComp.WorldMatrixNormalizedInv;
+			}
+			Vector3D vector3D2 = vector3D;
+			MyParticleEffect myParticleEffect;
+			if (MyParticlesManager.TryCreateParticleEffect("OxyLeakLarge", ref matrixD, ref vector3D2, grid.Render.GetRenderObjectID(), out myParticleEffect))
+			{
+				MyEntity3DSoundEmitter myEntity3DSoundEmitter = MyAudioComponent.TryGetSoundEmitter();
+				if (myEntity3DSoundEmitter != null)
+				{
+					myEntity3DSoundEmitter.SetPosition(new Vector3D?(vector3D));
+					myEntity3DSoundEmitter.PlaySound(MyGridGasSystem.m_airleakSound, false, false, false, false, false, null);
+					if (grid.Physics != null)
+					{
+						myEntity3DSoundEmitter.SetVelocity(new Vector3?(grid.Physics.LinearVelocity));
+					}
+				}
+				if (grid.GridSizeEnum == MyCubeSize.Small)
+				{
+					myParticleEffect.UserScale = 0.2f;
+				}
+			}
+		}
+
+		private Vector3I GridMin()
+		{
+			return this.m_cubeGrid.Min - Vector3I.One;
+		}
+
+		private Vector3I GridMax()
+		{
+			return this.m_cubeGrid.Max + Vector3I.One;
+		}
+
+		private bool IsAirtightBetweenPositions(Vector3I startPos, Vector3I endPos)
+		{
+			IMySlimBlock cubeBlock = this.m_cubeGrid.GetCubeBlock(startPos);
+			IMySlimBlock cubeBlock2 = this.m_cubeGrid.GetCubeBlock(endPos);
+			if (cubeBlock != cubeBlock2)
+			{
+				return (cubeBlock != null && this.IsAirtightBlock(cubeBlock, startPos, endPos - startPos)) || (cubeBlock2 != null && this.IsAirtightBlock(cubeBlock2, endPos, startPos - endPos));
+			}
+			if (cubeBlock != null)
+			{
+				MyCubeBlockDefinition myCubeBlockDefinition = cubeBlock.BlockDefinition as MyCubeBlockDefinition;
+				bool? flag = this.IsAirtightFromDefinition(myCubeBlockDefinition, cubeBlock.BuildLevelRatio);
+				return myCubeBlockDefinition != null && flag == true;
+			}
+			return false;
+		}
+
+		private bool IsAirtightBlock(IMySlimBlock block, Vector3I pos, Vector3 normal)
+		{
+			MyCubeBlockDefinition myCubeBlockDefinition = block.BlockDefinition as MyCubeBlockDefinition;
+			if (myCubeBlockDefinition == null)
+			{
+				return false;
+			}
+			bool? flag = this.IsAirtightFromDefinition(myCubeBlockDefinition, block.BuildLevelRatio);
+			if (flag != null)
+			{
+				return flag.Value;
+			}
+			Matrix matrix;
+			block.Orientation.GetMatrix(out matrix);
+			matrix.TransposeRotationInPlace();
+			Vector3I key = Vector3I.Round(Vector3.Transform(normal, matrix));
+			Vector3 position = Vector3.Zero;
+			if (block.FatBlock != null)
+			{
+				position = pos - block.FatBlock.Position;
+			}
+			Vector3 value = Vector3.Transform(position, matrix) + myCubeBlockDefinition.Center;
+			bool flag2 = myCubeBlockDefinition.IsCubePressurized[Vector3I.Round(value)][key];
+			if (flag2)
+			{
+				return true;
+			}
+			Sandbox.ModAPI.IMyDoor myDoor = block.FatBlock as Sandbox.ModAPI.IMyDoor;
+			return myDoor != null && (myDoor.Status == DoorStatus.Closed || myDoor.Status == DoorStatus.Closing) && this.IsDoorAirtight(myDoor, ref key, myCubeBlockDefinition);
+		}
+
+		private bool? IsAirtightFromDefinition(MyCubeBlockDefinition blockDefinition, float buildLevelRatio)
+		{
+			if (blockDefinition.BuildProgressModels != null && blockDefinition.BuildProgressModels.Length > 0)
+			{
+				MyCubeBlockDefinition.BuildProgressModel buildProgressModel = blockDefinition.BuildProgressModels[blockDefinition.BuildProgressModels.Length - 1];
+				if (buildLevelRatio < buildProgressModel.BuildRatioUpperBound)
+				{
+					return new bool?(false);
+				}
+			}
+			return blockDefinition.IsAirTight;
+		}
+
+		private bool IsDoorAirtight(Sandbox.ModAPI.IMyDoor doorBlock, ref Vector3I transformedNormal, MyCubeBlockDefinition blockDefinition)
+		{
+			if (doorBlock is MyAdvancedDoor)
+			{
+				if (doorBlock.IsFullyClosed)
+				{
+					foreach (MyCubeBlockDefinition.MountPoint mountPoint in blockDefinition.MountPoints)
+					{
+						if (transformedNormal == mountPoint.Normal)
+						{
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+			else if (doorBlock is MyAirtightSlideDoor)
+			{
+				if (doorBlock.IsFullyClosed && transformedNormal == Vector3I.Forward)
+				{
+					return true;
+				}
+			}
+			else if (doorBlock is MyAirtightDoorGeneric)
+			{
+				if (doorBlock.IsFullyClosed && (transformedNormal == Vector3I.Forward || transformedNormal == Vector3I.Backward))
+				{
+					return true;
+				}
+			}
+			else if (doorBlock.IsFullyClosed)
+			{
+				foreach (MyCubeBlockDefinition.MountPoint mountPoint2 in blockDefinition.MountPoints)
+				{
+					if (transformedNormal == mountPoint2.Normal)
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+
+		private void StartRemoveBlocks()
+		{
+			if (this.m_isProcessingData)
+			{
+				return;
+			}
+			if (this.m_gasBlocks.Count == 0)
+			{
+				this.Clear();
+			}
+			if (this.m_rooms == null)
+			{
+				this.m_deletedBlocks.Clear();
+				return;
+			}
+			this.m_isProcessingData = true;
+			List<IMySlimBlock> deletedBlocksSwap = this.m_deletedBlocksSwap;
+			this.m_deletedBlocksSwap = this.m_deletedBlocks;
+			this.m_deletedBlocks = deletedBlocksSwap;
+			this.m_backgroundTask = Parallel.Start(new Action(this.RemoveBlocks), new Action(this.OnBackgroundTaskFinished));
+		}
+
+		private void RemoveBlocks()
+		{
+			bool flag = false;
+			Vector3I arg = Vector3I.Zero;
+			Vector3I arg2 = Vector3I.Zero;
+			foreach (IMySlimBlock mySlimBlock in this.m_deletedBlocksSwap)
+			{
+				Vector3I min = mySlimBlock.Min;
+				Vector3I min2 = mySlimBlock.Min;
+				Vector3I max = mySlimBlock.Max;
+				Vector3I_RangeIterator vector3I_RangeIterator = new Vector3I_RangeIterator(ref min2, ref max);
+				while (vector3I_RangeIterator.IsValid())
+				{
+					Vector3I vector3I;
+					Vector3I vector3I2;
+					if (this.RemoveBlock(min, out vector3I, out vector3I2))
+					{
+						flag = true;
+						arg = vector3I;
+						arg2 = vector3I2;
+					}
+					vector3I_RangeIterator.GetNext(out min);
+				}
+			}
+			if (flag)
+			{
+				MyMultiplayer.RaiseStaticEvent<long, Vector3I, Vector3I>((IMyEventOwner x) => new Action<long, Vector3I, Vector3I>(MyCubeGrid.DepressurizeEffect), this.m_cubeGrid.EntityId, arg, arg2, default(EndpointId), null);
+			}
+			this.m_deletedBlocksSwap.Clear();
+		}
+
+		private bool RemoveBlock(Vector3I deletedBlockPosition, out Vector3I depressFrom, out Vector3I depressTo)
+		{
+			bool result = false;
+			depressFrom = Vector3I.Zero;
+			depressTo = Vector3I.Zero;
+			Vector3I vector3I = deletedBlockPosition;
+			MyOxygenRoom myOxygenRoom = this.m_rooms[0];
+			MyOxygenRoom myOxygenRoom2 = this.GetMaxBlockRoom(ref vector3I, myOxygenRoom);
+			if (myOxygenRoom2 == null)
+			{
+				return result;
+			}
+			for (int i = 0; i < this.m_neighboursForDelete.Length; i++)
+			{
+				Vector3I vector3I2 = vector3I + this.m_neighboursForDelete[i];
+				if (this.IsInBounds(vector3I2))
+				{
+					MyOxygenRoom oxygenRoomForCubeGridPosition = this.GetOxygenRoomForCubeGridPosition(ref vector3I2);
+					if (oxygenRoomForCubeGridPosition != null && oxygenRoomForCubeGridPosition != myOxygenRoom2 && (!(vector3I != vector3I2) || !this.IsAirtightBetweenPositions(vector3I, vector3I2)))
+					{
+						if (myOxygenRoom2.IsAirtight && !oxygenRoomForCubeGridPosition.IsAirtight)
+						{
+							oxygenRoomForCubeGridPosition.BlockCount += myOxygenRoom2.BlockCount;
+							oxygenRoomForCubeGridPosition.OxygenAmount += myOxygenRoom2.OxygenAmount;
+							this.MergeRooms(oxygenRoomForCubeGridPosition, myOxygenRoom2, oxygenRoomForCubeGridPosition.Link);
+							if (myOxygenRoom2.Blocks != null && oxygenRoomForCubeGridPosition.Blocks != null)
+							{
+								oxygenRoomForCubeGridPosition.Blocks.UnionWith(myOxygenRoom2.Blocks);
+							}
+							if (myOxygenRoom2.OxygenLevel(this.m_cubeGrid.GridSize) - oxygenRoomForCubeGridPosition.EnvironmentOxygen > 0.2f)
+							{
+								result = true;
+								depressFrom = vector3I;
+								depressTo = vector3I2;
+							}
+							myOxygenRoom2.IsAirtight = false;
+							myOxygenRoom2.OxygenAmount = 0f;
+							myOxygenRoom2.EnvironmentOxygen = Math.Max(myOxygenRoom2.EnvironmentOxygen, oxygenRoomForCubeGridPosition.EnvironmentOxygen);
+							myOxygenRoom2.DepressurizationTime = this.GetTotalGamePlayTimeInMilliseconds();
+							myOxygenRoom2.Link.Room = oxygenRoomForCubeGridPosition;
+							if (oxygenRoomForCubeGridPosition != myOxygenRoom2 && myOxygenRoom2 != myOxygenRoom)
+							{
+								myOxygenRoom2.BlockCount = 0;
+								myOxygenRoom2.Blocks = null;
+								this.m_rooms.Remove(myOxygenRoom2);
+							}
+							myOxygenRoom2 = oxygenRoomForCubeGridPosition;
+						}
+						else if (!myOxygenRoom2.IsAirtight && oxygenRoomForCubeGridPosition.IsAirtight)
+						{
+							myOxygenRoom2.BlockCount += oxygenRoomForCubeGridPosition.BlockCount;
+							myOxygenRoom2.OxygenAmount += oxygenRoomForCubeGridPosition.OxygenAmount;
+							this.MergeRooms(myOxygenRoom2, oxygenRoomForCubeGridPosition, myOxygenRoom2.Link);
+							myOxygenRoom2.EnvironmentOxygen = Math.Max(myOxygenRoom2.EnvironmentOxygen, oxygenRoomForCubeGridPosition.EnvironmentOxygen);
+							if (oxygenRoomForCubeGridPosition.OxygenLevel(this.m_cubeGrid.GridSize) - myOxygenRoom2.EnvironmentOxygen > 0.2f)
+							{
+								result = true;
+								depressFrom = vector3I;
+								depressTo = vector3I2;
+							}
+							oxygenRoomForCubeGridPosition.IsAirtight = false;
+							oxygenRoomForCubeGridPosition.OxygenAmount = 0f;
+							oxygenRoomForCubeGridPosition.EnvironmentOxygen = Math.Max(myOxygenRoom2.EnvironmentOxygen, oxygenRoomForCubeGridPosition.EnvironmentOxygen);
+							oxygenRoomForCubeGridPosition.DepressurizationTime = this.GetTotalGamePlayTimeInMilliseconds();
+							oxygenRoomForCubeGridPosition.Link.Room = myOxygenRoom2;
+							if (oxygenRoomForCubeGridPosition != myOxygenRoom2 && oxygenRoomForCubeGridPosition != myOxygenRoom)
+							{
+								oxygenRoomForCubeGridPosition.BlockCount = 0;
+								oxygenRoomForCubeGridPosition.Blocks = null;
+								this.m_rooms.Remove(oxygenRoomForCubeGridPosition);
+							}
+						}
+						else
+						{
+							myOxygenRoom2.BlockCount += oxygenRoomForCubeGridPosition.BlockCount;
+							myOxygenRoom2.OxygenAmount += oxygenRoomForCubeGridPosition.OxygenAmount;
+							this.MergeRooms(myOxygenRoom2, oxygenRoomForCubeGridPosition, myOxygenRoom2.Link);
+							oxygenRoomForCubeGridPosition.Link.Room = myOxygenRoom2;
+							if (oxygenRoomForCubeGridPosition != myOxygenRoom2 && oxygenRoomForCubeGridPosition != myOxygenRoom)
+							{
+								oxygenRoomForCubeGridPosition.BlockCount = 0;
+								oxygenRoomForCubeGridPosition.Blocks = null;
+								this.m_rooms.Remove(oxygenRoomForCubeGridPosition);
+							}
+						}
+					}
+				}
+			}
+			Vector3I vector3I3 = vector3I;
+			MyOxygenBlock myOxygenBlock = this.m_cubeRoom[vector3I3.X, vector3I3.Y, vector3I3.Z];
+			if (myOxygenBlock == null)
+			{
+				myOxygenBlock = new MyOxygenBlock();
+				this.m_cubeRoom.Add(vector3I3, myOxygenBlock);
+			}
+			if (myOxygenBlock.Room == null)
+			{
+				myOxygenBlock.RoomLink = myOxygenRoom2.Link;
+				myOxygenRoom2.BlockCount++;
+				myOxygenRoom2.Blocks.Add(vector3I3);
+			}
+			return result;
+		}
+
+		private void MergeRooms(MyOxygenRoom target, MyOxygenRoom withRoom, MyOxygenRoomLink link)
+		{
+			if (target.Blocks != null && withRoom.Blocks != null)
+			{
+				target.Blocks.UnionWith(withRoom.Blocks);
+				foreach (Vector3I vector3I in withRoom.Blocks)
+				{
+					this.m_cubeRoom[vector3I.X, vector3I.Y, vector3I.Z].RoomLink = link;
+				}
+			}
+		}
+
+		private MyOxygenRoom GetMaxBlockRoom(ref Vector3I current, MyOxygenRoom topRoom)
+		{
+			MyOxygenRoom myOxygenRoom = this.GetOxygenRoomForCubeGridPosition(ref current);
+			for (int i = 0; i < this.m_neighbours.Length; i++)
+			{
+				Vector3I vector3I = current + this.m_neighbours[i];
+				if (this.IsInBounds(current) && this.IsInBounds(vector3I) && !this.IsAirtightBetweenPositions(current, vector3I))
+				{
+					MyOxygenRoom oxygenRoomForCubeGridPosition = this.GetOxygenRoomForCubeGridPosition(ref vector3I);
+					if (oxygenRoomForCubeGridPosition != null)
+					{
+						if (myOxygenRoom == null)
+						{
+							myOxygenRoom = oxygenRoomForCubeGridPosition;
+						}
+						else if (oxygenRoomForCubeGridPosition == topRoom)
+						{
+							myOxygenRoom = topRoom;
+						}
+						else if (myOxygenRoom.BlockCount < oxygenRoomForCubeGridPosition.BlockCount && myOxygenRoom != topRoom)
+						{
+							myOxygenRoom = oxygenRoomForCubeGridPosition;
+						}
+					}
+				}
+			}
+			return myOxygenRoom;
+		}
+
+		private bool IsInBounds(Vector3I pos)
+		{
+			return !(this.m_storedGridMin != Vector3I.Min(pos, this.m_storedGridMin)) && !(this.m_storedGridMax != Vector3I.Max(pos, this.m_storedGridMax));
+		}
+
+		public MyOxygenRoom GetOxygenRoomForCubeGridPosition(ref Vector3I gridPosition)
+		{
+			Vector3I pos = gridPosition;
+			if (!this.IsInBounds(pos))
+			{
+				return null;
+			}
+			MyOxygenBlock myOxygenBlock = this.m_cubeRoom[pos.X, pos.Y, pos.Z];
+			if (myOxygenBlock == null)
+			{
+				return null;
+			}
+			return myOxygenBlock.Room;
+		}
+
+		public MyOxygenBlock GetOxygenBlock(Vector3D worldPosition)
+		{
+			Vector3I pos = this.m_cubeGrid.WorldToGridInteger(worldPosition);
+			if (this.m_cubeRoom != null && this.IsInBounds(pos))
+			{
+				return this.m_cubeRoom[pos.X, pos.Y, pos.Z];
+			}
+			return new MyOxygenBlock();
+		}
+
+		public MyOxygenBlock GetSafeOxygenBlock(Vector3D position)
+		{
+			MyOxygenBlock oxygenBlock = this.GetOxygenBlock(position);
+			if (oxygenBlock == null || oxygenBlock.Room == null)
+			{
+				Vector3D vector3D = Vector3D.Transform(position, this.m_cubeGrid.PositionComp.WorldMatrixNormalizedInv);
+				vector3D /= (double)this.m_cubeGrid.GridSize;
+				List<Vector3D> list = new List<Vector3D>(3);
+				if (vector3D.X - Math.Floor(vector3D.X) > 0.5)
+				{
+					list.Add(new Vector3D(-1.0, 0.0, 0.0));
+				}
+				else
+				{
+					list.Add(new Vector3D(1.0, 0.0, 0.0));
+				}
+				if (vector3D.Y - Math.Floor(vector3D.Y) > 0.5)
+				{
+					list.Add(new Vector3D(0.0, -1.0, 0.0));
+				}
+				else
+				{
+					list.Add(new Vector3D(0.0, 1.0, 0.0));
+				}
+				if (vector3D.Z - Math.Floor(vector3D.Z) > 0.5)
+				{
+					list.Add(new Vector3D(0.0, 0.0, -1.0));
+				}
+				else
+				{
+					list.Add(new Vector3D(0.0, 0.0, 1.0));
+				}
+				foreach (Vector3D value in list)
+				{
+					Vector3D vector3D2 = vector3D;
+					vector3D2 += value;
+					vector3D2 *= (double)this.m_cubeGrid.GridSize;
+					vector3D2 = Vector3D.Transform(vector3D2, this.m_cubeGrid.PositionComp.WorldMatrix);
+					MyOxygenBlock oxygenBlock2 = this.GetOxygenBlock(vector3D2);
+					if (oxygenBlock2 != null && oxygenBlock2.Room != null && oxygenBlock2.Room.IsAirtight)
+					{
+						return oxygenBlock2;
+					}
+				}
+				return oxygenBlock;
+			}
+			return oxygenBlock;
+		}
+
+		public void DebugDraw()
+		{
+			if (this.m_isProcessingData || this.m_rooms == null)
+			{
+				return;
+			}
+			Vector2 zero = Vector2.Zero;
+			MyRenderProxy.DebugDrawText2D(zero, "CTRL+ (T Toggle Top Room) (R Toggle Room Index) (Y Toggle Positions) (U Toggle View) ([ Index Down) (] Index Up) (- Index Reset) (+ Index Last)", Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+			zero.Y += this.m_debugTextlineSize;
+			MyRenderProxy.DebugDrawText2D(zero, "Rooms Count: " + this.m_rooms.Count, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+			zero.Y += this.m_debugTextlineSize;
+			MyRenderProxy.DebugDrawText2D(zero, "Selected Room", Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+			zero.Y += this.m_debugTextlineSize;
+			MyRenderProxy.DebugDrawText2D(zero, "   Index: " + this.m_debugRoomIndex, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+			if (MyInput.Static.IsLeftCtrlKeyPressed())
+			{
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.T))
+				{
+					this.m_debugShowTopRoom = !this.m_debugShowTopRoom;
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.R))
+				{
+					this.m_debugShowRoomIndex = !this.m_debugShowRoomIndex;
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.Y))
+				{
+					this.m_debugShowPositions = !this.m_debugShowPositions;
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.OemOpenBrackets))
+				{
+					this.m_debugRoomIndex = ((this.m_debugRoomIndex == 0) ? 0 : (this.m_debugRoomIndex - 1));
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.OemCloseBrackets))
+				{
+					this.m_debugRoomIndex = ((this.m_debugRoomIndex >= this.m_lastRoomIndex) ? this.m_lastRoomIndex : (this.m_debugRoomIndex + 1));
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.OemPlus))
+				{
+					this.m_debugRoomIndex = this.m_lastRoomIndex;
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.OemMinus))
+				{
+					this.m_debugRoomIndex = 0;
+				}
+				if (MyInput.Static.IsNewKeyPressed(MyKeys.U))
+				{
+					this.m_debugToggleView = !this.m_debugToggleView;
+				}
+			}
+			if (this.m_debugToggleView)
+			{
+				Vector3I storedGridMin = this.m_storedGridMin;
+				Vector3I_RangeIterator vector3I_RangeIterator = new Vector3I_RangeIterator(ref this.m_storedGridMin, ref this.m_storedGridMax);
+				while (vector3I_RangeIterator.IsValid())
+				{
+					MyOxygenBlock myOxygenBlock;
+					if (this.m_cubeRoom.TryGetValue(storedGridMin, out myOxygenBlock))
+					{
+						MyOxygenRoom room = myOxygenBlock.Room;
+						if (room != null && (room.Index != 0 || this.m_debugShowTopRoom))
+						{
+							this.DrawBlock(room, storedGridMin);
+						}
+					}
+					vector3I_RangeIterator.GetNext(out storedGridMin);
+				}
+				return;
+			}
+			this.DrawRooms(zero);
+		}
+
+		private void DrawRooms(Vector2 textPosition)
+		{
+			foreach (MyOxygenRoom myOxygenRoom in this.m_rooms)
+			{
+				this.DrawRoomInfo(textPosition, myOxygenRoom);
+				foreach (Vector3I blockPosition in myOxygenRoom.Blocks)
+				{
+					if ((myOxygenRoom.Index != 0 || this.m_debugShowTopRoom) && (this.m_debugRoomIndex == 0 || myOxygenRoom.Index == this.m_debugRoomIndex))
+					{
+						this.DrawBlock(myOxygenRoom, blockPosition);
+					}
+				}
+			}
+		}
+
+		private void DrawBlock(MyOxygenRoom room, Vector3I blockPosition)
+		{
+			Color color = room.IsAirtight ? Color.Lerp(Color.Red, Color.Green, room.OxygenLevel(this.m_cubeGrid.GridSize)) : Color.Blue;
+			Vector3D vector3D = this.m_cubeGrid.GridIntegerToWorld(blockPosition);
+			MyRenderProxy.DebugDrawPoint(vector3D, color, false, false);
+			if (this.m_debugShowRoomIndex)
+			{
+				MyRenderProxy.DebugDrawText3D(vector3D, room.Index.ToString(), Color.LightGray, 0.5f, false, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, -1, false);
+			}
+			if (this.m_debugShowPositions)
+			{
+				string text = string.Format("{0}, {1}, {2}", blockPosition.X, blockPosition.Y, blockPosition.Z);
+				MyRenderProxy.DebugDrawText3D(vector3D, text, Color.LightGray, 0.5f, false, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, -1, false);
+			}
+		}
+
+		private void DrawRoomInfo(Vector2 textPosition, MyOxygenRoom room)
+		{
+			if (room.Index == this.m_debugRoomIndex)
+			{
+				string str = string.Format("{0} : {1}", room.BlockCount, room.Blocks.Count);
+				textPosition.Y += this.m_debugTextlineSize;
+				MyRenderProxy.DebugDrawText2D(textPosition, "   Block Count: " + str, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+				textPosition.Y += this.m_debugTextlineSize;
+				MyRenderProxy.DebugDrawText2D(textPosition, "   Oxygen Amount: " + room.OxygenAmount, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+				textPosition.Y += this.m_debugTextlineSize;
+				MyRenderProxy.DebugDrawText2D(textPosition, "   Min: " + this.m_storedGridMin, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+				textPosition.Y += this.m_debugTextlineSize;
+				MyRenderProxy.DebugDrawText2D(textPosition, "   Max: " + this.m_storedGridMax, Color.Yellow, 0.6f, MyGuiDrawAlignEnum.HORISONTAL_LEFT_AND_VERTICAL_TOP, false);
+			}
+		}
+
+		internal OxygenRoom[] GetOxygenAmount()
+		{
+			if (this.m_rooms != null && this.m_rooms.List != null)
+			{
+				int count = this.m_rooms.List.Count;
+				MyOxygenRoom[] internalArray = this.m_rooms.List.GetInternalArray<MyOxygenRoom>();
+				OxygenRoom[] array = new OxygenRoom[count];
+				for (int i = 0; i < count; i++)
+				{
+					MyOxygenRoom myOxygenRoom = internalArray[i];
+					if (myOxygenRoom != null)
+					{
+						array[i].OxygenAmount = myOxygenRoom.OxygenAmount;
+						array[i].StartingPosition = myOxygenRoom.StartingPosition;
+					}
+				}
+				return array;
+			}
+			return null;
+		}
+
+		internal void Init(OxygenRoom[] oxygenAmount)
+		{
+			this.m_savedRooms = oxygenAmount;
+		}
+
+		[CompilerGenerated]
+		private static Action<long, Vector3I, Vector3I> <RemoveBlocks>b__0(IMyEventOwner x)
+		{
+			return new Action<long, Vector3I, Vector3I>(MyCubeGrid.DepressurizeEffect);
+		}
+
+		// Note: this type is marked as 'beforefieldinit'.
+		static MyGridGasSystem()
+		{
+		}
+	}
+}

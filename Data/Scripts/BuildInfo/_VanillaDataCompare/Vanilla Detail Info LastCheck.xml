@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-16"?>
 <VanillaDetailInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <GameVersion>1.189.41</GameVersion>
   <Blocks>
     <InfoEntry>
       <Id>MyObjectBuilder_BatteryBlock/LargeBlockBatteryBlock</Id>
@@ -9,7 +10,7 @@ Max Required Input: 12.00 MW
 Max Stored Power: 3.00 MWh
 Current Input: 0 W
 Current Output: 0 W
-Stored power: 1.19 MWh
+Stored power: 900.00 kWh
 Fully depleted in: -</DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -49,7 +50,7 @@ Used upgrade module slots: 0 / 8
     <InfoEntry>
       <Id>MyObjectBuilder_OxygenGenerator/</Id>
       <DetailInfo>Type: O2/H2 Generator
-Max Required Input: 330.00 kW</DetailInfo>
+Max Required Input: 500.00 kW</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_Assembler/LargeAssembler</Id>
@@ -61,6 +62,17 @@ Productivity:100%
 Power Efficiency:100%
 
 Used upgrade module slots: 0 / 8
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_SurvivalKit/SurvivalKitLarge</Id>
+      <DetailInfo>Type: Survival kit
+Max Required Input: 200.00 kW
+Required Input: 15.00 kW
+
+Productivity:100%
+Power Efficiency:100%
 
 </DetailInfo>
     </InfoEntry>
@@ -87,22 +99,22 @@ Fully recharged in: 0 sec
 Max jump distance:0 km</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_Drill/SmallBlockDrill</Id>
-      <DetailInfo>Type: Drill
-Max Required Input: 2.00 kW
-</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
       <Id>MyObjectBuilder_SensorBlock/SmallBlockSensor</Id>
       <DetailInfo>Type: Sensor
 Max Required Input: 0 W
 Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
+      <Id>MyObjectBuilder_Drill/SmallBlockDrill</Id>
+      <DetailInfo>Type: Drill
+Max Required Input: 2.00 kW
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
       <Id>MyObjectBuilder_OxygenTank/OxygenTankSmall</Id>
       <DetailInfo>Type: Oxygen Tank
 Max Required Input: 1.00 kW
-Filled: 50.0% (25000L/50000L)</DetailInfo>
+Filled: 0.0% (0L/50000L)</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_RemoteControl/LargeBlockRemoteControl</Id>
@@ -113,13 +125,13 @@ Max Required Input: 10.00 kW
     <InfoEntry>
       <Id>MyObjectBuilder_AirVent/</Id>
       <DetailInfo>Type: Air Vent
-Max Required Input: 330.00 kW
+Max Required Input: 100.00 kW
 Room pressure: Not pressurized</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_Thrust/SmallBlockSmallThrust</Id>
       <DetailInfo>Type: Ion Thrusters
-Max Required Input: 201.00 kW
+Max Required Input: 200.00 kW
 </DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -130,18 +142,26 @@ Max Required Input: 30 W</DetailInfo>
     <InfoEntry>
       <Id>MyObjectBuilder_Gyro/LargeBlockGyro</Id>
       <DetailInfo>Type: Gyroscope
-Max Required Input: 30 W</DetailInfo>
+Max Required Input: 10.00 kW</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_Reactor/SmallBlockSmallGenerator</Id>
       <DetailInfo>Type: Small Reactor
 Max Output: 500.00 kW
-Current Output: 0 W</DetailInfo>
+Current Output: 0 W
+</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_PistonBase/LargePistonBase</Id>
       <DetailInfo>Attached
 Current position: 0.0m</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_HydrogenEngine/LargeHydrogenEngine</Id>
+      <DetailInfo>Type: Hydrogen Engine
+Max Output: 5.00 MW
+Current Output: 0 W
+Filled: 0.0% (0L/500000L)</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_ExtendedPistonBase/LargePistonBase</Id>
@@ -159,15 +179,23 @@ Current angle: 0°</DetailInfo>
 Current angle: 0°</DetailInfo>
     </InfoEntry>
     <InfoEntry>
+      <Id>MyObjectBuilder_WindTurbine/LargeBlockWindTurbine</Id>
+      <DetailInfo>Type: Wind Turbine
+Max Output: 0 W
+Current Output: 0 W
+Wind Clearance: None</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
       <Id>MyObjectBuilder_SolarPanel/LargeBlockSolarPanel</Id>
       <DetailInfo>Type: Solar Panel
-Max Output: 9.26 kW
-Current Output: 0 W</DetailInfo>
+Max Output: 24.69 kW
+Current Output: 0 W
+</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_OxygenFarm/LargeBlockOxygenFarm</Id>
       <DetailInfo>Type: Oxygen Farm
-Max Required Input: 1.00 kW
+Max Required Input: 20.00 kW
 Oxygen Output: 0.00 L/min</DetailInfo>
     </InfoEntry>
     <InfoEntry>

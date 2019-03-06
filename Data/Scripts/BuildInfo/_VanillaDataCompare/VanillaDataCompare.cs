@@ -3,18 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Timers;
-using Digi.BuildInfo.Utils;
 using ProtoBuf;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.ObjectBuilders;
 using VRageMath;
 
@@ -24,19 +20,17 @@ namespace Digi.BuildInfo
     public class VanillaDataCompare : MySessionComponentBase
     {
         const string NAME = "GameChecks";
-        const string LAST_CHECKED_VERSION = "v1.187.87";
+        const string LAST_CHECKED_VERSION = "v1.189.41";
 
-        string readFile;
-        string writeFile;
+        const string readFile = "Vanilla Detail Info LastCheck.xml";
+        const string writeFile = "Vanilla Detail Info LastCheck.xml";
+        const string backupFile = "Vanilla Detail Info Backup.xml";
 
         public override void BeforeStart()
         {
             // ensuring this component doesn't run unless it's local and offline
             if(MyAPIGateway.Session.OnlineMode != MyOnlineModeEnum.OFFLINE || Log.WorkshopId != 0)
                 return;
-
-            readFile = $"{Log.ModName} VanillaDetailInfo {LAST_CHECKED_VERSION}.xml";
-            writeFile = $"{Log.ModName} VanillaDetailInfo v{MyAPIGateway.Session.Version}.xml";
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }
@@ -57,6 +51,24 @@ namespace Digi.BuildInfo
 
                     CompareVanillaDetailInfo();
                 }
+
+                //if(text.StartsWith("/spawnheld"))
+                //{
+                //    sendToOthers = false;
+
+                //    var def = BuildInfoMod.Client.EquipmentMonitor.BlockDef;
+
+                //    var matrix = MyAPIGateway.Session.Camera.WorldMatrix;
+                //    matrix.Translation += matrix.Forward * 2;
+
+                //    //MyCubeBuilder.SpawnStaticGrid(def, null, matrix, new Vector3(0, -1, 0));
+
+                //    MyCubeBuilder.Static.AddBlocksToBuildQueueOrSpawn(def, ref matrix, Vector3I.Zero, Vector3I.One, Vector3I.Zero, Quaternion.Identity);
+
+                //    //MyCubeBuilder.Static.Add();
+
+                //    MyAPIGateway.Utilities.ShowNotification("SPAWNED!");
+                //}
             }
             catch(Exception e)
             {
@@ -67,11 +79,13 @@ namespace Digi.BuildInfo
         #region Vanilla detail info check
         Dictionary<MyDefinitionId, string> vanillaDetailInfo;
         List<IMyTerminalBlock> spawnedBlocks;
-        Vector3D spawnPosition = new Vector3D(-1000, -1000, 0);
 
         [ProtoContract]
         public class VanillaDetailInfo
         {
+            [ProtoMember(2)]
+            public string GameVersion;
+
             [ProtoMember(1)]
             public List<InfoEntry> Blocks;
         }
@@ -92,11 +106,13 @@ namespace Digi.BuildInfo
 
             Log.Info($"{NAME}: Reading 'Storage/{readFile}'...");
 
-            if(MyAPIGateway.Utilities.FileExistsInGlobalStorage(readFile))
+            if(MyAPIGateway.Utilities.FileExistsInLocalStorage(readFile, typeof(VanillaDataCompare)))
             {
-                using(var reader = MyAPIGateway.Utilities.ReadFileInGlobalStorage(readFile))
+                string xml = null;
+
+                using(var reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(readFile, typeof(VanillaDataCompare)))
                 {
-                    var xml = reader.ReadToEnd();
+                    xml = reader.ReadToEnd();
                     var info = MyAPIGateway.Utilities.SerializeFromXML<VanillaDetailInfo>(xml);
 
                     if(info == null)
@@ -118,10 +134,17 @@ namespace Digi.BuildInfo
                         vanillaDetailInfo.Add(MyDefinitionId.Parse(block.Id), block.DetailInfo);
                     }
                 }
+
+                Log.Info($"{NAME}: Backing up {readFile} as {backupFile}.");
+
+                using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(backupFile, typeof(VanillaDataCompare)))
+                {
+                    writer.Write(xml);
+                }
             }
             else
             {
-                Log.Info($"{NAME}: File not found!");
+                Log.Info($"{NAME}: {readFile} not found.");
                 MyAPIGateway.Utilities.ShowMessage(NAME, $"{Log.ModName} WARNING: missing 'Storage/{readFile}' file, nothing to compare to!");
             }
 
@@ -129,6 +152,8 @@ namespace Digi.BuildInfo
             var spawned = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
 
             Log.Info($"{NAME}: Spawning blocks...");
+
+            var matrix = MatrixD.Identity;
 
             foreach(var def in definitions)
             {
@@ -143,134 +168,43 @@ namespace Digi.BuildInfo
                 if(!spawned.Add(def.Id.TypeId)) // if Add() returns false it means the entry already exists
                     continue;
 
-                var block = SpawnTerminalBlock(blockDef);
+                MyCubeBuilder.SpawnStaticGrid(blockDef, null, matrix, Vector3.One, completionCallback: GridSpawned);
 
-                if(block == null)
-                    continue;
-
-                spawnedBlocks.Add(block);
+                matrix.Translation += new Vector3D(0, 0, 100);
             }
 
             Log.Info($"{NAME}: Starting timer and waiting...");
 
-            var timer = new Timer(2000);
+            var timer = new Timer(3000);
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
         }
 
-        private IMyTerminalBlock SpawnTerminalBlock(MyCubeBlockDefinition def)
+        private void GridSpawned(MyEntity ent)
         {
-            IMyCubeGrid grid = null;
+            var grid = (IMyCubeGrid)ent;
+            var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
 
-            try
+            if(block == null)
             {
-                var worldMatrix = MatrixD.Identity;
-                worldMatrix.Translation = spawnPosition;
-
-                spawnPosition.Z += 100;
-
-                //var gridObj = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_CubeGrid>();
-
-                var offset = Vector3.TransformNormal(MyCubeBlock.GetBlockGridOffset(def), worldMatrix);
-
-                var gridObj = new MyObjectBuilder_CubeGrid()
-                {
-                    EntityId = 0,
-                    CreatePhysics = true,
-                    GridSizeEnum = def.CubeSize,
-                    PositionAndOrientation = new MyPositionAndOrientation(worldMatrix.Translation - offset, worldMatrix.Forward, worldMatrix.Up),
-                    PersistentFlags = (MyPersistentEntityFlags2.Enabled | MyPersistentEntityFlags2.InScene),
-                    IsStatic = true,
-                    Editable = false,
-                    DestructibleBlocks = false,
-                    IsRespawnGrid = false,
-                    Name = "BuildInfo_TemporaryGrid",
-                    CubeBlocks = new List<MyObjectBuilder_CubeBlock>(1),
-                };
-
-                var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(def.Id);
-                blockObj.EntityId = 0;
-                blockObj.Orientation = Quaternion.CreateFromForwardUp(Vector3I.Forward, Vector3I.Up);
-                blockObj.Min = (def.Size / 2) - def.Size + Vector3I.One;
-                //blockObj.ColorMaskHSV = color;
-                //blockObj.BuiltBy = builtBy;
-                //blockObj.Owner = builtBy;
-
-                // HACK these types do not check if their fields are null in their Remap() method.
-                var timer = blockObj as MyObjectBuilder_TimerBlock;
-                if(timer != null)
-                    timer.Toolbar = new MyObjectBuilder_Toolbar();
-
-                var button = blockObj as MyObjectBuilder_ButtonPanel;
-                if(button != null)
-                    button.Toolbar = new MyObjectBuilder_Toolbar();
-
-                var sensor = blockObj as MyObjectBuilder_SensorBlock;
-                if(sensor != null)
-                    sensor.Toolbar = new MyObjectBuilder_Toolbar();
-
-                if(def.EntityComponents != null)
-                {
-                    if(blockObj.ComponentContainer == null)
-                        blockObj.ComponentContainer = new MyObjectBuilder_ComponentContainer();
-
-                    foreach(var kv in def.EntityComponents)
-                    {
-                        blockObj.ComponentContainer.Components.Add(new MyObjectBuilder_ComponentContainer.ComponentData
-                        {
-                            TypeId = kv.Key.ToString(),
-                            Component = kv.Value
-                        });
-                    }
-                }
-
-                gridObj.CubeBlocks.Add(blockObj);
-
-                MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
-
-                var ent = (MyEntity)MyAPIGateway.Entities.CreateFromObjectBuilder(gridObj);
-
-                if(ent == null)
-                {
-                    Log.Error($"Can't get spawned entity for block: {def.Id}");
-                    return null;
-                }
-
-                ent.IsPreview = true;
-                ent.Save = false;
-                MyAPIGateway.Entities.AddEntity(ent, true);
-
-                grid = (IMyCubeGrid)ent;
-                var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
-
-                if(block == null)
-                {
-                    RemoveConnectedGrids(grid);
-                    Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
-                    return null;
-                }
-
-                var terminalBlock = block as IMyTerminalBlock;
-
-                if(terminalBlock == null)
-                {
-                    RemoveConnectedGrids(grid);
-                    return null;
-                }
-
-                block.OnBuildSuccess(0, true);
-
-                return terminalBlock;
-            }
-            catch(Exception e)
-            {
-                if(grid != null)
-                    RemoveConnectedGrids(grid);
-
-                Log.Error(e);
+                RemoveConnectedGrids(grid);
+                Log.Error($"Can't get block from spawned entity for some unknown block...");
+                //Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
+                return;
             }
 
-            return null;
+            var terminalBlock = block as IMyTerminalBlock;
+
+            if(terminalBlock == null)
+            {
+                Log.Info($"Spawned block is not a terminal block: {block.BlockDefinition}");
+                RemoveConnectedGrids(grid);
+                return;
+            }
+
+            block.OnBuildSuccess(0, true);
+
+            spawnedBlocks.Add(terminalBlock);
         }
 
         private void RemoveConnectedGrids(IMyCubeGrid grid)
@@ -298,6 +232,7 @@ namespace Digi.BuildInfo
                 bool newDetected = false;
                 var data = new VanillaDetailInfo
                 {
+                    GameVersion = MyAPIGateway.Session.Version.ToString(),
                     Blocks = new List<InfoEntry>()
                 };
 
@@ -352,7 +287,7 @@ namespace Digi.BuildInfo
 
                 var xml = MyAPIGateway.Utilities.SerializeToXML(data);
 
-                using(var writer = MyAPIGateway.Utilities.WriteFileInGlobalStorage(writeFile))
+                using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(writeFile, typeof(VanillaDataCompare)))
                 {
                     writer.Write(xml);
                     writer.Flush();
