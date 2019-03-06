@@ -16,6 +16,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
+using VRageMath;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features
@@ -144,16 +145,21 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_RemoteControl), Format_RemoteControl);
 
             // not needed, already contains current power usage, sort of
-            //Add(typeof(MyObjectBuilder_Gyro),Format_Gyro);
+            //Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
 
             Add(typeof(MyObjectBuilder_Thrust), Format_Thruster);
 
             Add(typeof(MyObjectBuilder_Collector), Format_Collector);
 
             Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
+            Add(typeof(MyObjectBuilder_HydrogenEngine), Format_HydrogenEngine);
+            Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
+            // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+            //Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
 
             Add(typeof(MyObjectBuilder_Refinery), Format_Production);
             Add(typeof(MyObjectBuilder_Assembler), Format_Production);
+            Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
 
             Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
@@ -316,7 +322,12 @@ namespace Digi.BuildInfo.Features
             if(newBlock != null)
             {
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
-                    return; // ignore blocks that don't need stats
+                {
+                    if(newBlock.BlockDefinition.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+                        currentFormatCall = Format_WindTurbine;
+                    else
+                        return; // ignore blocks that don't need stats
+                }
 
                 viewedInTerminal = newBlock;
 
@@ -388,7 +399,7 @@ namespace Digi.BuildInfo.Features
         #region Text formatting per block type
         void Format_LightingBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -396,7 +407,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Doors(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -404,7 +415,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_OreDetector(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -412,7 +423,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_TimerBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      <timer status>
 
             info.DetailInfo_InputPower(Sink);
@@ -420,7 +431,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_SoundBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -428,7 +439,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_CargoContainer(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
@@ -436,7 +447,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_ConveyorSorter(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
@@ -448,7 +459,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Connector(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -494,7 +505,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Weapons(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -510,7 +521,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
             //      Current Input: <n> W
@@ -558,7 +569,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_UpgradeModule(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             var upgradeModule = (IMyUpgradeModule)block;
@@ -633,7 +644,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_OxygenFarm(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
             //      Oxygen output: <n> L/min
@@ -645,7 +656,7 @@ namespace Digi.BuildInfo.Features
         {
             var cockpit = (IMyCockpit)block;
 
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //     [Main ship cockpit: <name>]
 
             if(cockpit.OxygenCapacity > 0)
@@ -656,7 +667,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_RemoteControl(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
 
@@ -889,7 +900,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Rotor(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current angle or status
 
@@ -898,7 +909,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Piston(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current position
 
@@ -907,7 +918,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_AirVent(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
             //      Room pressure: <status>
@@ -917,7 +928,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Reactor(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Output: <n> W
             //      Current Output: <n> W
@@ -975,9 +986,54 @@ namespace Digi.BuildInfo.Features
             info.DetailInfo_Inventory(Inv, maxVolume);
         }
 
+        void Format_HydrogenEngine(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.189.041:
+            //      Type: <BlockDefName>
+            //      Max Output: 5.00 MW
+            //      Current Output: 0 W
+            //      Filled: 0.0% (0L/500000L)
+
+            info.DetailInfo_InputHydrogen(Sink);
+        }
+
+        void Format_WindTurbine(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.189.041:
+            //      Type: <BlockDefName>
+            //      Max Output: 5.00 MW
+            //      Current Output: 0 W
+            //      Wind Clearance: <Text>
+
+            var turbineDef = (MyWindTurbineDefinition)block.SlimBlock.BlockDefinition;
+            info.Append("Max Possible Output: ").PowerFormat(turbineDef.MaxPowerOutput).NewLine();
+
+            var grid = block.CubeGrid;
+            var position = (grid.Physics == null ? grid.Physics.CenterOfMassWorld : grid.GetPosition());
+            var planet = MyGamePruningStructure.GetClosestPlanet(position);
+
+            info.Append("Current wind speed: ");
+            if(planet != null && planet.PositionComp.WorldAABB.Contains(position) != ContainmentType.Disjoint)
+                info.Append(planet.GetWindSpeed(position).ToString("0.##"));
+            else
+                info.Append('0');
+            info.NewLine();
+        }
+
+        void Format_SolarPanel(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.189.041:
+            //      Type: <BlockDefName>
+            //      Max Output: 5.00 MW
+            //      Current Output: 0 W
+
+            var solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
+            info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).NewLine();
+        }
+
         void Format_Thruster(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
 
@@ -1041,7 +1097,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_RadioAntenna(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
@@ -1052,7 +1108,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_LaserAntenna(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current Input: <n> W
             //      <LaserAntennaStatus>
@@ -1082,7 +1138,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Beacon(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
@@ -1093,7 +1149,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
 
@@ -1103,7 +1159,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_GasTank(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
             //      Filled: <n>% (<current>L / <max>L)
@@ -1115,7 +1171,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_MedicalRoom(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -1123,7 +1179,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_ShipWelder(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_Inventory(Inv);
@@ -1131,7 +1187,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_ShipGrinder(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //      (nothing)
 
             info.DetailInfo_Inventory(Inv);
@@ -1139,7 +1195,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Parachute(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //     (nothing)
 
             var parachute = (IMyParachute)block;
@@ -1150,7 +1206,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Collector(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //     (nothing)
 
             info.DetailInfo_Inventory(Inv);
@@ -1158,7 +1214,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_ButtonPanel(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //     (nothing)
 
             info.DetailInfo_InputPower(Sink);
@@ -1166,7 +1222,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_ProgrammableBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.186.5:
+            // Vanilla info in 1.189.041:
             //     (nothing)
 
             if(block.DetailedInfo.Length != 0)

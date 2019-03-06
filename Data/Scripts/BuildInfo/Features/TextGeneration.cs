@@ -1300,8 +1300,7 @@ namespace Digi.BuildInfo.Features
                 {
                     action.Invoke(def);
                 }
-                // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
-                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine")
+                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
                 {
                     Format_PowerProducer(def);
                 }
