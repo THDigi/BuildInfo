@@ -235,6 +235,8 @@ namespace Digi.BuildInfo.Features
                             data.Msg.Up = camMatrix.Up;
                             data.Msg.TimeToLive = 2;
                         }
+
+                        data.Msg.Draw();
                     }
                     else
                     {
