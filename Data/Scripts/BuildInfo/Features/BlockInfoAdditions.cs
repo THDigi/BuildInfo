@@ -149,20 +149,21 @@ namespace Digi.BuildInfo.Features
                 var posCompList = DrawUtils.GetHudComponentListStart();
                 var totalComps = blockDef.Components.Length;
 
-                //if(MyAPIGateway.Input.IsKeyPress(MyKeys.Shift))
+                // for debugging
+                //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Shift))
                 //{
                 //    for(int i = totalComps - 1; i >= 0; --i)
                 //    {
-                //        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * ScaleFOV);
+                //        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * DrawUtils.ScaleFOV);
                 //
                 //        var hud = posCompList;
                 //        hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - i - 1);
                 //
-                //        var worldPos = HudToWorld(hud);
+                //        var worldPos = DrawUtils.HUDtoWorld(hud);
                 //
                 //        worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
                 //
-                //        MyTransparentGeometry.AddBillboardOriented(MATERIAL_SQUARE, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
+                //        MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
                 //    }
                 //}
 
@@ -208,19 +209,20 @@ namespace Digi.BuildInfo.Features
 
                     if(TextAPIEnabled)
                     {
-                        const double LEFT_OFFSET = 0.021;
-                        const double TEXT_SCALE = 0.0006;
-                        const int MAX_CHARACTERS = 14 + 33; // 14 for the <color=yellow> to be ignored
+                        const double LEFT_OFFSET = 0.0183;
+                        const double TEXT_SCALE = 0.00055;
+                        string textColor = "<color=255,255,0>";
+                        int maxCharacters = textColor.Length + 33;
 
                         worldPos += camMatrix.Left * (LEFT_OFFSET * DrawUtils.ScaleFOV);
 
                         if(data.Msg == null)
                         {
-                            var text = new StringBuilder().Append("<color=yellow>Grinds to: ").Append(data.Replaced.DisplayNameText);
+                            var text = new StringBuilder().Append(textColor).Append("Grinds to: ").Append(data.Replaced.DisplayNameText);
 
-                            if(text.Length > MAX_CHARACTERS)
+                            if(text.Length > maxCharacters)
                             {
-                                text.Length = MAX_CHARACTERS;
+                                text.Length = maxCharacters;
                                 text.Append('…');
                             }
 
