@@ -186,7 +186,7 @@
     <Compile Include="Features\LeakInfo\PathfindingObjects.cs" />
     <Compile Include="Features\LeakInfo\DrawObjects.cs" />
     <Compile Include="Features\QuickMenu.cs" />
-    <Compile Include="Systems\ConfigMonitor.cs" />
+    <Compile Include="Systems\GameConfig.cs" />
     <Compile Include="Systems\InputLibHandler.cs" />
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Features\LiveData\TempBlockSpawn.cs" />
