@@ -16,28 +16,12 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
             //EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
         public override void UnregisterComponent()
         {
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
             //EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
-        }
-
-        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
-        {
-            if(Config.Debug)
-                MyAPIGateway.Utilities.ShowNotification($"Equipment.ToolChanged :: {toolDefId}", 1000, MyFontEnum.Green);
-        }
-
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
-        {
-            if(Config.Debug)
-                MyAPIGateway.Utilities.ShowNotification($"Equipment.BlockChanged :: {def?.Id.ToString() ?? "Unequipped"}, {(def == null ? "" : (block != null ? "Aimed" : "Held"))}", 1000);
         }
 
         //private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled, int tick)
