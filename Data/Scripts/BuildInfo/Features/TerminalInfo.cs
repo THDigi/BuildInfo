@@ -86,92 +86,97 @@ namespace Digi.BuildInfo.Features
 
         private void RegisterFormats()
         {
-            formatLookup[typeof(MyObjectBuilder_InteriorLight)] = Format_LightingBlock;
-            formatLookup[typeof(MyObjectBuilder_ReflectorLight)] = Format_LightingBlock;
+            Add(typeof(MyObjectBuilder_InteriorLight), Format_LightingBlock);
+            Add(typeof(MyObjectBuilder_ReflectorLight), Format_LightingBlock);
 
-            formatLookup[typeof(MyObjectBuilder_Door)] = Format_Doors;
-            formatLookup[typeof(MyObjectBuilder_AdvancedDoor)] = Format_Doors;
-            formatLookup[typeof(MyObjectBuilder_AirtightDoorGeneric)] = Format_Doors;
-            formatLookup[typeof(MyObjectBuilder_AirtightHangarDoor)] = Format_Doors;
-            formatLookup[typeof(MyObjectBuilder_AirtightSlideDoor)] = Format_Doors;
+            Add(typeof(MyObjectBuilder_Door), Format_Doors);
+            Add(typeof(MyObjectBuilder_AdvancedDoor), Format_Doors);
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_Doors);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_Doors);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_Doors);
 
-            formatLookup[typeof(MyObjectBuilder_CargoContainer)] = Format_CargoContainer;
+            Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoContainer);
 
-            formatLookup[typeof(MyObjectBuilder_ConveyorSorter)] = Format_ConveyorSorter;
+            Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
 
-            formatLookup[typeof(MyObjectBuilder_ShipWelder)] = Format_ShipWelder;
+            Add(typeof(MyObjectBuilder_ShipWelder), Format_ShipWelder);
 
-            formatLookup[typeof(MyObjectBuilder_ShipGrinder)] = Format_ShipGrinder;
+            Add(typeof(MyObjectBuilder_ShipGrinder), Format_ShipGrinder);
 
-            formatLookup[typeof(MyObjectBuilder_PistonBase)] = Format_Piston; // this one is actually ancient and unused?
-            formatLookup[typeof(MyObjectBuilder_ExtendedPistonBase)] = Format_Piston;
+            Add(typeof(MyObjectBuilder_PistonBase), Format_Piston); // this one is actually ancient and unused?
+            Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
 
-            formatLookup[typeof(MyObjectBuilder_ShipConnector)] = Format_Connector;
+            Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
 
-            formatLookup[typeof(MyObjectBuilder_MotorAdvancedStator)] = Format_Rotor;
-            formatLookup[typeof(MyObjectBuilder_MotorStator)] = Format_Rotor;
-            formatLookup[typeof(MyObjectBuilder_MotorSuspension)] = Format_Rotor;
+            Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
+            Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
+            Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
 
-            formatLookup[typeof(MyObjectBuilder_TimerBlock)] = Format_TimerBlock;
+            Add(typeof(MyObjectBuilder_TimerBlock), Format_TimerBlock);
 
-            formatLookup[typeof(MyObjectBuilder_SoundBlock)] = Format_SoundBlock;
+            Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
 
-            formatLookup[typeof(MyObjectBuilder_ButtonPanel)] = Format_ButtonPanel;
+            Add(typeof(MyObjectBuilder_ButtonPanel), Format_ButtonPanel);
 
-            formatLookup[typeof(MyObjectBuilder_TurretBase)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_ConveyorTurretBase)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_SmallGatlingGun)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_SmallMissileLauncher)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_SmallMissileLauncherReload)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_InteriorTurret)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_LargeGatlingTurret)] = Format_Weapons;
-            formatLookup[typeof(MyObjectBuilder_LargeMissileTurret)] = Format_Weapons;
+            Add(typeof(MyObjectBuilder_TurretBase), Format_Weapons);
+            Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapons);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapons);
+            Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapons);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapons);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapons);
 
             // nothing useful to add, it also has a huge detail info text when a projection is loaded
-            //blockTypeFormat[typeof(MyObjectBuilder_Projector)] = Format_Projector;
-            //blockTypeFormat[typeof(MyObjectBuilder_ProjectorBase)] = Format_Projector;
+            //Add(typeof(MyObjectBuilder_Projector),Format_Projector);
+            //Add(typeof(MyObjectBuilder_ProjectorBase),Format_Projector);
 
-            formatLookup[typeof(MyObjectBuilder_OreDetector)] = Format_OreDetector;
+            Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
 
-            formatLookup[typeof(MyObjectBuilder_Parachute)] = Format_Parachute;
+            Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
 
-            formatLookup[typeof(MyObjectBuilder_GasTank)] = Format_GasTank;
-            formatLookup[typeof(MyObjectBuilder_OxygenTank)] = Format_GasTank;
+            Add(typeof(MyObjectBuilder_GasTank), Format_GasTank);
+            Add(typeof(MyObjectBuilder_OxygenTank), Format_GasTank);
 
-            formatLookup[typeof(MyObjectBuilder_Cockpit)] = Format_Seats;
-            formatLookup[typeof(MyObjectBuilder_CryoChamber)] = Format_Seats;
+            Add(typeof(MyObjectBuilder_Cockpit), Format_Seats);
+            Add(typeof(MyObjectBuilder_CryoChamber), Format_Seats);
 
-            formatLookup[typeof(MyObjectBuilder_RemoteControl)] = Format_RemoteControl;
+            Add(typeof(MyObjectBuilder_RemoteControl), Format_RemoteControl);
 
             // not needed, already contains current power usage, sort of
-            //blockTypeFormat[typeof(MyObjectBuilder_Gyro)] = Format_Gyro;
+            //Add(typeof(MyObjectBuilder_Gyro),Format_Gyro);
 
-            formatLookup[typeof(MyObjectBuilder_Thrust)] = Format_Thruster;
+            Add(typeof(MyObjectBuilder_Thrust), Format_Thruster);
 
-            formatLookup[typeof(MyObjectBuilder_Collector)] = Format_Collector;
+            Add(typeof(MyObjectBuilder_Collector), Format_Collector);
 
-            formatLookup[typeof(MyObjectBuilder_Reactor)] = Format_Reactor;
+            Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
 
-            formatLookup[typeof(MyObjectBuilder_Refinery)] = Format_Production;
-            formatLookup[typeof(MyObjectBuilder_Assembler)] = Format_Production;
+            Add(typeof(MyObjectBuilder_Refinery), Format_Production);
+            Add(typeof(MyObjectBuilder_Assembler), Format_Production);
 
-            formatLookup[typeof(MyObjectBuilder_UpgradeModule)] = Format_UpgradeModule;
+            Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
-            formatLookup[typeof(MyObjectBuilder_MedicalRoom)] = Format_MedicalRoom;
+            Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
 
-            formatLookup[typeof(MyObjectBuilder_OxygenGenerator)] = Format_GasGenerator;
+            Add(typeof(MyObjectBuilder_OxygenGenerator), Format_GasGenerator);
 
-            formatLookup[typeof(MyObjectBuilder_OxygenFarm)] = Format_OxygenFarm;
+            Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
 
-            formatLookup[typeof(MyObjectBuilder_AirVent)] = Format_AirVent;
+            Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
 
-            formatLookup[typeof(MyObjectBuilder_RadioAntenna)] = Format_RadioAntenna;
+            Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
-            formatLookup[typeof(MyObjectBuilder_LaserAntenna)] = Format_LaserAntenna;
+            Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
 
-            formatLookup[typeof(MyObjectBuilder_Beacon)] = Format_Beacon;
+            Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
 
-            formatLookup[typeof(MyObjectBuilder_MyProgrammableBlock)] = Format_ProgrammableBlock;
+            Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
+        }
+
+        private void Add(MyObjectBuilderType blockType, CustomInfoCall call)
+        {
+            formatLookup.Add(blockType, call);
         }
 
         public override void UpdateAfterSim(int tick)

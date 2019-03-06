@@ -1,5 +1,6 @@
 ﻿using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 
@@ -19,7 +20,9 @@ namespace Digi.BuildInfo
         protected GameConfig GameConfig => Mod.GameConfig;
         protected BlockMonitor BlockMonitor => Mod.BlockMonitor;
         protected ChatCommands ChatCommands => Mod.ChatCommands;
+        protected TerminalInfo TerminalInfo => Mod.TerminalInfo;
         protected TextGeneration TextGeneration => Mod.TextGeneration;
+        protected LiveDataHandler LiveDataHandler => Mod.LiveDataHandler;
         protected EquipmentMonitor EquipmentMonitor => Mod.EquipmentMonitor;
 
         protected bool TextAPIEnabled => Mod.TextAPI.IsEnabled;

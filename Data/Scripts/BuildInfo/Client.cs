@@ -29,6 +29,7 @@ namespace Digi.BuildInfo
         public PickBlock PickBlock;
         public QuickMenu QuickMenu;
         public ChatCommands ChatCommands;
+        public TerminalInfo TerminalInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
         public TurretAmmoPrint TurretAmmoPrint;
@@ -59,6 +60,7 @@ namespace Digi.BuildInfo
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             ChatCommands = new ChatCommands(this);
+            TerminalInfo = new TerminalInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
             TurretAmmoPrint = new TurretAmmoPrint(this);

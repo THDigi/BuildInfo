@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features
         private bool useLeftSide = true;
         private double prevAspectRatio = 1;
         private int lines;
-        private StringBuilder textAPIlines = null;
+        private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
         private float TextAPIScale => Config.TextAPIScale;
@@ -132,7 +132,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            InitTextGeneration();
+            InitLookups();
 
             TextAPI.Detected += TextAPI_APIDetected;
             GameConfig.HudStateChanged += GameConfig_HudStateChanged;
@@ -1446,128 +1446,131 @@ namespace Digi.BuildInfo.Features
         #endregion
 
         #region Per block info
-        public void InitTextGeneration()
+        public void InitLookups()
         {
-            textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
+            Add(typeof(MyObjectBuilder_TerminalBlock), Format_TerminalBlock);
 
-            formatLookup.Add(typeof(MyObjectBuilder_TerminalBlock), Format_TerminalBlock);
+            Add(typeof(MyObjectBuilder_Conveyor), Format_Conveyors);
+            Add(typeof(MyObjectBuilder_ConveyorConnector), Format_Conveyors);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Conveyor), Format_Conveyors);
-            formatLookup.Add(typeof(MyObjectBuilder_ConveyorConnector), Format_Conveyors);
+            Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
+            Add(typeof(MyObjectBuilder_Collector), Format_CargoAndCollector);
+            Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoAndCollector);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Collector), Format_CargoAndCollector);
-            formatLookup.Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoAndCollector);
+            Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
+            Add(typeof(MyObjectBuilder_Drill), Format_Drill);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Drill), Format_Drill);
+            Add(typeof(MyObjectBuilder_ShipWelder), Format_WelderAndGrinder);
+            Add(typeof(MyObjectBuilder_ShipGrinder), Format_WelderAndGrinder);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ShipWelder), Format_WelderAndGrinder);
-            formatLookup.Add(typeof(MyObjectBuilder_ShipGrinder), Format_WelderAndGrinder);
+            Add(typeof(MyObjectBuilder_PistonBase), Format_Piston);
+            Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
 
-            formatLookup.Add(typeof(MyObjectBuilder_PistonBase), Format_Piston);
-            formatLookup.Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
+            Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
+            Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
+            Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
 
-            formatLookup.Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
-            formatLookup.Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
-            formatLookup.Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
+            Add(typeof(MyObjectBuilder_MergeBlock), Format_MergeBlock);
 
-            formatLookup.Add(typeof(MyObjectBuilder_MergeBlock), Format_MergeBlock);
+            Add(typeof(MyObjectBuilder_LandingGear), Format_LandingGear);
 
-            formatLookup.Add(typeof(MyObjectBuilder_LandingGear), Format_LandingGear);
+            Add(typeof(MyObjectBuilder_ShipController), Format_ShipController);
+            Add(typeof(MyObjectBuilder_Cockpit), Format_ShipController);
+            Add(typeof(MyObjectBuilder_CryoChamber), Format_ShipController);
+            Add(typeof(MyObjectBuilder_RemoteControl), Format_ShipController);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ShipController), Format_ShipController);
-            formatLookup.Add(typeof(MyObjectBuilder_Cockpit), Format_ShipController);
-            formatLookup.Add(typeof(MyObjectBuilder_CryoChamber), Format_ShipController);
-            formatLookup.Add(typeof(MyObjectBuilder_RemoteControl), Format_ShipController);
+            Add(typeof(MyObjectBuilder_Thrust), Format_Thrust);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Thrust), Format_Thrust);
+            Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
+            Add(typeof(MyObjectBuilder_LightingBlock), Format_Light);
+            Add(typeof(MyObjectBuilder_InteriorLight), Format_Light);
+            Add(typeof(MyObjectBuilder_ReflectorLight), Format_Light);
 
-            formatLookup.Add(typeof(MyObjectBuilder_LightingBlock), Format_Light);
-            formatLookup.Add(typeof(MyObjectBuilder_InteriorLight), Format_Light);
-            formatLookup.Add(typeof(MyObjectBuilder_ReflectorLight), Format_Light);
+            Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
 
-            formatLookup.Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
+            Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
+            Add(typeof(MyObjectBuilder_Projector), Format_Projector);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
-            formatLookup.Add(typeof(MyObjectBuilder_Projector), Format_Projector);
+            Add(typeof(MyObjectBuilder_Door), Format_Door);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Door), Format_Door);
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_AirtightDoor);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_AirtightDoor);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_AirtightDoor);
 
-            formatLookup.Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_AirtightDoor);
-            formatLookup.Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_AirtightDoor);
-            formatLookup.Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_AirtightDoor);
+            Add(typeof(MyObjectBuilder_AdvancedDoor), Format_AdvancedDoor);
 
-            formatLookup.Add(typeof(MyObjectBuilder_AdvancedDoor), Format_AdvancedDoor);
+            Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
+            Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
 
-            formatLookup.Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
+            Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
+            Add(typeof(MyObjectBuilder_Refinery), Format_Production);
+            Add(typeof(MyObjectBuilder_Assembler), Format_Production);
+            Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
+            Add(typeof(MyObjectBuilder_GasTank), Format_Production);
+            Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
+            Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_Refinery), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_Assembler), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_GasTank), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
-            formatLookup.Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
+            Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
 
-            formatLookup.Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
+            Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
+            Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
-            formatLookup.Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
-            formatLookup.Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
-
-            formatLookup.Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
-            formatLookup.Add(typeof(MyObjectBuilder_HydrogenEngine), Format_PowerProducer);
-            formatLookup.Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
-            formatLookup.Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
-            //formatLookup.Add(typeof(MyObjectBuilder_WindTurbine), Format_PowerProducer);
+            Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
+            Add(typeof(MyObjectBuilder_HydrogenEngine), Format_PowerProducer);
+            Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
+            Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
+            //Add(typeof(MyObjectBuilder_WindTurbine), Format_PowerProducer);
             // DEBUG ^^^ when whitelisting is fixed
 
-            formatLookup.Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
+            Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
-            formatLookup.Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
+            Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
+            Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
 
-            formatLookup.Add(typeof(MyObjectBuilder_TimerBlock), Format_Timer);
+            Add(typeof(MyObjectBuilder_TimerBlock), Format_Timer);
 
-            formatLookup.Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
+            Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
 
-            formatLookup.Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
+            Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
 
-            formatLookup.Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
+            Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
 
-            formatLookup.Add(typeof(MyObjectBuilder_SensorBlock), Format_Sensor);
+            Add(typeof(MyObjectBuilder_SensorBlock), Format_Sensor);
 
-            formatLookup.Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
+            Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
+            Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
 
-            formatLookup.Add(typeof(MyObjectBuilder_GravityGeneratorBase), Format_GravityGenerator);
-            formatLookup.Add(typeof(MyObjectBuilder_GravityGenerator), Format_GravityGenerator);
-            formatLookup.Add(typeof(MyObjectBuilder_GravityGeneratorSphere), Format_GravityGenerator);
+            Add(typeof(MyObjectBuilder_GravityGeneratorBase), Format_GravityGenerator);
+            Add(typeof(MyObjectBuilder_GravityGenerator), Format_GravityGenerator);
+            Add(typeof(MyObjectBuilder_GravityGeneratorSphere), Format_GravityGenerator);
 
-            formatLookup.Add(typeof(MyObjectBuilder_VirtualMass), Format_ArtificialMass);
+            Add(typeof(MyObjectBuilder_VirtualMass), Format_ArtificialMass);
 
-            formatLookup.Add(typeof(MyObjectBuilder_SpaceBall), Format_SpaceBall);
+            Add(typeof(MyObjectBuilder_SpaceBall), Format_SpaceBall);
 
-            formatLookup.Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
+            Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
 
-            formatLookup.Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_UserControllableGun), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapon);
-            formatLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
+            Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapon);
+            Add(typeof(MyObjectBuilder_UserControllableGun), Format_Weapon);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapon);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapon);
+            Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapon);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapon);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapon);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
 
-            formatLookup.Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
+            Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
+        }
+
+        private void Add(MyObjectBuilderType blockType, TextGenerationCall call)
+        {
+            formatLookup.Add(blockType, call);
         }
 
         private void Format_TerminalBlock(MyCubeBlockDefinition def)

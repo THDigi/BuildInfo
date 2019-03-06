@@ -191,29 +191,34 @@ namespace Digi.BuildInfo.Features
 
         private void InitLookups()
         {
-            drawLookup.Add(typeof(MyObjectBuilder_ShipWelder), DrawOverlay_ShipTool);
-            drawLookup.Add(typeof(MyObjectBuilder_ShipGrinder), DrawOverlay_ShipTool);
+            Add(typeof(MyObjectBuilder_ShipWelder), DrawOverlay_ShipTool);
+            Add(typeof(MyObjectBuilder_ShipGrinder), DrawOverlay_ShipTool);
 
-            drawLookup.Add(typeof(MyObjectBuilder_Drill), DrawOverlay_Drill);
+            Add(typeof(MyObjectBuilder_Drill), DrawOverlay_Drill);
 
-            drawLookup.Add(typeof(MyObjectBuilder_SmallGatlingGun), DrawOverlay_Weapons);
-            drawLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncher), DrawOverlay_Weapons);
-            drawLookup.Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), DrawOverlay_Weapons);
-            drawLookup.Add(typeof(MyObjectBuilder_LargeGatlingTurret), DrawOverlay_Weapons);
-            drawLookup.Add(typeof(MyObjectBuilder_LargeMissileTurret), DrawOverlay_Weapons);
-            drawLookup.Add(typeof(MyObjectBuilder_InteriorTurret), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), DrawOverlay_Weapons);
+            Add(typeof(MyObjectBuilder_InteriorTurret), DrawOverlay_Weapons);
 
-            drawLookup.Add(typeof(MyObjectBuilder_Door), DrawOverlay_Doors);
-            drawLookup.Add(typeof(MyObjectBuilder_AdvancedDoor), DrawOverlay_Doors);
-            drawLookup.Add(typeof(MyObjectBuilder_AirtightDoorGeneric), DrawOverlay_Doors);
-            drawLookup.Add(typeof(MyObjectBuilder_AirtightHangarDoor), DrawOverlay_Doors);
-            drawLookup.Add(typeof(MyObjectBuilder_AirtightSlideDoor), DrawOverlay_Doors);
+            Add(typeof(MyObjectBuilder_Door), DrawOverlay_Doors);
+            Add(typeof(MyObjectBuilder_AdvancedDoor), DrawOverlay_Doors);
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), DrawOverlay_Doors);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), DrawOverlay_Doors);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), DrawOverlay_Doors);
 
-            drawLookup.Add(typeof(MyObjectBuilder_Thrust), DrawOverlay_Thruster);
+            Add(typeof(MyObjectBuilder_Thrust), DrawOverlay_Thruster);
 
-            drawLookup.Add(typeof(MyObjectBuilder_LandingGear), DrawOverlay_LandingGear);
+            Add(typeof(MyObjectBuilder_LandingGear), DrawOverlay_LandingGear);
 
-            drawLookup.Add(typeof(MyObjectBuilder_Collector), DrawOverlay_Collector);
+            Add(typeof(MyObjectBuilder_Collector), DrawOverlay_Collector);
+        }
+
+        private void Add(MyObjectBuilderType blockType, OverlayCall call)
+        {
+            drawLookup.Add(blockType, call);
         }
 
         public override void UpdateDraw()
