@@ -372,6 +372,8 @@ namespace Digi.BuildInfo.Features
                 if(c == '\n')
                     lines++;
             }
+
+            textObject.Flush();
             #endregion
 
             var textPos = Vector2D.Zero;

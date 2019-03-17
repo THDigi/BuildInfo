@@ -201,7 +201,8 @@ namespace Draygo.API
             TextLength,
             Offset,
             BlendType,
-            Draw
+            Draw,
+            Flush
         }
         public abstract class MessageBase
         {
@@ -313,9 +314,20 @@ namespace Draygo.API
                 return (Vector2D)(instance.MessageGet(BackingObject, (int)MessageBaseMembers.TextLength));
             }
 
+            /// <summary>
+            /// Manual draw method
+            /// </summary>
             public void Draw()
             {
                 instance.MessageGet(BackingObject, (int)MessageBaseMembers.Draw);
+            }
+
+            /// <summary>
+            /// Clears the object cache
+            /// </summary>
+            public void Flush()
+            {
+                instance.MessageGet(BackingObject, (int)MessageBaseMembers.Flush);
             }
 
         }
@@ -1034,7 +1046,6 @@ namespace Draygo.API
                 this.Interactable = Interactable;
             }
         }
-
         public abstract class MenuCategoryBase : MenuItemBase
         {
             private enum MenuBaseCategoryMembers : int
