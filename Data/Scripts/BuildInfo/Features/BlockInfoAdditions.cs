@@ -210,7 +210,7 @@ namespace Digi.BuildInfo.Features
                     if(TextAPIEnabled)
                     {
                         const double LEFT_OFFSET = 0.0183;
-                        const double TEXT_SCALE = 0.00055;
+                        const double TEXT_SCALE = 0.001;
                         string textColor = "<color=255,255,0>";
                         int maxCharacters = textColor.Length + 33;
 
