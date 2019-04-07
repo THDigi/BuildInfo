@@ -262,27 +262,13 @@ namespace Digi.BuildInfo.Systems
 
             // HACK find a better way to get selected tool type
             var shipControllerObj = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
-            var toolbar = shipControllerObj?.Toolbar;
-            var slotIndex = (toolbar != null && toolbar.SelectedSlot.HasValue ? toolbar.SelectedSlot.Value : -1);
+            var selectedToolId = shipControllerObj.SelectedGunId;
 
-            if(slotIndex >= 0)
+            if(selectedToolId.HasValue)
             {
-                foreach(var slot in toolbar.Slots)
-                {
-                    if(slot.Index == slotIndex)
-                    {
-                        var weapon = slot.Data as MyObjectBuilder_ToolbarItemWeapon; // includes tools too
-
-                        if(weapon != null)
-                        {
-                            SetTool(weapon.DefinitionId);
-                            SetBlock(null); // tool changed, reset selected block
-                            return; // found a valid tool, stop here.
-                        }
-
-                        break; // slot found, exit loop
-                    }
-                }
+                SetTool(selectedToolId.Value);
+                SetBlock(null); // tool changed, reset selected block
+                return; // found a valid tool, stop here.
             }
 
             SetTool(null); // no valid tool was found
