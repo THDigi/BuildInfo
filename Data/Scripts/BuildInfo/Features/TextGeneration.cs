@@ -10,6 +10,7 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -1864,6 +1865,8 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
+
+            TextSurfaces(def, shipController.ScreenAreas);
         }
 
         private void Format_Thrust(MyCubeBlockDefinition def)
@@ -1991,6 +1994,8 @@ namespace Digi.BuildInfo.Features
             var projector = (MyProjectorDefinition)def;
 
             PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
+
+            TextSurfaces(def, projector.ScreenAreas);
         }
 
         #region Doors
@@ -2156,6 +2161,8 @@ namespace Digi.BuildInfo.Features
                 else
                     AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetColor();
             }
+
+            TextSurfaces(def, medicalRoom.ScreenAreas);
         }
 
         #region Production
@@ -2191,6 +2198,8 @@ namespace Digi.BuildInfo.Features
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
                 }
+
+                TextSurfaces(def, survivalKit.ScreenAreas);
             }
 
             var refinery = def as MyRefineryDefinition;
@@ -2583,6 +2592,8 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
 
+            TextSurfaces(def, pb.ScreenAreas);
+
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
             {
                 if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
@@ -2604,7 +2615,8 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Screen resolution").Append(lcd.TextureResolution * lcd.TextureAspectRadio).Append("x").Append(lcd.TextureResolution);
+                var res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
+                AddLine().Label("Screen resolution").Append(res.X).Append("x").Append(res.Y);
                 AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
             }
         }
@@ -2985,6 +2997,37 @@ namespace Digi.BuildInfo.Features
                 else if(hardcodedVolume > 0)
                     AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume);
                 // else unknown inventory /shrug
+            }
+        }
+
+        private void TextSurfaces(MyCubeBlockDefinition def, List<ScreenArea> surfaces)
+        {
+            return; // DEBUG TODO disabled for now as I don't like how this visually looks
+
+            if(surfaces == null || surfaces.Count == 0 || !Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                return;
+
+            if(surfaces.Count == 1)
+            {
+                var surface = surfaces[0];
+                var displayName = MyTexts.Get(MyStringId.GetOrCompute(surface.DisplayName));
+                var res = Hardcoded.TextSurface_GetResolution(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
+
+                AddLine().Label("Text Surface").AppendSB(displayName).Append(" (").Append(surface.Name).Append(")")
+                    .Separator().Label("Resolution").Append(res.X).Append("x").Append(res.Y)
+                    .Separator().Label("Default script").Append(string.IsNullOrEmpty(surface.Script) ? "(None)" : surface.Script);
+            }
+
+            AddLine().Label("Text Surfaces");
+
+            foreach(var surface in surfaces)
+            {
+                var displayName = MyTexts.Get(MyStringId.GetOrCompute(surface.DisplayName));
+                var res = Hardcoded.TextSurface_GetResolution(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
+
+                AddLine().Append("   ").AppendSB(displayName).Append(" (").Append(surface.Name).Append(")")
+                    .Separator().Label("Resolution").Append(res.X).Append("x").Append(res.Y)
+                    .Separator().Label("Script").Append(string.IsNullOrEmpty(surface.Script) ? "(None)" : surface.Script);
             }
         }
 

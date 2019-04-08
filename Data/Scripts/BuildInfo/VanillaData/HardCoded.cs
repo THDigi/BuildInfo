@@ -200,7 +200,7 @@ namespace Digi.BuildInfo.VanillaData
         // from MyAirVent.VentDummy getter
         public const string AirVent_DummyName = "vent_001";
 
-        // from from MyParachute.UpdateParachute() 
+        // from MyParachute.UpdateParachute() 
         public static void Parachute_GetLoadEstimate(MyParachuteDefinition parachute, float targetDescendVelocity, out float maxMass, out float disreefAtmosphere)
         {
             float atmosphere = 1.0f;
@@ -230,6 +230,21 @@ namespace Digi.BuildInfo.VanillaData
 
             maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / GAME_EARTH_GRAVITY;
         }
-    }
 
+        // from MyTextPanelComponent.GetTextureResolutionForAspectRatio()
+        public static Vector2I TextSurface_GetResolution(int width, int height, int textureSize)
+        {
+            if(width == height)
+                return new Vector2I(textureSize, textureSize);
+
+            if(width > height)
+            {
+                int num = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(width / height)));
+                return new Vector2I(textureSize * num, textureSize);
+            }
+
+            int num2 = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(height / width)));
+            return new Vector2I(textureSize, textureSize * num2);
+        }
+    }
 }
