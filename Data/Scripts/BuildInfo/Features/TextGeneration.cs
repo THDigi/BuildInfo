@@ -1836,7 +1836,8 @@ namespace Digi.BuildInfo.Features
             var cockpit = def as MyCockpitDefinition;
             if(cockpit != null)
             {
-                InventoryStats(def, 0, Hardcoded.Cockpit_InventoryVolume);
+                if(cockpit.HasInventory)
+                    InventoryStats(def, 0, Hardcoded.Cockpit_InventoryVolume);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
