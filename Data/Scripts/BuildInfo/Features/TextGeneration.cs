@@ -1357,7 +1357,7 @@ namespace Digi.BuildInfo.Features
                     GetLine().Color(COLOR_PART).Append(padding);
 
                 GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetColor().Separator()
-                    .VectorFormat(def.Size).Separator()
+                    .Size3DFormat(def.Size).Separator()
                     .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
 
                 if(Math.Abs(grindRatio - 1) >= 0.0001f)
@@ -2647,7 +2647,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max area").VectorFormat(maxField);
+                AddLine().Label("Max area").Size3DFormat(maxField);
             }
         }
 
@@ -2703,7 +2703,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    AddLine().Label("Field size").VectorFormat(flatGravGen.MinFieldSize).Append(" to ").VectorFormat(flatGravGen.MaxFieldSize);
+                    AddLine().Label("Field size").Size3DFormat(flatGravGen.MinFieldSize).Append(" to ").Size3DFormat(flatGravGen.MaxFieldSize);
                 }
             }
             else

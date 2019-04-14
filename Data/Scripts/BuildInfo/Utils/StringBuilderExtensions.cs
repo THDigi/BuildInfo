@@ -113,17 +113,6 @@ namespace Digi.BuildInfo.Utils
             return s.Color(new Color(255, 255, 155)).Append('*');
         }
 
-        public static StringBuilder PCUFormat(this StringBuilder s, int PCU)
-        {
-            if(PCU >= 500)
-                s.Color(TextGeneration.COLOR_BAD);
-            else if(PCU >= 200)
-                s.Color(TextGeneration.COLOR_WARNING);
-
-            s.Append("PCU: ").Append(PCU).ResetColor();
-            return s;
-        }
-
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
         {
             return s.Append(b ? "Yes" : "No");
@@ -173,8 +162,28 @@ namespace Digi.BuildInfo.Utils
             return s;
         }
 
+        private static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
+        {
+            if(float.IsInfinity(f))
+            {
+                s.Append(prefix).Append("Inf.").Append(suffix);
+                return false;
+            }
+
+            if(float.IsNaN(f))
+            {
+                s.Append(prefix).Append("NaN").Append(suffix);
+                return false;
+            }
+
+            return true;
+        }
+
         public static StringBuilder ForceFormat(this StringBuilder s, float N)
         {
+            if(!IsValid(s, N, " N"))
+                return s;
+
             if(N >= 1000000)
                 return s.Number(N / 1000000).Append(" MN");
 
@@ -186,30 +195,39 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond, int digits = 2)
         {
-            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append("°/s");
+            if(!IsValid(s, radPerSecond, "°/s"))
+                return s;
+
+            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append(" °/s");
         }
 
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)
         {
+            if(!IsValid(s, N, " N-m"))
+                return s;
+
             if(N >= 1000000)
                 return s.Number(N / 1000000).Append(" MN-m");
 
             if(N >= 1000)
                 return s.Number(N / 1000).Append(" kN-m");
 
-            return s.Number(N).Append("N-m");
+            return s.Number(N).Append(" N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
+            if(!IsValid(s, MW, " W"))
+                return s;
+
             if(MW >= 1000000000)
-                return s.Number(MW / 1000000000).Append(" PetaWatts");
+                return s.Number(MW / 1000000000).Append(" PW");
 
             if(MW >= 1000000)
-                return s.Number(MW / 1000000).Append(" TerraWatts");
+                return s.Number(MW / 1000000).Append(" TW");
 
             if(MW >= 1000)
-                return s.Number(MW / 1000).Append(" GigaWatts");
+                return s.Number(MW / 1000).Append(" GW");
 
             if(MW >= 1)
                 return s.Number(MW).Append(" MW");
@@ -222,29 +240,40 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder PowerStorageFormat(this StringBuilder s, float MWh)
         {
-            return s.PowerFormat(MWh).Append("h");
+            return s.PowerFormat(MWh).Append('h');
         }
 
         public static StringBuilder DistanceFormat(this StringBuilder s, float m, int digits = -1)
         {
+            if(!IsValid(s, m, " m"))
+                return s;
+
             if(m >= 1000)
-                return s.Number(m / 1000).Append("km");
+                return s.Number(m / 1000).Append(" km");
 
             if(digits <= -1)
             {
                 if(m < 10)
-                    return s.RoundedNumber(m, 2).Append("m");
+                    return s.RoundedNumber(m, 2).Append(" m");
 
-                return s.Append((int)m).Append("m");
+                return s.Append((int)m).Append(" m");
             }
             else
             {
-                return s.RoundedNumber(m, digits).Append("m");
+                return s.RoundedNumber(m, digits).Append(" m");
             }
         }
 
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
+            bool valid = !IsValid(s, m1);
+
+            if(!IsValid(s, m2, prefix: (valid ? "" : "~")))
+                valid = false;
+
+            if(!valid)
+                return s.Append(" m");
+
             if(m1 >= 1000)
                 return s.Number(m1 / 1000).Append("~").Number(m2 / 1000).Append(" km");
 
@@ -256,39 +285,66 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
+            if(!IsValid(s, kg, " kg"))
+                return s;
+
+            if(Math.Abs(kg) < 0.0000001f)
+                return s.Append("0 kg");
+
+            if(kg >= 1000000000)
+                return s.Number(kg / 1000000000f).Append(" Mt");
+
             if(kg >= 1000000)
-                return s.Number(kg / 1000000).Append(" Mt");
+                return s.Number(kg / 1000000f).Append(" kt");
 
             if(kg >= 1000)
-                return s.Number(kg / 1000).Append(" t");
+                return s.Number(kg / 1000f).Append(" t");
 
             if(kg >= 1)
                 return s.Number(kg).Append(" kg");
 
             if(kg >= 0.001f)
-                return s.Number(kg * 1000).Append(" g");
+                return s.Number(kg * 1000f).Append(" grams");
 
-            return s.Number(kg * 1000000).Append(" mg");
+            return s.Number(kg * 1000000f).Append(" miligrams");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
         {
+            if(!IsValid(s, integrity))
+                return s;
+
+            if(integrity >= 1000000000000)
+                return s.Number(integrity / 1000000000000f).Append(" T");
+
             if(integrity >= 1000000000)
-                return s.Number(integrity / 1000000000).Append(" G");
+                return s.Number(integrity / 1000000000f).Append(" G");
 
             if(integrity >= 1000000)
-                return s.Number(integrity / 1000000).Append(" M");
+                return s.Number(integrity / 1000000f).Append(" M");
 
             if(integrity >= 1000)
-                return s.Number(integrity / 1000).Append(" k");
+                return s.Number(integrity / 1000f).Append(" k");
 
             return s.Number(integrity);
         }
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
+            if(!IsValid(s, l, " l"))
+                return s;
+
+            if(l >= 1000000000000)
+                return s.Number(l / 1000000000000f).Append(" TL");
+
+            if(l >= 1000000000)
+                return s.Number(l / 1000000000f).Append(" GL");
+
+            if(l >= 1000000)
+                return s.Number(l / 1000000f).Append(" ML");
+
             if(l >= 1000)
-                return s.Number(l / 1000f).Append(" m³");
+                return s.Number(l / 1000f).Append(" kL");
 
             return s.Number(l).Append(" L");
         }
@@ -374,8 +430,11 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
         {
+            if(!IsValid(s, seconds))
+                return s.Append(" seconds");
+
             if(seconds > (60 * 60 * 24 * 365))
-                return s.Append("1y+");
+                return s.Append("1 y+");
 
             var span = TimeSpan.FromSeconds(seconds);
 
@@ -396,31 +455,46 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0)
         {
+            if(!IsValid(s, radians))
+                return s.Append('°');
+
             return s.AngleFormatDeg(MathHelper.ToDegrees(radians), digits);
         }
 
         public static StringBuilder AngleFormatDeg(this StringBuilder s, float degrees, int digits = 0)
         {
+            if(!IsValid(s, degrees))
+                return s.Append('°');
+
             return s.Append(Math.Round(degrees, digits)).Append('°');
         }
 
-        public static StringBuilder VectorFormat(this StringBuilder s, Vector3 vec)
+        public static StringBuilder Size3DFormat(this StringBuilder s, Vector3 vec)
         {
-            return s.Append(vec.X).Append('x').Append(vec.Y).Append('x').Append(vec.Z);
+            return s.Number(vec.X).Append('x').Number(vec.Y).Append('x').Number(vec.Z);
         }
 
         public static StringBuilder SpeedFormat(this StringBuilder s, float metersPerSecond, int digits = 2)
         {
+            if(!IsValid(s, metersPerSecond))
+                return s.Append(" m/s");
+
             return s.RoundedNumber(metersPerSecond, digits).Append(" m/s");
         }
 
-        public static StringBuilder AccelerationFormat(this StringBuilder s, float metersPerSecond)
+        public static StringBuilder AccelerationFormat(this StringBuilder s, float metersPerSecondSquared)
         {
-            return s.SpeedFormat(metersPerSecond).Append('²');
+            if(!IsValid(s, metersPerSecondSquared))
+                return s.Append(" m/s²");
+
+            return s.SpeedFormat(metersPerSecondSquared).Append('²');
         }
 
         public static StringBuilder ProportionToPercent(this StringBuilder s, float proportion)
         {
+            if(!IsValid(s, proportion))
+                return s.Append('%');
+
             return s.Append((int)(proportion * 100)).Append('%');
         }
 
@@ -438,8 +512,8 @@ namespace Digi.BuildInfo.Utils
             var index = typeName.IndexOf('_') + 1;
             s.Append(typeName, index, typeName.Length - index);
 
-            if(typeName.EndsWith("GasProperties")) // manually fixing "GasProperties" to just "Gas"
-                s.Length -= "Properties".Length;
+            if(typeName.EndsWith("GasProperties"))
+                s.Length -= "Properties".Length; // manually fixing "GasProperties" to just "Gas"
 
             return s;
         }
@@ -463,11 +537,17 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder Number(this StringBuilder s, float value)
         {
+            if(!IsValid(s, value))
+                return s;
+
             return s.AppendFormat("{0:###,###,###,###,###,##0.##}", value);
         }
 
         public static StringBuilder RoundedNumber(this StringBuilder s, float value, int digits)
         {
+            if(!IsValid(s, value))
+                return s;
+
             return s.AppendFormat("{0:###,###,###,###,###,##0.##########}", Math.Round(value, digits));
         }
 
