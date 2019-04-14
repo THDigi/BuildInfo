@@ -266,7 +266,7 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
-            bool valid = !IsValid(s, m1);
+            bool valid = IsValid(s, m1);
 
             if(!IsValid(s, m2, prefix: (valid ? "" : "~")))
                 valid = false;
