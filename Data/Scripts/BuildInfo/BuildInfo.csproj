@@ -215,8 +215,5 @@
   <ItemGroup>
     <None Include="BuildInfo.ruleset" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Blocks\" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
