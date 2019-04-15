@@ -239,6 +239,9 @@ namespace Digi.BuildInfo.Features
 
             if(EquipmentMonitor.IsCubeBuilder)
             {
+                if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utilities.CreativeToolsEnabled)
+                    return;
+
                 var box = MyCubeBuilder.Static.GetBuildBoundingBox();
                 drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
 

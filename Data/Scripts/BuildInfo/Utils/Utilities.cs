@@ -135,5 +135,7 @@ namespace Digi.BuildInfo.Utils
         {
             return $"<color={color.R},{color.G},{color.B}>";
         }
+
+        public static bool CreativeToolsEnabled => MyAPIGateway.Session.CreativeMode || (MyAPIGateway.Session.HasCreativeRights && MyAPIGateway.Session.EnableCopyPaste);
     }
 }
