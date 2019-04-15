@@ -79,12 +79,22 @@ namespace Digi.BuildInfo.VanillaData
             var door = block.FatBlock as IMyDoor;
 
             if(door != null)
-                return IsDoorAirtight(def, ref side, (door.Status == DoorStatus.Closed));
+                return IsDoorAirtightInternal(def, ref side, (door.Status == DoorStatus.Closed));
 
             return false;
         }
 
         public static bool IsDoorAirtight(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
+        {
+            var isAirTight = IsAirtightFromDefinition(def, 1f);
+
+            if(isAirTight != AirTightMode.USE_MOUNTS)
+                return (isAirTight == AirTightMode.SEALED);
+
+            return IsDoorAirtightInternal(def, ref normalLocal, fullyClosed);
+        }
+
+        private static bool IsDoorAirtightInternal(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
         {
             if(def is MyAirtightSlideDoorDefinition)
             {
