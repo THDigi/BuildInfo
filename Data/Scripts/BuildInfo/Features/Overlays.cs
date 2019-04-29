@@ -54,13 +54,12 @@ namespace Digi.BuildInfo.Features
         private Color AIRTIGHT_COLOR = new Color(0, 155, 255) * MOUNTPOINT_ALPHA;
         private Color AIRTIGHT_TOGGLE_COLOR = new Color(0, 255, 155) * MOUNTPOINT_ALPHA;
 
-        private const BlendTypeEnum LABEL_BLEND_TYPE = BlendTypeEnum.Standard;
-        private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.Standard;
+        private const double LABEL_TEXT_SCALE = 0.24;
+        private readonly Vector2D LABEL_OFFSET = new Vector2D(0.1, 0.1);
         private const BlendTypeEnum LABEL_BLEND_TYPE = BlendTypeEnum.PostPP;
         private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.SDR;
         private readonly Color LABEL_SHADOW_COLOR = Color.Black * 0.9f;
-        private const double LABEL_SHADOW_OFFSET = 0.007;
-        private const double LABEL_SHADOW_OFFSET_Z = 0.01;
+        private readonly Vector2D LABEL_SHADOW_OFFSET = new Vector2D(0.01, -0.01);
 
         private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
 
@@ -503,7 +502,7 @@ namespace Digi.BuildInfo.Features
                         drawLabel = false;
 
                         var labelPos = pos + dirLeft * width + dirUp * height;
-                        DrawLineLabelAlternate(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, labelPos + dirLeft * 0.5, "Airtight when closed", AIRTIGHT_TOGGLE_COLOR, underlineLength: 1.7f);
+                        DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", AIRTIGHT_TOGGLE_COLOR, underlineLength: 1.7f);
 
                         if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
                             break;
@@ -727,57 +726,40 @@ namespace Digi.BuildInfo.Features
         #endregion
 
         #region Draw helpers
-        private void DrawLineLabelAlternate(TextAPIMsgIds id, Vector3D start, Vector3D end, string text, Color color, bool constantTextUpdate = false, float lineThick = 0.005f, float underlineLength = 0.75f)
-        {
-            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
-            var direction = (end - start);
-
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, 1f, lineThick, LABEL_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, direction, 1f, lineThick, LABEL_SHADOW_BLEND_TYPE);
-
-            if(!Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
-                return;
-
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, end, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
-
-            DrawSimpleLabel(id, end, text, color, constantTextUpdate);
-        }
-
         private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, string text, Color color, bool constantTextUpdate = false, float lineHeight = 0.3f, float lineThick = 0.005f, float underlineLength = 0.75f)
         {
             var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             var end = start + direction * lineHeight;
+            var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
 
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
 
             if(!Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
                 return;
 
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, end, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + cm.Right * LABEL_SHADOW_OFFSET + cm.Down * LABEL_SHADOW_OFFSET + cm.Forward * LABEL_SHADOW_OFFSET_Z, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
 
             DrawSimpleLabel(id, end, text, color, constantTextUpdate);
         }
 
         private void DrawSimpleLabel(TextAPIMsgIds id, Vector3D worldPos, string text, Color textColor, bool updateText = false)
         {
+            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             anyLabelShown = true;
 
             var i = (int)id;
-            var camera = MyAPIGateway.Session.Camera;
             var msgObj = textAPILabels[i];
-            HudAPIv2.SpaceMessage shadowObj = textAPIShadows[i];
+            var shadowObj = textAPIShadows[i];
+
+            var labelPos = worldPos + cm.Right * LABEL_OFFSET.X + cm.Up * LABEL_OFFSET.Y;
+            var shadowPos = labelPos + cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y + cm.Forward * 0.0001;
 
             if(msgObj == null)
             {
-                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), worldPos, Vector3D.Up, Vector3D.Left, 0.1, Blend: LABEL_BLEND_TYPE);
-                msgObj.Offset = new Vector2D(0.1, 0.1);
-
-                textAPIShadows[i] = shadowObj = new HudAPIv2.SpaceMessage(new StringBuilder(), worldPos, Vector3D.Up, Vector3D.Left, 0.1, Blend: LABEL_SHADOW_BLEND_TYPE);
-                shadowObj.Offset = msgObj.Offset + new Vector2D(LABEL_SHADOW_OFFSET, -LABEL_SHADOW_OFFSET);
-
+                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), labelPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
+                textAPIShadows[i] = shadowObj = new HudAPIv2.SpaceMessage(new StringBuilder(), shadowPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
                 updateText = true;
             }
 
@@ -788,14 +770,14 @@ namespace Digi.BuildInfo.Features
             }
 
             msgObj.Visible = true;
-            msgObj.WorldPosition = worldPos;
-            msgObj.Left = camera.WorldMatrix.Left;
-            msgObj.Up = camera.WorldMatrix.Up;
+            msgObj.WorldPosition = labelPos;
+            msgObj.Left = cm.Left;
+            msgObj.Up = cm.Up;
 
             shadowObj.Visible = true;
-            shadowObj.WorldPosition = worldPos;
-            shadowObj.Left = camera.WorldMatrix.Left;
-            shadowObj.Up = camera.WorldMatrix.Up;
+            shadowObj.WorldPosition = shadowPos;
+            shadowObj.Left = cm.Left;
+            shadowObj.Up = cm.Up;
         }
 
         private void DrawMountPoint(MyCubeBlockDefinition.MountPoint mountPoint, float cubeSize, ref Vector3I center, ref MatrixD mainMatrix, ref Color colorFace, double minSize)
