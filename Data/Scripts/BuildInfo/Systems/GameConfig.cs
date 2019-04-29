@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Systems
         {
             UpdateHudState();
 
-            HudBackgroundOpacity = MyAPIGateway.Session.Config?.HUDBkOpacity ?? 0.75f;
+            HudBackgroundOpacity = MyAPIGateway.Session.Config?.HUDBkOpacity ?? 0.6f;
 
             RotationHints = MyAPIGateway.Session.Config?.RotationHints ?? true;
 
