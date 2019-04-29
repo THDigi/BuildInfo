@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features
     public class BlockInfoAdditions : ClientComponent
     {
         public readonly MyStringId LINE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Square");
-        private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.PostPP;
         private const float BLOCKINFO_COMPONENT_HEIGHT = 0.037f; // component height in the vanilla block info
         private const float BLOCKINFO_COMPONENT_WIDTH = 0.011f;
         private const float BLOCKINFO_COMPONENT_UNDERLINE_OFFSET = 0.0062f;

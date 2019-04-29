@@ -37,10 +37,10 @@ namespace Digi.BuildInfo.Features
     public class TextGeneration : ClientComponent
     {
         #region Constants
-        private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
         private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
-        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.Standard;
+        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.SDR;
         private readonly Color BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
         private const float BG_DGE = 0.02f; // added padding edge around the text boundary for the background image
 

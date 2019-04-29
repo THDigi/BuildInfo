@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features
         //private readonly List<IMyShipWelder> welders = new List<IMyShipWelder>();
         private readonly List<IMyShipGrinder> grinders = new List<IMyShipGrinder>();
 
-        private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.PostPP;
         private readonly MyStringId BAR_BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBarBg");
         private readonly MyStringId BAR_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBarProgress");
         private readonly Vector2 BAR_HUDPOS = new Vector2(0.5f, 0.835f);

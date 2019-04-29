@@ -42,11 +42,11 @@ namespace Digi.BuildInfo.Features
                   = new Dictionary<MyObjectBuilderType, OverlayCall>(MyObjectBuilderType.Comparer);
 
         #region Constants
-        private const BlendTypeEnum OVERLAY_BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum OVERLAY_BLEND_TYPE = BlendTypeEnum.PostPP;
         public readonly MyStringId OVERLAY_SQUARE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Square");
         public readonly MyStringId OVERLAY_DOT_MATERIAL = MyStringId.GetOrCompute("WhiteDot");
 
-        private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.Standard;
+        private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.SDR;
         private const double MOUNTPOINT_THICKNESS = 0.05;
         private const float MOUNTPOINT_ALPHA = 0.65f;
         private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
@@ -56,6 +56,8 @@ namespace Digi.BuildInfo.Features
 
         private const BlendTypeEnum LABEL_BLEND_TYPE = BlendTypeEnum.Standard;
         private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.Standard;
+        private const BlendTypeEnum LABEL_BLEND_TYPE = BlendTypeEnum.PostPP;
+        private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.SDR;
         private readonly Color LABEL_SHADOW_COLOR = Color.Black * 0.9f;
         private const double LABEL_SHADOW_OFFSET = 0.007;
         private const double LABEL_SHADOW_OFFSET_Z = 0.01;
@@ -158,8 +160,8 @@ namespace Digi.BuildInfo.Features
         {
             if(shipController != null && EquipmentMonitor.IsBuildTool && drawOverlay > 0)
             {
-                const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.Standard;
-                const float REACH_DISTANCE = VanillaData.Hardcoded.ShipTool_ReachDistance;
+                const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
+                const float REACH_DISTANCE = Hardcoded.ShipTool_ReachDistance;
                 var color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
                 var shipCtrlDef = (MyShipControllerDefinition)shipController.SlimBlock.BlockDefinition;
 
@@ -372,8 +374,6 @@ namespace Digi.BuildInfo.Features
 
             // draw per-block overlays
             selectedOverlayCall?.Invoke(def, drawMatrix);
-
-
 
             // TODO real time neighbour airtight display?
 #if false
