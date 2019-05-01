@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features
         private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
         private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
-        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.PostPP;
         private readonly Color BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
         private const float BG_DGE = 0.02f; // added padding edge around the text boundary for the background image
 
@@ -346,14 +346,14 @@ namespace Digi.BuildInfo.Features
 
         private Vector2D UpdateTextAPIvisuals(StringBuilder textSB, Vector2D textSize = default(Vector2D))
         {
-            if(textObject == null)
-            {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Config.TextAlwaysVisible, Blend: FG_BLEND_TYPE);
-            }
-
             if(bgObject == null)
             {
                 bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Config.TextAlwaysVisible, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
+            }
+
+            if(textObject == null)
+            {
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Config.TextAlwaysVisible, Blend: FG_BLEND_TYPE);
             }
 
             bgObject.Visible = true;

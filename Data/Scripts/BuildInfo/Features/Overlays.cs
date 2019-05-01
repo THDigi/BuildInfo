@@ -57,7 +57,7 @@ namespace Digi.BuildInfo.Features
         private const double LABEL_TEXT_SCALE = 0.24;
         private readonly Vector2D LABEL_OFFSET = new Vector2D(0.1, 0.1);
         private const BlendTypeEnum LABEL_BLEND_TYPE = BlendTypeEnum.PostPP;
-        private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.SDR;
+        private const BlendTypeEnum LABEL_SHADOW_BLEND_TYPE = BlendTypeEnum.PostPP;
         private readonly Color LABEL_SHADOW_COLOR = Color.Black * 0.9f;
         private readonly Vector2D LABEL_SHADOW_OFFSET = new Vector2D(0.01, -0.01);
 
@@ -732,16 +732,16 @@ namespace Digi.BuildInfo.Features
             var end = start + direction * lineHeight;
             var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
 
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
-            if(!Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
-                return;
+            if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
+            {
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, end, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
 
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, end, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
-
-            DrawSimpleLabel(id, end, text, color, constantTextUpdate);
+                DrawSimpleLabel(id, end, text, color, constantTextUpdate);
+            }
         }
 
         private void DrawSimpleLabel(TextAPIMsgIds id, Vector3D worldPos, string text, Color textColor, bool updateText = false)
@@ -758,8 +758,8 @@ namespace Digi.BuildInfo.Features
 
             if(msgObj == null)
             {
-                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), labelPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
                 textAPIShadows[i] = shadowObj = new HudAPIv2.SpaceMessage(new StringBuilder(), shadowPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
+                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), labelPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
                 updateText = true;
             }
 
