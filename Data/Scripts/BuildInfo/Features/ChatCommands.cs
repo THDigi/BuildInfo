@@ -105,7 +105,7 @@ namespace Digi.BuildInfo.Features
                 if(msg.StartsWith(CMD_MODLINK, CMD_COMPARE_TYPE))
                 {
                     send = false;
-                    ShowModWorkshop();
+                    ShowSelectedBlocksModWorkshop();
                     return;
                 }
 
@@ -207,7 +207,7 @@ namespace Digi.BuildInfo.Features
                 Utilities.ShowColoredChatMessage(CMD_WORKSHOP, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
         }
 
-        public void ShowModWorkshop()
+        public void ShowSelectedBlocksModWorkshop()
         {
             if(EquipmentMonitor.BlockDef != null)
             {

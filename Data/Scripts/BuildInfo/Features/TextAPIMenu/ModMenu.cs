@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_Binds, "Placement Distance in Survival", Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Binds, "Placement Distance in Ship Creative", Config.AdjustBuildDistanceShipCreative);
 
-            new ItemButton(Category_Mod, "Mod's workshop page", ChatCommands.ShowModWorkshop);
+            new ItemButton(Category_Mod, "Mod's workshop page", ChatCommands.ShowBuildInfoWorkshop);
 
             // gray out items that need to start like that
             groupTextInfo.SetInteractable(Config.TextShow);

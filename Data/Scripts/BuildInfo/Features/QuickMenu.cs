@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Features
                         else
                         {
                             Shown = false;
-                            Mod.ChatCommands.ShowModWorkshop();
+                            Mod.ChatCommands.ShowSelectedBlocksModWorkshop();
                         }
                         break;
                     case 3:
