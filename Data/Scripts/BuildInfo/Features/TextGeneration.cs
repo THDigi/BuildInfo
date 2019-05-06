@@ -940,15 +940,15 @@ namespace Digi.BuildInfo.Features
             if(Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
-                int dmgResPercent = (int)((1 - (aimedBlock.DamageRatio * def.GeneralDamageMultiplier)) * 100);
-                int gridDamageRes = (int)((1 - ((MyCubeGrid)grid).GridGeneralDamageModifier) * 100);
+                int dmgResPercent = Utilities.DamageMultiplierToResistance(aimedBlock.DamageRatio * def.GeneralDamageMultiplier);
+                int gridDmgResPercent = Utilities.DamageMultiplierToResistance(((MyCubeGrid)grid).GridGeneralDamageModifier);
 
-                if(dmgResPercent != 0 || gridDamageRes != 0)
+                if(dmgResPercent != 0 || gridDmgResPercent != 0)
                 {
                     AddLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
 
-                    if(gridDamageRes != 0)
-                        GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDamageRes > 0 ? "+" : "").Append(gridDamageRes).Append("%)").ResetColor();
+                    if(gridDmgResPercent != 0)
+                        GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDmgResPercent > 0 ? "+" : "").Append(gridDmgResPercent).Append("%)").ResetColor();
                 }
 
                 // TODO impact resistance? wheels in particular...
@@ -1381,7 +1381,7 @@ namespace Digi.BuildInfo.Features
                 if(deformable)
                     GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
 
-                var dmgResPercent = (int)((1 - def.GeneralDamageMultiplier) * 100);
+                int dmgResPercent = Utilities.DamageMultiplierToResistance(def.GeneralDamageMultiplier);
 
                 if(dmgResPercent != 0)
                     GetLine().Separator().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label("Resistance").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
