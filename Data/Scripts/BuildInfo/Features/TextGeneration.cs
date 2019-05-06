@@ -380,6 +380,8 @@ namespace Digi.BuildInfo.Features
             var textPos = Vector2D.Zero;
             var textOffset = Vector2D.Zero;
 
+            // FIXME: menu bg size doesn't match text
+
             // calculate text size if it wasn't inputted
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
                 textSize = textObject.GetTextLength();
@@ -1303,7 +1305,7 @@ namespace Digi.BuildInfo.Features
                 {
                     action.Invoke(def);
                 }
-                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
                 {
                     Format_PowerProducer(def);
                 }
@@ -1526,7 +1528,7 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
             Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
             //Add(typeof(MyObjectBuilder_WindTurbine), Format_PowerProducer);
-            // DEBUG ^^^ when whitelisting is fixed
+            // TODO: uncomment when whitelisting is fixed
 
             Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
@@ -3003,7 +3005,7 @@ namespace Digi.BuildInfo.Features
 
         private void TextSurfaces(MyCubeBlockDefinition def, List<ScreenArea> surfaces)
         {
-            return; // DEBUG TODO disabled for now as I don't like how this visually looks
+            return; // TODO: disabled for now as I don't like how this visually looks
 
             if(surfaces == null || surfaces.Count == 0 || !Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;

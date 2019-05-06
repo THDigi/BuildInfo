@@ -38,7 +38,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             if(Format == null)
                 Format = (val) => val.ToString($"N{rounding}");
 
-            Item = new MenuSliderInput(string.Empty, category, Getter(), title, OnSubmit, OnSlide, OnCancel);
+            float initialPercent = ValueToPercent(Min, Max, Getter());
+            Item = new MenuSliderInput(string.Empty, category, initialPercent, title, OnSubmit, OnSlide, OnCancel);
 
             UpdateTitle();
         }

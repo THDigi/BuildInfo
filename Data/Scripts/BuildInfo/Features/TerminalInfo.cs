@@ -154,7 +154,7 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
             Add(typeof(MyObjectBuilder_HydrogenEngine), Format_HydrogenEngine);
             Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
-            // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+            // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
             //Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
 
             Add(typeof(MyObjectBuilder_Refinery), Format_Production);
@@ -323,7 +323,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
                 {
-                    if(newBlock.BlockDefinition.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // DEBUG HACK temporary until MyObjectBuilder_WindTurbine is whitelisted
+                    if(newBlock.BlockDefinition.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
                         currentFormatCall = Format_WindTurbine;
                     else
                         return; // ignore blocks that don't need stats
@@ -820,13 +820,13 @@ namespace Digi.BuildInfo.Features
 
                     if(block is IMyReactor)
                         reactorsWorking++;
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // DEBUG use the interface when one is added
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
                         enginesWorking++;
                     else if(block is IMyBatteryBlock)
                         batteriesWorking++;
                     else if(block is IMySolarPanel)
                         solarPanelsWorking++;
-                    else if(block.BlockDefinition.TypeIdString == "MyObjectBuilder_WindTurbine") // DEBUG use the interface when one is added
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
                         windTurbinesWorking++;
                     else
                         otherSourcesWorking++;
@@ -854,7 +854,7 @@ namespace Digi.BuildInfo.Features
                         if(working)
                             reactorsWorking++;
                     }
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // DEBUG use the interface when one is added
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
                     {
                         engines++;
 
@@ -875,7 +875,7 @@ namespace Digi.BuildInfo.Features
                         if(working)
                             solarPanelsWorking++;
                     }
-                    else if(block.BlockDefinition.TypeIdString == "MyObjectBuilder_WindTurbine") // DEBUG use the interface when one is added
+                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
                     {
                         windTurbines++;
 
