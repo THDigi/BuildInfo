@@ -199,6 +199,11 @@ namespace Digi.BuildInfo.Features
             {
                 PurgeCache();
             }
+
+            if(forceDrawTicks > 0)
+            {
+                forceDrawTicks--;
+            }
         }
 
         private void Update(int tick)
@@ -447,8 +452,8 @@ namespace Digi.BuildInfo.Features
 #endif
             {
                 float edge = BG_DGE * TextAPIScale;
-
-                bgObject.BillBoardColor = BG_COLOR * (QuickMenu.Shown ? MENU_BG_OPACITY : (Config.TextAPIBackgroundOpacity.Value < 0 ? GameConfig.HudBackgroundOpacity : Config.TextAPIBackgroundOpacity.Value));
+                float bgOpacity = (QuickMenu.Shown ? MENU_BG_OPACITY : (Config.TextAPIBackgroundOpacity.Value < 0 ? GameConfig.HudBackgroundOpacity : Config.TextAPIBackgroundOpacity.Value));
+                bgObject.BillBoardColor = BG_COLOR * bgOpacity;
                 bgObject.Origin = textPos;
                 bgObject.Width = (float)Math.Abs(textSize.X) + edge;
                 bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
@@ -642,15 +647,18 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown)
             {
-                textShown = false;
-                LastDefId = default(MyDefinitionId);
+                if(forceDrawTicks == 0)
+                {
+                    textShown = false;
+                    LastDefId = default(MyDefinitionId);
 
-                // text API hide
-                if(textObject != null)
-                    textObject.Visible = false;
+                    // text API hide
+                    if(textObject != null)
+                        textObject.Visible = false;
 
-                if(bgObject != null)
-                    bgObject.Visible = false;
+                    if(bgObject != null)
+                        bgObject.Visible = false;
+                }
 
                 // HUD notifications don't need hiding, they expire in one frame.
 
@@ -3082,7 +3090,9 @@ namespace Digi.BuildInfo.Features
             Refresh();
         }
 
-        public void Refresh(bool redraw = false, StringBuilder write = null)
+        private uint forceDrawTicks = 0;
+
+        public void Refresh(bool redraw = false, StringBuilder write = null, uint forceDrawTicks = 0)
         {
             HideText();
             CachedBuildInfoTextAPI.Clear();
@@ -3110,6 +3120,8 @@ namespace Digi.BuildInfo.Features
                 else
                     UpdateTextAPIvisuals(write ?? textAPIlines);
             }
+
+            this.forceDrawTicks = forceDrawTicks;
         }
 
         #region Classes for storing generated info

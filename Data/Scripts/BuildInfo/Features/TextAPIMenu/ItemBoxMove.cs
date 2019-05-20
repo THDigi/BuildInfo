@@ -1,4 +1,5 @@
 ﻿using System;
+using Digi.BuildInfo.Features.Config;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 
@@ -36,9 +37,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Moving = moving;
             Cancelled = cancelled;
 
-            var boxSize = new Vector2D(0.1 / BuildInfoMod.Client.GameConfig.AspectRatio, 0.1);
-            Item = new MenuScreenInput(string.Empty, category, Getter(), boxSize, string.Empty, OnSubmit, OnMove, OnCancel, OnSelect);
-
+            Item = new MenuScreenInput(string.Empty, category, Getter(), Vector2D.Zero, string.Empty, OnSubmit, OnMove, OnCancel, OnSelect);
             UpdateTitle();
         }
 

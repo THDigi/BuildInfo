@@ -16,10 +16,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup toggle = new ItemGroup();
         private readonly ItemGroup other = new ItemGroup();
 
-        public ItemFlags(MenuCategoryBase category, string toggleTitle, FlagsSetting<T> setting)
+        public ItemFlags(MenuCategoryBase category, string toggleTitle, FlagsSetting<T> setting, Action<int, bool> onValueSet = null)
         {
             ToggleTitle = toggleTitle;
             Setting = setting;
+            OnValueSet = onValueSet;
 
             allValue = (int)Enum.Parse(typeof(T), "All");
 

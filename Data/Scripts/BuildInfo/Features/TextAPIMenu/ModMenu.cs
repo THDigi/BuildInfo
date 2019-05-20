@@ -28,27 +28,27 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private MenuCategoryBase Category_Binds;
 
         // groups of items to update on when other settings are changed
-        private ItemGroup groupTextInfo = new ItemGroup();
-        private ItemGroup groupCustomStyling = new ItemGroup();
-        private ItemGroup groupBinds = new ItemGroup();
-        private ItemGroup groupLabelsToggle = new ItemGroup();
-        private ItemGroup groupLabels = new ItemGroup();
-        private ItemGroup groupAimInfoToggle = new ItemGroup();
-        private ItemGroup groupAimInfo = new ItemGroup();
-        private ItemGroup groupPlaceInfoToggle = new ItemGroup();
-        private ItemGroup groupPlaceInfo = new ItemGroup();
+        private readonly ItemGroup groupTextInfo = new ItemGroup();
+        private readonly ItemGroup groupCustomStyling = new ItemGroup();
+        private readonly ItemGroup groupBinds = new ItemGroup();
+        private readonly ItemGroup groupLabelsToggle = new ItemGroup();
+        private readonly ItemGroup groupLabels = new ItemGroup();
+        private readonly ItemGroup groupAimInfoToggle = new ItemGroup();
+        private readonly ItemGroup groupAimInfo = new ItemGroup();
+        private readonly ItemGroup groupPlaceInfoToggle = new ItemGroup();
+        private readonly ItemGroup groupPlaceInfo = new ItemGroup();
 
         private readonly StringBuilder tmp = new StringBuilder();
 
-        private const string TEXT_FORMAT = "<color=gray>Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
-            "\nPellentesque ac quam in est feugiat mollis." +
-            "\nAenean commodo, dolor ac molestie commodo, quam nulla" +
-            "\n  suscipit est, sit amet consequat neque purus sed dui." +
-            "\n<color=255,0,255>Grab the pink box and move me!" +
-            "\n<color=yellow>Current position: {0:0.000}. {1:0.000}" +
-            "\n<color=gray>Fusce aliquam eros sit amet varius convallis." +
-            "\nClass aptent taciti sociosqu ad litora torquent" +
-            "\n  per conubia nostra, per inceptos himenaeos.";
+        private const uint SLIDERS_FORCEDRAWTICKS = 60 * 10;
+        private const uint TOGGLE_FORCEDRAWTICKS = 60 * 2;
+        private const string TEXT_START = "<color=gray>Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+                                        "\nPellentesque ac quam in est feugiat mollis." +
+                                        "\nAenean commodo, dolor ac molestie commodo, quam nulla" +
+                                        "\n  suscipit est, sit amet consequat neque purus sed dui.";
+        private const string TEXT_END = "\n<color=gray>Fusce aliquam eros sit amet varius convallis." +
+                                        "\nClass aptent taciti sociosqu ad litora torquent" +
+                                        "\n  per conubia nostra, per inceptos himenaeos.";
 
         public ModMenu(Client mod) : base(mod)
         {
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             Category_TextCustomize = AddCategory("TextBox Customization", Category_Mod);
             Category_Overlays = AddCategory("Overlays", Category_Mod);
-            Category_HUD = AddCategory("HUD", Category_Mod);
+            Category_HUD = AddCategory("HUD Additions", Category_Mod);
             Category_LeakInfo = AddCategory("Leak Info", Category_Mod);
             Category_Binds = AddCategory("Binds and related", Category_Mod);
 
@@ -98,8 +98,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
             SimpleToggle(Category_HUD, "Turret Ammo Count", Config.TurretAmmo);
 
-            new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(), () => ApplySettings(save: false));
-            new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(), () => ApplySettings(save: false));
+            new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
+            new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
 
             SimpleBind(Category_Binds, "Menu Bind", Features.Config.Config.MENU_BIND_INPUT_NAME, Config.MenuBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Features.Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Config.CycleOverlaysBind, groupBinds, groupBinds);
@@ -123,7 +123,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (v) =>
                 {
                     Config.TextShow.Value = v;
-                    ApplySettings();
+                    ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0u));
                     groupTextInfo.SetInteractable(v);
                     groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling : false);
                 });
@@ -136,12 +136,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (val) =>
                 {
                     Config.TextAPIScale.Value = val;
-                    ApplySettings();
+                    ApplySettings(redraw: false);
                 },
                 sliding: (val) =>
                 {
                     Config.TextAPIScale.Value = val;
-                    ApplySettings(save: false);
+                    ApplySettings(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (orig) =>
                 {
@@ -162,12 +162,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                         val = -0.1f;
 
                     Config.TextAPIBackgroundOpacity.Value = val;
-                    ApplySettings();
+                    ApplySettings(redraw: false);
                 },
                 sliding: (val) =>
                 {
                     Config.TextAPIBackgroundOpacity.Value = val;
-                    ApplySettings(save: false);
+                    ApplySettings(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (orig) =>
                 {
@@ -187,7 +187,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     Config.TextAPICustomStyling.Value = v;
                     groupCustomStyling.SetInteractable(v);
-                    ApplySettings();
+                    ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 });
             groupTextInfo.Add(item);
         }
@@ -199,22 +199,22 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (pos) =>
                 {
                     Config.TextAPIScreenPosition.Value = pos;
-                    ApplySettings();
+                    ApplySettings(redraw: false);
                 },
                 selected: (pos) =>
                 {
                     Config.TextAPIScreenPosition.Value = pos;
-                    ApplySettings(save: false);
+                    ApplySettings(save: false, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 moving: (pos) =>
                 {
                     Config.TextAPIScreenPosition.Value = pos;
-                    ApplySettings(save: false);
+                    ApplySettings(save: false, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (origPos) =>
                 {
                     Config.TextAPIScreenPosition.Value = origPos;
-                    ApplySettings(save: false);
+                    ApplySettings(save: false, redraw: false);
                 });
             groupCustomStyling.Add(item);
         }
@@ -228,7 +228,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     var set = !Config.TextAPIAlign.IsSet(TextAlignFlags.Right);
                     Config.TextAPIAlign.Set(TextAlignFlags.Right, set);
                     Config.TextAPIAlign.Set(TextAlignFlags.Left, !set);
-                    ApplySettings();
+                    ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
                 onText: "Right",
                 offText: "Left");
@@ -247,7 +247,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     var set = !Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom);
                     Config.TextAPIAlign.Set(TextAlignFlags.Bottom, set);
                     Config.TextAPIAlign.Set(TextAlignFlags.Top, !set);
-                    ApplySettings();
+                    ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
                 onText: "Bottom",
                 offText: "Top");
@@ -259,23 +259,23 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_PlaceInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Config.PlaceInfo);
-
-            item.OnValueSet = (flag, set) => ApplySettings();
+            var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Config.PlaceInfo,
+                onValueSet: (flag, set) => ApplySettings(redraw: false)
+            );
         }
 
         private void ItemAdd_AimInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Config.AimInfo);
-
-            item.OnValueSet = (flag, set) => ApplySettings();
+            var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Config.AimInfo,
+                onValueSet: (flag, set) => ApplySettings(redraw: false)
+            );
         }
 
         private void ItemAdd_OverlayLabelToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Config.OverlayLabels);
-
-            item.OnValueSet = (flag, set) => ApplySettings();
+            var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Config.OverlayLabels,
+                onValueSet: (flag, set) => ApplySettings(redraw: false)
+            );
         }
 
         #region Helper methods
@@ -296,7 +296,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (v) =>
                 {
                     setting.Value = v;
-                    ApplySettings();
+                    ApplySettings(redraw: false);
                 });
             group?.Add(item);
         }
@@ -308,21 +308,27 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (combination) =>
                 {
                     setting.Value = combination;
-                    ApplySettings();
+                    ApplySettings(redraw: false);
                     updateGroupOnSet?.UpdateTitles();
                 });
 
             addToGroup?.Add(item);
         }
 
-        private void ApplySettings(bool save = true)
+        private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, uint drawTicks = 0)
         {
             if(save)
                 Config.Save();
 
-            tmp.Clear().AppendFormat(TEXT_FORMAT, Config.TextAPIScreenPosition.Value.X.ToString(), Config.TextAPIScreenPosition.Value.Y.ToString());
+            tmp.Clear();
+            tmp.Append(TEXT_START);
 
-            TextGeneration.Refresh(redraw: true, write: tmp);
+            if(moveHint)
+                tmp.Append($"\n<color=0,255,0>Click and drag anywhere to move!\n<color=255,255,0>Current position: {Config.TextAPIScreenPosition.Value.X:0.000}, {Config.TextAPIScreenPosition.Value.Y:0.000}");
+
+            tmp.Append(TEXT_END);
+
+            TextGeneration.Refresh(redraw: redraw, write: tmp, forceDrawTicks: drawTicks);
         }
         #endregion Helper methods
     }
