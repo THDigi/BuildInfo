@@ -281,15 +281,29 @@ namespace Digi.BuildInfo.Features
                             }
                             else
                             {
-                                GenerateBlockText(def);
-                                PostProcessText(def.Id, true);
+                                try
+                                {
+                                    GenerateBlockText(def);
+                                    PostProcessText(def.Id, true);
+                                }
+                                catch(Exception e)
+                                {
+                                    Log.Error($"Error on equipped defId={def?.Id} - {e.Message}\n{e.StackTrace}");
+                                }
                             }
                         }
                         else
                         {
-                            aimInfoNeedsUpdate = false;
-                            GenerateAimBlockText(def);
-                            PostProcessText(def.Id, false);
+                            try
+                            {
+                                aimInfoNeedsUpdate = false;
+                                GenerateAimBlockText(def);
+                                PostProcessText(def.Id, false);
+                            }
+                            catch(Exception e)
+                            {
+                                Log.Error($"Error on aimed defId={def?.Id} - {e.Message}\n{e.StackTrace}");
+                            }
                         }
                     }
                 }

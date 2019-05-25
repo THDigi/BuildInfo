@@ -241,146 +241,148 @@ namespace Digi.BuildInfo.Features
             var def = EquipmentMonitor.BlockDef;
             var aimedBlock = EquipmentMonitor.AimedBlock;
 
-            #region DrawMatrix and other needed data
-            var drawMatrix = MatrixD.Identity;
-
-            if(EquipmentMonitor.IsCubeBuilder)
+            try
             {
-                if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utilities.CreativeToolsEnabled)
-                    return;
+                #region DrawMatrix and other needed data
+                var drawMatrix = MatrixD.Identity;
 
-                var box = MyCubeBuilder.Static.GetBuildBoundingBox();
-                drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
-
-                if(MyCubeBuilder.Static.DynamicMode)
+                if(EquipmentMonitor.IsCubeBuilder)
                 {
-                    var hit = (MyCubeBuilder.Static.HitInfo as IHitInfo);
+                    if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utilities.CreativeToolsEnabled)
+                        return;
 
-                    if(hit != null && hit.HitEntity is IMyVoxelBase)
-                        drawMatrix.Translation = hit.Position; // HACK: required for position to be accurate when aiming at a planet
+                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
+
+                    if(MyCubeBuilder.Static.DynamicMode)
+                    {
+                        var hit = (MyCubeBuilder.Static.HitInfo as IHitInfo);
+
+                        if(hit != null && hit.HitEntity is IMyVoxelBase)
+                            drawMatrix.Translation = hit.Position; // HACK: required for position to be accurate when aiming at a planet
+                        else
+                            drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
+                    }
                     else
-                        drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
+                    {
+                        drawMatrix.Translation = box.Center;
+                    }
+                }
+                else // using welder/grinder
+                {
+                    Matrix m;
+                    Vector3D center;
+                    aimedBlock.Orientation.GetMatrix(out m);
+                    aimedBlock.ComputeWorldCenter(out center);
+
+                    drawMatrix = m * aimedBlock.CubeGrid.WorldMatrix;
+                    drawMatrix.Translation = center;
+                }
+                #endregion
+
+                #region Draw mount points
+                var cellSize = EquipmentMonitor.BlockGridSize;
+
+                if(TextAPIEnabled)
+                {
+                    DrawMountPointAxixText(def, cellSize, ref drawMatrix);
                 }
                 else
                 {
-                    drawMatrix.Translation = box.Center;
+                    // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
+                    var mp = def.MountPoints;
+                    def.MountPoints = BLANK_MOUNTPOINTS;
+                    MyCubeBuilder.DrawMountPoints(cellSize, def, ref drawMatrix);
+                    def.MountPoints = mp;
                 }
-            }
-            else // using welder/grinder
-            {
-                Matrix m;
-                Vector3D center;
-                aimedBlock.Orientation.GetMatrix(out m);
-                aimedBlock.ComputeWorldCenter(out center);
 
-                drawMatrix = m * aimedBlock.CubeGrid.WorldMatrix;
-                drawMatrix.Translation = center;
-            }
-            #endregion
+                blockFunctionalForPressure = true;
 
-            #region Draw mount points
-            var cellSize = EquipmentMonitor.BlockGridSize;
-
-            if(TextAPIEnabled)
-            {
-                DrawMountPointAxixText(def, cellSize, ref drawMatrix);
-            }
-            else
-            {
-                // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
-                var mp = def.MountPoints;
-                def.MountPoints = BLANK_MOUNTPOINTS;
-                MyCubeBuilder.DrawMountPoints(cellSize, def, ref drawMatrix);
-                def.MountPoints = mp;
-            }
-
-            blockFunctionalForPressure = true;
-
-            // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
-            if(aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
-            {
-                var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
-
-                if(aimedBlock.BuildLevelRatio < progressModel.BuildRatioUpperBound)
-                    blockFunctionalForPressure = false;
-            }
-
-            // draw custom mount point styling
-            {
-                var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
-                var center = def.Center;
-                var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cellSize) * drawMatrix;
-                var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-                bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
-
-                if(drawOverlay == 1 && blockFunctionalForPressure)
+                // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
+                if(aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                 {
-                    // TODO have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
+                    var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
-                    if(def.IsAirTight.HasValue)
-                    {
-                        if(def.IsAirTight.Value)
-                        {
-                            var halfExtents = def.Size * (cellSize * 0.5);
-                            var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
-                            MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
-                        }
-                    }
-                    else if(mountPoints != null)
-                    {
-                        var half = Vector3D.One * -(0.5f * cellSize);
-                        var corner = (Vector3D)def.Size * -(0.5f * cellSize);
-                        var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
+                    if(aimedBlock.BuildLevelRatio < progressModel.BuildRatioUpperBound)
+                        blockFunctionalForPressure = false;
+                }
 
-                        foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = is airtight
+                // draw custom mount point styling
+                {
+                    var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
+                    var center = def.Center;
+                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cellSize) * drawMatrix;
+                    var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+                    bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+
+                    if(drawOverlay == 1 && blockFunctionalForPressure)
+                    {
+                        // TODO have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
+
+                        if(def.IsAirTight.HasValue)
                         {
-                            foreach(var kv2 in kv.Value)
+                            if(def.IsAirTight.Value)
                             {
-                                if(!kv2.Value) // pos+normal not airtight
-                                    continue;
+                                var halfExtents = def.Size * (cellSize * 0.5);
+                                var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
+                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+                            }
+                        }
+                        else if(mountPoints != null)
+                        {
+                            var half = Vector3D.One * -(0.5f * cellSize);
+                            var corner = (Vector3D)def.Size * -(0.5f * cellSize);
+                            var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
-                                var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
-                                var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
-                                var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
-                                var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+                            foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = is airtight
+                            {
+                                foreach(var kv2 in kv.Value)
+                                {
+                                    if(!kv2.Value) // pos+normal not airtight
+                                        continue;
 
-                                var m = MatrixD.Identity;
-                                m.Translation = pos + dirForward * (cellSize * 0.5f);
-                                m.Forward = dirForward;
-                                m.Backward = -dirForward;
-                                m.Left = Vector3D.Cross(dirForward, dirUp);
-                                m.Right = -m.Left;
-                                m.Up = dirUp;
-                                m.Down = -dirUp;
-                                var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
-                                MatrixD.Rescale(ref m, ref scale);
+                                    var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
+                                    var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                                    var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
+                                    var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                    var m = MatrixD.Identity;
+                                    m.Translation = pos + dirForward * (cellSize * 0.5f);
+                                    m.Forward = dirForward;
+                                    m.Backward = -dirForward;
+                                    m.Left = Vector3D.Cross(dirForward, dirUp);
+                                    m.Right = -m.Left;
+                                    m.Up = dirUp;
+                                    m.Down = -dirUp;
+                                    var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
+                                    MatrixD.Rescale(ref m, ref scale);
+
+                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                }
                             }
                         }
                     }
-                }
-                else if(drawOverlay == 2 && mountPoints != null)
-                {
-                    for(int i = 0; i < mountPoints.Length; i++)
+                    else if(drawOverlay == 2 && mountPoints != null)
                     {
-                        var mountPoint = mountPoints[i];
+                        for(int i = 0; i < mountPoints.Length; i++)
+                        {
+                            var mountPoint = mountPoints[i];
 
-                        if(!mountPoint.Enabled)
-                            continue; // ignore all disabled mount points as airtight ones are rendered separate
+                            if(!mountPoint.Enabled)
+                                continue; // ignore all disabled mount points as airtight ones are rendered separate
 
-                        var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+                            var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
 
-                        DrawMountPoint(mountPoint, cellSize, ref center, ref mainMatrix, ref colorFace, minSize);
+                            DrawMountPoint(mountPoint, cellSize, ref center, ref mainMatrix, ref colorFace, minSize);
+                        }
                     }
                 }
-            }
-            #endregion
+                #endregion
 
-            // draw per-block overlays
-            selectedOverlayCall?.Invoke(def, drawMatrix);
+                // draw per-block overlays
+                selectedOverlayCall?.Invoke(def, drawMatrix);
 
-            // TODO real time neighbour airtight display?
+                // TODO real time neighbour airtight display?
 #if false
             {
                 var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
@@ -420,6 +422,11 @@ namespace Digi.BuildInfo.Features
                 }
             }
 #endif
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error on overlay draw; heldDefId={def?.Id}; aimedDefId={aimedBlock?.BlockDefinition?.Id} - {e.Message}\n{e.StackTrace}");
+            }
         }
 
         public void HideLabels()
