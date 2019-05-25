@@ -1259,11 +1259,14 @@ namespace Digi.BuildInfo.Features
             #region Optional - different item gain on grinding
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
             {
-                foreach(var comp in def.Components)
+                if(!TextAPIEnabled)
                 {
-                    if(comp.DeconstructItem != comp.Definition)
+                    foreach(var comp in def.Components)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        if(comp.DeconstructItem != comp.Definition)
+                        {
+                            AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        }
                     }
                 }
             }
