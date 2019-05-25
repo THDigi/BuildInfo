@@ -50,13 +50,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public override void RegisterComponent()
         {
-            // FIXME: disabled textAPI menu until textAPI fixes its sim speed issues
-            //TextAPI.Detected += TextAPI_Detected;
+            TextAPI.Detected += TextAPI_Detected;
         }
 
         public override void UnregisterComponent()
         {
-            //TextAPI.Detected -= TextAPI_Detected;
+            TextAPI.Detected -= TextAPI_Detected;
         }
 
         private void TextAPI_Detected()
