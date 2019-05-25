@@ -33,8 +33,15 @@ namespace Digi.BuildInfo.Features
         private bool blockFunctionalForPressure;
         private IMyHudNotification overlayNotification;
         private OverlayCall selectedOverlayCall;
-        private readonly HudAPIv2.SpaceMessage[] textAPILabels;
-        private readonly HudAPIv2.SpaceMessage[] textAPIShadows;
+        private readonly LabelData[] labels;
+
+        class LabelData
+        {
+            public HudAPIv2.SpaceMessage Text;
+            public HudAPIv2.SpaceMessage Shadow;
+            public float UnderlineLength = -1;
+        }
+
         private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
 
         public delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
@@ -112,8 +119,7 @@ namespace Digi.BuildInfo.Features
             Flags = UpdateFlags.NONE;
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
-            textAPILabels = new HudAPIv2.SpaceMessage[count];
-            textAPIShadows = new HudAPIv2.SpaceMessage[count];
+            labels = new LabelData[count];
         }
 
         public override void RegisterComponent()
@@ -423,14 +429,14 @@ namespace Digi.BuildInfo.Features
 
             anyLabelShown = false;
 
-            for(int i = 0; i < textAPILabels.Length; ++i)
+            for(int i = 0; i < labels.Length; ++i)
             {
-                var msgObj = textAPILabels[i];
+                var label = labels[i];
 
-                if(msgObj != null)
+                if(label != null && label.Text != null)
                 {
-                    msgObj.Visible = false;
-                    textAPIShadows[i].Visible = false;
+                    label.Text.Visible = false;
+                    label.Shadow.Visible = false;
                 }
             }
         }
@@ -502,7 +508,7 @@ namespace Digi.BuildInfo.Features
                         drawLabel = false;
 
                         var labelPos = pos + dirLeft * width + dirUp * height;
-                        DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, "Airtight when closed", AIRTIGHT_TOGGLE_COLOR, underlineLength: 1.7f);
+                        DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
                         if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
                             break;
@@ -563,7 +569,9 @@ namespace Digi.BuildInfo.Features
             {
                 var labelDir = coneMatrix.Up;
                 var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
-                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, $"Accuracy cone - {height} m", color, constantTextUpdate: true, lineHeight: lineHeight, underlineLength: 1.75f);
+
+                LabelTextBuilder().Append("Accuracy cone - ").Append(height).Append(" m");
+                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, color, lineHeight: lineHeight);
 
                 //var lineStart = circleMatrix.Translation + coneMatrix.Down * accuracyAt100m;
                 //var labelStart = lineStart + coneMatrix.Down * 0.3f;
@@ -592,7 +600,9 @@ namespace Digi.BuildInfo.Features
             {
                 var labelDir = drawMatrix.Down;
                 var sphereEdge = drawMatrix.Translation + (labelDir * drill.SensorRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, (showCutOut ? "Mining radius" : "Mining/cutout radius"), colorMine, constantTextUpdate: true, lineHeight: lineHeight, underlineLength: (showCutOut ? 0.75f : 1f));
+
+                LabelTextBuilder().Append(showCutOut ? "Mining radius" : "Mining/cutout radius");
+                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMine, lineHeight: lineHeight);
             }
 
             if(showCutOut)
@@ -605,7 +615,7 @@ namespace Digi.BuildInfo.Features
                 {
                     var labelDir = cutMatrix.Left;
                     var sphereEdge = cutMatrix.Translation + (labelDir * drill.CutOutRadius);
-                    DrawLineLabel(TextAPIMsgIds.DRILL_CUTOUT, sphereEdge, labelDir, "Cutout radius", colorCut, lineHeight: lineHeight);
+                    DrawLineLabel(TextAPIMsgIds.DRILL_CUTOUT, sphereEdge, labelDir, colorCut, message: "Cutout radius", lineHeight: lineHeight);
                 }
             }
         }
@@ -635,7 +645,9 @@ namespace Digi.BuildInfo.Features
                 bool isWelder = def is MyShipWelderDefinition;
                 var labelDir = drawMatrix.Down;
                 var sphereEdge = drawMatrix.Translation + (labelDir * radius);
-                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, (isWelder ? "Welding radius" : "Grinding radius"), color, constantTextUpdate: true, lineHeight: lineHeight, underlineLength: 0.75f);
+
+                LabelTextBuilder().Append(isWelder ? "Welding radius" : "Grinding radius");
+                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, color, lineHeight: lineHeight);
             }
         }
 
@@ -665,7 +677,7 @@ namespace Digi.BuildInfo.Features
                     drawLabel = false; // label only on the first flame
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * flame.Radius;
-                    DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, "Thrust damage", color, lineHeight: lineHeight, underlineLength: 1.1f);
+                    DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage", lineHeight: lineHeight);
                 }
             }
         }
@@ -695,7 +707,7 @@ namespace Digi.BuildInfo.Features
                     drawLabel = false; // only label the first one
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, "Magnet", color, lineHeight: 0.5f, underlineLength: 0.7f);
+                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnet", lineHeight: 0.5f);
                 }
             }
         }
@@ -720,16 +732,19 @@ namespace Digi.BuildInfo.Features
             {
                 var labelDir = drawMatrix.Down;
                 var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, "Collection Area", color, lineHeight: 0.5f, underlineLength: 0.7f);
+                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area", lineHeight: 0.5f);
             }
         }
         #endregion
 
         #region Draw helpers
-        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, string text, Color color, bool constantTextUpdate = false, float lineHeight = 0.3f, float lineThick = 0.005f, float underlineLength = 0.75f)
+        private HudAPIv2.SpaceMessage textMeasurement;
+        private StringBuilder label = new StringBuilder(128);
+        private StringBuilder LabelTextBuilder() => label.Clear();
+
+        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.3f, float lineThick = 0.005f)
         {
             var cm = MyAPIGateway.Session.Camera.WorldMatrix;
-            var end = start + direction * lineHeight;
             var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
 
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
@@ -737,47 +752,66 @@ namespace Digi.BuildInfo.Features
 
             if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
             {
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, end + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, end, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
+                var textWorldPos = start + direction * lineHeight;
+                anyLabelShown = true;
 
-                DrawSimpleLabel(id, end, text, color, constantTextUpdate);
+                var i = (int)id;
+                var labelData = labels[i];
+
+                if(labelData == null)
+                    labels[i] = labelData = new LabelData();
+
+                if(labelData.Text == null)
+                {
+                    var shadowSB = new StringBuilder(label.Capacity);
+                    var msgSB = new StringBuilder(label.Capacity);
+
+                    labelData.Shadow = new HudAPIv2.SpaceMessage(shadowSB, textWorldPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
+                    labelData.Text = new HudAPIv2.SpaceMessage(msgSB, textWorldPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
+
+                    if(message != null)
+                    {
+                        shadowSB.Color(LABEL_SHADOW_COLOR).Append(message);
+                        msgSB.Color(color).Append(message);
+
+                        labelData.UnderlineLength = GetLabelUnderlineLength(labelData.Text);
+                    }
+                }
+
+                var shadow = labelData.Shadow;
+                var text = labelData.Text;
+
+                if(message == null)
+                {
+                    shadow.Message.Clear().Color(LABEL_SHADOW_COLOR).AppendSB(label);
+                    text.Message.Clear().Color(color).AppendSB(label);
+
+                    labelData.UnderlineLength = GetLabelUnderlineLength(text);
+                }
+
+                var textPos = textWorldPos + cm.Right * LABEL_OFFSET.X + cm.Up * LABEL_OFFSET.Y;
+                var shadowPos = textPos + cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y + cm.Forward * 0.0001;
+
+                shadow.Visible = true;
+                shadow.WorldPosition = shadowPos;
+                shadow.Left = cm.Left;
+                shadow.Up = cm.Up;
+
+                text.Visible = true;
+                text.WorldPosition = textPos;
+                text.Left = cm.Left;
+                text.Up = cm.Up;
+
+                var underlineLength = labelData.UnderlineLength;
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, textWorldPos + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, textWorldPos, cm.Right, underlineLength, lineThick, LABEL_BLEND_TYPE);
             }
         }
 
-        private void DrawSimpleLabel(TextAPIMsgIds id, Vector3D worldPos, string text, Color textColor, bool updateText = false)
+        private float GetLabelUnderlineLength(HudAPIv2.SpaceMessage msg)
         {
-            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
-            anyLabelShown = true;
-
-            var i = (int)id;
-            var msgObj = textAPILabels[i];
-            var shadowObj = textAPIShadows[i];
-
-            var labelPos = worldPos + cm.Right * LABEL_OFFSET.X + cm.Up * LABEL_OFFSET.Y;
-            var shadowPos = labelPos + cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y + cm.Forward * 0.0001;
-
-            if(msgObj == null)
-            {
-                textAPIShadows[i] = shadowObj = new HudAPIv2.SpaceMessage(new StringBuilder(), shadowPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
-                textAPILabels[i] = msgObj = new HudAPIv2.SpaceMessage(new StringBuilder(), labelPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
-                updateText = true;
-            }
-
-            if(updateText)
-            {
-                msgObj.Message.Clear().Color(textColor).Append(text);
-                shadowObj.Message.Clear().Color(LABEL_SHADOW_COLOR).Append(text);
-            }
-
-            msgObj.Visible = true;
-            msgObj.WorldPosition = labelPos;
-            msgObj.Left = cm.Left;
-            msgObj.Up = cm.Up;
-
-            shadowObj.Visible = true;
-            shadowObj.WorldPosition = shadowPos;
-            shadowObj.Left = cm.Left;
-            shadowObj.Up = cm.Up;
+            var textSize = msg.GetTextLength();
+            return (float)(LABEL_OFFSET.X + (textSize.X * LABEL_TEXT_SCALE));
         }
 
         private void DrawMountPoint(MyCubeBlockDefinition.MountPoint mountPoint, float cubeSize, ref Vector3I center, ref MatrixD mainMatrix, ref Color colorFace, double minSize)
@@ -817,7 +851,7 @@ namespace Digi.BuildInfo.Features
         {
             var dir = Vector3D.TransformNormal(direction * 0.5f, matrix);
             var text = AXIS_LABELS[(int)id];
-            DrawLineLabel(id, drawMatrix.Translation, dir, text, color, lineHeight: 1.5f, underlineLength: (text.Length + 1) * 0.1f);
+            DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f);
         }
         #endregion
     }
