@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
-using Digi.Input;
-using Sandbox.ModAPI;
-using VRage.Game;
-using VRage.Input;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
@@ -56,12 +50,13 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public override void RegisterComponent()
         {
-            TextAPI.Detected += TextAPI_Detected;
+            // FIXME: disabled textAPI menu until textAPI fixes its sim speed issues
+            //TextAPI.Detected += TextAPI_Detected;
         }
 
         public override void UnregisterComponent()
         {
-            TextAPI.Detected -= TextAPI_Detected;
+            //TextAPI.Detected -= TextAPI_Detected;
         }
 
         private void TextAPI_Detected()
