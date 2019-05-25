@@ -27,23 +27,29 @@ namespace Digi.BuildInfo.Features
         private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
         private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = (Color.Yellow * 0.75f).ToVector4();
 
-        private int computerCompIndex = -1;
-        private List<CompLoss> componentLossIndexes = new List<CompLoss>();
-        private class CompLoss
-        {
-            public readonly int Index;
-            public readonly MyPhysicalItemDefinition Replaced;
-            public HudAPIv2.SpaceMessage Msg;
+        private int computerComponentIndex = -1;
 
-            public CompLoss(int index, MyPhysicalItemDefinition item)
+        private int componentReplaceInfoCount = 0;
+        private readonly List<ComponentReplaceInfo> componentReplaceInfo = new List<ComponentReplaceInfo>(8);
+
+        private class ComponentReplaceInfo
+        {
+            public int Index;
+            public MyPhysicalItemDefinition Replaced;
+            public HudAPIv2.SpaceMessage Text;
+
+            public void Set(int index, MyPhysicalItemDefinition replaced)
             {
                 Index = index;
-                Replaced = item;
+                Replaced = replaced;
             }
 
-            public void Close()
+            public void Clear()
             {
-                Msg?.DeleteMessage();
+                if(Text != null)
+                    Text.Visible = false;
+
+                Replaced = null;
             }
         }
 
@@ -64,14 +70,13 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, VRage.Game.ModAPI.IMySlimBlock block)
         {
-            computerCompIndex = -1;
-
-            foreach(var data in componentLossIndexes)
+            for(int i = 0; i < componentReplaceInfoCount; ++i)
             {
-                data.Close();
+                componentReplaceInfo[i].Clear();
             }
 
-            componentLossIndexes.Clear();
+            componentReplaceInfoCount = 0;
+            computerComponentIndex = -1;
 
             if(def != null)
             {
@@ -79,17 +84,35 @@ namespace Digi.BuildInfo.Features
                 {
                     var comp = def.Components[i];
 
-                    if(computerCompIndex == -1 && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == Constants.COMPUTER_COMPONENT_NAME) // HACK this is what the game checks internally, hardcoded to computer component.
+                    if(computerComponentIndex == -1 && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == Constants.COMPUTER_COMPONENT_NAME) // HACK this is what the game checks internally, hardcoded to computer component.
                     {
-                        computerCompIndex = i;
+                        computerComponentIndex = i;
                     }
 
                     if(comp.DeconstructItem != comp.Definition)
                     {
-                        componentLossIndexes.Add(new CompLoss(i, comp.DeconstructItem));
+                        AddCompLoss(i, comp.DeconstructItem);
                     }
                 }
             }
+        }
+
+        private void AddCompLoss(int index, MyPhysicalItemDefinition replaced)
+        {
+            ComponentReplaceInfo info = null;
+
+            if(componentReplaceInfoCount >= componentReplaceInfo.Count)
+            {
+                info = new ComponentReplaceInfo();
+                componentReplaceInfo.Add(info);
+            }
+            else
+            {
+                info = componentReplaceInfo[componentReplaceInfoCount];
+            }
+
+            info.Set(index, replaced);
+            componentReplaceInfoCount++;
         }
 
         public override void UpdateDraw()
@@ -183,12 +206,12 @@ namespace Digi.BuildInfo.Features
                 }
 
                 // blue hacking line
-                if(computerCompIndex != -1)
+                if(computerComponentIndex != -1)
                 {
                     var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * DrawUtils.ScaleFOV);
 
                     var hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - computerCompIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - computerComponentIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
                     var worldPos = DrawUtils.HUDtoWorld(hud);
 
@@ -198,45 +221,49 @@ namespace Digi.BuildInfo.Features
                 }
 
                 // different return item on grind
-                for(int i = componentLossIndexes.Count - 1; i >= 0; --i)
+                for(int i = componentReplaceInfoCount - 1; i >= 0; --i)
                 {
-                    var data = componentLossIndexes[i];
+                    var info = componentReplaceInfo[i];
 
                     var hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - data.Index - 1);
+                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - info.Index - 1);
 
                     var worldPos = DrawUtils.HUDtoWorld(hud);
 
                     if(TextAPIEnabled)
                     {
                         const double LEFT_OFFSET = 0.0183;
-                        const double TEXT_SCALE = 0.001;
-                        string textColor = "<color=255,255,0>";
-                        int maxCharacters = textColor.Length + 33;
+                        const double TEXT_SCALE = 0.0011;
+                        const string LABEL = "<color=255,255,0>Grinds to: ";
+                        const int NAME_MAX_CHARACTERS = 21;
 
                         worldPos += camMatrix.Left * (LEFT_OFFSET * DrawUtils.ScaleFOV);
 
-                        if(data.Msg == null)
+                        if(info.Text == null)
                         {
-                            var text = new StringBuilder().Append(textColor).Append("Grinds to: ").Append(data.Replaced.DisplayNameText);
-
-                            if(text.Length > maxCharacters)
-                            {
-                                text.Length = maxCharacters;
-                                text.Append('…');
-                            }
-
-                            data.Msg = new HudAPIv2.SpaceMessage(text, worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(64), worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
                         }
                         else
                         {
-                            data.Msg.WorldPosition = worldPos;
-                            data.Msg.Left = camMatrix.Left;
-                            data.Msg.Up = camMatrix.Up;
-                            data.Msg.TimeToLive = 2;
+                            info.Text.WorldPosition = worldPos;
+                            info.Text.Left = camMatrix.Left;
+                            info.Text.Up = camMatrix.Up;
                         }
 
-                        data.Msg.Draw();
+                        var sb = info.Text.Message.Clear();
+                        sb.Append(LABEL);
+
+                        if(info.Replaced.DisplayNameText.Length > NAME_MAX_CHARACTERS)
+                        {
+                            sb.Append(info.Replaced.DisplayNameText, 0, NAME_MAX_CHARACTERS);
+                            sb.Append('…');
+                        }
+                        else
+                        {
+                            sb.Append(info.Replaced.DisplayNameText);
+                        }
+
+                        info.Text.Draw();
                     }
                     else
                     {

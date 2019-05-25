@@ -95,7 +95,7 @@ namespace Digi.BuildInfo.Features.Config
         {
             Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommands.CMD_RELOAD}");
 
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);
             Handler.FooterComments.Add(sb.ToString());
 
