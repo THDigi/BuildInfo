@@ -1120,7 +1120,7 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Optional: item changes on grind
-            if(Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder)
+            if(Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder && !TextAPIEnabled)
             {
                 foreach(var comp in def.Components)
                 {
@@ -1271,16 +1271,13 @@ namespace Digi.BuildInfo.Features
             AppendBasics(def, part: false);
 
             #region Optional - different item gain on grinding
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning) && !TextAPIEnabled)
             {
-                if(!TextAPIEnabled)
+                foreach(var comp in def.Components)
                 {
-                    foreach(var comp in def.Components)
+                    if(comp.DeconstructItem != comp.Definition)
                     {
-                        if(comp.DeconstructItem != comp.Definition)
-                        {
-                            AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
-                        }
+                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
                 }
             }
