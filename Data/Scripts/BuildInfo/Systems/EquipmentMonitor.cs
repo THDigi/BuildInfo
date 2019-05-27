@@ -344,6 +344,9 @@ namespace Digi.BuildInfo.Systems
                                            || defId.TypeId == typeof(MyObjectBuilder_Welder)));
             IsAnyTool = (IsCubeBuilder || IsBuildTool || defId.TypeId == typeof(MyObjectBuilder_Drill) || defId.TypeId == typeof(MyObjectBuilder_HandDrill));
 
+            if(IsCubeBuilder)
+                handToolCasterComp = null;
+
             ToolChanged?.Invoke(ToolDefId);
         }
 
