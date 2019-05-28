@@ -139,6 +139,7 @@ namespace Digi.BuildInfo.Features
             GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
             EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
 
             ReCheckSide();
         }
@@ -149,6 +150,7 @@ namespace Digi.BuildInfo.Features
             GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             GameConfig.OptionsMenuClosed -= GameConfig_OptionsMenuClosed;
             EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
         private void TextAPI_APIDetected()
@@ -175,6 +177,11 @@ namespace Digi.BuildInfo.Features
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
             willSplitGrid = GridSplitType.Recalculate;
+        }
+
+        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        {
+            LastDefId = default(MyDefinitionId);
         }
 
         private void ReCheckSide()
