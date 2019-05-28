@@ -145,7 +145,7 @@ namespace Digi.BuildInfo.Features
                         {
                             var meters = (km * 1000);
                             var megaWatts = VanillaData.Hardcoded.LaserAntenna_PowerUsage((MyLaserAntennaDefinition)EquipmentMonitor.BlockDef, meters);
-                            var s = new StringBuilder().Append(EquipmentMonitor.BlockDef.DisplayNameString).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
+                            var s = new StringBuilder().Append(EquipmentMonitor.BlockDef.DisplayNameText).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
                             Utilities.ShowColoredChatMessage(CMD_LASERPOWER, s.ToString(), MyFontEnum.Green);
                         }
                         else
