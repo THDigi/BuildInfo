@@ -12,6 +12,7 @@ using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo
@@ -168,7 +169,7 @@ namespace Digi.BuildInfo
                 if(!spawned.Add(def.Id.TypeId)) // if Add() returns false it means the entry already exists
                     continue;
 
-                MyCubeBuilder.SpawnStaticGrid(blockDef, null, matrix, Vector3.One, completionCallback: GridSpawned);
+                MyCubeBuilder.SpawnStaticGrid(blockDef, null, matrix, Vector3.One, MyStringHash.NullOrEmpty, completionCallback: GridSpawned);
 
                 matrix.Translation += new Vector3D(0, 0, 100);
             }
