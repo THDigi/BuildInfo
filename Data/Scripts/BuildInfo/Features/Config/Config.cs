@@ -14,8 +14,8 @@ namespace Digi.BuildInfo.Features.Config
         public readonly ConfigHandler Handler;
 
         public const string FILE_NAME = "config.ini";
-        public const int CFGV_LATEST = 3;
         public const int CFGV_MENU_BIND = 2;
+        public const int CFGV_LATEST = 3;
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
@@ -65,12 +65,23 @@ namespace Digi.BuildInfo.Features.Config
 
         private void SettingsLoaded()
         {
+            if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS).GetKeyboardControl();
+                var terminalInventoryKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL).GetKeyboardControl();
+
+                if(voxelHandSettingsKey != MyKeys.None && voxelHandSettingsKey == terminalInventoryKey)
+                {
+                    MenuBind.ResetToDefault();
+
+                    Log.Info("Reset MenuBind in config to default because VoxelHandSettings and Terminal/Inventory are on the same key.");
+                }
+            }
+
             var cfgv = Handler.ConfigVersion.Value;
 
-            if(cfgv == CFGV_LATEST)
+            if(cfgv >= CFGV_LATEST)
                 return;
-
-            // backwards compatibility checks
 
             if(cfgv == CFGV_MENU_BIND)
             {
