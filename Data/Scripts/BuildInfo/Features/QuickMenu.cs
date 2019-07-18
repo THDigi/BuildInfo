@@ -46,6 +46,9 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
+            if(inMenu)
+                return;
+
             if(EquipmentMonitor.IsBuildTool || EquipmentMonitor.IsCubeBuilder)
             {
                 UpdateHotkeys();
@@ -54,7 +57,7 @@ namespace Digi.BuildInfo.Features
             if(!Shown)
                 return;
 
-            if(!anyKeyOrMouse || inMenu)
+            if(!anyKeyOrMouse)
                 return;
 
             if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.Escape))
