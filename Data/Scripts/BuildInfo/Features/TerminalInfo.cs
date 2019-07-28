@@ -905,6 +905,9 @@ namespace Digi.BuildInfo.Features
             //      Current angle or status
 
             info.DetailInfo_InputPower(Sink);
+
+            var stator = block as IMyMotorStator;
+            info.Append("Internal Angle: ").RoundedNumber(stator.Angle, 2).Append(" radians").NewLine();
         }
 
         void Format_Piston(IMyTerminalBlock block, StringBuilder info)
