@@ -512,10 +512,10 @@ namespace Digi.BuildInfo.Features
             info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
 
             var gun = (IMyGunObject<MyGunBase>)block;
-            int mags = gun.GetAmmunitionAmount();
+            int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
             int totalAmmo = gun.GunBase.GetTotalAmmunitionAmount();
 
-            info.Append("Ammo: ").Append(totalAmmo).Append(" (").Append(mags).Append(" mags)").NewLine();
+            info.Append("Ammo: ").Append(gun.GunBase.CurrentAmmo).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
             info.Append("Magazine: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
         }
 
