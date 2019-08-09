@@ -4,7 +4,7 @@ using Digi.Input;
 
 namespace Digi.BuildInfo.Systems
 {
-    public class InputLibHandler : ComponentBase<Client>
+    public class InputLibHandler : ClientComponent
     {
         public InputLib InputLib;
 

@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Systems
     /// <para>This only cares about currently controlled entities.</para>
     /// <para>Note: designed specifically for BuildInfo, not plug&play.</para>
     /// </summary>
-    public class EquipmentMonitor : ComponentBase<Client>
+    public class EquipmentMonitor : ClientComponent
     {
         public event EventHandlerToolChanged ToolChanged;
         public delegate void EventHandlerToolChanged(MyDefinitionId toolDefId);
