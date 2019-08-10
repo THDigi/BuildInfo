@@ -40,6 +40,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting ToggleTransparencyBind;
         public InputCombinationSetting FreezePlacementBind;
         public InputCombinationSetting BlockPickerBind;
+        public BoolSetting InternalInfo;
         public BoolSetting Debug;
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
@@ -195,6 +196,13 @@ namespace Digi.BuildInfo.Features.Config
                 "The bind for adding the aimed block to the toolbar.",
                 "NOTE: It does request a number press afterwards.",
                 "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect"); // FIXME pick block temporarily disabled in MP
+
+            InternalInfo = new BoolSetting(Handler, "Internal Info", false,
+                "Enables various info useful for server admins, PB scripters and modders.",
+                "Currently it adds:",
+                "- Block Type+SubType and BlockPairName in aim&place info",
+                "- Rotor angle from API in terminal info as it differs from what game already prints.",
+                "- Piston extended position from API in terminal info in case it differs in some cases.");
 
             Debug = new BoolSetting(Handler, "Debug", false,
                 "For debugging purposes only, not for normal use!",

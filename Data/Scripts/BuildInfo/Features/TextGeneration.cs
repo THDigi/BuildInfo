@@ -76,6 +76,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_MOD_TITLE = Color.GreenYellow;
         public readonly Color COLOR_OWNER = new Color(55, 255, 255);
         public readonly Color COLOR_INFO = new Color(69, 177, 227);
+        public readonly Color COLOR_INTERNAL = new Color(125, 125, 255);
 
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
         public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
@@ -928,6 +929,15 @@ namespace Digi.BuildInfo.Features
             }
             #endregion
 
+            #region Internal info
+            if(Config.InternalInfo.Value)
+            {
+                var typeName = def.Id.TypeId.ToString().Substring("MyObjectBuilder_".Length);
+                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
+                AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
+            }
+            #endregion
+
             #region Mass, grid mass
             if(Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
@@ -1321,6 +1331,15 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
                     }
                 }
+            }
+            #endregion
+
+            #region Internal info
+            if(Config.InternalInfo.Value)
+            {
+                var typeName = def.Id.TypeId.ToString().Substring("MyObjectBuilder_".Length);
+                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
+                AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
             }
             #endregion
 

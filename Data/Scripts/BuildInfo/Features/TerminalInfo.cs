@@ -906,8 +906,11 @@ namespace Digi.BuildInfo.Features
 
             info.DetailInfo_InputPower(Sink);
 
-            var stator = block as IMyMotorStator;
-            info.Append("Internal Angle: ").RoundedNumber(stator.Angle, 2).Append(" radians").NewLine();
+            if(Config.InternalInfo.Value)
+            {
+                var stator = (IMyMotorStator)block;
+                info.Append("API Angle: ").RoundedNumber(stator.Angle, 2).Append(" radians").NewLine();
+            }
         }
 
         void Format_Piston(IMyTerminalBlock block, StringBuilder info)
@@ -917,6 +920,12 @@ namespace Digi.BuildInfo.Features
             //      Current position
 
             info.DetailInfo_InputPower(Sink);
+
+            if(Config.InternalInfo.Value)
+            {
+                var piston = (IMyPistonBase)block;
+                info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).NewLine();
+            }
         }
 
         void Format_AirVent(IMyTerminalBlock block, StringBuilder info)
