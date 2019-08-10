@@ -92,6 +92,10 @@ namespace Digi.BuildInfo.Features
         public Vector3D lastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
 
+        private int gridMassComputeCooldown;
+        private float gridMassCache;
+        private long prevSelectedGrid;
+
         // used by the textAPI view mode
         public readonly Dictionary<MyDefinitionId, Cache> CachedBuildInfoTextAPI = new Dictionary<MyDefinitionId, Cache>(MyDefinitionId.Comparer);
         private bool useLeftSide = true;
@@ -950,7 +954,52 @@ namespace Digi.BuildInfo.Features
 
                 if(grid.Physics != null)
                 {
-                    GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(aimedBlock.CubeGrid.Physics.Mass);
+                    if(Math.Abs(grid.Physics.Mass) <= 0.000001f)
+                    {
+                        #region Manually compute mass for static grids
+                        if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
+                        {
+                            gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 since this method executes very 10 ticks
+                            prevSelectedGrid = grid.EntityId;
+
+                            var internalGrid = (MyCubeGrid)grid;
+                            float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
+                            gridMassCache = 0;
+
+                            foreach(IMySlimBlock block in internalGrid.GetBlocks())
+                            {
+                                if(block.FatBlock != null)
+                                {
+                                    gridMassCache += block.FatBlock.Mass;
+
+                                    var cockpit = block.FatBlock as IMyCockpit;
+                                    if(cockpit != null && cockpit.Pilot != null)
+                                    {
+                                        gridMassCache += cockpit.Pilot.BaseMass;
+                                    }
+
+                                    for(int i = block.FatBlock.InventoryCount - 1; i >= 0; --i)
+                                    {
+                                        var inv = block.FatBlock.GetInventory(i);
+
+                                        if(inv != null)
+                                            gridMassCache += (float)inv.CurrentMass * cargoMassMultiplier;
+                                    }
+                                }
+                                else
+                                {
+                                    gridMassCache += block.Mass;
+                                }
+                            }
+                        }
+
+                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
+                        #endregion
+                    }
+                    else
+                    {
+                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(grid.Physics.Mass);
+                    }
                 }
             }
             #endregion
@@ -1278,7 +1327,7 @@ namespace Digi.BuildInfo.Features
             AppendBasics(def, part: false);
 
             #region Optional - different item gain on grinding
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning) && !TextAPIEnabled)
+            if(!TextAPIEnabled && Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
             {
                 foreach(var comp in def.Components)
                 {
