@@ -124,8 +124,8 @@ namespace Digi.BuildInfo.VanillaData
         // from MyRadioAntenna
         public static float RadioAntenna_PowerReq(float maxRange) => (maxRange / 500f) * MyEnergyConstants.MAX_REQUIRED_POWER_ANTENNA;
 
-        // from MyBeacon
-        public static float Beacon_PowerReq(float maxRange) => (maxRange / 100000f) * MyEnergyConstants.MAX_REQUIRED_POWER_BEACON;
+        // from MyBeacon.UpdatePowerInput()
+        public static float Beacon_PowerReq(MyBeaconDefinition def, float radius) => radius / def.MaxBroadcastRadius * def.MaxBroadcastPowerDrainkW / 1000f;
 
         // from MyTimerBlock
         public const float Timer_PowerReq = 1E-07f;

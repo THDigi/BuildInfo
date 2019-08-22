@@ -745,7 +745,6 @@ namespace Digi.BuildInfo.Features
         #endregion
 
         #region Draw helpers
-        private HudAPIv2.SpaceMessage textMeasurement;
         private StringBuilder label = new StringBuilder(128);
         private StringBuilder LabelTextBuilder() => label.Clear();
 

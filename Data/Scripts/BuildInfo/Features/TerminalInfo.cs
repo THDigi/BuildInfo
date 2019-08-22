@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -1156,7 +1157,7 @@ namespace Digi.BuildInfo.Features
 
             var def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(VanillaData.Hardcoded.Beacon_PowerReq(def.MaxBroadcastRadius)).NewLine();
+            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def, def.MaxBroadcastRadius)).NewLine();
         }
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
