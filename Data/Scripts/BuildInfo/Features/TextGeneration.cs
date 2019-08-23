@@ -2665,7 +2665,7 @@ namespace Digi.BuildInfo.Features
         {
             var beacon = (MyBeaconDefinition)def;
 
-            PowerRequired(Hardcoded.Beacon_PowerReq(beacon, beacon.MaxBroadcastRadius), beacon.ResourceSinkGroup);
+            PowerRequired(Hardcoded.Beacon_PowerReq(beacon), beacon.ResourceSinkGroup);
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {

@@ -1157,7 +1157,7 @@ namespace Digi.BuildInfo.Features
 
             var def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def, def.MaxBroadcastRadius)).NewLine();
+            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def)).NewLine();
         }
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
