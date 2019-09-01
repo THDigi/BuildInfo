@@ -5,6 +5,7 @@ namespace Digi.ComponentLib
     [Flags]
     public enum UpdateFlags
     {
+        INVALID = -1,
         NONE = 0,
         UPDATE_INPUT = 1,
         //UPDATE_BEFORE_SIM = 2, // not used in this mod

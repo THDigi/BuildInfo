@@ -6,8 +6,8 @@ namespace Digi.ComponentLib
     {
         public readonly T Mod;
 
-        private UpdateFlags _backingFlags;
-        private UpdateFlags _setNewFlags;
+        private UpdateFlags _backingFlags = UpdateFlags.NONE;
+        private UpdateFlags _setNewFlags = UpdateFlags.INVALID;
         public UpdateFlags Flags
         {
             get { return _backingFlags; }
@@ -68,7 +68,7 @@ namespace Digi.ComponentLib
             UpdateList(Mod.ComponentUpdateAfterSim, _setNewFlags, UpdateFlags.UPDATE_AFTER_SIM);
             UpdateList(Mod.ComponentUpdateDraw, _setNewFlags, UpdateFlags.UPDATE_DRAW);
             _backingFlags = _setNewFlags;
-            _setNewFlags = UpdateFlags.NONE;
+            _setNewFlags = UpdateFlags.INVALID;
         }
 
         private void UpdateList(List<IComponent> list, UpdateFlags setFlags, UpdateFlags checkFlag)
