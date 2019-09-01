@@ -118,6 +118,7 @@ namespace Digi.BuildInfo.Features
 
         public void ParseCommand(string msg)
         {
+            // FIXME pick block temporarily disabled in MP
             if(MyAPIGateway.Multiplayer.MultiplayerActive)
             {
                 Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
@@ -137,7 +138,7 @@ namespace Digi.BuildInfo.Features
                         if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
                         {
                             MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
-                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{BlockDef.DisplayNameText} placed in slot {slot}.", MyFontEnum.Green);
+                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot}.", MyFontEnum.Green);
                         }
                         else
                         {
