@@ -214,7 +214,7 @@
     <Compile Include="Features\LeakInfo\LeakInfo.cs" />
     <Compile Include="Features\TextGeneration.cs" />
     <Compile Include="Utils\Utilities.cs" />
-    <Compile Include="_VanillaDataCompare\VanillaDataCompare.cs" />
+    <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\..\..\..\_SharedCode\SEWhitelistChecker.dll" />
