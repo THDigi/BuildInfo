@@ -1222,6 +1222,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //     (nothing)
 
+            info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
 
