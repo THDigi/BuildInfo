@@ -19,6 +19,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRageMath;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
+using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 
 namespace Digi.BuildInfo.Features
 {
@@ -545,7 +546,16 @@ namespace Digi.BuildInfo.Features
 
             if(assembler != null)
             {
-                info.Append("Mode: ").Append(assembler.Mode).NewLine();
+                info.Append("Mode: ");
+
+                switch(assembler.Mode)
+                {
+                    case MyAssemblerMode.Assembly: info.Append("Assemble"); break;
+                    case MyAssemblerMode.Disassembly: info.Append("Disassemble"); break;
+                    default: info.Append(assembler.Mode.ToString()); break;
+                }
+
+                info.NewLine();
                 info.Append("Loop queue: ").Append(assembler.Repeating ? "On" : "Off").NewLine();
             }
 

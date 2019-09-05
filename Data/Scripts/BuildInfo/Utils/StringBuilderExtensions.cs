@@ -351,31 +351,57 @@ namespace Digi.BuildInfo.Utils
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
         {
-            var types = new HashSet<MyObjectBuilderType>(inputConstraint.ConstrainedTypes);
-            types.UnionWith(outputConstraint.ConstrainedTypes);
+            var types = Caches.GetObTypeSet();
+            types.AddSetReader(inputConstraint.ConstrainedTypes);
+            types.AddSetReader(outputConstraint.ConstrainedTypes);
 
-            var items = new HashSet<MyDefinitionId>(inputConstraint.ConstrainedIds);
-            items.UnionWith(outputConstraint.ConstrainedIds);
+            var items = Caches.GetDefIdSet();
+            items.AddSetReader(inputConstraint.ConstrainedIds);
+            items.AddSetReader(outputConstraint.ConstrainedIds);
 
-            return s.InventoryFormat(volume, types: types, items: items, isWhitelist: inputConstraint.IsWhitelist); // HACK only using input constraint's whitelist status, not sure if output inventory's whitelist is needed
+            // HACK only using input constraint's whitelist status, not sure if output inventory's whitelist is needed
+            return s.InventoryFormat(volume,
+                types: types,
+                items: items,
+                isWhitelist: inputConstraint.IsWhitelist);
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inventoryConstraint)
         {
+            var types = Caches.GetObTypeSet();
+            types.AddSetReader(inventoryConstraint.ConstrainedTypes);
+
+            var items = Caches.GetDefIdSet();
+            items.AddSetReader(inventoryConstraint.ConstrainedIds);
+
             return s.InventoryFormat(volume,
-                types: new HashSet<MyObjectBuilderType>(inventoryConstraint.ConstrainedTypes),
-                items: new HashSet<MyDefinitionId>(inventoryConstraint.ConstrainedIds),
+                types: types,
+                items: items,
                 isWhitelist: inventoryConstraint.IsWhitelist);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, params MyObjectBuilderType[] allowedTypesParams)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyObjectBuilderType allowedType)
         {
-            return s.InventoryFormat(volume, types: new HashSet<MyObjectBuilderType>(allowedTypesParams));
+            var types = Caches.GetObTypeSet();
+            types.Add(allowedType);
+
+            return s.InventoryFormat(volume, types: types);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, params MyDefinitionId[] allowedItems)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId[] allowedItems)
         {
-            return s.InventoryFormat(volume, items: new HashSet<MyDefinitionId>(allowedItems));
+            var items = Caches.GetDefIdSet();
+            items.AddArray(allowedItems);
+
+            return s.InventoryFormat(volume, items: items);
+        }
+
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId allowedItem)
+        {
+            var items = Caches.GetDefIdSet();
+            items.Add(allowedItem);
+
+            return s.InventoryFormat(volume, items: items);
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
@@ -439,18 +465,40 @@ namespace Digi.BuildInfo.Utils
             var span = TimeSpan.FromSeconds(seconds);
 
             if(span.Days > 7)
-                return s.AppendFormat("{0:0}w {1:0}d {2:0}h {3:0.#}m", (span.Days / 7), (span.Days % 7), span.Hours, (span.TotalMinutes % 60));
+            {
+                s.Append(span.Days / 7).Append('w');
+                s.Append(' ').Append(span.Days % 7).Append('d');
+                s.Append(' ').Append(span.Hours).Append('h');
+                s.Append(' ').Append(span.Minutes).Append('m');
+                return s;
+            }
 
             if(span.Days > 0)
-                return s.AppendFormat("{0:0}d {1:0}h {2:0}m {3:0.#}s", span.Days, span.Hours, span.Minutes, span.Seconds);
+            {
+                s.Append(span.Days).Append('d');
+                s.Append(' ').Append(span.Hours).Append('h');
+                s.Append(' ').Append(span.Minutes).Append('m');
+                s.Append(' ').Append(span.Seconds).Append('s');
+                return s;
+            }
 
             if(span.Hours > 0)
-                return s.AppendFormat("{0:0}h {1:0}m {2:0.#}s", span.Hours, span.Minutes, span.Seconds);
+            {
+                s.Append(span.Hours).Append('h');
+                s.Append(' ').Append(span.Minutes).Append('m');
+                s.Append(' ').Append(span.Seconds).Append('s');
+                return s;
+            }
 
             if(span.Minutes > 0)
-                return s.AppendFormat("{0:0}m {1:0.#}s", span.Minutes, (seconds % 60));
+            {
+                s.Append(span.Minutes).Append('m');
+                s.Append(' ').Append((seconds % 60).ToString("0.#")).Append('s');
+                return s;
+            }
 
-            return s.AppendFormat("{0:0.#}s", seconds);
+            s.Append(seconds.ToString("0.#")).Append('s');
+            return s;
         }
 
         public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0)
@@ -540,7 +588,7 @@ namespace Digi.BuildInfo.Utils
             if(!IsValid(s, value))
                 return s;
 
-            return s.AppendFormat("{0:###,###,###,###,###,##0.##}", value);
+            return s.Append(value.ToString("###,###,###,###,###,##0.##"));
         }
 
         public static StringBuilder RoundedNumber(this StringBuilder s, float value, int digits)
@@ -548,7 +596,7 @@ namespace Digi.BuildInfo.Utils
             if(!IsValid(s, value))
                 return s;
 
-            return s.AppendFormat("{0:###,###,###,###,###,##0.##########}", Math.Round(value, digits));
+            return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##########"));
         }
 
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
@@ -559,7 +607,7 @@ namespace Digi.BuildInfo.Utils
             {
                 case MyUpgradeModifierType.Additive: s.Append('+').Append(modifier); break;
                 case MyUpgradeModifierType.Multiplicative: s.Append('x').Append(modifier); break;
-                default: s.Append(modifier).Append(' ').Append(upgrade.ModifierType); break;
+                default: s.Append(modifier).Append(' ').Append(upgrade.ModifierType.ToString()); break;
             }
 
             s.Append(' ').Append(upgrade.UpgradeType);

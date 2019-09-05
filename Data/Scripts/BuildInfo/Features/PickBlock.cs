@@ -101,7 +101,7 @@ namespace Digi.BuildInfo.Features
                 {
                     MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
-                    MyAPIGateway.Utilities.ShowNotification($"{BlockDef.DisplayNameText} placed in slot {slot}.", 2000, MyFontEnum.Green);
+                    MyAPIGateway.Utilities.ShowNotification($"{BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, MyFontEnum.Green);
 
                     BlockDef = null;
                 }
@@ -138,7 +138,7 @@ namespace Digi.BuildInfo.Features
                         if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
                         {
                             MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
-                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot}.", MyFontEnum.Green);
+                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
                         }
                         else
                         {

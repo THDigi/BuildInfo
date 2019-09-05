@@ -300,7 +300,7 @@ namespace Digi.BuildInfo.Features
                                 }
                                 catch(Exception e)
                                 {
-                                    Log.Error($"Error on equipped defId={def?.Id} - {e.Message}\n{e.StackTrace}");
+                                    Log.Error($"Error on equipped defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
                                 }
                             }
                         }
@@ -314,7 +314,7 @@ namespace Digi.BuildInfo.Features
                             }
                             catch(Exception e)
                             {
-                                Log.Error($"Error on aimed defId={def?.Id} - {e.Message}\n{e.StackTrace}");
+                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
                             }
                         }
                     }
@@ -1475,7 +1475,7 @@ namespace Digi.BuildInfo.Features
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding).ResetColor();
 
-                GetLine().Label("Integrity").AppendFormat("{0:#,###,###,###,###}", def.MaxIntegrity);
+                GetLine().Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
                 if(deformable)
                     GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
@@ -1815,7 +1815,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Pull strength").AppendFormat("{0:###,###,##0.#######}", merge.Strength);
+                AddLine().Label("Pull strength").Append(merge.Strength.ToString("###,###,##0.#######"));
             }
         }
 
@@ -2181,7 +2181,7 @@ namespace Digi.BuildInfo.Features
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere);
-                    AddLine().Label("Drag coefficient").AppendFormat("{0:0.0####}", parachute.DragCoefficient);
+                    AddLine().Label("Drag coefficient").Append(parachute.DragCoefficient.ToString("0.0####"));
                     AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.");
                 }
             }
@@ -3049,7 +3049,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
             {
                 AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius);
-                AddLine().Label("Damage").AppendFormat("{0:#,###,###,###,##0.##}", warhead.WarheadExplosionDamage);
+                AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##"));
             }
         }
         #endregion
@@ -3226,12 +3226,13 @@ namespace Digi.BuildInfo.Features
 
         public class CacheTextAPI : Cache
         {
-            public readonly StringBuilder Text = new StringBuilder();
+            public readonly StringBuilder Text;
             public readonly Vector2D TextSize;
 
             public CacheTextAPI(StringBuilder textSB, Vector2D textSize)
             {
                 ResetExpiry();
+                Text = new StringBuilder(textSB.Length);
                 Text.AppendSB(textSB);
                 TextSize = textSize;
             }
@@ -3239,11 +3240,22 @@ namespace Digi.BuildInfo.Features
 
         public class CacheNotifications : Cache
         {
-            public readonly List<IMyHudNotification> Lines = new List<IMyHudNotification>();
+            public readonly List<IMyHudNotification> Lines;
 
             public CacheNotifications(List<HudLine> hudLines)
             {
                 ResetExpiry();
+
+                int lineNum = 0;
+
+                for(int i = 0; i < hudLines.Count; ++i)
+                {
+                    var line = hudLines[i];
+                    if(line.str.Length > 0)
+                        lineNum++;
+                }
+
+                Lines = new List<IMyHudNotification>(lineNum);
 
                 for(int i = 0; i < hudLines.Count; ++i)
                 {
@@ -3259,7 +3271,7 @@ namespace Digi.BuildInfo.Features
 
         public class HudLine
         {
-            public StringBuilder str = new StringBuilder();
+            public StringBuilder str = new StringBuilder(128);
             public string font;
             public int lineWidthPx;
         }
