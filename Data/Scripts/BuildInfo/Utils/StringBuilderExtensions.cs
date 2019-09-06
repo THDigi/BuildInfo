@@ -70,15 +70,29 @@ namespace Digi.BuildInfo.Utils
             return sb;
         }
 
-        public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength)
+        public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength, bool addDots = true, bool noNewLines = true)
         {
             if(text == null)
                 return s.Append("(NULL)");
 
+            if(noNewLines)
+            {
+                var newLine = text.IndexOf('\n');
+                if(newLine >= 0)
+                    maxLength = Math.Min(maxLength, newLine); // redefine max length to before the first newline character
+            }
+
             if(text.Length > maxLength)
-                s.AppendSubstring(text, 0, maxLength - 1).Append('…');
+            {
+                if(addDots)
+                    s.AppendSubstring(text, 0, maxLength - 1).Append('…');
+                else
+                    s.AppendSubstring(text, 0, maxLength);
+            }
             else
+            {
                 s.Append(text);
+            }
 
             return s;
         }

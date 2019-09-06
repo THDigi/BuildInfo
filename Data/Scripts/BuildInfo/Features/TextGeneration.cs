@@ -920,13 +920,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Append('"').Color(COLOR_BLOCKTITLE);
 
-                var name = terminalBlock.CustomName;
-                var newLine = name.IndexOf('\n');
-
-                if(newLine >= 0)
-                    name = name.Substring(0, newLine); // strip everything past new line (incl new line char)
-
-                GetLine().AppendMaxLength(name, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+                GetLine().AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
             }
             #endregion
 
