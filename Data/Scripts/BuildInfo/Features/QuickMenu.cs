@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features
     {
         public const int MENU_TOTAL_ITEMS = 11;
 
-        public bool Shown = false;
+        public bool Shown { get; private set; }
         public bool NeedsUpdate = true;
         public int SelectedItem = 0;
 
@@ -41,7 +41,20 @@ namespace Digi.BuildInfo.Features
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             if(Shown && !EquipmentMonitor.IsCubeBuilder && !EquipmentMonitor.IsBuildTool)
-                Shown = false;
+            {
+                CloseMenu();
+            }
+        }
+
+        public void ShowMenu()
+        {
+            Shown = true;
+        }
+
+        public void CloseMenu()
+        {
+            Shown = false;
+            NeedsUpdate = true;
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
@@ -62,8 +75,7 @@ namespace Digi.BuildInfo.Features
 
             if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.Escape))
             {
-                Shown = false;
-                NeedsUpdate = true;
+                CloseMenu();
                 return;
             }
 
@@ -90,12 +102,12 @@ namespace Digi.BuildInfo.Features
                 switch(SelectedItem)
                 {
                     case 0:
-                        Shown = false;
+                        CloseMenu();
                         break;
                     case 1:
                         if(EquipmentMonitor.AimedBlock != null)
                         {
-                            Shown = false;
+                            CloseMenu();
                             Mod.PickBlock.BlockDef = EquipmentMonitor.BlockDef;
                         }
                         else
@@ -112,16 +124,16 @@ namespace Digi.BuildInfo.Features
                         }
                         else
                         {
-                            Shown = false;
+                            CloseMenu();
                             Mod.ChatCommands.ShowSelectedBlocksModWorkshop();
                         }
                         break;
                     case 3:
-                        Shown = false;
+                        CloseMenu();
                         Mod.ChatCommands.ShowHelp();
                         break;
                     case 4:
-                        Shown = false;
+                        CloseMenu();
                         Mod.ChatCommands.ShowBuildInfoWorkshop();
                         break;
                     case 5:
@@ -140,7 +152,7 @@ namespace Digi.BuildInfo.Features
                         ToggleTextAPI();
                         break;
                     case 10:
-                        Shown = false;
+                        CloseMenu();
                         ReloadConfig(Log.ModName);
                         break;
                 }
@@ -189,7 +201,11 @@ namespace Digi.BuildInfo.Features
                 if(Config.MenuBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
-                    Shown = !Shown;
+
+                    if(Shown)
+                        CloseMenu();
+                    else
+                        ShowMenu();
                 }
 
                 return;
@@ -207,7 +223,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                Shown = false;
+                CloseMenu();
                 MyAPIGateway.Utilities.ShowNotification("TextAPI mod not detected! (workshop id: 758597413)", 3000, MyFontEnum.Red);
             }
         }

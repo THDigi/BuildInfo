@@ -178,7 +178,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else // no arg and block equipped/selected
                     {
-                        Mod.QuickMenu.Shown = true;
+                        Mod.QuickMenu.ShowMenu();
                     }
 
                     return;

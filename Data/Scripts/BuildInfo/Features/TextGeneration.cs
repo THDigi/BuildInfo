@@ -246,7 +246,7 @@ namespace Digi.BuildInfo.Features
 
             if(textShown)
             {
-                QuickMenu.Shown = false;
+                QuickMenu.CloseMenu();
 
                 if(MyAPIGateway.CubeBuilder.FreezeGizmo)
                 {
