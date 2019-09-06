@@ -1,24 +1,24 @@
-﻿using System.Text;
-using Digi.BuildInfo.Systems;
-using Draygo.API;
+﻿using Digi.BuildInfo.Systems;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Game.ModAPI;
-using VRageMath;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
 {
     public class TurretAmmoPrint : ClientComponent
     {
-        private const int SKIP_TICKS = 5; // ticks between text updates, min value 1.
+        const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        private bool visible = false;
+        bool visible = false;
+        int prevRounds;
+        int prevMags;
+
+        IMyHudNotification notify;
+
         //private HudAPIv2.HUDMessage msg;
         //private StringBuilder msgStr;
-        private IMyHudNotification notify;
 
         public TurretAmmoPrint(Client mod) : base(mod)
         {
@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features
                 int rounds = gun.GunBase.GetTotalAmmunitionAmount(); // total rounds in inventory + currently used mag; gets updated on shoot only though
                 int mags = gun.GetAmmunitionAmount(); // total mags in inventory (not including the one partially fired that's in the gun)
 
-                // rounds in current ShotsInBurst internal magazine is not accessible
+                // rounds in the ShotsInBurst-internal-magazine is not accessible to know how many rounds until reload
 
                 // TODO keep it as a notification?
                 //if(TextAPIEnabled)
@@ -84,13 +84,23 @@ namespace Digi.BuildInfo.Features
                 //}
                 //else
                 {
-                    if(notify == null)
-                        notify = MyAPIGateway.Utilities.CreateNotification("", 16 * SKIP_TICKS, "Monospace");
+                    if(prevRounds != rounds || prevMags != mags || notify == null)
+                    {
+                        if(notify == null)
+                            notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue, "Monospace");
 
-                    // the extra spacing in front is because the font shadow takes [ and ] into consideration and adds shadow at the end...
-                    notify.Text = (mags == 0 ? $"  [{rounds}]" : $"{rounds}");
-                    notify.Show();
-                    visible = true;
+                        // the extra spacing in front is because the font shadow takes [ and ] into consideration and adds shadow at the end...
+                        notify.Text = (mags == 0 ? "  [" + rounds.ToString() + "]" : rounds.ToString());
+
+                        prevRounds = rounds;
+                        prevMags = mags;
+                    }
+
+                    if(!visible)
+                    {
+                        visible = true;
+                        notify.Show();
+                    }
                 }
             }
             else
