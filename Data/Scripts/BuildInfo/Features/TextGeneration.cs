@@ -51,8 +51,9 @@ namespace Digi.BuildInfo.Features
         private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
         private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
         private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
-        public const int MOD_NAME_MAX_LENGTH = 30;
-        public const int PLAYER_NAME_MAX_LENGTH = 18;
+        public const int MOD_NAME_MAX_LENGTH = 40;
+        public const int PLAYER_NAME_MAX_LENGTH = 24;
+        public const int BLOCK_NAME_MAX_LENGTH = 35;
 
         private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
 
@@ -917,8 +918,6 @@ namespace Digi.BuildInfo.Features
             #region Block name
             if(Config.AimInfo.IsSet(AimInfoFlags.TerminalName) && terminalBlock != null)
             {
-                const int LENGTH_LIMIT = 35;
-
                 AddLine().Append('"').Color(COLOR_BLOCKTITLE);
 
                 var name = terminalBlock.CustomName;
@@ -927,7 +926,7 @@ namespace Digi.BuildInfo.Features
                 if(newLine >= 0)
                     name = name.Substring(0, newLine); // strip everything past new line (incl new line char)
 
-                GetLine().AppendMaxLength(name, LENGTH_LIMIT).ResetColor().Append('"');
+                GetLine().AppendMaxLength(name, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
             }
             #endregion
 
