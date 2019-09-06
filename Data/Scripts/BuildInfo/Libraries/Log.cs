@@ -14,7 +14,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.52 by Digi</para>
+    /// <para>Version 1.53 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -24,10 +24,20 @@ namespace Digi
         private static bool unloaded = false;
 
         public const string FILE = "info.log";
-        public const int PRINT_TIME_INFO = 3000;
-        public const int PRINT_TIME_ERROR = 10000;
-        public const string PRINT_ERROR = "error";
-        public const string PRINT_MSG = "msg";
+        private const int DEFAULT_TIME_INFO = 3000;
+        private const int DEFAULT_TIME_ERROR = 10000;
+
+        /// <summary>
+        /// Print the generic error info.
+        /// (For use in <see cref="Log.Error(string, string, int)"/>'s 2nd arg)
+        /// </summary>
+        public const string PRINT_ERROR = "<err>";
+
+        /// <summary>
+        /// Prints the message instead of the generic generated error info.
+        /// (For use in <see cref="Log.Error(string, string, int)"/>'s 2nd arg)
+        /// </summary>
+        public const string PRINT_MSG = "<msg>";
 
         #region Handling of handler
         public override void LoadData()
@@ -73,7 +83,7 @@ namespace Digi
             if(handler == null)
                 handler = new Handler();
         }
-        #endregion
+        #endregion Handling of handler
 
         #region Publicly accessible properties and methods
         /// <summary>
@@ -162,7 +172,7 @@ namespace Digi
         /// <param name="exception">The exception to write to custom log and game's log.</param>
         /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the exception message, <see cref="PRINT_ERROR"/> to use the predefined error message, or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
-        public static void Error(Exception exception, string printText = PRINT_ERROR, int printTimeMs = PRINT_TIME_ERROR)
+        public static void Error(Exception exception, string printText = PRINT_ERROR, int printTimeMs = DEFAULT_TIME_ERROR)
         {
             EnsureHandlerCreated();
             handler.Error(exception.ToString(), printText, printTimeMs);
@@ -174,7 +184,7 @@ namespace Digi
         /// <param name="message">The message printed to custom log and game log.</param>
         /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the message arg, <see cref="PRINT_ERROR"/> to use the predefined error message, or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
-        public static void Error(string message, string printText = PRINT_ERROR, int printTimeMs = PRINT_TIME_ERROR)
+        public static void Error(string message, string printText = PRINT_MSG, int printTimeMs = DEFAULT_TIME_ERROR)
         {
             EnsureHandlerCreated();
             handler.Error(message, printText, printTimeMs);
@@ -187,7 +197,7 @@ namespace Digi
         /// <param name="message">The text that's written to log.</param>
         /// <param name="printText">HUD notification text, can be set to null to disable, to <see cref="PRINT_MSG"/> to use the message arg or any other custom string.</param>
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
-        public static void Info(string message, string printText = null, int printTimeMs = PRINT_TIME_INFO)
+        public static void Info(string message, string printText = null, int printTimeMs = DEFAULT_TIME_INFO)
         {
             EnsureHandlerCreated();
             handler.Info(message, printText, printTimeMs);
@@ -215,7 +225,7 @@ namespace Digi
 
             return false;
         }
-        #endregion
+        #endregion Publicly accessible properties and methods
 
         private class Handler
         {
@@ -290,7 +300,7 @@ namespace Digi
 
                     preInitMessages = null;
                 }
-                #endregion
+                #endregion Pre-init messages
 
                 #region Init message
                 sb.Clear();
@@ -327,7 +337,7 @@ namespace Digi
 
                 Info(sb.ToString());
                 sb.Clear();
-                #endregion
+                #endregion Init message
             }
 
             public void Close()
@@ -363,7 +373,7 @@ namespace Digi
                 indent = 0;
             }
 
-            public void Error(string message, string printText = PRINT_ERROR, int printTime = PRINT_TIME_ERROR)
+            public void Error(string message, string printText = PRINT_ERROR, int printTime = DEFAULT_TIME_ERROR)
             {
                 MyLog.Default.WriteLineAndConsole(modName + " error/exception: " + message); // write to game's log
 
@@ -373,7 +383,7 @@ namespace Digi
                     ShowHudMessage(ref notifyError, message, printText, printTime, MyFontEnum.Red);
             }
 
-            public void Info(string message, string printText = null, int printTime = PRINT_TIME_INFO)
+            public void Info(string message, string printText = null, int printTime = DEFAULT_TIME_INFO)
             {
                 LogMessage(message); // write to custom log
 
