@@ -1,8 +1,11 @@
-﻿using Digi.ComponentLib;
+﻿using System.Collections.Generic;
+using Digi.BuildInfo.VanillaData;
+using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character.Components;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -11,6 +14,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
+using VRageMath;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Systems
@@ -41,6 +45,16 @@ namespace Digi.BuildInfo.Systems
         public IMySlimBlock AimedBlock { get; private set; }
 
         /// <summary>
+        /// If aimed block is projected, this is the source, otherwise null.
+        /// </summary>
+        public IMyProjector AimedProjectedBy { get; private set; }
+
+        /// <summary>
+        /// If aimed block is projected this will indicate its can-build status.
+        /// </summary>
+        public BuildCheckResult AimedProjectedCanBuild { get; private set; }
+
+        /// <summary>
         /// Aimed or equipped block definition, null if nothing is equipped/aimed.
         /// </summary>
         public MyCubeBlockDefinition BlockDef { get; private set; }
@@ -64,6 +78,11 @@ namespace Digi.BuildInfo.Systems
         /// Currently equipped hand drill (because it doesn't implement IMyEngineerToolBase)
         /// </summary>
         public IMyHandDrill HandDrill { get; private set; }
+
+        /// <summary>
+        /// Wether the selected tool is a welder (ship or handheld)
+        /// </summary>
+        public bool IsAnyWelder { get; private set; }
 
         /// <summary>
         /// Wether the selected tool is a grinder (ship or handheld)
@@ -159,12 +178,144 @@ namespace Digi.BuildInfo.Systems
             CheckHandTool(character, character.EquippedTool, controllerChanged);
 
             if(!IsCubeBuilder && !IsBuildTool)
-                return; // no tool equipped, nothing to update
+                return; // no tool equipped, nothing to update; block gets nullified on tool change
 
-            var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-            var casterBlock = handToolCasterComp?.HitBlock as IMySlimBlock;
+            var equippedDef = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
-            SetBlock(def, casterBlock);
+            if(IsCubeBuilder && equippedDef != null)
+            {
+                SetBlock(equippedDef, null);
+                return;
+            }
+
+            var aimBlock = handToolCasterComp?.HitBlock as IMySlimBlock;
+
+            if(CanWeld(aimBlock))
+            {
+                SetBlock(null, aimBlock);
+                return;
+            }
+
+            IMySlimBlock projectedGood;
+            IMySlimBlock projectedClosest;
+            BuildCheckResult projectedGoodCanBuild;
+            BuildCheckResult projectedClosestCanBuild;
+            FindProjectedBlock(character, out projectedGood, out projectedClosest, out projectedGoodCanBuild, out projectedClosestCanBuild);
+
+            if(projectedGood != null)
+            {
+                SetBlock(null, projectedGood, projectedGoodCanBuild);
+                return;
+            }
+
+            if(aimBlock != null)
+            {
+                SetBlock(null, aimBlock);
+                return;
+            }
+
+            if(projectedClosest != null)
+            {
+                SetBlock(null, projectedClosest, projectedClosestCanBuild);
+                return;
+            }
+
+            SetBlock(null, null);
+        }
+
+        private bool CanWeld(IMySlimBlock block)
+        {
+            if(block == null)
+                return false;
+
+            //if(!MySessionComponentSafeZones.IsActionAllowed(block.WorldAABB, MySafeZoneAction.Welding, 0L))
+            //    return false;
+
+            if(!block.IsFullIntegrity || block.HasDeformation)
+                return true;
+
+            return false;
+        }
+
+        private readonly List<Vector3I> cells = new List<Vector3I>();
+        private readonly List<IMySlimBlock> blocks = new List<IMySlimBlock>();
+        private void RayCastBlocksAllOrdered(MyCubeGrid grid, Vector3D worldStart, Vector3D worldEnd, List<IMySlimBlock> outBlocks)
+        {
+            outBlocks.Clear();
+            grid.RayCastCells(worldStart, worldEnd, cells, clearOutHitPositions: true);
+
+            for(int i = 0; i < cells.Count; ++i)
+            {
+                var slim = grid.GetCubeBlock(cells[i]) as IMySlimBlock;
+
+                if(slim != null && !blocks.Contains(slim))
+                    outBlocks.Add(slim);
+            }
+        }
+
+        // HACK hardcoded from MyWelder.FindProjectedBlock()
+        private bool FindProjectedBlock(IMyCharacter character, out IMySlimBlock goodBlock, out IMySlimBlock closestBlock, out BuildCheckResult goodCanBuild, out BuildCheckResult closestCanBuild)
+        {
+            goodBlock = null;
+            closestBlock = null;
+            goodCanBuild = BuildCheckResult.NotFound;
+            closestCanBuild = BuildCheckResult.NotFound;
+
+            if(handToolCasterComp == null || HandTool?.PhysicalItemDefinition == null)
+                return false;
+
+            var weaponPosition = character?.Components?.Get<MyCharacterWeaponPositionComponent>();
+
+            if(weaponPosition == null)
+                return false;
+
+            var handItemDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+
+            float reachDistance = Hardcoded.EngineerToolBase_DefaultReachDistance * (handItemDef == null ? 1f : handItemDef.DistanceMultiplier);
+
+            // HACK hardcoded from MyEngineerToolBase.UpdateSensorPosition()
+            MatrixD worldMatrix = MatrixD.Identity;
+            worldMatrix.Translation = weaponPosition.LogicalPositionWorld;
+            worldMatrix.Right = character.WorldMatrix.Right;
+            worldMatrix.Forward = weaponPosition.LogicalOrientationWorld;
+            worldMatrix.Up = Vector3.Cross(worldMatrix.Right, worldMatrix.Forward);
+
+            Vector3D forward = worldMatrix.Forward;
+            Vector3D start = worldMatrix.Translation; // + forward * originOffset;
+            Vector3D end = start + forward * reachDistance;
+
+            LineD line = new LineD(start, end);
+            MyCubeGrid grid;
+            Vector3I discardVec;
+            double discardDouble;
+            if(!MyCubeGrid.GetLineIntersection(ref line, out grid, out discardVec, out discardDouble) || grid?.Projector == null)
+                return false;
+
+            var projector = (IMyProjector)grid.Projector;
+
+            RayCastBlocksAllOrdered(grid, start, end, blocks);
+
+            for(int i = 0; i < blocks.Count; ++i)
+            {
+                var slim = blocks[i];
+                var canBuild = projector.CanBuild(slim, checkHavokIntersections: true);
+
+                if(i == 0 && !projector.ShowOnlyBuildable)
+                {
+                    closestBlock = slim;
+                    closestCanBuild = canBuild;
+                }
+
+                if(canBuild == BuildCheckResult.OK)
+                {
+                    goodBlock = slim;
+                    goodCanBuild = canBuild;
+                    break;
+                }
+            }
+
+            blocks.Clear();
+            return true;
         }
 
         private bool CheckControlledEntity(IMyControllableEntity controlled, IMyShipController shipController, IMyCharacter character)
@@ -337,11 +488,9 @@ namespace Digi.BuildInfo.Systems
 
             IsCockpitBuildMode = cockpitBuildMode;
             IsCubeBuilder = (cockpitBuildMode || defId.TypeId == typeof(MyObjectBuilder_CubePlacer));
+            IsAnyWelder = (!IsCubeBuilder && (defId.TypeId == typeof(MyObjectBuilder_Welder) || defId.TypeId == typeof(MyObjectBuilder_ShipWelder)));
             IsAnyGrinder = (!IsCubeBuilder && (defId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || defId.TypeId == typeof(MyObjectBuilder_ShipGrinder)));
-            IsBuildTool = (!IsCubeBuilder && (defId.TypeId == typeof(MyObjectBuilder_AngleGrinder)
-                                           || defId.TypeId == typeof(MyObjectBuilder_ShipGrinder)
-                                           || defId.TypeId == typeof(MyObjectBuilder_ShipWelder)
-                                           || defId.TypeId == typeof(MyObjectBuilder_Welder)));
+            IsBuildTool = (IsAnyWelder || IsAnyGrinder);
             IsAnyTool = (IsCubeBuilder || IsBuildTool || defId.TypeId == typeof(MyObjectBuilder_Drill) || defId.TypeId == typeof(MyObjectBuilder_HandDrill));
 
             if(IsCubeBuilder)
@@ -353,7 +502,7 @@ namespace Digi.BuildInfo.Systems
         /// <summary>
         /// Updates the block if different and invokes the <see cref="BlockChanged"/> event.
         /// </summary>
-        private void SetBlock(MyCubeBlockDefinition def, IMySlimBlock block = null)
+        private void SetBlock(MyCubeBlockDefinition def, IMySlimBlock block = null, BuildCheckResult projectedCanBuild = BuildCheckResult.NotFound)
         {
             if(def == null)
                 def = block?.BlockDefinition as MyCubeBlockDefinition;
@@ -362,6 +511,14 @@ namespace Digi.BuildInfo.Systems
                 return;
 
             AimedBlock = block;
+            AimedProjectedBy = null;
+            AimedProjectedCanBuild = projectedCanBuild;
+            if(AimedBlock != null)
+            {
+                var internalGrid = (MyCubeGrid)AimedBlock.CubeGrid;
+                AimedProjectedBy = internalGrid?.Projector;
+            }
+
             BlockDef = def;
             BlockGridSize = (def == null ? 0 : MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
 

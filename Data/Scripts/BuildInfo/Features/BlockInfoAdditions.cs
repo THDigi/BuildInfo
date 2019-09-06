@@ -4,11 +4,14 @@ using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
@@ -27,10 +30,15 @@ namespace Digi.BuildInfo.Features
         private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
         private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = (Color.Yellow * 0.75f).ToVector4();
 
+        private readonly MyStringId SELECT_GIZMO_RED = MyStringId.GetOrCompute("GizmoDrawLineRed");
+        private const int SELECT_CANBUILD_SKIP_TICKS = 15;
+
         private int computerComponentIndex = -1;
 
         private int componentReplaceInfoCount = 0;
         private readonly List<ComponentReplaceInfo> componentReplaceInfo = new List<ComponentReplaceInfo>(8);
+
+        private BuildCheckResult projectedCanBuildCached;
 
         private class ComponentReplaceInfo
         {
@@ -68,7 +76,7 @@ namespace Digi.BuildInfo.Features
             EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, VRage.Game.ModAPI.IMySlimBlock block)
+        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
             for(int i = 0; i < componentReplaceInfoCount; ++i)
             {
@@ -115,9 +123,35 @@ namespace Digi.BuildInfo.Features
             componentReplaceInfoCount++;
         }
 
+        private void DrawProjectedSelection()
+        {
+            var aimedBlock = EquipmentMonitor.AimedBlock;
+            var projector = EquipmentMonitor.AimedProjectedBy;
+
+            if(aimedBlock == null || projector == null)
+                return;
+
+            var canBuild = projectedCanBuildCached;
+
+            if(Mod.Tick % SELECT_CANBUILD_SKIP_TICKS == 0)
+                canBuild = projectedCanBuildCached = projector.CanBuild(aimedBlock, checkHavokIntersections: true);
+
+            if(canBuild == BuildCheckResult.OK) // buildable blocks already have a selection box
+                return;
+
+            var grid = (MyCubeGrid)aimedBlock.CubeGrid;
+            MyCubeBuilder.DrawSemiTransparentBox(aimedBlock.Min, aimedBlock.Max, grid, Color.White, onlyWireframe: true, lineMaterial: SELECT_GIZMO_RED);
+        }
+
         public override void UpdateDraw()
         {
             if(GameConfig.HudState == HudState.OFF || EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
+                return;
+
+            DrawProjectedSelection();
+
+            var hudComps = MyHud.BlockInfo?.Components;
+            if(hudComps == null || hudComps.Count == 0) // don't show block info additions if the block info isn't visible
                 return;
 
 #if false

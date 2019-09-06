@@ -25,7 +25,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
@@ -275,20 +275,35 @@ namespace Digi.BuildInfo.Features
             else
             {
                 bool changedBlock = (def.Id != LastDefId);
+                bool hasBlockDef = (EquipmentMonitor.BlockDef != null);
+                bool hasAimedBlock = (EquipmentMonitor.AimedBlock != null);
 
-                if(Config.PlaceInfo.Value == 0 && EquipmentMonitor.IsCubeBuilder)
+                if(hasBlockDef && Config.PlaceInfo.Value == 0)
                     return false;
 
-                if(Config.AimInfo.Value == 0 && EquipmentMonitor.AimedBlock != null)
+                if(hasAimedBlock && Config.AimInfo.Value == 0)
                     return false;
 
-                if(changedBlock || (aimInfoNeedsUpdate && EquipmentMonitor.AimedBlock != null))
+                if(changedBlock || (aimInfoNeedsUpdate && hasAimedBlock))
                 {
                     LastDefId = def.Id;
 
                     if(Config.TextShow)
                     {
-                        if(EquipmentMonitor.IsCubeBuilder)
+                        if(hasAimedBlock)
+                        {
+                            try
+                            {
+                                aimInfoNeedsUpdate = false;
+                                GenerateAimBlockText(def);
+                                PostProcessText(def.Id, false);
+                            }
+                            catch(Exception e)
+                            {
+                                Log.Error($"Error on aimed defId={def?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
+                            }
+                        }
+                        else if(hasBlockDef)
                         {
                             if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(def.Id, out cache) : CachedBuildInfoNotification.TryGetValue(def.Id, out cache))
                             {
@@ -909,18 +924,32 @@ namespace Digi.BuildInfo.Features
                 return;
 
             var aimedBlock = EquipmentMonitor.AimedBlock;
-            var integrityRatio = aimedBlock.Integrity / aimedBlock.MaxIntegrity;
-            var grid = aimedBlock.CubeGrid;
+
+            if(aimedBlock == null)
+            {
+                Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MSG);
+                return;
+            }
+
+            var projectedBy = EquipmentMonitor.AimedProjectedBy;
+            bool projected = (projectedBy != null);
+            var integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
+            var grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
 
             var terminalBlock = aimedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
             #region Block name
-            if(Config.AimInfo.IsSet(AimInfoFlags.TerminalName) && terminalBlock != null)
+            if(Config.AimInfo.IsSet(AimInfoFlags.TerminalName))
             {
-                AddLine().Append('"').Color(COLOR_BLOCKTITLE);
-
-                GetLine().AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+                if(terminalBlock != null)
+                {
+                    AddLine().Append('"').Color(COLOR_BLOCKTITLE).AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+                }
+                else if(projected) // show block def name because game might not.
+                {
+                    AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetColor();
+                }
             }
             #endregion
 
@@ -933,77 +962,122 @@ namespace Digi.BuildInfo.Features
             }
             #endregion
 
+            #region Projector info and status
+            if(projected && Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            {
+                AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+
+                // TODO custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
+                var canBuild = projectedBy.CanBuild(aimedBlock, checkHavokIntersections: true);
+
+                AddLine().Label("Status");
+
+                switch(canBuild)
+                {
+                    case BuildCheckResult.OK:
+                        GetLine().Color(COLOR_GOOD).Append("Ready to build");
+                        break;
+                    case BuildCheckResult.AlreadyBuilt:
+                        GetLine().Color(COLOR_WARNING).Append("Already built!");
+                        break;
+                    case BuildCheckResult.IntersectedWithGrid:
+                        GetLine().Color(COLOR_BAD).Append("Other block in the way.");
+                        break;
+                    case BuildCheckResult.IntersectedWithSomethingElse:
+                        GetLine().Color(COLOR_WARNING).Append("Something in the way.");
+                        break;
+                    case BuildCheckResult.NotConnected:
+                        GetLine().Color(COLOR_WARNING).Append("Nothing to attach to.");
+                        break;
+                    case BuildCheckResult.NotWeldable:
+                        GetLine().Color(COLOR_BAD).Append("Projector doesn't allow building.");
+                        break;
+                    //case BuildCheckResult.NotFound: // not used by CanBuild()
+                    default:
+                        GetLine().Color(COLOR_BAD).Append("(Unknown)");
+                        break;
+                }
+            }
+            #endregion
+
             #region Mass, grid mass
             if(Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
                 var mass = def.Mass;
                 var massColor = Color.GreenYellow;
 
-                if(aimedBlock.FatBlock != null)
+                if(projected)
                 {
-                    var inv = aimedBlock.FatBlock.GetInventory();
-
-                    if(inv != null)
-                    {
-                        var invMass = (float)inv.CurrentMass;
-
-                        if(invMass > 0)
-                        {
-                            mass += invMass;
-                            massColor = COLOR_WARNING;
-                        }
-                    }
+                    AddLine().Color(massColor).MassFormat(mass);
                 }
-
-                AddLine().Color(massColor).MassFormat(mass);
-
-                if(grid.Physics != null)
+                else
                 {
-                    if(Math.Abs(grid.Physics.Mass) <= 0.000001f)
+                    if(aimedBlock.FatBlock != null)
                     {
-                        #region Manually compute mass for static grids
-                        if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
+                        var inv = aimedBlock.FatBlock.GetInventory();
+
+                        if(inv != null)
                         {
-                            gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 since this method executes very 10 ticks
-                            prevSelectedGrid = grid.EntityId;
+                            var invMass = (float)inv.CurrentMass;
 
-                            var internalGrid = (MyCubeGrid)grid;
-                            float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
-                            gridMassCache = 0;
-
-                            foreach(IMySlimBlock block in internalGrid.GetBlocks())
+                            if(invMass > 0)
                             {
-                                if(block.FatBlock != null)
-                                {
-                                    gridMassCache += block.FatBlock.Mass;
-
-                                    var cockpit = block.FatBlock as IMyCockpit;
-                                    if(cockpit != null && cockpit.Pilot != null)
-                                    {
-                                        gridMassCache += cockpit.Pilot.BaseMass;
-                                    }
-
-                                    for(int i = block.FatBlock.InventoryCount - 1; i >= 0; --i)
-                                    {
-                                        var inv = block.FatBlock.GetInventory(i);
-
-                                        if(inv != null)
-                                            gridMassCache += (float)inv.CurrentMass * cargoMassMultiplier;
-                                    }
-                                }
-                                else
-                                {
-                                    gridMassCache += block.Mass;
-                                }
+                                mass += invMass;
+                                massColor = COLOR_WARNING;
                             }
                         }
-
-                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
-                        #endregion
                     }
-                    else
+
+                    AddLine().Color(massColor).MassFormat(mass);
+
+                    if(grid.Physics != null)
                     {
-                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(grid.Physics.Mass);
+                        if(Math.Abs(grid.Physics.Mass) <= 0.000001f)
+                        {
+                            #region Manually compute mass for static grids
+                            if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
+                            {
+                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 since this method executes very 10 ticks
+                                prevSelectedGrid = grid.EntityId;
+
+                                var internalGrid = (MyCubeGrid)grid;
+                                float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
+                                gridMassCache = 0;
+
+                                foreach(IMySlimBlock block in internalGrid.GetBlocks())
+                                {
+                                    if(block.FatBlock != null)
+                                    {
+                                        gridMassCache += block.FatBlock.Mass;
+
+                                        var cockpit = block.FatBlock as IMyCockpit;
+                                        if(cockpit != null && cockpit.Pilot != null)
+                                        {
+                                            gridMassCache += cockpit.Pilot.BaseMass;
+                                        }
+
+                                        for(int i = block.FatBlock.InventoryCount - 1; i >= 0; --i)
+                                        {
+                                            var inv = block.FatBlock.GetInventory(i);
+
+                                            if(inv != null)
+                                                gridMassCache += (float)inv.CurrentMass * cargoMassMultiplier;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        gridMassCache += block.Mass;
+                                    }
+                                }
+                            }
+
+                            GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
+                            #endregion
+                        }
+                        else
+                        {
+                            GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(grid.Physics.Mass);
+                        }
                     }
                 }
             }
@@ -1012,17 +1086,27 @@ namespace Digi.BuildInfo.Features
             #region Integrity
             if(Config.AimInfo.IsSet(AimInfoFlags.Integrity))
             {
-                AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
-                    .IntegrityFormat(aimedBlock.Integrity).ResetColor()
-                    .Append(" / ").IntegrityFormat(aimedBlock.MaxIntegrity);
+                if(projected)
+                {
+                    var originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
-                if(def.BlockTopology == MyBlockTopology.Cube && aimedBlock.HasDeformation)
-                    GetLine().Color(COLOR_WARNING).Append(" (deformed)");
+                    AddLine().ResetColor().Append("Original integrity: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
+                        .ProportionToPercent(originalIntegrity).ResetColor();
+                }
+                else
+                {
+                    AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
+                        .IntegrityFormat(aimedBlock.Integrity).ResetColor()
+                        .Append(" / ").IntegrityFormat(aimedBlock.MaxIntegrity);
+
+                    if(def.BlockTopology == MyBlockTopology.Cube && aimedBlock.HasDeformation)
+                        GetLine().Color(COLOR_WARNING).Append(" (deformed)");
+                }
             }
             #endregion
 
             #region Optional: intake damage multiplier
-            if(Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
+            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
                 int dmgResPercent = Utilities.DamageMultiplierToResistance(aimedBlock.DamageRatio * def.GeneralDamageMultiplier);
@@ -1041,71 +1125,106 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Optional: ownership
-            if(Config.AimInfo.IsSet(AimInfoFlags.Ownership) && hasComputer)
+            if(Config.AimInfo.IsSet(AimInfoFlags.Ownership))
             {
-                var relation = (aimedBlock.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
-                var shareMode = Utilities.GetBlockShareMode(aimedBlock.FatBlock);
-
-                AddLine();
-
-                if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
-                    GetLine().Color(COLOR_BAD);
-                else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                    GetLine().Color(COLOR_OWNER);
-                else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                    GetLine().Color(COLOR_GOOD);
-                else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                    GetLine().Color(COLOR_WARNING);
-
-                if(aimedBlock.OwnerId == 0)
+                if(!projected && hasComputer)
                 {
-                    GetLine().Append("Not owned");
-                }
-                else
-                {
-                    GetLine().Append("Owner: ");
+                    var relation = (aimedBlock.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+                    var shareMode = Utilities.GetBlockShareMode(aimedBlock.FatBlock);
 
-                    // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
-                    var factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
+                    AddLine();
 
-                    if(!string.IsNullOrEmpty(factionTag))
-                        GetLine().Append(factionTag).Append('.');
-
-                    GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
-                }
-
-                GetLine().ResetColor().Separator();
-
-                if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                {
-                    GetLine().Color(COLOR_GOOD).Append("Access: All");
-                }
-                else if(shareMode == MyOwnershipShareModeEnum.All)
-                {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
+                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                        GetLine().Color(COLOR_BAD);
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                        GetLine().Color(COLOR_OWNER);
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
                         GetLine().Color(COLOR_GOOD);
-                    else
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
                         GetLine().Color(COLOR_WARNING);
 
-                    GetLine().Append("Access: All");
+                    if(aimedBlock.OwnerId == 0)
+                    {
+                        GetLine().Append("Not owned");
+                    }
+                    else
+                    {
+                        GetLine().Append("Owner: ");
+
+                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
+                        var factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
+
+                        if(!string.IsNullOrEmpty(factionTag))
+                            GetLine().Append(factionTag).Append('.');
+
+                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                    }
+
+                    GetLine().ResetColor().Separator();
+
+                    if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                    {
+                        GetLine().Color(COLOR_GOOD).Append("Access: All");
+                    }
+                    else if(shareMode == MyOwnershipShareModeEnum.All)
+                    {
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
+                            GetLine().Color(COLOR_GOOD);
+                        else
+                            GetLine().Color(COLOR_WARNING);
+
+                        GetLine().Append("Access: All");
+                    }
+                    else if(shareMode == MyOwnershipShareModeEnum.Faction)
+                    {
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                            GetLine().Color(COLOR_GOOD);
+                        else
+                            GetLine().Color(COLOR_BAD);
+
+                        GetLine().Append("Access: Faction");
+                    }
+                    else if(shareMode == MyOwnershipShareModeEnum.None)
+                    {
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                            GetLine().Color(COLOR_WARNING);
+                        else
+                            GetLine().Color(COLOR_BAD);
+
+                        GetLine().Append("Access: Owner");
+                    }
                 }
-                else if(shareMode == MyOwnershipShareModeEnum.Faction)
+                else if(projected)
                 {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                    var relation = (projectedBy.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+
+                    AddLine();
+
+                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                        GetLine().Color(COLOR_BAD);
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                        GetLine().Color(COLOR_OWNER);
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
                         GetLine().Color(COLOR_GOOD);
-                    else
-                        GetLine().Color(COLOR_BAD);
-
-                    GetLine().Append("Access: Faction");
-                }
-                else if(shareMode == MyOwnershipShareModeEnum.None)
-                {
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
                         GetLine().Color(COLOR_WARNING);
-                    else
-                        GetLine().Color(COLOR_BAD);
 
-                    GetLine().Append("Access: Owner");
+                    if(projectedBy.OwnerId == 0)
+                    {
+                        GetLine().Append("Projector not owned");
+                    }
+                    else
+                    {
+                        GetLine().Append("Projector owner: ");
+
+                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
+                        var factionTag = projectedBy.GetOwnerFactionTag();
+
+                        if(!string.IsNullOrEmpty(factionTag))
+                            GetLine().Append(factionTag).Append('.');
+
+                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(projectedBy.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                    }
                 }
             }
             #endregion
@@ -1181,7 +1300,7 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Optional: item changes on grind
-            if(Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder && !TextAPIEnabled)
+            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder && !TextAPIEnabled)
             {
                 foreach(var comp in def.Components)
                 {
@@ -1220,7 +1339,7 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Optional: ship grinder apply force
-            if(Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
 
@@ -1244,7 +1363,7 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Optional: grinder makes grid split
-            if(Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && EquipmentMonitor.IsAnyGrinder)
+            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && EquipmentMonitor.IsAnyGrinder)
             {
                 if(willSplitGrid == GridSplitType.Recalculate)
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
@@ -1308,7 +1427,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    stages = MyCubeBuilder.Static.ToolbarBlockDefinition.BlockStages;
+                    stages = MyCubeBuilder.Static?.ToolbarBlockDefinition?.BlockStages;
 
                     if(stages != null && stages.Length > 0)
                     {

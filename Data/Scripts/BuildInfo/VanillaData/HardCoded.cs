@@ -260,5 +260,8 @@ namespace Digi.BuildInfo.VanillaData
             int num2 = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(height / width)));
             return new Vector2I(textureSize, textureSize * num2);
         }
+
+        // from MyEngineerToolBase
+        public const float EngineerToolBase_DefaultReachDistance = 2f;
     }
 }

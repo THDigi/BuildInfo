@@ -19,6 +19,7 @@ namespace Digi.BuildInfo.Features.Config
         GrindGridSplit = (1 << 9),
         AddedByMod = (1 << 10),
         OverlayHint = (1 << 11),
+        Projected = (1 << 12),
     }
 
     [Flags]

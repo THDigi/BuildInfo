@@ -311,7 +311,7 @@ namespace Digi.BuildInfo.Features
                 blockFunctionalForPressure = true;
 
                 // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
-                if(aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
+                if(EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                 {
                     var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
