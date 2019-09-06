@@ -228,6 +228,10 @@ namespace Digi.BuildInfo.Features
             drawLookup.Add(blockType, call);
         }
 
+        // experimental boxless hit info getters
+        IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
+        Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
+
         public override void UpdateDraw()
         {
             if(drawOverlay == 0 || EquipmentMonitor.BlockDef == null || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible))
@@ -254,12 +258,20 @@ namespace Digi.BuildInfo.Features
                     var box = MyCubeBuilder.Static.GetBuildBoundingBox();
                     drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
 
-                    if(MyCubeBuilder.Static.DynamicMode)
+                    if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
                     {
-                        var hit = (MyCubeBuilder.Static.HitInfo as IHitInfo);
+                        //var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
 
-                        if(hit != null && hit.HitEntity is IMyVoxelBase)
-                            drawMatrix.Translation = hit.Position; // HACK: required for position to be accurate when aiming at a planet
+                        //if(hit != null && hit.HitEntity is IMyVoxelBase)
+                        //    drawMatrix.Translation = hit.Position; // HACK: required for position to be accurate when aiming at a planet
+                        //else
+                        //    drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
+
+                        // DEBUG experimental box-less hitinfo....
+                        var hitEnt = GetHitEnt(MyCubeBuilder.Static.HitInfo.Value);
+
+                        if(hitEnt != null && hitEnt is IMyVoxelBase)
+                            drawMatrix.Translation = GetHitPos(MyCubeBuilder.Static.HitInfo.Value); // HACK: required for position to be accurate when aiming at a planet
                         else
                             drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
                     }
