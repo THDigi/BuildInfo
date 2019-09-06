@@ -156,8 +156,7 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
             Add(typeof(MyObjectBuilder_HydrogenEngine), Format_HydrogenEngine);
             Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
-            // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
-            //Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
+            Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
 
             Add(typeof(MyObjectBuilder_Refinery), Format_Production);
             Add(typeof(MyObjectBuilder_Assembler), Format_Production);
@@ -325,10 +324,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
                 {
-                    if(newBlock.BlockDefinition.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
-                        currentFormatCall = Format_WindTurbine;
-                    else
-                        return; // ignore blocks that don't need stats
+                    return; // ignore blocks that don't need stats
                 }
 
                 viewedInTerminal = newBlock;
@@ -1039,7 +1035,7 @@ namespace Digi.BuildInfo.Features
             if(planet != null && planet.PositionComp.WorldAABB.Contains(position) != ContainmentType.Disjoint)
                 info.Append(planet.GetWindSpeed(position).ToString("0.##"));
             else
-                info.Append('0');
+                info.Append("N/A");
             info.NewLine();
         }
 
