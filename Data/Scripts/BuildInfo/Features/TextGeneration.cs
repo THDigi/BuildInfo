@@ -9,6 +9,7 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
 using Draygo.API;
+using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
@@ -16,6 +17,7 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -1667,6 +1669,9 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
+
+            // TODO: safe zone block when MyObjectBuilder_SafeZoneBlock and MySafeZoneBlockDefinition are whitelisted
+            //Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
         }
 
         private void Add(MyObjectBuilderType blockType, TextGenerationCall call)

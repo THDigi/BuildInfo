@@ -85,6 +85,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Category_AimInfo = AddCategory("Aim Info", Category_TextCustomize);
             ItemAdd_AimInfoToggles(Category_AimInfo);
 
+            SimpleToggle(Category_TextCustomize, "Internal Info", Config.InternalInfo);
+
             SimpleToggle(Category_Overlays, "Show when HUD is off", Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
 
@@ -125,7 +127,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_TextScale(MenuCategoryBase category)
         {
-            var item = new ItemSlider(Category_TextCustomize, "Text Scale", min: Config.TextAPIScale.Min, max: Config.TextAPIScale.Max, rounding: 2,
+            var item = new ItemSlider(category, "Text Scale", min: Config.TextAPIScale.Min, max: Config.TextAPIScale.Max, rounding: 2,
                 getter: () => Config.TextAPIScale.Value,
                 setter: (val) =>
                 {
@@ -148,7 +150,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
         {
-            var item = new ItemSlider(Category_TextCustomize, "Background Opacity", min: -0.1f, max: Config.TextAPIBackgroundOpacity.Max, rounding: 2,
+            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Config.TextAPIBackgroundOpacity.Max, rounding: 2,
                 getter: () => Config.TextAPIBackgroundOpacity.Value,
                 setter: (val) =>
                 {

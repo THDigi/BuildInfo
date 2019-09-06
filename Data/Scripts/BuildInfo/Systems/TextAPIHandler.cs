@@ -61,14 +61,21 @@ namespace Digi.BuildInfo.Systems
 
         private void TextAPIDetected()
         {
-            if(WasDetected)
+            try
             {
-                Log.Error("TextAPI sent the register event twice now! Please report to TextAPI author.", Log.PRINT_MSG);
-                return;
-            }
+                if(WasDetected)
+                {
+                    Log.Error("TextAPI sent the register event twice now! Please report to TextAPI author.", Log.PRINT_MSG);
+                    return;
+                }
 
-            WasDetected = true;
-            Detected?.Invoke();
+                WasDetected = true;
+                Detected?.Invoke();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
     }
 }
