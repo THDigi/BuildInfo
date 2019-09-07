@@ -1661,57 +1661,68 @@ namespace Digi.BuildInfo.Features
         #region Per block info
         public void InitLookups()
         {
+            TextGenerationCall action;
+
             Add(typeof(MyObjectBuilder_TerminalBlock), Format_TerminalBlock);
 
-            Add(typeof(MyObjectBuilder_Conveyor), Format_Conveyors);
-            Add(typeof(MyObjectBuilder_ConveyorConnector), Format_Conveyors);
+            action = Format_Conveyors;
+            Add(typeof(MyObjectBuilder_Conveyor), action);
+            Add(typeof(MyObjectBuilder_ConveyorConnector), action);
 
             Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
 
-            Add(typeof(MyObjectBuilder_Collector), Format_CargoAndCollector);
-            Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoAndCollector);
+            action = Format_CargoAndCollector;
+            Add(typeof(MyObjectBuilder_Collector), action);
+            Add(typeof(MyObjectBuilder_CargoContainer), action);
 
             Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
 
             Add(typeof(MyObjectBuilder_Drill), Format_Drill);
 
-            Add(typeof(MyObjectBuilder_ShipWelder), Format_WelderAndGrinder);
-            Add(typeof(MyObjectBuilder_ShipGrinder), Format_WelderAndGrinder);
+            action = Format_WelderAndGrinder;
+            Add(typeof(MyObjectBuilder_ShipWelder), action);
+            Add(typeof(MyObjectBuilder_ShipGrinder), action);
 
-            Add(typeof(MyObjectBuilder_PistonBase), Format_Piston);
-            Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
+            action = Format_Piston;
+            Add(typeof(MyObjectBuilder_PistonBase), action);
+            Add(typeof(MyObjectBuilder_ExtendedPistonBase), action);
 
-            Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
-            Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
-            Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
+            action = Format_Rotor;
+            Add(typeof(MyObjectBuilder_MotorStator), action);
+            Add(typeof(MyObjectBuilder_MotorAdvancedStator), action);
+            Add(typeof(MyObjectBuilder_MotorSuspension), action);
 
             Add(typeof(MyObjectBuilder_MergeBlock), Format_MergeBlock);
 
             Add(typeof(MyObjectBuilder_LandingGear), Format_LandingGear);
 
-            Add(typeof(MyObjectBuilder_ShipController), Format_ShipController);
-            Add(typeof(MyObjectBuilder_Cockpit), Format_ShipController);
-            Add(typeof(MyObjectBuilder_CryoChamber), Format_ShipController);
-            Add(typeof(MyObjectBuilder_RemoteControl), Format_ShipController);
+            action = Format_ShipController;
+            Add(typeof(MyObjectBuilder_ShipController), action);
+            Add(typeof(MyObjectBuilder_Cockpit), action);
+            Add(typeof(MyObjectBuilder_CryoChamber), action);
+            Add(typeof(MyObjectBuilder_RemoteControl), action);
 
             Add(typeof(MyObjectBuilder_Thrust), Format_Thrust);
 
             Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
 
-            Add(typeof(MyObjectBuilder_LightingBlock), Format_Light);
-            Add(typeof(MyObjectBuilder_InteriorLight), Format_Light);
-            Add(typeof(MyObjectBuilder_ReflectorLight), Format_Light);
+            action = Format_Light;
+            Add(typeof(MyObjectBuilder_LightingBlock), action);
+            Add(typeof(MyObjectBuilder_InteriorLight), action);
+            Add(typeof(MyObjectBuilder_ReflectorLight), action);
 
             Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
 
-            Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
-            Add(typeof(MyObjectBuilder_Projector), Format_Projector);
+            action = Format_Projector;
+            Add(typeof(MyObjectBuilder_ProjectorBase), action);
+            Add(typeof(MyObjectBuilder_Projector), action);
 
             Add(typeof(MyObjectBuilder_Door), Format_Door);
 
-            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_AirtightDoor);
-            Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_AirtightDoor);
-            Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_AirtightDoor);
+            action = Format_AirtightDoor;
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), action);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), action);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), action);
 
             Add(typeof(MyObjectBuilder_AdvancedDoor), Format_AdvancedDoor);
 
@@ -1719,24 +1730,26 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_MedicalRoom), Format_MedicalRoom);
 
-            Add(typeof(MyObjectBuilder_ProductionBlock), Format_Production);
-            Add(typeof(MyObjectBuilder_Refinery), Format_Production);
-            Add(typeof(MyObjectBuilder_Assembler), Format_Production);
-            Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
-            Add(typeof(MyObjectBuilder_GasTank), Format_Production);
-            Add(typeof(MyObjectBuilder_OxygenTank), Format_Production);
-            Add(typeof(MyObjectBuilder_OxygenGenerator), Format_Production);
+            action = Format_Production;
+            Add(typeof(MyObjectBuilder_ProductionBlock), action);
+            Add(typeof(MyObjectBuilder_Refinery), action);
+            Add(typeof(MyObjectBuilder_Assembler), action);
+            Add(typeof(MyObjectBuilder_SurvivalKit), action);
+            Add(typeof(MyObjectBuilder_GasTank), action);
+            Add(typeof(MyObjectBuilder_OxygenTank), action);
+            Add(typeof(MyObjectBuilder_OxygenGenerator), action);
 
             Add(typeof(MyObjectBuilder_OxygenFarm), Format_OxygenFarm);
 
             Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
             Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
-            Add(typeof(MyObjectBuilder_Reactor), Format_PowerProducer);
-            Add(typeof(MyObjectBuilder_HydrogenEngine), Format_PowerProducer);
-            Add(typeof(MyObjectBuilder_BatteryBlock), Format_PowerProducer);
-            Add(typeof(MyObjectBuilder_SolarPanel), Format_PowerProducer);
-            //Add(typeof(MyObjectBuilder_WindTurbine), Format_PowerProducer);
+            action = Format_PowerProducer;
+            Add(typeof(MyObjectBuilder_Reactor), action);
+            Add(typeof(MyObjectBuilder_HydrogenEngine), action);
+            Add(typeof(MyObjectBuilder_BatteryBlock), action);
+            Add(typeof(MyObjectBuilder_SolarPanel), action);
+            //Add(typeof(MyObjectBuilder_WindTurbine), action);
             // TODO: uncomment when whitelisting is fixed
 
             Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
@@ -1759,9 +1772,10 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
 
-            Add(typeof(MyObjectBuilder_GravityGeneratorBase), Format_GravityGenerator);
-            Add(typeof(MyObjectBuilder_GravityGenerator), Format_GravityGenerator);
-            Add(typeof(MyObjectBuilder_GravityGeneratorSphere), Format_GravityGenerator);
+            action = Format_GravityGenerator;
+            Add(typeof(MyObjectBuilder_GravityGeneratorBase), action);
+            Add(typeof(MyObjectBuilder_GravityGenerator), action);
+            Add(typeof(MyObjectBuilder_GravityGeneratorSphere), action);
 
             Add(typeof(MyObjectBuilder_VirtualMass), Format_ArtificialMass);
 
@@ -1769,14 +1783,15 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
 
-            Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapon);
-            Add(typeof(MyObjectBuilder_UserControllableGun), Format_Weapon);
-            Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapon);
-            Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapon);
-            Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapon);
-            Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapon);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapon);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapon);
+            action = Format_Weapon;
+            Add(typeof(MyObjectBuilder_ConveyorTurretBase), action);
+            Add(typeof(MyObjectBuilder_UserControllableGun), action);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), action);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), action);
+            Add(typeof(MyObjectBuilder_InteriorTurret), action);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), action);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), action);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
