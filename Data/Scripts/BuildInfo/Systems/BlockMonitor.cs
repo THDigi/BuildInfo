@@ -45,7 +45,15 @@ namespace Digi.BuildInfo.Systems
             if(!CanAddTypes)
                 throw new Exception("BlockMonitor can not accept monitor requests at RegisterComponent() or later.");
 
-            monitorBlockTypes.Add(blockType, callback);
+            CallbackDelegate del;
+            if(monitorBlockTypes.TryGetValue(blockType, out del))
+            {
+                monitorBlockTypes[blockType] = (CallbackDelegate)Delegate.Combine(del, callback);
+            }
+            else
+            {
+                monitorBlockTypes.Add(blockType, callback);
+            }
         }
 
         private void OnEntitySpawned(IMyEntity ent)
