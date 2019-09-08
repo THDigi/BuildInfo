@@ -1595,11 +1595,31 @@ namespace Digi.BuildInfo.Features
                 int dmgResPercent = Utilities.DamageMultiplierToResistance(def.GeneralDamageMultiplier);
 
                 if(dmgResPercent != 0)
-                    GetLine().Separator().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label("Resistance").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
+                {
+                    GetLine().Separator()
+                        .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING))
+                        .Label("Resistance").Append(dmgResPercent > 0 ? "+" : "")
+                        .Append(dmgResPercent).Append("%").ResetColor();
+                }
+            }
 
-                //if(!def.IsStandAlone)
-                //    GetLine().Separator().Color(COLOR_WARNING).Label("Not standalone");
-                // TODO add HasPhysics and IsStandAlone?
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                if(!def.IsStandAlone || !def.HasPhysics)
+                    AddLine();
+
+                if(!def.HasPhysics)
+                {
+                    GetLine().Append("No collisions");
+                }
+
+                if(!def.IsStandAlone || !def.HasPhysics)
+                {
+                    if(!def.HasPhysics)
+                        GetLine().Separator();
+
+                    GetLine().Color(COLOR_WARNING).Append("No standalone [2]");
+                }
             }
             #endregion
 

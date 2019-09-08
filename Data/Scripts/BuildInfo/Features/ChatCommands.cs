@@ -24,63 +24,67 @@ namespace Digi.BuildInfo.Features
         public const StringComparison CMD_COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
 
         private const string HELP_FORMAT =
-            "Chat commands:\n" +
-            "  /bi or /buildinfo\n" +
-            "    shows this window or menu if you're holding a block.\n" +
-            "  /bi help\n" +
-            "    shows this window.\n" +
-            "  /bi reload\n" +
-            "    reloads the config.\n" +
-            "  /bi getblock [1~9]\n" +
-            "    Picks the aimed block to be placed in toolbar.\n" +
-            "  /bi modlink\n" +
-            "    Opens steam overlay with workshop on the selected block's mod.\n" +
-            "  /bi workshop\n" +
-            "    Opens steam overlay with workshop of this mod.\n" +
-            "  /bi laserpower <km>\n" +
-            "    Calculates power needed for equipped/aimed laser antenna\n" +
-            "    at the specified range.\n" +
-            "  /bi clearcache\n" +
-            "    clears the block info cache, not for normal use.\n" +
+            "Chat commands:" +
+            "\n  /bi or /buildinfo" +
+            "\n    shows this window or menu if you're holding a block." +
+            "\n  /bi help" +
+            "\n    shows this window." +
+            "\n  /bi reload" +
+            "\n    reloads the config." +
+            "\n  /bi getblock [1~9]" +
+            "\n    Picks the aimed block to be placed in toolbar." +
+            "\n  /bi modlink" +
+            "\n    Opens steam overlay with workshop on the selected block's mod." +
+            "\n  /bi workshop" +
+            "\n    Opens steam overlay with workshop of this mod." +
+            "\n  /bi laserpower <km>" +
+            "\n    Calculates power needed for equipped/aimed laser antenna" +
+            "\n    at the specified range." +
+            "\n  /bi clearcache" +
+            "\n    clears the block info cache, not for normal use." +
             "\n" +
             "\n" +
-            "Hotkeys:\n" +
-            "  {0} show/hide menu\n" +
-            "    Can be changed in config.\n" +
-            "  {1} with block equipped/selected\n" +
-            "    Cycles overlay draw.\n" +
-            "  {2} with block equipped/selected\n" +
-            "    Toggle transparent model.\n" +
-            "  {3} with block equipped\n" +
-            "    Toggle freeze position.\n" +
+            "\nHotkeys:" +
+            "\n  {0} show/hide menu" +
+            "\n    Can be changed in config." +
+            "\n  {1} with block equipped/selected" +
+            "\n    Cycles overlay draw." +
+            "\n  {2} with block equipped/selected" +
+            "\n    Toggle transparent model." +
+            "\n  {3} with block equipped" +
+            "\n    Toggle freeze position." +
             "\n" +
             "\n" +
-            "The config is located in:\n" +
-            "%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg\n" +
+            "\nThe config is located in:" +
+            "\n%appdata%\\SpaceEngineers\\Storage\\514062285.sbm_BuildInfo\\settings.cfg" +
             "\n" +
             "\n" +
-            "The asterisks on the labels (e.g. Power usage*: 10 W) means\n" +
-            "  that the value is calculated from hardcoded values taken\n" +
-            "  from the game source, they might become inaccurate with updates.\n" +
+            "\nThe asterisks on the labels (e.g. Power usage*: 10 W) means" +
+            "\n  that the value is calculated from hardcoded values taken" +
+            "\n  from the game source, they might become inaccurate with updates." +
             "\n" +
             "\n" +
-            "Mount points & airtightness explained:\n" +
+            "\nMount points & airtightness explained:" +
             "\n" +
-            "  Mount points define areas that can be attached to other\n" +
-            "    block's mount points.\n" +
-            "  Orange mount point is the one used for auto-rotation.\n" +
+            "\n  Mount points define areas that can be attached to other" +
+            "\n    block's mount points." +
+            "\n  Orange mount point is the one used for auto-rotation." +
             "\n" +
-            "  Airtightness also uses the mount points system, if a\n" +
-            "    mount point spans accross an entire grid cell face\n" +
-            "    then that face is airtight.\n" +
+            "\n  Airtightness also uses the mount points system, if a" +
+            "\n    mount point spans accross an entire grid cell face" +
+            "\n    then that face is airtight." +
             "\n" +
             "\n" +
             "\nNumbered markings in text explained:" +
             "\n" +
-            "[1] Laser antenna power usage is linear up to 200km, after\n" +
-            "   that it's a quadratic ecuation.\n" +
-            "   To calculate it at your needed distance, hold a laser antenna\n" +
-            "   and type in chat: /bi laserpower <km>" +
+            "\n[1] Laser antenna power usage is linear up to 200km, after" +
+            "\n   that it's a quadratic ecuation." +
+            "\n   To calculate it at your needed distance, hold a laser antenna" +
+            "\n   and type in chat: /bi laserpower <km>" +
+            "\n" +
+            "\n[2] No standalone means the block can't exist as the" +
+            "\n   only block in the grid." +
+            "\n   Blocks with no collisions also have this limitation." +
             "\n";
         #endregion Constants
 
@@ -234,13 +238,14 @@ namespace Digi.BuildInfo.Features
                 Utilities.ShowColoredChatMessage(CMD_MODLINK, "No block selected/equipped.", MyFontEnum.Red);
         }
 
+        private string[] args = new string[4];
         public void ShowHelp()
         {
-            var help = string.Format(HELP_FORMAT,
-                Config.MenuBind.Value.GetBinds(),
-                Config.CycleOverlaysBind.Value.GetBinds(),
-                Config.ToggleTransparencyBind.Value.GetBinds(),
-                Config.FreezePlacementBind.Value.GetBinds());
+            args[0] = Config.MenuBind.Value.GetBinds();
+            args[1] = Config.CycleOverlaysBind.Value.GetBinds();
+            args[2] = Config.ToggleTransparencyBind.Value.GetBinds();
+            args[3] = Config.FreezePlacementBind.Value.GetBinds();
+            var help = string.Format(HELP_FORMAT, args);
 
             MyAPIGateway.Utilities.ShowMissionScreen("BuildInfo Mod", "", "Various help topics", help, null, "Close");
         }
