@@ -3202,6 +3202,21 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##"));
             }
         }
+
+        // TODO: safe zone block when MyObjectBuilder_SafeZoneBlock and MySafeZoneBlockDefinition are whitelisted
+        //private void Format_SafeZone(MyCubeBlockDefinition def)
+        //{
+        //    var safeZone = (MySafeZoneBlockDefinition)def;
+        //
+        //    PowerRequired(safeZone.MaxSafeZonePowerDrainkW / 1000f, safeZone.ResourceSinkGroup);
+        //
+        //    AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Starts at").DistanceFormat(safeZone.DefaultSafeZoneRadius);
+        //    AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
+        //    AddLine().Label("Upkeep required").TimeFormat(safeZone.SafeZoneUpkeep).Append(" zone chip").Append(safeZone.SafeZoneUpkeep ? "s" : "");
+        //    AddLine().Label("Upkeep duration").TimeFormat(safeZone.SafeZoneUpkeepTimeM / 60f);
+        //
+        //    TextSurfaces(def, safeZone.ScreenAreas);
+        //}
         #endregion
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
