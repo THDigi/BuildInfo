@@ -68,13 +68,13 @@ namespace Digi.BuildInfo.Systems
 
         /// <summary>
         /// Transforms screen coordinates to world coordinates.
-        /// <para><paramref name="textAPIcoords"/>=true => 0,0 as top-left and 1,1 as bottom-right, no negative values.</para>
-        /// <para><paramref name="textAPIcoords"/>=false => -1,-1 = bottom-left, 0,0 = center, 1,1 = top-right.</para> 
+        /// <para><paramref name="textAPIcoords"/>=true => -1,-1 = bottom-left; 0,0 = center; 1,1 = top-right.</para> 
+        /// <para><paramref name="textAPIcoords"/>=false is in game HUD coords => 0,0 = top-left; 1,1 = bottom-right, no negative values.</para>
         /// </summary>
-        public Vector3D HUDtoWorld(Vector2 hud, bool textAPIcoords = true)
+        public Vector3D HUDtoWorld(Vector2 hud, bool textAPIcoords = false)
         {
-            double hudX = (textAPIcoords ? (2.0 * hud.X - 1) : hud.X);
-            double hudY = (textAPIcoords ? (1 - 2.0 * hud.Y) : -hud.Y);
+            double hudX = (textAPIcoords ? hud.X : (2.0 * hud.X - 1));
+            double hudY = (textAPIcoords ? hud.Y : (1 - 2.0 * hud.Y));
 
             // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
             var matrix = ViewProjectionInv;
