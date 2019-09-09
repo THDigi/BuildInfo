@@ -109,7 +109,11 @@ namespace Digi.BuildInfo.Systems
             try
             {
                 var typeId = slim.BlockDefinition.Id.TypeId;
-                var callbacks = monitorBlockTypes.GetValueOrDefault(typeId, null);
+
+                List<CallbackDelegate> callbacks;
+
+                if(!monitorBlockTypes.TryGetValue(typeId, out callbacks))
+                    return;
 
                 for(int i = 0; i < callbacks.Count; ++i)
                 {
