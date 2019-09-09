@@ -10,20 +10,24 @@ namespace Digi.BuildInfo.Features.Config
     /// <summary>
     /// Loads the settings from the old settings.cfg
     /// </summary>
-    public class LegacyConfig : ClientComponent
+    public class LegacyConfig : ModComponent
     {
         private bool newConfigExists = false;
         private const string FILE = "settings.cfg";
         private readonly char[] CHARS = new char[] { '=' };
 
-        public LegacyConfig(Client mod) : base(mod)
+        public LegacyConfig(BuildInfoMod main) : base(main)
         {
             newConfigExists = MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FILE_NAME, typeof(Config));
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             LoadAndDelete();
+        }
+
+        protected override void UnregisterComponent()
+        {
         }
 
         private void LoadAndDelete()

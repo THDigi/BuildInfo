@@ -15,7 +15,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features.TurretInfo
 {
-    public class TurretHUD : ClientComponent
+    public class TurretHUD : ModComponent
     {
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
@@ -30,17 +30,17 @@ namespace Digi.BuildInfo.Features.TurretInfo
         private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
         private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
 
-        public TurretHUD(Client mod) : base(mod)
+        public TurretHUD(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             Config.Handler.SettingsLoaded += SettingsLoaded;
             SettingsLoaded();
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             Config.Handler.SettingsLoaded -= SettingsLoaded;
         }
@@ -49,16 +49,16 @@ namespace Digi.BuildInfo.Features.TurretInfo
         {
             if(Config.TurretHUD.Value)
             {
-                Flags = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
+                UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
             }
             else
             {
-                Flags = UpdateFlags.NONE;
+                UpdateMethods = UpdateFlags.NONE;
                 HideHUD();
             }
         }
 
-        public override void UpdateDraw()
+        protected override void UpdateDraw()
         {
             var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
 
@@ -91,7 +91,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
             MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             if(tick % SKIP_TICKS != 0)
                 return;
@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
             {
                 if(prevTurret != turret)
                 {
-                    tracker = Mod.TurretTracking.GetTrackerForTurret(turret);
+                    tracker = Main.TurretTracking.GetTrackerForTurret(turret);
                     prevTurret = turret;
                 }
 

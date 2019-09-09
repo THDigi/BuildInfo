@@ -11,14 +11,14 @@ namespace Digi.BuildInfo.Features.LiveData
     /// <summary>
     /// Handles grabbing and catching live block data which requires spawning a temporary grid with block to get that data from the block, because it's unavailable from definitions.
     /// </summary>
-    public class LiveDataHandler : ClientComponent
+    public class LiveDataHandler : ModComponent
     {
         public BData_Base BlockDataCache;
         public bool BlockDataCacheValid = true;
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
         public readonly HashSet<MyDefinitionId> BlockSpawnInProgress = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
-        public LiveDataHandler(Client mod) : base(mod)
+        public LiveDataHandler(BuildInfoMod main) : base(main)
         {
             AddType<BData_Collector>(typeof(MyObjectBuilder_Collector));
 
@@ -39,12 +39,12 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }

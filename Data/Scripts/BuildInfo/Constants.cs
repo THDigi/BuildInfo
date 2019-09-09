@@ -9,7 +9,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo
 {
-    public class Constants : ClientComponent
+    public class Constants : ModComponent
     {
         public readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
         public const float ASPECT_RATIO_54_FIX = 0.938f;
@@ -38,10 +38,18 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT9,
         };
 
-        public Constants(Client mod) : base(mod)
+        public Constants(BuildInfoMod main) : base(main)
         {
             ComputeCharacterSizes();
             ComputeResourceGroups();
+        }
+
+        protected override void RegisterComponent()
+        {
+        }
+
+        protected override void UnregisterComponent()
+        {
         }
 
         #region Resource group priorities

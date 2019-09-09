@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Systems
     /// <summary>
     /// Executes callbacks for registered block types.
     /// </summary>
-    public class BlockMonitor : ClientComponent
+    public class BlockMonitor : ModComponent
     {
         public bool CanAddTypes { get; private set; } = true;
 
@@ -19,11 +19,11 @@ namespace Digi.BuildInfo.Systems
 
         private readonly List<IMySlimBlock> tmpBlocks = new List<IMySlimBlock>();
 
-        public BlockMonitor(Client mod) : base(mod)
+        public BlockMonitor(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             CanAddTypes = false;
 
@@ -42,7 +42,7 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.Entities.OnEntityAdd -= EntitySpawned;
         }

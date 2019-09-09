@@ -11,7 +11,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
     /// <summary>
     /// The mod menu invoked by TextAPI
     /// </summary>
-    public class ModMenu : ClientComponent
+    public class ModMenu : ModComponent
     {
         private MenuRootCategory Category_Mod;
         private MenuCategoryBase Category_TextCustomize;
@@ -45,16 +45,16 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                                         "\nClass aptent taciti sociosqu ad litora torquent" +
                                         "\n  per conubia nostra, per inceptos himenaeos.";
 
-        public ModMenu(Client mod) : base(mod)
+        public ModMenu(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             TextAPI.Detected += TextAPI_Detected;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             TextAPI.Detected -= TextAPI_Detected;
         }

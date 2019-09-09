@@ -8,7 +8,7 @@ using VRage.Game;
 
 namespace Digi.BuildInfo.Features
 {
-    public class PickBlock : ClientComponent
+    public class PickBlock : ModComponent
     {
         private MyCubeBlockDefinition _blockDef;
         public MyCubeBlockDefinition BlockDef
@@ -17,16 +17,24 @@ namespace Digi.BuildInfo.Features
             set
             {
                 _blockDef = value;
-                SetFlag(UpdateFlags.UPDATE_AFTER_SIM, (value != null));
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (value != null));
             }
         }
 
-        public PickBlock(Client mod) : base(mod)
+        public PickBlock(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_INPUT;
+            UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
-        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        protected override void RegisterComponent()
+        {
+        }
+
+        protected override void UnregisterComponent()
+        {
+        }
+
+        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(BlockDef == null && EquipmentMonitor.AimedBlock != null && Config.BlockPickerBind.Value.IsJustPressed())
             {
@@ -59,7 +67,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 int slot = 0;
-                var controlSlots = Mod.Constants.CONTROL_SLOTS;
+                var controlSlots = Main.Constants.CONTROL_SLOTS;
 
                 // intentionally skipping 0
                 for(int i = 1; i < controlSlots.Length; ++i)
@@ -108,7 +116,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             if(BlockDef != null && tick % 5 == 0)
             {

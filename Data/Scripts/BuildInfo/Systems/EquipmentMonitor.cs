@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Systems
     /// <para>This only cares about currently controlled entities.</para>
     /// <para>Note: designed specifically for BuildInfo, not plug&play.</para>
     /// </summary>
-    public class EquipmentMonitor : ClientComponent
+    public class EquipmentMonitor : ModComponent
     {
         public event EventHandlerToolChanged ToolChanged;
         public delegate void EventHandlerToolChanged(MyDefinitionId toolDefId);
@@ -119,17 +119,17 @@ namespace Digi.BuildInfo.Systems
         private MyCasterComponent handToolCasterComp;
         private bool closedSomeUI = false;
 
-        public EquipmentMonitor(Client mod) : base(mod)
+        public EquipmentMonitor(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved += GUIControlRemoved;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved -= GUIControlRemoved;
         }
@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Systems
             closedSomeUI = true;
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             var controlled = MyAPIGateway.Session.ControlledObject;
             var shipController = controlled as IMyShipController;
@@ -381,7 +381,7 @@ namespace Digi.BuildInfo.Systems
 
                     if(!check)
                     {
-                        var controlSlots = Mod.Constants.CONTROL_SLOTS;
+                        var controlSlots = Main.Constants.CONTROL_SLOTS;
 
                         // intentionally skipping SLOT0
                         for(int i = 1; i < controlSlots.Length; ++i)

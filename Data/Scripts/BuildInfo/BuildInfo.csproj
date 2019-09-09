@@ -129,7 +129,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientComponent.cs" />
+    <Compile Include="GameSession.cs" />
+    <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
+    <Compile Include="Libraries\ComponentLib\GameSession.cs" />
+    <Compile Include="Libraries\ComponentLib\IComponent.cs" />
+    <Compile Include="Libraries\ComponentLib\IModBase.cs" />
+    <Compile Include="Libraries\ComponentLib\ModBase.cs" />
+    <Compile Include="Libraries\ComponentLib\UpdateFlags.cs" />
+    <Compile Include="Libraries\ComponentLib\UpdateFlagsExtensions.cs" />
+    <Compile Include="ModComponent.cs" />
     <Compile Include="Features\RelativeDampenerInfo.cs" />
     <Compile Include="Features\BuilderAdditions.cs" />
     <Compile Include="Features\Config\Config.cs" />
@@ -165,14 +173,9 @@
     <Compile Include="Systems\DrawUtils.cs" />
     <Compile Include="Systems\BlockMonitor.cs" />
     <Compile Include="Features\MergeFailDetector.cs" />
-    <Compile Include="Client.cs" />
     <Compile Include="BuildInfoMod.cs" />
     <Compile Include="Features\DebugEvents.cs" />
     <Compile Include="Features\PlacementDistance.cs" />
-    <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
-    <Compile Include="Libraries\ComponentLib\IComponent.cs" />
-    <Compile Include="Libraries\ComponentLib\ModBase.cs" />
-    <Compile Include="Libraries\ComponentLib\UpdateFlagsEnum.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Features\BlockInfoAdditions.cs" />
     <Compile Include="Features\ChatCommands.cs" />

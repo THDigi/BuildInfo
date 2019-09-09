@@ -1,89 +1,90 @@
-﻿using Digi.BuildInfo.Features.Config;
+﻿using Digi.BuildInfo.Features;
+using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Features.LeakInfo;
+using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.TextAPIMenu;
+using Digi.BuildInfo.Features.TurretInfo;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utils;
-using Sandbox.ModAPI;
+using Digi.ComponentLib;
 using VRage.Game.Components;
 
 namespace Digi.BuildInfo
 {
-    [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
-    public class BuildInfoMod : MySessionComponentBase
+    public class BuildInfoMod : ModBase<BuildInfoMod>
     {
         public const string MOD_NAME = "Build Info";
 
-        public static BuildInfoMod Instance;
+        public Caches Caches;
+        public Constants Constants;
 
-        public static Caches Caches => Instance.caches;
-        public static Client Client => Instance.client;
-        public static Config Config => Client.Config;
-        public static EquipmentMonitor EquipmentMonitor => Client.EquipmentMonitor;
+        // Systems
+        public DrawUtils DrawUtils;
+        public TextAPI TextAPI;
+        public GameConfig GameConfig;
+        public BlockMonitor BlockMonitor;
+        public InputLibHandler InputLibHandler;
+        public EquipmentMonitor EquipmentMonitor;
 
-        public bool Started { get; private set; }
-        public bool IsDS { get; private set; }
+        // Features
+        public Config Config;
+        public LegacyConfig LegacyConfig;
+        public ModMenu ModMenu;
+        public LeakInfo LeakInfo;
+        public Overlays Overlays;
+        public PickBlock PickBlock;
+        public QuickMenu QuickMenu;
+        public ChatCommands ChatCommands;
+        public TerminalInfo TerminalInfo;
+        public TextGeneration TextGeneration;
+        public LiveDataHandler LiveDataHandler;
+        public TurretTracking TurretTracking;
+        public TurretHUD TurretHUD;
+        public BuilderAdditions BuilderAdditions;
+        public PlacementDistance PlacementDistance;
+        public BlockInfoAdditions BlockInfoAdditions;
+        public RelativeDampenerInfo RelativeDampenerInfo;
+        public ShipToolInventoryBar ShipToolInventoryBar;
+        public DebugEvents DebugEvents;
 
-        private Client client;
-        private Caches caches;
-
-        public override void LoadData()
+        public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
         {
-            Instance = this;
-            IsDS = (MyAPIGateway.Multiplayer.IsServer && MyAPIGateway.Utilities.IsDedicated);
-            Log.ModName = MOD_NAME;
-
-            if(IsDS)
+            if(IsDedicatedServer)
                 return;
 
-            caches = new Caches();
+            session.SetUpdateOrder(MyUpdateOrder.AfterSimulation);
 
-            client = new Client();
-            client.WorldLoading();
+            Caches = new Caches(this);
+            Constants = new Constants(this);
 
-            SetUpdateOrder(MyUpdateOrder.AfterSimulation);
-        }
+            // Systems
+            DrawUtils = new DrawUtils(this);
+            TextAPI = new TextAPI(this);
+            InputLibHandler = new InputLibHandler(this);
+            GameConfig = new GameConfig(this);
+            BlockMonitor = new BlockMonitor(this);
+            EquipmentMonitor = new EquipmentMonitor(this);
 
-        public override void BeforeStart()
-        {
-            Started = true;
-
-            if(IsDS)
-                return;
-
-            client.WorldStart();
-        }
-
-        protected override void UnloadData()
-        {
-            Instance = null;
-            Started = false;
-
-            if(IsDS)
-                return;
-
-            client.WorldExit();
-        }
-
-        public override void HandleInput()
-        {
-            if(IsDS)
-                return;
-
-            client.UpdateInput();
-        }
-
-        public override void UpdateAfterSimulation()
-        {
-            if(IsDS)
-                return;
-
-            client.UpdateAfterSim();
-        }
-
-        public override void Draw()
-        {
-            if(IsDS)
-                return;
-
-            client.UpdateDraw();
+            // Features
+            Config = new Config(this);
+            LegacyConfig = new LegacyConfig(this);
+            ModMenu = new ModMenu(this);
+            LeakInfo = new LeakInfo(this);
+            Overlays = new Overlays(this);
+            PickBlock = new PickBlock(this);
+            QuickMenu = new QuickMenu(this);
+            ChatCommands = new ChatCommands(this);
+            TerminalInfo = new TerminalInfo(this);
+            TextGeneration = new TextGeneration(this);
+            LiveDataHandler = new LiveDataHandler(this);
+            TurretTracking = new TurretTracking(this);
+            TurretHUD = new TurretHUD(this);
+            BuilderAdditions = new BuilderAdditions(this);
+            PlacementDistance = new PlacementDistance(this);
+            BlockInfoAdditions = new BlockInfoAdditions(this);
+            RelativeDampenerInfo = new RelativeDampenerInfo(this);
+            ShipToolInventoryBar = new ShipToolInventoryBar(this);
+            DebugEvents = new DebugEvents(this);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Digi.BuildInfo.Systems
         BASIC = 2
     }
 
-    public class GameConfig : ClientComponent
+    public class GameConfig : ModComponent
     {
         public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);
         public event EventHandlerHudStateChanged HudStateChanged;
@@ -24,24 +24,24 @@ namespace Digi.BuildInfo.Systems
         public double AspectRatio;
         public bool RotationHints;
 
-        public GameConfig(Client mod) : base(mod)
+        public GameConfig(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
 
             UpdateConfigValues();
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             // required in simulation update because it gets the previous value if used in HandleInput()
             if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))

@@ -20,10 +20,10 @@ namespace Digi.BuildInfo.Utils
 {
     public static class StringBuilderExtensions
     {
-        private static Config Settings => BuildInfoMod.Client.Config;
-        private static Constants Constants => BuildInfoMod.Client.Constants;
-        private static TextGeneration TextGeneration => BuildInfoMod.Client.TextGeneration;
-        private static bool TextAPIEnabled => BuildInfoMod.Client.TextAPI.IsEnabled;
+        private static Config Settings => BuildInfoMod.Instance.Config;
+        private static Constants Constants => BuildInfoMod.Instance.Constants;
+        private static TextGeneration TextGeneration => BuildInfoMod.Instance.TextGeneration;
+        private static bool TextAPIEnabled => BuildInfoMod.Instance.TextAPI.IsEnabled;
 
         // HACK copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
@@ -165,7 +165,7 @@ namespace Digi.BuildInfo.Utils
 
             s.Append(": ");
 
-            var constants = BuildInfoMod.Client.Constants;
+            var constants = BuildInfoMod.Instance.Constants;
             ResourceGroupData data;
 
             if(groupId == null || !constants.resourceGroupPriority.TryGetValue(groupId, out data))

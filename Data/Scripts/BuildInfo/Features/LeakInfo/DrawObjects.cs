@@ -60,7 +60,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         public DrawReturn Draw(IMyCubeGrid grid, List<LineI> lines, Color colorWorld, Color colorOverlay, ParticleData particleData, ref Vector3D camPos, ref Vector3D camFw, ref int delayParticles, bool spawnSync)
         {
             var paused = MyParticlesManager.Paused;
-            var leakInfo = BuildInfoMod.Client.LeakInfo;
+            var leakInfo = BuildInfoMod.Instance.LeakInfo;
 
             var lineIndex = (walk < 0 ? 0 : (int)Math.Floor(walk));
             var line = lines[lineIndex];

@@ -12,7 +12,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the 
 
 namespace Digi.BuildInfo.Features
 {
-    public class ShipToolInventoryBar : ClientComponent
+    public class ShipToolInventoryBar : ModComponent
     {
         private bool show = false;
         private float filledRatio = 0f;
@@ -32,19 +32,19 @@ namespace Digi.BuildInfo.Features
         private readonly Vector4 BAR_WARN_COLOR = new Vector4(1f, 0.75f, 0f, 1f);
         private const float BAR_WARNING_ABOVE = 0.7f;
 
-        public ShipToolInventoryBar(Client mod) : base(mod)
+        public ShipToolInventoryBar(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_DRAW;
+            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features
                 {
                     skippedTicks = 0;
 
-                    if(TextAPIEnabled && Mod.Config.ShipToolInventoryBar.Value && !MyAPIGateway.Gui.IsCursorVisible)
+                    if(TextAPIEnabled && Main.Config.ShipToolInventoryBar.Value && !MyAPIGateway.Gui.IsCursorVisible)
                         ComputeFillRatio();
                 }
             }
@@ -133,9 +133,9 @@ namespace Digi.BuildInfo.Features
             return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
         }
 
-        public override void UpdateDraw()
+        protected override void UpdateDraw()
         {
-            if(!show || !TextAPIEnabled || !Mod.Config.ShipToolInventoryBar.Value || MyAPIGateway.Gui.IsCursorVisible)
+            if(!show || !TextAPIEnabled || !Main.Config.ShipToolInventoryBar.Value || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;

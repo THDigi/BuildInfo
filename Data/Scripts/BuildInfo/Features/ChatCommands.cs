@@ -9,7 +9,7 @@ using VRage.Game;
 
 namespace Digi.BuildInfo.Features
 {
-    public class ChatCommands : ClientComponent
+    public class ChatCommands : ModComponent
     {
         #region Constants
         public const string CMD_BUILDINFO = "/bi";
@@ -88,16 +88,16 @@ namespace Digi.BuildInfo.Features
             "\n";
         #endregion Constants
 
-        public ChatCommands(Client mod) : base(mod)
+        public ChatCommands(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
         }
@@ -168,7 +168,7 @@ namespace Digi.BuildInfo.Features
                 if(msg.StartsWith(CMD_GETBLOCK, CMD_COMPARE_TYPE))
                 {
                     send = false;
-                    Mod.PickBlock.ParseCommand(msg);
+                    Main.PickBlock.ParseCommand(msg);
                     return;
                 }
 
@@ -182,7 +182,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else // no arg and block equipped/selected
                     {
-                        Mod.QuickMenu.ShowMenu();
+                        Main.QuickMenu.ShowMenu();
                     }
 
                     return;

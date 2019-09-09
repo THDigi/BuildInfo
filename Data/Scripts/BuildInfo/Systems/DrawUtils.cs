@@ -5,7 +5,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Systems
 {
-    public class DrawUtils : ClientComponent
+    public class DrawUtils : ModComponent
     {
         private MatrixD _viewProjInvCache;
         private bool _viewProjInvCompute = true;
@@ -13,12 +13,20 @@ namespace Digi.BuildInfo.Systems
         private float _scaleFovCache;
         private bool _scaleFovCompute = true;
 
-        public DrawUtils(Client mod) : base(mod)
+        public DrawUtils(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_DRAW;
+            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void UpdateDraw()
+        protected override void RegisterComponent()
+        {
+        }
+
+        protected override void UnregisterComponent()
+        {
+        }
+
+        protected override void UpdateDraw()
         {
             ResetDrawCaches();
         }

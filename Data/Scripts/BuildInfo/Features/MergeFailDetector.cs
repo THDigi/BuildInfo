@@ -38,9 +38,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateOnceBeforeFrame()
         {
-            if(!BuildInfoMod.Instance.Started
-             || BuildInfoMod.Instance.IsDS
-             || block.CubeGrid?.Physics == null)
+            if(BuildInfoMod.Instance.IsDedicatedServer || block?.CubeGrid?.Physics == null)
                 return;
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
@@ -149,7 +147,7 @@ namespace Digi.BuildInfo.Features
         #region Converted vanilla code
         private void LoadDummies()
         {
-            var dummies = BuildInfoMod.Caches.Dummies;
+            var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
             foreach(var kv in dummies)

@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features
         Split,
     }
 
-    public class TextGeneration : ClientComponent
+    public class TextGeneration : ModComponent
     {
         #region Constants
         private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
@@ -132,12 +132,12 @@ namespace Digi.BuildInfo.Features
         private readonly List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>> ammoMissiles
                    = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
 
-        public TextGeneration(Client mod) : base(mod)
+        public TextGeneration(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             InitLookups();
 
@@ -150,7 +150,7 @@ namespace Digi.BuildInfo.Features
             ReCheckSide();
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             TextAPI.Detected -= TextAPI_APIDetected;
             GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
@@ -201,7 +201,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             if(textShown && textObject != null && MyAPIGateway.Gui.IsCursorVisible)
                 HideText();
@@ -794,7 +794,7 @@ namespace Digi.BuildInfo.Features
 
             for(int i = 0; i < endLength; ++i)
             {
-                if(BuildInfoMod.Client.Constants.charSize.TryGetValue(builder[i], out len))
+                if(BuildInfoMod.Instance.Constants.charSize.TryGetValue(builder[i], out len))
                     size += len;
                 else
                     size += 15;

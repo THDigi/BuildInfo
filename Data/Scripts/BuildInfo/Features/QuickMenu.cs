@@ -11,7 +11,7 @@ using VRage.Input;
 
 namespace Digi.BuildInfo.Features
 {
-    public class QuickMenu : ClientComponent
+    public class QuickMenu : ModComponent
     {
         public const int MENU_TOTAL_ITEMS = 11;
 
@@ -23,17 +23,17 @@ namespace Digi.BuildInfo.Features
         private IMyHudNotification transparencyNotification;
         private IMyHudNotification freezeGizmoNotification;
 
-        public QuickMenu(Client mod) : base(mod)
+        public QuickMenu(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_INPUT | UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
@@ -57,7 +57,7 @@ namespace Digi.BuildInfo.Features
             NeedsUpdate = true;
         }
 
-        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(inMenu)
                 return;
@@ -108,7 +108,7 @@ namespace Digi.BuildInfo.Features
                         if(EquipmentMonitor.AimedBlock != null)
                         {
                             CloseMenu();
-                            Mod.PickBlock.BlockDef = EquipmentMonitor.BlockDef;
+                            Main.PickBlock.BlockDef = EquipmentMonitor.BlockDef;
                         }
                         else
                             MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, MyFontEnum.Red);
@@ -125,16 +125,16 @@ namespace Digi.BuildInfo.Features
                         else
                         {
                             CloseMenu();
-                            Mod.ChatCommands.ShowSelectedBlocksModWorkshop();
+                            Main.ChatCommands.ShowSelectedBlocksModWorkshop();
                         }
                         break;
                     case 3:
                         CloseMenu();
-                        Mod.ChatCommands.ShowHelp();
+                        Main.ChatCommands.ShowHelp();
                         break;
                     case 4:
                         CloseMenu();
-                        Mod.ChatCommands.ShowBuildInfoWorkshop();
+                        Main.ChatCommands.ShowBuildInfoWorkshop();
                         break;
                     case 5:
                         ToggleTextInfo();

@@ -13,7 +13,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.LeakInfo
 {
-    public class LeakInfo : ClientComponent
+    public class LeakInfo : ModComponent
     {
         public bool Enabled => MyAPIGateway.Session.SessionSettings.EnableOxygenPressurization && MyAPIGateway.Session.SessionSettings.EnableOxygen;
 
@@ -62,23 +62,23 @@ namespace Digi.BuildInfo.Features.LeakInfo
             new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
         };
 
-        public LeakInfo(Client mod) : base(mod)
+        public LeakInfo(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
             ClearStatus();
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             if(selectedGrid != null && selectedGrid.Closed)
             {
@@ -306,7 +306,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         }
 
         #region Drawing
-        public override void UpdateDraw()
+        protected override void UpdateDraw()
         {
             if(Status != ThreadStatus.DRAW)
                 return;

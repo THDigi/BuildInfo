@@ -6,7 +6,7 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public abstract class BData_Base
     {
-        private static LiveDataHandler Handler => BuildInfoMod.Client.LiveDataHandler;
+        private static LiveDataHandler Handler => BuildInfoMod.Instance.LiveDataHandler;
 
         public BData_Base()
         {

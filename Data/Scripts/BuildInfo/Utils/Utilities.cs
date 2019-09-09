@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Utils
             if(def.IsAirTight.HasValue)
                 return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
 
-            var cubes = BuildInfoMod.Caches.Vector3ISet;
+            var cubes = BuildInfoMod.Instance.Caches.Vector3ISet;
             cubes.Clear();
 
             foreach(var kv in def.IsCubePressurized)

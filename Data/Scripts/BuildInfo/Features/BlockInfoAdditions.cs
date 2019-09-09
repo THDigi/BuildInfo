@@ -16,7 +16,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
-    public class BlockInfoAdditions : ClientComponent
+    public class BlockInfoAdditions : ModComponent
     {
         public readonly MyStringId LINE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Square");
         private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.PostPP;
@@ -62,17 +62,17 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public BlockInfoAdditions(Client mod) : base(mod)
+        public BlockInfoAdditions(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_DRAW | UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Features
 
             var canBuild = projectedCanBuildCached;
 
-            if(Mod.Tick % SELECT_CANBUILD_SKIP_TICKS == 0)
+            if(Main.Tick % SELECT_CANBUILD_SKIP_TICKS == 0)
                 canBuild = projectedCanBuildCached = projector.CanBuild(aimedBlock, checkHavokIntersections: true);
 
             if(canBuild == BuildCheckResult.OK) // buildable blocks already have a selection box
@@ -144,7 +144,7 @@ namespace Digi.BuildInfo.Features
             MyCubeBuilder.DrawSemiTransparentBox(aimedBlock.Min, aimedBlock.Max, grid, Color.White, onlyWireframe: true, lineMaterial: SELECT_GIZMO_RED);
         }
 
-        public override void UpdateDraw()
+        protected override void UpdateDraw()
         {
             if(GameConfig.HudState == HudState.OFF || EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;

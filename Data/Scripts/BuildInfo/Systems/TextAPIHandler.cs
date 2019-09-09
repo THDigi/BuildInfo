@@ -3,7 +3,7 @@ using Draygo.API;
 
 namespace Digi.BuildInfo.Systems
 {
-    public class TextAPI : ClientComponent
+    public class TextAPI : ModComponent
     {
         /// <summary>
         /// Triggered when TextAPI is detected.
@@ -41,16 +41,16 @@ namespace Digi.BuildInfo.Systems
         private HudAPIv2 api;
         private bool _use = true;
 
-        public TextAPI(Client mod) : base(mod)
+        public TextAPI(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             api = new HudAPIv2(TextAPIDetected);
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             api?.Close();
             api = null;

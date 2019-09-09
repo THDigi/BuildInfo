@@ -13,7 +13,7 @@ namespace Digi.BuildInfo.Features
     /// Adds the ctrl+scroll block distance adjust to in-ship mode in creative and creative tools as well as survival (ship or character).
     /// It also overwrites the behavior for creative tools to allow maximum placement distance like in creative mode.
     /// </summary>
-    public class PlacementDistance : ClientComponent
+    public class PlacementDistance : ModComponent
     {
         private const float PLACE_MINRANGE = 1;
         private const float PLACE_MAXRANGE = 50;
@@ -28,23 +28,23 @@ namespace Digi.BuildInfo.Features
         private bool SurvivalCreativeTools => MyAPIGateway.Session.SurvivalMode && MyAPIGateway.Session.EnableCopyPaste;
         private bool CreativeGameMode => MyAPIGateway.Session.CreativeMode;
 
-        public PlacementDistance(Client mod) : base(mod)
+        public PlacementDistance(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            SetFlag(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
 
             // reset survival distance if this feature is disabled
             if(EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !CreativeGameMode && !SurvivalCreativeTools)
@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(inMenu || paused || !EquipmentMonitor.IsCubeBuilder || EquipmentMonitor.BlockDef == null)
                 return;

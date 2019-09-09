@@ -23,7 +23,7 @@ using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features
 {
-    public class TerminalInfo : ClientComponent
+    public class TerminalInfo : ModComponent
     {
         #region Constants
         public const long MOD_API_ID = 514062285; // API id for other mods to use, must not be changed if you want to support the API users; see "API Information"
@@ -66,12 +66,12 @@ namespace Digi.BuildInfo.Features
             _inv2Cache = null;
         }
 
-        public TerminalInfo(Client mod) : base(mod)
+        public TerminalInfo(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             RegisterFormats();
 
@@ -80,7 +80,7 @@ namespace Digi.BuildInfo.Features
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             MyAPIGateway.Utilities.UnregisterMessageHandler(MOD_API_ID, ModMessageReceived);
 
@@ -186,7 +186,7 @@ namespace Digi.BuildInfo.Features
             formatLookup.Add(blockType, call);
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             if(powerSourcesCooldown > 0)
                 powerSourcesCooldown--;
@@ -202,7 +202,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(Mod.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
+            if(Main.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
             {
                 UpdateDetailInfo();
 
@@ -340,10 +340,10 @@ namespace Digi.BuildInfo.Features
 
         void UpdateDetailInfo(bool force = false)
         {
-            if(!force && refreshWaitForTick > Mod.Tick)
+            if(!force && refreshWaitForTick > Main.Tick)
                 return;
 
-            refreshWaitForTick = (Mod.Tick + REFRESH_MIN_TICKS);
+            refreshWaitForTick = (Main.Tick + REFRESH_MIN_TICKS);
             viewedInTerminal.RefreshCustomInfo();
         }
 

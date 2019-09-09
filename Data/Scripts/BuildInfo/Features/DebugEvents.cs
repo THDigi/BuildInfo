@@ -9,22 +9,22 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
-    public class DebugEvents : ClientComponent
+    public class DebugEvents : ModComponent
     {
-        public DebugEvents(Client mod) : base(mod)
+        public DebugEvents(BuildInfoMod main) : base(main)
         {
             //Flags |= UpdateFlags.UPDATE_INPUT;
             //Flags |= UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
             EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features
 
         //private HudAPIv2.HUDMessage debugHudMsg;
 
-        //public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        //protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         //{
         //    MyAPIGateway.Utilities.ShowMessage("DEBUG", $"HUD={MyAPIGateway.Session.Config.HudState}; MinimalHUD={MyAPIGateway.Session.Config.MinimalHud}");
 
@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features
         //HudAPIv2.SpaceMessage msg;
         //HudAPIv2.SpaceMessage shadow;
 
-        //public override void UpdateDraw()
+        //protected override void UpdateDraw()
         //{
         //    if(TextAPI.WasDetected)
         //    {

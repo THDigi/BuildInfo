@@ -9,7 +9,7 @@ using static Digi.Input.InputLib;
 
 namespace Digi.BuildInfo.Features.Config
 {
-    public class Config : ClientComponent
+    public class Config : ModComponent
     {
         public readonly ConfigHandler Handler;
 
@@ -50,12 +50,12 @@ namespace Digi.BuildInfo.Features.Config
         public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
         public const string BLOCK_PICKER_INPUT_NAME = "bi.blockPicker";
 
-        public Config(Client mod) : base(mod)
+        public Config(BuildInfoMod main) : base(main)
         {
             Handler = new ConfigHandler(FILE_NAME, CFGV_LATEST);
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             Handler.SettingsLoaded += SettingsLoaded;
 
@@ -63,6 +63,10 @@ namespace Digi.BuildInfo.Features.Config
 
             Load();
             Save();
+        }
+
+        protected override void UnregisterComponent()
+        {
         }
 
         private void SettingsLoaded()

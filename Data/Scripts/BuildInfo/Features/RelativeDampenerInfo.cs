@@ -10,7 +10,7 @@ using InternalControllableEntity = Sandbox.Game.Entities.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
 {
-    public class RelativeDampenerInfo : ClientComponent
+    public class RelativeDampenerInfo : ModComponent
     {
         private IMyHudNotification notify;
 
@@ -19,20 +19,20 @@ namespace Digi.BuildInfo.Features
 
         private StringBuilder sb = new StringBuilder(128);
 
-        public RelativeDampenerInfo(Client mod) : base(mod)
+        public RelativeDampenerInfo(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        public override void RegisterComponent()
-        {
-        }
-
-        public override void UnregisterComponent()
+        protected override void RegisterComponent()
         {
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UnregisterComponent()
+        {
+        }
+
+        protected override void UpdateAfterSim(int tick)
         {
             if(!Config.RelativeDampenerInfo.Value)
                 return;

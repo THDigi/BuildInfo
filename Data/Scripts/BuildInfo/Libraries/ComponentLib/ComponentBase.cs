@@ -1,86 +1,116 @@
-﻿using System.Collections.Generic;
-
-namespace Digi.ComponentLib
+﻿namespace Digi.ComponentLib
 {
-    public abstract class ComponentBase<T> : IComponent where T : ModBase
+    public abstract class ComponentBase<TModBase> : IComponent where TModBase : IModBase
     {
-        public readonly T Mod;
+        /// <summary>
+        /// The parent main class.
+        /// </summary>
+        public readonly TModBase Main;
 
-        private UpdateFlags _backingFlags = UpdateFlags.NONE;
-        private UpdateFlags _setNewFlags = UpdateFlags.INVALID;
-        public UpdateFlags Flags
+        /// <summary>
+        /// Defines what Update*() methods will be called.
+        /// </summary>
+        public UpdateFlags UpdateMethods
         {
-            get { return _backingFlags; }
+            get { return _flags; }
             set
             {
-                if(_setNewFlags == value)
+                if(value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM) && !Main.SessionHasBeforeSim)
+                    Log.Error($"{GetType().Name} component can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
+
+                if(value.IsSet(UpdateFlags.UPDATE_AFTER_SIM) && !Main.SessionHasAfterSim)
+                    Log.Error($"{GetType().Name} Component can't work with UPDATE_AFTER_SIM because session is not set to call it.");
+
+                if(_newFlags == value)
                     return;
 
-                if(!Mod.ComponentRefreshFlags.Contains(this))
-                    Mod.ComponentRefreshFlags.Add(this);
-
-                _setNewFlags = value;
+                Main.ComponentScheduleRefresh(this);
+                _newFlags = value;
             }
         }
+        private UpdateFlags _flags = UpdateFlags.NONE;
+        private UpdateFlags _newFlags = UpdateFlags.INVALID;
 
-        public void SetFlag(UpdateFlags flag, bool set)
+        /// <summary>
+        /// Same as <see cref="UpdateMethods"/> but simpler for toggling.
+        /// </summary>
+        /// <param name="flag">The flag to change.</param>
+        /// <param name="on">true to add, false to remove.</param>
+        public void SetUpdateMethods(UpdateFlags flag, bool on)
         {
-            if(set)
-                Flags |= flag;
+            if(on)
+                UpdateMethods = UpdateMethods | flag;
             else
-                Flags &= ~flag;
+                UpdateMethods = UpdateMethods & ~flag;
         }
 
-        public ComponentBase(T mod)
+        /// <summary>
+        /// Called in LoadData()
+        /// </summary>
+        /// <param name="main">Must be the main class.</param>
+        protected ComponentBase(TModBase main)
         {
-            Mod = mod;
-            mod.Components.Add(this);
+            Main = main;
+            Main.ComponentAdd(this);
         }
 
-        public virtual void RegisterComponent()
+        /// <summary>
+        /// Called in BeforeStart().
+        /// </summary>
+        protected abstract void RegisterComponent();
+
+        /// <summary>
+        /// Called in UnloadData().
+        /// </summary>
+        protected abstract void UnregisterComponent();
+
+        /// <summary>
+        /// Called in HandleInput(), even when game is paused.
+        /// Do not call base!
+        /// </summary>
+        protected virtual void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
+            Log.Error($"UpdateInput() is enabled but not overwritten for {GetType().Name} component!");
         }
 
-        public virtual void UnregisterComponent()
+        /// <summary>
+        /// Called in UpdateBeforeSimulation(), respects pause.
+        /// Do not call base!
+        /// </summary>
+        protected virtual void UpdateBeforeSim(int tick)
         {
+            Log.Error($"UpdateBeforeSim() is enabled but not overwritten for {GetType().Name} component!");
         }
 
-        public virtual void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        /// <summary>
+        /// Called in UpdateAfterSimulation(), respects pause.
+        /// Do not call base!
+        /// </summary>
+        protected virtual void UpdateAfterSim(int tick)
         {
+            Log.Error($"UpdateAfterSim() is enabled but not overwritten for {GetType().Name} component!");
         }
 
-        public virtual void UpdateBeforeSim(int tick)
+        /// <summary>
+        /// Called in Draw(), even when game is paused.
+        /// Do not call base!
+        /// </summary>
+        protected virtual void UpdateDraw()
         {
+            Log.Error($"UpdateDraw() is enabled but not overwritten for {GetType().Name} component!");
         }
 
-        public virtual void UpdateAfterSim(int tick)
+        void IComponent.RegisterComponent() => RegisterComponent();
+        void IComponent.UnregisterComponent() => UnregisterComponent();
+        void IComponent.UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused) => UpdateInput(anyKeyOrMouse, inMenu, paused);
+        void IComponent.UpdateBeforeSim(int tick) => UpdateBeforeSim(tick);
+        void IComponent.UpdateAfterSim(int tick) => UpdateAfterSim(tick);
+        void IComponent.UpdateDraw() => UpdateDraw();
+        void IComponent.RefreshFlags()
         {
-        }
-
-        public virtual void UpdateDraw()
-        {
-        }
-
-        public void RefreshFlags()
-        {
-            UpdateList(Mod.ComponentUpdateInput, _setNewFlags, UpdateFlags.UPDATE_INPUT);
-            //UpdateList(Mod.ComponentUpdateBeforeSim, _setNewFlags, UpdateFlags.UPDATE_BEFORE_SIM);
-            UpdateList(Mod.ComponentUpdateAfterSim, _setNewFlags, UpdateFlags.UPDATE_AFTER_SIM);
-            UpdateList(Mod.ComponentUpdateDraw, _setNewFlags, UpdateFlags.UPDATE_DRAW);
-            _backingFlags = _setNewFlags;
-            _setNewFlags = UpdateFlags.INVALID;
-        }
-
-        private void UpdateList(List<IComponent> list, UpdateFlags setFlags, UpdateFlags checkFlag)
-        {
-            if(_backingFlags.HasFlag(checkFlag) && !setFlags.HasFlag(checkFlag))
-            {
-                list.Remove(this);
-            }
-            else if(!_backingFlags.HasFlag(checkFlag) && setFlags.HasFlag(checkFlag))
-            {
-                list.Add(this);
-            }
+            Main.ComponentSetNewFlags(this, _newFlags);
+            _flags = _newFlags;
+            _newFlags = UpdateFlags.INVALID;
         }
     }
 }

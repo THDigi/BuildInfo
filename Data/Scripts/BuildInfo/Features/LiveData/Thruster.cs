@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features.LiveData
             // ThrustLengthRand = CurrentStrength * 10f * MyUtils.GetRandomFloat(0.6f, 1f) * BlockDefinition.FlameLengthScale;
             var thrustMaxLength = 10f * thrustDef.FlameLengthScale;
 
-            var dummies = BuildInfoMod.Caches.Dummies;
+            var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             Flames.Clear();
             HighestLength = 0;

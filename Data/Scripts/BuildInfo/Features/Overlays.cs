@@ -24,7 +24,7 @@ using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity
 
 namespace Digi.BuildInfo.Features
 {
-    public class Overlays : ClientComponent
+    public class Overlays : ModComponent
     {
         public int drawOverlay = 0;
         private bool anyLabelShown;
@@ -114,15 +114,15 @@ namespace Digi.BuildInfo.Features
         };
         #endregion Constants
 
-        public Overlays(Client mod) : base(mod)
+        public Overlays(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.NONE;
+            UpdateMethods = UpdateFlags.NONE;
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
             labels = new LabelData[count];
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             InitLookups();
 
@@ -132,7 +132,7 @@ namespace Digi.BuildInfo.Features
             EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
@@ -183,7 +183,7 @@ namespace Digi.BuildInfo.Features
             if(++drawOverlay >= NAMES.Length)
                 drawOverlay = 0;
 
-            SetFlag(UpdateFlags.UPDATE_DRAW, drawOverlay > 0);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, drawOverlay > 0);
             HideLabels();
 
             if(showNotification)
@@ -232,7 +232,7 @@ namespace Digi.BuildInfo.Features
         IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
         Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
 
-        public override void UpdateDraw()
+        protected override void UpdateDraw()
         {
             if(drawOverlay == 0 || EquipmentMonitor.BlockDef == null || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
                 return;

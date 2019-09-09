@@ -1,0 +1,79 @@
+﻿A mod component system designed for feature separation for code flexibility.
+
+
+Requires:
+	Log.cs also made by me, at least v1.52.
+
+
+Usage:
+
+1. Copy ComponentLib in your mod's scripts folder (I usually do /Libraries/ComponentLib).
+Don't create or edit files in the ComponentLib folder, it's designed for simple copy-paste updating.
+
+2. Create a class in your mod folder extending ModBase<T>, where T is the class you're creating.
+Then the compiler will ask you to override the constructor, in the base you can set the mod name.
+
+3. Use session.SetUpdateOrder() to define what update types to support overall. Simulation one is not supported at all.
+
+Example:
+
+namespace YourNameSpace
+{
+    public class YourMainClass : ModBase<YourMainClass>
+	{
+        public YourMainClass(GameSession session) : base("Your Mod Name", session)
+        {
+			session.SetUpdateOrder(MyUpdateOrder.AfterSimulation);
+		}
+	}
+}
+
+
+3. Create a .cs file in your mod folder with:
+
+namespace Digi.ComponentLib
+{
+    public partial class GameSession
+    {
+        void LoadMod()
+        {
+            main = new YourNameSpace.YourMainClass(this);
+        }
+    }
+}
+
+
+4. (OPTIONAL) Create an intermediary component class so that you can define fields for features for quicker access.
+Example:
+
+public abstract class ModComponent : ComponentBase<YourMainClass>
+{
+    protected SomeFeature SomeFeature => Main.SomeFeature;
+    protected SomeOtherFeature SomeOtherFeature => Main.SomeOtherFeature;
+
+    public ModComponent(YourMainClass main) : base(main)
+    {
+    }
+}
+
+
+5. IMPORTANT: Rename GameSession class to include your mod name because of this bug: https://support.keenswh.com/spaceengineers/general/topic/1-192-022modapi-session-update-broken-by-namespaceclass-sharing-in-multiple-mods
+(Yes, rename it inside the ComponentLib too, via Ctrl+R, bugs bring exceptions to rules...)
+
+
+Basic setup is done, now to add functionality:
+
+1. Create a class extending either your custom ModComponent or ComponentBase<YourMainClass>.
+
+2. Create the ctor and overrides that compiler will ask.
+
+3. Use the RegisterComponent() and UnregisterComponent() for doing initialization and cleaning up.
+Only use the ctor if you know you need something done in LoadData() (like OnEntityAdded).
+
+4. Use UpdateMethods or SetUpdateMethods() to enable/disable Update*() methods inside your component dynamically. It can be used within an update method too.
+
+5. Finally create a field in YourMainClass and an instance of the class in its constructor.
+The component will be automatically added and also will automatically call the methods from step 3.
+No manual nulling required.
+
+For working examples see my Build Info and Paint Gun mods.

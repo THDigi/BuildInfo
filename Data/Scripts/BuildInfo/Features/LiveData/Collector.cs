@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var dummies = BuildInfoMod.Caches.Dummies;
+            var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 

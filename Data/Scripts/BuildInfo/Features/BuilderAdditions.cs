@@ -1,19 +1,19 @@
 ﻿namespace Digi.BuildInfo.Features
 {
-    public class BuilderAdditions : ClientComponent
+    public class BuilderAdditions : ModComponent
     {
         //private IMyHudNotification unsupportedGridSizeNotification;
 
-        public BuilderAdditions(Client mod) : base(mod)
+        public BuilderAdditions(BuildInfoMod main) : base(main)
         {
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
             //EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             //EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
         }

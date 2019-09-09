@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
     public class AirVent : MyGameLogicComponent
     {
-        private LeakInfo LeakInfo => BuildInfoMod.Client.LeakInfo;
+        private LeakInfo LeakInfo => BuildInfoMod.Instance.LeakInfo;
 
         private IMyAirVent block;
         private bool init = false;
@@ -37,10 +37,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             {
                 if(!init)
                 {
-                    if(!BuildInfoMod.Instance.Started)
-                        return;
-
-                    if(BuildInfoMod.Instance.IsDS || block.CubeGrid.Physics == null) // ignore DS side and ghost grids
+                    if(BuildInfoMod.Instance.IsDedicatedServer || block?.CubeGrid?.Physics == null) // ignore DS side and ghost grids
                     {
                         NeedsUpdate = MyEntityUpdateEnum.NONE;
                         return;
@@ -78,7 +75,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 {
                     dummyIsSet = true;
 
-                    var dummies = BuildInfoMod.Caches.Dummies;
+                    var dummies = BuildInfoMod.Instance.Caches.Dummies;
                     dummies.Clear();
 
                     IMyModelDummy dummy;
@@ -115,17 +112,17 @@ namespace Digi.BuildInfo.Features.LeakInfo
         #region Terminal control handling
         private static bool Terminal_Enabled(IMyTerminalBlock block)
         {
-            return BuildInfoMod.Client.LeakInfo.Enabled;
+            return BuildInfoMod.Instance.LeakInfo.Enabled;
         }
 
         private static void Terminal_Setter(IMyTerminalBlock block, bool v)
         {
             try
             {
-                if(!BuildInfoMod.Instance.Started || BuildInfoMod.Instance.IsDS)
+                if(BuildInfoMod.Instance.IsDedicatedServer)
                     return;
 
-                var leakInfo = BuildInfoMod.Client.LeakInfo;
+                var leakInfo = BuildInfoMod.Instance.LeakInfo;
 
                 if(!leakInfo.Enabled)
                     return;
@@ -163,7 +160,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         private static bool Terminal_Getter(IMyTerminalBlock block)
         {
-            var leakInfo = BuildInfoMod.Client.LeakInfo;
+            var leakInfo = BuildInfoMod.Instance.LeakInfo;
             return (leakInfo.Status != ThreadStatus.IDLE);
         }
 
@@ -180,7 +177,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 str.Append('\n');
                 str.Append("Air leak scan status:\n");
 
-                var leakInfo = BuildInfoMod.Client.LeakInfo;
+                var leakInfo = BuildInfoMod.Instance.LeakInfo;
 
                 if(!leakInfo.Enabled)
                 {

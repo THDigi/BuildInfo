@@ -8,16 +8,16 @@ using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.TurretInfo
 {
-    public class TurretTracking : ClientComponent
+    public class TurretTracking : ModComponent
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private List<TurretAmmoTracker> turretTrackers = new List<TurretAmmoTracker>();
         private MyConcurrentPool<TurretAmmoTracker> trackerPool = new MyConcurrentPool<TurretAmmoTracker>(activator: () => new TurretAmmoTracker(), clear: (i) => i.Clear());
 
-        public TurretTracking(Client mod) : base(mod)
+        public TurretTracking(BuildInfoMod main) : base(main)
         {
-            Flags = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
             BlockMonitor.CallbackDelegate action = TurretAdded;
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
@@ -25,11 +25,11 @@ namespace Digi.BuildInfo.Features.TurretInfo
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
         }
 
-        public override void RegisterComponent()
+        protected override void RegisterComponent()
         {
         }
 
-        public override void UnregisterComponent()
+        protected override void UnregisterComponent()
         {
             turretTrackers.Clear();
             trackerPool.Clean();
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
             }
         }
 
-        public override void UpdateAfterSim(int tick)
+        protected override void UpdateAfterSim(int tick)
         {
             for(int i = (turretTrackers.Count - 1); i >= 0; --i)
             {
