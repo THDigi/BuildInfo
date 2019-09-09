@@ -7,6 +7,8 @@ namespace Digi.ConfigLib
     {
         public readonly bool UseAlpha;
 
+        private readonly char[] SPLIT_BY = new char[] { ',' };
+
         public ColorSetting(ConfigHandler configInstance, string name, Color defaultValue, bool useAlpha = false, params string[] commentLines)
             : base(configInstance, name, defaultValue, commentLines)
         {
@@ -18,7 +20,7 @@ namespace Digi.ConfigLib
             error = null;
 
             byte r, g, b, a;
-            var split = value.Split(',');
+            var split = value.Split(SPLIT_BY);
             if(split.Length >= 3 && byte.TryParse(split[0], out r) && byte.TryParse(split[1], out g) && byte.TryParse(split[2], out b))
             {
                 a = 255; // default alpha if not defined
@@ -28,7 +30,8 @@ namespace Digi.ConfigLib
                     return;
                 }
             }
-            error = "expected format: 0.0, 0.0";
+
+            error = "expected format: R,G,B or R,G,B,A";
         }
 
         public override void WriteValue(StringBuilder output)
