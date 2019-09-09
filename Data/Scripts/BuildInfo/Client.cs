@@ -3,6 +3,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.TextAPIMenu;
+using Digi.BuildInfo.Features.TurretInfo;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 
@@ -32,7 +33,8 @@ namespace Digi.BuildInfo
         public TerminalInfo TerminalInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
-        public TurretAmmoPrint TurretAmmoPrint;
+        public TurretTracking TurretTracking;
+        public TurretHUD TurretHUD;
         public BuilderAdditions BuilderAdditions;
         public PlacementDistance PlacementDistance;
         public BlockInfoAdditions BlockInfoAdditions;
@@ -64,7 +66,8 @@ namespace Digi.BuildInfo
             TerminalInfo = new TerminalInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
-            TurretAmmoPrint = new TurretAmmoPrint(this);
+            TurretTracking = new TurretTracking(this);
+            TurretHUD = new TurretHUD(this);
             BuilderAdditions = new BuilderAdditions(this);
             PlacementDistance = new PlacementDistance(this);
             BlockInfoAdditions = new BlockInfoAdditions(this);

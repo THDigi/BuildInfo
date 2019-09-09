@@ -92,7 +92,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             SimpleToggle(Category_HUD, "Block Info Stages", Config.BlockInfoStages);
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
-            SimpleToggle(Category_HUD, "Turret Ammo Count", Config.TurretAmmo);
+            SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
 
             new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));

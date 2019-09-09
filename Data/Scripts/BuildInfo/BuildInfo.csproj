@@ -148,11 +148,13 @@
     <Compile Include="Features\TextAPIMenu\ItemToggle.cs" />
     <Compile Include="Features\TextAPIMenu\ItemGroup.cs" />
     <Compile Include="Features\TextAPIMenu\ModMenu.cs" />
+    <Compile Include="Features\TurretInfo\TurretAmmoTracker.cs" />
+    <Compile Include="Features\TurretInfo\TurretTracking.cs" />
     <Compile Include="Libraries\ConfigLib\BoolSetting.cs" />
     <Compile Include="Libraries\ConfigLib\FlagsSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ColorSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ConfigHandler.cs" />
-    <Compile Include="Features\TurretAmmoPrint.cs" />
+    <Compile Include="Features\TurretInfo\TurretHUD.cs" />
     <Compile Include="Features\Config\InputCombinationSetting.cs" />
     <Compile Include="Libraries\ConfigLib\IntegerSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ISetting.cs" />

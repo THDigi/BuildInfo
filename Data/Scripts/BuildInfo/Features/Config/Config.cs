@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features.Config
         public FlagsSetting<AimInfoFlags> AimInfo;
         public BoolSetting BlockInfoStages;
         public BoolSetting ShipToolInventoryBar;
-        public BoolSetting TurretAmmo;
+        public BoolSetting TurretHUD;
         public BoolSetting RelativeDampenerInfo;
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
@@ -132,8 +132,9 @@ namespace Digi.BuildInfo.Features.Config
             ShipToolInventoryBar = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship tool is selected.");
 
-            TurretAmmo = new BoolSetting(Handler, "HUD: Turret Ammo", true,
-                "Shows total ammo that's in the turret when controlling one.");
+            // TODO: allow renaming of settings by specifying older names to read aswell.
+            TurretHUD = new BoolSetting(Handler, "HUD: Turret Ammo", true,
+                "Shows turret ammo and some ship stats because the entire HUD is missing.");
 
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
