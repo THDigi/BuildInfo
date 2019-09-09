@@ -17,7 +17,9 @@ namespace Digi.BuildInfo
 
         public readonly MyStringHash COMPUTER_COMPONENT_NAME = MyStringHash.GetOrCompute("Computer");
 
-        public const bool BLOCKPICKER_IN_MP = false; // FIXME pick block temporarily disabled in MP due to: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect
+        public const bool BLOCKPICKER_IN_MP = false; // FIXME now block picker does nothing in MP, see comments in: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect
+        public const string BLOCKPICKER_DISABLED_CONFIG = "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect";
+        public const string BLOCKPICKER_DISABLED_CHAT = "Pick block feature disabled in MP because of issues, see workshop page for details.";
 
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {

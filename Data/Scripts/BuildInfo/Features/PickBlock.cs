@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
-                    Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                    Utilities.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                     return;
                 }
 
@@ -56,7 +56,7 @@ namespace Digi.BuildInfo.Features
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     PickedBlockDef = null;
-                    Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                    Utilities.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                     return;
                 }
 
@@ -131,7 +131,7 @@ namespace Digi.BuildInfo.Features
         {
             if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
             {
-                Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
+                Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                 return;
             }
 

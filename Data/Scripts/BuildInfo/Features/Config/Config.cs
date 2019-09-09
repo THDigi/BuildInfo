@@ -205,7 +205,7 @@ namespace Digi.BuildInfo.Features.Config
             BlockPickerBind = new InputCombinationSetting(Handler, "Bind: Block Picker", Combination.Create(BLOCK_PICKER_INPUT_NAME, "ctrl c.cubesizemode"),
                 "The bind for adding the aimed block to the toolbar.",
                 "NOTE: It does request a number press afterwards.",
-                (!Constants.BLOCKPICKER_IN_MP ? "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect" : ""));
+                (!Constants.BLOCKPICKER_IN_MP ? Constants.BLOCKPICKER_DISABLED_CONFIG : ""));
 
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",

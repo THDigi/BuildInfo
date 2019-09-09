@@ -1,35 +1,106 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Systems;
+using Digi.ComponentLib;
 using Draygo.API;
+using ProtoBuf;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    //[ProtoContract]
+    //public class TestPacket
+    //{
+    //    [ProtoMember(1)]
+    //    public long IdentityId;
+    //
+    //    [ProtoMember(2)]
+    //    public string BlockId;
+    //
+    //    [ProtoMember(3)]
+    //    public int Slot;
+    //
+    //    public TestPacket() { }
+    //}
+
+
+    //var packet = new TestPacket();
+    //packet.IdentityId = MyAPIGateway.Session.Player.IdentityId;
+    //packet.BlockId = PickedBlockDef.Id.ToString();
+    //packet.Slot = (slot - 1);
+    //MyAPIGateway.Multiplayer.SendMessageToServer(1337, MyAPIGateway.Utilities.SerializeToBinary(packet));
+
+
     public class DebugEvents : ModComponent
     {
         public DebugEvents(BuildInfoMod main) : base(main)
         {
-            //Flags |= UpdateFlags.UPDATE_INPUT;
-            //Flags |= UpdateFlags.UPDATE_DRAW;
         }
 
         protected override void RegisterComponent()
         {
-            //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            if(Main.IsPlayer)
+            {
+                //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+                //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+                EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+
+                //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
+            }
+
+            //if(MyAPIGateway.Multiplayer.IsServer)
+            //{
+            //    MyAPIGateway.Multiplayer.RegisterMessageHandler(1337, ReceivedPacket);
+            //}
         }
 
         protected override void UnregisterComponent()
         {
-            //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            if(Main.IsPlayer)
+            {
+                //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+                //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+                EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+
+                //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
+            }
+
+            //if(MyAPIGateway.Multiplayer.IsServer)
+            //{
+            //    MyAPIGateway.Multiplayer.UnregisterMessageHandler(1337, ReceivedPacket);
+            //}
         }
+
+        //void ReceivedPacket(byte[] rawData)
+        //{
+        //    try
+        //    {
+        //        var packet = MyAPIGateway.Utilities.SerializeFromBinary<TestPacket>(rawData);
+        //
+        //        if(packet == null)
+        //            return;
+        //
+        //        MyLog.Default.WriteLineAndConsole($"### DEBUG: Received packet for identity={packet.IdentityId}; blockId={packet.BlockId}; slot={packet.Slot}");
+        //
+        //        var blockDefId = MyDefinitionId.Parse(packet.BlockId);
+        //        MyVisualScriptLogicProvider.SetToolbarSlotToItem(packet.Slot - 1, blockDefId, packet.IdentityId);
+        //    }
+        //    catch(Exception e)
+        //    {
+        //        Log.Error(e);
+        //    }
+        //}
+
+        //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
+        //{
+        //    MyAPIGateway.Utilities.ShowNotification($"entId={entityId.ToString()}; id={typeId}/{subtypeId}; page={page.ToString()}; slot={slot.ToString()}", 5000);
+        //}
 
         //private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         //{
