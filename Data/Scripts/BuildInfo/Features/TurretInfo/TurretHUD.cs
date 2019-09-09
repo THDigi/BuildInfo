@@ -37,6 +37,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
         public override void RegisterComponent()
         {
             Config.Handler.SettingsLoaded += SettingsLoaded;
+            SettingsLoaded();
         }
 
         public override void UnregisterComponent()
