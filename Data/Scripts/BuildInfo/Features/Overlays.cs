@@ -290,7 +290,7 @@ namespace Digi.BuildInfo.Features
                     drawMatrix = m * aimedBlock.CubeGrid.WorldMatrix;
                     drawMatrix.Translation = center;
                 }
-                #endregion
+                #endregion DrawMatrix and other needed data
 
                 #region Draw mount points
                 var cellSize = EquipmentMonitor.BlockGridSize;
@@ -389,7 +389,7 @@ namespace Digi.BuildInfo.Features
                         }
                     }
                 }
-                #endregion
+                #endregion Draw mount points
 
                 // draw per-block overlays
                 selectedOverlayCall?.Invoke(def, drawMatrix);
@@ -754,7 +754,7 @@ namespace Digi.BuildInfo.Features
                 DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area", lineHeight: 0.5f);
             }
         }
-        #endregion
+        #endregion Block-specific overlays
 
         #region Draw helpers
         private StringBuilder label = new StringBuilder(128);
@@ -871,6 +871,6 @@ namespace Digi.BuildInfo.Features
             var text = AXIS_LABELS[(int)id];
             DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f);
         }
-        #endregion
+        #endregion Draw helpers
     }
 }

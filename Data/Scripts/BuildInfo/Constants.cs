@@ -92,7 +92,7 @@ namespace Digi.BuildInfo
             public MyResourceDistributionGroupDefinition def;
             public int priority;
         }
-        #endregion
+        #endregion Resource group priorities
 
         #region Character sizes for padding HUD notifications
         public readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
@@ -141,6 +141,6 @@ namespace Digi.BuildInfo
                 charSize.Add(chars[i], size);
             }
         }
-        #endregion
+        #endregion Character sizes for padding HUD notifications
     }
 }

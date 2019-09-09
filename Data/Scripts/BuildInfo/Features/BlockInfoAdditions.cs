@@ -195,7 +195,7 @@ namespace Digi.BuildInfo.Features
                     MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
                 }
             }
-            #endregion
+            #endregion Block info addition background
 #endif
 
             #region Lines on top of block info
@@ -301,7 +301,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Lines on top of block info
         }
     }
 }

@@ -18,8 +18,8 @@ using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRageMath;
-using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
+using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features
 {
@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Features
         private const int REFRESH_MIN_TICKS = 30; // minimum amount of ticks between refresh calls
 
         private readonly string[] tickerText = { "–––", "•––", "–•–", "––•" };
-        #endregion
+        #endregion Constants
 
         private IMyTerminalBlock viewedInTerminal;
         private int delayCursorCheck = 0;
@@ -903,7 +903,7 @@ namespace Digi.BuildInfo.Features
 
             return false;
         }
-        #endregion
+        #endregion ShipController extra stuff
 
         void Format_Rotor(IMyTerminalBlock block, StringBuilder info)
         {
@@ -1257,7 +1257,7 @@ namespace Digi.BuildInfo.Features
                 info.Append("Scripter role is required to use in-game scripts.\n");
             }
         }
-        #endregion
+        #endregion Text formatting per block type
 
         // called when another mod uses this mod's API, for details see "API Information" file.
         void ModMessageReceived(object obj)

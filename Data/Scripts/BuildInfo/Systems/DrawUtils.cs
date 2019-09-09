@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Systems
 
         /// <summary>
         /// Transforms screen coordinates to world coordinates.
-        /// <para><paramref name="textAPIcoords"/>=true => -1,-1 = bottom-left; 0,0 = center; 1,1 = top-right.</para> 
+        /// <para><paramref name="textAPIcoords"/>=true => -1,-1 = bottom-left; 0,0 = center; 1,1 = top-right.</para>
         /// <para><paramref name="textAPIcoords"/>=false is in game HUD coords => 0,0 = top-left; 1,1 = bottom-right, no negative values.</para>
         /// </summary>
         public Vector3D HUDtoWorld(Vector2 hud, bool textAPIcoords = false)

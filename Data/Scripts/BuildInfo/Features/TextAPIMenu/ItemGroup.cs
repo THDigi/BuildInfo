@@ -32,5 +32,4 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             }
         }
     }
-
 }

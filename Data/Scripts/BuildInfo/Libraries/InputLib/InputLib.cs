@@ -15,7 +15,7 @@ namespace Digi.Input
 {
     /// <summary>
     /// <para>Usage: create an instance in BeforeStart(); call Update() in any simulation update; Dispose() in UnloadData().</para>
-    /// </summary> 
+    /// </summary>
     public class InputLib : IDisposable
     {
         #region Input combination inner class
@@ -99,7 +99,7 @@ namespace Digi.Input
                 error = null;
                 return combination;
             }
-            #endregion
+            #endregion Factory static methods
 
             private readonly List<InputBase> inputs = null;
             public readonly string CombinationString;
@@ -229,7 +229,7 @@ namespace Digi.Input
                 return (string.IsNullOrWhiteSpace(CombinationString) ? "<Unassigned>" : CombinationString);
             }
         }
-        #endregion
+        #endregion Input combination inner class
 
         public const string MOUSE_PREFIX = "m.";
         public const string GAMEPAD_PREFIX = "g.";
@@ -368,7 +368,7 @@ namespace Digi.Input
             AddInput(MyKeys.PageDown, null, "Page Down");
             AddInput(MyKeys.ScrollLock, null, "Scroll Lock");
             AddInput(MyKeys.Pause);
-            #endregion
+            #endregion Keyboard inputs
 
             #region Mouse inputs
             AddInput(MyMouseButtonsEnum.Left, MOUSE_PREFIX + "left", "Mouse LeftClick");
@@ -386,7 +386,7 @@ namespace Digi.Input
             AddInput(new InputMouseXNeg());
             AddInput(new InputMouseYPos());
             AddInput(new InputMouseYNeg());
-            #endregion
+            #endregion Mouse inputs
 
             #region Gamepad inputs
             AddInput(MyJoystickButtonsEnum.J01, GAMEPAD_PREFIX + "a", printChar: '\xe001');
@@ -440,7 +440,7 @@ namespace Digi.Input
 
             AddInput(MyJoystickAxesEnum.Slider2pos, GAMEPAD_PREFIX + "slider2+");
             AddInput(MyJoystickAxesEnum.Slider2neg, GAMEPAD_PREFIX + "slider2-");
-            #endregion
+            #endregion Gamepad inputs
 
             #region Game controls inputs
             AddInput(new InputGameControlMovement());
@@ -531,7 +531,7 @@ namespace Digi.Input
             //Control PRIMARY_BUILD_ACTION doesn't exist.
             //Control SECONDARY_BUILD_ACTION doesn't exist.
             //Control COPY_PASTE_ACTION doesn't exist.
-            #endregion
+            #endregion Game controls inputs
         }
 
         public void Dispose()
@@ -559,7 +559,7 @@ namespace Digi.Input
                 }
             }
         }
-        #endregion
+        #endregion Required methods
 
         #region Public methods
         public void AddCustomInput(InputCustomBase custom)
@@ -569,7 +569,7 @@ namespace Digi.Input
 
             inputs.Add(custom.Id, custom);
         }
-        #endregion
+        #endregion Public methods
 
         #region Public static methods
         public static bool IsInputReadable() => !MyAPIGateway.Gui.ChatEntryVisible && !MyAPIGateway.Gui.IsCursorVisible;
@@ -773,7 +773,7 @@ namespace Digi.Input
 
             str.AppendLine().Append(commentPrefix);
         }
-        #endregion
+        #endregion Public static methods
 
         #region Private AddInput()
         private void AddInput(MyKeys key, string id = null, string displayName = null)
@@ -836,7 +836,7 @@ namespace Digi.Input
         {
             inputs.Add(custom.Id, custom);
         }
-        #endregion
+        #endregion Private AddInput()
 
         #region Private utils
         private string GetFirstUpper(string id)
@@ -848,7 +848,7 @@ namespace Digi.Input
         {
             return char.ToUpper(id[2]) + id.Substring(3);
         }
-        #endregion
+        #endregion Private utils
 
         #region Dev tools
         /// <summary>
@@ -1063,6 +1063,6 @@ namespace Digi.Input
                 output.AppendLine($"    {kv.Key} => {string.Join(", ", kv.Value)}");
             }
         }
-        #endregion
+        #endregion Dev tools
     }
 }

@@ -244,7 +244,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             var s = Vector3I.Min(max - p, p - min);
             return Math.Min(s.X, Math.Min(s.Y, s.Z));
         }
-        #endregion
+        #endregion Pathfinding
 
         private void ThreadFinished()
         {
@@ -367,6 +367,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             return (((camPos.X * point.X + camPos.Y * point.Y + camPos.Z * point.Z) - (camPos.X * camFw.X + camPos.Y * camFw.Y + camPos.Z * camFw.Z)) > 0);
         }
-        #endregion
+        #endregion Drawing
     }
 }

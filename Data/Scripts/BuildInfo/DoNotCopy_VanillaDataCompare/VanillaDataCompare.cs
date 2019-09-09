@@ -341,6 +341,6 @@ namespace Digi.BuildInfo
 
             return literal.ToString();
         }
-        #endregion
+        #endregion Vanilla detail info check
     }
 }

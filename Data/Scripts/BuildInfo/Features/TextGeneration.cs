@@ -85,7 +85,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
         public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
         public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
-        #endregion
+        #endregion Constants
 
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public bool textShown = false;
@@ -422,7 +422,7 @@ namespace Digi.BuildInfo.Features
             }
 
             textObject.Flush();
-            #endregion
+            #endregion Update text and count lines
 
             var textPos = Vector2D.Zero;
             var textOffset = Vector2D.Zero;
@@ -911,7 +911,7 @@ namespace Digi.BuildInfo.Features
 
             EndAddedLines();
         }
-        #endregion
+        #endregion Menu generation
 
         #region Aimed block info generation
         public void GenerateAimBlockText(MyCubeBlockDefinition def)
@@ -949,7 +949,7 @@ namespace Digi.BuildInfo.Features
                     AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetColor();
                 }
             }
-            #endregion
+            #endregion Block name
 
             #region Internal info
             if(Config.InternalInfo.Value)
@@ -958,7 +958,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
             }
-            #endregion
+            #endregion Internal info
 
             #region Projector info and status
             if(projected && Config.AimInfo.IsSet(AimInfoFlags.Projected))
@@ -996,7 +996,7 @@ namespace Digi.BuildInfo.Features
                         break;
                 }
             }
-            #endregion
+            #endregion Projector info and status
 
             #region Mass, grid mass
             if(Config.AimInfo.IsSet(AimInfoFlags.Mass))
@@ -1070,7 +1070,7 @@ namespace Digi.BuildInfo.Features
                             }
 
                             GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
-                            #endregion
+                            #endregion Manually compute mass for static grids
                         }
                         else
                         {
@@ -1079,7 +1079,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Mass, grid mass
 
             #region Integrity
             if(Config.AimInfo.IsSet(AimInfoFlags.Integrity))
@@ -1101,7 +1101,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(COLOR_WARNING).Append(" (deformed)");
                 }
             }
-            #endregion
+            #endregion Integrity
 
             #region Optional: intake damage multiplier
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
@@ -1120,7 +1120,7 @@ namespace Digi.BuildInfo.Features
 
                 // TODO impact resistance? wheels in particular...
             }
-            #endregion
+            #endregion Optional: intake damage multiplier
 
             #region Optional: ownership
             if(Config.AimInfo.IsSet(AimInfoFlags.Ownership))
@@ -1225,7 +1225,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Optional: ownership
 
             #region Time to complete/grind
             if(Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
@@ -1295,7 +1295,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Time to complete/grind
 
             #region Optional: item changes on grind
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder && !TextAPIEnabled)
@@ -1308,7 +1308,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Optional: item changes on grind
 
             #region Optional: grid moving
             if(Config.AimInfo.IsSet(AimInfoFlags.GridMoving) && grid.Physics != null)
@@ -1334,7 +1334,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Optional: grid moving
 
             #region Optional: ship grinder apply force
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
@@ -1358,7 +1358,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Optional: ship grinder apply force
 
             #region Optional: grinder makes grid split
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && EquipmentMonitor.IsAnyGrinder)
@@ -1371,7 +1371,7 @@ namespace Digi.BuildInfo.Features
 
                 // TODO find if split blocks will vanish due to no physics/no standalone
             }
-            #endregion
+            #endregion Optional: grinder makes grid split
 
             #region Optional: added by mod
             var context = def.Context;
@@ -1391,18 +1391,18 @@ namespace Digi.BuildInfo.Features
                     AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(context);
                 }
             }
-            #endregion
+            #endregion Optional: added by mod
 
             #region Overlay hints
             if(Config.AimInfo.IsSet(AimInfoFlags.OverlayHint))
             {
                 AddOverlaysHint(def);
             }
-            #endregion
+            #endregion Overlay hints
 
             EndAddedLines();
         }
-        #endregion
+        #endregion Aimed block info generation
 
         #region Equipped block info generation
         public void GenerateBlockText(MyCubeBlockDefinition def)
@@ -1444,7 +1444,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Block name line only for textAPI
 
             #region Internal info
             if(Config.InternalInfo.Value)
@@ -1453,7 +1453,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
             }
-            #endregion
+            #endregion Internal info
 
             AppendBasics(def, part: false);
 
@@ -1468,12 +1468,12 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion
+            #endregion Optional - different item gain on grinding
 
             // TODO use? not sure if useful...
             //if(def.VoxelPlacement.HasValue)
             //{
-            //    // Comment from definition: 
+            //    // Comment from definition:
             //    // <!--Possible settings Both,InVoxel,OutsideVoxel,Volumetric. If volumetric set than MaxAllowed and MinAllowed will be used.-->
             //
             //    var vp = def.VoxelPlacement.Value;
@@ -1503,7 +1503,7 @@ namespace Digi.BuildInfo.Features
                         AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)");
                 }
             }
-            #endregion
+            #endregion Optional - creative-only stuff
 
             #region Per-block info
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
@@ -1519,25 +1519,25 @@ namespace Digi.BuildInfo.Features
                     Format_PowerProducer(def);
                 }
             }
-            #endregion
+            #endregion Per-block info
 
             #region Added by mod
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
                 AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
             }
-            #endregion
+            #endregion Added by mod
 
             #region Overlay hints
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.OverlayHint))
             {
                 AddOverlaysHint(def);
             }
-            #endregion
+            #endregion Overlay hints
 
             EndAddedLines();
         }
-        #endregion
+        #endregion Equipped block info generation
 
         #region Shared generation methods
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
@@ -1577,7 +1577,7 @@ namespace Digi.BuildInfo.Features
                 if(!buildModels)
                     GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
             }
-            #endregion
+            #endregion Mass/size/build time/deconstruct time/no models
 
             #region Integrity, deformable, damage intake
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
@@ -1621,7 +1621,7 @@ namespace Digi.BuildInfo.Features
                     GetLine().Color(COLOR_WARNING).Append("No standalone [2]");
                 }
             }
-            #endregion
+            #endregion Integrity, deformable, damage intake
 
             #region Airtightness
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
@@ -1674,9 +1674,9 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
                 }
             }
-            #endregion
+            #endregion Airtightness
         }
-        #endregion
+        #endregion Shared generation methods
 
         #region Per block info
         public void InitLookups()
@@ -1879,7 +1879,7 @@ namespace Digi.BuildInfo.Features
 
             InventoryStats(def, sorter.InventorySize.Volume, 0);
         }
-        #endregion
+        #endregion Conveyors
 
         private void Format_Piston(MyCubeBlockDefinition def)
         {
@@ -2034,7 +2034,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
         }
-        #endregion
+        #endregion Ship tools
 
         private void Format_ShipController(MyCubeBlockDefinition def)
         {
@@ -2303,7 +2303,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Move time - Opening").TimeFormat(openTime).Separator().Label("Closing").TimeFormat(closeTime);
             }
         }
-        #endregion
+        #endregion Doors
 
         private void Format_Parachute(MyCubeBlockDefinition def)
         {
@@ -2764,7 +2764,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
         }
-        #endregion
+        #endregion Production
 
         #region Communication
         private void Format_RadioAntenna(MyCubeBlockDefinition def)
@@ -2822,7 +2822,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius);
             }
         }
-        #endregion
+        #endregion Communication
 
         private void Format_Timer(MyCubeBlockDefinition def)
         {
@@ -3014,7 +3014,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
             }
         }
-        #endregion
+        #endregion Magic blocks
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
@@ -3212,7 +3212,7 @@ namespace Digi.BuildInfo.Features
         //
         //    TextSurfaces(def, safeZone.ScreenAreas);
         //}
-        #endregion
+        #endregion Per block info
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
@@ -3446,6 +3446,6 @@ namespace Digi.BuildInfo.Features
             public string font;
             public int lineWidthPx;
         }
-        #endregion
+        #endregion Classes for storing generated info
     }
 }

@@ -406,7 +406,7 @@ namespace Digi.BuildInfo.Systems
                     }
                 }
             }
-            #endregion
+            #endregion Check if any toolbar slot or next/prev was pressed
 
             if(!check)
                 return;

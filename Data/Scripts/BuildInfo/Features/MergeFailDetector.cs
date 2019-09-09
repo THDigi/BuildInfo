@@ -269,6 +269,6 @@ namespace Digi.BuildInfo.Features
             public float StrengthFactor;
             public Vector3 RelativeVelocity;
         }
-        #endregion
+        #endregion Converted vanilla code
     }
 }

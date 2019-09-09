@@ -157,7 +157,7 @@ namespace Digi.Input.Devices
             NullControl(ControlContext.VOXEL_EDIT, MyControlsSpace.PRIMARY_BUILD_ACTION);
             NullControl(ControlContext.VOXEL_EDIT, MyControlsSpace.SECONDARY_BUILD_ACTION);
         }
-        #endregion
+        #endregion Binding methods
 
         #region Private binding adding methods
         private void AddContext(ControlContext contextId, ControlContext parentContextId = ControlContext.NONE)
@@ -183,7 +183,7 @@ namespace Digi.Input.Devices
         {
             contexts[(int)contextId][controlId] = null;
         }
-        #endregion
+        #endregion Private binding adding methods
 
         public interface IControl
         {

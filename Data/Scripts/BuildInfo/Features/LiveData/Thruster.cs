@@ -87,7 +87,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     if(hitDist.HasValue)
                         length += (hitDist.Value - RAY_OFFSET);
-                    #endregion
+                    #endregion calculating damage line from block bounding box
 
                     HighestLength = Math.Max(HighestLength, length);
                     HighestRadius = Math.Max(HighestRadius, radius);

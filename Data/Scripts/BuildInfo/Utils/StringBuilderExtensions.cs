@@ -791,6 +791,6 @@ namespace Digi.BuildInfo.Utils
 
             return s;
         }
-        #endregion
+        #endregion Detailed info formats
     }
 }

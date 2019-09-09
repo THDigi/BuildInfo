@@ -216,6 +216,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 Log.Error(e);
             }
         }
-        #endregion
+        #endregion Terminal control handling
     }
 }
