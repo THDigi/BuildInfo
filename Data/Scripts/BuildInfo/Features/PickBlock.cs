@@ -10,8 +10,10 @@ namespace Digi.BuildInfo.Features
 {
     public class PickBlock : ModComponent
     {
-        private MyCubeBlockDefinition _blockDef;
-        public MyCubeBlockDefinition BlockDef
+        /// <summary>
+        /// Setting this will cause the mod to ask for a slot input as to where to place the block, if not null.
+        /// </summary>
+        public MyCubeBlockDefinition PickedBlockDef
         {
             get { return _blockDef; }
             set
@@ -20,6 +22,7 @@ namespace Digi.BuildInfo.Features
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (value != null));
             }
         }
+        private MyCubeBlockDefinition _blockDef;
 
         public PickBlock(BuildInfoMod main) : base(main)
         {
@@ -36,7 +39,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(BlockDef == null && EquipmentMonitor.AimedBlock != null && Config.BlockPickerBind.Value.IsJustPressed())
+            if(PickedBlockDef == null && EquipmentMonitor.AimedBlock != null && Config.BlockPickerBind.Value.IsJustPressed())
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
@@ -44,22 +47,22 @@ namespace Digi.BuildInfo.Features
                     return;
                 }
 
-                BlockDef = EquipmentMonitor.BlockDef;
+                PickedBlockDef = EquipmentMonitor.BlockDef;
             }
 
             // waiting for a slot input...
-            if(BlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
+            if(PickedBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
-                    BlockDef = null;
+                    PickedBlockDef = null;
                     Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
                     return;
                 }
 
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
                 {
-                    BlockDef = null;
+                    PickedBlockDef = null;
                     MyAPIGateway.Utilities.ShowNotification("Block picking cancelled.", 2000);
                     return;
                 }
@@ -107,20 +110,20 @@ namespace Digi.BuildInfo.Features
 
                 if(slot != 0)
                 {
-                    MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
+                    MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, PickedBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
-                    MyAPIGateway.Utilities.ShowNotification($"{BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, MyFontEnum.Green);
+                    MyAPIGateway.Utilities.ShowNotification($"{PickedBlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, MyFontEnum.Green);
 
-                    BlockDef = null;
+                    PickedBlockDef = null;
                 }
             }
         }
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(BlockDef != null && tick % 5 == 0)
+            if(PickedBlockDef != null && tick % 5 == 0)
             {
-                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{BlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
+                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{PickedBlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
             }
         }
 
@@ -157,7 +160,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 // if no argument is defined, ask for a number
-                BlockDef = EquipmentMonitor.BlockDef;
+                PickedBlockDef = EquipmentMonitor.BlockDef;
             }
             else
             {

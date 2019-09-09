@@ -108,7 +108,7 @@ namespace Digi.BuildInfo.Features
                         if(EquipmentMonitor.AimedBlock != null)
                         {
                             CloseMenu();
-                            Main.PickBlock.BlockDef = EquipmentMonitor.BlockDef;
+                            Main.PickBlock.PickedBlockDef = EquipmentMonitor.BlockDef;
                         }
                         else
                             MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, MyFontEnum.Red);
