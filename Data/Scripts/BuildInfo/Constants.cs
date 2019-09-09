@@ -17,6 +17,8 @@ namespace Digi.BuildInfo
 
         public readonly MyStringHash COMPUTER_COMPONENT_NAME = MyStringHash.GetOrCompute("Computer");
 
+        public const bool BLOCKPICKER_IN_MP = false; // FIXME pick block temporarily disabled in MP due to: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect
+
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {
             typeof(MyObjectBuilder_Ore),

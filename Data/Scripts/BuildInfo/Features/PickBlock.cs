@@ -38,8 +38,7 @@ namespace Digi.BuildInfo.Features
         {
             if(BlockDef == null && EquipmentMonitor.AimedBlock != null && Config.BlockPickerBind.Value.IsJustPressed())
             {
-                // FIXME pick block temporarily disabled in MP
-                if(MyAPIGateway.Multiplayer.MultiplayerActive)
+                if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
                     return;
@@ -51,8 +50,7 @@ namespace Digi.BuildInfo.Features
             // waiting for a slot input...
             if(BlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
             {
-                // FIXME pick block temporarily disabled in MP
-                if(MyAPIGateway.Multiplayer.MultiplayerActive)
+                if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     BlockDef = null;
                     Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
@@ -81,6 +79,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
+                // alternate hardcoded digit key monitor
                 //if(slot == 0)
                 //{
                 //    for(MyKeys k = MyKeys.D1; k <= MyKeys.D9; k++)
@@ -93,6 +92,7 @@ namespace Digi.BuildInfo.Features
                 //    }
                 //}
 
+                // alternate numpad key monitor
                 //if(slot == 0)
                 //{
                 //    for(MyKeys k = MyKeys.NumPad1; k <= MyKeys.NumPad9; k++)
@@ -120,14 +120,13 @@ namespace Digi.BuildInfo.Features
         {
             if(BlockDef != null && tick % 5 == 0)
             {
-                MyAPIGateway.Utilities.ShowNotification($"Press SLOT number for '{BlockDef.DisplayNameText}'; or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
+                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{BlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
             }
         }
 
         public void ParseCommand(string msg)
         {
-            // FIXME pick block temporarily disabled in MP
-            if(MyAPIGateway.Multiplayer.MultiplayerActive)
+            if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
             {
                 Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Pick block feature temporarily disabled for MP due to severe issues, see workshop page for details.", MyFontEnum.Red);
                 return;
