@@ -42,12 +42,12 @@ namespace Digi.ConfigLib
 
         public virtual void WriteValue(StringBuilder output)
         {
-            output.Append(Value);
+            output.Append(Value.ToString());
         }
 
         public virtual void WriteDefaultValue(StringBuilder output)
         {
-            output.Append(DefaultValue);
+            output.Append(DefaultValue.ToString());
         }
 
         public virtual void SaveSetting(StringBuilder output)
@@ -77,11 +77,6 @@ namespace Digi.ConfigLib
                 WriteDefaultValue(output);
                 output.AppendLine();
             }
-        }
-
-        public static implicit operator T(SettingBase<T> setting)
-        {
-            return setting.Value;
         }
     }
 }

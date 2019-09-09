@@ -1,16 +1,11 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Systems;
-using Digi.ComponentLib;
 using Draygo.API;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
-using VRage.Input;
 using VRageMath;
-
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
@@ -54,7 +49,7 @@ namespace Digi.BuildInfo.Features
         {
             if(TextAPI.WasDetected)
             {
-                if(Config.Debug)
+                if(Config.Debug.Value)
                 {
                     if(debugEquipmentMsg == null)
                         debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);

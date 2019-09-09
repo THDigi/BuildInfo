@@ -234,7 +234,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateDraw()
         {
-            if(drawOverlay == 0 || EquipmentMonitor.BlockDef == null || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible))
+            if(drawOverlay == 0 || EquipmentMonitor.BlockDef == null || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
                 return;
 
             // TODO: show currently selected overlay mode? maybe only with textAPI?
@@ -437,7 +437,7 @@ namespace Digi.BuildInfo.Features
             }
             catch(Exception e)
             {
-                Log.Error($"Error on overlay draw; heldDefId={def?.Id}; aimedDefId={aimedBlock?.BlockDefinition?.Id} - {e.Message}\n{e.StackTrace}");
+                Log.Error($"Error on overlay draw; heldDefId={def?.Id.ToString()}; aimedDefId={aimedBlock?.BlockDefinition?.Id.ToString()} - {e.Message}\n{e.StackTrace}");
             }
         }
 

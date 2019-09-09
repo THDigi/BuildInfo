@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Utils;
 using Digi.ConfigLib;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
@@ -109,8 +110,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             new ItemButton(Category_Mod, "Mod's workshop page", ChatCommands.ShowBuildInfoWorkshop);
 
             // gray out items that need to start like that
-            groupTextInfo.SetInteractable(Config.TextShow);
-            groupCustomStyling.SetInteractable(Config.TextShow && Config.TextAPICustomStyling.Value);
+            groupTextInfo.SetInteractable(Config.TextShow.Value);
+            groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
         }
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
@@ -122,7 +123,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextShow.Value = v;
                     ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0u));
                     groupTextInfo.SetInteractable(v);
-                    groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling : false);
+                    groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling.Value : false);
                 });
         }
 
@@ -171,7 +172,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextAPIBackgroundOpacity.Value = orig;
                     ApplySettings(save: false);
                 },
-                format: (v) => (v < 0 ? "HUD" : $"{(v * 100)}%"));
+                format: (v) => (v < 0 ? "HUD" : (v * 100).ToString() + "%"));
 
             groupTextInfo.Add(item);
         }
@@ -179,7 +180,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_CustomStyling(MenuCategoryBase category)
         {
             var item = new ItemToggle(category, "Custom Styling",
-                getter: () => Config.TextAPICustomStyling,
+                getter: () => Config.TextAPICustomStyling.Value,
                 setter: (v) =>
                 {
                     Config.TextAPICustomStyling.Value = v;
@@ -321,7 +322,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             tmp.Append(TEXT_START);
 
             if(moveHint)
-                tmp.Append($"\n<color=0,255,0>Click and drag anywhere to move!\n<color=255,255,0>Current position: {Config.TextAPIScreenPosition.Value.X:0.000}, {Config.TextAPIScreenPosition.Value.Y:0.000}");
+            {
+                tmp.NewLine();
+                tmp.Append("<color=0,255,0>Click and drag anywhere to move!").NewLine();
+                tmp.Append("<color=255,255,0>Current position: ").Append(Config.TextAPIScreenPosition.Value.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.Value.Y.ToString("0.000"));
+            }
 
             tmp.Append(TEXT_END);
 

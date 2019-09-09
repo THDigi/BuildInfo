@@ -1,10 +1,4 @@
-﻿using Digi.BuildInfo.Systems;
-using Sandbox.Definitions;
-using Sandbox.ModAPI;
-using VRage.Game;
-using VRage.Game.ModAPI;
-
-namespace Digi.BuildInfo.Features
+﻿namespace Digi.BuildInfo.Features
 {
     public class BuilderAdditions : ClientComponent
     {

@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features
                 {
                     skippedTicks = 0;
 
-                    if(TextAPIEnabled && Mod.Config.ShipToolInventoryBar && !MyAPIGateway.Gui.IsCursorVisible)
+                    if(TextAPIEnabled && Mod.Config.ShipToolInventoryBar.Value && !MyAPIGateway.Gui.IsCursorVisible)
                         ComputeFillRatio();
                 }
             }
@@ -135,7 +135,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateDraw()
         {
-            if(!show || !TextAPIEnabled || !Mod.Config.ShipToolInventoryBar || MyAPIGateway.Gui.IsCursorVisible)
+            if(!show || !TextAPIEnabled || !Mod.Config.ShipToolInventoryBar.Value || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;

@@ -246,7 +246,7 @@ namespace Digi.BuildInfo.Features
 
             if(buildInfoNotification == null)
                 buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
-            buildInfoNotification.Text = (Config.TextShow ? "Text info ON + saved to config" : "Text info OFF + saved to config");
+            buildInfoNotification.Text = (Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
             buildInfoNotification.Show();
         }
 

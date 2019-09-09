@@ -47,7 +47,7 @@ namespace Digi.BuildInfo.Features
             SetFlag(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
 
             // reset survival distance if this feature is disabled
-            if(EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival && !CreativeGameMode && !SurvivalCreativeTools)
+            if(EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !CreativeGameMode && !SurvivalCreativeTools)
             {
                 MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance;
             }
@@ -66,21 +66,21 @@ namespace Digi.BuildInfo.Features
                 if(!inShip)
                     return;
 
-                if(!Config.AdjustBuildDistanceShipCreative)
+                if(!Config.AdjustBuildDistanceShipCreative.Value)
                     return;
 
                 maxRange = VANILLA_CREATIVE_MAXDIST;
             }
             else if(SurvivalCreativeTools)
             {
-                if(!Config.AdjustBuildDistanceShipCreative)
+                if(!Config.AdjustBuildDistanceShipCreative.Value)
                     return;
 
                 maxRange = VANILLA_CREATIVE_MAXDIST;
             }
             else
             {
-                if(!Config.AdjustBuildDistanceSurvival)
+                if(!Config.AdjustBuildDistanceSurvival.Value)
                     return;
 
                 float blockSizeMeters = Math.Max(EquipmentMonitor.BlockDef.Size.AbsMax() * EquipmentMonitor.BlockGridSize, PLACE_MIN_SIZE);
@@ -106,8 +106,8 @@ namespace Digi.BuildInfo.Features
 
             MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, PLACE_MINRANGE, maxRange);
 
-            if(Config.Debug)
-                MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance:0.##}; max={maxRange:0.##})", 17);
+            if(Config.Debug.Value)
+                MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance.ToString("0.##")}; max={maxRange.ToString("0.##")})", 17);
         }
 
         private int GetDistanceAdjustInputValue()

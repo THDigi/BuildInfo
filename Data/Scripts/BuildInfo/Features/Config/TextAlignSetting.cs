@@ -29,12 +29,12 @@ namespace Digi.BuildInfo.Features.Config
 
         public override void WriteValue(StringBuilder output)
         {
-            output.Append((TextAlignFlags)Value);
+            output.Append(((TextAlignFlags)Value).GetName());
         }
 
         public override void WriteDefaultValue(StringBuilder output)
         {
-            output.Append((TextAlignFlags)DefaultValue);
+            output.Append(((TextAlignFlags)DefaultValue).GetName());
         }
 
         public void Set(TextAlignFlags flag, bool on)

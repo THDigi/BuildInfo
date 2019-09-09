@@ -106,7 +106,7 @@ namespace Digi.BuildInfo.Features
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private float TextAPIScale => Config.TextAPIScale;
+        private float TextAPIScale => Config.TextAPIScale.Value;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
@@ -286,7 +286,7 @@ namespace Digi.BuildInfo.Features
                 {
                     LastDefId = def.Id;
 
-                    if(Config.TextShow)
+                    if(Config.TextShow.Value)
                     {
                         if(hasAimedBlock)
                         {
@@ -395,12 +395,12 @@ namespace Digi.BuildInfo.Features
         {
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Config.TextAlwaysVisible, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             if(textObject == null)
             {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Config.TextAlwaysVisible, Blend: FG_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
             }
 
             bgObject.Visible = true;
@@ -465,7 +465,7 @@ namespace Digi.BuildInfo.Features
                 bgObject.Visible = false;
             }
 #endif
-            else if(Config.TextAPICustomStyling) // custom alignment and position
+            else if(Config.TextAPICustomStyling.Value) // custom alignment and position
             {
                 textPos = Config.TextAPIScreenPosition.Value;
 
@@ -512,7 +512,7 @@ namespace Digi.BuildInfo.Features
 
             if(TextAPIEnabled)
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow && !QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow.Value && !QuickMenu.Shown))
                 {
                     HideText();
                     return;
@@ -542,7 +542,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow && !QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow.Value && !QuickMenu.Shown))
                 {
                     return;
                 }
@@ -870,7 +870,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:");
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Config.TextShow ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Text info: ").Append(Config.TextShow.Value ? "ON" : "OFF");
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(Overlays.NAMES[Overlays.drawOverlay]);
             if(Config.CycleOverlaysBind.Value.IsAssigned())
@@ -3361,7 +3361,7 @@ namespace Digi.BuildInfo.Features
             {
                 textObject.Scale = TextAPIScale;
 
-                if(Config.TextAlwaysVisible)
+                if(Config.TextAlwaysVisible.Value)
                 {
                     textObject.Options &= ~HudAPIv2.Options.HideHud;
                     bgObject.Options &= ~HudAPIv2.Options.HideHud;
