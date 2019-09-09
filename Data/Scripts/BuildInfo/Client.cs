@@ -36,6 +36,7 @@ namespace Digi.BuildInfo
         public BuilderAdditions BuilderAdditions;
         public PlacementDistance PlacementDistance;
         public BlockInfoAdditions BlockInfoAdditions;
+        public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
         public DebugEvents DebugEvents;
 
@@ -67,6 +68,7 @@ namespace Digi.BuildInfo
             BuilderAdditions = new BuilderAdditions(this);
             PlacementDistance = new PlacementDistance(this);
             BlockInfoAdditions = new BlockInfoAdditions(this);
+            RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             DebugEvents = new DebugEvents(this);
         }

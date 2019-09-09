@@ -4,6 +4,7 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
 
@@ -263,5 +264,15 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyEngineerToolBase
         public const float EngineerToolBase_DefaultReachDistance = 2f;
+
+        // from MyEntityThrustComponent
+        public const double RelativeDampeners_MaxDistance = 100f;
+        public const double RelativeDampeners_MaxDistanceSq = RelativeDampeners_MaxDistance * RelativeDampeners_MaxDistance;
+
+        // from MyEntityThrustComponent.UpdateRelativeDampeningEntity()
+        public static bool RelativeDampeners_DistanceCheck(IMyEntity controlledEnt, IMyEntity relativeEnt)
+        {
+            return relativeEnt.PositionComp.WorldAABB.DistanceSquared(controlledEnt.PositionComp.GetPosition()) <= RelativeDampeners_MaxDistanceSq;
+        }
     }
 }

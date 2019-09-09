@@ -130,6 +130,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientComponent.cs" />
+    <Compile Include="Features\RelativeDampenerInfo.cs" />
     <Compile Include="Features\BuilderAdditions.cs" />
     <Compile Include="Features\Config\Config.cs" />
     <Compile Include="Features\Config\FlagExtensions.cs" />

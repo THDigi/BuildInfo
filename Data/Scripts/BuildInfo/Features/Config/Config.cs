@@ -24,6 +24,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting BlockInfoStages;
         public BoolSetting ShipToolInventoryBar;
         public BoolSetting TurretAmmo;
+        public BoolSetting RelativeDampenerInfo;
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
         public TextAlignSetting TextAPIAlign;
@@ -133,6 +134,10 @@ namespace Digi.BuildInfo.Features.Config
 
             TurretAmmo = new BoolSetting(Handler, "HUD: Turret Ammo", true,
                 "Shows total ammo that's in the turret when controlling one.");
+
+            RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
+                "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
+                "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
 
             TextAPIScale = new FloatSetting(Handler, "TextAPI: Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
                 {
