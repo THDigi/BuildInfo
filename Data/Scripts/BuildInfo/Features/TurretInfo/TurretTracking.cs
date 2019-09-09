@@ -50,6 +50,9 @@ namespace Digi.BuildInfo.Features.TurretInfo
 
         private void TurretAdded(IMySlimBlock block)
         {
+            if(block.CubeGrid?.Physics == null)
+                return; // no tracking for ghost grids
+
             var turret = block.FatBlock as IMyLargeTurretBase;
 
             if(turret != null)
