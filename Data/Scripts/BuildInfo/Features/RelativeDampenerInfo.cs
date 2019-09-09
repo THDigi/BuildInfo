@@ -37,13 +37,24 @@ namespace Digi.BuildInfo.Features
             if(!Config.RelativeDampenerInfo.Value)
                 return;
 
-            var controlled = MyAPIGateway.Session.ControlledObject as InternalControllableEntity;
+            var controlled = MyAPIGateway.Session?.ControlledObject as InternalControllableEntity;
+            var controlledEnt = controlled?.Entity;
 
-            if(prevControlledEntId != controlled.Entity.EntityId)
+            if(controlledEnt == null)
             {
-                prevControlledEntId = controlled.Entity.EntityId;
+                prevControlledEntId = 0;
+                prevRelativeEntId = 0;
+                return;
+            }
+
+            if(prevControlledEntId != controlledEnt.EntityId)
+            {
+                prevControlledEntId = controlledEnt.EntityId;
                 prevRelativeEntId = 0;
             }
+
+            if(controlledEnt == null)
+                return;
 
             var relativeEnt = controlled.RelativeDampeningEntity;
             long relativeEntId = (relativeEnt == null || relativeEnt.MarkedForClose ? 0 : relativeEnt.EntityId);
@@ -61,7 +72,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(!Hardcoded.RelativeDampeners_DistanceCheck(controlled.Entity, relativeEnt))
+                if(!Hardcoded.RelativeDampeners_DistanceCheck(controlledEnt, relativeEnt))
                 {
                     // HACK preventing this confusing mess: https://support.keenswh.com/spaceengineers/general/topic/1-192-022-relative-dampeners-allow-engaging-at-larger-distances-then-turn-off
                     controlled.RelativeDampeningEntity = null;
