@@ -12,24 +12,25 @@
         /// </summary>
         public UpdateFlags UpdateMethods
         {
-            get { return _flags; }
+            get { return (_newFlags != UpdateFlags.INVALID ? _newFlags : _flags); }
             set
             {
                 if(value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM) && !Main.SessionHasBeforeSim)
-                    Log.Error($"{GetType().Name} component can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
+                    Log.Error("Component can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
 
                 if(value.IsSet(UpdateFlags.UPDATE_AFTER_SIM) && !Main.SessionHasAfterSim)
-                    Log.Error($"{GetType().Name} Component can't work with UPDATE_AFTER_SIM because session is not set to call it.");
+                    Log.Error("Component can't work with UPDATE_AFTER_SIM because session is not set to call it.");
 
-                if(_newFlags == value)
-                    return;
-
-                Main.ComponentScheduleRefresh(this);
-                _newFlags = value;
+                if(_newFlags != value)
+                {
+                    Main.ComponentScheduleRefresh(this);
+                    _newFlags = value;
+                }
             }
         }
         private UpdateFlags _flags = UpdateFlags.NONE;
         private UpdateFlags _newFlags = UpdateFlags.INVALID;
+        UpdateFlags IComponent.CurrentUpdateMethods => _flags;
 
         /// <summary>
         /// Same as <see cref="UpdateMethods"/> but simpler for toggling.

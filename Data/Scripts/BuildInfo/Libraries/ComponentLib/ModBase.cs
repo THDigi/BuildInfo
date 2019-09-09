@@ -86,54 +86,46 @@ namespace Digi.ComponentLib
 
         void IModBase.WorldStart()
         {
-            try
+            if((Session.UpdateOrder & MyUpdateOrder.Simulation) != 0)
+                throw new Exception("MyUpdateOrder.Simulation not supported by ComponentLib!");
+
+            if(!SessionHasBeforeSim && !SessionHasAfterSim)
+                throw new Exception($"Neither BeforeSim nor AfterSim are set in session, this will break Tick and ALL component updating on DS side!");
+
+            RunCriticalOnInput = null;
+            RunCriticalOnBeforeSim = null;
+            RunCriticalOnAfterSim = null;
+
+            if(!IsDedicatedServer)
             {
-                if((Session.UpdateOrder & MyUpdateOrder.Simulation) != 0)
-                    throw new Exception("MyUpdateOrder.Simulation not supported by ComponentLib!");
-
-                if(!SessionHasBeforeSim && !SessionHasAfterSim)
-                    throw new Exception($"Neither BeforeSim nor AfterSim are set in session, this will break Tick and ALL component updating on DS side!");
-
-                RunCriticalOnInput = null;
-                RunCriticalOnBeforeSim = null;
-                RunCriticalOnAfterSim = null;
-
-                if(!IsDedicatedServer)
-                {
-                    RunCriticalOnInput = RunCriticalUpdate;
-                }
-                else // DS doesn't call HandleInput() so the critical updates have to go in the next registered sim update
-                {
-                    if(SessionHasBeforeSim)
-                    {
-                        RunCriticalOnBeforeSim = RunCriticalUpdate;
-                    }
-                    else if(SessionHasAfterSim)
-                    {
-                        RunCriticalOnAfterSim = RunCriticalUpdate;
-                    }
-                }
-
-                for(int i = 0; i < Components.Count; ++i)
-                {
-                    try
-                    {
-                        Components[i].RegisterComponent();
-                    }
-                    catch(Exception e)
-                    {
-                        Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MSG);
-                        Log.Error(e);
-                    }
-                }
-
-                OnWorldStart?.Invoke();
+                RunCriticalOnInput = RunCriticalUpdate;
             }
-            catch(Exception)
+            else // DS doesn't call HandleInput() so the critical updates have to go in the next registered sim update
             {
-                Instance.WorldExit();
-                throw;
+                if(SessionHasBeforeSim)
+                {
+                    RunCriticalOnBeforeSim = RunCriticalUpdate;
+                }
+                else if(SessionHasAfterSim)
+                {
+                    RunCriticalOnAfterSim = RunCriticalUpdate;
+                }
             }
+
+            for(int i = 0; i < Components.Count; ++i)
+            {
+                try
+                {
+                    Components[i].RegisterComponent();
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MSG);
+                    Log.Error(e);
+                }
+            }
+
+            OnWorldStart?.Invoke();
         }
 
         void IModBase.WorldExit()
@@ -162,15 +154,10 @@ namespace Digi.ComponentLib
                 ComponentUpdateAfterSim.Clear();
                 ComponentUpdateDraw.Clear();
             }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
             finally
             {
                 Session = null;
                 Instance = null;
-                Log.Close();
             }
         }
 
@@ -282,11 +269,11 @@ namespace Digi.ComponentLib
 
         void UpdateList(IComponent component, List<IComponent> list, UpdateFlags newFlags, UpdateFlags flag)
         {
-            if(component.UpdateMethods.IsSet(flag) && !newFlags.IsSet(flag))
+            if(component.CurrentUpdateMethods.IsSet(flag) && !newFlags.IsSet(flag))
             {
                 list.Remove(component);
             }
-            else if(!component.UpdateMethods.IsSet(flag) && newFlags.IsSet(flag))
+            else if(!component.CurrentUpdateMethods.IsSet(flag) && newFlags.IsSet(flag))
             {
                 list.Add(component);
             }

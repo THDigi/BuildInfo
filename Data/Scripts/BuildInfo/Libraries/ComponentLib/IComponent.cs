@@ -6,6 +6,7 @@
     public interface IComponent
     {
         UpdateFlags UpdateMethods { get; set; }
+        UpdateFlags CurrentUpdateMethods { get; }
         void RegisterComponent();
         void UnregisterComponent();
         void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused);

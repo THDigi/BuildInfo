@@ -19,9 +19,6 @@ namespace Digi.ComponentLib
             try
             {
                 LoadMod();
-
-                if(main == null)
-                    throw new NullReferenceException("GameSession.main is null, it needs to be assigned!");
             }
             catch(Exception e)
             {
@@ -35,10 +32,7 @@ namespace Digi.ComponentLib
         {
             try
             {
-                if(main == null)
-                    throw new NullReferenceException("GameSession.main is null.");
-
-                main.WorldStart();
+                main?.WorldStart();
             }
             catch(Exception e)
             {
@@ -52,20 +46,15 @@ namespace Digi.ComponentLib
         {
             try
             {
-                if(main == null)
-                    throw new NullReferenceException("GameSession.main is null.");
-
-                main.WorldExit();
+                main?.WorldExit();
             }
             catch(Exception e)
             {
                 Log.Error(e);
                 throw new Exception("Error in mod unloading, see above exceptions.");
             }
-            finally
-            {
-                Log.Close();
-            }
+
+            Log.Close();
         }
 
         public override void HandleInput()
