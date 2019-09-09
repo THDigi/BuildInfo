@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utils;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Definitions;
@@ -36,7 +37,7 @@ namespace Digi.BuildInfo.Features
         private int computerComponentIndex = -1;
 
         private int componentReplaceInfoCount = 0;
-        private readonly List<ComponentReplaceInfo> componentReplaceInfo = new List<ComponentReplaceInfo>(8);
+        private readonly List<ComponentReplaceInfo> componentReplaceInfo = new List<ComponentReplaceInfo>(10);
 
         private BuildCheckResult projectedCanBuildCached;
 
@@ -198,7 +199,7 @@ namespace Digi.BuildInfo.Features
 #endif
 
             #region Lines on top of block info
-            if(Config.BlockInfoStages)
+            if(Config.BlockInfoStages.Value)
             {
                 var blockDef = EquipmentMonitor.BlockDef;
                 var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
@@ -275,7 +276,7 @@ namespace Digi.BuildInfo.Features
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(64), worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LABEL.Length + NAME_MAX_CHARACTERS), worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
                         }
                         else
                         {
@@ -286,16 +287,7 @@ namespace Digi.BuildInfo.Features
 
                         var sb = info.Text.Message.Clear();
                         sb.Append(LABEL);
-
-                        if(info.Replaced.DisplayNameText.Length > NAME_MAX_CHARACTERS)
-                        {
-                            sb.Append(info.Replaced.DisplayNameText, 0, NAME_MAX_CHARACTERS);
-                            sb.Append('…');
-                        }
-                        else
-                        {
-                            sb.Append(info.Replaced.DisplayNameText);
-                        }
+                        sb.AppendMaxLength(info.Replaced.DisplayNameText, NAME_MAX_CHARACTERS);
 
                         info.Text.Draw();
                     }
