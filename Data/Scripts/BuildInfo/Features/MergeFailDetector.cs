@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateOnceBeforeFrame()
         {
-            if(BuildInfoMod.Instance.IsDedicatedServer || block?.CubeGrid?.Physics == null)
+            if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null)
                 return;
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;

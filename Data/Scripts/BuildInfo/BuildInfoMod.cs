@@ -49,9 +49,6 @@ namespace Digi.BuildInfo
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
         {
-            if(IsDedicatedServer)
-                return;
-
             session.SetUpdateOrder(MyUpdateOrder.AfterSimulation);
 
             Caches = new Caches(this);

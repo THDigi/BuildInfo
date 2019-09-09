@@ -37,7 +37,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             {
                 if(!init)
                 {
-                    if(BuildInfoMod.Instance.IsDedicatedServer || block?.CubeGrid?.Physics == null) // ignore DS side and ghost grids
+                    if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null) // ignore DS side and ghost grids
                     {
                         NeedsUpdate = MyEntityUpdateEnum.NONE;
                         return;
