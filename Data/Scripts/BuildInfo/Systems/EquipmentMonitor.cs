@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Systems
         public delegate void EventHandlerToolChanged(MyDefinitionId toolDefId);
 
         public event EventHandlerBlockChanged BlockChanged;
-        public delegate void EventHandlerBlockChanged(MyCubeBlockDefinition def, IMySlimBlock block);
+        public delegate void EventHandlerBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock);
 
         /// <summary>
         /// Update after simulation and after this system computed its things.

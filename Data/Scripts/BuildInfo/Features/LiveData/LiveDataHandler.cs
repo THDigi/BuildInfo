@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features.LiveData
             EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
+        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             BlockDataCache = null;
             BlockDataCacheValid = true;
@@ -60,15 +60,18 @@ namespace Digi.BuildInfo.Features.LiveData
             BlockMonitor.MonitorType(blockType, BlockAdded<T>);
         }
 
-        private void BlockAdded<T>(IMySlimBlock block) where T : BData_Base, new()
+        private void BlockAdded<T>(IMySlimBlock slimBlock) where T : BData_Base, new()
         {
-            var success = BData_Base.TrySetData<T>(block.FatBlock);
+            if(slimBlock.FatBlock == null)
+                return;
+
+            var success = BData_Base.TrySetData<T>(slimBlock.FatBlock);
 
             if(success && TextGeneration != null)
             {
                 // reset caches and force block text recalc
-                TextGeneration.CachedBuildInfoTextAPI.Remove(block.BlockDefinition.Id);
-                TextGeneration.CachedBuildInfoNotification.Remove(block.BlockDefinition.Id);
+                TextGeneration.CachedBuildInfoTextAPI.Remove(slimBlock.BlockDefinition.Id);
+                TextGeneration.CachedBuildInfoNotification.Remove(slimBlock.BlockDefinition.Id);
                 TextGeneration.LastDefId = default(MyDefinitionId);
             }
         }

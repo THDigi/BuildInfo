@@ -7,13 +7,16 @@ using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Systems
 {
+    /// <summary>
+    /// Executes callbacks for registered block types.
+    /// </summary>
     public class BlockMonitor : ClientComponent
     {
         public bool CanAddTypes { get; private set; } = true;
 
         public delegate void CallbackDelegate(IMySlimBlock block);
+        private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> monitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);
 
-        private readonly Dictionary<MyObjectBuilderType, CallbackDelegate> monitorBlockTypes = new Dictionary<MyObjectBuilderType, CallbackDelegate>(MyObjectBuilderType.Comparer);
         private readonly List<IMySlimBlock> tmpBlocks = new List<IMySlimBlock>();
 
         public BlockMonitor(Client mod) : base(mod)
@@ -24,50 +27,61 @@ namespace Digi.BuildInfo.Systems
         {
             CanAddTypes = false;
 
-            MyAPIGateway.Entities.OnEntityAdd += OnEntitySpawned;
+            // Not using MyVisualScriptLogicProvider.BlockBuilt because it doesn't get called for existing grids,
+            //  requiring entities monitored and grids to be iterated for blocks on spawn anyway.
+            //  (to detect blocks for spawned/streamed/pasted/etc grids)
+
+            MyAPIGateway.Entities.OnEntityAdd += EntitySpawned;
 
             var ents = new HashSet<IMyEntity>();
             MyAPIGateway.Entities.GetEntities(ents);
 
             foreach(var ent in ents)
             {
-                OnEntitySpawned(ent);
+                EntitySpawned(ent);
             }
         }
 
         public override void UnregisterComponent()
         {
-            MyAPIGateway.Entities.OnEntityAdd -= OnEntitySpawned;
+            MyAPIGateway.Entities.OnEntityAdd -= EntitySpawned;
         }
 
+        /// <summary>
+        /// Adds callback for specified block type.
+        /// Multiple callbacks per type are supported.
+        /// </summary>
         public void MonitorType(MyObjectBuilderType blockType, CallbackDelegate callback)
         {
             if(!CanAddTypes)
-                throw new Exception("BlockMonitor can not accept monitor requests at RegisterComponent() or later.");
+                throw new Exception($"{GetType().Name} can not accept monitor requests at RegisterComponent() or later.");
 
-            CallbackDelegate del;
-            if(monitorBlockTypes.TryGetValue(blockType, out del))
+            if(callback == null)
+                throw new ArgumentException($"{GetType().Name}.MonitorType() does not accept a null callback.");
+
+            List<CallbackDelegate> callbacks;
+
+            if(!monitorBlockTypes.TryGetValue(blockType, out callbacks))
             {
-                monitorBlockTypes[blockType] = (CallbackDelegate)Delegate.Combine(del, callback);
+                callbacks = new List<CallbackDelegate>(1);
+                monitorBlockTypes.Add(blockType, callbacks);
             }
-            else
-            {
-                monitorBlockTypes.Add(blockType, callback);
-            }
+
+            callbacks.Add(callback);
         }
 
-        private void OnEntitySpawned(IMyEntity ent)
+        void EntitySpawned(IMyEntity ent)
         {
             try
             {
                 var grid = ent as IMyCubeGrid;
-
                 if(grid == null)
                     return;
 
                 grid.OnBlockAdded += BlockAdded;
                 grid.OnClose += GridClosed;
 
+                tmpBlocks.Clear();
                 grid.GetBlocks(tmpBlocks);
 
                 foreach(var slim in tmpBlocks)
@@ -83,24 +97,32 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        private void GridClosed(IMyEntity ent)
+        void GridClosed(IMyEntity ent)
         {
             var grid = (IMyCubeGrid)ent;
             grid.OnBlockAdded -= BlockAdded;
             grid.OnClose -= GridClosed;
         }
 
-        private void BlockAdded(IMySlimBlock slim)
+        void BlockAdded(IMySlimBlock slim)
         {
             try
             {
-                if(slim.FatBlock == null)
-                    return;
-
                 var typeId = slim.BlockDefinition.Id.TypeId;
-                var method = monitorBlockTypes.GetValueOrDefault(typeId, null);
+                var callbacks = monitorBlockTypes.GetValueOrDefault(typeId, null);
 
-                method?.Invoke(slim);
+                for(int i = 0; i < callbacks.Count; ++i)
+                {
+                    try
+                    {
+                        callbacks[i].Invoke(slim);
+                    }
+                    catch(Exception e)
+                    {
+                        Log.Error($"{GetType().Name}.BlockAdded() :: callback for {typeId.ToString()} @ index={i.ToString()} error:");
+                        Log.Error(e);
+                    }
+                }
             }
             catch(Exception e)
             {
