@@ -235,7 +235,7 @@ namespace Digi.Input
         public const string GAMEPAD_PREFIX = "g.";
         public const string CONTROL_PREFIX = "c.";
 
-        public const string INPUT_PRINT_SEPARATOR = "»";
+        public const string INPUT_PRINT_SEPARATOR = " ";
 
         public const float EPSILON = 0.000001f;
 
