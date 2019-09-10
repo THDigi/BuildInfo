@@ -129,6 +129,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Features\AnalyseShip.cs" />
     <Compile Include="GameSession.cs" />
     <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
     <Compile Include="Libraries\ComponentLib\GameSession.cs" />

@@ -34,6 +34,7 @@ namespace Digi.BuildInfo
         public Overlays Overlays;
         public PickBlock PickBlock;
         public QuickMenu QuickMenu;
+        public AnalyseShip AnalyseShip;
         public ChatCommands ChatCommands;
         public TerminalInfo TerminalInfo;
         public TextGeneration TextGeneration;
@@ -69,6 +70,7 @@ namespace Digi.BuildInfo
             Overlays = new Overlays(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
+            AnalyseShip = new AnalyseShip(this);
             ChatCommands = new ChatCommands(this);
             TerminalInfo = new TerminalInfo(this);
             TextGeneration = new TextGeneration(this);

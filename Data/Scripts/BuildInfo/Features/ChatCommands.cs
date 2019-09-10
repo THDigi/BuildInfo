@@ -20,6 +20,7 @@ namespace Digi.BuildInfo.Features
         public const string CMD_MODLINK = "/bi modlink";
         public const string CMD_WORKSHOP = "/bi workshop";
         public const string CMD_LASERPOWER = "/bi laserpower";
+        public const string CMD_SHIPMODS = "/bi shipmods";
         public const string CMD_GETBLOCK = "/bi getblock";
         public const StringComparison CMD_COMPARE_TYPE = StringComparison.InvariantCultureIgnoreCase;
 
@@ -40,6 +41,9 @@ namespace Digi.BuildInfo.Features
             "\n  /bi laserpower <km>" +
             "\n    Calculates power needed for equipped/aimed laser antenna" +
             "\n    at the specified range." +
+            "\n  /bi shipmods" +
+            "\n    Shows what mods and DLCs are used on the aimed ship." +
+            "\n    Also available for blueprints in projectors' terminal." +
             "\n  /bi clearcache" +
             "\n    clears the block info cache, not for normal use." +
             "\n" +
@@ -160,6 +164,49 @@ namespace Digi.BuildInfo.Features
                     else
                     {
                         Utils.ShowColoredChatMessage(CMD_LASERPOWER, "Need a reference Laser Antenna, equip one first.", MyFontEnum.Red);
+                    }
+
+                    return;
+                }
+
+                if(msg.StartsWith(CMD_SHIPMODS, CMD_COMPARE_TYPE))
+                {
+                    send = false;
+
+                    if(EquipmentMonitor.AimedBlock != null)
+                    {
+                        var grid = EquipmentMonitor.AimedBlock.CubeGrid;
+
+                        bool friendly = true;
+
+                        // TODO: improve checking to avoid people placing subgrids and aiming at subgrid to fool the check
+                        if(grid.BigOwners != null)
+                        {
+                            friendly = false;
+
+                            for(int i = 0; i < grid.BigOwners.Count; ++i)
+                            {
+                                if(MyAPIGateway.Session.Player.GetRelationTo(grid.BigOwners[i]) != MyRelationsBetweenPlayerAndBlock.Enemies)
+                                {
+                                    friendly = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(friendly)
+                        {
+                            Main.AnalyseShip.Analyse(grid);
+                        }
+                        else
+                        {
+                            Utils.ShowColoredChatMessage(CMD_SHIPMODS, "Can't be used on enemy ships.", MyFontEnum.Red);
+                        }
+                    }
+                    else
+                    {
+                        Utils.ShowColoredChatMessage(CMD_SHIPMODS, "Aim at a ship with a welder/grinder first.", MyFontEnum.Red);
+                        Utils.ShowColoredChatMessage(CMD_SHIPMODS, "This feature is also in projectors' terminal.", MyFontEnum.White);
                     }
 
                     return;
