@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Definitions;

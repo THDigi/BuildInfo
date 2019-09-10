@@ -1,5 +1,5 @@
 ﻿using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Game;
@@ -231,9 +231,9 @@ namespace Digi.BuildInfo.Features
         public void ReloadConfig(string caller)
         {
             if(Config.Load())
-                Utilities.ShowColoredChatMessage(caller, "Config loaded.", MyFontEnum.Green);
+                Utils.ShowColoredChatMessage(caller, "Config loaded.", MyFontEnum.Green);
             else
-                Utilities.ShowColoredChatMessage(caller, "Config created and loaded default settings.", MyFontEnum.Green);
+                Utils.ShowColoredChatMessage(caller, "Config created and loaded default settings.", MyFontEnum.Green);
 
             Config.Save();
             TextGeneration.OnConfigReloaded();

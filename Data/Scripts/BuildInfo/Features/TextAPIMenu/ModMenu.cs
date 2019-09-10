@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Features.Config;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using VRageMath;
 using static Draygo.API.HudAPIv2;

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -132,7 +132,7 @@ namespace Digi.BuildInfo.Features
                     send = false;
                     TextGeneration.CachedBuildInfoNotification.Clear();
                     TextGeneration.CachedBuildInfoTextAPI.Clear();
-                    Utilities.ShowColoredChatMessage(CMD_CLEARCACHE, "Emptied block info cache.", MyFontEnum.Green);
+                    Utils.ShowColoredChatMessage(CMD_CLEARCACHE, "Emptied block info cache.", MyFontEnum.Green);
                     return;
                 }
 
@@ -150,16 +150,16 @@ namespace Digi.BuildInfo.Features
                             var meters = (km * 1000);
                             var megaWatts = VanillaData.Hardcoded.LaserAntenna_PowerUsage((MyLaserAntennaDefinition)EquipmentMonitor.BlockDef, meters);
                             var s = new StringBuilder().Append(EquipmentMonitor.BlockDef.DisplayNameText).Append(" will use ").PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(".");
-                            Utilities.ShowColoredChatMessage(CMD_LASERPOWER, s.ToString(), MyFontEnum.Green);
+                            Utils.ShowColoredChatMessage(CMD_LASERPOWER, s.ToString(), MyFontEnum.Green);
                         }
                         else
                         {
-                            Utilities.ShowColoredChatMessage(CMD_LASERPOWER, $"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", MyFontEnum.Red);
+                            Utils.ShowColoredChatMessage(CMD_LASERPOWER, $"Need a distance in kilometers, e.g. {CMD_LASERPOWER} 500", MyFontEnum.Red);
                         }
                     }
                     else
                     {
-                        Utilities.ShowColoredChatMessage(CMD_LASERPOWER, "Need a reference Laser Antenna, equip one first.", MyFontEnum.Red);
+                        Utils.ShowColoredChatMessage(CMD_LASERPOWER, "Need a reference Laser Antenna, equip one first.", MyFontEnum.Red);
                     }
 
                     return;
@@ -205,10 +205,10 @@ namespace Digi.BuildInfo.Features
                 // 0 in this method opens for the local client, hopefully they don't change that to "ALL" like they did on the chat message...
                 MyVisualScriptLogicProvider.OpenSteamOverlay(link, 0);
 
-                Utilities.ShowColoredChatMessage(CMD_WORKSHOP, $"Opened steam overlay with {link}", MyFontEnum.Green);
+                Utils.ShowColoredChatMessage(CMD_WORKSHOP, $"Opened steam overlay with {link}", MyFontEnum.Green);
             }
             else
-                Utilities.ShowColoredChatMessage(CMD_WORKSHOP, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
+                Utils.ShowColoredChatMessage(CMD_WORKSHOP, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
         }
 
         public void ShowSelectedBlocksModWorkshop()
@@ -226,16 +226,16 @@ namespace Digi.BuildInfo.Features
                         // 0 in this method opens for the local client, hopefully they don't change that to "ALL" like they did on the chat message...
                         MyVisualScriptLogicProvider.OpenSteamOverlay(link, 0);
 
-                        Utilities.ShowColoredChatMessage(CMD_MODLINK, $"Opened steam overlay with {link}", MyFontEnum.Green);
+                        Utils.ShowColoredChatMessage(CMD_MODLINK, $"Opened steam overlay with {link}", MyFontEnum.Green);
                     }
                     else
-                        Utilities.ShowColoredChatMessage(CMD_MODLINK, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
+                        Utils.ShowColoredChatMessage(CMD_MODLINK, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
                 }
                 else
-                    Utilities.ShowColoredChatMessage(CMD_MODLINK, $"{EquipmentMonitor.BlockDef.DisplayNameText} is not added by a mod.", MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(CMD_MODLINK, $"{EquipmentMonitor.BlockDef.DisplayNameText} is not added by a mod.", MyFontEnum.Red);
             }
             else
-                Utilities.ShowColoredChatMessage(CMD_MODLINK, "No block selected/equipped.", MyFontEnum.Red);
+                Utils.ShowColoredChatMessage(CMD_MODLINK, "No block selected/equipped.", MyFontEnum.Red);
         }
 
         private string[] args = new string[4];

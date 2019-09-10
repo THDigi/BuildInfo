@@ -1,5 +1,5 @@
 ﻿using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
-                    Utilities.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                     return;
                 }
 
@@ -56,7 +56,7 @@ namespace Digi.BuildInfo.Features
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     PickedBlockDef = null;
-                    Utilities.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                     return;
                 }
 
@@ -131,7 +131,7 @@ namespace Digi.BuildInfo.Features
         {
             if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
             {
-                Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
                 return;
             }
 
@@ -148,11 +148,11 @@ namespace Digi.BuildInfo.Features
                         if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
                         {
                             MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
-                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
+                            Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
                         }
                         else
                         {
-                            Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"'{arg}' is not a number from 1 to 9.", MyFontEnum.Red);
+                            Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"'{arg}' is not a number from 1 to 9.", MyFontEnum.Red);
                         }
 
                         return;
@@ -164,7 +164,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                Utilities.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Aim at a block with a welder or grinder first.", MyFontEnum.Red);
+                Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Aim at a block with a welder or grinder first.", MyFontEnum.Red);
             }
         }
     }

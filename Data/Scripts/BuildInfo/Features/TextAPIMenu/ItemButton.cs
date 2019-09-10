@@ -1,5 +1,5 @@
 ﻿using System;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 
@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var titleColor = (Item.Interactable ? Utilities.ColorTag(TitleColor) : "<color=gray>");
+            var titleColor = (Item.Interactable ? Utils.ColorTag(TitleColor) : "<color=gray>");
             Item.Text = $"{titleColor}{Title}";
         }
 

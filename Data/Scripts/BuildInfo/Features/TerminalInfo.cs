@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.LiveData;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
@@ -465,7 +465,7 @@ namespace Digi.BuildInfo.Features
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
             float volume;
 
-            if(Utilities.GetInventoryFromComponent(def, out volume))
+            if(Utils.GetInventoryFromComponent(def, out volume))
             {
                 info.DetailInfo_Inventory(Inv, volume);
             }
@@ -1000,7 +1000,7 @@ namespace Digi.BuildInfo.Features
             var maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
 
             if(maxVolume <= 0)
-                Utilities.GetInventoryFromComponent(reactorDef, out maxVolume);
+                Utils.GetInventoryFromComponent(reactorDef, out maxVolume);
 
             info.DetailInfo_Inventory(Inv, maxVolume);
         }

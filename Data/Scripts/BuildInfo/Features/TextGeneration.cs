@@ -4,7 +4,7 @@ using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
@@ -1107,8 +1107,8 @@ namespace Digi.BuildInfo.Features
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
-                int dmgResPercent = Utilities.DamageMultiplierToResistance(aimedBlock.DamageRatio * def.GeneralDamageMultiplier);
-                int gridDmgResPercent = Utilities.DamageMultiplierToResistance(((MyCubeGrid)grid).GridGeneralDamageModifier);
+                int dmgResPercent = Utils.DamageMultiplierToResistance(aimedBlock.DamageRatio * def.GeneralDamageMultiplier);
+                int gridDmgResPercent = Utils.DamageMultiplierToResistance(((MyCubeGrid)grid).GridGeneralDamageModifier);
 
                 if(dmgResPercent != 0 || gridDmgResPercent != 0)
                 {
@@ -1128,7 +1128,7 @@ namespace Digi.BuildInfo.Features
                 if(!projected && hasComputer)
                 {
                     var relation = (aimedBlock.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
-                    var shareMode = Utilities.GetBlockShareMode(aimedBlock.FatBlock);
+                    var shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
 
                     AddLine();
 
@@ -1544,7 +1544,7 @@ namespace Digi.BuildInfo.Features
         {
             int airTightFaces = 0;
             int totalFaces = 0;
-            var airTight = Utilities.GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
+            var airTight = Utils.GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
             var deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
             var assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
             var buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
@@ -1592,7 +1592,7 @@ namespace Digi.BuildInfo.Features
                 if(deformable)
                     GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
 
-                int dmgResPercent = Utilities.DamageMultiplierToResistance(def.GeneralDamageMultiplier);
+                int dmgResPercent = Utils.DamageMultiplierToResistance(def.GeneralDamageMultiplier);
 
                 if(dmgResPercent != 0)
                 {
@@ -1992,7 +1992,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume;
-                if(Utilities.GetInventoryFromComponent(def, out volume))
+                if(Utils.GetInventoryFromComponent(def, out volume))
                     AddLine().Label("Inventory").InventoryFormat(volume, Hardcoded.ShipDrill_InventoryConstraint);
                 else
                     AddLine().LabelHardcoded("Inventory").InventoryFormat(Hardcoded.ShipDrill_InventoryVolume(def), Hardcoded.ShipDrill_InventoryConstraint);
@@ -3249,7 +3249,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume;
-                if(!Utilities.GetInventoryFromComponent(def, out volume))
+                if(!Utils.GetInventoryFromComponent(def, out volume))
                     volume = alternateVolume;
 
                 if(volume > 0)

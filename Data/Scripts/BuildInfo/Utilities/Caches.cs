@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
 
-namespace Digi.BuildInfo.Utils
+namespace Digi.BuildInfo.Utilities
 {
     public class Caches : ModComponent
     {

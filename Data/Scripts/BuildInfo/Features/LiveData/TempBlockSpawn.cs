@@ -1,5 +1,5 @@
 ﻿using System;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;

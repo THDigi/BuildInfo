@@ -181,7 +181,7 @@
     <Compile Include="Features\ChatCommands.cs" />
     <Compile Include="Systems\TextAPIHandler.cs" />
     <Compile Include="Systems\EquipmentMonitor.cs" />
-    <Compile Include="Utils\Caches.cs" />
+    <Compile Include="Utilities\Caches.cs" />
     <Compile Include="Features\PickBlock.cs" />
     <Compile Include="Features\Config\LegacySettings.cs" />
     <Compile Include="Features\ShipToolInventoryBar.cs" />
@@ -201,7 +201,7 @@
     <Compile Include="Features\QuickMenu.cs" />
     <Compile Include="Systems\GameConfig.cs" />
     <Compile Include="Systems\InputLibHandler.cs" />
-    <Compile Include="Utils\Extensions.cs" />
+    <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Features\LiveData\TempBlockSpawn.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />
     <Compile Include="Features\LiveData\Base.cs" />
@@ -213,13 +213,13 @@
     <Compile Include="Features\LiveData\Weapon.cs" />
     <Compile Include="Features\Overlays.cs" />
     <Compile Include="Features\TerminalInfo.cs" />
-    <Compile Include="Utils\StringBuilderExtensions.cs" />
+    <Compile Include="Utilities\StringBuilderExtensions.cs" />
     <Compile Include="VanillaData\Hardcoded.cs" />
     <Compile Include="VanillaData\Pressurization.cs" />
     <Compile Include="Libraries\Log.cs" />
     <Compile Include="Features\LeakInfo\LeakInfo.cs" />
     <Compile Include="Features\TextGeneration.cs" />
-    <Compile Include="Utils\Utilities.cs" />
+    <Compile Include="Utilities\Utils.cs" />
     <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
   </ItemGroup>
   <ItemGroup>

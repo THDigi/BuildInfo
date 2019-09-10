@@ -5,7 +5,7 @@ using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.TextAPIMenu;
 using Digi.BuildInfo.Features.TurretInfo;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using VRage.Game.Components;
 

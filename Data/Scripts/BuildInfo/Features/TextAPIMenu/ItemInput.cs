@@ -1,5 +1,5 @@
 ﻿using System;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.Input;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public void UpdateTitle()
         {
             var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? Utilities.ColorTag(ValueColor) : "");
+            var valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
             Item.Text = $"{titleColor}{Title}: {valueColor}{Getter()}";
         }
 

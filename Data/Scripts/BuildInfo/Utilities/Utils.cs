@@ -8,12 +8,12 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Utils
+namespace Digi.BuildInfo.Utilities
 {
     /// <summary>
     /// Various random utility methods
     /// </summary>
-    public static class Utilities
+    public static class Utils
     {
         /// <summary>
         /// Chat message with the sender name being colored.

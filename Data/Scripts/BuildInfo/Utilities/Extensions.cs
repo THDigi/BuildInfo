@@ -4,7 +4,7 @@ using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
 
-namespace Digi.BuildInfo.Utils
+namespace Digi.BuildInfo.Utilities
 {
     public static class Extensions
     {

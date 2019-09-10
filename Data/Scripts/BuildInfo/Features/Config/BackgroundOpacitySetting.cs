@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using VRageMath;
 

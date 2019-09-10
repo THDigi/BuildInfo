@@ -1,5 +1,5 @@
 ﻿using System;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 
@@ -37,7 +37,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         {
             var isOn = Getter();
             var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? (isOn ? Utilities.ColorTag(ColorOn) : Utilities.ColorTag(ColorOff)) : "");
+            var valueColor = (Item.Interactable ? (isOn ? Utils.ColorTag(ColorOn) : Utils.ColorTag(ColorOff)) : "");
             Item.Text = $"{titleColor}{Title}: {valueColor}{(isOn ? OnText : OffText)}";
         }
 

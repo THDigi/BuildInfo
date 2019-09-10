@@ -16,7 +16,7 @@ using VRage.Utils;
 using VRageMath;
 using static Digi.BuildInfo.Constants;
 
-namespace Digi.BuildInfo.Utils
+namespace Digi.BuildInfo.Utilities
 {
     public static class StringBuilderExtensions
     {

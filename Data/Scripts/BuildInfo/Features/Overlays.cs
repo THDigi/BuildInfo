@@ -4,7 +4,7 @@ using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utils;
+using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Draygo.API;
@@ -252,7 +252,7 @@ namespace Digi.BuildInfo.Features
 
                 if(EquipmentMonitor.IsCubeBuilder)
                 {
-                    if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utilities.CreativeToolsEnabled)
+                    if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
 
                     var box = MyCubeBuilder.Static.GetBuildBoundingBox();
