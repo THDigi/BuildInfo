@@ -137,9 +137,9 @@ namespace Digi.BuildInfo.Features.Config
             ShipToolInventoryBar = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship tool is selected.");
 
-            // TODO: allow renaming of settings by specifying older names to read aswell.
-            TurretHUD = new BoolSetting(Handler, "HUD: Turret Ammo", true,
+            TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
+            TurretHUD.AddCompatibilityName("HUD: Turret Ammo");
 
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",

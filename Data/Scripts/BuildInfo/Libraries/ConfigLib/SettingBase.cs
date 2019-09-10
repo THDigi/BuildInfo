@@ -26,6 +26,11 @@ namespace Digi.ConfigLib
             configInstance.Settings.Add(Name, this);
         }
 
+        public void AddCompatibilityName(string name)
+        {
+            configInstance.SettingsAlias.Add(name, this);
+        }
+
         public override string ToString()
         {
             var sb = new StringBuilder();

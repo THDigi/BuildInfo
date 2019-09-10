@@ -17,7 +17,8 @@ namespace Digi.ConfigLib
         public readonly List<string> HeaderComments = new List<string>();
         public readonly List<string> FooterComments = new List<string>();
 
-        internal readonly Dictionary<string, ISetting> Settings = new Dictionary<string, ISetting>(StringComparer.InvariantCultureIgnoreCase);
+        public readonly Dictionary<string, ISetting> Settings = new Dictionary<string, ISetting>(StringComparer.InvariantCultureIgnoreCase);
+        public readonly Dictionary<string, ISetting> SettingsAlias = new Dictionary<string, ISetting>(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly char[] separatorCache = { VALUE_SEPARATOR };
         private StringBuilder sb = new StringBuilder();
@@ -108,13 +109,13 @@ namespace Digi.ConfigLib
 
                                 if(args.Length != 2)
                                 {
-                                    Log.Error($"{FileName} unknown format on line #{lineNumber}: '{line}'", Log.PRINT_MSG);
+                                    Log.Error($"{FileName} unknown format on line #{lineNumber.ToString()}: '{line}'", Log.PRINT_MSG);
                                     continue;
                                 }
 
                                 var key = args[0].Trim();
 
-                                if(Settings.TryGetValue(key, out setting))
+                                if(Settings.TryGetValue(key, out setting) || SettingsAlias.TryGetValue(key, out setting))
                                 {
                                     if(!setting.IsMultiLine) // only send the subsequent lines for multi-line settings
                                     {
@@ -146,7 +147,7 @@ namespace Digi.ConfigLib
             setting.ReadValue(value, out error);
 
             if(error != null)
-                Log.Error($"{FileName} line #{lineNumber} has an error: {error}", Log.PRINT_MSG);
+                Log.Error($"{FileName} line #{lineNumber.ToString()} has an error: {error}", Log.PRINT_MSG);
         }
 
         public void SaveToFile()
