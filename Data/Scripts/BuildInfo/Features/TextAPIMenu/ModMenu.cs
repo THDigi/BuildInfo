@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         {
             Category_Mod = new MenuRootCategory("Build Info", MenuFlag.PlayerMenu, "Build Info Settings");
 
-            new ItemButton(Category_Mod, "Help Window", ChatCommands.ShowHelp);
+            new ItemButton(Category_Mod, "Help Window", Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs);
 
             Category_TextCustomize = AddCategory("TextBox Customization", Category_Mod);
             Category_Overlays = AddCategory("Overlays", Category_Mod);
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_Binds, "Placement Distance in Survival", Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Binds, "Placement Distance in Ship Creative", Config.AdjustBuildDistanceShipCreative);
 
-            new ItemButton(Category_Mod, "Mod's workshop page", ChatCommands.ShowBuildInfoWorkshop);
+            new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
 
             // gray out items that need to start like that
             groupTextInfo.SetInteractable(Config.TextShow.Value);

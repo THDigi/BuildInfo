@@ -5,6 +5,7 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Input;
 using VRageMath;
+using Digi.BuildInfo.Features.ChatCommands;
 using static Digi.Input.InputLib;
 
 namespace Digi.BuildInfo.Features.Config
@@ -110,7 +111,7 @@ namespace Digi.BuildInfo.Features.Config
 
         private void InitSettings()
         {
-            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommands.CMD_RELOAD}");
+            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MAIN_COMMAND} reload");
 
             var sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);

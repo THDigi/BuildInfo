@@ -1,4 +1,5 @@
 ﻿using Digi.BuildInfo.Features;
+using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
@@ -35,7 +36,7 @@ namespace Digi.BuildInfo
         public PickBlock PickBlock;
         public QuickMenu QuickMenu;
         public AnalyseShip AnalyseShip;
-        public ChatCommands ChatCommands;
+        public ChatCommandHandler ChatCommandHandler;
         public TerminalInfo TerminalInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
@@ -71,7 +72,7 @@ namespace Digi.BuildInfo
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);
-            ChatCommands = new ChatCommands(this);
+            ChatCommandHandler = new ChatCommandHandler(this);
             TerminalInfo = new TerminalInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);

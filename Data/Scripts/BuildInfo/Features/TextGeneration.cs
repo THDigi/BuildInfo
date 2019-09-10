@@ -821,7 +821,7 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append("Build info mod");
+            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.MOD_NAME).Append(" mod");
 
             int i = 0;
 
@@ -836,7 +836,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                GetLine().Append(ChatCommands.CMD_BUILDINFO);
+                GetLine().Append(Main.ChatCommandHandler.CommandQuickMenu.MainAlias);
             }
             GetLine().Append(")");
 
@@ -854,15 +854,15 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                GetLine().Append(ChatCommands.CMD_GETBLOCK);
+                GetLine().Append(Main.ChatCommandHandler.CommandGetBlock.MainAlias);
             }
             GetLine().Append(")");
 
-            AddMenuItemLine(i++).Append("Open block's mod workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(ChatCommands.CMD_MODLINK).Append(')');
+            AddMenuItemLine(i++).Append("Open block's mod workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandModLink.MainAlias).Append(')');
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(ChatCommands.CMD_HELP).Append(')');
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandHelp.MainAlias).Append(')');
 
-            AddMenuItemLine(i++).Append("Open this mod's workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(ChatCommands.CMD_WORKSHOP).Append(')');
+            AddMenuItemLine(i++).Append("Open this mod's workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandWorkshop.MainAlias).Append(')');
 
             if(TextAPIEnabled)
             {
@@ -902,7 +902,7 @@ namespace Digi.BuildInfo.Features
             else
                 GetLine().Append("OFF (Mod not detected)");
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(ChatCommands.CMD_RELOAD).Append(')');
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).Append(')');
 
             if(TextAPIEnabled)
                 AddLine();

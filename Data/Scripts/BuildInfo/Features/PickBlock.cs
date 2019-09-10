@@ -126,46 +126,5 @@ namespace Digi.BuildInfo.Features
                 MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{PickedBlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
             }
         }
-
-        public void ParseCommand(string msg)
-        {
-            if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
-            {
-                Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
-                return;
-            }
-
-            if(EquipmentMonitor.AimedBlock != null)
-            {
-                if(msg.Length > ChatCommands.CMD_GETBLOCK.Length)
-                {
-                    var arg = msg.Substring(ChatCommands.CMD_GETBLOCK.Length);
-
-                    if(!string.IsNullOrWhiteSpace(arg))
-                    {
-                        int slot;
-
-                        if(int.TryParse(arg, out slot) && slot >= 1 && slot <= 9)
-                        {
-                            MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
-                            Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"{EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
-                        }
-                        else
-                        {
-                            Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, $"'{arg}' is not a number from 1 to 9.", MyFontEnum.Red);
-                        }
-
-                        return;
-                    }
-                }
-
-                // if no argument is defined, ask for a number
-                PickedBlockDef = EquipmentMonitor.BlockDef;
-            }
-            else
-            {
-                Utils.ShowColoredChatMessage(ChatCommands.CMD_GETBLOCK, "Aim at a block with a welder or grinder first.", MyFontEnum.Red);
-            }
-        }
     }
 }

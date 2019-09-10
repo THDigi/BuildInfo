@@ -1,5 +1,4 @@
 ﻿using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Game;
@@ -125,16 +124,16 @@ namespace Digi.BuildInfo.Features
                         else
                         {
                             CloseMenu();
-                            Main.ChatCommands.ShowSelectedBlocksModWorkshop();
+                            Main.ChatCommandHandler.CommandModLink.ExecuteNoArgs();
                         }
                         break;
                     case 3:
                         CloseMenu();
-                        Main.ChatCommands.ShowHelp();
+                        Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs();
                         break;
                     case 4:
                         CloseMenu();
-                        Main.ChatCommands.ShowBuildInfoWorkshop();
+                        Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs();
                         break;
                     case 5:
                         ToggleTextInfo();
@@ -153,7 +152,7 @@ namespace Digi.BuildInfo.Features
                         break;
                     case 10:
                         CloseMenu();
-                        ReloadConfig(Log.ModName);
+                        Main.ChatCommandHandler.CommandReloadConfig.ExecuteNoArgs();
                         break;
                 }
             }
@@ -226,17 +225,6 @@ namespace Digi.BuildInfo.Features
                 CloseMenu();
                 MyAPIGateway.Utilities.ShowNotification("TextAPI mod not detected! (workshop id: 758597413)", 3000, MyFontEnum.Red);
             }
-        }
-
-        public void ReloadConfig(string caller)
-        {
-            if(Config.Load())
-                Utils.ShowColoredChatMessage(caller, "Config loaded.", MyFontEnum.Green);
-            else
-                Utils.ShowColoredChatMessage(caller, "Config created and loaded default settings.", MyFontEnum.Green);
-
-            Config.Save();
-            TextGeneration.OnConfigReloaded();
         }
 
         public void ToggleTextInfo()

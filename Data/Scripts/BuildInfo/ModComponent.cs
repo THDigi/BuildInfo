@@ -20,7 +20,6 @@ namespace Digi.BuildInfo
         protected QuickMenu QuickMenu => Main.QuickMenu;
         protected GameConfig GameConfig => Main.GameConfig;
         protected BlockMonitor BlockMonitor => Main.BlockMonitor;
-        protected ChatCommands ChatCommands => Main.ChatCommands;
         protected TerminalInfo TerminalInfo => Main.TerminalInfo;
         protected TextGeneration TextGeneration => Main.TextGeneration;
         protected LiveDataHandler LiveDataHandler => Main.LiveDataHandler;

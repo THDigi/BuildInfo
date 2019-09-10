@@ -130,6 +130,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Features\AnalyseShip.cs" />
+    <Compile Include="Features\ChatCommands\ChatCommandHandler.cs" />
+    <Compile Include="Features\ChatCommands\Arguments.cs" />
+    <Compile Include="Features\ChatCommands\CommandGetBlock.cs" />
+    <Compile Include="Features\ChatCommands\CommandQuickMenu.cs" />
+    <Compile Include="Features\ChatCommands\CommandModLink.cs" />
+    <Compile Include="Features\ChatCommands\Command.cs" />
+    <Compile Include="Features\ChatCommands\CommandHelp.cs" />
+    <Compile Include="Features\ChatCommands\CommandClearCache.cs" />
+    <Compile Include="Features\ChatCommands\CommandLaserPower.cs" />
+    <Compile Include="Features\ChatCommands\CommandShipMods.cs" />
+    <Compile Include="Features\ChatCommands\CommandWorkshop.cs" />
+    <Compile Include="Features\ChatCommands\CommandReloadConfig.cs" />
     <Compile Include="GameSession.cs" />
     <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
     <Compile Include="Libraries\ComponentLib\GameSession.cs" />
@@ -178,7 +190,6 @@
     <Compile Include="Features\PlacementDistance.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Features\BlockInfoAdditions.cs" />
-    <Compile Include="Features\ChatCommands.cs" />
     <Compile Include="Systems\TextAPIHandler.cs" />
     <Compile Include="Systems\EquipmentMonitor.cs" />
     <Compile Include="Utilities\Caches.cs" />
