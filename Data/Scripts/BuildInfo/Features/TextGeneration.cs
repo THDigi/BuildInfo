@@ -161,6 +161,7 @@ namespace Digi.BuildInfo.Features
 
         private void TextAPI_APIDetected()
         {
+            // FIXME: doesn't re-show the menu if in it while this happens...
             TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
         }
 
@@ -427,17 +428,16 @@ namespace Digi.BuildInfo.Features
             var textPos = Vector2D.Zero;
             var textOffset = Vector2D.Zero;
 
-            // FIXME: menu bg size doesn't match text
-
             // calculate text size if it wasn't inputted
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
                 textSize = textObject.GetTextLength();
 
             if(QuickMenu.Shown) // in the menu
             {
+                textSize.Y *= 1.2f; // HACK manual fix for smaller Y background only in menu
                 textOffset = new Vector2D(-textSize.X, textSize.Y / -2);
             }
-#if false
+#if false // disabled blockinfo-attached GUI
             else if(selectedBlock != null) // welder/grinder info attached to the game's block info
             {
                 var cam = MyAPIGateway.Session.Camera;
@@ -489,7 +489,7 @@ namespace Digi.BuildInfo.Features
             textObject.Origin = textPos;
             textObject.Offset = textOffset;
 
-#if false
+#if false // disabled blockinfo-attached GUI
             if(showMenu || selectedBlock == null)
 #endif
             {
