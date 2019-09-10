@@ -145,7 +145,7 @@ namespace Digi.BuildInfo.Features
                         SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
                         break;
                     case 8:
-                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo, showNotification: false);
+                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo, showNotification: TextAPIEnabled);
                         break;
                     case 9:
                         ToggleTextAPI();
