@@ -28,8 +28,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var titleColor = (Item.Interactable ? Utils.ColorTag(TitleColor) : "<color=gray>");
-            Item.Text = $"{titleColor}{Title}";
+            Item.Text = (Item.Interactable ? Utils.ColorTag(TitleColor, Title) : "<color=gray>" + Title);
         }
 
         private void OnClick()

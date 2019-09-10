@@ -35,10 +35,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
+            var title = (Item.Interactable ? Title : "<color=gray>" + Title);
+
             var isOn = Getter();
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? (isOn ? Utils.ColorTag(ColorOn) : Utils.ColorTag(ColorOff)) : "");
-            Item.Text = $"{titleColor}{Title}: {valueColor}{(isOn ? OnText : OffText)}";
+            var value = (isOn ? OnText : OffText);
+            value = (Item.Interactable ? (isOn ? Utils.ColorTag(ColorOn, value) : Utils.ColorTag(ColorOff, value)) : "");
+            Item.Text = $"{title}: {value}";
         }
 
         private void OnClick()

@@ -33,7 +33,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             for(int i = 0; i < Sliders.Length; ++i)
             {
-                int channel = i;
+                int channel = i; // captured by lambda, needs to be in this scope to not change
 
                 var slider = Sliders[channel] = new ItemSlider(category, CHANNEL_NAMES[channel], min: 0, max: 255, rounding: 0,
                     getter: () => GetChannel(setting.Value, channel),
@@ -101,8 +101,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var valueColor = Utils.ColorTag(Setting.Value);
-            Item.Text = $"{Title}: {valueColor}|||||";
+            var valueColor = Utils.ColorTag(Setting.Value, "|||||");
+            Item.Text = $"{Title}: {valueColor}";
         }
     }
 }

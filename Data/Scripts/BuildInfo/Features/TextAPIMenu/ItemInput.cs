@@ -39,9 +39,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
-            Item.Text = $"{titleColor}{Title}: {valueColor}{Getter()}";
+            var title = (Item.Interactable ? Title : "<color=gray>" + Title);
+            var value = (Item.Interactable ? Utils.ColorTag(ValueColor, Getter().ToString()) : Getter().ToString());
+            Item.Text = $"{title}: {value}";
         }
 
         private void OnSubmit(MyKeys key, bool shift, bool ctrl, bool alt)
@@ -73,7 +73,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             if(input == null)
             {
-                MyAPIGateway.Utilities.ShowNotification("Unknown key: " + key, 5000, MyFontEnum.Red);
+                MyAPIGateway.Utilities.ShowNotification($"Unknown key: {key.ToString()}", 5000, MyFontEnum.Red);
                 return null;
             }
 
