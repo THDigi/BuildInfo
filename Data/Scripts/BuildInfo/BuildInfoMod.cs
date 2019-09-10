@@ -40,7 +40,6 @@ namespace Digi.BuildInfo
         public LiveDataHandler LiveDataHandler;
         public TurretTracking TurretTracking;
         public TurretHUD TurretHUD;
-        public BuilderAdditions BuilderAdditions;
         public PlacementDistance PlacementDistance;
         public BlockInfoAdditions BlockInfoAdditions;
         public RelativeDampenerInfo RelativeDampenerInfo;
@@ -76,7 +75,6 @@ namespace Digi.BuildInfo
             LiveDataHandler = new LiveDataHandler(this);
             TurretTracking = new TurretTracking(this);
             TurretHUD = new TurretHUD(this);
-            BuilderAdditions = new BuilderAdditions(this);
             PlacementDistance = new PlacementDistance(this);
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);

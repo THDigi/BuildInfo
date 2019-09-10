@@ -139,7 +139,6 @@
     <Compile Include="Libraries\ComponentLib\UpdateFlagsExtensions.cs" />
     <Compile Include="ModComponent.cs" />
     <Compile Include="Features\RelativeDampenerInfo.cs" />
-    <Compile Include="Features\BuilderAdditions.cs" />
     <Compile Include="Features\Config\Config.cs" />
     <Compile Include="Features\Config\FlagExtensions.cs" />
     <Compile Include="Features\Config\Flags.cs" />
