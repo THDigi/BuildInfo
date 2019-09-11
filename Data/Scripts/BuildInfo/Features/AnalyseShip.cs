@@ -603,7 +603,7 @@ namespace Digi.BuildInfo.Features
         void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
         {
             sb.Clear();
-            sb.Append("Blocks or skins from DLCs:").NewLine();
+            sb.Append("##### Blocks or skins from DLCs:").NewLine();
 
             if(dlcs.Count == 0)
             {
@@ -624,7 +624,7 @@ namespace Digi.BuildInfo.Features
             }
 
             sb.NewLine();
-            sb.Append("Blocks or skins from mods:").NewLine();
+            sb.Append("##### Blocks or skins from mods:").NewLine();
 
             if(mods.Count == 0)
             {
@@ -648,7 +648,9 @@ namespace Digi.BuildInfo.Features
             }
 
             sb.NewLine();
-            sb.Append("Vanilla blocks altered by mods:").NewLine();
+            sb.Append("##### Vanilla blocks altered by mods:").NewLine();
+            sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.").NewLine();
+            sb.NewLine();
 
             if(modsChangingVanilla.Count == 0)
             {
@@ -670,9 +672,6 @@ namespace Digi.BuildInfo.Features
                     sb.NewLine();
                 }
             }
-
-            sb.NewLine();
-            sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.");
 
             var text = sb.ToString();
 
