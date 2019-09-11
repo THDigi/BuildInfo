@@ -527,145 +527,8 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
 
-                var grids = MyAPIGateway.GridGroups.GetGroup(mainGrid, GridLinkTypeEnum.Physical);
-
-                foreach(MyCubeGrid grid in grids)
-                {
-                    foreach(IMySlimBlock block in grid.GetBlocks())
-                    {
-                        var def = (MyCubeBlockDefinition)block.BlockDefinition;
-
-                        if(block.SkinSubtypeId != MyStringHash.NullOrEmpty)
-                        {
-                            string dlc;
-                            if(armorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
-                            {
-                                var objects = GetOrAddObjects(dlcs, dlc);
-                                objects.SkinnedBlocks++;
-                            }
-                            else
-                            {
-                                ModId modId;
-                                if(armorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
-                                {
-                                    var objects = GetOrAddObjects(mods, modId);
-                                    objects.SkinnedBlocks++;
-                                }
-                            }
-                        }
-
-                        if(def.DLCs != null && def.DLCs.Length != 0)
-                        {
-                            foreach(var dlc in def.DLCs)
-                            {
-                                var objects = GetOrAddObjects(dlcs, dlc);
-                                objects.Blocks++;
-                            }
-                        }
-
-                        if(!def.Context.IsBaseGame)
-                        {
-                            var modId = new ModId(def.Context);
-
-                            if(vanillaDefinitions.Contains(def.Id))
-                            {
-                                if(!mods.ContainsKey(modId))
-                                {
-                                    var objects = GetOrAddObjects(modsChangingVanilla, modId);
-                                    objects.Blocks++;
-                                }
-                            }
-                            else
-                            {
-                                var objects = GetOrAddObjects(mods, modId);
-                                objects.Blocks++;
-                            }
-                        }
-                    }
-                }
-
-                sb.Clear();
-                sb.Append("Blocks or skins from DLCs:").NewLine();
-
-                if(dlcs.Count == 0)
-                {
-                    sb.Append(" (None)").NewLine();
-                }
-                else
-                {
-                    foreach(var kv in dlcs)
-                    {
-                        var dlc = kv.Key;
-                        var objects = kv.Value;
-
-                        sb.Append("- ").Append(dlc).NewLine();
-
-                        sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
-                        sb.NewLine();
-                    }
-                }
-
-                sb.NewLine();
-                sb.Append("Blocks or skins from mods:").NewLine();
-
-                if(mods.Count == 0)
-                {
-                    sb.Append(" (None)").NewLine();
-                }
-                else
-                {
-                    foreach(var kv in mods)
-                    {
-                        var modId = kv.Key;
-                        var objects = kv.Value;
-
-                        sb.Append("- ");
-                        if(modId.WorkshopId != 0)
-                            sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
-                        sb.Append(modId.ModName).NewLine();
-
-                        sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
-                        sb.NewLine();
-                    }
-                }
-
-                sb.NewLine();
-                sb.Append("Vanilla blocks altered by mods:").NewLine();
-
-                if(modsChangingVanilla.Count == 0)
-                {
-                    sb.Append(" (None)").NewLine();
-                }
-                else
-                {
-                    foreach(var kv in modsChangingVanilla)
-                    {
-                        var modId = kv.Key;
-                        var objects = kv.Value;
-
-                        sb.Append("- ");
-                        if(modId.WorkshopId != 0)
-                            sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
-                        sb.Append(modId.ModName).NewLine();
-
-                        sb.Append("    ").Append(objects.Blocks).Append(" blocks").NewLine();
-                        sb.NewLine();
-                    }
-                }
-
-                sb.NewLine();
-                sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.");
-
-                var text = sb.ToString();
-
-                sb.Clear();
-                sb.Append(mainGrid.CustomName);
-                if(grids.Count > 1)
-                    sb.Append(" + ").Append((grids.Count - 1).ToString()).Append(" subgrids");
-
-                var subTitle = sb.ToString();
-
-                MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", subTitle, string.Empty, text, null, "Close");
+                var grids = GetInfoFromGrids(mainGrid);
+                GenerateShipInfo(mainGrid, grids);
             }
             finally
             {
@@ -673,6 +536,154 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
             }
+        }
+
+        List<IMyCubeGrid> GetInfoFromGrids(IMyCubeGrid mainGrid)
+        {
+            var grids = MyAPIGateway.GridGroups.GetGroup(mainGrid, GridLinkTypeEnum.Physical);
+
+            foreach(MyCubeGrid grid in grids)
+            {
+                foreach(IMySlimBlock block in grid.GetBlocks())
+                {
+                    var def = (MyCubeBlockDefinition)block.BlockDefinition;
+
+                    if(block.SkinSubtypeId != MyStringHash.NullOrEmpty)
+                    {
+                        string dlc;
+                        if(armorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
+                        {
+                            var objects = GetOrAddObjects(dlcs, dlc);
+                            objects.SkinnedBlocks++;
+                        }
+                        else
+                        {
+                            ModId modId;
+                            if(armorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
+                            {
+                                var objects = GetOrAddObjects(mods, modId);
+                                objects.SkinnedBlocks++;
+                            }
+                        }
+                    }
+
+                    if(def.DLCs != null && def.DLCs.Length != 0)
+                    {
+                        foreach(var dlc in def.DLCs)
+                        {
+                            var objects = GetOrAddObjects(dlcs, dlc);
+                            objects.Blocks++;
+                        }
+                    }
+
+                    if(!def.Context.IsBaseGame)
+                    {
+                        var modId = new ModId(def.Context);
+
+                        if(vanillaDefinitions.Contains(def.Id))
+                        {
+                            if(!mods.ContainsKey(modId))
+                            {
+                                var objects = GetOrAddObjects(modsChangingVanilla, modId);
+                                objects.Blocks++;
+                            }
+                        }
+                        else
+                        {
+                            var objects = GetOrAddObjects(mods, modId);
+                            objects.Blocks++;
+                        }
+                    }
+                }
+            }
+
+            return grids;
+        }
+
+        void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
+        {
+            sb.Clear();
+            sb.Append("Blocks or skins from DLCs:").NewLine();
+
+            if(dlcs.Count == 0)
+            {
+                sb.Append(" (None)").NewLine();
+            }
+            else
+            {
+                foreach(var kv in dlcs)
+                {
+                    var dlc = kv.Key;
+                    var objects = kv.Value;
+
+                    sb.Append("- ").Append(dlc).NewLine();
+
+                    sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                    sb.NewLine();
+                }
+            }
+
+            sb.NewLine();
+            sb.Append("Blocks or skins from mods:").NewLine();
+
+            if(mods.Count == 0)
+            {
+                sb.Append(" (None)").NewLine();
+            }
+            else
+            {
+                foreach(var kv in mods)
+                {
+                    var modId = kv.Key;
+                    var objects = kv.Value;
+
+                    sb.Append("- ");
+                    if(modId.WorkshopId != 0)
+                        sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
+                    sb.Append(modId.ModName).NewLine();
+
+                    sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                    sb.NewLine();
+                }
+            }
+
+            sb.NewLine();
+            sb.Append("Vanilla blocks altered by mods:").NewLine();
+
+            if(modsChangingVanilla.Count == 0)
+            {
+                sb.Append(" (None)").NewLine();
+            }
+            else
+            {
+                foreach(var kv in modsChangingVanilla)
+                {
+                    var modId = kv.Key;
+                    var objects = kv.Value;
+
+                    sb.Append("- ");
+                    if(modId.WorkshopId != 0)
+                        sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
+                    sb.Append(modId.ModName).NewLine();
+
+                    sb.Append("    ").Append(objects.Blocks).Append(" blocks").NewLine();
+                    sb.NewLine();
+                }
+            }
+
+            sb.NewLine();
+            sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.");
+
+            var text = sb.ToString();
+
+            sb.Clear();
+            sb.Append(mainGrid.CustomName);
+            if(grids.Count > 1)
+                sb.Append(" + ").Append((grids.Count - 1).ToString()).Append(" subgrids");
+
+            var subTitle = sb.ToString();
+
+            MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", subTitle, string.Empty, text, null, "Close");
         }
 
         Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
