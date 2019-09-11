@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 
 namespace Digi.BuildInfo

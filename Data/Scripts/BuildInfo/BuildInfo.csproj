@@ -182,7 +182,6 @@
     <Compile Include="Libraries\ConfigLib\FloatSetting.cs" />
     <Compile Include="Libraries\ConfigLib\Vector2DSetting.cs" />
     <Compile Include="Libraries\TextAPIv2.cs" />
-    <Compile Include="Systems\DrawUtils.cs" />
     <Compile Include="Systems\BlockMonitor.cs" />
     <Compile Include="Features\MergeFailDetector.cs" />
     <Compile Include="BuildInfoMod.cs" />
@@ -212,6 +211,7 @@
     <Compile Include="Features\QuickMenu.cs" />
     <Compile Include="Systems\GameConfig.cs" />
     <Compile Include="Systems\InputLibHandler.cs" />
+    <Compile Include="Utilities\DrawUtils.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Features\LiveData\TempBlockSpawn.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />

@@ -16,11 +16,12 @@ namespace Digi.BuildInfo
     {
         public const string MOD_NAME = "Build Info";
 
+        // Utils
         public Caches Caches;
         public Constants Constants;
+        public DrawUtils DrawUtils;
 
         // Systems
-        public DrawUtils DrawUtils;
         public TextAPI TextAPI;
         public GameConfig GameConfig;
         public BlockMonitor BlockMonitor;
@@ -52,11 +53,12 @@ namespace Digi.BuildInfo
         {
             session.SetUpdateOrder(MyUpdateOrder.AfterSimulation);
 
+            // Utils
             Caches = new Caches(this);
             Constants = new Constants(this);
+            DrawUtils = new DrawUtils(this);
 
             // Systems
-            DrawUtils = new DrawUtils(this);
             TextAPI = new TextAPI(this);
             InputLibHandler = new InputLibHandler(this);
             GameConfig = new GameConfig(this);

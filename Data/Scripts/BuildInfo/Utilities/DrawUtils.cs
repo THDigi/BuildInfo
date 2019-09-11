@@ -1,9 +1,10 @@
 ﻿using System;
+using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRageMath;
 
-namespace Digi.BuildInfo.Systems
+namespace Digi.BuildInfo.Utilities
 {
     public class DrawUtils : ModComponent
     {
