@@ -15,16 +15,16 @@ namespace Digi.BuildInfo.Features
 {
     public class AnalyseShip : ModComponent
     {
-        struct ModInfo
+        struct ModId
         {
-            public class ModInfoComparer : IEqualityComparer<ModInfo>
+            public class ModInfoComparer : IEqualityComparer<ModId>
             {
-                public bool Equals(ModInfo x, ModInfo y)
+                public bool Equals(ModId x, ModId y)
                 {
                     return x.ModName == y.ModName;
                 }
 
-                public int GetHashCode(ModInfo obj)
+                public int GetHashCode(ModId obj)
                 {
                     return obj.GetHashCode();
                 }
@@ -37,7 +37,7 @@ namespace Digi.BuildInfo.Features
 
             private readonly int hashCode;
 
-            public ModInfo(MyModContext mod)
+            public ModId(MyModContext mod)
             {
                 ModName = mod.ModName;
                 WorkshopId = mod.GetWorkshopID();
@@ -50,13 +50,22 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private readonly HashSet<string> dlcs = new HashSet<string>();
-        private readonly HashSet<ModInfo> mods = new HashSet<ModInfo>(ModInfo.Comparer);
-        private readonly HashSet<ModInfo> modsChangingVanilla = new HashSet<ModInfo>(ModInfo.Comparer);
-        private readonly StringBuilder sb = new StringBuilder(512);
+        class Objects
+        {
+            public int Blocks;
+            public int SkinnedBlocks;
+        }
 
+        // per ship data
+        private readonly StringBuilder sb = new StringBuilder(512);
+        private readonly Dictionary<string, Objects> dlcs = new Dictionary<string, Objects>();
+        private readonly Dictionary<ModId, Objects> mods = new Dictionary<ModId, Objects>(ModId.Comparer);
+        private readonly Dictionary<ModId, Objects> modsChangingVanilla = new Dictionary<ModId, Objects>(ModId.Comparer);
+
+        // definition data
         private readonly HashSet<MyDefinitionId> vanillaDefinitions = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         private readonly Dictionary<MyStringHash, string> armorSkinDLC = new Dictionary<MyStringHash, string>(MyStringHash.Comparer);
+        private readonly Dictionary<MyStringHash, ModId> armorSkinMods = new Dictionary<MyStringHash, ModId>(MyStringHash.Comparer);
 
         private IMyTerminalControlButton projectorButton;
 
@@ -122,11 +131,18 @@ namespace Digi.BuildInfo.Features
         {
             foreach(var assetDef in MyDefinitionManager.Static.GetAssetModifierDefinitions())
             {
-                if(assetDef.DLCs != null && assetDef.DLCs.Length != 0 && assetDef.Id.SubtypeName.EndsWith("_Armor"))
+                if(assetDef.Id.SubtypeName.EndsWith("_Armor"))
                 {
-                    foreach(var dlc in assetDef.DLCs)
+                    if(assetDef.DLCs != null && assetDef.DLCs.Length != 0)
                     {
-                        armorSkinDLC.Add(assetDef.Id.SubtypeId, dlc);
+                        foreach(var dlc in assetDef.DLCs)
+                        {
+                            armorSkinDLC.Add(assetDef.Id.SubtypeId, dlc);
+                        }
+                    }
+                    else if(!assetDef.Context.IsBaseGame)
+                    {
+                        armorSkinMods.Add(assetDef.Id.SubtypeId, new ModId(assetDef.Context));
                     }
                 }
             }
@@ -524,7 +540,17 @@ namespace Digi.BuildInfo.Features
                             string dlc;
                             if(armorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
                             {
-                                dlcs.Add(dlc);
+                                var objects = GetOrAddObjects(dlcs, dlc);
+                                objects.SkinnedBlocks++;
+                            }
+                            else
+                            {
+                                ModId modId;
+                                if(armorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
+                                {
+                                    var objects = GetOrAddObjects(mods, modId);
+                                    objects.SkinnedBlocks++;
+                                }
                             }
                         }
 
@@ -532,22 +558,27 @@ namespace Digi.BuildInfo.Features
                         {
                             foreach(var dlc in def.DLCs)
                             {
-                                dlcs.Add(dlc);
+                                var objects = GetOrAddObjects(dlcs, dlc);
+                                objects.Blocks++;
                             }
                         }
 
                         if(!def.Context.IsBaseGame)
                         {
-                            var modInfo = new ModInfo(def.Context);
+                            var modId = new ModId(def.Context);
 
                             if(vanillaDefinitions.Contains(def.Id))
                             {
-                                if(!mods.Contains(modInfo))
-                                    modsChangingVanilla.Add(modInfo);
+                                if(!mods.ContainsKey(modId))
+                                {
+                                    var objects = GetOrAddObjects(modsChangingVanilla, modId);
+                                    objects.Blocks++;
+                                }
                             }
                             else
                             {
-                                mods.Add(modInfo);
+                                var objects = GetOrAddObjects(mods, modId);
+                                objects.Blocks++;
                             }
                         }
                     }
@@ -562,14 +593,20 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    foreach(var dlc in dlcs)
+                    foreach(var kv in dlcs)
                     {
+                        var dlc = kv.Key;
+                        var objects = kv.Value;
+
                         sb.Append("- ").Append(dlc).NewLine();
+
+                        sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                        sb.NewLine();
                     }
                 }
 
                 sb.NewLine();
-                sb.Append("Blocks from mods:").NewLine();
+                sb.Append("Blocks or skins from mods:").NewLine();
 
                 if(mods.Count == 0)
                 {
@@ -577,14 +614,18 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    foreach(var mod in mods)
+                    foreach(var kv in mods)
                     {
+                        var modId = kv.Key;
+                        var objects = kv.Value;
+
                         sb.Append("- ");
+                        if(modId.WorkshopId != 0)
+                            sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
+                        sb.Append(modId.ModName).NewLine();
 
-                        if(mod.WorkshopId != 0)
-                            sb.Append("(").Append(mod.WorkshopId.ToString()).Append(") ");
-
-                        sb.Append(mod.ModName).NewLine();
+                        sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                        sb.NewLine();
                     }
                 }
 
@@ -597,20 +638,23 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    foreach(var mod in modsChangingVanilla)
+                    foreach(var kv in modsChangingVanilla)
                     {
+                        var modId = kv.Key;
+                        var objects = kv.Value;
+
                         sb.Append("- ");
+                        if(modId.WorkshopId != 0)
+                            sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
+                        sb.Append(modId.ModName).NewLine();
 
-                        if(mod.WorkshopId != 0)
-                            sb.Append("(").Append(mod.WorkshopId.ToString()).Append(") ");
-
-                        sb.Append(mod.ModName).NewLine();
+                        sb.Append("    ").Append(objects.Blocks).Append(" blocks").NewLine();
+                        sb.NewLine();
                     }
                 }
 
                 sb.NewLine();
-                sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.").NewLine();
-                sb.NewLine();
+                sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.");
 
                 var text = sb.ToString();
 
@@ -629,6 +673,17 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
             }
+        }
+
+        Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
+        {
+            Objects objects;
+            if(!dictionary.TryGetValue(key, out objects))
+            {
+                objects = new Objects();
+                dictionary.Add(key, objects);
+            }
+            return objects;
         }
     }
 }
