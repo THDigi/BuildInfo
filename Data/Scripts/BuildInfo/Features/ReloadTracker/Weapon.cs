@@ -12,9 +12,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     /// </summary>
     public class Weapon
     {
-        public IMyLargeTurretBase Turret;
+        public IMyUserControllableGun Block;
         private IMyGunObject<MyGunBase> gun;
         private MyWeaponDefinition weaponDef;
+
+        public int ReloadUntilTick;
+        public bool Reloading => ReloadUntilTick > 0;
 
         public int Ammo
         {
@@ -56,11 +59,11 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
         }
 
-        public bool Init(IMyLargeTurretBase turret)
+        public bool Init(IMyUserControllableGun gunBlock)
         {
-            Turret = turret;
-            gun = (IMyGunObject<MyGunBase>)turret;
-            var blockDef = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
+            Block = gunBlock;
+            gun = (IMyGunObject<MyGunBase>)gunBlock;
+            var blockDef = (MyWeaponBlockDefinition)gunBlock.SlimBlock.BlockDefinition;
             weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(blockDef.WeaponDefinitionId);
 
             if(weaponDef.ReloadTime == 0)
@@ -84,18 +87,28 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         /// </summary>
         public void Clear()
         {
-            Turret = null;
+            Block = null;
             gun = null;
             weaponDef = null;
+            ReloadUntilTick = 0;
+            projectilesUtilReload = 0;
+            projectileShotsInBurst = 0;
+            missilesUntilReload = 0;
+            missileShotsInBurst = 0;
         }
 
-        public bool Update()
+        public bool Update(int tick)
         {
-            if(Turret.MarkedForClose)
+            if(Block.MarkedForClose)
                 return false;
+
+            if(ReloadUntilTick != 0 && ReloadUntilTick < tick)
+                ReloadUntilTick = 0;
 
             if(gun.GunBase.LastShootTime.Ticks > lastShotTime)
             {
+                bool reloading = false;
+
                 lastShotTime = gun.GunBase.LastShootTime.Ticks;
 
                 if(gun.GunBase.IsAmmoProjectile)
@@ -103,6 +116,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                     if(--projectilesUtilReload == 0)
                     {
                         projectilesUtilReload = projectileShotsInBurst;
+                        reloading = true;
                     }
                 }
                 else if(gun.GunBase.IsAmmoMissile)
@@ -110,8 +124,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                     if(--missilesUntilReload == 0)
                     {
                         missilesUntilReload = missileShotsInBurst;
+                        reloading = true;
                     }
                 }
+
+                if(reloading)
+                    ReloadUntilTick = tick + (int)(60f * (weaponDef.ReloadTime / 1000f));
             }
 
             return true;

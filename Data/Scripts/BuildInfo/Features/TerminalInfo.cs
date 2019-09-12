@@ -523,8 +523,22 @@ namespace Digi.BuildInfo.Features
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
             int totalAmmo = gun.GunBase.GetTotalAmmunitionAmount();
 
-            info.Append("Ammo: ").Append(gun.GunBase.CurrentAmmo).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
-            info.Append("Magazine: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
+            var weaponTracker = Main.ReloadTracking.GetWeaponInfo((IMyUserControllableGun)block);
+
+            if(weaponTracker != null)
+            {
+                info.Append("Ammo: ");
+
+                if(weaponTracker.Reloading)
+                    info.Append("Reloading");
+                else
+                    info.Append(weaponTracker.Ammo);
+
+                info.Append(" / ").Append(weaponTracker.AmmoMax).NewLine();
+            }
+
+            info.Append("Reserve: ").Append(gun.GunBase.CurrentAmmo).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
+            info.Append("Type: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)

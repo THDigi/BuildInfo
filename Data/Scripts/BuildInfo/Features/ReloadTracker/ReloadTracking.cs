@@ -12,17 +12,20 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        private List<Weapon> turretTrackers = new List<Weapon>();
-        private MyConcurrentPool<Weapon> trackerPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
+        private List<Weapon> weapons = new List<Weapon>();
+        private MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
-            BlockMonitor.CallbackDelegate action = TurretAdded;
+            var action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeMissileTurret), action);
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
+            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallGatlingGun), action);
+            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncher), action);
+            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
         }
 
         protected override void RegisterComponent()
@@ -31,54 +34,54 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         protected override void UnregisterComponent()
         {
-            turretTrackers.Clear();
-            trackerPool.Clean();
+            weapons.Clear();
+            weaponPool.Clean();
         }
 
-        public Weapon GetTrackerForTurret(IMyLargeTurretBase turret)
+        public Weapon GetWeaponInfo(IMyUserControllableGun gunBlock)
         {
-            for(int i = (turretTrackers.Count - 1); i >= 0; --i)
+            for(int i = (weapons.Count - 1); i >= 0; --i)
             {
-                var turretTracker = turretTrackers[i];
+                var weapon = weapons[i];
 
-                if(turretTracker.Turret == turret)
-                    return turretTracker;
+                if(weapon.Block == gunBlock)
+                    return weapon;
             }
 
             return null;
         }
 
-        private void TurretAdded(IMySlimBlock block)
+        private void WeaponBlockAdded(IMySlimBlock block)
         {
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
 
-            var turret = block.FatBlock as IMyLargeTurretBase;
+            var gunBlock = block.FatBlock as IMyUserControllableGun;
 
-            if(turret != null)
+            if(gunBlock != null)
             {
-                var tracker = trackerPool.Get();
+                var weapon = weaponPool.Get();
 
-                if(!tracker.Init(turret))
+                if(!weapon.Init(gunBlock))
                 {
-                    trackerPool.Return(tracker);
+                    weaponPool.Return(weapon);
                     return;
                 }
 
-                turretTrackers.Add(tracker);
+                weapons.Add(weapon);
             }
         }
 
         protected override void UpdateAfterSim(int tick)
         {
-            for(int i = (turretTrackers.Count - 1); i >= 0; --i)
+            for(int i = (weapons.Count - 1); i >= 0; --i)
             {
-                var tracker = turretTrackers[i];
+                var weapon = weapons[i];
 
-                if(!tracker.Update())
+                if(!weapon.Update(tick))
                 {
-                    turretTrackers.RemoveAtFast(i);
-                    trackerPool.Return(tracker);
+                    weapons.RemoveAtFast(i);
+                    weaponPool.Return(weapon);
                     continue;
                 }
             }

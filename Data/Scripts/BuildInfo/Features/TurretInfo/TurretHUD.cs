@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private IMyLargeTurretBase prevTurret;
-        private Weapon tracker;
+        private Weapon weaponTracker;
 
         private bool visible = false;
         private IMyHudNotification notify;
@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
             {
                 if(prevTurret != turret)
                 {
-                    tracker = Main.TurretTracking.GetTrackerForTurret(turret);
+                    weaponTracker = Main.ReloadTracking.GetWeaponInfo(turret);
                     prevTurret = turret;
                 }
 
@@ -122,16 +122,23 @@ namespace Digi.BuildInfo.Features.TurretInfo
 
                 sb.Clear();
 
-                if(tracker != null)
+                if(weaponTracker != null)
                 {
                     sb.Append("Ammo: ");
-                    var ammo = tracker.Ammo;
-                    var ammoMax = tracker.AmmoMax;
+                    var ammo = weaponTracker.Ammo;
+                    var ammoMax = weaponTracker.AmmoMax;
 
-                    if(ammo <= (ammoMax / 4))
+                    if(weaponTracker.Reloading)
+                        sb.Color(Color.Red);
+                    else if(ammo <= (ammoMax / 4))
                         sb.Color(Color.Yellow);
 
-                    sb.Append(ammo).ResetColor().Append(" / ").Append(ammoMax).NewLine();
+                    if(weaponTracker.Reloading)
+                        sb.Append("Reloading");
+                    else
+                        sb.Append(ammo);
+
+                    sb.ResetColor().Append(" / ").Append(ammoMax).NewLine();
                 }
 
                 if(magDef != null)
@@ -222,7 +229,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
 
             visible = false;
             prevTurret = null;
-            tracker = null;
+            weaponTracker = null;
 
             if(hudMsg != null)
                 hudMsg.Visible = false;
