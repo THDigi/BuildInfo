@@ -168,8 +168,8 @@
     <Compile Include="Features\TextAPIMenu\ItemToggle.cs" />
     <Compile Include="Features\TextAPIMenu\ItemGroup.cs" />
     <Compile Include="Features\TextAPIMenu\ModMenu.cs" />
-    <Compile Include="Features\TurretInfo\TurretAmmoTracker.cs" />
-    <Compile Include="Features\TurretInfo\TurretTracking.cs" />
+    <Compile Include="Features\ReloadTracker\Weapon.cs" />
+    <Compile Include="Features\ReloadTracker\ReloadTracking.cs" />
     <Compile Include="Libraries\ConfigLib\BoolSetting.cs" />
     <Compile Include="Libraries\ConfigLib\FlagsSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ColorSetting.cs" />

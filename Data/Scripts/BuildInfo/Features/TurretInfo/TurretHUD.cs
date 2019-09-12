@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private IMyLargeTurretBase prevTurret;
-        private TurretAmmoTracker tracker;
+        private Weapon tracker;
 
         private bool visible = false;
         private IMyHudNotification notify;

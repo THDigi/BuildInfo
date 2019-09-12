@@ -5,12 +5,12 @@ using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
 
-namespace Digi.BuildInfo.Features.TurretInfo
+namespace Digi.BuildInfo.Features.ReloadTracker
 {
     /// <summary>
     /// Re-usable turret ammo tracking for determining when reload is about to happen.
     /// </summary>
-    public class TurretAmmoTracker
+    public class Weapon
     {
         public IMyLargeTurretBase Turret;
         private IMyGunObject<MyGunBase> gun;
@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
 
         private long lastShotTime;
 
-        public TurretAmmoTracker()
+        public Weapon()
         {
         }
 

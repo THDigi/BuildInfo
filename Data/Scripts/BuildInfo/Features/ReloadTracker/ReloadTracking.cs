@@ -6,16 +6,16 @@ using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game.ModAPI;
 
-namespace Digi.BuildInfo.Features.TurretInfo
+namespace Digi.BuildInfo.Features.ReloadTracker
 {
-    public class TurretTracking : ModComponent
+    public class ReloadTracking : ModComponent
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        private List<TurretAmmoTracker> turretTrackers = new List<TurretAmmoTracker>();
-        private MyConcurrentPool<TurretAmmoTracker> trackerPool = new MyConcurrentPool<TurretAmmoTracker>(activator: () => new TurretAmmoTracker(), clear: (i) => i.Clear());
+        private List<Weapon> turretTrackers = new List<Weapon>();
+        private MyConcurrentPool<Weapon> trackerPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
 
-        public TurretTracking(BuildInfoMod main) : base(main)
+        public ReloadTracking(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
@@ -35,7 +35,7 @@ namespace Digi.BuildInfo.Features.TurretInfo
             trackerPool.Clean();
         }
 
-        public TurretAmmoTracker GetTrackerForTurret(IMyLargeTurretBase turret)
+        public Weapon GetTrackerForTurret(IMyLargeTurretBase turret)
         {
             for(int i = (turretTrackers.Count - 1); i >= 0; --i)
             {
