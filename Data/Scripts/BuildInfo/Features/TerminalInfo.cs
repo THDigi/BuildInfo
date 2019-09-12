@@ -89,14 +89,18 @@ namespace Digi.BuildInfo.Features
 
         private void RegisterFormats()
         {
-            Add(typeof(MyObjectBuilder_InteriorLight), Format_LightingBlock);
-            Add(typeof(MyObjectBuilder_ReflectorLight), Format_LightingBlock);
+            CustomInfoCall action;
 
-            Add(typeof(MyObjectBuilder_Door), Format_Doors);
-            Add(typeof(MyObjectBuilder_AdvancedDoor), Format_Doors);
-            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), Format_Doors);
-            Add(typeof(MyObjectBuilder_AirtightHangarDoor), Format_Doors);
-            Add(typeof(MyObjectBuilder_AirtightSlideDoor), Format_Doors);
+            action = Format_LightingBlock;
+            Add(typeof(MyObjectBuilder_InteriorLight), action);
+            Add(typeof(MyObjectBuilder_ReflectorLight), action);
+
+            action = Format_Doors;
+            Add(typeof(MyObjectBuilder_Door), action);
+            Add(typeof(MyObjectBuilder_AdvancedDoor), action);
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), action);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), action);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), action);
 
             Add(typeof(MyObjectBuilder_CargoContainer), Format_CargoContainer);
 
@@ -106,14 +110,16 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_ShipGrinder), Format_ShipGrinder);
 
-            Add(typeof(MyObjectBuilder_PistonBase), Format_Piston); // this one is actually ancient and unused?
-            Add(typeof(MyObjectBuilder_ExtendedPistonBase), Format_Piston);
+            action = Format_Piston;
+            Add(typeof(MyObjectBuilder_PistonBase), action); // this one is actually ancient and unused?
+            Add(typeof(MyObjectBuilder_ExtendedPistonBase), action);
 
             Add(typeof(MyObjectBuilder_ShipConnector), Format_Connector);
 
-            Add(typeof(MyObjectBuilder_MotorAdvancedStator), Format_Rotor);
-            Add(typeof(MyObjectBuilder_MotorStator), Format_Rotor);
-            Add(typeof(MyObjectBuilder_MotorSuspension), Format_Rotor);
+            action = Format_Rotor;
+            Add(typeof(MyObjectBuilder_MotorAdvancedStator), action);
+            Add(typeof(MyObjectBuilder_MotorStator), action);
+            Add(typeof(MyObjectBuilder_MotorSuspension), action);
 
             Add(typeof(MyObjectBuilder_TimerBlock), Format_TimerBlock);
 
@@ -121,14 +127,15 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_ButtonPanel), Format_ButtonPanel);
 
-            Add(typeof(MyObjectBuilder_TurretBase), Format_Weapons);
-            Add(typeof(MyObjectBuilder_ConveyorTurretBase), Format_Weapons);
-            Add(typeof(MyObjectBuilder_SmallGatlingGun), Format_Weapons);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncher), Format_Weapons);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Format_Weapons);
-            Add(typeof(MyObjectBuilder_InteriorTurret), Format_Weapons);
-            Add(typeof(MyObjectBuilder_LargeGatlingTurret), Format_Weapons);
-            Add(typeof(MyObjectBuilder_LargeMissileTurret), Format_Weapons);
+            action = Format_Weapons;
+            Add(typeof(MyObjectBuilder_TurretBase), action);
+            Add(typeof(MyObjectBuilder_ConveyorTurretBase), action);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), action);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), action);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
+            Add(typeof(MyObjectBuilder_InteriorTurret), action);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), action);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), action);
 
             // nothing useful to add, it also has a huge detail info text when a projection is loaded
             //Add(typeof(MyObjectBuilder_Projector),Format_Projector);
@@ -138,11 +145,13 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Parachute), Format_Parachute);
 
-            Add(typeof(MyObjectBuilder_GasTank), Format_GasTank);
-            Add(typeof(MyObjectBuilder_OxygenTank), Format_GasTank);
+            action = Format_GasTank;
+            Add(typeof(MyObjectBuilder_GasTank), action);
+            Add(typeof(MyObjectBuilder_OxygenTank), action);
 
-            Add(typeof(MyObjectBuilder_Cockpit), Format_Seats);
-            Add(typeof(MyObjectBuilder_CryoChamber), Format_Seats);
+            action = Format_Seats;
+            Add(typeof(MyObjectBuilder_Cockpit), action);
+            Add(typeof(MyObjectBuilder_CryoChamber), action);
 
             Add(typeof(MyObjectBuilder_RemoteControl), Format_RemoteControl);
 
@@ -158,9 +167,10 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
             Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
 
-            Add(typeof(MyObjectBuilder_Refinery), Format_Production);
-            Add(typeof(MyObjectBuilder_Assembler), Format_Production);
-            Add(typeof(MyObjectBuilder_SurvivalKit), Format_Production);
+            action = Format_Production;
+            Add(typeof(MyObjectBuilder_Refinery), action);
+            Add(typeof(MyObjectBuilder_Assembler), action);
+            Add(typeof(MyObjectBuilder_SurvivalKit), action);
 
             Add(typeof(MyObjectBuilder_UpgradeModule), Format_UpgradeModule);
 
@@ -440,7 +450,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
+            info.DetailInfo_Inventory(Inv, Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
         }
 
         void Format_ConveyorSorter(IMyTerminalBlock block, StringBuilder info)
@@ -471,7 +481,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.ShipConnector_InventoryVolume(def));
+                info.DetailInfo_Inventory(Inv, Hardcoded.ShipConnector_InventoryVolume(def));
             }
 
             var data = BData_Base.TryGetDataCached<BData_Connector>(def);
@@ -507,7 +517,7 @@ namespace Digi.BuildInfo.Features
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
-            info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
+            info.DetailInfo_Inventory(Inv, Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
 
             var gun = (IMyGunObject<MyGunBase>)block;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
@@ -688,7 +698,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Inv != null)
             {
-                info.DetailInfo_Inventory(Inv, VanillaData.Hardcoded.Cockpit_InventoryVolume);
+                info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
             }
 
             var def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
@@ -1122,7 +1132,7 @@ namespace Digi.BuildInfo.Features
 
             var def = (MyRadioAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(VanillaData.Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).NewLine();
+            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).NewLine();
         }
 
         void Format_LaserAntenna(IMyTerminalBlock block, StringBuilder info)
@@ -1142,14 +1152,14 @@ namespace Digi.BuildInfo.Features
 
             info.Append("  At Range: ");
             if(antenna.Range < 1E+08f)
-                info.PowerFormat(VanillaData.Hardcoded.LaserAntenna_PowerUsage(def, antenna.Range));
+                info.PowerFormat(Hardcoded.LaserAntenna_PowerUsage(def, antenna.Range));
             else
                 info.Append("Infinite.");
             info.NewLine();
 
             info.Append("  Max: ");
             if(def.MaxRange > 0)
-                info.PowerFormat(VanillaData.Hardcoded.LaserAntenna_PowerUsage(def, def.MaxRange));
+                info.PowerFormat(Hardcoded.LaserAntenna_PowerUsage(def, def.MaxRange));
             else
                 info.Append("Infinite.");
             info.NewLine();
