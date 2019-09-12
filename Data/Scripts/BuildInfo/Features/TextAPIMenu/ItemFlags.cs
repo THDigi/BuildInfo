@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 if(name == "All" || name == "None")
                     continue;
 
-                int value = values[i]; // required for the lambda class magic to not use a different index later on
+                int value = values[i]; // captured by lambda, needs to be in this scope to not change
 
                 var item = new ItemToggle(category, $"    {name}",
                     getter: () => Setting.IsSet(value),

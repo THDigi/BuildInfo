@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Min = min;
             Max = max;
             Rounding = rounding;
-            format = $"N{rounding}";
+            format = "N" + rounding.ToString();
             Getter = getter;
             Setter = setter;
             Selected = selected;
@@ -48,10 +48,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
+            var title = (Item.Interactable ? Title : "<color=gray>" + Title);
             var valueColor = (Item.Interactable ? "<color=yellow>" : "");
             var value = Getter();
-            Item.Text = $"{titleColor}{Title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)}";
+            Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)}";
         }
 
         private void OnSubmit(Vector2D pos)

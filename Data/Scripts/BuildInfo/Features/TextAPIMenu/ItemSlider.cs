@@ -1,4 +1,5 @@
 ﻿using System;
+using Digi.BuildInfo.Utilities;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 
@@ -12,10 +13,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public Action<float> Sliding;
         public Action<float> Cancelled;
         public Func<float, string> Format;
-        public string Title;
-        public float Min;
-        public float Max;
-        public int Rounding;
+        public readonly string Title;
+        public readonly float Min;
+        public readonly float Max;
+        public readonly int Rounding;
         public Color ValueColor = new Color(0, 255, 100);
 
         public ItemSlider(MenuCategoryBase category, string title, float min, float max, int rounding,
@@ -36,7 +37,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Format = format;
 
             if(Format == null)
-                Format = (val) => val.ToString($"N{rounding}");
+            {
+                var formatString = "N" + rounding.ToString();
+                Format = (val) => val.ToString(formatString);
+            }
 
             float initialPercent = ValueToPercent(Min, Max, Getter());
             Item = new MenuSliderInput(string.Empty, category, initialPercent, title, OnSubmit, OnSlide, OnCancel);
@@ -53,7 +57,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public void UpdateTitle()
         {
             var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? $"<color={ValueColor.R},{ValueColor.G},{ValueColor.B}>" : "");
+            var valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
             Item.Text = $"{titleColor}{Title}: {valueColor}{Format.Invoke(Getter())}";
         }
 

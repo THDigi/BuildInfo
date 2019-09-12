@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void TextAPI_Detected()
         {
-            Category_Mod = new MenuRootCategory("Build Info", MenuFlag.PlayerMenu, "Build Info Settings");
+            Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs);
 
