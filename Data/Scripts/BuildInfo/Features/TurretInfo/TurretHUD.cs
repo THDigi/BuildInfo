@@ -13,6 +13,8 @@ using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
+// TODO add more of the vanilla HUD things back?
+
 namespace Digi.BuildInfo.Features.TurretInfo
 {
     public class TurretHUD : ModComponent
@@ -106,119 +108,126 @@ namespace Digi.BuildInfo.Features.TurretInfo
                     prevTurret = turret;
                 }
 
-                var gun = (IMyGunObject<MyGunBase>)turret;
-                var magDef = gun.GunBase?.CurrentAmmoMagazineDefinition;
-
-                var grid = turret.CubeGrid;
-                var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
-
-                var inv = turret.GetInventory();
-
-                int loadedMag = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
-                int mags = gun.GetAmmunitionAmount(); // total mags in inventory (not including the one partially fired that's in the gun)
-
-                if(sb == null)
-                    sb = new StringBuilder(160);
-
-                sb.Clear();
-
-                if(weaponTracker != null)
-                {
-                    sb.Append("Ammo: ");
-                    var ammo = weaponTracker.Ammo;
-                    var ammoMax = weaponTracker.AmmoMax;
-
-                    if(weaponTracker.Reloading)
-                        sb.Color(Color.Red);
-                    else if(ammo <= (ammoMax / 4))
-                        sb.Color(Color.Yellow);
-
-                    if(weaponTracker.Reloading)
-                        sb.Append("Reloading");
-                    else
-                        sb.Append(ammo);
-
-                    sb.ResetColor().Append(" / ").Append(ammoMax).NewLine();
-                }
-
-                if(magDef != null)
-                {
-                    sb.Append("Type: ").Append(magDef.DisplayNameText).NewLine();
-
-                    if(magDef.Capacity > 1)
-                        sb.Append("Magazine: ").Append(loadedMag).NewLine();
-                }
-
-                sb.Append("Inventory: ").Append(mags);
-                if(inv != null && magDef != null)
-                    sb.Append(" / ").Append(Math.Floor((float)inv.MaxVolume / magDef.Volume));
-                sb.Append(" mags").NewLine();
-
-                if(!grid.IsStatic)
-                {
-                    sb.NewLine();
-
-                    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
-                    if(cockpit != null)
-                    {
-                        var internalCockpit = (MyCockpit)cockpit;
-
-                        sb.Append("Dampeners: ");
-
-                        if(internalCockpit.RelativeDampeningEntity != null)
-                        {
-                            sb.Color(Color.Lime).Append("Relative");
-                        }
-                        else
-                        {
-                            if(!cockpit.DampenersOverride)
-                                sb.Color(Color.Red);
-
-                            sb.Append(cockpit.DampenersOverride ? "On" : "Off");
-                        }
-
-                        sb.NewLine();
-                    }
-                }
-
-                // TODO add more of the vanilla HUD things back?
-
-                if(TextAPIEnabled)
-                {
-                    if(hudMsg == null)
-                    {
-                        hudMsg = new HudAPIv2.HUDMessage(sb, new Vector2D(0.4, 0), HideHud: true, Scale: 1.2, Shadowing: true, ShadowColor: Color.Black, Blend: BlendTypeEnum.PostPP);
-
-                        if(notify != null)
-                            notify.Hide();
-                    }
-
-                    var textLen = hudMsg.GetTextLength();
-                    hudMsg.Offset = new Vector2D(0, -(textLen.Y / 2));
-
-                    if(!visible)
-                    {
-                        visible = true;
-                        hudMsg.Visible = true;
-                    }
-                }
-                else
-                {
-                    if(notify == null)
-                        notify = notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue);
-
-                    notify.Text = sb.ToString();
-
-                    if(!visible)
-                    {
-                        visible = true;
-                        notify.Show();
-                    }
-                }
+                GenerateText(turret);
+                DrawHUD();
             }
             else
             {
                 HideHUD();
+            }
+        }
+
+        private void GenerateText(IMyLargeTurretBase turret)
+        {
+            var gun = (IMyGunObject<MyGunBase>)turret;
+            var magDef = gun.GunBase?.CurrentAmmoMagazineDefinition;
+
+            var grid = turret.CubeGrid;
+            var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+
+            var inv = turret.GetInventory();
+
+            int loadedMag = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
+            int mags = gun.GetAmmunitionAmount(); // total mags in inventory (not including the one partially fired that's in the gun)
+
+            if(sb == null)
+                sb = new StringBuilder(160);
+
+            sb.Clear();
+
+            if(weaponTracker != null)
+            {
+                sb.Append("Ammo: ");
+                var ammo = weaponTracker.Ammo;
+                var ammoMax = weaponTracker.AmmoMax;
+
+                if(weaponTracker.Reloading)
+                    sb.Color(Color.Red);
+                else if(ammo <= (ammoMax / 4))
+                    sb.Color(Color.Yellow);
+
+                if(weaponTracker.Reloading)
+                    sb.Append("Reloading");
+                else
+                    sb.Append(ammo);
+
+                sb.ResetColor().Append(" / ").Append(ammoMax).NewLine();
+            }
+
+            if(magDef != null)
+            {
+                sb.Append("Type: ").Append(magDef.DisplayNameText).NewLine();
+
+                if(magDef.Capacity > 1)
+                    sb.Append("Magazine: ").Append(loadedMag).NewLine();
+            }
+
+            sb.Append("Inventory: ").Append(mags);
+            if(inv != null && magDef != null)
+                sb.Append(" / ").Append(Math.Floor((float)inv.MaxVolume / magDef.Volume));
+            sb.Append(" mags").NewLine();
+
+            if(!grid.IsStatic)
+            {
+                sb.NewLine();
+
+                sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
+                if(cockpit != null)
+                {
+                    var internalCockpit = (MyCockpit)cockpit;
+
+                    sb.Append("Dampeners: ");
+
+                    if(internalCockpit.RelativeDampeningEntity != null)
+                    {
+                        sb.Color(Color.Lime).Append("Relative");
+                    }
+                    else
+                    {
+                        if(!cockpit.DampenersOverride)
+                            sb.Color(Color.Red);
+
+                        sb.Append(cockpit.DampenersOverride ? "On" : "Off");
+                    }
+
+                    sb.NewLine();
+                }
+            }
+        }
+
+        private void DrawHUD()
+        {
+            if(TextAPIEnabled)
+            {
+                if(hudMsg == null)
+                {
+                    hudMsg = new HudAPIv2.HUDMessage(sb, new Vector2D(0.4, 0), HideHud: true, Scale: 1.2, Shadowing: true, ShadowColor: Color.Black, Blend: BlendTypeEnum.PostPP);
+
+                    if(notify != null)
+                        notify.Hide();
+                }
+
+                var textLen = hudMsg.GetTextLength();
+                hudMsg.Offset = new Vector2D(0, -(textLen.Y / 2));
+
+                if(!visible)
+                {
+                    visible = true;
+                    hudMsg.Visible = true;
+                }
+            }
+            else
+            {
+                if(notify == null)
+                    notify = notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue);
+
+                notify.Text = sb.ToString();
+
+                if(!visible)
+                {
+                    visible = true;
+                    notify.Show();
+                }
             }
         }
 
