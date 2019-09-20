@@ -1514,10 +1514,6 @@ namespace Digi.BuildInfo.Features
                 {
                     action.Invoke(def);
                 }
-                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_WindTurbine") // TODO: temporary until MyObjectBuilder_WindTurbine is whitelisted
-                {
-                    Format_PowerProducer(def);
-                }
             }
             #endregion Per-block info
 
@@ -1769,8 +1765,7 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_HydrogenEngine), action);
             Add(typeof(MyObjectBuilder_BatteryBlock), action);
             Add(typeof(MyObjectBuilder_SolarPanel), action);
-            //Add(typeof(MyObjectBuilder_WindTurbine), action);
-            // TODO: uncomment when whitelisting is fixed
+            Add(typeof(MyObjectBuilder_WindTurbine), action);
 
             Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
 
