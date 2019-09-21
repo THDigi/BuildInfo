@@ -450,7 +450,9 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            info.DetailInfo_Inventory(Inv, Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
+            var cargoDef = (MyCargoContainerDefinition)block.SlimBlock.BlockDefinition;
+
+            info.DetailInfo_Inventory(Inv, cargoDef.InventorySize.Volume);
         }
 
         void Format_ConveyorSorter(IMyTerminalBlock block, StringBuilder info)
@@ -475,7 +477,7 @@ namespace Digi.BuildInfo.Features
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
             float volume;
 
-            if(Utils.GetInventoryFromComponent(def, out volume))
+            if(Utils.GetInventoryVolumeFromComponent(def, out volume))
             {
                 info.DetailInfo_Inventory(Inv, volume);
             }
@@ -517,7 +519,14 @@ namespace Digi.BuildInfo.Features
             //      (nothing)
 
             info.DetailInfo_InputPower(Sink);
-            info.DetailInfo_Inventory(Inv, Hardcoded.CargoContainer_InventoryVolume((MyCubeBlockDefinition)block.SlimBlock.BlockDefinition));
+
+            var weaponDef = (MyWeaponBlockDefinition)block.SlimBlock.BlockDefinition;
+
+            float maxVolume;
+            if(!Utils.GetInventoryVolumeFromComponent(weaponDef, out maxVolume))
+                maxVolume = weaponDef.InventoryMaxVolume;
+
+            info.DetailInfo_Inventory(Inv, maxVolume);
 
             var gun = (IMyGunObject<MyGunBase>)block;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
@@ -1021,10 +1030,9 @@ namespace Digi.BuildInfo.Features
 
             info.NewLine();
 
-            var maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
-
-            if(maxVolume <= 0)
-                Utils.GetInventoryFromComponent(reactorDef, out maxVolume);
+            float maxVolume;
+            if(!Utils.GetInventoryVolumeFromComponent(reactorDef, out maxVolume))
+                maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
 
             info.DetailInfo_Inventory(Inv, maxVolume);
         }

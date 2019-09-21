@@ -1835,7 +1835,7 @@ namespace Digi.BuildInfo.Features
         {
             PowerRequired(Hardcoded.ShipConnector_PowerReq(def), Hardcoded.ShipConnector_PowerGroup, powerHardcoded: true, groupHardcoded: true);
 
-            InventoryStats(def, 0, Hardcoded.ShipConnector_InventoryVolume(def));
+            InventoryStats(def, hardcodedVolume: Hardcoded.ShipConnector_InventoryVolume(def));
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
@@ -1863,7 +1863,7 @@ namespace Digi.BuildInfo.Features
                 PowerRequired(poweredCargo.RequiredPowerInput, poweredCargo.ResourceSinkGroup);
             }
 
-            InventoryStats(def, cargo.InventorySize.Volume, Hardcoded.CargoContainer_InventoryVolume(def));
+            InventoryStats(def, alternateVolume: cargo.InventorySize.Volume);
         }
 
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
@@ -1872,7 +1872,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(sorter.PowerInput, sorter.ResourceSinkGroup);
 
-            InventoryStats(def, sorter.InventorySize.Volume, 0);
+            InventoryStats(def, alternateVolume: sorter.InventorySize.Volume);
         }
         #endregion Conveyors
 
@@ -1987,7 +1987,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume;
-                if(Utils.GetInventoryFromComponent(def, out volume))
+                if(Utils.GetInventoryVolumeFromComponent(def, out volume))
                     AddLine().Label("Inventory").InventoryFormat(volume, Hardcoded.ShipDrill_InventoryConstraint);
                 else
                     AddLine().LabelHardcoded("Inventory").InventoryFormat(Hardcoded.ShipDrill_InventoryVolume(def), Hardcoded.ShipDrill_InventoryConstraint);
@@ -2007,7 +2007,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ShipTool_PowerReq, Hardcoded.ShipTool_PowerGroup, powerHardcoded: true, groupHardcoded: true);
 
-            InventoryStats(def, 0, Hardcoded.ShipTool_InventoryVolume(def));
+            InventoryStats(def, hardcodedVolume: Hardcoded.ShipTool_InventoryVolume(def));
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
@@ -2081,7 +2081,7 @@ namespace Digi.BuildInfo.Features
             if(cockpit != null)
             {
                 if(cockpit.HasInventory)
-                    InventoryStats(def, 0, Hardcoded.Cockpit_InventoryVolume);
+                    InventoryStats(def, hardcodedVolume: Hardcoded.Cockpit_InventoryVolume);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
@@ -2678,36 +2678,8 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
-                {
-                    var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
-                    var invLimit = reactor.InventoryConstraint;
-
-                    if(invLimit != null)
-                    {
-                        AddLine().Append("Inventory: ").InventoryFormat(volume, reactor.InventoryConstraint);
-
-                        if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
-                        {
-                            AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":");
-
-                            foreach(var id in invLimit.ConstrainedIds)
-                            {
-                                AddLine().Append("       - ").IdTypeSubtypeFormat(id);
-                            }
-
-                            foreach(var type in invLimit.ConstrainedTypes)
-                            {
-                                AddLine().Append("       - All of type: ").IdTypeFormat(type);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        AddLine().Append("Inventory: ").InventoryFormat(volume);
-                    }
-                }
-
+                var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
+                InventoryStats(def, alternateVolume: volume);
                 return;
             }
 
@@ -3239,19 +3211,59 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume, float hardcodedVolume)
+        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true)
         {
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                float volume;
-                if(!Utils.GetInventoryFromComponent(def, out volume))
-                    volume = alternateVolume;
+                float volume = alternateVolume;
+                var invComp = Utils.GetInventoryFromComponent(def);
+
+                if(invComp != null)
+                    volume = invComp.Volume;
 
                 if(volume > 0)
                     AddLine().Label("Inventory").InventoryFormat(volume);
                 else if(hardcodedVolume > 0)
                     AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume);
-                // else unknown inventory /shrug
+
+                if(invComp != null)
+                    InventoryConstraints(volume, invComp.InputConstraint);
+            }
+        }
+
+        private void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit)
+        {
+            if(invLimit != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
+            {
+                AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":");
+
+                foreach(var id in invLimit.ConstrainedIds)
+                {
+                    AddLine().Append("       - ").IdTypeSubtypeFormat(id).Append(" (Max fit: ");
+
+                    var itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
+
+                    if(itemDef == null)
+                    {
+                        GetLine().Color(COLOR_BAD).Append("ERROR: NOT FOUND!").ResetColor();
+                    }
+                    else
+                    {
+                        float maxFit = (maxVolume / itemDef.Volume);
+
+                        if(itemDef.HasIntegralAmounts)
+                            GetLine().Append(Math.Floor(maxFit));
+                        else
+                            GetLine().Append(maxFit.ToString("0.##"));
+                    }
+
+                    GetLine().Append(")");
+                }
+
+                foreach(var type in invLimit.ConstrainedTypes)
+                {
+                    AddLine().Append("       - All of type: ").IdTypeFormat(type);
+                }
             }
         }
 

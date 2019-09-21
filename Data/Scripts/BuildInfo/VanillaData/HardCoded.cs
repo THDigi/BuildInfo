@@ -128,18 +128,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyBeacon.UpdatePowerInput()
         public static float Beacon_PowerReq(MyBeaconDefinition def, float? range = null)
         {
-            // HACK small backwards compatibility
-#if VERSION_191 || VERSION_190 || VERSION_189 || VERSION_188 || VERSION_187 || VERSION_186 || VERSION_185 || VERSION_184 || VERSION_183 || VERSION_182 || VERSION_181 || VERSION_180
-            if(range.HasValue)
-                return (range.Value / 100000f) * MyEnergyConstants.MAX_REQUIRED_POWER_BEACON;
-            else
-                return (def.MaxBroadcastRadius / 100000f) * MyEnergyConstants.MAX_REQUIRED_POWER_BEACON;
-#else
             if(range.HasValue)
                 return (range.Value / def.MaxBroadcastRadius) * (def.MaxBroadcastPowerDrainkW / 1000f);
             else
                 return (def.MaxBroadcastPowerDrainkW / 1000f);
-#endif
         }
 
         // from MyTimerBlock
@@ -150,13 +142,6 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MySoundBlock
         public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK;
-
-        // from MyCargoContainer
-        public static float CargoContainer_InventoryVolume(MyCubeBlockDefinition def)
-        {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-            return (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize;
-        }
 
         // from MyLargeTurretBase
         public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET;

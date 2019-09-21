@@ -104,9 +104,27 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Gets the inventory volume from the EntityComponents and EntityContainers definitions.
         /// </summary>
-        public static bool GetInventoryFromComponent(MyDefinitionBase def, out float volume)
+        public static bool GetInventoryVolumeFromComponent(MyDefinitionBase def, out float volume)
         {
-            volume = 0;
+            var invComp = GetInventoryFromComponent(def);
+
+            if(invComp != null)
+            {
+                volume = invComp.Volume;
+                return true;
+            }
+            else
+            {
+                volume = 0;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets the inventory definition from the EntityComponents and EntityContainers definitions.
+        /// </summary>
+        public static MyInventoryComponentDefinition GetInventoryFromComponent(MyDefinitionBase def)
+        {
             MyContainerDefinition containerDef;
 
             if(MyDefinitionManager.Static.TryGetContainerDefinition(def.Id, out containerDef) && containerDef.DefaultComponents != null)
@@ -121,14 +139,13 @@ namespace Digi.BuildInfo.Utilities
 
                         if(invComp != null && invComp.Id.SubtypeId == def.Id.SubtypeId)
                         {
-                            volume = invComp.Volume;
-                            return true;
+                            return invComp;
                         }
                     }
                 }
             }
 
-            return false;
+            return null;
         }
 
         public static string ColorTag(Color color)
