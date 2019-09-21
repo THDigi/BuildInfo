@@ -9,6 +9,7 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
 using Draygo.API;
+using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
@@ -16,6 +17,7 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -1810,8 +1812,10 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
-            // TODO: safe zone block when MyObjectBuilder_SafeZoneBlock and MySafeZoneBlockDefinition are whitelisted
-            //Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
+            Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
+            Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
+            Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
+            Add(typeof(MyObjectBuilder_VendingMachine), Format_StoreBlock);
         }
 
         private void Add(MyObjectBuilderType blockType, TextGenerationCall call)
@@ -3165,20 +3169,54 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        // TODO: safe zone block when MyObjectBuilder_SafeZoneBlock and MySafeZoneBlockDefinition are whitelisted
-        //private void Format_SafeZone(MyCubeBlockDefinition def)
-        //{
-        //    var safeZone = (MySafeZoneBlockDefinition)def;
-        //
-        //    PowerRequired(safeZone.MaxSafeZonePowerDrainkW / 1000f, safeZone.ResourceSinkGroup);
-        //
-        //    AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Starts at").DistanceFormat(safeZone.DefaultSafeZoneRadius);
-        //    AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
-        //    AddLine().Label("Upkeep required").TimeFormat(safeZone.SafeZoneUpkeep).Append(" zone chip").Append(safeZone.SafeZoneUpkeep ? "s" : "");
-        //    AddLine().Label("Upkeep duration").TimeFormat(safeZone.SafeZoneUpkeepTimeM / 60f);
-        //
-        //    TextSurfaces(def, safeZone.ScreenAreas);
-        //}
+        private void Format_SafeZone(MyCubeBlockDefinition def)
+        {
+            var safeZone = (MySafeZoneBlockDefinition)def;
+
+            //PowerRequired(safeZone.MaxSafeZonePowerDrainkW / 1000f, safeZone.ResourceSinkGroup);
+            AddLine().Label("Power usage - Min").PowerFormat(safeZone.MinSafeZonePowerDrainkW / 1000f)
+                .Separator().Label("Max").PowerFormat(safeZone.MaxSafeZonePowerDrainkW / 1000f)
+                .Separator().Label("Priority").ResourcePriority(safeZone.ResourceSinkGroup);
+
+            AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Default").DistanceFormat(safeZone.DefaultSafeZoneRadius);
+            AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
+            AddLine().Label("Upkeep").Append(safeZone.SafeZoneUpkeep).Append(safeZone.SafeZoneUpkeep == 1 ? " zone chip" : " zone chips") // HACK block is hardcoded to only use zone chips.
+                .Separator().Label("for").TimeFormat(safeZone.SafeZoneUpkeepTimeM * 60f);
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            {
+                var invComp = Utils.GetInventoryFromComponent(def); // SafeZone type has no inventory data in its definition, only components can add inventory to it.
+                if(invComp != null)
+                {
+                    AddLine().Label("Inventory").InventoryFormat(invComp.Volume, invComp.InputConstraint);
+                    InventoryConstraints(invComp.Volume, invComp.InputConstraint);
+                }
+            }
+
+            Screens(def, safeZone.ScreenAreas);
+        }
+
+        private void Format_ContractBlock(MyCubeBlockDefinition def)
+        {
+            var contracts = (MyContractBlockDefinition)def;
+
+            Screens(def, contracts.ScreenAreas);
+        }
+
+        private void Format_StoreBlock(MyCubeBlockDefinition def)
+        {
+            var store = (MyStoreBlockDefinition)def;
+
+            // vending machine extends this, but has no info in it.
+            //var vending = def as MyVendingMachineDefinition;
+            //if(vending != null)
+            //{
+            //}
+
+            InventoryStats(def);
+
+            Screens(def, store.ScreenAreas);
+        }
         #endregion Per block info
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
