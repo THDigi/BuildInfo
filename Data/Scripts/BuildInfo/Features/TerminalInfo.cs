@@ -520,6 +520,9 @@ namespace Digi.BuildInfo.Features
 
             info.DetailInfo_InputPower(Sink);
 
+            if(Inv == null)
+                return;
+
             var weaponDef = (MyWeaponBlockDefinition)block.SlimBlock.BlockDefinition;
 
             float maxVolume;
