@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
@@ -69,6 +70,8 @@ namespace Digi.BuildInfo.Features
 
         private IMyTerminalControlButton projectorButton;
 
+        private Action<ResultEnum> WindowClosedAction;
+
         public AnalyseShip(BuildInfoMod main) : base(main)
         {
             if(Constants.EXPORT_VANILLA_BLOCKS)
@@ -78,6 +81,8 @@ namespace Digi.BuildInfo.Features
 
             DefineVanillaBlocks();
             GetArmorSkinDefinitions();
+
+            WindowClosedAction = new Action<ResultEnum>(WindowClosed);
         }
 
         protected override void RegisterComponent()
@@ -673,16 +678,67 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            var text = sb.ToString();
+            shipInfoText = sb.ToString();
 
             sb.Clear();
             sb.Append(mainGrid.CustomName);
             if(grids.Count > 1)
                 sb.Append(" + ").Append((grids.Count - 1).ToString()).Append(" subgrids");
 
-            var subTitle = sb.ToString();
+            shipInfoTitle = sb.ToString();
 
-            MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", subTitle, string.Empty, text, null, "Close");
+            MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", shipInfoTitle, string.Empty, shipInfoText, WindowClosedAction, "Export info to file\n(Press [Esc] to not export)");
+        }
+
+        StringBuilder fileNameSb = new StringBuilder(128);
+        string shipInfoTitle;
+        string shipInfoText;
+
+        void WindowClosed(ResultEnum result)
+        {
+            try
+            {
+                if(result == ResultEnum.OK)
+                {
+                    fileNameSb.Clear();
+                    fileNameSb.Append("ShipInfo '");
+                    fileNameSb.Append(shipInfoTitle);
+                    fileNameSb.Append("' - ");
+                    fileNameSb.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
+                    fileNameSb.Append(".txt");
+
+                    var invalidFileNameChars = Path.GetInvalidFileNameChars();
+
+                    foreach(char invalidChar in invalidFileNameChars)
+                    {
+                        fileNameSb.Replace(invalidChar, '_');
+                    }
+
+                    var fileName = fileNameSb.ToString();
+                    var modStorageName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+
+                    TextWriter writer = null;
+                    try
+                    {
+                        writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(fileName, typeof(AnalyseShip));
+                        writer.Write(shipInfoText);
+                        writer.Flush();
+
+                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Exported ship info to: %appdata%/SpaceEngineers/Storage/{modStorageName}/{fileName}", MyFontEnum.Green);
+                    }
+                    catch(Exception e)
+                    {
+                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Failed to export ship info! Exception: {e.Message}; see SE log for details.", MyFontEnum.Red);
+                        Log.Error(e);
+                    }
+
+                    writer?.Dispose();
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
