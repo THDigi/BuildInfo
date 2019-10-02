@@ -3173,15 +3173,25 @@ namespace Digi.BuildInfo.Features
         {
             var safeZone = (MySafeZoneBlockDefinition)def;
 
-            //PowerRequired(safeZone.MaxSafeZonePowerDrainkW / 1000f, safeZone.ResourceSinkGroup);
-            AddLine().Label("Power usage - Min").PowerFormat(safeZone.MinSafeZonePowerDrainkW / 1000f)
-                .Separator().Label("Max").PowerFormat(safeZone.MaxSafeZonePowerDrainkW / 1000f)
-                .Separator().Label("Priority").ResourcePriority(safeZone.ResourceSinkGroup);
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                AddLine().Label("Power usage - Min").PowerFormat(safeZone.MinSafeZonePowerDrainkW / 1000f).Separator().Label("Max").PowerFormat(safeZone.MaxSafeZonePowerDrainkW / 1000f);
 
-            AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Default").DistanceFormat(safeZone.DefaultSafeZoneRadius);
-            AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
-            AddLine().Label("Upkeep").Append(safeZone.SafeZoneUpkeep).Append(safeZone.SafeZoneUpkeep == 1 ? " zone chip" : " zone chips") // HACK block is hardcoded to only use zone chips.
-                .Separator().Label("for").TimeFormat(safeZone.SafeZoneUpkeepTimeM * 60f);
+                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    GetLine().Separator().ResourcePriority(safeZone.ResourceSinkGroup);
+            }
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Default").DistanceFormat(safeZone.DefaultSafeZoneRadius);
+                AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
+
+                // HACK block is hardcoded to only use zone chips, see MySafeZoneComponent.TryConsumeUpkeep().
+                var zoneChipDef = MyDefinitionManager.Static.GetComponentDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Component), "ZoneChip"));
+                string itemName = (zoneChipDef == null ? "ZoneChip" : zoneChipDef.DisplayNameText);
+
+                AddLine().Label("Upkeep").Append(safeZone.SafeZoneUpkeep).Append("x ").Append(itemName).Separator().Label("for").TimeFormat(safeZone.SafeZoneUpkeepTimeM * 60f);
+            }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
