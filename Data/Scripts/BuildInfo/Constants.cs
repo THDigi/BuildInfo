@@ -71,9 +71,10 @@ namespace Digi.BuildInfo
             resourceSinkGroups = 0;
 
             var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
-            var orderedGroups = groupDefs.OrderBy(GroupOrderBy);
+            var orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
 
-            foreach(var group in orderedGroups)
+            // compact priorities into an ordered number.
+            foreach(var group in orderedGroupsEnumerable)
             {
                 int priority = 0;
 
@@ -88,23 +89,20 @@ namespace Digi.BuildInfo
                     priority = resourceSinkGroups;
                 }
 
-                resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData()
-                {
-                    def = group,
-                    priority = priority,
-                });
+                resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData(group, priority));
             }
-        }
-
-        private int GroupOrderBy(MyResourceDistributionGroupDefinition def)
-        {
-            return def.Priority;
         }
 
         public struct ResourceGroupData
         {
-            public MyResourceDistributionGroupDefinition def;
-            public int priority;
+            public readonly MyResourceDistributionGroupDefinition Def;
+            public readonly int Priority;
+
+            public ResourceGroupData(MyResourceDistributionGroupDefinition def, int priority)
+            {
+                Def = def;
+                Priority = priority;
+            }
         }
         #endregion Resource group priorities
 

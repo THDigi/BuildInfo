@@ -151,12 +151,12 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false) // HACK some ResourceSinkGroup are string and some are MyStringHash...
+        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false, bool isSource = false) // HACK some ResourceSinkGroup are string and some are MyStringHash...
         {
-            return s.ResourcePriority(MyStringHash.GetOrCompute(groupName), hardcoded);
+            return s.ResourcePriority(MyStringHash.GetOrCompute(groupName), hardcoded, isSource);
         }
 
-        public static StringBuilder ResourcePriority(this StringBuilder s, MyStringHash groupId, bool hardcoded = false)
+        public static StringBuilder ResourcePriority(this StringBuilder s, MyStringHash groupId, bool hardcoded = false, bool isSource = false)
         {
             s.Append("Priority");
 
@@ -168,10 +168,14 @@ namespace Digi.BuildInfo.Utilities
             var constants = BuildInfoMod.Instance.Constants;
             ResourceGroupData data;
 
-            if(groupId == null || !constants.resourceGroupPriority.TryGetValue(groupId, out data))
-                s.Append("(Undefined)");
+            if(groupId != MyStringHash.NullOrEmpty && constants.resourceGroupPriority.TryGetValue(groupId, out data))
+            {
+                s.Append(groupId.String).Append(" (").Append(data.Priority).Append("/").Append(data.Def.IsSource ? constants.resourceSourceGroups : constants.resourceSinkGroups).Append(")");
+            }
             else
-                s.Append(groupId.String).Append(" (").Append(data.priority).Append("/").Append(data.def.IsSource ? constants.resourceSourceGroups : constants.resourceSinkGroups).Append(")");
+            {
+                s.Append("Undefined (last)");
+            }
 
             return s;
         }

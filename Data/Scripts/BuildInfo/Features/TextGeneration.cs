@@ -2569,7 +2569,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s");
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup);
+                    GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup, isSource: true);
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2595,7 +2595,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Output - Rate").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s");
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup);
+                    GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup, isSource: true);
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
@@ -2638,7 +2638,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                    GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup);
+                    GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup, isSource: true);
             }
 
             var h2Engine = def as MyHydrogenEngineDefinition;
