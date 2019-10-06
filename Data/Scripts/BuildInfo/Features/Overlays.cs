@@ -677,6 +677,7 @@ namespace Digi.BuildInfo.Features
             if(data == null)
                 return;
 
+            const float capsuleRadiusAdd = 0.05f; // so it visually hits things more how the physics engine hits.
             const int wireDivideRatio = 12;
             const float lineHeight = 0.3f;
             var color = Color.Red;
@@ -689,7 +690,7 @@ namespace Digi.BuildInfo.Features
                 var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Length * 0.5)); // capsule's position is in the center
 
-                MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.CapsuleRadius, flame.Length, ref colorFace, wireDivideRatio, OVERLAY_SQUARE_MATERIAL);
+                MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.CapsuleRadius + capsuleRadiusAdd, flame.Length, ref colorFace, wireDivideRatio, OVERLAY_SQUARE_MATERIAL);
 
                 if(drawLabel)
                 {
