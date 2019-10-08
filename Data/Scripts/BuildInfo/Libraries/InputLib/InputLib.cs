@@ -152,7 +152,7 @@ namespace Digi.Input
 
             /// <summary>
             /// Returns true the first time this gets called while all inputs are being held, gets reset when any of them are released (updated outside of this method)
-            /// <para>NOTE: <see cref="InputLib"/> requires <see cref="UpdateInput"/> to be called for this method to work properly.</para>
+            /// <para>NOTE: <see cref="InputLib"/> requires <see cref="UpdateInput"/> to be called in HandleInput() for this method to work properly.</para>
             /// </summary>
             public bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
             {
@@ -572,7 +572,16 @@ namespace Digi.Input
         #endregion Public methods
 
         #region Public static methods
-        public static bool IsInputReadable() => !MyAPIGateway.Gui.ChatEntryVisible && !MyAPIGateway.Gui.IsCursorVisible;
+        public static bool IsInputReadable(bool checkSpectator = false)
+        {
+            if(MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible)
+                return false;
+
+            if(checkSpectator && MyAPIGateway.Session.IsCameraUserControlledSpectator)
+                return false;
+
+            return true;
+        }
 
         public static ControlContext GetCurrentInputContext()
         {
@@ -947,8 +956,6 @@ namespace Digi.Input
                 MyControlsSpace.PREV_BLOCK_STAGE,
                 MyControlsSpace.MOVE_CLOSER,
                 MyControlsSpace.MOVE_FURTHER,
-                MyControlsSpace.PRIMARY_BUILD_ACTION,
-                MyControlsSpace.SECONDARY_BUILD_ACTION,
                 MyControlsSpace.COPY_PASTE_ACTION
             };
 

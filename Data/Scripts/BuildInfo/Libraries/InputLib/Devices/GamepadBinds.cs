@@ -89,8 +89,6 @@ namespace Digi.Input.Devices
             AddControl(ControlContext.CHARACTER, MyControlsSpace.STRAFE_RIGHT, MyJoystickAxesEnum.Xpos);
             AddControl(ControlContext.CHARACTER, MyControlsSpace.PRIMARY_TOOL_ACTION, MyJoystickAxesEnum.Zneg);
             AddControl(ControlContext.CHARACTER, MyControlsSpace.SECONDARY_TOOL_ACTION, MyJoystickAxesEnum.Zpos);
-            AddControl(ControlContext.CHARACTER, MyControlsSpace.PRIMARY_BUILD_ACTION, MyJoystickAxesEnum.Zneg);
-            AddControl(ControlContext.CHARACTER, MyControlsSpace.SECONDARY_BUILD_ACTION, MyJoystickAxesEnum.Zpos);
             AddControl(ControlContext.CHARACTER, MyControlsSpace.COPY_PASTE_ACTION, MyJoystickAxesEnum.Zneg);
             AddControl(ControlContext.CHARACTER, MyControlsSpace.ROTATION_LEFT, MyJoystickAxesEnum.RotationXneg);
             AddControl(ControlContext.CHARACTER, MyControlsSpace.ROTATION_RIGHT, MyJoystickAxesEnum.RotationXpos);
@@ -118,9 +116,6 @@ namespace Digi.Input.Devices
 
             AddControl(ControlContext.VEHICLE, MyControlsSpace.LANDING_GEAR, MyJoystickButtonsEnum.J02);
             AddControl(ControlContext.VEHICLE, MyControlsSpace.TOGGLE_REACTORS, MyJoystickButtonsEnum.J04);
-
-            NullControl(ControlContext.VEHICLE, MyControlsSpace.PRIMARY_BUILD_ACTION);
-            NullControl(ControlContext.VEHICLE, MyControlsSpace.SECONDARY_BUILD_ACTION);
         }
 
         private void CreateForBuildMode()
@@ -154,8 +149,6 @@ namespace Digi.Input.Devices
             AddControl(ControlContext.VOXEL_EDIT, MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE, MyJoystickAxesEnum.Ypos);
 
             NullControl(ControlContext.VOXEL_EDIT, MyControlsSpace.CROUCH);
-            NullControl(ControlContext.VOXEL_EDIT, MyControlsSpace.PRIMARY_BUILD_ACTION);
-            NullControl(ControlContext.VOXEL_EDIT, MyControlsSpace.SECONDARY_BUILD_ACTION);
         }
         #endregion Binding methods
 
