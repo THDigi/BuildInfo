@@ -5,7 +5,6 @@ using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.TextAPIMenu;
-using Digi.BuildInfo.Features.TurretInfo;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;

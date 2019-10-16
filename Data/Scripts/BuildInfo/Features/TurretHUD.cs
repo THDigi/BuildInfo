@@ -15,7 +15,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 // TODO add more of the vanilla HUD things back?
 
-namespace Digi.BuildInfo.Features.TurretInfo
+namespace Digi.BuildInfo.Features
 {
     public class TurretHUD : ModComponent
     {

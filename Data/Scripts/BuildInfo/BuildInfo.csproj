@@ -174,7 +174,7 @@
     <Compile Include="Libraries\ConfigLib\FlagsSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ColorSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ConfigHandler.cs" />
-    <Compile Include="Features\TurretInfo\TurretHUD.cs" />
+    <Compile Include="Features\TurretHUD.cs" />
     <Compile Include="Features\Config\InputCombinationSetting.cs" />
     <Compile Include="Libraries\ConfigLib\IntegerSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ISetting.cs" />
