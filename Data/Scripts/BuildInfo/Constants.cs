@@ -107,11 +107,11 @@ namespace Digi.BuildInfo
         #endregion Resource group priorities
 
         #region Character sizes for padding HUD notifications
-        public readonly Dictionary<char, int> charSize = new Dictionary<char, int>();
+        public readonly Dictionary<char, int> CharSize = new Dictionary<char, int>();
 
         private void ComputeCharacterSizes()
         {
-            charSize.Clear();
+            CharSize.Clear();
 
             // generated from fonts/white_shadow/FontData.xml
             AddCharsSize(" !I`ijl ¡¨¯´¸ÌÍÎÏìíîïĨĩĪīĮįİıĵĺļľłˆˇ˘˙˚˛˜˝ІЇії‹›∙", 8);
@@ -150,7 +150,7 @@ namespace Digi.BuildInfo
         {
             for(int i = 0; i < chars.Length; i++)
             {
-                charSize.Add(chars[i], size);
+                CharSize.Add(chars[i], size);
             }
         }
         #endregion Character sizes for padding HUD notifications

@@ -796,7 +796,7 @@ namespace Digi.BuildInfo.Features
 
             for(int i = 0; i < endLength; ++i)
             {
-                if(BuildInfoMod.Instance.Constants.charSize.TryGetValue(builder[i], out len))
+                if(BuildInfoMod.Instance.Constants.CharSize.TryGetValue(builder[i], out len))
                     size += len;
                 else
                     size += 15;
