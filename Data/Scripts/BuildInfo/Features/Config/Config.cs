@@ -7,6 +7,7 @@ using VRage.Input;
 using VRageMath;
 using Digi.BuildInfo.Features.ChatCommands;
 using static Digi.Input.InputLib;
+using System;
 
 namespace Digi.BuildInfo.Features.Config
 {
@@ -37,6 +38,7 @@ namespace Digi.BuildInfo.Features.Config
         public ColorSetting LeakParticleColorOverlay;
         public BoolSetting AdjustBuildDistanceSurvival;
         public BoolSetting AdjustBuildDistanceShipCreative;
+        public IntegerSetting ToolbarActionLabelMode;
         public InputCombinationSetting MenuBind;
         public InputCombinationSetting CycleOverlaysBind;
         public InputCombinationSetting ToggleTransparencyBind;
@@ -190,6 +192,29 @@ namespace Digi.BuildInfo.Features.Config
             AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
                 "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
                 "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
+
+            {
+                var names = Enum.GetNames(typeof(ToolbarActionLabelsMode));
+                var values = (int[])Enum.GetValues(typeof(ToolbarActionLabelsMode));
+
+                int extraLines = 2;
+                string[] comments = new string[names.Length + extraLines];
+                comments[0] = "Customize ship toolbar block action labels.";
+                comments[1] = "If not off, some actions get new custom statuses.";
+
+                for(int i = 0; i < names.Length; ++i)
+                {
+                    comments[i + extraLines] = $"    {values[i].ToString()} = {names[i]}";
+
+                    if(values[i] == (int)ToolbarActionLabelsMode.HudHints)
+                    {
+                        comments[i + extraLines] += " (can also be shown with ALT in this mode)";
+                    }
+                }
+
+                ToolbarActionLabelMode = new IntegerSetting(Handler, "Show toolbar actions", defaultValue: (int)ToolbarActionLabelsMode.HudHints, min: values[0], max: values[values.Length - 1], commentLines: comments);
+            }
+
 
             MenuBind = new InputCombinationSetting(Handler, "Bind: Menu", Combination.Create(MENU_BIND_INPUT_NAME, "plus"),
                 "For accessing the quick menu.");

@@ -1,15 +1,42 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Digi.ConfigLib
 {
     public abstract class SettingBase<T> : ISetting
     {
         public string Name { get; private set; }
-        public T Value { get; set; }
+
+        private T _value;
+        public T Value
+        {
+            get { return _value; }
+            set
+            {
+                var oldValue = _value;
+                _value = value;
+
+                try
+                {
+                    ValueAssigned?.Invoke(oldValue, _value, this);
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+
         public readonly T DefaultValue;
         public bool IsMultiLine { get; protected set; }
         public bool AddDefaultValueComment { get; set; } = true;
         public bool AddValidRangeComment { get; set; } = true;
+
+        /// <summary>
+        /// Called when Value is assigned regardless if the new value is different.
+        /// </summary>
+        public event ValueChangedDel ValueAssigned;
+        public delegate void ValueChangedDel(T oldValue, T newValue, SettingBase<T> setting);
 
         protected readonly string[] commentLines;
         protected readonly ConfigHandler configInstance;

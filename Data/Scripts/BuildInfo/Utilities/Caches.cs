@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
@@ -12,6 +13,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly HashSet<Vector3I> Vector3ISet = new HashSet<Vector3I>(Vector3I.Comparer);
         public readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
         public readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+        public readonly StringBuilder SB = new StringBuilder(128);
 
         public Caches(BuildInfoMod main) : base(main)
         {

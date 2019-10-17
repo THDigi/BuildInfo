@@ -14,6 +14,8 @@ namespace Digi.BuildInfo.Features
 {
     public class ShipToolInventoryBar : ModComponent
     {
+        public bool Shown = false;
+
         private bool show = false;
         private float filledRatio = 0f;
         private int skippedTicks = SKIP_TICKS;
@@ -135,6 +137,8 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateDraw()
         {
+            Shown = false;
+
             if(!show || !TextAPIEnabled || !Main.Config.ShipToolInventoryBar.Value || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
@@ -160,6 +164,8 @@ namespace Digi.BuildInfo.Features
 
                 MyTransparentGeometry.AddBillboardOriented(BAR_MATERIAL, color, worldPos, camMatrix.Left, camMatrix.Up, w, h, uv, blendType: BLEND_TYPE);
             }
+
+            Shown = true;
         }
     }
 }

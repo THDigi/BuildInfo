@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
@@ -95,6 +96,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
+            new ItemEnumCycle(Category_HUD, "Toolbar Action Label Mode",
+                    getter: () => Config.ToolbarActionLabelMode.Value,
+                    setter: (v) =>
+                    {
+                        Config.ToolbarActionLabelMode.Value = v;
+                        ApplySettings(redraw: false);
+                    },
+                    enumType: typeof(ToolbarActionLabelsMode));
 
             new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
             new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));

@@ -15,6 +15,8 @@ namespace Digi.BuildInfo
         public const float ASPECT_RATIO_54_FIX = 0.938f;
         public const float BLOCKINFO_TEXT_PADDING = 0.001f;
 
+        public const int TICKS_PER_SECOND = 60;
+
         public readonly MyStringHash COMPUTER_COMPONENT_NAME = MyStringHash.GetOrCompute("Computer");
 
         public const bool BLOCKPICKER_IN_MP = false; // FIXME now block picker does nothing in MP, see comments in: https://support.keenswh.com/spaceengineers/general/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect

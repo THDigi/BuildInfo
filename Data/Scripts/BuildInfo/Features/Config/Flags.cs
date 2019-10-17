@@ -65,4 +65,12 @@ namespace Digi.BuildInfo.Features.Config
         Axis = (1 << 0),
         Other = (1 << 1),
     }
+
+    public enum ToolbarActionLabelsMode
+    {
+        Off = 0,
+        AltKey = 1,
+        HudHints = 2,
+        AlwaysOn = 3,
+    }
 }

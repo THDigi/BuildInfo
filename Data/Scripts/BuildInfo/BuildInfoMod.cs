@@ -47,6 +47,7 @@ namespace Digi.BuildInfo
         public BlockInfoAdditions BlockInfoAdditions;
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
+        public ToolbarActionLabels ToolbarActionLabels;
         public DebugEvents DebugEvents;
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
@@ -84,6 +85,7 @@ namespace Digi.BuildInfo
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
+            ToolbarActionLabels = new ToolbarActionLabels(this);
             DebugEvents = new DebugEvents(this);
         }
     }
