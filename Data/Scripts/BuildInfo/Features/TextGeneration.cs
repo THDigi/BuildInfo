@@ -956,8 +956,9 @@ namespace Digi.BuildInfo.Features
             #region Internal info
             if(Config.InternalInfo.Value)
             {
-                var typeName = def.Id.TypeId.ToString().Substring("MyObjectBuilder_".Length);
-                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
+                int obPrefixLen = "MyObjectBuilder_".Length;
+                string typeIdString = def.Id.TypeId.ToString();
+                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
             }
             #endregion Internal info
@@ -1451,8 +1452,9 @@ namespace Digi.BuildInfo.Features
             #region Internal info
             if(Config.InternalInfo.Value)
             {
-                var typeName = def.Id.TypeId.ToString().Substring("MyObjectBuilder_".Length);
-                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeName).Append("/").Append(def.Id.SubtypeName);
+                int obPrefixLen = "MyObjectBuilder_".Length;
+                string typeIdString = def.Id.TypeId.ToString();
+                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
             }
             #endregion Internal info
