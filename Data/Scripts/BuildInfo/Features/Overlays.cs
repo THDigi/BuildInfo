@@ -228,7 +228,7 @@ namespace Digi.BuildInfo.Features
             drawLookup.Add(blockType, call);
         }
 
-        // experimental boxless hit info getters
+        // boxless HitInfo getters
         IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
         Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
 
@@ -260,14 +260,6 @@ namespace Digi.BuildInfo.Features
 
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
                     {
-                        //var hit = MyCubeBuilder.Static.HitInfo as IHitInfo;
-
-                        //if(hit != null && hit.HitEntity is IMyVoxelBase)
-                        //    drawMatrix.Translation = hit.Position; // HACK: required for position to be accurate when aiming at a planet
-                        //else
-                        //    drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
-
-                        // DEBUG experimental box-less hitinfo....
                         var hitEnt = GetHitEnt(MyCubeBuilder.Static.HitInfo.Value);
 
                         if(hitEnt != null && hitEnt is IMyVoxelBase)

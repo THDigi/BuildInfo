@@ -3,6 +3,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
@@ -36,8 +37,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private readonly StringBuilder tmp = new StringBuilder();
 
-        private const uint SLIDERS_FORCEDRAWTICKS = 60 * 10;
-        private const uint TOGGLE_FORCEDRAWTICKS = 60 * 2;
+        private const int SLIDERS_FORCEDRAWTICKS = 60 * 10;
+        private const int TOGGLE_FORCEDRAWTICKS = 60 * 2;
         private const string TEXT_START = "<color=gray>Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
                                         "\nPellentesque ac quam in est feugiat mollis." +
                                         "\nAenean commodo, dolor ac molestie commodo, quam nulla" +
@@ -134,7 +135,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (v) =>
                 {
                     Config.TextShow.Value = v;
-                    ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0u));
+                    ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0));
                     groupTextInfo.SetInteractable(v);
                     groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling.Value : false);
                 });
@@ -215,12 +216,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 selected: (pos) =>
                 {
                     Config.TextAPIScreenPosition.Value = pos;
-                    ApplySettings(save: false, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
+                    ApplySettings(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 moving: (pos) =>
                 {
                     Config.TextAPIScreenPosition.Value = pos;
-                    ApplySettings(save: false, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
+                    ApplySettings(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (origPos) =>
                 {
@@ -326,7 +327,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             addToGroup?.Add(item);
         }
 
-        private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, uint drawTicks = 0)
+        private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, int drawTicks = 0)
         {
             if(save)
                 Config.Save();

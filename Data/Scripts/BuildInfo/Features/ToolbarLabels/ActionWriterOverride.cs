@@ -30,6 +30,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             Action.Writer = CustomWriter;
 
+            mode = (ToolbarActionLabelsMode)BuildInfoMod.Instance.Config.ToolbarActionLabelMode.Value;
+
             // HACK giving an icon for some iconless actions
             if(string.IsNullOrEmpty(action.Icon))
             {
@@ -42,8 +44,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     action.Icon = @"Textures\GUI\Icons\DisconnectedPlayerIcon.png";
                 }
             }
-
-            mode = (ToolbarActionLabelsMode)BuildInfoMod.Instance.Config.ToolbarActionLabelMode.Value;
         }
 
         public void SettingChanged(int newMode)
@@ -297,7 +297,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             int chrSize;
             if(!charSizeDict.TryGetValue(chr, out chrSize))
             {
-                Log.Error($"Couldn't find character size for character: '{chr.ToString()}'", Log.PRINT_MSG);
+                Log.Error($"Couldn't find character size for character: '{chr.ToString()}' ({((int)chr).ToString()}; {char.GetUnicodeCategory(chr).ToString()})", Log.PRINT_MSG);
                 chrSize = charSizeDict[' '];
             }
             return chrSize;

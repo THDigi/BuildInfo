@@ -105,6 +105,7 @@ namespace Digi.BuildInfo.Features
         private bool useLeftSide = true;
         private double prevAspectRatio = 1;
         private int lines;
+        private int forceDrawTicks = 0;
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
@@ -691,7 +692,7 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown)
             {
-                if(forceDrawTicks == 0)
+                if(forceDrawTicks <= 0)
                 {
                     textShown = false;
                     LastDefId = default(MyDefinitionId);
@@ -3407,9 +3408,7 @@ namespace Digi.BuildInfo.Features
             Refresh();
         }
 
-        private uint forceDrawTicks = 0;
-
-        public void Refresh(bool redraw = false, StringBuilder write = null, uint forceDrawTicks = 0)
+        public void Refresh(bool redraw = false, StringBuilder write = null, int forceDrawTicks = 0)
         {
             HideText();
             CachedBuildInfoTextAPI.Clear();
