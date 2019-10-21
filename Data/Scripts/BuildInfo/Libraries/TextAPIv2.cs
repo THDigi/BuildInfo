@@ -159,7 +159,8 @@ namespace Draygo.API
             MenuScreenInput,
             MenuSliderItem,
             MenuTextInput,
-            MenuKeybindInput
+            MenuKeybindInput,
+            MenuColorPickerInput
         }
         #region Info
         public static class APIinfo
@@ -1140,6 +1141,145 @@ namespace Draygo.API
                 this.Text = Text;
                 this.Header = HeaderText;
                 this.Parent = Parent;
+            }
+        }
+        public class MenuColorPickerInput : MenuItemBase
+        {
+            private enum MenuColorPickerInputMembers : int
+            {
+                OnSubmitAction = 100,
+                Parent,
+                InputDialogTitle,
+                OnUpdateAction,
+                OnCancelAction,
+                InitialColor,
+                ShowAlpha
+            }
+
+            /// <summary>
+            /// Must be either a MenuRootCategory or MenuSubCategory object
+            /// </summary>
+            public MenuCategoryBase Parent
+            {
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.Parent, value.BackingObject);
+                }
+            }
+
+            /// <summary>
+            /// Titlebar of the Dialog window. 
+            /// </summary>
+            public string InputDialogTitle
+            {
+                get
+                {
+                    return (string)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.InputDialogTitle));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.InputDialogTitle, value);
+                }
+            }
+
+            /// <summary>
+            /// Returns inputted color on submit. 
+            /// </summary>
+            public Action<Color> OnSubmitAction
+            {
+                get
+                {
+                    return (Action<Color>)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.OnSubmitAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.OnSubmitAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Returns color as client is manipulating the dialog. 
+            /// </summary>
+            public Action<Color> OnUpdateAction
+            {
+                get
+                {
+                    return (Action<Color>)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.OnUpdateAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.OnUpdateAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Canceled the dialog 
+            /// </summary>
+            public Action OnCancelAction
+            {
+                get
+                {
+                    return (Action)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.OnCancelAction));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.OnCancelAction, value);
+                }
+            }
+
+            /// <summary>
+            /// Initial color in the dialog box
+            /// </summary>
+            public Color InitialColor
+            {
+                get
+                {
+                    return (Color)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.InitialColor));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.InitialColor, value);
+                }
+            }
+
+            /// <summary>
+            /// Shows alpha slider if true (default true)
+            /// </summary>
+            public bool ShowAlpha
+            {
+                get
+                {
+                    return (bool)(instance.MessageGet(BackingObject, (int)MenuColorPickerInputMembers.ShowAlpha));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MenuColorPickerInputMembers.ShowAlpha, value);
+                }
+            }
+
+            /// <summary>
+            /// Summons a dialog box that allows the user to specify a color.
+            /// </summary>
+            /// <param name="Text">Text displayed in the category list</param>
+            /// <param name="Parent">Must be either a MenuRootCategory or MenuSubCategory object</param>
+            /// <param name="initialColor">Initial color set in the dialog box</param>
+            /// <param name="InputDialogTitle">Dialog Title</param>
+            /// <param name="onSubmit">On Submit Callback, returns color in the dialog</param>
+            /// <param name="onUpdate">Update callback, will call per tick with the current selected color in the dialog</param>
+            /// <param name="onCancel">User canceled the dialog</param>
+            /// <param name="showAlpha">Shows alpha slider if true</param>
+            public MenuColorPickerInput(string Text, MenuCategoryBase Parent, Color initialColor, string InputDialogTitle = "Enter text value", Action<Color> onSubmit = null, Action<Color> onUpdate = null, Action onCancel = null, bool showAlpha = true)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.MenuColorPickerInput);
+                this.Text = Text;
+                this.InputDialogTitle = InputDialogTitle;
+                this.OnSubmitAction = onSubmit;
+                this.Parent = Parent;
+                this.InitialColor = initialColor;
+                this.OnUpdateAction = onUpdate;
+                this.OnCancelAction = onCancel;
+                this.ShowAlpha = showAlpha;
             }
         }
         public class MenuTextInput : MenuItemBase
