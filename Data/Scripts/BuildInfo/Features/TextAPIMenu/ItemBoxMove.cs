@@ -36,7 +36,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Moving = moving;
             Cancelled = cancelled;
 
-            Item = new MenuScreenInput(string.Empty, category, Getter(), Vector2D.Zero, string.Empty, OnSubmit, OnMove, OnCancel, OnSelect);
+            // HACK using `" "` instead of string.Empty due to an issue with textAPI.
+            Item = new MenuScreenInput(string.Empty, category, Getter(), Vector2D.Zero, " ", OnSubmit, OnMove, OnCancel, OnSelect);
             UpdateTitle();
         }
 
