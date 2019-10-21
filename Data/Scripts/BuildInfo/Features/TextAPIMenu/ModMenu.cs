@@ -1,8 +1,8 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
+using Sandbox.ModAPI;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
@@ -64,7 +64,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         {
             Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
 
-            new ItemButton(Category_Mod, "Help Window", Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs);
+            new ItemButton(Category_Mod, "Help Window", () =>
+            {
+                Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs();
+                MyAPIGateway.Utilities.ShowNotification("[Close chat to see help window]", 3000);
+            });
 
             Category_TextCustomize = AddCategory("TextBox Customization", Category_Mod);
             Category_Overlays = AddCategory("Overlays", Category_Mod);
