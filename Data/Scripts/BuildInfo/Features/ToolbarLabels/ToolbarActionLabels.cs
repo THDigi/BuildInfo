@@ -14,21 +14,22 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage.ObjectBuilders;
-
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
     public class ToolbarActionLabels : ModComponent
     {
-        public int EnteredCockpitTicks = SHOW_ACTION_LABELS_FOR_TICKS;
-
         public const int SHOW_ACTION_LABELS_FOR_TICKS = Constants.TICKS_PER_SECOND * 3;
+        public const int CACHE_LIVE_TICKS = Constants.TICKS_PER_SECOND * 1;
+
+        public int EnteredCockpitTicks = SHOW_ACTION_LABELS_FOR_TICKS;
 
         private readonly Dictionary<IMyTerminalAction, ActionWriterOverride> overriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);
 
         public ToolbarActionLabels(BuildInfoMod main) : base(main)
         {
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         protected override void RegisterComponent()
@@ -36,7 +37,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
             Main.Config.ToolbarActionLabelMode.ValueAssigned += ToolbarActionLabelModeChanged;
 
@@ -72,7 +72,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 if(player != null && player.IdentityId == playerId)
                 {
                     EnteredCockpitTicks = SHOW_ACTION_LABELS_FOR_TICKS;
-                    //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
                 }
             }
             catch(Exception e)
@@ -109,7 +108,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 EnteredCockpitTicks--;
             }
 
-            if(tick % 60 == 0)
+            if(tick % CACHE_LIVE_TICKS == 0)
             {
                 cachedStatusText.Clear();
             }
