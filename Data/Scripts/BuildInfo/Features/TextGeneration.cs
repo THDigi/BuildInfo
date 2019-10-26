@@ -1421,31 +1421,29 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
-                var stages = def.BlockStages;
+                var variantsGroup = def.BlockVariantsGroup;
 
-                if(stages != null && stages.Length > 0)
+                if(variantsGroup != null)
                 {
-                    GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant 1 of ").Append(stages.Length + 1).Append(")");
-                }
-                else
-                {
-                    stages = MyCubeBuilder.Static?.ToolbarBlockDefinition?.BlockStages;
+                    // variantsGroup.Blocks.Length contains all blocks of all sizes, it needs to filter out the irrelevant sizes.
+                    int blockNumber = 0;
+                    int totalBlocks = 0;
 
-                    if(stages != null && stages.Length > 0)
+                    for(int i = 0; i < variantsGroup.Blocks.Length; ++i)
                     {
-                        int num = 0;
+                        var blockDef = variantsGroup.Blocks[i];
 
-                        for(int i = 0; i < stages.Length; ++i)
+                        if(blockDef.CubeSize == def.CubeSize)
                         {
-                            if(def.Id == stages[i])
-                            {
-                                num = i + 2; // +2 instead of +1 because the 1st block is not in the list, it's the list holder
-                                break;
-                            }
-                        }
+                            totalBlocks++;
 
-                        GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(num).Append(" of ").Append(stages.Length + 1).Append(")");
+                            if(blockDef == def)
+                                blockNumber = totalBlocks;
+                        }
                     }
+
+                    if(totalBlocks > 1)
+                        GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(blockNumber).Append(" of ").Append(totalBlocks).Append(")");
                 }
             }
             #endregion Block name line only for textAPI
