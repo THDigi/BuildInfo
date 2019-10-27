@@ -273,7 +273,7 @@ namespace Digi.BuildInfo.Systems
 
             float reachDistance = Hardcoded.EngineerToolBase_DefaultReachDistance * (handItemDef == null ? 1f : handItemDef.DistanceMultiplier);
 
-            // HACK hardcoded from MyEngineerToolBase.UpdateSensorPosition()
+            // hardcoded from MyEngineerToolBase.UpdateSensorPosition()
             MatrixD worldMatrix = MatrixD.Identity;
             worldMatrix.Translation = weaponPosition.LogicalPositionWorld;
             worldMatrix.Right = character.WorldMatrix.Right;
@@ -411,7 +411,7 @@ namespace Digi.BuildInfo.Systems
             if(!check)
                 return;
 
-            // HACK find a better way to get selected tool type
+            // TODO: find a better way to get selected tool type
             var shipControllerObj = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
             var selectedToolId = shipControllerObj.SelectedGunId;
 

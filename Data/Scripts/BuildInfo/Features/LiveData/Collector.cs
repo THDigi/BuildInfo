@@ -1,4 +1,5 @@
-﻿using Sandbox.Definitions;
+﻿using Digi.BuildInfo.Utilities;
+using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -14,15 +15,16 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
-            // HACK copied from MyCollector.LoadDummies()
+            // HACK: behavior from MyCollector.LoadDummies()
             foreach(var dummy in dummies)
             {
-                if(dummy.Key.ToLower().Contains("collector"))
+                if(dummy.Key.ContainsIgnoreCase("collector"))
                 {
                     Matrix dummyMatrix = dummy.Value.Matrix;
 
-                    boxLocalMatrix = dummyMatrix;
+                    boxLocalMatrix = Matrix.Normalize(dummyMatrix);
 
+                    // from GetBoxFromMatrix()
                     //MatrixD matrix = Matrix.Normalize(dummyMatrix) * block.WorldMatrix;
                     //var orientation = Quaternion.CreateFromRotationMatrix(matrix);
                     //var halfExtents = Vector3.Abs(dummyMatrix.Scale) / 2f;

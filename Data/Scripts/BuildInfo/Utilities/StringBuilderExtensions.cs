@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Utilities
         private static TextGeneration TextGeneration => BuildInfoMod.Instance.TextGeneration;
         private static bool TextAPIEnabled => BuildInfoMod.Instance.TextAPI.IsEnabled;
 
-        // HACK copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
+        // copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
             int num = sb.Length;
@@ -36,20 +36,6 @@ namespace Digi.BuildInfo.Utilities
             }
 
             sb.Length = num;
-
-            return sb;
-        }
-
-        // HACK copy of StringBuilderExtensions_Format.AppendStringBuilder() since it's not whitelisted in modAPI
-        public static StringBuilder AppendSB(this StringBuilder sb, StringBuilder otherSb)
-        {
-            sb.EnsureCapacity(sb.Length + otherSb.Length);
-
-            for(int i = 0; i < otherSb.Length; i++)
-            {
-                sb.Append(otherSb[i]);
-            }
-
             return sb;
         }
 
@@ -151,7 +137,8 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false, bool isSource = false) // HACK some ResourceSinkGroup are string and some are MyStringHash...
+        // Some ResourceSinkGroup are string and some are MyStringHash...
+        public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false, bool isSource = false)
         {
             return s.ResourcePriority(MyStringHash.GetOrCompute(groupName), hardcoded, isSource);
         }

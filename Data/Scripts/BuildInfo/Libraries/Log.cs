@@ -467,7 +467,7 @@ namespace Digi
 
             private ulong GetWorkshopID(string modId)
             {
-                // HACK workaround for MyModContext not having the actual workshop ID number.
+                // NOTE workaround for MyModContext not having the actual workshop ID number.
                 foreach(var mod in MyAPIGateway.Session.Mods)
                 {
                     if(mod.Name == modId)

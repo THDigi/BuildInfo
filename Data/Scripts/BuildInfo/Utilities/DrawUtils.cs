@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Utilities
                 {
                     var cam = MyAPIGateway.Session.Camera;
 
-                    // HACK ProjectionMatrix needs recomputing because camera's m_fovSpring is set after ProjectionMatrix is computed, MyCamera.Update(float updateStepTime) and MyCamera.FovWithZoom
+                    // NOTE: ProjectionMatrix needs recomputing because camera's m_fovSpring is set after ProjectionMatrix is computed; see MyCamera.Update(float updateStepTime) and MyCamera.FovWithZoom
                     var aspectRatio = cam.ViewportSize.X / cam.ViewportSize.Y;
                     var safeNear = Math.Min(4f, cam.NearPlaneDistance); // MyCamera.GetSafeNear()
                     var projectionMatrix = MatrixD.CreatePerspectiveFieldOfView(cam.FovWithZoom, aspectRatio, safeNear, cam.FarPlaneDistance);
@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.Utilities
             if(GameConfig.HudState == HudState.BASIC)
                 posHUD.Y = 0.558f;
 
-            // FIXME vanilla UI is all over the place with this, needs tweaking
+            // FIXME: vanilla UI is all over the place with this, needs tweaking
             if(GameConfig.AspectRatio > 5) // triple monitor
                 posHUD.X += 0.75f;
 

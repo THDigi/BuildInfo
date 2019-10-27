@@ -217,13 +217,13 @@ namespace Digi.BuildInfo.Features.Config
 
                     if(key.Equals("AllLabels", COMPARE_TYPE))
                     {
-                        allLabels = val.ContainsCaseInsensitive("true");
+                        allLabels = val.ContainsIgnoreCase("true");
                         continue;
                     }
 
                     if(key.Equals("AxisLabels", COMPARE_TYPE))
                     {
-                        axisLabels = val.ContainsCaseInsensitive("true");
+                        axisLabels = val.ContainsIgnoreCase("true");
                         continue;
                     }
 

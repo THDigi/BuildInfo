@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -154,7 +155,7 @@ namespace Digi.BuildInfo.Features
 
             foreach(var kv in dummies)
             {
-                if(kv.Key.IndexOf("merge", StringComparison.OrdinalIgnoreCase) != -1)
+                if(kv.Key.ContainsIgnoreCase("merge"))
                 {
                     Matrix matrix = kv.Value.Matrix;
                     Vector3 vector = matrix.Scale / 2f;

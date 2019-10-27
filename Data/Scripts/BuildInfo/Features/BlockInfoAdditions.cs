@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features
                 {
                     var comp = def.Components[i];
 
-                    if(computerComponentIndex == -1 && comp.Definition.Id.TypeId == typeof(MyObjectBuilder_Component) && comp.Definition.Id.SubtypeId == Constants.COMPUTER_COMPONENT_NAME) // HACK this is what the game checks internally, hardcoded to computer component.
+                    if(computerComponentIndex == -1 && comp.Definition.Id == Constants.COMPUTER_COMPONENT_ID)
                     {
                         computerComponentIndex = i;
                     }

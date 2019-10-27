@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.Features.Config
         {
             error = null;
 
-            if(valueString.ContainsCaseInsensitive("HUD"))
+            if(valueString.ContainsIgnoreCase("HUD"))
             {
                 Value = -1;
                 return;

@@ -11,10 +11,10 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Gets the workshop id from the mod context by iterating the mods to find it.
         /// Returns 0 if not found.
+        /// NOTE: workaround for MyModContext not having the actual workshop ID number.
         /// </summary>
         public static ulong GetWorkshopID(this MyModContext modContext)
         {
-            // HACK workaround for MyModContext not having the actual workshop ID number.
             foreach(var mod in MyAPIGateway.Session.Mods)
             {
                 if(mod.Name == modContext.ModId)
@@ -24,9 +24,9 @@ namespace Digi.BuildInfo.Utilities
             return 0;
         }
 
-        public static bool ContainsCaseInsensitive(this string str, string find)
+        public static bool ContainsIgnoreCase(this string str, string find)
         {
-            return str.IndexOf(find, 0, StringComparison.InvariantCultureIgnoreCase) > -1;
+            return str.IndexOf(find, StringComparison.InvariantCultureIgnoreCase) > -1;
         }
 
         public static void AddSetReader<T>(this HashSet<T> set, HashSetReader<T> read)

@@ -205,7 +205,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             // check if the block is still valid or if the player exited the menu
-            // HACK IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
+            // NOTE: IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
             if(viewedInTerminal.Closed || ((delayCursorCheck == 0 || --delayCursorCheck == 0) && !MyAPIGateway.Gui.IsCursorVisible))
             {
                 ViewedBlockChanged(viewedInTerminal, null);
@@ -488,7 +488,7 @@ namespace Digi.BuildInfo.Features
 
             var data = BData_Base.TryGetDataCached<BData_Connector>(def);
 
-            if(data != null && data.Connector)
+            if(data != null && data.CanConnect)
             {
                 var connector = (IMyShipConnector)block;
 
@@ -618,7 +618,7 @@ namespace Digi.BuildInfo.Features
             var upgradeModule = (IMyUpgradeModule)block;
             var def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
 
-            if(def.Upgrades == null) // HACK required as UpgradeCount throws NRE if block has no Upgrades tag at all (empty tag would be fine)
+            if(def.Upgrades == null) // required as UpgradeCount throws NRE if block has no Upgrades tag at all (empty tag would be fine)
                 return;
 
             if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
@@ -632,7 +632,7 @@ namespace Digi.BuildInfo.Features
             {
                 info.NewLine();
 
-                // HACK since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
+                // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
                 longSetTemp.Clear();
                 var nearbyBlocks = upgradeModule.SlimBlock.Neighbours;
 

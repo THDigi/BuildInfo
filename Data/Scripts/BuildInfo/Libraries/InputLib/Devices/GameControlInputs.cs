@@ -83,7 +83,7 @@ namespace Digi.Input.Devices
 
         public override bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            return IsPressed(); // TODO this is probably wrong
+            return IsPressed(); // TODO: this is probably wrong
         }
     }
 
@@ -101,7 +101,7 @@ namespace Digi.Input.Devices
 
         public override bool IsJustPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            return IsPressed(); // TODO this is probably wrong
+            return IsPressed(); // TODO: this is probably wrong
         }
     }
 }

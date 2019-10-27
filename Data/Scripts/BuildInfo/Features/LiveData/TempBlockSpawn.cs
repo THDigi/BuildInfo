@@ -60,25 +60,25 @@ namespace Digi.BuildInfo.Features.LiveData
             blockObj.EntityId = 0;
             blockObj.Min = Vector3I.Zero;
 
-            // HACK these types do not check if their fields are null in their Remap() method.
+            // NOTE these types do not check if their fields are null in their Remap() method.
             var timer = blockObj as MyObjectBuilder_TimerBlock;
             if(timer != null)
             {
-                timer.Toolbar = new MyObjectBuilder_Toolbar();
+                timer.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
 
             var button = blockObj as MyObjectBuilder_ButtonPanel;
             if(button != null)
             {
-                button.Toolbar = new MyObjectBuilder_Toolbar();
+                button.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
 
             var sensor = blockObj as MyObjectBuilder_SensorBlock;
             if(sensor != null)
             {
-                sensor.Toolbar = new MyObjectBuilder_Toolbar();
+                sensor.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
 
@@ -95,7 +95,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 if(block == null)
                 {
-                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id}; grid={grid?.EntityId.ToString() ?? "(NULL)"} (mod workshopId={BlockDef.Context.GetWorkshopID()})");
+                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"} (mod workshopId={BlockDef.Context.GetWorkshopID().ToString()})");
                     return;
                 }
 

@@ -115,7 +115,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 sb.Length -= 1;
                         }
 
-                        sb.AppendSB(tempSB);
+                        sb.AppendStringBuilder(tempSB);
                         tempSB.Clear();
                     }
                 }
@@ -142,12 +142,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         void AppendLabel(IMyTerminalBlock block, StringBuilder sb)
         {
-            // issues:
+            // issues with printing block CustomName:
             // - can't detect groups
             // - gets kinda large
 
-            // TODO per-block name cache?
-            // TODO toggleable per block somehow (maybe use Show In Toolbar Config?) or toggle names globally
+            // TODO: per-block name cache?
+            // TODO: toggleable per block somehow (maybe use Show In Toolbar Config?) or toggle names globally
 
             if(MyAPIGateway.Gui.IsCursorVisible // always show names when in menu
             || (block is IMyCameraBlock && Action.Id == "View")

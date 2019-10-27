@@ -22,6 +22,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -969,7 +970,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
 
-                // TODO custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
+                // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
                 var canBuild = projectedBy.CanBuild(aimedBlock, checkHavokIntersections: true);
 
                 AddLine().Label("Status");
@@ -1122,7 +1123,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDmgResPercent > 0 ? "+" : "").Append(gridDmgResPercent).Append("%)").ResetColor();
                 }
 
-                // TODO impact resistance? wheels in particular...
+                // TODO: impact resistance? wheels in particular...
             }
             #endregion Optional: intake damage multiplier
 
@@ -1373,7 +1374,7 @@ namespace Digi.BuildInfo.Features
                 if(willSplitGrid == GridSplitType.Split)
                     AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("Grid will split if removed!");
 
-                // TODO find if split blocks will vanish due to no physics/no standalone
+                // TODO: find if split grid will vanish due to no physics/no standalone
             }
             #endregion Optional: grinder makes grid split
 
@@ -1473,7 +1474,7 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional - different item gain on grinding
 
-            // TODO use? not sure if useful...
+            // TODO: use? not sure if useful...
             //if(def.VoxelPlacement.HasValue)
             //{
             //    // Comment from definition:
@@ -1481,17 +1482,17 @@ namespace Digi.BuildInfo.Features
             //
             //    var vp = def.VoxelPlacement.Value;
             //
-            //    AddLine().SetTextAPIColor(COLOR_WARNING).Append($"Terrain placement - Dynamic: ").Append(vp.DynamicMode.PlacementMode);
+            //    AddLine().Color(COLOR_WARNING).Append($"Terrain placement - Dynamic: ").Append(vp.DynamicMode.PlacementMode.ToString());
             //
             //    if(vp.DynamicMode.PlacementMode == VoxelPlacementMode.Volumetric)
-            //        GetLine().Append(" (").Append(vp.DynamicMode.MinAllowed).Append(" to ").Append(vp.DynamicMode.MaxAllowed).Append(")");
+            //        GetLine().Append(" (").ProportionToPercent(vp.DynamicMode.MinAllowed).Append(" to ").ProportionToPercent(vp.DynamicMode.MaxAllowed).Append(")");
             //
-            //    GetLine().Separator().Append($"Static: ").Append(vp.StaticMode.PlacementMode);
+            //    GetLine().Separator().Append($"Static: ").Append(vp.StaticMode.PlacementMode.ToString());
             //
             //    if(vp.StaticMode.PlacementMode == VoxelPlacementMode.Volumetric)
-            //        GetLine().Append(" (").Append(vp.StaticMode.MinAllowed).Append(" to ").Append(vp.StaticMode.MaxAllowed).Append(")");
+            //        GetLine().Append(" (").ProportionToPercent(vp.StaticMode.MinAllowed).Append(" to ").ProportionToPercent(vp.StaticMode.MaxAllowed).Append(")");
             //
-            //    GetLine().ResetTextAPIColor();
+            //    GetLine().ResetColor();
             //}
 
             #region Optional - creative-only stuff
@@ -1848,7 +1849,7 @@ namespace Digi.BuildInfo.Features
 
                 if(data != null)
                 {
-                    if(data.Connector)
+                    if(data.CanConnect)
                         AddLine().Append("Connectable: Yes");
                     else
                         AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
@@ -2730,7 +2731,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize);
                     AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2);
-                    // TODO wind speed unit?
+                    // TODO: wind speed unit?
                 }
 
                 return;
@@ -2779,7 +2780,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees);
                 AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * Hardcoded.LaserAntenna_RotationSpeedMul);
 
-                // TODO visualize angle limits?
+                // TODO: visualize angle limits?
             }
         }
 
@@ -2891,7 +2892,7 @@ namespace Digi.BuildInfo.Features
 
                 GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
 
-                // TODO visualize angle limits?
+                // TODO: visualize angle limits?
             }
         }
 
@@ -3030,7 +3031,7 @@ namespace Digi.BuildInfo.Features
 
                     GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
 
-                    // TODO visualize angle limits?
+                    // TODO: visualize angle limits?
                 }
             }
 
@@ -3062,7 +3063,7 @@ namespace Digi.BuildInfo.Features
 
                 if(ammoProjectiles.Count > 0)
                 {
-                    // TODO check if wepDef.DamageMultiplier is used for ship weapons (in 1.189 it's only used for handheld weapons)
+                    // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
 
                     var projectilesData = wepDef.WeaponAmmoDatas[0];
 
@@ -3458,7 +3459,7 @@ namespace Digi.BuildInfo.Features
             {
                 ResetExpiry();
                 Text = new StringBuilder(textSB.Length);
-                Text.AppendSB(textSB);
+                Text.AppendStringBuilder(textSB);
                 TextSize = textSize;
             }
         }

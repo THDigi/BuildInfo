@@ -255,7 +255,6 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                // HACK using this method instead of MyAPIGateway.CubeBuilder.FreezeGizmo's setter because that one ignores the value and sets it to true.
                 MyCubeBuilder.Static.FreezeGizmo = value;
 
                 freezeGizmoNotification.Text = (value ? "Freeze placement position ON" : "Freeze placement position OFF");

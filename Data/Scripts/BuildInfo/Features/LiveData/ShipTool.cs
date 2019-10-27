@@ -1,4 +1,5 @@
-﻿using Sandbox.Definitions;
+﻿using Digi.BuildInfo.Utilities;
+using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -18,8 +19,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             foreach(var kv in dummies)
             {
-                // HACK: copied from Sandbox.Game.Weapons.MyShipToolBase.LoadDummies()
-                if(kv.Key.ToUpper().Contains("DETECTOR_SHIPTOOL"))
+                // dummy name from Sandbox.Game.Weapons.MyShipToolBase.LoadDummies()
+                if(kv.Key.ContainsIgnoreCase("detector_shiptool"))
                 {
                     DummyMatrix = kv.Value.Matrix;
                     success = true;

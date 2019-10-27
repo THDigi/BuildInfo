@@ -23,7 +23,7 @@ namespace Digi.Input.Devices
     /// </summary>
     public class GamepadBindings
     {
-        // HACK pasted from MyControlsGUI, because it's not whitelisted
+        // pasted from MyControlsGUI, because it's not whitelisted
         private readonly MyStringId GUI_MAIN_MENU = MyStringId.GetOrCompute("MAIN_MENU");
         private readonly MyStringId GUI_MOVE_UP = MyStringId.GetOrCompute("MOVE_NEXT");
         private readonly MyStringId GUI_MOVE_DOWN = MyStringId.GetOrCompute("MOVE_PREV");

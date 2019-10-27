@@ -19,7 +19,7 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // HACK allows the use of BlendTypeEnum which is whitelisted but bypasses accessing MyBillboard which is not whitelisted
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
@@ -263,9 +263,9 @@ namespace Digi.BuildInfo.Features
                         var hitEnt = GetHitEnt(MyCubeBuilder.Static.HitInfo.Value);
 
                         if(hitEnt != null && hitEnt is IMyVoxelBase)
-                            drawMatrix.Translation = GetHitPos(MyCubeBuilder.Static.HitInfo.Value); // HACK: required for position to be accurate when aiming at a planet
+                            drawMatrix.Translation = GetHitPos(MyCubeBuilder.Static.HitInfo.Value); // required for position to be accurate when aiming at a planet
                         else
-                            drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // HACK: required for the position to be 100% accurate when the block is not aimed at anything
+                            drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
                     }
                     else
                     {
@@ -293,7 +293,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    // HACK re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
+                    // re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
                     var mp = def.MountPoints;
                     def.MountPoints = BLANK_MOUNTPOINTS;
                     MyCubeBuilder.DrawMountPoints(cellSize, def, ref drawMatrix);
@@ -321,7 +321,7 @@ namespace Digi.BuildInfo.Features
 
                     if(drawOverlay == 1 && blockFunctionalForPressure)
                     {
-                        // TODO have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
+                        // TODO: have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
 
                         if(def.IsAirTight.HasValue)
                         {
@@ -386,7 +386,7 @@ namespace Digi.BuildInfo.Features
                 // draw per-block overlays
                 selectedOverlayCall?.Invoke(def, drawMatrix);
 
-                // TODO real time neighbour airtight display?
+                // TODO: real time neighbour airtight display?
 #if false
             {
                 var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
@@ -794,8 +794,8 @@ namespace Digi.BuildInfo.Features
 
                 if(message == null)
                 {
-                    shadow.Message.Clear().Color(LABEL_SHADOW_COLOR).AppendSB(label);
-                    text.Message.Clear().Color(color).AppendSB(label);
+                    shadow.Message.Clear().Color(LABEL_SHADOW_COLOR).AppendStringBuilder(label);
+                    text.Message.Clear().Color(color).AppendStringBuilder(label);
 
                     labelData.UnderlineLength = GetLabelUnderlineLength(text);
                 }

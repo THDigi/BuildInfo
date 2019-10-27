@@ -14,6 +14,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
         public readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         public readonly StringBuilder SB = new StringBuilder(128);
+        public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
 
         public Caches(BuildInfoMod main) : base(main)
         {

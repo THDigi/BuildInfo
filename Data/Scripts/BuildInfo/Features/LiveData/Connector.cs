@@ -1,11 +1,15 @@
-﻿using Sandbox.Definitions;
+﻿using Digi.BuildInfo.Utilities;
+using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Connector : BData_Base
     {
-        public bool Connector = false;
+        /// <summary>
+        /// False = ejector.
+        /// </summary>
+        public bool CanConnect;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -15,10 +19,10 @@ namespace Digi.BuildInfo.Features.LiveData
 
             foreach(var name in dummies.Keys)
             {
-                // HACK behavior from MyShipConnector.LoadDummies()
-                if(name.ToLower().Contains("connector"))
+                // HACK: behavior from MyShipConnector.LoadDummies()
+                if(name.ContainsIgnoreCase("connector"))
                 {
-                    Connector = true;
+                    CanConnect = true;
                     break;
                 }
             }
