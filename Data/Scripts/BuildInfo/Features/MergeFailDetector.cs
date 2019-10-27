@@ -150,9 +150,11 @@ namespace Digi.BuildInfo.Features
             var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
+            block.Model.GetDummies(dummies);
+
             foreach(var kv in dummies)
             {
-                if(kv.Key.ToLower().Contains("merge"))
+                if(kv.Key.IndexOf("merge", StringComparison.OrdinalIgnoreCase) != -1)
                 {
                     Matrix matrix = kv.Value.Matrix;
                     Vector3 vector = matrix.Scale / 2f;
