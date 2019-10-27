@@ -15,14 +15,14 @@ namespace Digi.BuildInfo.VanillaData
 
     public static class Pressurization
     {
-        // TODO update this code when changed in game.
-        // Last checked on v1.186.500.
+        // TODO: update this code when changed in game.
+        // Last checked on v01_193_019.
         // All these are from Sandbox.Game.GameSystems.MyGridGasSystem.
         // Since that namespace is prohibited I have to copy it and convert it to work with modAPI.
 
         public static AirTightMode IsAirtightFromDefinition(MyCubeBlockDefinition def, float buildLevelRatio)
         {
-            if(def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
+            if(def.BuildProgressModels != null && def.BuildProgressModels.Length != 0)
             {
                 var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
@@ -41,45 +41,55 @@ namespace Digi.BuildInfo.VanillaData
             var b1 = grid.GetCubeBlock(startPos);
             var b2 = grid.GetCubeBlock(endPos);
 
-            if(b1 != b2)
+            if(b1 == b2)
             {
-                return (b1 != null && IsAirtightBlock(b1, startPos, endPos - startPos))
-                    || (b2 != null && IsAirtightBlock(b2, endPos, startPos - endPos));
+                if(b1 != null)
+                {
+                    var def = b1.BlockDefinition as MyCubeBlockDefinition;
+
+                    if(def != null)
+                        return (IsAirtightFromDefinition(def, b1.BuildLevelRatio) == AirTightMode.SEALED);
+
+                    return false;
+                }
+
+                return false;
             }
 
-            if(b1 != null)
-            {
-                var isAirTight = IsAirtightFromDefinition((MyCubeBlockDefinition)b1.BlockDefinition, b1.BuildLevelRatio);
+            if(b1 != null && IsAirtightBlock(b1, startPos, endPos - startPos))
+                return true;
 
-                return (isAirTight == AirTightMode.SEALED);
-            }
+            if(b2 != null)
+                return IsAirtightBlock(b2, endPos, startPos - endPos);
 
             return false;
         }
 
         private static bool IsAirtightBlock(IMySlimBlock block, Vector3I pos, Vector3 normal)
         {
-            var def = (MyCubeBlockDefinition)block.BlockDefinition;
-            var isAirTight = IsAirtightFromDefinition(def, block.BuildLevelRatio);
+            var def = block.BlockDefinition as MyCubeBlockDefinition;
+            if(def == null)
+                return false;
 
-            if(isAirTight != AirTightMode.USE_MOUNTS)
-                return (isAirTight == AirTightMode.SEALED);
+            var airtight = IsAirtightFromDefinition(def, block.BuildLevelRatio);
+            if(airtight != AirTightMode.USE_MOUNTS)
+                return (airtight == AirTightMode.SEALED);
 
             Matrix matrix;
             block.Orientation.GetMatrix(out matrix);
             matrix.TransposeRotationInPlace();
 
-            var position = (block.FatBlock != null ? pos - block.FatBlock.Position : Vector3.Zero);
-            var cell = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
-            var side = Vector3I.Round(Vector3.Transform(normal, matrix));
+            Vector3 position = (block.FatBlock == null ? Vector3.Zero : (pos - block.FatBlock.Position));
+            Vector3I cell = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
+            Vector3I side = Vector3I.Round(Vector3.Transform(normal, matrix));
 
             if(def.IsCubePressurized[cell][side])
                 return true;
 
-            var door = block.FatBlock as IMyDoor;
+            IMyDoor door = block.FatBlock as IMyDoor;
 
-            if(door != null)
-                return IsDoorAirtightInternal(def, ref side, (door.Status == DoorStatus.Closed));
+            if(door != null && (door.Status == DoorStatus.Closed || door.Status == DoorStatus.Closing))
+                return IsDoorAirtightInternal(def, ref side, door.IsFullyClosed);
 
             return false;
         }
