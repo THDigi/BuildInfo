@@ -34,6 +34,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup groupAimInfo = new ItemGroup();
         private readonly ItemGroup groupPlaceInfoToggle = new ItemGroup();
         private readonly ItemGroup groupPlaceInfo = new ItemGroup();
+        private readonly ItemGroup groupToolbarActionLabels = new ItemGroup();
 
         private readonly StringBuilder tmp = new StringBuilder();
 
@@ -102,6 +103,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
             ItemAdd_ToolbarActionLabels(Category_HUD);
+            ItemAdd_ToolbarActionBlockNames(Category_HUD);
+            SimpleToggle(Category_HUD, "Toolbar Action Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
 
             new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
             new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
@@ -119,6 +122,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             // gray out items that need to start like that
             groupTextInfo.SetInteractable(Config.TextShow.Value);
             groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
+            groupToolbarActionLabels.SetInteractable(Config.ToolbarActionLabels.Value != (int)ToolbarActionLabelsMode.Off);
         }
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
@@ -267,15 +271,31 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_ToolbarActionLabels(MenuCategoryBase category)
         {
             new ItemEnumCycle(category, "Toolbar Action Label Mode",
-                    getter: () => Config.ToolbarActionLabelMode.Value,
-                    setter: (v) =>
-                    {
-                        Config.ToolbarActionLabelMode.Value = v;
-                        ApplySettings(redraw: false);
-                    },
-                    enumType: typeof(ToolbarActionLabelsMode),
-                    defaultValue: Config.ToolbarActionLabelMode.DefaultValue);
+                getter: () => Config.ToolbarActionLabels.Value,
+                setter: (v) =>
+                {
+                    Config.ToolbarActionLabels.Value = v;
+                    ApplySettings(redraw: false);
+                    groupToolbarActionLabels.SetInteractable(v != (int)ToolbarActionLabelsMode.Off);
+                },
+                enumType: typeof(ToolbarActionLabelsMode),
+                defaultValue: Config.ToolbarActionLabels.DefaultValue);
         }
+
+        private void ItemAdd_ToolbarActionBlockNames(MenuCategoryBase category)
+        {
+            var item = new ItemEnumCycle(category, "Toolbar Action Block Names",
+                getter: () => Config.ToolbarActionBlockNames.Value,
+                setter: (v) =>
+                {
+                    Config.ToolbarActionBlockNames.Value = v;
+                    ApplySettings(redraw: false);
+                },
+                enumType: typeof(ToolbarActionBlockNameMode),
+                defaultValue: Config.ToolbarActionBlockNames.DefaultValue);
+            groupToolbarActionLabels.Add(item);
+        }
+
         #region Helper methods
         private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent)
         {

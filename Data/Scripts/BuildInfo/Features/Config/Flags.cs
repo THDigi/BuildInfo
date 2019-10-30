@@ -73,4 +73,12 @@ namespace Digi.BuildInfo.Features.Config
         HudHints = 2,
         AlwaysOn = 3,
     }
+
+    public enum ToolbarActionBlockNameMode
+    {
+        Off = 0,
+        OffExceptGUI = 1,
+        Useful = 2,
+        All = 3,
+    }
 }

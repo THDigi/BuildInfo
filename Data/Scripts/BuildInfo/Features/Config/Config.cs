@@ -25,8 +25,11 @@ namespace Digi.BuildInfo.Features.Config
         public FlagsSetting<AimInfoFlags> AimInfo;
         public BoolSetting BlockInfoStages;
         public BoolSetting ShipToolInventoryBar;
-        public BoolSetting TurretHUD;
         public BoolSetting RelativeDampenerInfo;
+        public BoolSetting TurretHUD;
+        public IntegerSetting ToolbarActionLabels;
+        public IntegerSetting ToolbarActionBlockNames;
+        public BoolSetting ToolbarActionStatus;
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
         public TextAlignSetting TextAPIAlign;
@@ -38,7 +41,6 @@ namespace Digi.BuildInfo.Features.Config
         public ColorSetting LeakParticleColorOverlay;
         public BoolSetting AdjustBuildDistanceSurvival;
         public BoolSetting AdjustBuildDistanceShipCreative;
-        public IntegerSetting ToolbarActionLabelMode;
         public InputCombinationSetting MenuBind;
         public InputCombinationSetting CycleOverlaysBind;
         public InputCombinationSetting ToggleTransparencyBind;
@@ -74,7 +76,7 @@ namespace Digi.BuildInfo.Features.Config
 
         private void SettingsLoaded()
         {
-            if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", System.StringComparison.OrdinalIgnoreCase))
+            if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", StringComparison.OrdinalIgnoreCase))
             {
                 var voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS).GetKeyboardControl();
                 var terminalInventoryKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL).GetKeyboardControl();
@@ -143,6 +145,64 @@ namespace Digi.BuildInfo.Features.Config
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
             TurretHUD.AddCompatibilityName("HUD: Turret Ammo");
 
+            {
+                var names = Enum.GetNames(typeof(ToolbarActionLabelsMode));
+                var values = (int[])Enum.GetValues(typeof(ToolbarActionLabelsMode));
+
+                int extraLines = 2;
+                string[] comments = new string[names.Length + extraLines];
+                comments[0] = "Customize ship toolbar block action's labels.";
+                comments[1] = "Turning this off turns off the rest of the toolbar action stuff.";
+
+                for(int i = 0; i < names.Length; ++i)
+                {
+                    var val = values[i];
+                    int index = i + extraLines;
+                    comments[index] = $"    {val.ToString()} = {names[i]}";
+
+                    if(val == (int)ToolbarActionLabelsMode.HudHints)
+                    {
+                        comments[i + extraLines] += " (can also be shown with ALT in this mode)";
+                    }
+                }
+
+                ToolbarActionLabels = new IntegerSetting(Handler, "HUD: Toolbar action labels", defaultValue: (int)ToolbarActionLabelsMode.HudHints, min: values[0], max: values[values.Length - 1], commentLines: comments);
+                ToolbarActionLabels.AddCompatibilityName("Show toolbar action");
+            }
+
+            {
+                var names = Enum.GetNames(typeof(ToolbarActionBlockNameMode));
+                var values = (int[])Enum.GetValues(typeof(ToolbarActionBlockNameMode));
+
+                int extraLines = 2;
+                string[] comments = new string[names.Length + extraLines];
+                comments[0] = "Pick what blocks should have their custom name printed in the action label.";
+                comments[1] = "Visibility of this is affected by the above setting.";
+
+                for(int i = 0; i < names.Length; ++i)
+                {
+                    var val = values[i];
+                    int index = i + extraLines;
+                    comments[index] = $"    {val.ToString()} = {names[i]}";
+
+                    if(val == (int)ToolbarActionBlockNameMode.OffExceptGUI)
+                    {
+                        comments[index] += " (only shown when menus are open)";
+                    }
+                    else if(val == (int)ToolbarActionBlockNameMode.Useful)
+                    {
+                        comments[index] += " (PBs, timers, connectors, etc)";
+                    }
+                }
+
+                ToolbarActionBlockNames = new IntegerSetting(Handler, "HUD: Toolbar action block name", defaultValue: (int)ToolbarActionBlockNameMode.Useful, min: values[0], max: values[values.Length - 1], commentLines: comments);
+            }
+
+            ToolbarActionStatus = new BoolSetting(Handler, "HUD: Toolbar action status", true,
+                "Adds some statuses to some toolbar actions.",
+                "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, and quite a few more.",
+                "Toolbar action labels must not be OFF for this to work.");
+
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
@@ -192,29 +252,6 @@ namespace Digi.BuildInfo.Features.Config
             AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
                 "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
                 "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
-
-            {
-                var names = Enum.GetNames(typeof(ToolbarActionLabelsMode));
-                var values = (int[])Enum.GetValues(typeof(ToolbarActionLabelsMode));
-
-                int extraLines = 2;
-                string[] comments = new string[names.Length + extraLines];
-                comments[0] = "Customize ship toolbar block action labels.";
-                comments[1] = "If not off, some actions get new custom statuses.";
-
-                for(int i = 0; i < names.Length; ++i)
-                {
-                    comments[i + extraLines] = $"    {values[i].ToString()} = {names[i]}";
-
-                    if(values[i] == (int)ToolbarActionLabelsMode.HudHints)
-                    {
-                        comments[i + extraLines] += " (can also be shown with ALT in this mode)";
-                    }
-                }
-
-                ToolbarActionLabelMode = new IntegerSetting(Handler, "Show toolbar actions", defaultValue: (int)ToolbarActionLabelsMode.HudHints, min: values[0], max: values[values.Length - 1], commentLines: comments);
-            }
-
 
             MenuBind = new InputCombinationSetting(Handler, "Bind: Menu", Combination.Create(MENU_BIND_INPUT_NAME, "plus"),
                 "For accessing the quick menu.");

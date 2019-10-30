@@ -13,6 +13,7 @@ using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
@@ -38,7 +39,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
 
-            Main.Config.ToolbarActionLabelMode.ValueAssigned += ToolbarActionLabelModeChanged;
+            Main.Config.ToolbarActionLabels.ValueAssigned += ToolbarActionLabelModeChanged;
 
             InitCustomStatus();
         }
@@ -49,7 +50,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
 
-            Main.Config.ToolbarActionLabelMode.ValueAssigned -= ToolbarActionLabelModeChanged;
+            Main.Config.ToolbarActionLabels.ValueAssigned -= ToolbarActionLabelModeChanged;
         }
 
         void ToolbarActionLabelModeChanged(int oldValue, int newValue, SettingBase<int> setting)
@@ -84,7 +85,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             try
             {
-                if(Main.Config.ToolbarActionLabelMode.Value == 0)
+                if(Main.Config.ToolbarActionLabels.Value == 0)
                     return;
 
                 foreach(var action in actions)
@@ -113,6 +114,36 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 cachedStatusText.Clear();
             }
         }
+
+        #region Custom name caching
+        private readonly Dictionary<long, string> cachedCustomName = new Dictionary<long, string>();
+
+        public string GetCustomName(long entityId)
+        {
+            return cachedCustomName.GetValueOrDefault(entityId, null);
+        }
+
+        public void AddCustomNameCache(IMyTerminalBlock block, string parsedName)
+        {
+            cachedCustomName[block.EntityId] = parsedName;
+
+            block.CustomNameChanged += Block_CustomNameChanged;
+            block.OnMarkForClose += Block_OnMarkForClose;
+        }
+
+        private void Block_CustomNameChanged(IMyTerminalBlock block)
+        {
+            cachedCustomName.Remove(block.EntityId);
+        }
+
+        private void Block_OnMarkForClose(IMyEntity ent)
+        {
+            var block = (IMyTerminalBlock)ent;
+            block.CustomNameChanged -= Block_CustomNameChanged;
+            block.OnMarkForClose -= Block_OnMarkForClose;
+            cachedCustomName.Remove(block.EntityId);
+        }
+        #endregion
 
         #region Custom statuses
         public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb);
@@ -163,6 +194,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         }
 
         // NOTE: for groups only the first block gets the writer called, and no way to detect if it's a group.
+
+        // TODO: one method per action ID instead for less switch() on runtime?
 
         bool Status_PB(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
         {
