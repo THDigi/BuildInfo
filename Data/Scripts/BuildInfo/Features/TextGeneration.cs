@@ -22,7 +22,6 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -45,7 +44,7 @@ namespace Digi.BuildInfo.Features
         private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
         private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.PostPP;
         private readonly Color BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
-        private const float BG_DGE = 0.02f; // added padding edge around the text boundary for the background image
+        private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
         private const float MENU_BG_OPACITY = 0.7f;
 
@@ -497,7 +496,7 @@ namespace Digi.BuildInfo.Features
             if(showMenu || selectedBlock == null)
 #endif
             {
-                float edge = BG_DGE * TextAPIScale;
+                float edge = BG_EDGE * TextAPIScale;
                 float bgOpacity = (QuickMenu.Shown ? MENU_BG_OPACITY : (Config.TextAPIBackgroundOpacity.Value < 0 ? GameConfig.HudBackgroundOpacity : Config.TextAPIBackgroundOpacity.Value));
                 bgObject.BillBoardColor = BG_COLOR * bgOpacity;
                 bgObject.Origin = textPos;
