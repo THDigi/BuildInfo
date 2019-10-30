@@ -16,6 +16,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandHelp CommandHelp;
         public CommandModLink CommandModLink;
         public CommandWorkshop CommandWorkshop;
+        public CommandChangelog CommandChangelog;
         public CommandGetBlock CommandGetBlock;
         public CommandShipMods CommandShipMods;
         public CommandQuickMenu CommandQuickMenu;
@@ -34,6 +35,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandHelp = new CommandHelp();
             CommandModLink = new CommandModLink();
             CommandWorkshop = new CommandWorkshop();
+            CommandChangelog = new CommandChangelog();
             CommandGetBlock = new CommandGetBlock();
             CommandShipMods = new CommandShipMods();
             CommandQuickMenu = new CommandQuickMenu();

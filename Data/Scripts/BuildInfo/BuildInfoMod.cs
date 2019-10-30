@@ -49,6 +49,7 @@ namespace Digi.BuildInfo
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
         public ToolbarActionLabels ToolbarActionLabels;
+        public WhatsNew WhatsNew;
         public DebugEvents DebugEvents;
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
@@ -87,6 +88,7 @@ namespace Digi.BuildInfo
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             ToolbarActionLabels = new ToolbarActionLabels(this);
+            WhatsNew = new WhatsNew(this);
             DebugEvents = new DebugEvents(this);
         }
     }

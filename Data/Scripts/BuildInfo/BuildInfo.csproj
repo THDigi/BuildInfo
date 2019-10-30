@@ -140,11 +140,13 @@
     <Compile Include="Features\ChatCommands\CommandClearCache.cs" />
     <Compile Include="Features\ChatCommands\CommandLaserPower.cs" />
     <Compile Include="Features\ChatCommands\CommandShipMods.cs" />
+    <Compile Include="Features\ChatCommands\CommandChangelog.cs" />
     <Compile Include="Features\ChatCommands\CommandWorkshop.cs" />
     <Compile Include="Features\ChatCommands\CommandReloadConfig.cs" />
     <Compile Include="Features\TextAPIMenu\ItemEnumCycle.cs" />
     <Compile Include="Features\ToolbarLabels\ActionWriterOverride.cs" />
     <Compile Include="Features\ToolbarLabels\ToolbarActionLabels.cs" />
+    <Compile Include="Features\WhatsNew.cs" />
     <Compile Include="GameSession.cs" />
     <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
     <Compile Include="Libraries\ComponentLib\GameSession.cs" />

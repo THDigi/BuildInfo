@@ -48,6 +48,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting BlockPickerBind;
         public BoolSetting InternalInfo;
         public BoolSetting Debug;
+        public IntegerSetting ModVersion;
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
         public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
@@ -280,6 +281,12 @@ namespace Digi.BuildInfo.Features.Config
             Debug = new BoolSetting(Handler, "Debug", false,
                 "For debugging purposes only, not for normal use!",
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
+
+            ModVersion = new IntegerSetting(Handler, "Mod Version", 0, 0, int.MaxValue,
+                "Latest version loaded for notifying you of notable changes.",
+                "Do not edit!");
+            ModVersion.AddDefaultValueComment = false;
+            ModVersion.AddValidRangeComment = false;
         }
 
         public void Save()
