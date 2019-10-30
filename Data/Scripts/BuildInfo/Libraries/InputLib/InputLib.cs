@@ -228,6 +228,38 @@ namespace Digi.Input
             {
                 return (string.IsNullOrWhiteSpace(CombinationString) ? "<Unassigned>" : CombinationString);
             }
+
+            public static bool CombinationEqual(Combination c1, Combination c2)
+            {
+                if(c1 == c2)
+                    return true;
+
+                if(c1 == null || c2 == null)
+                    return false;
+
+                if(c1.inputs.Count != c2.inputs.Count)
+                    return false;
+
+                // TODO: improvements?
+                foreach(var c1input in c1.inputs)
+                {
+                    bool found = false;
+
+                    foreach(var c2input in c2.inputs)
+                    {
+                        if(c1input.Id == c2input.Id)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if(!found)
+                        return false;
+                }
+
+                return true;
+            }
         }
         #endregion Input combination inner class
 

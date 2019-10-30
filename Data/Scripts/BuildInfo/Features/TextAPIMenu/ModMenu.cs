@@ -79,7 +79,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             ItemAdd_TextShow(Category_TextCustomize);
             SimpleToggle(Category_TextCustomize, "Show when HUD is off", Config.TextAlwaysVisible, groupTextInfo);
-            ItemAdd_TextScale(Category_TextCustomize);
+            SimpleSlider(Category_TextCustomize, "Text Scale", Config.TextAPIScale);
             ItemAdd_BackgroundOpacity(Category_TextCustomize);
             ItemAdd_CustomStyling(Category_TextCustomize);
             ItemAdd_ScreenPosition(Category_TextCustomize);
@@ -101,14 +101,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
-            new ItemEnumCycle(Category_HUD, "Toolbar Action Label Mode",
-                    getter: () => Config.ToolbarActionLabelMode.Value,
-                    setter: (v) =>
-                    {
-                        Config.ToolbarActionLabelMode.Value = v;
-                        ApplySettings(redraw: false);
-                    },
-                    enumType: typeof(ToolbarActionLabelsMode));
+            ItemAdd_ToolbarActionLabels(Category_HUD);
 
             new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
             new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
@@ -138,35 +131,13 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0));
                     groupTextInfo.SetInteractable(v);
                     groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling.Value : false);
-                });
-        }
-
-        private void ItemAdd_TextScale(MenuCategoryBase category)
-        {
-            var item = new ItemSlider(category, "Text Scale", min: Config.TextAPIScale.Min, max: Config.TextAPIScale.Max, rounding: 2,
-                getter: () => Config.TextAPIScale.Value,
-                setter: (val) =>
-                {
-                    Config.TextAPIScale.Value = val;
-                    ApplySettings(redraw: false);
                 },
-                sliding: (val) =>
-                {
-                    Config.TextAPIScale.Value = val;
-                    ApplySettings(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
-                },
-                cancelled: (orig) =>
-                {
-                    Config.TextAPIScale.Value = orig;
-                    ApplySettings(save: false);
-                });
-
-            groupTextInfo.Add(item);
+                defaultValue: Config.TextShow.DefaultValue);
         }
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
         {
-            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Config.TextAPIBackgroundOpacity.Max, rounding: 2,
+            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Config.TextAPIBackgroundOpacity.Max, defaultValue: Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
                 getter: () => Config.TextAPIBackgroundOpacity.Value,
                 setter: (val) =>
                 {
@@ -200,13 +171,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextAPICustomStyling.Value = v;
                     groupCustomStyling.SetInteractable(v);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
-                });
+                },
+                defaultValue: Config.TextAPICustomStyling.DefaultValue);
             groupTextInfo.Add(item);
         }
 
         private void ItemAdd_ScreenPosition(MenuCategoryBase category)
         {
-            var item = new ItemBoxMove(category, "Screen Position", min: Config.TextAPIScreenPosition.Min, max: Config.TextAPIScreenPosition.Max, rounding: 3,
+            var item = new ItemBoxMove(category, "Screen Position", min: Config.TextAPIScreenPosition.Min, max: Config.TextAPIScreenPosition.Max, defaultValue: Config.TextAPIScreenPosition.DefaultValue, rounding: 3,
                 getter: () => Config.TextAPIScreenPosition.Value,
                 setter: (pos) =>
                 {
@@ -242,6 +214,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextAPIAlign.Set(TextAlignFlags.Left, !set);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
+                defaultValue: (Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Right) != 0,
                 onText: "Right",
                 offText: "Left");
 
@@ -261,6 +234,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextAPIAlign.Set(TextAlignFlags.Top, !set);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
+                defaultValue: (Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Bottom) != 0,
                 onText: "Bottom",
                 offText: "Top");
 
@@ -290,6 +264,18 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             );
         }
 
+        private void ItemAdd_ToolbarActionLabels(MenuCategoryBase category)
+        {
+            new ItemEnumCycle(category, "Toolbar Action Label Mode",
+                    getter: () => Config.ToolbarActionLabelMode.Value,
+                    setter: (v) =>
+                    {
+                        Config.ToolbarActionLabelMode.Value = v;
+                        ApplySettings(redraw: false);
+                    },
+                    enumType: typeof(ToolbarActionLabelsMode),
+                    defaultValue: Config.ToolbarActionLabelMode.DefaultValue);
+        }
         #region Helper methods
         private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent)
         {
@@ -309,8 +295,32 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     setting.Value = v;
                     ApplySettings(redraw: false);
-                });
+                },
+                defaultValue: setting.DefaultValue);
             group?.Add(item);
+        }
+
+        private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting)
+        {
+            var item = new ItemSlider(category, title, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+                getter: () => setting.Value,
+                setter: (val) =>
+                {
+                    setting.Value = val;
+                    ApplySettings(redraw: false);
+                },
+                sliding: (val) =>
+                {
+                    setting.Value = val;
+                    ApplySettings(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
+                },
+                cancelled: (orig) =>
+                {
+                    setting.Value = orig;
+                    ApplySettings(save: false);
+                });
+
+            groupTextInfo.Add(item);
         }
 
         private void SimpleBind(MenuCategoryBase category, string name, string inputName, InputCombinationSetting setting, ItemGroup addToGroup = null, ItemGroup updateGroupOnSet = null)
@@ -322,7 +332,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     setting.Value = combination;
                     ApplySettings(redraw: false);
                     updateGroupOnSet?.UpdateTitles();
-                });
+                },
+                defaultValue: setting.DefaultValue);
 
             addToGroup?.Add(item);
         }
@@ -338,8 +349,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             if(moveHint)
             {
                 tmp.NewLine();
-                tmp.Append("<color=0,255,0>Click and drag anywhere to move!").NewLine();
-                tmp.Append("<color=255,255,0>Current position: ").Append(Config.TextAPIScreenPosition.Value.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.Value.Y.ToString("0.000"));
+                tmp.NewLine().Append("<color=0,255,0>Click and drag anywhere to move!");
+                tmp.NewLine().Append("<color=255,255,0>Current position: ").Append(Config.TextAPIScreenPosition.Value.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.Value.Y.ToString("0.000"));
+                tmp.NewLine().Append("<color=100,100,55>Default: ").Append(Config.TextAPIScreenPosition.DefaultValue.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.DefaultValue.Y.ToString("0.000"));
+                tmp.NewLine();
             }
 
             tmp.Append(TEXT_END);

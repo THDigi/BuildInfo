@@ -18,13 +18,15 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public string Title;
         public string InputName;
         public Color ValueColor = new Color(0, 255, 100);
+        public Combination DefaultValue;
 
-        public ItemInput(MenuCategoryBase category, string title, string inputName, Func<Combination> getter, Action<Combination> setter = null)
+        public ItemInput(MenuCategoryBase category, string title, string inputName, Func<Combination> getter, Action<Combination> setter, Combination defaultValue)
         {
             Title = title;
             InputName = inputName;
             Getter = getter;
             Setter = setter;
+            DefaultValue = defaultValue;
 
             Item = new MenuKeybindInput(string.Empty, category, "Press a key to bind.\nCan be combined with alt/ctrl/shift.\nUnbind by confirming without a key.", OnSubmit);
 
@@ -39,9 +41,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         public void UpdateTitle()
         {
-            var title = (Item.Interactable ? Title : "<color=gray>" + Title);
-            var value = (Item.Interactable ? Utils.ColorTag(ValueColor, Getter().ToString()) : Getter().ToString());
-            Item.Text = $"{title}: {value}";
+            var value = Getter();
+            var titleColored = (Item.Interactable ? Title : "<color=gray>" + Title);
+            var valueColored = (Item.Interactable ? Utils.ColorTag(ValueColor, value.ToString()) : value.ToString());
+            Item.Text = $"{titleColored}: {valueColored}{(Combination.CombinationEqual(DefaultValue, value) ? " <color=gray>[default]" : "")}";
         }
 
         private void OnSubmit(MyKeys key, bool shift, bool ctrl, bool alt)

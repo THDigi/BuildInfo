@@ -17,12 +17,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private readonly string[] names;
         private readonly int[] values;
+        private readonly int defaultValue;
 
-        public ItemEnumCycle(MenuCategoryBase category, string title, Func<int> getter, Action<int> setter, Type enumType)
+        public ItemEnumCycle(MenuCategoryBase category, string title, Func<int> getter, Action<int> setter, Type enumType, int defaultValue)
         {
             Title = title;
             Getter = getter;
             Setter = setter;
+            this.defaultValue = defaultValue;
 
             names = Enum.GetNames(enumType);
             values = (int[])Enum.GetValues(enumType);
@@ -41,7 +43,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         {
             int val = Getter();
             var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            Item.Text = $"{titleColor}{Title}: {Utils.ColorTag(ColorName)}{names[val]} {Utils.ColorTag(ColorValue)}({val.ToString()})";
+            Item.Text = $"{titleColor}{Title}: {Utils.ColorTag(ColorName)}{names[val]} {Utils.ColorTag(ColorValue)}({val.ToString()}){(defaultValue == val ? " <color=gray>[default]" : "")}";
         }
 
         private void OnClick()

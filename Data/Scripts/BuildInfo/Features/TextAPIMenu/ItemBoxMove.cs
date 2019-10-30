@@ -15,10 +15,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public string Title;
         public readonly Vector2D Min;
         public readonly Vector2D Max;
+        public readonly Vector2D DefaultValue;
         public readonly int Rounding;
         private readonly string format;
 
-        public ItemBoxMove(MenuCategoryBase category, string title, Vector2D min, Vector2D max, int rounding,
+        public ItemBoxMove(MenuCategoryBase category, string title, Vector2D min, Vector2D max, Vector2D defaultValue, int rounding,
             Func<Vector2D> getter,
             Action<Vector2D> setter = null,
             Action<Vector2D> selected = null,
@@ -28,6 +29,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Title = title;
             Min = min;
             Max = max;
+            DefaultValue = defaultValue;
             Rounding = rounding;
             format = "N" + rounding.ToString();
             Getter = getter;
@@ -52,7 +54,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             var title = (Item.Interactable ? Title : "<color=gray>" + Title);
             var valueColor = (Item.Interactable ? "<color=yellow>" : "");
             var value = Getter();
-            Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)}";
+            Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)} <color=gray>[default:{DefaultValue.X.ToString(format)},{DefaultValue.Y.ToString(format)}]";
         }
 
         private void OnSubmit(Vector2D pos)

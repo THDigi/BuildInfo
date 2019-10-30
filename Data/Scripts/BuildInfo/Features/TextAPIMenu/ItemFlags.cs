@@ -37,7 +37,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Setting.Value = (v ? allValue : 0);
                     OnValueSet?.Invoke(allValue, v);
                     other.UpdateTitles();
-                });
+                },
+                defaultValue: (Setting.DefaultValue & allValue) != 0);
 
             toggle.Add(item);
         }
@@ -63,7 +64,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                         Setting.Set(value, v);
                         OnValueSet?.Invoke(value, v);
                         toggle.UpdateTitles();
-                    });
+                    },
+                    defaultValue: (Setting.DefaultValue & value) != 0);
 
                 other.Add(item);
             }

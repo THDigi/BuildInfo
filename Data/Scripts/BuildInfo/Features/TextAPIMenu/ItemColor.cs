@@ -21,7 +21,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Apply = apply;
             Preview = preview;
 
-            Item = new MenuColorPickerInput(title, category, setting.Value, title, OnSubmit, OnSlide, OnCancel, useAlpha);
+            var inputDialogTitle = $"{Title} | Default: {Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}";
+
+            Item = new MenuColorPickerInput(title, category, setting.Value, inputDialogTitle, OnSubmit, OnSlide, OnCancel, useAlpha);
 
             UpdateTitle();
         }
@@ -35,7 +37,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public void UpdateTitle()
         {
             var valueColor = Utils.ColorTag(Setting.Value);
-            Item.Text = $"{Title}: {valueColor}|||||||||";
+            Item.Text = $"{Title}: {valueColor}{Setting.Value.R.ToString()},{Setting.Value.G.ToString()},{Setting.Value.B.ToString()} <color=gray>[default:{Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}]";
         }
 
         private void OnSubmit(Color color)
