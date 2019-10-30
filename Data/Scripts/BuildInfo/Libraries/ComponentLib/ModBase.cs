@@ -179,7 +179,15 @@ namespace Digi.ComponentLib
 
                     for(int i = 0; i < comps; ++i)
                     {
-                        ComponentUpdateInput[i].UpdateInput(anyKeyOrMouse, inMenu, paused);
+                        try
+                        {
+                            ComponentUpdateInput[i].UpdateInput(anyKeyOrMouse, inMenu, paused);
+                        }
+                        catch(Exception e)
+                        {
+                            Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MSG);
+                            Log.Error(e);
+                        }
                     }
                 }
             }
@@ -197,7 +205,15 @@ namespace Digi.ComponentLib
 
                 for(int i = 0; i < ComponentUpdateBeforeSim.Count; ++i)
                 {
-                    ComponentUpdateBeforeSim[i].UpdateBeforeSim(Tick);
+                    try
+                    {
+                        ComponentUpdateBeforeSim[i].UpdateBeforeSim(Tick);
+                    }
+                    catch(Exception e)
+                    {
+                        Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error(e);
+                    }
                 }
             }
             catch(Exception e)
@@ -214,7 +230,15 @@ namespace Digi.ComponentLib
 
                 for(int i = 0; i < ComponentUpdateAfterSim.Count; ++i)
                 {
-                    ComponentUpdateAfterSim[i].UpdateAfterSim(Tick);
+                    try
+                    {
+                        ComponentUpdateAfterSim[i].UpdateAfterSim(Tick);
+                    }
+                    catch(Exception e)
+                    {
+                        Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error(e);
+                    }
                 }
             }
             catch(Exception e)
@@ -232,7 +256,15 @@ namespace Digi.ComponentLib
 
                 for(int i = 0; i < ComponentUpdateDraw.Count; ++i)
                 {
-                    ComponentUpdateDraw[i].UpdateDraw();
+                    try
+                    {
+                        ComponentUpdateDraw[i].UpdateDraw();
+                    }
+                    catch(Exception e)
+                    {
+                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.Draw(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error(e);
+                    }
                 }
             }
             catch(Exception e)
@@ -243,7 +275,14 @@ namespace Digi.ComponentLib
 
         void IModBase.WorldSave()
         {
-            OnWorldSave?.Invoke();
+            try
+            {
+                OnWorldSave?.Invoke();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         void IModBase.ComponentAdd(IComponent component)
