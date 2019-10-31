@@ -148,7 +148,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         #region Custom statuses
         public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb);
 
-        private readonly Dictionary<MyObjectBuilderType, StatusDel> customStatus = new Dictionary<MyObjectBuilderType, StatusDel>();
+        private readonly Dictionary<MyObjectBuilderType, StatusDel> customStatus = new Dictionary<MyObjectBuilderType, StatusDel>(MyObjectBuilderType.Comparer);
 
         private readonly Dictionary<long, string> cachedStatusText = new Dictionary<long, string>();
 

@@ -128,7 +128,7 @@ namespace Digi.BuildInfo
                         return;
                     }
 
-                    vanillaDetailInfo = new Dictionary<MyDefinitionId, string>();
+                    vanillaDetailInfo = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
 
                     foreach(var block in info.Blocks)
                     {
