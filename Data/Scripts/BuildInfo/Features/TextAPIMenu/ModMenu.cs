@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
@@ -62,14 +62,27 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             TextAPI.Detected -= TextAPI_Detected;
         }
 
+        protected override void UpdateAfterSim(int tick)
+        {
+            if(!MyAPIGateway.Gui.ChatEntryVisible)
+            {
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+                Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs();
+            }
+            else
+            {
+                MyAPIGateway.Utilities.ShowNotification("[Close chat to see help window]", 16);
+            }
+        }
+
         private void TextAPI_Detected()
         {
             Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", () =>
             {
-                Main.ChatCommandHandler.CommandHelp.ExecuteNoArgs();
-                MyAPIGateway.Utilities.ShowNotification("[Close chat to see help window]", 3000);
+                // HACK: schedule to be shown after chat is closed, due to a soft lock bug with ShowMissionScreen() when chat is opened.
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             });
 
             Category_TextCustomize = AddCategory("TextBox Customization", Category_Mod);
