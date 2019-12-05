@@ -16,6 +16,11 @@ namespace Digi.ComponentLib
         public BuildInfo_GameSession Session;
 
         /// <summary>
+        /// Gets set to true when world starts right after all components got registered.
+        /// </summary>
+        public bool ComponentsRegistered { get; private set; }
+
+        /// <summary>
         /// Can be with or without render, but never MP client.
         /// </summary>
         public bool IsServer = false;
@@ -125,6 +130,7 @@ namespace Digi.ComponentLib
                 }
             }
 
+            ComponentsRegistered = true;
             OnWorldStart?.Invoke();
         }
 
@@ -134,16 +140,19 @@ namespace Digi.ComponentLib
             {
                 OnWorldExit?.Invoke();
 
-                for(int i = 0; i < Components.Count; ++i)
+                if(ComponentsRegistered)
                 {
-                    try
+                    for(int i = 0; i < Components.Count; ++i)
                     {
-                        Components[i].UnregisterComponent();
-                    }
-                    catch(Exception e)
-                    {
-                        Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MSG);
-                        Log.Error(e);
+                        try
+                        {
+                            Components[i].UnregisterComponent();
+                        }
+                        catch(Exception e)
+                        {
+                            Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MSG);
+                            Log.Error(e);
+                        }
                     }
                 }
 
@@ -158,6 +167,7 @@ namespace Digi.ComponentLib
             {
                 Session = null;
                 Instance = null;
+                ComponentsRegistered = false;
             }
         }
 
