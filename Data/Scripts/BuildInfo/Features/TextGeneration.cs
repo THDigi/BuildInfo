@@ -437,7 +437,6 @@ namespace Digi.BuildInfo.Features
 
             if(QuickMenu.Shown) // in the menu
             {
-                textSize.Y *= 1.2f; // HACK manual fix for smaller Y background only in menu
                 textOffset = new Vector2D(-textSize.X, textSize.Y / -2);
             }
 #if false // disabled blockinfo-attached GUI
