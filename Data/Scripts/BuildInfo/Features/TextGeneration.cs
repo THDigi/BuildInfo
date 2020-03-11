@@ -351,6 +351,8 @@ namespace Digi.BuildInfo.Features
         {
             if(TextAPIEnabled)
             {
+                textAPIlines.TrimEndWhitespace();
+
                 var textSize = UpdateTextAPIvisuals(textAPIlines);
 
                 if(useCache)
