@@ -9,14 +9,42 @@ using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
-// TODO add more of the vanilla HUD things back?
-
 namespace Digi.BuildInfo.Features
 {
+    // Overriding controlled_is_turret hud stat to show the HUD while controlling turret.
+    public class HudStat_TurretControl : IMyHudStat
+    {
+        public MyStringHash Id => MyStringHash.GetOrCompute("controlled_is_turret");
+        public float CurrentValue { get; private set; }
+        public float MinValue => 0;
+        public float MaxValue => 1;
+        public string GetValueString() => CurrentValue.ToString("0.00");
+        public void Update()
+        {
+            var setting = BuildInfoMod.Instance?.Config?.TurretHUD;
+
+            if(setting != null && setting.Value)
+            {
+                CurrentValue = 0f;
+            }
+            else
+            {
+                // vanilla game's logic for this stat
+                var controlled = MyAPIGateway.Session?.ControlledObject;
+
+                if(controlled == null)
+                    CurrentValue = 0f;
+                else
+                    CurrentValue = ((controlled is IMyUserControllableGun) ? 1 : 0);
+            }
+        }
+    }
+
     public class TurretHUD : ModComponent
     {
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
@@ -167,32 +195,33 @@ namespace Digi.BuildInfo.Features
                 sb.Append(" / ").Append(Math.Floor((float)inv.MaxVolume / magDef.Volume));
             sb.Append(" mags").NewLine();
 
-            if(!grid.IsStatic)
-            {
-                sb.NewLine();
+            // TODO: toggleable between showing vanilla HUD and showing this?
+            //if(!grid.IsStatic)
+            //{
+            //    sb.NewLine();
 
-                sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
-                if(cockpit != null)
-                {
-                    var internalCockpit = (MyCockpit)cockpit;
+            //    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
+            //    if(cockpit != null)
+            //    {
+            //        var internalCockpit = (MyCockpit)cockpit;
 
-                    sb.Append("Dampeners: ");
+            //        sb.Append("Dampeners: ");
 
-                    if(internalCockpit.RelativeDampeningEntity != null)
-                    {
-                        sb.Color(Color.Lime).Append("Relative");
-                    }
-                    else
-                    {
-                        if(!cockpit.DampenersOverride)
-                            sb.Color(Color.Red);
+            //        if(internalCockpit.RelativeDampeningEntity != null)
+            //        {
+            //            sb.Color(Color.Lime).Append("Relative");
+            //        }
+            //        else
+            //        {
+            //            if(!cockpit.DampenersOverride)
+            //                sb.Color(Color.Red);
 
-                        sb.Append(cockpit.DampenersOverride ? "On" : "Off");
-                    }
+            //            sb.Append(cockpit.DampenersOverride ? "On" : "Off");
+            //        }
 
-                    sb.NewLine();
-                }
-            }
+            //        sb.NewLine();
+            //    }
+            //}
         }
 
         private void DrawHUD()
