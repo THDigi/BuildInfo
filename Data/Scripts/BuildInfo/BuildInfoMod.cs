@@ -28,6 +28,7 @@ namespace Digi.BuildInfo
         public BlockMonitor BlockMonitor;
         public InputLibHandler InputLibHandler;
         public EquipmentMonitor EquipmentMonitor;
+        public WeaponCoreAPIHandler WeaponCoreAPIHandler;
 
         // Features
         public Config Config;
@@ -67,6 +68,7 @@ namespace Digi.BuildInfo
             GameConfig = new GameConfig(this);
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
+            WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
 
             // Features
             Config = new Config(this);

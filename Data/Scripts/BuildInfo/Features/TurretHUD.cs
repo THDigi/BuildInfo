@@ -51,6 +51,7 @@ namespace Digi.BuildInfo.Features
 
         private IMyLargeTurretBase prevTurret;
         private Weapon weaponTracker;
+        private bool weaponCoreBlock;
 
         private bool visible = false;
         private IMyHudNotification notify;
@@ -88,6 +89,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        // draw ship relative direction indicator
         protected override void UpdateDraw()
         {
             var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
@@ -132,8 +134,20 @@ namespace Digi.BuildInfo.Features
             {
                 if(prevTurret != turret)
                 {
-                    weaponTracker = Main.ReloadTracking.GetWeaponInfo(turret);
+                    weaponCoreBlock = WeaponCoreAPIHandler.IsBlockWeapon(turret.BlockDefinition);
+
+                    if(weaponCoreBlock)
+                        weaponTracker = null;
+                    else
+                        weaponTracker = Main.ReloadTracking.GetWeaponInfo(turret);
+
                     prevTurret = turret;
+                }
+
+                if(weaponCoreBlock)
+                {
+                    HideHUD();
+                    return;
                 }
 
                 GenerateText(turret);

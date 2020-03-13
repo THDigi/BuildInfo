@@ -461,6 +461,13 @@ namespace Digi.BuildInfo.Features
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
+            // Conveyor sorters can be used as a base block for WeaponCore.
+            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            {
+                Format_WeaponCore(block, info);
+                return;
+            }
+
             var sorterDef = (MyConveyorSorterDefinition)block.SlimBlock.BlockDefinition;
 
             info.DetailInfo_MaxPowerUsage(Sink);
@@ -518,6 +525,12 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            {
+                Format_WeaponCore(block, info);
+                return;
+            }
+
             info.DetailInfo_InputPower(Sink);
 
             if(Inv == null)
@@ -551,6 +564,11 @@ namespace Digi.BuildInfo.Features
 
             info.Append("Reserve: ").Append(gun.GunBase.CurrentAmmo).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
             info.Append("Type: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
+        }
+
+        void Format_WeaponCore(IMyTerminalBlock block, StringBuilder info)
+        {
+            info.DetailInfo_InputPower(Sink);
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)

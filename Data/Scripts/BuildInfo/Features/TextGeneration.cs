@@ -782,7 +782,8 @@ namespace Digi.BuildInfo.Features
 
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
-            if(Overlays.drawLookup.ContainsKey(def.Id.TypeId))
+            // TODO: remove last condition when adding overlay
+            if(Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
                 Config.CycleOverlaysBind.Value.GetBinds(GetLine());
@@ -1874,6 +1875,13 @@ namespace Digi.BuildInfo.Features
 
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
+            // conveyor sorter type is used by WeaponCore too.
+            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            {
+                Format_WeaponCore(def);
+                return;
+            }
+
             var sorter = (MyConveyorSorterDefinition)def; // does not extend MyPoweredCargoContainerDefinition
 
             PowerRequired(sorter.PowerInput, sorter.ResourceSinkGroup);
@@ -2991,6 +2999,12 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
+            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            {
+                Format_WeaponCore(def);
+                return;
+            }
+
             var weapon = (MyWeaponBlockDefinition)def;
             var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
 
@@ -3155,6 +3169,16 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Color(Color.Red).Append("Weapons are disabled in this world");
             }
+        }
+
+        private void Format_WeaponCore(MyCubeBlockDefinition blockDef)
+        {
+            // NOTE: this includes conveyor sorter too
+
+            AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats available)");
+
+            //AddLine().Label("DEBUG_MaxPower").PowerFormat(WeaponCoreAPI.GetMaxPower(blockDef.Id));
+            //AddLine().Label("DEBUG_OptimalDPS").PowerFormat(WeaponCoreAPI.GetOptimalDps(blockDef.Id));
         }
 
         private void Format_Warhead(MyCubeBlockDefinition def)

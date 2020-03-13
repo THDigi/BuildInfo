@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using WeaponCore.Api;
 
 namespace Digi.BuildInfo
 {
@@ -25,6 +26,8 @@ namespace Digi.BuildInfo
         protected TextGeneration TextGeneration => Main.TextGeneration;
         protected LiveDataHandler LiveDataHandler => Main.LiveDataHandler;
         protected EquipmentMonitor EquipmentMonitor => Main.EquipmentMonitor;
+        protected WcApi WeaponCoreAPI => Main.WeaponCoreAPIHandler.API;
+        protected WeaponCoreAPIHandler WeaponCoreAPIHandler => Main.WeaponCoreAPIHandler;
 
         protected bool TextAPIEnabled => Main.TextAPI.IsEnabled;
 

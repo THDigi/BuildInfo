@@ -56,6 +56,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
 
+            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition.Id))
+                return; // no tracking of weaponcore blocks
+
             var gunBlock = block.FatBlock as IMyUserControllableGun;
 
             if(gunBlock != null)

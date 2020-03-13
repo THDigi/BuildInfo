@@ -155,6 +155,7 @@
     <Compile Include="Libraries\ComponentLib\ModBase.cs" />
     <Compile Include="Libraries\ComponentLib\UpdateFlags.cs" />
     <Compile Include="Libraries\ComponentLib\UpdateFlagsExtensions.cs" />
+    <Compile Include="Libraries\WeaponCoreAPI.cs" />
     <Compile Include="ModComponent.cs" />
     <Compile Include="Features\RelativeDampenerInfo.cs" />
     <Compile Include="Features\Config\Config.cs" />
@@ -194,6 +195,7 @@
     <Compile Include="Features\PlacementDistance.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Features\BlockInfoAdditions.cs" />
+    <Compile Include="Systems\WeaponCoreAPIHandler.cs" />
     <Compile Include="Systems\TextAPIHandler.cs" />
     <Compile Include="Systems\EquipmentMonitor.cs" />
     <Compile Include="Utilities\Caches.cs" />

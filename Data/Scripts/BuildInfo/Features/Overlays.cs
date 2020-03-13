@@ -203,6 +203,7 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Drill), DrawOverlay_Drill);
 
+            Add(typeof(MyObjectBuilder_ConveyorSorter), DrawOverlay_WeaponCoreWeapon);
             Add(typeof(MyObjectBuilder_SmallGatlingGun), DrawOverlay_Weapons);
             Add(typeof(MyObjectBuilder_SmallMissileLauncher), DrawOverlay_Weapons);
             Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), DrawOverlay_Weapons);
@@ -535,6 +536,12 @@ namespace Digi.BuildInfo.Features
 
         private void DrawOverlay_Weapons(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
+            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            {
+                DrawOverlay_WeaponCoreWeapon(def, drawMatrix);
+                return;
+            }
+
             var data = BData_Base.TryGetDataCached<BData_Weapon>(def);
 
             if(data == null)
@@ -587,6 +594,14 @@ namespace Digi.BuildInfo.Features
                 //var lineStart = circleMatrix.Translation + coneMatrix.Down * accuracyAt100m;
                 //var labelStart = lineStart + coneMatrix.Down * 0.3f;
                 //DrawLineLabelAlternate(TextAPIMsgIds.ACCURACY_100M, lineStart, labelStart, "At 100m (zoomed)", color100m, underlineLength: 1.5f);
+            }
+        }
+
+        private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            {
+                // TODO: weaponcore overlays?
             }
         }
 
