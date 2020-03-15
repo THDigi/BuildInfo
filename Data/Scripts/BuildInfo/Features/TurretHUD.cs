@@ -102,6 +102,9 @@ namespace Digi.BuildInfo.Features
             if(cockpit == null)
                 return;
 
+            if(!cockpit.IsSameConstructAs(turret))
+                return; // different ships
+
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
             var pos = DrawUtils.HUDtoWorld(new Vector2(0, -0.5f), true);
@@ -164,9 +167,6 @@ namespace Digi.BuildInfo.Features
             var gun = (IMyGunObject<MyGunBase>)turret;
             var magDef = gun.GunBase?.CurrentAmmoMagazineDefinition;
 
-            var grid = turret.CubeGrid;
-            var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
-
             var inv = turret.GetInventory();
 
             int loadedMag = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
@@ -210,12 +210,18 @@ namespace Digi.BuildInfo.Features
             sb.Append(" mags").NewLine();
 
             // TODO: toggleable between showing vanilla HUD and showing this?
+
+            //var grid = turret.CubeGrid;
+
             //if(!grid.IsStatic)
             //{
             //    sb.NewLine();
 
             //    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
-            //    if(cockpit != null)
+
+            //    var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+
+            //    if(cockpit != null && cockpit.IsSameConstructAs(turret))
             //    {
             //        var internalCockpit = (MyCockpit)cockpit;
 
