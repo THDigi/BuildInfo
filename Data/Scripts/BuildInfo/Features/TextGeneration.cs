@@ -2164,7 +2164,8 @@ namespace Digi.BuildInfo.Features
 
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
-                    // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var, planetary influence is always considered atmosphere.
+                    // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var because planetary influence is air density.
+                    // TODO: test if this NeedsAtmosphereForInfluence actually does anything with earth, mars, moon and space.
 
                     AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
                         .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ");
@@ -2174,7 +2175,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("in atmosphere");
 
                     AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                                    .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
+                        .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
                     if(thrust.MinPlanetaryInfluence > 0f)
                         GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
                     else
