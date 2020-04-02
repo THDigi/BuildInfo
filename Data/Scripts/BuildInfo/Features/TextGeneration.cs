@@ -3274,9 +3274,9 @@ namespace Digi.BuildInfo.Features
                 var color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
 
                 if(powerHardcoded)
-                    AddLine().Color(color).Label("Power required");
-                else
                     AddLine().Color(color).LabelHardcoded("Power required", color);
+                else
+                    AddLine().Color(color).Label("Power required");
 
                 if(mw <= 0)
                     GetLine().Append("No");
