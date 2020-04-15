@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder Hardcoded(this StringBuilder s)
         {
-            return s.Color(new Color(255, 255, 155)).Append('*');
+            return s.Color(new Color(255, 200, 100)).Append('*');
         }
 
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
