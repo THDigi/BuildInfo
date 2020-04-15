@@ -255,7 +255,7 @@ namespace Digi.BuildInfo.Features
 
         private static Vector3 ConstraintPositionInGridSpace(IMyShipMergeBlock b, Base6Directions.Direction forward)
         {
-            return b.Position * b.CubeGrid.GridSize + b.PositionComp.LocalMatrix.GetDirectionVector(forward) * (b.CubeGrid.GridSize * 0.5f);
+            return b.Position * b.CubeGrid.GridSize + b.LocalMatrix.GetDirectionVector(forward) * (b.CubeGrid.GridSize * 0.5f);
         }
 
         private struct MergeData
