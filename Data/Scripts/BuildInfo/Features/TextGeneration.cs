@@ -3263,11 +3263,11 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 var groupNameHash = (groupName != null ? MyStringHash.GetOrCompute(groupName) : MyStringHash.NullOrEmpty);
-                PowerRequired(mw, groupNameHash, powerHardcoded);
+                PowerRequired(mw, groupNameHash, powerHardcoded, groupHardcoded);
             }
         }
 
-        private void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false)
+        private void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -3284,7 +3284,9 @@ namespace Digi.BuildInfo.Features
                     GetLine().PowerFormat(mw);
 
                 if(groupName != MyStringHash.NullOrEmpty && Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                    GetLine().ResetColor().Separator().ResourcePriority(groupName);
+                {
+                    GetLine().ResetColor().Separator().ResourcePriority(groupName, groupHardcoded);
+                }
             }
         }
 

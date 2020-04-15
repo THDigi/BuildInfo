@@ -145,12 +145,10 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder ResourcePriority(this StringBuilder s, MyStringHash groupId, bool hardcoded = false, bool isSource = false)
         {
-            s.Append("Priority");
-
             if(hardcoded)
-                s.Append('*');
-
-            s.Append(": ");
+                s.LabelHardcoded("Priority");
+            else
+                s.Label("Priority");
 
             var constants = BuildInfoMod.Instance.Constants;
             ResourceGroupData data;
