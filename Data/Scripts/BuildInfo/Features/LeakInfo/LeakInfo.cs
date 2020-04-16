@@ -299,6 +299,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             if(notify == null)
                 notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
 
+            notify.Hide(); // required since SE v1.194
             notify.Text = "Air leak scan: " + message;
             notify.AliveTime = time;
             notify.Font = font;

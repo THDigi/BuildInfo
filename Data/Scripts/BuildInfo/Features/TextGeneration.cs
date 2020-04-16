@@ -625,6 +625,7 @@ namespace Digi.BuildInfo.Features
                         || (selected == itemsStartAt && l == (selected + 2)))
                         {
                             var hud = hudLines[l];
+                            hud.Hide(); // required since SE v1.194
                             hud.ResetAliveTime();
                             hud.Show();
                         }
@@ -642,6 +643,7 @@ namespace Digi.BuildInfo.Features
 
                             if(l < SCROLL_FROM_LINE)
                             {
+                                hud.Hide(); // required since SE v1.194
                                 hud.ResetAliveTime();
                                 hud.Show();
                             }
@@ -657,6 +659,7 @@ namespace Digi.BuildInfo.Features
                             if(hud.Text.Length == 0)
                                 break;
 
+                            hud.Hide(); // required since SE v1.194
                             hud.ResetAliveTime();
                             hud.Show();
 
@@ -681,6 +684,7 @@ namespace Digi.BuildInfo.Features
                         for(int l = 0; l < lines; l++)
                         {
                             var hud = hudLines[l];
+                            hud.Hide(); // required since SE v1.194
                             hud.ResetAliveTime();
                             hud.Show();
                         }

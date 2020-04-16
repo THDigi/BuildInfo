@@ -234,6 +234,8 @@ namespace Digi.BuildInfo.Features
 
             if(buildInfoNotification == null)
                 buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+            buildInfoNotification.Hide(); // required since SE v1.194
             buildInfoNotification.Text = (Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
             buildInfoNotification.Show();
         }
@@ -242,6 +244,8 @@ namespace Digi.BuildInfo.Features
         {
             if(freezeGizmoNotification == null)
                 freezeGizmoNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+            freezeGizmoNotification.Hide(); // required since SE v1.194
 
             if(!EquipmentMonitor.IsCubeBuilder)
             {
@@ -277,6 +281,7 @@ namespace Digi.BuildInfo.Features
                 if(transparencyNotification == null)
                     transparencyNotification = MyAPIGateway.Utilities.CreateNotification("");
 
+                transparencyNotification.Hide(); // required since SE v1.194
                 transparencyNotification.Text = (MyCubeBuilder.Static.UseTransparency ? "Placement transparency ON" : "Placement transparency OFF");
                 transparencyNotification.Font = MyFontEnum.White;
                 transparencyNotification.Show();

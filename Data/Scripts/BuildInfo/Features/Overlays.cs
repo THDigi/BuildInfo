@@ -191,6 +191,7 @@ namespace Digi.BuildInfo.Features
                 if(overlayNotification == null)
                     overlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, MyFontEnum.White);
 
+                overlayNotification.Hide(); // required since SE v1.194
                 overlayNotification.Text = "Overlays: " + NAMES[drawOverlay];
                 overlayNotification.Show();
             }
@@ -239,6 +240,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             // TODO: show currently selected overlay mode? maybe only with textAPI?
+            //overlayNotification.Hide(); // required since SE v1.194
             //overlayNotification.Text = $"Showing {DRAW_OVERLAY_NAME[drawOverlay]} overlays (Ctrl+{voxelHandSettingsInput} to cycle)";
             //overlayNotification.AliveTime = 32;
             //overlayNotification.Show();

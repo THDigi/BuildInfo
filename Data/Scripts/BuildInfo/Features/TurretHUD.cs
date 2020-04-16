@@ -270,6 +270,7 @@ namespace Digi.BuildInfo.Features
                 if(notify == null)
                     notify = notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue);
 
+                notify.Hide(); // required since SE v1.194
                 notify.Text = sb.ToString();
 
                 if(!visible)
