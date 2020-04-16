@@ -19,8 +19,8 @@ namespace Digi.BuildInfo.VanillaData
         public const float GAME_EARTH_GRAVITY = 9.81f;
 
         // from MyGridConveyorSystem.CalculateConsumption()
-        //public const float Conveyors_PowerReq = 1E-07f;
-        //public const string Conveyors_PowerGroup = "Conveyors";
+        public const float Conveyors_PowerReqPerLine = 0.0000001f; // NOTE: this value is also manually written in CommandHelp, update there too.
+        public const string Conveyors_PowerGroup = "Conveyors";
 
         // from MyShipConnector
         public const string ShipConnector_PowerGroup = "Conveyors";

@@ -26,6 +26,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n" +
             "\n[2] No standalone means the block can't exist as the only block in the grid." +
             "\n   Blocks with no collisions also have this limitation." +
+            "\n" +
+            "\n[3] Explaining conveyor power usage:" +
+            "\n   A hub is a conveyor hub or a block with ports (assembler, reactor, etc), but not conveyor tubes, those are one kind of conveyor lines." +
+            "\n   A conveyor line is a connection between 2 hubs with or without conveyor tubes." +
+            "\n   If a hub is on the line then it splits the line in 2 lines." +
+            "\n   For example, 2 refineries that are placed to be connected with one port will form a conveyor line there." +
+            "\n   Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
             "\n";
 
         private StringBuilder sb = new StringBuilder(1024);

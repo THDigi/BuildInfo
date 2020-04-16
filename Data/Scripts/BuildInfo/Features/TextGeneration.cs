@@ -1835,9 +1835,15 @@ namespace Digi.BuildInfo.Features
         #region Conveyors
         private void Format_Conveyors(MyCubeBlockDefinition def)
         {
-            // HACK: conveyors don't actually use power, until they do they're marked as not consuming any.
-            //PowerRequired(Hardcoded.Conveyors_PowerReq, Hardcoded.Conveyors_PowerGroup, powerHardcoded: true, groupHardcoded: true);
-            PowerRequired(0, null, powerHardcoded: true);
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
+
+                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerLine).Append(" per line").Color(COLOR_UNIMPORTANT).Append(" ([3] @ /bi help)");
+
+                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    AddLine().Append("    ").ResourcePriority(Hardcoded.Conveyors_PowerGroup, hardcoded: true);
+            }
         }
 
         private void Format_Connector(MyCubeBlockDefinition def)
