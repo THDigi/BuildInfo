@@ -109,7 +109,7 @@ namespace Digi.ConfigLib
 
                                 if(args.Length != 2)
                                 {
-                                    Log.Error($"{FileName} unknown format on line #{lineNumber.ToString()}: '{line}'", Log.PRINT_MSG);
+                                    Log.Error($"{FileName} unknown format on line #{lineNumber.ToString()}: '{line}'", Log.PRINT_MESSAGE);
                                     continue;
                                 }
 
@@ -147,7 +147,7 @@ namespace Digi.ConfigLib
             setting.ReadValue(value, out error);
 
             if(error != null)
-                Log.Error($"{FileName} line #{lineNumber.ToString()} has an error: {error}", Log.PRINT_MSG);
+                Log.Error($"{FileName} line #{lineNumber.ToString()} has an error: {error}", Log.PRINT_MESSAGE);
         }
 
         public void SaveToFile()

@@ -930,7 +930,7 @@ namespace Digi.BuildInfo.Features
 
             if(aimedBlock == null)
             {
-                Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MSG);
+                Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MESSAGE);
                 return;
             }
 

@@ -521,7 +521,7 @@ namespace Digi.BuildInfo.Features
                 writer.Write(sb.ToString());
             }
 
-            Log.Info($"Exported vanilla blocks to Storage/{FILE_NAME}", Log.PRINT_MSG, 10000);
+            Log.Info($"Exported vanilla blocks to Storage/{FILE_NAME}", Log.PRINT_MESSAGE, 10000);
         }
 
         public void Analyse(IMyCubeGrid mainGrid)

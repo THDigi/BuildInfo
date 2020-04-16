@@ -125,7 +125,7 @@ namespace Digi.ComponentLib
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MSG);
+                    Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
                     Log.Error(e);
                 }
             }
@@ -150,7 +150,7 @@ namespace Digi.ComponentLib
                         }
                         catch(Exception e)
                         {
-                            Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MSG);
+                            Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
                             Log.Error(e);
                         }
                     }
@@ -195,7 +195,7 @@ namespace Digi.ComponentLib
                         }
                         catch(Exception e)
                         {
-                            Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MSG);
+                            Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
                             Log.Error(e);
                         }
                     }
@@ -221,7 +221,7 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
-                        Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
                 }
@@ -246,7 +246,7 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
-                        Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
                 }
@@ -272,7 +272,7 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
-                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.Draw(): {e.Message}", Log.PRINT_MSG);
+                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.Draw(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
                 }
