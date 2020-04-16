@@ -8,31 +8,23 @@ namespace Digi.BuildInfo.Features.ChatCommands
     {
         private const string FOOTER =
             "\n##### Asterisk in labels explained #####" +
-            "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means" +
-            "\n  that the value is calculated from hardcoded values taken" +
-            "\n  from the game source, they might become inaccurate with updates." +
+            "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means that the value is calculated from hardcoded values taken from the game source, they might become inaccurate with updates." +
             "\n" +
             "\n" +
             "\n##### Mount points & airtightness explained #####" +
             "\n" +
-            "\n  Mount points define areas that can be attached to other" +
-            "\n    block's mount points." +
+            "\n  Mount points define areas that can be attached to other block's mount points." +
             "\n  Orange mount point is the one used for auto-rotation." +
             "\n" +
-            "\n  Airtightness also uses the mount points system, if a" +
-            "\n    mount point spans accross an entire grid cell face" +
-            "\n    then that face is airtight." +
+            "\n  Airtightness also uses the mount points system, if a mount point spans accross an entire grid cell face then that face is airtight." +
             "\n" +
             "\n" +
             "\n##### Numbered markings in text explained #####" +
             "\n" +
-            "\n[1] Laser antenna power usage is linear up to 200km, after" +
-            "\n   that it's a quadratic ecuation." +
-            "\n   To calculate it at your needed distance, hold a laser antenna" +
-            "\n   and type in chat: /bi laserpower <km>" +
+            "\n[1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
+            "\n   To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
             "\n" +
-            "\n[2] No standalone means the block can't exist as the" +
-            "\n   only block in the grid." +
+            "\n[2] No standalone means the block can't exist as the only block in the grid." +
             "\n   Blocks with no collisions also have this limitation." +
             "\n";
 
