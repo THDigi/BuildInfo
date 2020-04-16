@@ -1619,7 +1619,7 @@ namespace Digi.BuildInfo.Features
                     if(!def.HasPhysics)
                         GetLine().Separator();
 
-                    GetLine().Color(COLOR_WARNING).Append("No standalone [2]");
+                    GetLine().Color(COLOR_WARNING).Append("No standalone").Color(COLOR_UNIMPORTANT).Append(" ([2] @ /bi help)");
                 }
             }
             #endregion Integrity, deformable, damage intake
@@ -2769,7 +2769,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Label("Power - Active[1]").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km ").Color(COLOR_UNIMPORTANT).Append("(/buildinfo help)");
+                AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km").Color(COLOR_UNIMPORTANT).Append(" ([1] @ /bi help)");
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
