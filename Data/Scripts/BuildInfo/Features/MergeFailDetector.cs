@@ -72,6 +72,8 @@ namespace Digi.BuildInfo.Features
                     block.SetEmissiveParts(EMISSIVE_NAME, (blinkSwitch ? COLOR_BLINK_ON : COLOR_BLINK_OFF), 1);
                     blinkSwitch = !blinkSwitch;
                 }
+
+                block.RefreshCustomInfo();
             }
             catch(Exception e)
             {
@@ -85,7 +87,6 @@ namespace Digi.BuildInfo.Features
                 return;
 
             mergeFailing = failing;
-            block.RefreshCustomInfo();
 
             if(!failing)
             {
