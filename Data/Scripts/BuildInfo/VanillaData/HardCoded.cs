@@ -101,9 +101,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyDoor
         public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR;
         public const float Door_Closed_DisassembleRatioMultiplier = 3.3f; // both MyDoor and MyAdvanced door override DisassembleRatio and multiply by this when closed
-        public static float Door_MoveSpeed(float openingSpeed)
+        public static float Door_MoveSpeed(float openingSpeed, float travelDistance = 1f)
         {
-            return (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * openingSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
+            return travelDistance / openingSpeed;
+            //return (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * openingSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
         }
         public static void AdvDoor_MoveSpeed(MyAdvancedDoorDefinition advDoor, out float openTime, out float closeTime)
         {

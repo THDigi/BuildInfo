@@ -2279,7 +2279,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                float moveTime = Hardcoded.Door_MoveSpeed(door.OpeningSpeed);
+                float moveTime = Hardcoded.Door_MoveSpeed(door.OpeningSpeed, door.MaxOpen);
                 AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen);
             }
         }
