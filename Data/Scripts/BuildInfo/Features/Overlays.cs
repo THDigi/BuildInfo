@@ -341,11 +341,11 @@ namespace Digi.BuildInfo.Features
                             var corner = (Vector3D)def.Size * -(0.5f * cellSize);
                             var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
-                            foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = is airtight
+                            foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
                             {
                                 foreach(var kv2 in kv.Value)
                                 {
-                                    if(!kv2.Value) // pos+normal not airtight
+                                    if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways) // pos+normal not always airtight
                                         continue;
 
                                     var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
@@ -526,6 +526,63 @@ namespace Digi.BuildInfo.Features
 
                         if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
                             break;
+                    }
+                }
+            }
+
+            var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+
+            if(mountPoints != null)
+            {
+                var cellSize = EquipmentMonitor.BlockGridSize;
+                var half = Vector3D.One * -(0.5f * cellSize);
+                var corner = (Vector3D)def.Size * -(0.5f * cellSize);
+                var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
+
+                foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
+                {
+                    foreach(var kv2 in kv.Value)
+                    {
+                        // only look for cell sides that are pressurized when doors are closed
+                        if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed)
+                            continue;
+
+                        var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
+                        var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                        var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
+                        var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+
+                        if(doorAirtightBlink)
+                        {
+                            var m = MatrixD.Identity;
+                            m.Translation = pos + dirForward * (cellSize * 0.5f);
+                            m.Forward = dirForward;
+                            m.Backward = -dirForward;
+                            m.Left = Vector3D.Cross(dirForward, dirUp);
+                            m.Right = -m.Left;
+                            m.Up = dirUp;
+                            m.Down = -dirUp;
+                            var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
+                            MatrixD.Rescale(ref m, ref scale);
+
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                        }
+
+                        if(drawLabel) // only label the first one
+                        {
+                            drawLabel = false;
+
+                            // DEBUG hmmm... ?
+                            var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
+                            float width = cubeSize.GetDim(((dirIndex + 4) % 6) / 2);
+                            float height = cubeSize.GetDim(((dirIndex + 2) % 6) / 2);
+
+                            var labelPos = pos + dirLeft * width + dirUp * height;
+                            DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
+
+                            if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
+                                break;
+                        }
                     }
                 }
             }

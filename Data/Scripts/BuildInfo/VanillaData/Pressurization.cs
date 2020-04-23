@@ -83,13 +83,20 @@ namespace Digi.BuildInfo.VanillaData
             Vector3I cell = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
             Vector3I side = Vector3I.Round(Vector3.Transform(normal, matrix));
 
-            if(def.IsCubePressurized[cell][side])
+            var pressurized = def.IsCubePressurized[cell][side];
+
+            if(pressurized == MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways)
                 return true;
 
             IMyDoor door = block.FatBlock as IMyDoor;
 
             if(door != null && (door.Status == DoorStatus.Closed || door.Status == DoorStatus.Closing))
-                return IsDoorAirtightInternal(def, ref side, door.IsFullyClosed);
+            {
+                if(pressurized == MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed)
+                    return true;
+                else
+                    return IsDoorAirtightInternal(def, ref side, door.IsFullyClosed);
+            }
 
             return false;
         }

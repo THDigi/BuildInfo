@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Utilities
                     if(cubes.Contains(kv.Key + kv2.Key))
                         continue;
 
-                    if(kv2.Value)
+                    if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.NotPressurized)
                         airTightFaces++;
 
                     totalFaces++;
