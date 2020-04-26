@@ -370,6 +370,9 @@ namespace Digi.BuildInfo.Features
                 if(currentFormatCall == null)
                     return;
 
+                if(ignoreModBlocks.Contains(block.BlockDefinition))
+                    return;
+
                 // Append other mod's info after my own.
                 // This is possible since this event is surely executed last as it's hooked when block is clicked
                 //   and because the same StringBuiler is given to all mods.
