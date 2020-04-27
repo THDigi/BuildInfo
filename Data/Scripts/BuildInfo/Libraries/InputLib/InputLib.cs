@@ -550,6 +550,9 @@ namespace Digi.Input
             AddInput(MyControlsSpace.SPECTATOR_STATIC, CONTROL_PREFIX + "specstatic", "Spectator Static");
             AddInput(MyControlsSpace.VOICE_CHAT, CONTROL_PREFIX + "voicechat", "Voice Chat");
             AddInput(MyControlsSpace.VOXEL_HAND_SETTINGS, CONTROL_PREFIX + "voxelhandsettings", "Voxel Hand Settings");
+
+            // TODO: add DAMPING_RELATIVE and other new stuff..
+
             //Control PICK_UP doesn't exist.
             //Control FACTIONS_MENU doesn't exist.
             //Control SWITCH_COMPOUND doesn't exist.

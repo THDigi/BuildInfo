@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                     if(int.TryParse(slotStr, out slot) && slot >= 1 && slot <= 9)
                     {
-                        MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, Main.EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
+                        MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot - 1, Main.EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
                         Utils.ShowColoredChatMessage(MainAlias, $"{Main.EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
                     }

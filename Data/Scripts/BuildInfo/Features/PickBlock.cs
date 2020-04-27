@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Features
 
                 if(slot != 0)
                 {
-                    MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot - 1, PickedBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
+                    MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot - 1, PickedBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
                     MyAPIGateway.Utilities.ShowNotification($"{PickedBlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, MyFontEnum.Green);
 

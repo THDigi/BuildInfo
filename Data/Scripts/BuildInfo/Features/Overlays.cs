@@ -572,7 +572,6 @@ namespace Digi.BuildInfo.Features
                         {
                             drawLabel = false;
 
-                            // DEBUG hmmm... ?
                             var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
                             float width = cubeSize.GetDim(((dirIndex + 4) % 6) / 2);
                             float height = cubeSize.GetDim(((dirIndex + 2) % 6) / 2);
