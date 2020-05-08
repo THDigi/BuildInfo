@@ -686,7 +686,7 @@ namespace Digi.BuildInfo.Features
 
             if(drawLabels)
             {
-                var labelDir = mineMatrix.Left;
+                var labelDir = mineMatrix.Up;
                 var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
                 DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMineText, message: "Mining radius", lineHeight: lineHeight);
             }
@@ -699,7 +699,7 @@ namespace Digi.BuildInfo.Features
 
             if(drawLabels)
             {
-                var labelDir = carveMatrix.Left;
+                var labelDir = carveMatrix.Up;
                 var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
                 DrawLineLabel(TextAPIMsgIds.DRILL_CARVE, sphereEdge, labelDir, colorCarveText, message: "Carving radius", lineHeight: lineHeight);
             }
@@ -717,7 +717,7 @@ namespace Digi.BuildInfo.Features
 
             if(drawLabels)
             {
-                var labelDir = drawMatrix.Down;
+                var labelDir = drawMatrix.Left;
                 var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
 
                 DrawLineLabel(TextAPIMsgIds.DRILL_SENSOR, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius", lineHeight: lineHeight);
