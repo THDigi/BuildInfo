@@ -100,6 +100,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append("     Get the aimed block in your toolbar.").NewLine();
 
             sb.NewLine();
+            sb.Append("  ");
+            Main.Config.LockOverlayBind.Value.GetBinds(sb, specialChars: false);
+            sb.Append("   (with block aimed at)").NewLine();
+            sb.Append("     Keep overlay active so you can move around.").NewLine();
+
+            sb.NewLine();
             sb.Append(FOOTER);
 
             MyAPIGateway.Utilities.ShowMissionScreen(BuildInfoMod.MOD_NAME + " help", null, null, sb.ToString(), null, "Close");

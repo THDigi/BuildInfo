@@ -35,6 +35,10 @@ namespace Digi.BuildInfo.Features
         private OverlayCall selectedOverlayCall;
         private readonly LabelData[] labels;
 
+        private IMySlimBlock lockedOnBlock;
+        private MyCubeBlockDefinition lockedOnBlockDef;
+        private IMyHudNotification lockedOnBlockNotification;
+
         class LabelData
         {
             public HudAPIv2.SpaceMessage Text;
@@ -117,7 +121,7 @@ namespace Digi.BuildInfo.Features
 
         public Overlays(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.NONE;
+            UpdateMethods = UpdateFlags.UPDATE_INPUT;
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
             labels = new LabelData[count];
@@ -154,6 +158,9 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
+            if(lockedOnBlock != null)
+                return;
+
             selectedOverlayCall = null;
 
             if(def != null)
@@ -231,13 +238,90 @@ namespace Digi.BuildInfo.Features
             drawLookup.Add(blockType, call);
         }
 
+        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        {
+            if(!paused && !inMenu && Config.LockOverlayBind.Value.IsJustPressed())
+            {
+                LockOverlayToAimedBlock();
+            }
+        }
+
+        public void LockOverlayToAimedBlock()
+        {
+            SetLockOnBlock(EquipmentMonitor.AimedBlock);
+        }
+
+        void SetLockOnBlock(IMySlimBlock block, string message = null)
+        {
+            HideLabels();
+            selectedOverlayCall = null;
+            lockedOnBlockDef = null;
+
+            // unhook previous
+            if(lockedOnBlock != null)
+            {
+                if(lockedOnBlock.FatBlock != null)
+                    lockedOnBlock.FatBlock.OnMarkForClose -= LockedOnBlock_MarkedForClose;
+            }
+
+            lockedOnBlock = block;
+
+            // hook new
+            if(lockedOnBlock != null)
+            {
+                if(lockedOnBlock.FatBlock != null)
+                    lockedOnBlock.FatBlock.OnMarkForClose += LockedOnBlock_MarkedForClose;
+
+                lockedOnBlockDef = (MyCubeBlockDefinition)lockedOnBlock.BlockDefinition;
+
+                selectedOverlayCall = drawLookup.GetValueOrDefault(lockedOnBlockDef.Id.TypeId, null);
+
+                if(lockedOnBlockNotification == null)
+                    lockedOnBlockNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+                lockedOnBlockNotification.Hide(); // required since SE v1.194
+                lockedOnBlockNotification.AliveTime = 100;
+                //lockedOnBlockNotification.Font = MyFontEnum.White;
+                lockedOnBlockNotification.Text = $"Locked overlay to {lockedOnBlockDef.DisplayNameText}, press [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.";
+                // shown every tick in UpdateDraw()
+            }
+            else
+            {
+                lockedOnBlockNotification.Hide(); // required since SE v1.194
+                lockedOnBlockNotification.AliveTime = 2000;
+                //lockedOnBlockNotification.Font = MyFontEnum.Red;
+                lockedOnBlockNotification.Text = (message ?? "Turned off overlay lock.");
+                lockedOnBlockNotification.Show();
+            }
+        }
+
+        private void LockedOnBlock_MarkedForClose(IMyEntity ent)
+        {
+            try
+            {
+                var block = ent as IMyCubeBlock;
+
+                if(block != null)
+                    block.OnMarkForClose -= LockedOnBlock_MarkedForClose;
+
+                if(lockedOnBlock == null || block != lockedOnBlock.FatBlock)
+                    return;
+
+                SetLockOnBlock(null, "Block removed, disabled overlay lock.");
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
         // boxless HitInfo getters
         IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
         Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
 
         protected override void UpdateDraw()
         {
-            if(drawOverlay == 0 || EquipmentMonitor.BlockDef == null || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
+            if(drawOverlay == 0 || (lockedOnBlock == null && EquipmentMonitor.BlockDef == null) || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
                 return;
 
             // TODO: show currently selected overlay mode? maybe only with textAPI?
@@ -248,13 +332,55 @@ namespace Digi.BuildInfo.Features
 
             var def = EquipmentMonitor.BlockDef;
             var aimedBlock = EquipmentMonitor.AimedBlock;
+            var cellSize = EquipmentMonitor.BlockGridSize;
+
+            if(lockedOnBlock != null)
+            {
+                if(lockedOnBlock.IsFullyDismounted || lockedOnBlock.IsDestroyed || (lockedOnBlock != null && lockedOnBlock.FatBlock == null))
+                {
+                    SetLockOnBlock(null, "Block removed, disabled overlay lock.");
+                    return;
+                }
+
+                Vector3D blockPos;
+                double maxRangeSq = 3;
+
+                if(lockedOnBlock.FatBlock != null)
+                {
+                    var blockVolume = lockedOnBlock.FatBlock.WorldVolume;
+                    maxRangeSq = blockVolume.Radius;
+                    blockPos = blockVolume.Center;
+                }
+                else
+                {
+                    lockedOnBlock.ComputeWorldCenter(out blockPos);
+                }
+
+                maxRangeSq = (maxRangeSq + 20) * 2;
+                maxRangeSq *= maxRangeSq;
+
+                if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > maxRangeSq)
+                {
+                    SetLockOnBlock(null, "Too far from block, disabled overlay lock.");
+                    return;
+                }
+
+                aimedBlock = lockedOnBlock;
+                def = lockedOnBlockDef;
+                cellSize = lockedOnBlock.CubeGrid.GridSize;
+
+                if(!MyParticlesManager.Paused && lockedOnBlockNotification != null)
+                {
+                    lockedOnBlockNotification.Show();
+                }
+            }
 
             try
             {
                 #region DrawMatrix and other needed data
                 var drawMatrix = MatrixD.Identity;
 
-                if(EquipmentMonitor.IsCubeBuilder)
+                if(lockedOnBlock == null && EquipmentMonitor.IsCubeBuilder)
                 {
                     if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
@@ -276,7 +402,7 @@ namespace Digi.BuildInfo.Features
                         drawMatrix.Translation = box.Center;
                     }
                 }
-                else // using welder/grinder
+                else // using welder/grinder or lockedOnBlock.
                 {
                     Matrix m;
                     Vector3D center;
@@ -289,8 +415,6 @@ namespace Digi.BuildInfo.Features
                 #endregion DrawMatrix and other needed data
 
                 #region Draw mount points
-                var cellSize = EquipmentMonitor.BlockGridSize;
-
                 if(TextAPIEnabled)
                 {
                     DrawMountPointAxixText(def, cellSize, ref drawMatrix);

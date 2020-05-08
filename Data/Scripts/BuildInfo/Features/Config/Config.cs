@@ -46,6 +46,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting ToggleTransparencyBind;
         public InputCombinationSetting FreezePlacementBind;
         public InputCombinationSetting BlockPickerBind;
+        public InputCombinationSetting LockOverlayBind;
         public BoolSetting InternalInfo;
         public BoolSetting Debug;
         public IntegerSetting ModVersion;
@@ -55,6 +56,7 @@ namespace Digi.BuildInfo.Features.Config
         public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";
         public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
         public const string BLOCK_PICKER_INPUT_NAME = "bi.blockPicker";
+        public const string LOCK_OVERLAY_INPUT_NAME = "bi.lockOverlay";
 
         public Config(BuildInfoMod main) : base(main)
         {
@@ -270,6 +272,10 @@ namespace Digi.BuildInfo.Features.Config
                 "The bind for adding the aimed block to the toolbar.",
                 "NOTE: It does request a number press afterwards.",
                 (!Constants.BLOCKPICKER_IN_MP ? Constants.BLOCKPICKER_DISABLED_CONFIG : ""));
+
+            LockOverlayBind = new InputCombinationSetting(Handler, "Bind: Lock Overlay", Combination.Create(LOCK_OVERLAY_INPUT_NAME, "shift c.cubesizemode"),
+                "When aiming at a block with a tool it locks overlays to that block so you can move around.",
+                "You still have to cycle overlays (see above) in order to see them.");
 
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",

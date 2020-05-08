@@ -520,7 +520,7 @@ namespace Digi.BuildInfo.Systems
             }
 
             BlockDef = def;
-            BlockGridSize = (def == null ? 0 : MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
+            BlockGridSize = (def == null ? 0 : (AimedBlock != null ? AimedBlock.CubeGrid.GridSize : MyDefinitionManager.Static.GetCubeSize(def.CubeSize)));
 
             BlockChanged?.Invoke(def, block);
         }
