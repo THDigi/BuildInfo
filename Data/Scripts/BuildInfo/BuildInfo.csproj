@@ -229,14 +229,14 @@
     <Compile Include="Features\LiveData\ShipTool.cs" />
     <Compile Include="Features\LiveData\Thruster.cs" />
     <Compile Include="Features\LiveData\Weapon.cs" />
-    <Compile Include="Features\Overlays.cs" />
-    <Compile Include="Features\TerminalInfo.cs" />
+    <Compile Include="Features\Overlays\Overlays.cs" />
+    <Compile Include="Features\TerminalInfo\TerminalInfo.cs" />
     <Compile Include="Utilities\StringBuilderExtensions.cs" />
     <Compile Include="VanillaData\Hardcoded.cs" />
     <Compile Include="VanillaData\Pressurization.cs" />
     <Compile Include="Libraries\Log.cs" />
     <Compile Include="Features\LeakInfo\LeakInfo.cs" />
-    <Compile Include="Features\TextGeneration.cs" />
+    <Compile Include="Features\TextGeneration\TextGeneration.cs" />
     <Compile Include="Utilities\Utils.cs" />
     <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
   </ItemGroup>
@@ -246,5 +246,6 @@
   <ItemGroup>
     <None Include="BuildInfo.ruleset" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
