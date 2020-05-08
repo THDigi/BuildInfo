@@ -2021,8 +2021,10 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Mining radius").DistanceFormat(shipDrill.SensorRadius);
-                AddLine().Label("Cutout radius").DistanceFormat(shipDrill.CutOutRadius);
+                float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + shipDrill.CutOutRadius;
+                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (shipDrill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
+                AddLine().LabelHardcoded("Mining radius").DistanceFormat(mineRadius).Separator().LabelHardcoded("when not collecting").DistanceFormat(carveRadius);
+                AddLine().Label("Entity detection radius").DistanceFormat(shipDrill.SensorRadius);
             }
         }
 

@@ -47,6 +47,10 @@ namespace Digi.BuildInfo.VanillaData
             var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
         }
+        public const float ShipDrill_VoxelVisualAdd = 0.8f; // based on visual tests
+        public const float ShipDrill_MineVoelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels()
+        public const float ShipDrill_MineFloatingObjectRadiusMul = 1.3300000429153442f; // MyDrillBase.DrillFloatingObject
+        public const float ShipDrill_MineCharacterRadiusMul = 0.800000011920929f; // MyDrillBase.DrillCharacter
 
         // from MyShipToolBase
         public const float ShipTool_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;

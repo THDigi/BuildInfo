@@ -92,8 +92,9 @@ namespace Digi.BuildInfo.Features
             //MOUNT,
             //MOUNT_ROTATE,
             //MOUNT_DISABLED,
+            DRILL_SENSOR,
             DRILL_MINE,
-            DRILL_CUTOUT,
+            DRILL_CARVE,
             SHIP_TOOL,
             ACCURACY_MAX,
             //ACCURACY_100M,
@@ -669,39 +670,59 @@ namespace Digi.BuildInfo.Features
 
             const float lineHeight = 0.3f;
             const int wireDivRatio = 20;
-            var colorMine = Color.Lime;
-            var colorMineFace = colorMine * 0.3f;
-            var colorCut = Color.Red;
-            var colorCutFace = colorCut * 0.3f;
+            var colorSensorText = Color.Gray;
+            var colorSensorFace = colorSensorText * 0.3f;
+            var colorMineText = Color.Lime;
+            var colorMineFace = colorMineText * 0.3f;
+            var colorCarveText = Color.Red;
+            var colorCarveFace = colorCarveText * 0.3f;
             bool drawLabels = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
-            drawMatrix.Translation += drawMatrix.Forward * drill.SensorOffset;
-            MySimpleObjectDraw.DrawTransparentSphere(ref drawMatrix, drill.SensorRadius, ref colorMineFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            #region Mining
+            var mineMatrix = drawMatrix;
+            mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
+            float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
+            MySimpleObjectDraw.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
 
-            bool showCutOut = (Math.Abs(drill.SensorRadius - drill.CutOutRadius) > 0.0001f || Math.Abs(drill.SensorOffset - drill.CutOutOffset) > 0.0001f);
+            if(drawLabels)
+            {
+                var labelDir = mineMatrix.Left;
+                var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
+                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMineText, message: "Mining radius", lineHeight: lineHeight);
+            }
+            #endregion
+
+            #region Carving
+            var carveMatrix = mineMatrix;
+            float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
+            MySimpleObjectDraw.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+
+            if(drawLabels)
+            {
+                var labelDir = carveMatrix.Left;
+                var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
+                DrawLineLabel(TextAPIMsgIds.DRILL_CARVE, sphereEdge, labelDir, colorCarveText, message: "Carving radius", lineHeight: lineHeight);
+            }
+            #endregion
+
+            #region Sensor
+            var sensorMatrix = drawMatrix;
+            sensorMatrix.Translation += sensorMatrix.Forward * drill.SensorOffset;
+            float sensorRadius = drill.SensorRadius;
+
+            if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
+            {
+                MySimpleObjectDraw.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            }
 
             if(drawLabels)
             {
                 var labelDir = drawMatrix.Down;
-                var sphereEdge = drawMatrix.Translation + (labelDir * drill.SensorRadius);
+                var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
 
-                LabelTextBuilder().Append(showCutOut ? "Mining radius" : "Mining/cutout radius");
-                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMine, lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.DRILL_SENSOR, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius", lineHeight: lineHeight);
             }
-
-            if(showCutOut)
-            {
-                var cutMatrix = drawMatrix;
-                cutMatrix.Translation += cutMatrix.Forward * drill.CutOutOffset;
-                MySimpleObjectDraw.DrawTransparentSphere(ref cutMatrix, drill.CutOutRadius, ref colorCutFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
-
-                if(drawLabels)
-                {
-                    var labelDir = cutMatrix.Left;
-                    var sphereEdge = cutMatrix.Translation + (labelDir * drill.CutOutRadius);
-                    DrawLineLabel(TextAPIMsgIds.DRILL_CUTOUT, sphereEdge, labelDir, colorCut, message: "Cutout radius", lineHeight: lineHeight);
-                }
-            }
+            #endregion
         }
 
         private void DrawOverlay_ShipTool(MyCubeBlockDefinition def, MatrixD drawMatrix)
