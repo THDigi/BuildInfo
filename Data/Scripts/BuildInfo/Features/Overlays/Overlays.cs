@@ -792,7 +792,7 @@ namespace Digi.BuildInfo.Features
 
             float height = ammo.MaxTrajectory;
             float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
-            float accuracyAtMaxRange = tanShotAngle * (height * 2);
+            float accuracyAtMaxRange = tanShotAngle * height;
             MatrixD coneMatrix = data.muzzleLocalMatrix * drawMatrix;
 
             MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, coneMatrix.Translation, 0.025f, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
