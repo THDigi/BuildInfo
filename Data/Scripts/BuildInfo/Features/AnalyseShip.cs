@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -155,7 +156,7 @@ namespace Digi.BuildInfo.Features
 
         void DefineVanillaBlocks()
         {
-            // Auto-generated vanilla definitions from SE v1.192.022
+            // Auto-generated vanilla definitions from SE v1.194.211
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRailStraight"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere1), "DebugSphereLarge"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere2), "DebugSphereLarge"));
@@ -252,6 +253,8 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "CockpitOpen"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Gyro), "LargeBlockGyro"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Gyro), "SmallBlockGyro"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "OpenCockpitSmall"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "OpenCockpitLarge"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "LargeBlockDesk"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "LargeBlockDeskCorner"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeBlockDeskChairless"));
@@ -270,6 +273,37 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Projector), "LargeBlockConsole"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "SmallBlockCockpitIndustrial"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "LargeBlockCockpitIndustrial"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_VendingMachine), "FoodDispenser"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Jukebox), "Jukebox"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LCDPanelsBlock), "LabEquipment"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Shower"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "WindowWall"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "WindowWallLeft"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "WindowWallRight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LCDPanelsBlock), "MedicalStation"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "TransparentLCDLarge"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "TransparentLCDSmall"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Catwalk"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkCorner"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkStraight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkWall"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkRailingEnd"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkRailingHalfRight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "CatwalkRailingHalfLeft"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "GratedStairs"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "GratedHalfStairs"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "GratedHalfStairsMirrored"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingStraight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingDouble"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingCorner"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingDiagonal"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingHalfRight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "RailingHalfLeft"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ReflectorLight), "RotatingLightLarge"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ReflectorLight), "RotatingLightSmall"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Freight1"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Freight2"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Freight3"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Door), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirtightHangarDoor), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirtightSlideDoor), "LargeBlockSlideDoor"));
@@ -282,7 +316,7 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorInvCorner"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorSide"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_StoreBlock), "StoreBlock"));
-            vanillaDefinitions.Add(MyDefinitionId.Parse("MyObjectBuilder_SafeZoneBlock/SafeZoneBlock"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SafeZoneBlock), "SafeZoneBlock"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ContractBlock), "ContractBlock"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_VendingMachine), "VendingMachine"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_StoreBlock), "AtmBlock"));
@@ -302,6 +336,15 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Stereolith"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadAstronaut"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeDeadAstronaut"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_RadioAntenna), "LargeBlockRadioAntennaDish"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Door), "LargeBlockGate"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Door), "LargeBlockOffsetDoor"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody01"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody02"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody03"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody04"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody05"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "DeadBody06"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_GravityGenerator), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_GravityGeneratorSphere), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_VirtualMass), "VirtualMassLarge"));
@@ -322,6 +365,7 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatLarge"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatSmall"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Ladder2), ""));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Ladder2), "LadderSmall"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "SmallTextPanel"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "SmallLCDPanelWide"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "SmallLCDPanel"));
@@ -347,7 +391,9 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "OxygenTankSmall"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "LargeHydrogenTank"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "LargeHydrogenTankSmall"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "SmallHydrogenTank"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "SmallHydrogenTankSmall"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirVent), ""));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirVent), "SmallAirVent"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "SmallBlockSmallContainer"));
@@ -496,6 +542,26 @@ namespace Digi.BuildInfo.Features
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Window3x3FlatInv"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Window2x3Flat"));
             vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Window2x3FlatInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2Slope"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2Inv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2Face"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2SideLeft"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2SideLeftInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2SideRight"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2SideRightInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1Slope"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1Face"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1Side"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1SideInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1Inv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2Flat"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x2FlatInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1Flat"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow1x1FlatInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow3x3Flat"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow3x3FlatInv"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3Flat"));
+            vanillaDefinitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3FlatInv"));
         }
 
         void ExtractVanillaBlocks()
