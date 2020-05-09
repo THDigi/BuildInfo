@@ -434,8 +434,8 @@ namespace Digi.BuildInfo.Features
 
         void Format_TimerBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
-            //      <timer status>
+            // Vanilla info in 1.194.211:
+            //      Time to trigger: 00:00:00
 
             info.DetailInfo_InputPower(Sink);
         }
@@ -1213,7 +1213,7 @@ namespace Digi.BuildInfo.Features
 
         void Format_Beacon(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
+            // Vanilla info in 1.194.211:
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
