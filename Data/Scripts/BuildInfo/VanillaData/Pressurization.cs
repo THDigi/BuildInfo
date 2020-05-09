@@ -111,7 +111,7 @@ namespace Digi.BuildInfo.VanillaData
             return IsDoorAirtightInternal(def, ref normalLocal, fullyClosed);
         }
 
-        private static bool IsDoorAirtightInternal(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
+        public static bool IsDoorAirtightInternal(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
         {
             if(def is MyAirtightSlideDoorDefinition)
             {

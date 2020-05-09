@@ -202,6 +202,8 @@ namespace Digi.BuildInfo.VanillaData
             return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / 9.81f);
         }
 
+        public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
+
         // from MyAirVent.VentDummy getter
         public const string AirVent_DummyName = "vent_001";
 

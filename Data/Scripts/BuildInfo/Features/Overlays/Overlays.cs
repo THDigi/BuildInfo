@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features
     {
         public int drawOverlay = 0;
         private bool anyLabelShown;
-        private bool doorAirtightBlink = false;
+        private bool doorAirtightBlink = true;
         private int doorAirtightBlinkTick = 0;
         private bool blockFunctionalForPressure;
         private IMyHudNotification overlayNotification;
@@ -463,7 +463,7 @@ namespace Digi.BuildInfo.Features
                             {
                                 var halfExtents = def.Size * (cellSize * 0.5);
                                 var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
-                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
                             }
                         }
                         else if(mountPoints != null)
@@ -495,7 +495,7 @@ namespace Digi.BuildInfo.Features
                                     var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
                                     MatrixD.Rescale(ref m, ref scale);
 
-                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                                 }
                             }
                         }
@@ -614,18 +614,18 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(EquipmentMonitor.AimedBlock != null)
-            {
-                doorAirtightBlink = true;
-            }
-            else if(!MyParticlesManager.Paused && ++doorAirtightBlinkTick >= 60)
-            {
-                doorAirtightBlinkTick = 0;
-                doorAirtightBlink = !doorAirtightBlink;
-            }
-
             IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
             float cellSize = (block == null ? EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
+
+            //if(block != null)
+            //{
+            //    doorAirtightBlink = true;
+            //}
+            //else if(!MyParticlesManager.Paused && ++doorAirtightBlinkTick >= 60)
+            //{
+            //    doorAirtightBlinkTick = 0;
+            //    doorAirtightBlink = !doorAirtightBlink;
+            //}
 
             var cubeSize = def.Size * (cellSize * 0.5f);
             bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
@@ -642,12 +642,17 @@ namespace Digi.BuildInfo.Features
                     fullyClosed = (door.Status == Sandbox.ModAPI.Ingame.DoorStatus.Closed);
             }
 
+            var isAirTight = Pressurization.IsAirtightFromDefinition(def, 1f);
+            if(isAirTight == AirTightMode.SEALED)
+                return; // if block is entirely sealed anyway, don't bother with door specifics
+
+            #region Draw sealed sides
             for(int i = 0; i < 6; ++i)
             {
                 var normal = DIRECTIONS[i];
                 var normalI = (Vector3I)normal;
 
-                if(Pressurization.IsDoorAirtight(def, ref normalI, fullyClosed))
+                if(Pressurization.IsDoorAirtightInternal(def, ref normalI, true))
                 {
                     var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
                     var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
@@ -663,7 +668,11 @@ namespace Digi.BuildInfo.Features
                         m.Right *= width * 2;
                         m.Up *= height * 2;
                         m.Forward *= MOUNTPOINT_THICKNESS;
-                        MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+
+                        if(fullyClosed)
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                        else
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                     }
 
                     if(drawLabel) // only label the first one
@@ -678,12 +687,12 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
+            #endregion
 
+            #region Find door-toggled mountpoints
             var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-
             if(mountPoints != null)
             {
-                var cellSize = EquipmentMonitor.BlockGridSize;
                 var half = Vector3D.One * -(0.5f * cellSize);
                 var corner = (Vector3D)def.Size * -(0.5f * cellSize);
                 var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
@@ -714,7 +723,10 @@ namespace Digi.BuildInfo.Features
                             var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
                             MatrixD.Rescale(ref m, ref scale);
 
-                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            if(fullyClosed)
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            else
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                         }
 
                         if(drawLabel) // only label the first one
@@ -734,6 +746,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
+            #endregion
 
             if(drawLabel) // no label was rendered since it would've set itself false by now
             {
@@ -758,8 +771,8 @@ namespace Digi.BuildInfo.Features
             const float lineHeight = 0.5f;
             var color = Color.Red;
             var colorFace = color * 0.5f;
-            var weapon = (MyWeaponBlockDefinition)def;
-            var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
+            var weaponBlockDef = (MyWeaponBlockDefinition)def;
+            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
             MyAmmoDefinition ammo = null;
 
             IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
@@ -773,17 +786,17 @@ namespace Digi.BuildInfo.Features
 
             if(ammo == null)
             {
-                var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[0]);
+                var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
                 ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
             }
 
-            var height = ammo.MaxTrajectory;
-            var tanShotAngle = (float)Math.Tan(wepDef.DeviateShotAngle);
-            var accuracyAtMaxRange = tanShotAngle * (height * 2);
-            var coneMatrix = data.muzzleLocalMatrix * drawMatrix;
+            float height = ammo.MaxTrajectory;
+            float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
+            float accuracyAtMaxRange = tanShotAngle * (height * 2);
+            MatrixD coneMatrix = data.muzzleLocalMatrix * drawMatrix;
 
             MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, coneMatrix.Translation, 0.025f, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
-            MySimpleObjectDraw.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref colorFace, wireDivideRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            Utils.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             //const int circleWireDivideRatio = 20;
             //var accuracyAt100m = tanShotAngle * (100 * 2);
@@ -820,18 +833,19 @@ namespace Digi.BuildInfo.Features
             const float lineHeight = 0.3f;
             const int wireDivRatio = 20;
             var colorSensorText = Color.Gray;
-            var colorSensorFace = colorSensorText * 0.3f;
+            var colorSensorFace = colorSensorText * 0.75f;
             var colorMineText = Color.Lime;
-            var colorMineFace = colorMineText * 0.3f;
+            var colorMineFace = colorMineText * 0.75f;
             var colorCarveText = Color.Red;
-            var colorCarveFace = colorCarveText * 0.3f;
+            var colorCarveFace = colorCarveText * 0.75f;
+            float lineThickness = 0.01f;
             bool drawLabels = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
             #region Mining
             var mineMatrix = drawMatrix;
             mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
             float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
-            MySimpleObjectDraw.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabels)
             {
@@ -844,7 +858,7 @@ namespace Digi.BuildInfo.Features
             #region Carving
             var carveMatrix = mineMatrix;
             float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
-            MySimpleObjectDraw.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabels)
             {
@@ -861,7 +875,7 @@ namespace Digi.BuildInfo.Features
 
             if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
             {
-                MySimpleObjectDraw.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
             }
 
             if(drawLabels)
@@ -884,7 +898,8 @@ namespace Digi.BuildInfo.Features
             const float lineHeight = 0.3f;
             const int wireDivRatio = 20;
             var color = Color.Lime;
-            var colorFace = color * 0.3f;
+            var colorFace = color * 0.75f;
+            float lineThickness = 0.01f;
 
             var toolDef = (MyShipToolDefinition)def;
             var matrix = data.DummyMatrix;
@@ -892,7 +907,7 @@ namespace Digi.BuildInfo.Features
             drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
             var radius = toolDef.SensorRadius;
 
-            MySimpleObjectDraw.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivRatio, faceMaterial: OVERLAY_SQUARE_MATERIAL);
+            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled)
             {
@@ -912,7 +927,6 @@ namespace Digi.BuildInfo.Features
             if(data == null)
                 return;
 
-            const float capsuleRadiusAdd = 0.05f; // so it visually hits things more how the physics engine hits.
             const int wireDivideRatio = 12;
             const float lineHeight = 0.3f;
             var color = Color.Red;
@@ -925,13 +939,14 @@ namespace Digi.BuildInfo.Features
                 var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Length * 0.5)); // capsule's position is in the center
 
-                MySimpleObjectDraw.DrawTransparentCapsule(ref capsuleMatrix, flame.CapsuleRadius + capsuleRadiusAdd, flame.Length, ref colorFace, wireDivideRatio, OVERLAY_SQUARE_MATERIAL);
+                float radius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
+                Utils.DrawTransparentCapsule(ref capsuleMatrix, radius, flame.Length, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
                 if(drawLabel)
                 {
                     drawLabel = false; // label only on the first flame
                     var labelDir = drawMatrix.Down;
-                    var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * flame.Radius;
+                    var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * radius;
                     DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage", lineHeight: lineHeight);
                 }
             }
@@ -955,14 +970,14 @@ namespace Digi.BuildInfo.Features
                 m.Translation = obb.Center;
                 m *= drawMatrix;
 
-                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
 
                 if(drawLabel)
                 {
                     drawLabel = false; // only label the first one
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnet", lineHeight: 0.5f);
+                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnetized Area", lineHeight: 0.5f);
                 }
             }
         }
@@ -981,7 +996,7 @@ namespace Digi.BuildInfo.Features
             var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
             var m = data.boxLocalMatrix * drawMatrix;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
 
             if(drawLabel)
             {

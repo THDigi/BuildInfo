@@ -1,4 +1,5 @@
-﻿using Digi.BuildInfo.VanillaData;
+﻿using System;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -6,7 +7,9 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 using VRageMath;
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Utilities
 {
@@ -173,6 +176,186 @@ namespace Digi.BuildInfo.Utilities
             float damageResistance = ((hpMul - initialHpMul) / initialHpMul);
 
             return (int)(damageResistance * 100);
+        }
+
+        // Optimized wireframe draw
+        public static void DrawTransparentSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1f, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
+            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            var vertices = BuildInfoMod.Instance.Caches.Vertices;
+            vertices.Clear();
+            MyMeshHelper.GenerateSphere(ref worldMatrix, radius, wireDivideRatio, vertices);
+            Vector3D center = worldMatrix.Translation;
+            MyQuadD quad;
+
+            for(int i = 0; i < vertices.Count; i += 4)
+            {
+                quad.Point0 = vertices[i + 1];
+                quad.Point1 = vertices[i + 3];
+                quad.Point2 = vertices[i + 2];
+                quad.Point3 = vertices[i];
+
+                if(drawWireframe)
+                {
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
+                }
+            }
+        }
+
+        public static void DrawTransparentCone(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            DrawTransparentCone(worldMatrix.Translation, worldMatrix.Forward * height, worldMatrix.Forward, worldMatrix.Up * radius, color, rasterization, wireDivideRatio, material, lineThickness, customViewProjection, blendType);
+        }
+
+        // Added wireframe and blend type as well as optimized.
+        public static void DrawTransparentCone(Vector3D apexPosition, Vector3 directionVector, Vector3D axisNormalized, Vector3D baseVector, Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
+            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            MyQuadD quad;
+            Vector3D offset = apexPosition + directionVector;
+
+            double angleStep = (MathHelperD.TwoPi / (double)wireDivideRatio);
+            Vector3D prevPoint = offset + Vector3D.Transform(baseVector, MatrixD.CreateFromAxisAngle(axisNormalized, 0)); // angle = (i * angleStep) == 0
+
+            for(int i = 0; i < wireDivideRatio; i++)
+            {
+                double nextAngle = (i + 1) * angleStep;
+                Vector3D nextPoint = offset + Vector3D.Transform(baseVector, MatrixD.CreateFromAxisAngle(axisNormalized, nextAngle));
+
+                if(drawWireframe)
+                {
+                    MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (apexPosition - prevPoint), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, nextPoint, (apexPosition - nextPoint), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    quad.Point0 = prevPoint;
+                    quad.Point1 = nextPoint;
+                    quad.Point2 = apexPosition;
+                    quad.Point3 = apexPosition;
+                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref Vector3D.Zero, -1, blendType, null);
+                }
+
+                prevPoint = nextPoint;
+            }
+        }
+
+        // Added wireframe and blend type as well as optimized.
+        public static void DrawTransparentCapsule(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
+            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+
+            Vector3D center = worldMatrix.Translation;
+            double halfHeight = height * 0.5;
+            MyQuadD quad;
+
+            #region Sphere halves
+            var vertices = BuildInfoMod.Instance.Caches.Vertices;
+            vertices.Clear();
+
+            MatrixD sphereMatrix = MatrixD.CreateRotationX(-MathHelperD.PiOver2);
+            sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
+            sphereMatrix *= worldMatrix;
+            MyMeshHelper.GenerateSphere(ref sphereMatrix, radius, wireDivideRatio, vertices);
+
+            int halfVerts = vertices.Count / 2;
+            var addVec = worldMatrix.Down * height;
+
+            for(int i = 0; i < vertices.Count; i += 4)
+            {
+                if(i < halfVerts)
+                {
+                    quad.Point0 = vertices[i + 1];
+                    quad.Point1 = vertices[i + 3];
+                    quad.Point2 = vertices[i + 2];
+                    quad.Point3 = vertices[i];
+                }
+                else // offset other half by the height of the cylinder
+                {
+                    quad.Point0 = vertices[i + 1] + addVec;
+                    quad.Point1 = vertices[i + 3] + addVec;
+                    quad.Point2 = vertices[i + 2] + addVec;
+                    quad.Point3 = vertices[i] + addVec;
+                }
+
+                if(drawWireframe)
+                {
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
+                }
+            }
+            #endregion
+
+            #region Cylinder
+            double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
+            double angle = 0f;
+
+            for(int k = 0; k < wireDivideRatio; k++)
+            {
+                angle = k * wireDivAngle;
+                double cos = (radius * Math.Cos(angle));
+                double sin = (radius * Math.Sin(angle));
+                quad.Point0.X = cos;
+                quad.Point0.Z = sin;
+                quad.Point3.X = cos;
+                quad.Point3.Z = sin;
+
+                angle = (k + 1) * wireDivAngle;
+                cos = (radius * Math.Cos(angle));
+                sin = (radius * Math.Sin(angle));
+                quad.Point1.X = cos;
+                quad.Point1.Z = sin;
+                quad.Point2.X = cos;
+                quad.Point2.Z = sin;
+
+                quad.Point0.Y = 0f - halfHeight;
+                quad.Point1.Y = 0f - halfHeight;
+                quad.Point2.Y = halfHeight;
+                quad.Point3.Y = halfHeight;
+
+                quad.Point0 = Vector3D.Transform(quad.Point0, worldMatrix);
+                quad.Point1 = Vector3D.Transform(quad.Point1, worldMatrix);
+                quad.Point2 = Vector3D.Transform(quad.Point2, worldMatrix);
+                quad.Point3 = Vector3D.Transform(quad.Point3, worldMatrix);
+
+                if(drawWireframe)
+                {
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
+                }
+            }
+            #endregion
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         public readonly StringBuilder SB = new StringBuilder(128);
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
+        public readonly List<Vector3D> Vertices = new List<Vector3D>();
 
         public Caches(BuildInfoMod main) : base(main)
         {
