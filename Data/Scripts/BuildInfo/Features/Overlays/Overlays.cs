@@ -448,7 +448,6 @@ namespace Digi.BuildInfo.Features
 
                 // draw custom mount point styling
                 {
-                    var minSize = (def.CubeSize == MyCubeSize.Large ? 0.05 : 0.02); // a minimum size to have some thickness
                     var center = def.Center;
                     var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cellSize) * drawMatrix;
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
@@ -510,9 +509,25 @@ namespace Digi.BuildInfo.Features
                             if(!mountPoint.Enabled)
                                 continue; // ignore all disabled mount points as airtight ones are rendered separate
 
-                            var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+                            var startLocal = mountPoint.Start - center;
+                            var endLocal = mountPoint.End - center;
 
-                            DrawMountPoint(mountPoint, cellSize, ref center, ref mainMatrix, ref colorFace, minSize);
+                            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cellSize, Vector3.Max(startLocal, endLocal) * cellSize);
+                            var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+
+                            var normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
+
+                            var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                            m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MOUNTPOINT_THICKNESS : 0));
+                            m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MOUNTPOINT_THICKNESS : 0));
+                            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
+                            m.Translation = obb.Center;
+
+                            var colorFace = (mountPoint.Default ? MOUNTPOINT_DEFAULT_COLOR : MOUNTPOINT_COLOR);
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorFace, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+
+                            //var colorWire = colorFace * 4;
+                            //MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorWire, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.005f, lineMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
                         }
                     }
                 }
@@ -1048,28 +1063,6 @@ namespace Digi.BuildInfo.Features
         {
             var textSize = msg.GetTextLength();
             return (float)(LABEL_OFFSET.X + (textSize.X * LABEL_TEXT_SCALE));
-        }
-
-        private void DrawMountPoint(MyCubeBlockDefinition.MountPoint mountPoint, float cubeSize, ref Vector3I center, ref MatrixD mainMatrix, ref Color colorFace, double minSize)
-        {
-            var startLocal = mountPoint.Start - center;
-            var endLocal = mountPoint.End - center;
-
-            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cubeSize, Vector3.Max(startLocal, endLocal) * cubeSize);
-            var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
-
-            var normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
-
-            var m = MatrixD.CreateFromQuaternion(obb.Orientation);
-            m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MOUNTPOINT_THICKNESS : 0));
-            m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MOUNTPOINT_THICKNESS : 0));
-            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
-            m.Translation = obb.Center;
-
-            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorFace, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
-
-            //var colorWire = colorFace * 4;
-            //MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorWire, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.005f, lineMaterial: MATERIAL_SQUARE, onlyFrontFaces: true);
         }
 
         private void DrawMountPointAxixText(MyCubeBlockDefinition def, float gridSize, ref MatrixD drawMatrix)
