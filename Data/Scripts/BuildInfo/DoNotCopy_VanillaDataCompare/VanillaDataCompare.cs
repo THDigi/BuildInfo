@@ -103,8 +103,22 @@ namespace Digi.BuildInfo
 
         void CompareVanillaDetailInfo()
         {
+            if(!ReadAndBackup())
+                return;
+
             spawnedBlocks = new List<IMyTerminalBlock>();
 
+            SpawnVanillaBlocks();
+
+            Log.Info($"{NAME}: Starting timer and waiting...");
+
+            var timer = new Timer(3000);
+            timer.Elapsed += Timer_Elapsed;
+            timer.Start();
+        }
+
+        bool ReadAndBackup()
+        {
             Log.Info($"{NAME}: Reading 'Storage/{readFile}'...");
 
             if(MyAPIGateway.Utilities.FileExistsInLocalStorage(readFile, typeof(VanillaDataCompare)))
@@ -119,13 +133,13 @@ namespace Digi.BuildInfo
                     if(info == null)
                     {
                         Log.Error($"{NAME}: info = null");
-                        return;
+                        return false;
                     }
 
                     if(info.Blocks == null)
                     {
                         Log.Error($"{NAME}: info.Blocks = null");
-                        return;
+                        return false;
                     }
 
                     vanillaDetailInfo = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
@@ -149,6 +163,11 @@ namespace Digi.BuildInfo
                 MyAPIGateway.Utilities.ShowMessage(NAME, $"{Log.ModName} WARNING: missing 'Storage/{readFile}' file, nothing to compare to!");
             }
 
+            return true;
+        }
+
+        void SpawnVanillaBlocks()
+        {
             var definitions = MyDefinitionManager.Static.GetAllDefinitions();
             var spawned = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
 
@@ -158,27 +177,32 @@ namespace Digi.BuildInfo
 
             foreach(var def in definitions)
             {
-                if(!def.Context.IsBaseGame) // only vanilla definitions
-                    continue;
+                try
+                {
+                    if(def?.Context == null)
+                        continue;
 
-                var blockDef = def as MyCubeBlockDefinition;
+                    if(!def.Context.IsBaseGame) // only vanilla definitions
+                        continue;
 
-                if(blockDef == null)
-                    continue;
+                    var blockDef = def as MyCubeBlockDefinition;
 
-                if(!spawned.Add(def.Id.TypeId)) // if Add() returns false it means the entry already exists
-                    continue;
+                    if(blockDef == null)
+                        continue;
 
-                MyCubeBuilder.SpawnStaticGrid(blockDef, null, matrix, Vector3.One, MyStringHash.NullOrEmpty, completionCallback: GridSpawned);
+                    if(!spawned.Add(def.Id.TypeId)) // if Add() returns false it means the entry already exists
+                        continue;
 
-                matrix.Translation += new Vector3D(0, 0, 100);
+                    MyCubeBuilder.SpawnStaticGrid(blockDef, null, matrix, Vector3.One, MyStringHash.NullOrEmpty, completionCallback: GridSpawned);
+
+                    matrix.Translation += new Vector3D(0, 0, 100);
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error in definition loop: {def?.Id}");
+                    Log.Error(e);
+                }
             }
-
-            Log.Info($"{NAME}: Starting timer and waiting...");
-
-            var timer = new Timer(3000);
-            timer.Elapsed += Timer_Elapsed;
-            timer.Start();
         }
 
         private void GridSpawned(MyEntity ent)
