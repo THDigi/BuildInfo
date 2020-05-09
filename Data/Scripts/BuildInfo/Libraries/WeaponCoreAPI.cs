@@ -46,7 +46,9 @@ namespace WeaponCore.Api
         private Func<IMyEntity, float> _getOptimalDps;
         private Func<IMyTerminalBlock, int, string> _getActiveAmmo;
         private Action<IMyTerminalBlock, int, string> _setActiveAmmo;
-
+        private Action<Action<Vector3, float>> _registerProjectileAdded;
+        private Action<Action<Vector3, float>> _unRegisterProjectileAdded;
+        private Func<IMyEntity, float> _getConstructEffectiveDps;
         private const long Channel = 67549756549;
         private bool _getWeaponDefinitions;
         private bool _isRegistered;
@@ -141,6 +143,10 @@ namespace WeaponCore.Api
             AssignMethod(delegates, "GetOptimalDps", ref _getOptimalDps);
             AssignMethod(delegates, "GetActiveAmmo", ref _getActiveAmmo);
             AssignMethod(delegates, "SetActiveAmmo", ref _setActiveAmmo);
+            AssignMethod(delegates, "RegisterProjectileAdded", ref _registerProjectileAdded);
+            AssignMethod(delegates, "UnRegisterProjectileAdded", ref _unRegisterProjectileAdded);
+            AssignMethod(delegates, "GetConstructEffectiveDps", ref _getConstructEffectiveDps);
+
 
             if(getWeaponDefinitions)
             {
@@ -169,7 +175,7 @@ namespace WeaponCore.Api
                 throw new Exception($"{GetType().Name} :: Delegate {name} is not type {typeof(T)}, instead it's: {del.GetType()}");
         }
 
-        public void GetAllWeaponDefinitions(IList<byte[]> collection) => _getAllWeaponDefinitions?.Invoke(collection);
+        private void GetAllWeaponDefinitions(IList<byte[]> collection) => _getAllWeaponDefinitions?.Invoke(collection);
         public void GetAllCoreWeapons(ICollection<MyDefinitionId> collection) => _getCoreWeapons?.Invoke(collection);
         public void GetAllCoreStaticLaunchers(ICollection<MyDefinitionId> collection) => _getCoreStaticLaunchers?.Invoke(collection);
         public void GetAllCoreTurrets(ICollection<MyDefinitionId> collection) => _getCoreTurrets?.Invoke(collection);
@@ -199,6 +205,10 @@ namespace WeaponCore.Api
         public float GetOptimalDps(IMyEntity entity) => _getOptimalDps?.Invoke(entity) ?? 0f;
         public string GetActiveAmmo(IMyTerminalBlock weapon, int weaponId) => _getActiveAmmo?.Invoke(weapon, weaponId) ?? null;
         public void SetActiveAmmo(IMyTerminalBlock weapon, int weaponId, string ammoType) => _setActiveAmmo?.Invoke(weapon, weaponId, ammoType);
+        public void RegisterProjectileAddedCallback(Action<Vector3, float> action) => _registerProjectileAdded?.Invoke(action);
+        public void UnRegisterProjectileAddedCallback(Action<Vector3, float> action) => _unRegisterProjectileAdded?.Invoke(action);
+        public float GetConstructEffectiveDps(IMyEntity entity) => _getConstructEffectiveDps?.Invoke(entity) ?? 0f;
+
     }
 
     public static class WcApiDef
@@ -263,7 +273,12 @@ namespace WeaponCore.Api
                 [ProtoMember(6)] internal bool ClosestFirst;
                 [ProtoMember(7)] internal BlockTypes[] SubSystems;
                 [ProtoMember(8)] internal Threat[] Threats;
+                [ProtoMember(9)] internal float MaxTargetDistance;
+                [ProtoMember(10)] internal float MinTargetDistance;
+                [ProtoMember(11)] internal bool IgnoreDumbProjectiles;
+                [ProtoMember(12)] internal bool LockedSmartOnly;
             }
+
 
             [ProtoContract]
             public struct AnimationDef
@@ -390,6 +405,7 @@ namespace WeaponCore.Api
                     [ProtoMember(13)] internal bool DegradeRof;
                     [ProtoMember(14)] internal int BarrelSpinRate;
                     [ProtoMember(15)] internal bool FireFullBurst;
+                    [ProtoMember(16)] internal bool GiveUpAfterBurst;
                 }
 
 
@@ -437,6 +453,7 @@ namespace WeaponCore.Api
                     [ProtoMember(5)] internal string FiringSound;
                     [ProtoMember(6)] internal bool FiringSoundPerShot;
                     [ProtoMember(7)] internal string PreFiringSound;
+                    [ProtoMember(8)] internal uint FireSoundEndDelay;
                 }
 
                 [ProtoContract]
@@ -448,6 +465,7 @@ namespace WeaponCore.Api
                     [ProtoMember(4)] internal bool MuzzleCheck;
                     [ProtoMember(5)] internal bool Debug;
                 }
+
                 [ProtoContract]
                 public struct HardPointParticleDef
                 {
@@ -477,6 +495,8 @@ namespace WeaponCore.Api
                 [ProtoMember(16)] internal GraphicDef AmmoGraphics;
                 [ProtoMember(17)] internal AmmoAudioDef AmmoAudio;
                 [ProtoMember(18)] internal bool HardPointUsable;
+                [ProtoMember(19)] internal AmmoPatternDef Pattern;
+                [ProtoMember(20)] internal int EnergyMagazineSize;
 
                 [ProtoContract]
                 public struct DamageScaleDef
@@ -609,6 +629,8 @@ namespace WeaponCore.Api
                             [ProtoMember(2)] internal float Length;
                             [ProtoMember(3)] internal float Width;
                             [ProtoMember(4)] internal Vector4 Color;
+                            [ProtoMember(5)] internal uint VisualFadeStart;
+                            [ProtoMember(6)] internal uint VisualFadeEnd;
                         }
 
                         [ProtoContract]
@@ -648,6 +670,17 @@ namespace WeaponCore.Api
                     [ProtoMember(7)] internal bool RandomizeDir;
                 }
 
+                [ProtoContract]
+                public struct AmmoPatternDef
+                {
+                    [ProtoMember(1)] internal string[] Ammos;
+                    [ProtoMember(2)] internal bool Enable;
+                    [ProtoMember(3)] internal float TriggerChance;
+                    [ProtoMember(4)] internal bool SkipParent;
+                    [ProtoMember(5)] internal bool Random;
+                    [ProtoMember(6)] internal int RandomMin;
+                    [ProtoMember(7)] internal int RandomMax;
+                }
 
                 [ProtoContract]
                 public struct AreaDamageDef
@@ -684,6 +717,10 @@ namespace WeaponCore.Api
                     {
                         [ProtoMember(1)] internal int Interval;
                         [ProtoMember(2)] internal int PulseChance;
+                        [ProtoMember(3)] internal int GrowTime;
+                        [ProtoMember(4)] internal bool HideModel;
+                        [ProtoMember(5)] internal bool ShowParticle;
+                        [ProtoMember(6)] internal ParticleDef Particle;
                     }
 
                     [ProtoContract]
@@ -725,6 +762,10 @@ namespace WeaponCore.Api
                     [ProtoMember(2)] internal string HitSound;
                     [ProtoMember(3)] internal float HitPlayChance;
                     [ProtoMember(4)] internal bool HitPlayShield;
+                    [ProtoMember(5)] internal string VoxelHitSound;
+                    [ProtoMember(6)] internal string PlayerHitSound;
+                    [ProtoMember(7)] internal string FloatingHitSound;
+                    [ProtoMember(8)] internal string ShieldHitSound;
                 }
 
                 [ProtoContract]
@@ -754,6 +795,7 @@ namespace WeaponCore.Api
                     [ProtoMember(11)] internal SmartsDef Smarts;
                     [ProtoMember(12)] internal MinesDef Mines;
                     [ProtoMember(13)] internal float GravityMultiplier;
+                    [ProtoMember(14)] internal uint MaxTrajectoryTime;
 
                     [ProtoContract]
                     public struct SmartsDef
@@ -765,6 +807,8 @@ namespace WeaponCore.Api
                         [ProtoMember(5)] internal int MaxChaseTime;
                         [ProtoMember(6)] internal bool OverideTarget;
                         [ProtoMember(7)] internal int MaxTargets;
+                        [ProtoMember(8)] internal bool NoTargetExpire;
+                        [ProtoMember(9)] internal bool Roam;
                     }
 
                     [ProtoContract]
@@ -796,6 +840,7 @@ namespace WeaponCore.Api
                 [ProtoMember(5)] internal bool Restart;
                 [ProtoMember(6)] internal float HitPlayChance;
             }
+
 
             [ProtoContract]
             public struct ParticleDef

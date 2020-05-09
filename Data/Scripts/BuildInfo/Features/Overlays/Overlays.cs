@@ -706,7 +706,45 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
-                // TODO: weaponcore overlays?
+                // TODO: weaponcore overlays? - not really viable...
+
+#if false
+                IMySlimBlock block = GetOverlayBlock();
+                IMyTerminalBlock terminalBlock = block?.FatBlock as IMyTerminalBlock;
+
+                if(terminalBlock == null)
+                    return;
+
+                foreach(var wcDef in WeaponCoreAPI.WeaponDefinitions)
+                {
+                    bool forThisWeapon = false;
+
+                    foreach(var mp in wcDef.Assignments.MountPoints)
+                    {
+                        if(mp.SubtypeId == def.Id.SubtypeName)
+                        {
+                            forThisWeapon = true;
+                            break;
+                        }
+                    }
+
+                    if(!forThisWeapon)
+                        continue;
+
+                    var ammoName = WeaponCoreAPI.GetActiveAmmo(terminalBlock, 0);
+
+                    foreach(var ammo in wcDef.Ammos)
+                    {
+                        if(ammo.Trajectory.GravityMultiplier > 0 || ammo.Trajectory.AccelPerSec > 0 || ammo.Trajectory.Guidance != WeaponCore.Api.WcApiDef.WeaponDefinition.AmmoDef.TrajectoryDef.GuidanceType.None)
+                            continue;
+
+                        if(ammo.AmmoRound != ammoName)
+                            continue;
+
+                        WeaponCoreAPI.GetMaxWeaponRange(
+                    }
+                }
+#endif
             }
         }
 
