@@ -248,6 +248,12 @@ namespace Digi.BuildInfo.Features
 
         public void LockOverlayToAimedBlock()
         {
+            if(lockedOnBlock == null && EquipmentMonitor.AimedBlock == null)
+            {
+                NotifyLockOverlay("Aim at a block with welder/grinder first.", 2000, MyFontEnum.Red);
+                return;
+            }
+
             SetLockOnBlock(EquipmentMonitor.AimedBlock);
         }
 
@@ -276,23 +282,24 @@ namespace Digi.BuildInfo.Features
 
                 selectedOverlayCall = drawLookup.GetValueOrDefault(lockedOnBlockDef.Id.TypeId, null);
 
-                if(lockedOnBlockNotification == null)
-                    lockedOnBlockNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-                lockedOnBlockNotification.Hide(); // required since SE v1.194
-                lockedOnBlockNotification.AliveTime = 100;
-                //lockedOnBlockNotification.Font = MyFontEnum.White;
-                lockedOnBlockNotification.Text = $"Locked overlay to {lockedOnBlockDef.DisplayNameText}, press [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.";
-                // shown every tick in UpdateDraw()
+                NotifyLockOverlay($"Locked overlay to {lockedOnBlockDef.DisplayNameText}, press [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
             }
             else
             {
-                lockedOnBlockNotification.Hide(); // required since SE v1.194
-                lockedOnBlockNotification.AliveTime = 2000;
-                //lockedOnBlockNotification.Font = MyFontEnum.Red;
-                lockedOnBlockNotification.Text = (message ?? "Turned off overlay lock.");
-                lockedOnBlockNotification.Show();
+                NotifyLockOverlay(message ?? "Turned off overlay lock.");
             }
+        }
+
+        void NotifyLockOverlay(string message, int aliveTimeMs = 2000, string font = MyFontEnum.White)
+        {
+            if(lockedOnBlockNotification == null)
+                lockedOnBlockNotification = MyAPIGateway.Utilities.CreateNotification("");
+
+            lockedOnBlockNotification.Hide(); // required since SE v1.194
+            lockedOnBlockNotification.AliveTime = aliveTimeMs;
+            lockedOnBlockNotification.Font = font;
+            lockedOnBlockNotification.Text = message;
+            lockedOnBlockNotification.Show();
         }
 
         private void LockedOnBlock_MarkedForClose(IMyEntity ent)
