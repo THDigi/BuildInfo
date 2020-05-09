@@ -605,10 +605,27 @@ namespace Digi.BuildInfo.Features
             return grids;
         }
 
+        void AppendTitle(StringBuilder sb, string title, int count = -1)
+        {
+            //const int TotalWidth = 50;
+            //int len = sb.Length;
+
+            sb.Append('=', 10).Append(' ').Append(title).Append(' ');
+
+            if(count >= 0)
+                sb.Append("(").Append(count).Append(") ");
+
+            //int suffixSize = TotalWidth - (sb.Length - len);
+            //if(suffixSize > 0)
+            //    sb.Append('=', suffixSize);
+
+            sb.NewLine();
+        }
+
         void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
         {
             sb.Clear();
-            sb.Append("##### Blocks or skins from DLCs:").NewLine();
+            AppendTitle(sb, "Blocks or skins from DLCs", dlcs.Count);
 
             if(dlcs.Count == 0)
             {
@@ -624,12 +641,11 @@ namespace Digi.BuildInfo.Features
                     sb.Append("- ").Append(dlc).NewLine();
 
                     sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
-                    sb.NewLine();
                 }
             }
 
             sb.NewLine();
-            sb.Append("##### Blocks or skins from mods:").NewLine();
+            AppendTitle(sb, "Blocks or skins from mods", mods.Count);
 
             if(mods.Count == 0)
             {
@@ -647,15 +663,13 @@ namespace Digi.BuildInfo.Features
                         sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
                     sb.Append(modId.ModName).NewLine();
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
-                    sb.NewLine();
+                    sb.Append(' ', 4).Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
                 }
             }
 
             sb.NewLine();
-            sb.Append("##### Vanilla blocks altered by mods:").NewLine();
+            AppendTitle(sb, "Vanilla blocks altered by mods", modsChangingVanilla.Count);
             sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.").NewLine();
-            sb.NewLine();
 
             if(modsChangingVanilla.Count == 0)
             {
