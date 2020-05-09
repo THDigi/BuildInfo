@@ -624,7 +624,10 @@ namespace Digi.BuildInfo.Features
                 doorAirtightBlink = !doorAirtightBlink;
             }
 
-            var cubeSize = def.Size * (EquipmentMonitor.BlockGridSize * 0.5f);
+            IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
+            float cellSize = (block == null ? EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
+
+            var cubeSize = def.Size * (cellSize * 0.5f);
             bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
             if(!drawLabel && !doorAirtightBlink)
@@ -632,10 +635,9 @@ namespace Digi.BuildInfo.Features
 
             bool fullyClosed = true;
 
-            if(EquipmentMonitor.AimedBlock != null)
+            if(block != null)
             {
-                var door = EquipmentMonitor.AimedBlock.FatBlock as IMyDoor;
-
+                var door = block.FatBlock as IMyDoor;
                 if(door != null)
                     fullyClosed = (door.Status == Sandbox.ModAPI.Ingame.DoorStatus.Closed);
             }
@@ -760,10 +762,11 @@ namespace Digi.BuildInfo.Features
             var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
             MyAmmoDefinition ammo = null;
 
-            if(EquipmentMonitor.AimedBlock != null)
-            {
-                var weaponBlock = EquipmentMonitor.AimedBlock.FatBlock as IMyGunObject<MyGunBase>;
+            IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
 
+            if(block != null)
+            {
+                var weaponBlock = block.FatBlock as IMyGunObject<MyGunBase>;
                 if(weaponBlock != null)
                     ammo = weaponBlock.GunBase.CurrentAmmoDefinition;
             }
@@ -788,7 +791,7 @@ namespace Digi.BuildInfo.Features
             //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
             //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
 
-            if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled)
+            if(TextAPIEnabled && Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other))
             {
                 var labelDir = coneMatrix.Up;
                 var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
