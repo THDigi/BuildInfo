@@ -22,22 +22,21 @@ using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.Overlays
 {
     public class Overlays : ModComponent
     {
-        public int drawOverlay = 0;
-        private bool anyLabelShown;
-        private bool doorAirtightBlink = true;
-        private int doorAirtightBlinkTick = 0;
-        private bool blockFunctionalForPressure;
-        private IMyHudNotification overlayNotification;
-        private OverlayCall selectedOverlayCall;
-        private readonly LabelData[] labels;
+        public int DrawOverlay = 0;
+        private OverlayCall SelectedOverlayCall;
+        private IMyHudNotification OverlayNotification;
 
-        private IMySlimBlock lockedOnBlock;
-        private MyCubeBlockDefinition lockedOnBlockDef;
-        private IMyHudNotification lockedOnBlockNotification;
+        private bool AnyLabelShown;
+        private readonly LabelData[] Labels;
+
+        private bool BlockFunctionalForPressure;
+
+        private bool DoorAirtightBlink = true;
+        private int DoorAirtightBlinkTick = 0;
 
         class LabelData
         {
@@ -45,8 +44,6 @@ namespace Digi.BuildInfo.Features
             public HudAPIv2.SpaceMessage Shadow;
             public float UnderlineLength = -1;
         }
-
-        private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
 
         public delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
         public readonly Dictionary<MyObjectBuilderType, OverlayCall> drawLookup
@@ -117,14 +114,16 @@ namespace Digi.BuildInfo.Features
             Vector3.Backward,
             Vector3.Forward,
         };
+
+        private readonly MyCubeBlockDefinition.MountPoint[] BLANK_MOUNTPOINTS = new MyCubeBlockDefinition.MountPoint[0];
         #endregion Constants
 
         public Overlays(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_INPUT;
+            UpdateMethods = UpdateFlags.NONE;
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
-            labels = new LabelData[count];
+            Labels = new LabelData[count];
         }
 
         protected override void RegisterComponent()
@@ -158,20 +157,20 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            if(lockedOnBlock != null)
+            if(LockOverlay.LockedOnBlock != null)
                 return;
 
-            selectedOverlayCall = null;
+            SelectedOverlayCall = null;
 
             if(def != null)
-                selectedOverlayCall = drawLookup.GetValueOrDefault(def.Id.TypeId, null);
+                SelectedOverlayCall = drawLookup.GetValueOrDefault(def.Id.TypeId, null);
 
             HideLabels();
         }
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
-            if(shipController != null && EquipmentMonitor.IsBuildTool && drawOverlay > 0)
+            if(shipController != null && EquipmentMonitor.IsBuildTool && DrawOverlay > 0)
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
                 const float REACH_DISTANCE = Hardcoded.ShipTool_ReachDistance;
@@ -188,21 +187,29 @@ namespace Digi.BuildInfo.Features
 
         public void CycleOverlayMode(bool showNotification = true)
         {
-            if(++drawOverlay >= NAMES.Length)
-                drawOverlay = 0;
+            if(++DrawOverlay >= NAMES.Length)
+                DrawOverlay = 0;
 
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, drawOverlay > 0);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, DrawOverlay > 0);
             HideLabels();
 
             if(showNotification)
             {
-                if(overlayNotification == null)
-                    overlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, MyFontEnum.White);
+                if(OverlayNotification == null)
+                    OverlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, MyFontEnum.White);
 
-                overlayNotification.Hide(); // required since SE v1.194
-                overlayNotification.Text = "Overlays: " + NAMES[drawOverlay];
-                overlayNotification.Show();
+                OverlayNotification.Hide(); // required since SE v1.194
+                OverlayNotification.Text = "Overlays: " + NAMES[DrawOverlay];
+                OverlayNotification.Show();
             }
+        }
+
+        public void SetOverlayCallFor(MyDefinitionId? defId)
+        {
+            if(defId.HasValue)
+                SelectedOverlayCall = drawLookup.GetValueOrDefault(defId.Value.TypeId, null);
+            else
+                SelectedOverlayCall = null;
         }
 
         private void InitLookups()
@@ -238,148 +245,23 @@ namespace Digi.BuildInfo.Features
             drawLookup.Add(blockType, call);
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
-        {
-            if(!paused && !inMenu && Config.LockOverlayBind.Value.IsJustPressed())
-            {
-                LockOverlayToAimedBlock();
-            }
-        }
-
-        public void LockOverlayToAimedBlock()
-        {
-            if(lockedOnBlock == null && EquipmentMonitor.AimedBlock == null)
-            {
-                NotifyLockOverlay("Aim at a block with welder/grinder first.", 2000, MyFontEnum.Red);
-                return;
-            }
-
-            SetLockOnBlock(EquipmentMonitor.AimedBlock);
-        }
-
-        void SetLockOnBlock(IMySlimBlock block, string message = null)
-        {
-            HideLabels();
-            selectedOverlayCall = null;
-            lockedOnBlockDef = null;
-
-            // unhook previous
-            if(lockedOnBlock != null)
-            {
-                if(lockedOnBlock.FatBlock != null)
-                    lockedOnBlock.FatBlock.OnMarkForClose -= LockedOnBlock_MarkedForClose;
-            }
-
-            lockedOnBlock = block;
-
-            // hook new
-            if(lockedOnBlock != null)
-            {
-                if(lockedOnBlock.FatBlock != null)
-                    lockedOnBlock.FatBlock.OnMarkForClose += LockedOnBlock_MarkedForClose;
-
-                lockedOnBlockDef = (MyCubeBlockDefinition)lockedOnBlock.BlockDefinition;
-
-                selectedOverlayCall = drawLookup.GetValueOrDefault(lockedOnBlockDef.Id.TypeId, null);
-
-                NotifyLockOverlay($"Locked overlay to {lockedOnBlockDef.DisplayNameText}, press [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
-            }
-            else
-            {
-                NotifyLockOverlay(message ?? "Turned off overlay lock.");
-            }
-        }
-
-        void NotifyLockOverlay(string message, int aliveTimeMs = 2000, string font = MyFontEnum.White)
-        {
-            if(lockedOnBlockNotification == null)
-                lockedOnBlockNotification = MyAPIGateway.Utilities.CreateNotification("");
-
-            lockedOnBlockNotification.Hide(); // required since SE v1.194
-            lockedOnBlockNotification.AliveTime = aliveTimeMs;
-            lockedOnBlockNotification.Font = font;
-            lockedOnBlockNotification.Text = message;
-            lockedOnBlockNotification.Show();
-        }
-
-        private void LockedOnBlock_MarkedForClose(IMyEntity ent)
-        {
-            try
-            {
-                var block = ent as IMyCubeBlock;
-
-                if(block != null)
-                    block.OnMarkForClose -= LockedOnBlock_MarkedForClose;
-
-                if(lockedOnBlock == null || block != lockedOnBlock.FatBlock)
-                    return;
-
-                SetLockOnBlock(null, "Block removed, disabled overlay lock.");
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
         // boxless HitInfo getters
         IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
         Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
 
         protected override void UpdateDraw()
         {
-            if(drawOverlay == 0 || (lockedOnBlock == null && EquipmentMonitor.BlockDef == null) || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
+            if(DrawOverlay == 0 || (LockOverlay.LockedOnBlock == null && EquipmentMonitor.BlockDef == null) || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
                 return;
-
-            // TODO: show currently selected overlay mode? maybe only with textAPI?
-            //overlayNotification.Hide(); // required since SE v1.194
-            //overlayNotification.Text = $"Showing {DRAW_OVERLAY_NAME[drawOverlay]} overlays (Ctrl+{voxelHandSettingsInput} to cycle)";
-            //overlayNotification.AliveTime = 32;
-            //overlayNotification.Show();
 
             var def = EquipmentMonitor.BlockDef;
             var aimedBlock = EquipmentMonitor.AimedBlock;
             var cellSize = EquipmentMonitor.BlockGridSize;
 
-            if(lockedOnBlock != null)
+            if(LockOverlay.LockedOnBlock != null)
             {
-                if(lockedOnBlock.IsFullyDismounted || lockedOnBlock.IsDestroyed || (lockedOnBlock != null && lockedOnBlock.FatBlock == null))
-                {
-                    SetLockOnBlock(null, "Block removed, disabled overlay lock.");
+                if(!LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
                     return;
-                }
-
-                Vector3D blockPos;
-                double maxRangeSq = 3;
-
-                if(lockedOnBlock.FatBlock != null)
-                {
-                    var blockVolume = lockedOnBlock.FatBlock.WorldVolume;
-                    maxRangeSq = blockVolume.Radius;
-                    blockPos = blockVolume.Center;
-                }
-                else
-                {
-                    lockedOnBlock.ComputeWorldCenter(out blockPos);
-                }
-
-                maxRangeSq = (maxRangeSq + 20) * 2;
-                maxRangeSq *= maxRangeSq;
-
-                if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > maxRangeSq)
-                {
-                    SetLockOnBlock(null, "Too far from block, disabled overlay lock.");
-                    return;
-                }
-
-                aimedBlock = lockedOnBlock;
-                def = lockedOnBlockDef;
-                cellSize = lockedOnBlock.CubeGrid.GridSize;
-
-                if(!MyParticlesManager.Paused && lockedOnBlockNotification != null)
-                {
-                    lockedOnBlockNotification.Show();
-                }
             }
 
             try
@@ -387,7 +269,7 @@ namespace Digi.BuildInfo.Features
                 #region DrawMatrix and other needed data
                 var drawMatrix = MatrixD.Identity;
 
-                if(lockedOnBlock == null && EquipmentMonitor.IsCubeBuilder)
+                if(LockOverlay.LockedOnBlock == null && EquipmentMonitor.IsCubeBuilder)
                 {
                     if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
@@ -435,7 +317,7 @@ namespace Digi.BuildInfo.Features
                     def.MountPoints = mp;
                 }
 
-                blockFunctionalForPressure = true;
+                BlockFunctionalForPressure = true;
 
                 // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
                 if(EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
@@ -443,7 +325,7 @@ namespace Digi.BuildInfo.Features
                     var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
                     if(aimedBlock.BuildLevelRatio < progressModel.BuildRatioUpperBound)
-                        blockFunctionalForPressure = false;
+                        BlockFunctionalForPressure = false;
                 }
 
                 // draw custom mount point styling
@@ -453,7 +335,7 @@ namespace Digi.BuildInfo.Features
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
                     bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
-                    if(drawOverlay == 1 && blockFunctionalForPressure)
+                    if(DrawOverlay == 1 && BlockFunctionalForPressure)
                     {
                         // TODO: have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
 
@@ -500,7 +382,7 @@ namespace Digi.BuildInfo.Features
                             }
                         }
                     }
-                    else if(drawOverlay == 2 && mountPoints != null)
+                    else if(DrawOverlay == 2 && mountPoints != null)
                     {
                         for(int i = 0; i < mountPoints.Length; i++)
                         {
@@ -534,7 +416,7 @@ namespace Digi.BuildInfo.Features
                 #endregion Draw mount points
 
                 // draw per-block overlays
-                selectedOverlayCall?.Invoke(def, drawMatrix);
+                SelectedOverlayCall?.Invoke(def, drawMatrix);
 
                 // TODO: real time neighbour airtight display?
 #if false
@@ -585,14 +467,14 @@ namespace Digi.BuildInfo.Features
 
         public void HideLabels()
         {
-            if(!anyLabelShown)
+            if(!AnyLabelShown)
                 return;
 
-            anyLabelShown = false;
+            AnyLabelShown = false;
 
-            for(int i = 0; i < labels.Length; ++i)
+            for(int i = 0; i < Labels.Length; ++i)
             {
-                var label = labels[i];
+                var label = Labels[i];
 
                 if(label != null && label.Text != null)
                 {
@@ -602,20 +484,23 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        private IMySlimBlock GetOverlayBlock() => (LockOverlay.LockedOnBlock ?? EquipmentMonitor.AimedBlock);
+        private float GetOverlayCellSize(IMySlimBlock block) => (block == null ? EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
+
         #region Block-specific overlays
         private void DrawOverlay_Doors(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            if(drawOverlay != 1)
+            if(DrawOverlay != 1)
                 return;
 
-            if(!blockFunctionalForPressure)
+            if(!BlockFunctionalForPressure)
             {
                 HideLabels();
                 return;
             }
 
-            IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
-            float cellSize = (block == null ? EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
+            IMySlimBlock block = GetOverlayBlock();
+            float cellSize = GetOverlayCellSize(block);
 
             //if(block != null)
             //{
@@ -630,7 +515,7 @@ namespace Digi.BuildInfo.Features
             var cubeSize = def.Size * (cellSize * 0.5f);
             bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
-            if(!drawLabel && !doorAirtightBlink)
+            if(!drawLabel && !DoorAirtightBlink)
                 return;
 
             bool fullyClosed = true;
@@ -662,7 +547,7 @@ namespace Digi.BuildInfo.Features
                     float width = cubeSize.GetDim(((i + 4) % 6) / 2);
                     float height = cubeSize.GetDim(((i + 2) % 6) / 2);
 
-                    if(doorAirtightBlink)
+                    if(DoorAirtightBlink)
                     {
                         var m = MatrixD.CreateWorld(pos, dirForward, dirUp);
                         m.Right *= width * 2;
@@ -682,7 +567,7 @@ namespace Digi.BuildInfo.Features
                         var labelPos = pos + dirLeft * width + dirUp * height;
                         DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
-                        if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
+                        if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
                             break;
                     }
                 }
@@ -710,7 +595,7 @@ namespace Digi.BuildInfo.Features
                         var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
                         var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
-                        if(doorAirtightBlink)
+                        if(DoorAirtightBlink)
                         {
                             var m = MatrixD.Identity;
                             m.Translation = pos + dirForward * (cellSize * 0.5f);
@@ -740,7 +625,7 @@ namespace Digi.BuildInfo.Features
                             var labelPos = pos + dirLeft * width + dirUp * height;
                             DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
-                            if(!doorAirtightBlink) // no need to iterate further if no faces need to be rendered
+                            if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
                                 break;
                         }
                     }
@@ -763,11 +648,10 @@ namespace Digi.BuildInfo.Features
             }
 
             var data = BData_Base.TryGetDataCached<BData_Weapon>(def);
-
             if(data == null)
                 return;
 
-            const int wireDivideRatio = 12;
+            const int wireDivideRatio = 36;
             const float lineHeight = 0.5f;
             var color = Color.Red;
             var colorFace = color * 0.5f;
@@ -775,7 +659,7 @@ namespace Digi.BuildInfo.Features
             var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
             MyAmmoDefinition ammo = null;
 
-            IMySlimBlock block = (lockedOnBlock ?? EquipmentMonitor.AimedBlock);
+            IMySlimBlock block = GetOverlayBlock();
 
             if(block != null)
             {
@@ -891,7 +775,6 @@ namespace Digi.BuildInfo.Features
         private void DrawOverlay_ShipTool(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
             var data = BData_Base.TryGetDataCached<BData_ShipTool>(def);
-
             if(data == null)
                 return;
 
@@ -923,7 +806,6 @@ namespace Digi.BuildInfo.Features
         private void DrawOverlay_Thruster(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
             var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
-
             if(data == null)
                 return;
 
@@ -955,7 +837,6 @@ namespace Digi.BuildInfo.Features
         private void DrawOverlay_LandingGear(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
             var data = BData_Base.TryGetDataCached<BData_LandingGear>(def);
-
             if(data == null)
                 return;
 
@@ -985,7 +866,6 @@ namespace Digi.BuildInfo.Features
         private void DrawOverlay_Collector(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
             var data = BData_Base.TryGetDataCached<BData_Collector>(def);
-
             if(data == null)
                 return;
 
@@ -1022,13 +902,13 @@ namespace Digi.BuildInfo.Features
             if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
             {
                 var textWorldPos = start + direction * lineHeight;
-                anyLabelShown = true;
+                AnyLabelShown = true;
 
                 var i = (int)id;
-                var labelData = labels[i];
+                var labelData = Labels[i];
 
                 if(labelData == null)
-                    labels[i] = labelData = new LabelData();
+                    Labels[i] = labelData = new LabelData();
 
                 if(labelData.Text == null)
                 {

@@ -3,6 +3,7 @@ using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.TextAPIMenu;
 using Digi.BuildInfo.Features.ToolbarLabels;
@@ -36,6 +37,7 @@ namespace Digi.BuildInfo
         public ModMenu ModMenu;
         public LeakInfo LeakInfo;
         public Overlays Overlays;
+        public LockOverlay LockOverlay;
         public PickBlock PickBlock;
         public QuickMenu QuickMenu;
         public AnalyseShip AnalyseShip;
@@ -76,6 +78,7 @@ namespace Digi.BuildInfo
             ModMenu = new ModMenu(this);
             LeakInfo = new LeakInfo(this);
             Overlays = new Overlays(this);
+            LockOverlay = new LockOverlay(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);

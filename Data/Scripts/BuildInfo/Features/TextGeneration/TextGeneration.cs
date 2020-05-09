@@ -881,7 +881,7 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Text info: ").Append(Config.TextShow.Value ? "ON" : "OFF");
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Overlays.NAMES[Overlays.drawOverlay]);
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Overlays.NAMES[Overlays.DrawOverlay]);
             if(Config.CycleOverlaysBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
@@ -3066,6 +3066,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
+                // accuracy cone diameter = tan(angle) * baseRadius * 2
                 AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000);
             }
 

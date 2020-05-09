@@ -1,6 +1,7 @@
 ﻿using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -17,6 +18,7 @@ namespace Digi.BuildInfo
         protected TextAPI TextAPI => Main.TextAPI;
         protected Config Config => Main.Config;
         protected Overlays Overlays => Main.Overlays;
+        protected LockOverlay LockOverlay => Main.LockOverlay;
         protected DrawUtils DrawUtils => Main.DrawUtils;
         protected Constants Constants => Main.Constants;
         protected QuickMenu QuickMenu => Main.QuickMenu;

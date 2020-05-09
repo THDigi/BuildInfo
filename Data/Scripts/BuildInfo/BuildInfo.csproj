@@ -143,6 +143,7 @@
     <Compile Include="Features\ChatCommands\CommandChangelog.cs" />
     <Compile Include="Features\ChatCommands\CommandWorkshop.cs" />
     <Compile Include="Features\ChatCommands\CommandReloadConfig.cs" />
+    <Compile Include="Features\Overlays\LockOverlay.cs" />
     <Compile Include="Features\TextAPIMenu\ItemEnumCycle.cs" />
     <Compile Include="Features\ToolbarLabels\ActionWriterOverride.cs" />
     <Compile Include="Features\ToolbarLabels\ToolbarActionLabels.cs" />
