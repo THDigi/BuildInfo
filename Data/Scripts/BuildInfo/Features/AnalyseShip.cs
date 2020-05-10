@@ -590,7 +590,7 @@ namespace Digi.BuildInfo.Features
             Log.Info($"Exported vanilla blocks to Storage/{FILE_NAME}", Log.PRINT_MESSAGE, 10000);
         }
 
-        public void Analyse(IMyCubeGrid mainGrid)
+        public bool Analyse(IMyCubeGrid mainGrid)
         {
             try
             {
@@ -598,7 +598,23 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
 
-                var grids = GetInfoFromGrids(mainGrid);
+                var grids = MyAPIGateway.GridGroups.GetGroup(mainGrid, GridLinkTypeEnum.Mechanical);
+
+                foreach(var grid in grids)
+                {
+                    if(grid.BigOwners != null && grid.BigOwners.Count > 0)
+                    {
+                        foreach(var owner in grid.BigOwners)
+                        {
+                            if(MyAPIGateway.Session.Player.GetRelationTo(owner) == MyRelationsBetweenPlayerAndBlock.Enemies)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                GetInfoFromGrids(grids);
                 GenerateShipInfo(mainGrid, grids);
             }
             finally
@@ -607,12 +623,12 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
             }
+
+            return true;
         }
 
-        List<IMyCubeGrid> GetInfoFromGrids(IMyCubeGrid mainGrid)
+        void GetInfoFromGrids(List<IMyCubeGrid> grids)
         {
-            var grids = MyAPIGateway.GridGroups.GetGroup(mainGrid, GridLinkTypeEnum.Physical);
-
             foreach(MyCubeGrid grid in grids)
             {
                 foreach(IMySlimBlock block in grid.GetBlocks())
@@ -667,25 +683,17 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-
-            return grids;
         }
 
-        void AppendTitle(StringBuilder sb, string title, int count = -1)
+        Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
         {
-            //const int TotalWidth = 50;
-            //int len = sb.Length;
-
-            sb.Append('=', 10).Append(' ').Append(title).Append(' ');
-
-            if(count >= 0)
-                sb.Append("(").Append(count).Append(") ");
-
-            //int suffixSize = TotalWidth - (sb.Length - len);
-            //if(suffixSize > 0)
-            //    sb.Append('=', suffixSize);
-
-            sb.NewLine();
+            Objects objects;
+            if(!dictionary.TryGetValue(key, out objects))
+            {
+                objects = new Objects();
+                dictionary.Add(key, objects);
+            }
+            return objects;
         }
 
         void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
@@ -770,6 +778,23 @@ namespace Digi.BuildInfo.Features
             MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", shipInfoTitle, string.Empty, shipInfoText, WindowClosedAction, "Export info to file\n(Press [Esc] to not export)");
         }
 
+        void AppendTitle(StringBuilder sb, string title, int count = -1)
+        {
+            //const int TotalWidth = 50;
+            //int len = sb.Length;
+
+            sb.Append('=', 10).Append(' ').Append(title).Append(' ');
+
+            if(count >= 0)
+                sb.Append("(").Append(count).Append(") ");
+
+            //int suffixSize = TotalWidth - (sb.Length - len);
+            //if(suffixSize > 0)
+            //    sb.Append('=', suffixSize);
+
+            sb.NewLine();
+        }
+
         StringBuilder fileNameSb = new StringBuilder(128);
         string shipInfoTitle;
         string shipInfoText;
@@ -819,17 +844,6 @@ namespace Digi.BuildInfo.Features
             {
                 Log.Error(e);
             }
-        }
-
-        Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
-        {
-            Objects objects;
-            if(!dictionary.TryGetValue(key, out objects))
-            {
-                objects = new Objects();
-                dictionary.Add(key, objects);
-            }
-            return objects;
         }
     }
 }

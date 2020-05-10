@@ -23,24 +23,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 return;
             }
 
-            var grids = MyAPIGateway.GridGroups.GetGroup(aimedGrid, GridLinkTypeEnum.Physical);
+            bool allowed = Main.AnalyseShip.Analyse(aimedGrid);
 
-            foreach(var grid in grids)
+            if(!allowed)
             {
-                if(grid.BigOwners != null && grid.BigOwners.Count > 0)
-                {
-                    foreach(var owner in grid.BigOwners)
-                    {
-                        if(MyAPIGateway.Session.Player.GetRelationTo(owner) == MyRelationsBetweenPlayerAndBlock.Enemies)
-                        {
-                            Utils.ShowColoredChatMessage(MainAlias, "Can't be used on enemy ships.", MyFontEnum.Red);
-                            return;
-                        }
-                    }
-                }
+                Utils.ShowColoredChatMessage(MainAlias, "Can't be used on enemy ships.", MyFontEnum.Red);
             }
-
-            Main.AnalyseShip.Analyse(aimedGrid);
         }
 
         public override void PrintHelp(StringBuilder sb)
