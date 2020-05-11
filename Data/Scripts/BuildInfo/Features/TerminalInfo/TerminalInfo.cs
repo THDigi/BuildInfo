@@ -107,8 +107,8 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_ConveyorSorter), Format_ConveyorSorter);
 
             Add(typeof(MyObjectBuilder_ShipWelder), Format_ShipWelder);
-
             Add(typeof(MyObjectBuilder_ShipGrinder), Format_ShipGrinder);
+            Add(typeof(MyObjectBuilder_Drill), Format_ShipDrill);
 
             action = Format_Piston;
             Add(typeof(MyObjectBuilder_PistonBase), action); // this one is actually ancient and unused?
@@ -215,6 +215,9 @@ namespace Digi.BuildInfo.Features
             if(Main.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
             {
                 UpdateDetailInfo();
+
+                // TODO: refresh while cursor is bottom right corner (in a box) of screen?
+                // + add textAPI button there or something.
 
                 // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
                 // HACK: force refresh terminal UI by changing ownership share mode; does not work for unownable blocks
@@ -1254,17 +1257,29 @@ namespace Digi.BuildInfo.Features
 
         void Format_ShipWelder(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
+            // Vanilla info in 1.194.211:
             //      (nothing)
 
+            info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
 
         void Format_ShipGrinder(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
+            // Vanilla info in 1.194.211:
             //      (nothing)
 
+            info.DetailInfo_InputPower(Sink);
+            info.DetailInfo_Inventory(Inv);
+        }
+
+        void Format_ShipDrill(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.194.211:
+            //      Type: <BlockDefName>
+            //      Max Required Input: <Power>
+
+            info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
 
