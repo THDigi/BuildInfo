@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         public ShipToolInventoryBar ShipToolInventoryBar;
         public ToolbarActionLabels ToolbarActionLabels;
         public WhatsNew WhatsNew;
+        public ItemTooltips ItemTooltips;
         public DebugEvents DebugEvents;
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
@@ -94,6 +95,7 @@ namespace Digi.BuildInfo
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             ToolbarActionLabels = new ToolbarActionLabels(this);
             WhatsNew = new WhatsNew(this);
+            ItemTooltips = new ItemTooltips(this);
             DebugEvents = new DebugEvents(this);
         }
     }

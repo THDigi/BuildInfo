@@ -22,6 +22,15 @@ namespace Digi.BuildInfo.VanillaData
         public const float Conveyors_PowerReqPerLine = 0.0000001f; // NOTE: this value is also manually written in CommandHelp, update there too.
         public const string Conveyors_PowerGroup = "Conveyors";
 
+        // from MyGridConveyorSystem.NeedsLargeTube()
+        public static bool Conveyors_ItemNeedsLargeTube(MyPhysicalItemDefinition physicalItemDefinition)
+        {
+            if(physicalItemDefinition.Id.TypeId == typeof(MyObjectBuilder_PhysicalGunObject))
+                return false;
+
+            return physicalItemDefinition.Size.AbsMax() > 0.25f;
+        }
+
         // from MyShipConnector
         public const string ShipConnector_PowerGroup = "Conveyors";
         public static float ShipConnector_PowerReq(MyCubeBlockDefinition def)
