@@ -17,9 +17,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             if(id > 0)
             {
-                var link = $"https://steamcommunity.com/sharedfiles/filedetails/changelog/{id.ToString()}";
+                var link = "https://steamcommunity.com/sharedfiles/filedetails/changelog/" + id.ToString();
 
-                MyVisualScriptLogicProvider.OpenSteamOverlay(link, 0);
+                MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 
                 Utils.ShowColoredChatMessage(MainAlias, $"Opened steam overlay with {link}", MyFontEnum.Green);
             }

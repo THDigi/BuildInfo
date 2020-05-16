@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     {
                         var link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
 
-                        MyVisualScriptLogicProvider.OpenSteamOverlay(link, 0);
+                        MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 
                         Utils.ShowColoredChatMessage(MainAlias, $"Opened steam overlay with {link}", MyFontEnum.Green);
                     }
