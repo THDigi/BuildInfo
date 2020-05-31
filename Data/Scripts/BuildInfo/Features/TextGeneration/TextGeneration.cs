@@ -3091,6 +3091,46 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
+                bool isValidWeapon = false;
+
+                if(ammoProjectiles.Count > 0 || ammoMissiles.Count > 0)
+                {
+                    for(int i = 0; i < ammoProjectiles.Count; ++i)
+                    {
+                        var data = ammoProjectiles[i];
+                        var ammo = data.Item2;
+
+                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0))
+                        {
+                            isValidWeapon = true;
+                            break;
+                        }
+                    }
+
+                    for(int i = 0; i < ammoMissiles.Count; ++i)
+                    {
+                        var data = ammoMissiles[i];
+                        var ammo = data.Item2;
+
+                        if(ammo.MissileExplosionDamage != 0)
+                        {
+                            isValidWeapon = true;
+                            break;
+                        }
+                    }
+                }
+
+                if(!isValidWeapon)
+                {
+                    if(ammoProjectiles.Count == 0 && ammoMissiles.Count == 0)
+                        AddLine().Color(COLOR_WARNING).Append("Has no ammo! Might have custom behavior.");
+                    else
+                        AddLine().Color(COLOR_WARNING).Append("Ammo deals no vanilla damage! Might have custom behavior.");
+
+                    ammoProjectiles.Clear();
+                    ammoMissiles.Clear();
+                }
+
                 if(ammoProjectiles.Count > 0)
                 {
                     // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
@@ -3183,7 +3223,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings) && !MyAPIGateway.Session.SessionSettings.WeaponsEnabled)
             {
-                AddLine().Color(Color.Red).Append("Weapons are disabled in this world");
+                AddLine().Color(COLOR_BAD).Append("Weapons are disabled in this world");
             }
         }
 
