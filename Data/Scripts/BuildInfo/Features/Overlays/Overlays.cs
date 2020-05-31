@@ -288,7 +288,12 @@ namespace Digi.BuildInfo.Features.Overlays
                     }
                     else
                     {
-                        drawMatrix.Translation = box.Center;
+                        //drawMatrix.Translation = box.Center;
+
+                        // HACK potential fix for jittery overlays when aiming at a grid.
+                        Vector3D addPosition;
+                        MyCubeBuilder.Static.GetAddPosition(out addPosition);
+                        drawMatrix.Translation = addPosition;
                     }
                 }
                 else // using welder/grinder or lockedOnBlock.
