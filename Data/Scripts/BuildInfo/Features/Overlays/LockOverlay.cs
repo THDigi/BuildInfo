@@ -116,7 +116,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 Overlays.SetOverlayCallFor(LockedOnBlockDef.Id);
 
-                NotifyLockOverlay($"Locked overlay to {LockedOnBlockDef.DisplayNameText}, press [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
+                NotifyLockOverlay($"Locked overlay to {LockedOnBlockDef.DisplayNameText}. [{Config.LockOverlayBind.Value.GetBinds()}] to unlock/change to aimed.", 100);
             }
             else
             {
