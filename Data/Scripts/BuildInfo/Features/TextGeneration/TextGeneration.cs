@@ -3409,7 +3409,7 @@ namespace Digi.BuildInfo.Features
             AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
         }
 
-        private void Screens(MyCubeBlockDefinition def, List<ScreenArea> surfaces)
+        private void Screens<T>(MyCubeBlockDefinition def, List<T> surfaces)
         {
             if(surfaces == null || surfaces.Count == 0 || !Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;
