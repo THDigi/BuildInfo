@@ -36,6 +36,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup groupPlaceInfo = new ItemGroup();
         private readonly ItemGroup groupToolbarActionLabels = new ItemGroup();
 
+        private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
+
         private readonly StringBuilder tmp = new StringBuilder();
 
         private const int SLIDERS_FORCEDRAWTICKS = 60 * 10;
@@ -60,6 +62,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         protected override void UnregisterComponent()
         {
             TextAPI.Detected -= TextAPI_Detected;
+            Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
         }
 
         protected override void UpdateAfterSim(int tick)
@@ -119,8 +122,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             ItemAdd_ToolbarActionBlockNames(Category_HUD);
             SimpleToggle(Category_HUD, "Toolbar Action Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
 
-            new ItemColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
-            new ItemColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay, () => ApplySettings(redraw: false), () => ApplySettings(save: false, redraw: false));
+            SimpleColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld);
+            SimpleColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay);
 
             SimpleBind(Category_Binds, "Menu Bind", Features.Config.Config.MENU_BIND_INPUT_NAME, Config.MenuBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Features.Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Config.CycleOverlaysBind, groupBinds, groupBinds);
@@ -137,6 +140,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             groupTextInfo.SetInteractable(Config.TextShow.Value);
             groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
             groupToolbarActionLabels.SetInteractable(Config.ToolbarActionLabels.Value != (int)ToolbarActionLabelsMode.Off);
+
+            Config.Handler.SettingsLoaded += Handler_SettingsLoaded;
+        }
+
+        void Handler_SettingsLoaded()
+        {
+            groupAll.UpdateValues();
+            groupAll.UpdateTitles();
         }
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
@@ -151,6 +162,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling.Value : false);
                 },
                 defaultValue: Config.TextShow.DefaultValue);
+
+            groupAll.Add(item);
         }
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
@@ -178,6 +191,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 format: (v) => (v < 0 ? "HUD" : (v * 100).ToString() + "%"));
 
             groupTextInfo.Add(item);
+            groupAll.Add(item);
         }
 
         private void ItemAdd_CustomStyling(MenuCategoryBase category)
@@ -191,7 +205,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
                 defaultValue: Config.TextAPICustomStyling.DefaultValue);
+
             groupTextInfo.Add(item);
+            groupAll.Add(item);
         }
 
         private void ItemAdd_ScreenPosition(MenuCategoryBase category)
@@ -218,7 +234,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     Config.TextAPIScreenPosition.Value = origPos;
                     ApplySettings(save: false, redraw: false);
                 });
+
             groupCustomStyling.Add(item);
+            groupAll.Add(item);
         }
 
         private void ItemAdd_HorizontalAlign(MenuCategoryBase category)
@@ -239,6 +257,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             item.ColorOn = item.ColorOff = new Color(255, 255, 0);
 
             groupCustomStyling.Add(item);
+            groupAll.Add(item);
         }
 
         private void ItemAdd_VerticalAlign(MenuCategoryBase category)
@@ -259,6 +278,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             item.ColorOn = item.ColorOff = new Color(255, 255, 0);
 
             groupCustomStyling.Add(item);
+            groupAll.Add(item);
         }
 
         private void ItemAdd_PlaceInfoToggles(MenuCategoryBase category)
@@ -266,6 +286,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Config.PlaceInfo,
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
+
+            groupAll.Add(item);
         }
 
         private void ItemAdd_AimInfoToggles(MenuCategoryBase category)
@@ -273,6 +295,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Config.AimInfo,
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
+
+            groupAll.Add(item);
         }
 
         private void ItemAdd_OverlayLabelToggles(MenuCategoryBase category)
@@ -280,11 +304,13 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Config.OverlayLabels,
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
+
+            groupAll.Add(item);
         }
 
         private void ItemAdd_ToolbarActionLabels(MenuCategoryBase category)
         {
-            new ItemEnumCycle(category, "Toolbar Action Label Mode",
+            var item = new ItemEnumCycle(category, "Toolbar Action Label Mode",
                 getter: () => Config.ToolbarActionLabels.Value,
                 setter: (v) =>
                 {
@@ -294,6 +320,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 },
                 enumType: typeof(ToolbarActionLabelsMode),
                 defaultValue: Config.ToolbarActionLabels.DefaultValue);
+
+            groupAll.Add(item);
         }
 
         private void ItemAdd_ToolbarActionBlockNames(MenuCategoryBase category)
@@ -307,7 +335,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 },
                 enumType: typeof(ToolbarActionBlockNameMode),
                 defaultValue: Config.ToolbarActionBlockNames.DefaultValue);
+
             groupToolbarActionLabels.Add(item);
+            groupAll.Add(item);
         }
 
         #region Helper methods
@@ -321,6 +351,17 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             new MenuItem($"<color=0,55,0>{(label == null ? new string('=', 10) : $"=== {label} ===")}", category);
         }
 
+        private void SimpleColor(MenuCategoryBase category, string title, ColorSetting setting, bool useAlpha = false, ItemGroup group = null)
+        {
+            var item = new ItemColor(category, title, setting,
+                apply: () => ApplySettings(redraw: false),
+                preview: () => ApplySettings(save: false, redraw: false),
+                useAlpha: useAlpha);
+
+            group?.Add(item);
+            groupAll.Add(item);
+        }
+
         private void SimpleToggle(MenuCategoryBase category, string title, BoolSetting setting, ItemGroup group = null)
         {
             var item = new ItemToggle(category, title,
@@ -331,7 +372,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     ApplySettings(redraw: false);
                 },
                 defaultValue: setting.DefaultValue);
+
             group?.Add(item);
+            groupAll.Add(item);
         }
 
         private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting)
@@ -355,6 +398,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 });
 
             groupTextInfo.Add(item);
+            groupAll.Add(item);
         }
 
         private void SimpleBind(MenuCategoryBase category, string name, string inputName, InputCombinationSetting setting, ItemGroup addToGroup = null, ItemGroup updateGroupOnSet = null)
@@ -370,6 +414,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 defaultValue: setting.DefaultValue);
 
             addToGroup?.Add(item);
+            groupAll.Add(item);
         }
 
         private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, int drawTicks = 0)

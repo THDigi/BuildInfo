@@ -24,6 +24,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             }
         }
 
+        public void UpdateValues()
+        {
+            foreach(var e in Items)
+            {
+                e.UpdateValue();
+            }
+        }
+
         public void UpdateTitles()
         {
             foreach(var e in Items)

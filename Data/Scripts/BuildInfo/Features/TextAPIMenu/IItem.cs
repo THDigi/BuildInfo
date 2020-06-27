@@ -5,5 +5,7 @@
         bool Interactable { get; set; }
 
         void UpdateTitle();
+
+        void UpdateValue();
     }
 }

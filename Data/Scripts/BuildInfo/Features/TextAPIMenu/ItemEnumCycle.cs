@@ -39,6 +39,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             set { Item.Interactable = value; }
         }
 
+        public void UpdateValue()
+        {
+            // nothing to set
+        }
+
         public void UpdateTitle()
         {
             int val = Getter();

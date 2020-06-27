@@ -49,6 +49,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             set { Item.Interactable = value; }
         }
 
+        public void UpdateValue()
+        {
+            Item.Origin = Getter();
+        }
+
         public void UpdateTitle()
         {
             var title = (Item.Interactable ? Title : "<color=gray>" + Title);

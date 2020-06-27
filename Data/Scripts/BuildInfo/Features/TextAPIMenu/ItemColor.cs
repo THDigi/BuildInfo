@@ -34,6 +34,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             set { Item.Interactable = value; }
         }
 
+        public void UpdateValue()
+        {
+            Item.InitialColor = Setting.Value;
+        }
+
         public void UpdateTitle()
         {
             var valueColor = Utils.ColorTag(Setting.Value);

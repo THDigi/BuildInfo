@@ -4,7 +4,7 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemFlags<T> where T : struct
+    public class ItemFlags<T> : IItem where T : struct
     {
         public readonly ItemToggle Item = null;
         public readonly string ToggleTitle;
@@ -26,6 +26,20 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             CreateToggleAll(category);
             CreateFlagToggles(category);
+        }
+
+        public bool Interactable { get; set; } // HACK unused, might wanna add functionality
+
+        public void UpdateValue()
+        {
+            toggle.UpdateValues();
+            other.UpdateValues();
+        }
+
+        public void UpdateTitle()
+        {
+            toggle.UpdateTitles();
+            other.UpdateTitles();
         }
 
         private void CreateToggleAll(MenuCategoryBase category)

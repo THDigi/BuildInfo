@@ -26,6 +26,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             set { Item.Interactable = value; }
         }
 
+        public void UpdateValue()
+        {
+            // nothing to set
+        }
+
         public void UpdateTitle()
         {
             Item.Text = (Item.Interactable ? Utils.ColorTag(TitleColor, Title) : "<color=gray>" + Title);

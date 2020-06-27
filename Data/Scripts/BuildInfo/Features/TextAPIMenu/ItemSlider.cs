@@ -56,6 +56,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             set { Item.Interactable = value; }
         }
 
+        public void UpdateValue()
+        {
+            Item.InitialPercent = ValueToPercent(Min, Max, Getter());
+        }
+
         public void UpdateTitle()
         {
             var value = Getter();
