@@ -237,6 +237,12 @@ namespace Digi.Input
                 if(c1 == null || c2 == null)
                     return false;
 
+                if(c1.inputs == c2.inputs)
+                    return true;
+
+                if(c1.inputs == null || c2.inputs == null)
+                    return false;
+
                 if(c1.inputs.Count != c2.inputs.Count)
                     return false;
 
