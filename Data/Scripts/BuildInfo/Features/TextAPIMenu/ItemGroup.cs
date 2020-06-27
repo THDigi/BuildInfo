@@ -20,23 +20,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             foreach(var e in Items)
             {
                 e.Interactable = set;
-                e.UpdateTitle();
             }
         }
 
-        public void UpdateValues()
+        public void Update()
         {
             foreach(var e in Items)
             {
-                e.UpdateValue();
-            }
-        }
-
-        public void UpdateTitles()
-        {
-            foreach(var e in Items)
-            {
-                e.UpdateTitle();
+                e.Update();
             }
         }
     }

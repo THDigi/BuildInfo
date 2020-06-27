@@ -5,9 +5,8 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemSlider : IItem
+    public class ItemSlider : ItemBase<MenuSliderInput>
     {
-        public readonly MenuSliderInput Item = null;
         public Func<float> Getter;
         public Action<float> Setter;
         public Action<float> Sliding;
@@ -25,7 +24,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Action<float> setter = null,
             Action<float> sliding = null,
             Action<float> cancelled = null,
-            Func<float, string> format = null)
+            Func<float, string> format = null) : base(category)
         {
             Title = title;
             Min = min;
@@ -50,18 +49,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
-        {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
-        }
-
-        public void UpdateValue()
+        protected override void UpdateValue()
         {
             Item.InitialPercent = ValueToPercent(Min, Max, Getter());
         }
 
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             var value = Getter();
             var titleColor = (Item.Interactable ? "" : "<color=gray>");

@@ -4,6 +4,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
@@ -16,13 +17,15 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
     public class ModMenu : ModComponent
     {
         private MenuRootCategory Category_Mod;
-        private MenuCategoryBase Category_TextCustomize;
+        private MenuCategoryBase Category_Textbox;
         private MenuCategoryBase Category_PlaceInfo;
         private MenuCategoryBase Category_AimInfo;
         private MenuCategoryBase Category_Overlays;
         private MenuCategoryBase Category_HUD;
         private MenuCategoryBase Category_LeakInfo;
         private MenuCategoryBase Category_Binds;
+        private MenuCategoryBase Category_Misc;
+        private MenuCategoryBase Category_ConfirmReset;
 
         // groups of items to update on when other settings are changed
         private readonly ItemGroup groupTextInfo = new ItemGroup();
@@ -88,28 +91,27 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             });
 
-            Category_TextCustomize = AddCategory("TextBox Customization", Category_Mod);
+            Category_Textbox = AddCategory("Text box", Category_Mod);
             Category_Overlays = AddCategory("Overlays", Category_Mod);
             Category_HUD = AddCategory("HUD Additions", Category_Mod);
             Category_LeakInfo = AddCategory("Leak Info", Category_Mod);
-            Category_Binds = AddCategory("Binds and related", Category_Mod);
+            Category_Binds = AddCategory("Binds", Category_Mod);
+            Category_Misc = AddCategory("Misc", Category_Mod);
 
-            ItemAdd_TextShow(Category_TextCustomize);
-            SimpleToggle(Category_TextCustomize, "Show when HUD is off", Config.TextAlwaysVisible, groupTextInfo);
-            SimpleSlider(Category_TextCustomize, "Text Scale", Config.TextAPIScale);
-            ItemAdd_BackgroundOpacity(Category_TextCustomize);
-            ItemAdd_CustomStyling(Category_TextCustomize);
-            ItemAdd_ScreenPosition(Category_TextCustomize);
-            ItemAdd_HorizontalAlign(Category_TextCustomize);
-            ItemAdd_VerticalAlign(Category_TextCustomize);
+            ItemAdd_TextShow(Category_Textbox);
+            SimpleToggle(Category_Textbox, "Show when HUD is off", Config.TextAlwaysVisible, groupTextInfo);
+            SimpleSlider(Category_Textbox, "Text Scale", Config.TextAPIScale);
+            ItemAdd_BackgroundOpacity(Category_Textbox);
+            ItemAdd_CustomStyling(Category_Textbox);
+            ItemAdd_ScreenPosition(Category_Textbox);
+            ItemAdd_HorizontalAlign(Category_Textbox);
+            ItemAdd_VerticalAlign(Category_Textbox);
 
-            Category_PlaceInfo = AddCategory("Place Info", Category_TextCustomize);
+            Category_PlaceInfo = AddCategory("Place Info", Category_Textbox, group: groupTextInfo);
             ItemAdd_PlaceInfoToggles(Category_PlaceInfo);
 
-            Category_AimInfo = AddCategory("Aim Info", Category_TextCustomize);
+            Category_AimInfo = AddCategory("Aim Info", Category_Textbox, group: groupTextInfo);
             ItemAdd_AimInfoToggles(Category_AimInfo);
-
-            SimpleToggle(Category_TextCustomize, "Internal Info", Config.InternalInfo);
 
             SimpleToggle(Category_Overlays, "Show when HUD is off", Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
@@ -131,10 +133,24 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleBind(Category_Binds, "Toggle Transparency Bind", Features.Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Config.ToggleTransparencyBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Block Picker Bind", Features.Config.Config.BLOCK_PICKER_INPUT_NAME, Config.BlockPickerBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Lock Overlay Bind", Features.Config.Config.LOCK_OVERLAY_INPUT_NAME, Config.LockOverlayBind, groupBinds, groupBinds);
-            SimpleToggle(Category_Binds, "Placement Distance in Survival", Config.AdjustBuildDistanceSurvival);
-            SimpleToggle(Category_Binds, "Placement Distance in Ship Creative", Config.AdjustBuildDistanceShipCreative);
 
-            new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
+            SimpleToggle(Category_Misc, "Placement Distance in Survival", Config.AdjustBuildDistanceSurvival);
+            SimpleToggle(Category_Misc, "Placement Distance in Ship Creative", Config.AdjustBuildDistanceShipCreative);
+            SimpleToggle(Category_Misc, "Internal Info", Config.InternalInfo);
+            AddSpacer(Category_Misc);
+            Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Are you sure?");
+            new ItemButton(Category_ConfirmReset, "I am sure!", () =>
+            {
+                Config.Handler.ResetToDefaults();
+                Config.Handler.SaveToFile();
+                Config.Reload();
+                MyAPIGateway.Utilities.ShowNotification("Config reset to defaults and saved.", 3000, MyFontEnum.Red);
+            });
+            // FIXME: resetting to defaults (probably happens with delete config+reload too) doesn't update interactible properly, might need redesign...
+
+
+            var button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
+            button.Interactable = (Log.WorkshopId > 0);
 
             // gray out items that need to start like that
             groupTextInfo.SetInteractable(Config.TextShow.Value);
@@ -146,8 +162,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         void Handler_SettingsLoaded()
         {
-            groupAll.UpdateValues();
-            groupAll.UpdateTitles();
+            groupAll.Update();
         }
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
@@ -287,6 +302,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
 
+            groupTextInfo.Add(item);
             groupAll.Add(item);
         }
 
@@ -296,6 +312,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
 
+            groupTextInfo.Add(item);
             groupAll.Add(item);
         }
 
@@ -341,9 +358,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         }
 
         #region Helper methods
-        private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent)
+        private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent, string header = null, ItemGroup group = null)
         {
-            return new MenuSubCategory($"{name} <color=0,155,255> >>>", parent, name);
+            var item = new ItemSubMenu(parent, name, header);
+            group?.Add(item);
+            return item.Item;
         }
 
         private void AddSpacer(MenuCategoryBase category, string label = null)
@@ -409,7 +428,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     setting.Value = combination;
                     ApplySettings(redraw: false);
-                    updateGroupOnSet?.UpdateTitles();
+                    updateGroupOnSet?.Update();
                 },
                 defaultValue: setting.DefaultValue);
 

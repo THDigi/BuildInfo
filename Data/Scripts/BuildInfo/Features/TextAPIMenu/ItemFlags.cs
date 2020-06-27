@@ -4,19 +4,20 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemFlags<T> : IItem where T : struct
+    public class ItemFlags<T> : ItemBase<MenuItemBase> where T : struct
     {
-        public readonly ItemToggle Item = null;
         public readonly string ToggleTitle;
         public readonly FlagsSetting<T> Setting;
         public Action<int, bool> OnValueSet;
 
+        bool AllInteractible = true;
+
         private readonly int allValue;
 
-        private readonly ItemGroup toggle = new ItemGroup();
-        private readonly ItemGroup other = new ItemGroup();
+        private readonly ItemGroup topToggle = new ItemGroup();
+        private readonly ItemGroup individualToggles = new ItemGroup();
 
-        public ItemFlags(MenuCategoryBase category, string toggleTitle, FlagsSetting<T> setting, Action<int, bool> onValueSet = null)
+        public ItemFlags(MenuCategoryBase category, string toggleTitle, FlagsSetting<T> setting, Action<int, bool> onValueSet = null) : base(category)
         {
             ToggleTitle = toggleTitle;
             Setting = setting;
@@ -28,18 +29,28 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             CreateFlagToggles(category);
         }
 
-        public bool Interactable { get; set; } // HACK unused, might wanna add functionality
-
-        public void UpdateValue()
+        public override bool Interactable
         {
-            toggle.UpdateValues();
-            other.UpdateValues();
+            get { return AllInteractible; }
+            set
+            {
+                AllInteractible = value;
+                topToggle.SetInteractable(value);
+                individualToggles.SetInteractable(value);
+                // no update title here as the childs will update titles themselves
+            }
         }
 
-        public void UpdateTitle()
+        protected override void UpdateValue()
         {
-            toggle.UpdateTitles();
-            other.UpdateTitles();
+            topToggle.Update();
+            individualToggles.Update();
+        }
+
+        protected override void UpdateTitle()
+        {
+            topToggle.Update();
+            individualToggles.Update();
         }
 
         private void CreateToggleAll(MenuCategoryBase category)
@@ -50,11 +61,13 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     Setting.Value = (v ? allValue : 0);
                     OnValueSet?.Invoke(allValue, v);
-                    other.UpdateTitles();
+                    individualToggles.Update();
                 },
                 defaultValue: (Setting.DefaultValue & allValue) != 0);
 
-            toggle.Add(item);
+            Item = item.Item;
+
+            topToggle.Add(item);
         }
 
         private void CreateFlagToggles(MenuCategoryBase category)
@@ -77,11 +90,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     {
                         Setting.Set(value, v);
                         OnValueSet?.Invoke(value, v);
-                        toggle.UpdateTitles();
+                        topToggle.Update();
                     },
                     defaultValue: (Setting.DefaultValue & value) != 0);
 
-                other.Add(item);
+                individualToggles.Add(item);
             }
         }
     }

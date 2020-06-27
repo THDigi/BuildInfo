@@ -4,8 +4,9 @@
     {
         bool Interactable { get; set; }
 
-        void UpdateTitle();
-
-        void UpdateValue();
+        /// <summary>
+        /// Updates both value and title.
+        /// </summary>
+        void Update();
     }
 }

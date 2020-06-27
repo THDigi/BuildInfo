@@ -5,14 +5,13 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemButton : IItem
+    public class ItemButton : ItemBase<MenuItem>
     {
-        public readonly MenuItem Item = null;
         public Action Action;
         public string Title;
         public Color TitleColor = new Color(255, 255, 255);
 
-        public ItemButton(MenuCategoryBase category, string title, Action action)
+        public ItemButton(MenuCategoryBase category, string title, Action action) : base(category)
         {
             Title = title;
             Action = action;
@@ -20,18 +19,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
+        protected override void UpdateValue()
         {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
+            // nothing to update
         }
 
-        public void UpdateValue()
-        {
-            // nothing to set
-        }
-
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             Item.Text = (Item.Interactable ? Utils.ColorTag(TitleColor, Title) : "<color=gray>" + Title);
         }

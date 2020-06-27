@@ -4,9 +4,8 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemBoxMove : IItem
+    public class ItemBoxMove : ItemBase<MenuScreenInput>
     {
-        public readonly MenuScreenInput Item = null;
         public Func<Vector2D> Getter;
         public Action<Vector2D> Setter;
         public Action<Vector2D> Selected;
@@ -24,7 +23,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Action<Vector2D> setter = null,
             Action<Vector2D> selected = null,
             Action<Vector2D> moving = null,
-            Action<Vector2D> cancelled = null)
+            Action<Vector2D> cancelled = null) : base(category)
         {
             Title = title;
             Min = min;
@@ -43,18 +42,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
-        {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
-        }
-
-        public void UpdateValue()
+        protected override void UpdateValue()
         {
             Item.Origin = Getter();
         }
 
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             var title = (Item.Interactable ? Title : "<color=gray>" + Title);
             var valueColor = (Item.Interactable ? "<color=yellow>" : "");

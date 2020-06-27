@@ -5,9 +5,8 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemEnumCycle : IItem
+    public class ItemEnumCycle : ItemBase<MenuItem>
     {
-        public readonly MenuItem Item = null;
         public Func<int> Getter;
         public Action<int> Setter;
         public string Title;
@@ -19,7 +18,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly int[] values;
         private readonly int defaultValue;
 
-        public ItemEnumCycle(MenuCategoryBase category, string title, Func<int> getter, Action<int> setter, Type enumType, int defaultValue)
+        public ItemEnumCycle(MenuCategoryBase category, string title, Func<int> getter, Action<int> setter, Type enumType, int defaultValue) : base(category)
         {
             Title = title;
             Getter = getter;
@@ -33,18 +32,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
+        protected override void UpdateValue()
         {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
+            // nothing to update
         }
 
-        public void UpdateValue()
-        {
-            // nothing to set
-        }
-
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             int val = Getter();
             var titleColor = (Item.Interactable ? "" : "<color=gray>");

@@ -5,9 +5,8 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemToggle : IItem
+    public class ItemToggle : ItemBase<MenuItem>
     {
-        public readonly MenuItem Item = null;
         public Func<bool> Getter;
         public Action<bool> Setter;
         public string Title;
@@ -17,7 +16,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public Color ColorOn = new Color(50, 255, 75);
         public Color ColorOff = new Color(255, 155, 0);
 
-        public ItemToggle(MenuCategoryBase category, string title, Func<bool> getter, Action<bool> setter, bool defaultValue = true, string onText = "On", string offText = "Off")
+        public ItemToggle(MenuCategoryBase category, string title, Func<bool> getter, Action<bool> setter, bool defaultValue = true, string onText = "On", string offText = "Off") : base(category)
         {
             Title = title;
             OnText = onText;
@@ -29,18 +28,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
+        protected override void UpdateValue()
         {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
+            // nothing to update
         }
 
-        public void UpdateValue()
-        {
-            // nothing to set
-        }
-
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             var isOn = Getter();
             var titleColor = (Item.Interactable ? "" : "<color=gray>");

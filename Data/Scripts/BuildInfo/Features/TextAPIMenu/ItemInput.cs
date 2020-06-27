@@ -10,9 +10,8 @@ using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.TextAPIMenu
 {
-    public class ItemInput : IItem
+    public class ItemInput : ItemBase<MenuKeybindInput>
     {
-        public readonly MenuKeybindInput Item = null;
         public Func<Combination> Getter;
         public Action<Combination> Setter;
         public string Title;
@@ -20,7 +19,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         public Color ValueColor = new Color(0, 255, 100);
         public Combination DefaultValue;
 
-        public ItemInput(MenuCategoryBase category, string title, string inputName, Func<Combination> getter, Action<Combination> setter, Combination defaultValue)
+        public ItemInput(MenuCategoryBase category, string title, string inputName, Func<Combination> getter, Action<Combination> setter, Combination defaultValue) : base(category)
         {
             Title = title;
             InputName = inputName;
@@ -33,18 +32,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             UpdateTitle();
         }
 
-        public bool Interactable
+        protected override void UpdateValue()
         {
-            get { return Item.Interactable; }
-            set { Item.Interactable = value; }
+            // nothing to update
         }
 
-        public void UpdateValue()
-        {
-            // nothing to set
-        }
-
-        public void UpdateTitle()
+        protected override void UpdateTitle()
         {
             var value = Getter();
             var titleColored = (Item.Interactable ? Title : "<color=gray>" + Title);
