@@ -1,10 +1,12 @@
 ﻿using System;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
@@ -22,7 +24,16 @@ namespace Digi.BuildInfo.Features
         private const float VANILLA_CREATIVE_MAXDIST = 100f;
         private const float VANILLA_SURVIVAL_CREATIVETOOLS_MAXDIST = 12.5f;
 
-        private float VanillaSurvivalDistance => (InShip ? 12.5f : (EquipmentMonitor.BlockDef.CubeSize == MyCubeSize.Large ? 10 : 5));
+        private float VanillaSurvivalDistance()
+        {
+            // HACK hardcoded: from Data/Game/SessionComponents.sbc
+
+            var def = EquipmentMonitor.BlockDef;
+            if(def == null || InShip)
+                return 12.5f;
+
+            return (def.CubeSize == MyCubeSize.Large ? 10f : 5f);
+        }
 
         private bool InShip => MyAPIGateway.Session.ControlledObject is IMyShipController;
         private bool SurvivalCreativeTools => MyAPIGateway.Session.SurvivalMode && MyAPIGateway.Session.EnableCopyPaste;
@@ -35,21 +46,26 @@ namespace Digi.BuildInfo.Features
         protected override void RegisterComponent()
         {
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         protected override void UnregisterComponent()
         {
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
+        }
 
+        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        {
             // reset survival distance if this feature is disabled
-            if(EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !CreativeGameMode && !SurvivalCreativeTools)
+            if(def != null && EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !CreativeGameMode && !SurvivalCreativeTools)
             {
-                MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance;
+                MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance();
             }
         }
 
@@ -91,7 +107,7 @@ namespace Digi.BuildInfo.Features
                 if(blockSizeMeters > tooLarge)
                     add = Math.Max(add - (blockSizeMeters - tooLarge), 0);
 
-                maxRange = MathHelper.Clamp(blockSizeMeters + add, VanillaSurvivalDistance, PLACE_MAXRANGE);
+                maxRange = MathHelper.Clamp(blockSizeMeters + add, VanillaSurvivalDistance(), PLACE_MAXRANGE);
             }
 
             int move = GetDistanceAdjustInputValue();
