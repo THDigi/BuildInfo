@@ -6,6 +6,8 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 
+// DEBUG TODO Customdata for labelling in order?
+
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
     /// <summary>
@@ -81,7 +83,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 if(block == null || block.MarkedForClose || sb == null)
                     return;
 
-                bool wroteCustomStatus = false;
+                bool overrideCustomStatus = false;
 
                 if(mode != ToolbarActionLabelsMode.Off)
                 {
@@ -102,10 +104,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     sb.Append('\n');
                     sb.Append('\n');
 
-                    wroteCustomStatus = AppendCustomStatus(block, sb);
+                    overrideCustomStatus = AppendCustomStatus(block, sb);
                 }
 
-                if(!wroteCustomStatus)
+                if(!overrideCustomStatus)
                 {
                     AppendOriginalStatus(block, sb);
                 }
@@ -152,14 +154,17 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             var tempSB = BuildInfoMod.Instance.Caches.SB;
             tempSB.Clear();
-            bool wroteCustomStatus = customStatusFunc.Invoke(this, block, tempSB);
+            bool overrideStatus = customStatusFunc.Invoke(this, block, tempSB);
 
             if(tempSB.Length > 0)
             {
                 // remove trailing newlines
-                while(tempSB.Length > 0 && tempSB[tempSB.Length - 1] == '\n')
+                if(overrideStatus)
                 {
-                    tempSB.Length -= 1;
+                    while(tempSB.Length > 0 && tempSB[tempSB.Length - 1] == '\n')
+                    {
+                        tempSB.Length -= 1;
+                    }
                 }
 
                 // remove newlines from `sb` for every newline added by status' `tempSB`
@@ -173,7 +178,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 tempSB.Clear();
             }
 
-            return wroteCustomStatus;
+            return overrideStatus;
         }
 
         void AppendLabel(IMyTerminalBlock block, StringBuilder sb)

@@ -203,43 +203,43 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Run":
                 case "RunWithDefaultArgument":
+                {
+                    var pb = (IMyProgrammableBlock)block;
+
+                    if(!string.IsNullOrEmpty(pb.DetailedInfo))
                     {
-                        var pb = (IMyProgrammableBlock)block;
-
-                        if(!string.IsNullOrEmpty(pb.DetailedInfo))
+                        if(pb.DetailedInfo.StartsWith("Assembly not found"))
                         {
-                            if(pb.DetailedInfo.StartsWith("Assembly not found"))
-                            {
-                                sb.Append("ERROR:\nCompile");
-                            }
-                            else if(pb.DetailedInfo.Contains("Caught exception"))
-                            {
-                                sb.Append("ERROR:\nException");
-                            }
-                            else
-                            {
-                                // append this max amount of lines from PB detailedinfo/echo
-                                const int MAX_LINES = 2;
-                                int allowedLines = MAX_LINES;
-
-                                for(int i = 0; i < pb.DetailedInfo.Length; ++i)
-                                {
-                                    var chr = pb.DetailedInfo[i];
-
-                                    if(chr == '\n' && --allowedLines == 0)
-                                        break;
-
-                                    sb.Append(chr);
-                                }
-                            }
+                            sb.Append("ERROR:\nCompile");
+                        }
+                        else if(pb.DetailedInfo.Contains("Caught exception"))
+                        {
+                            sb.Append("ERROR:\nException");
                         }
                         else
                         {
-                            // TODO: print if it's running?
-                        }
+                            // append this max amount of lines from PB detailedinfo/echo
+                            const int MAX_LINES = 2;
+                            int allowedLines = MAX_LINES;
 
-                        return true;
+                            for(int i = 0; i < pb.DetailedInfo.Length; ++i)
+                            {
+                                var chr = pb.DetailedInfo[i];
+
+                                if(chr == '\n' && --allowedLines == 0)
+                                    break;
+
+                                sb.Append(chr);
+                            }
+                        }
                     }
+                    else
+                    {
+                        // TODO: print if it's running?
+                    }
+
+                    return true;
+                }
             }
 
             return false;
@@ -252,71 +252,71 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Start":
                 case "Stop":
                 case "TriggerNow":
+                {
+                    int startIndex = Math.Max(0, sb.Length);
+                    var timer = (IMyTimerBlock)block;
+                    bool working = timer.IsWorking;
+
+                    if(working && timer.IsCountingDown)
                     {
-                        int startIndex = Math.Max(0, sb.Length);
-                        var timer = (IMyTimerBlock)block;
-                        bool working = timer.IsWorking;
-
-                        if(working && timer.IsCountingDown)
+                        string cachedText;
+                        if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
                         {
-                            string cachedText;
-                            if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
+                            bool blink = DateTime.UtcNow.Millisecond >= 500;
+                            sb.Append(blink ? "ˇ " : "  ");
+                            sb.Append(cachedText);
+                            if(blink)
+                                sb.Append(" ˇ");
+                            return true;
+                        }
+
+                        // HACK must parse detailedInfo because there's no getter of the current time.
+                        string detailedInfo = timer.DetailedInfo;
+
+                        if(!string.IsNullOrEmpty(detailedInfo))
+                        {
+                            // expected format "<Whatever language>: 00:00:00" in first line
+
+                            int endLineIndex = detailedInfo.IndexOf('\n');
+
+                            if(endLineIndex == -1)
+                                endLineIndex = detailedInfo.Length;
+
+                            int separatorIndex = detailedInfo.IndexOf(':', 0, endLineIndex);
+
+                            if(separatorIndex != -1)
                             {
-                                bool blink = DateTime.UtcNow.Millisecond >= 500;
-                                sb.Append(blink ? "ˇ " : "  ");
-                                sb.Append(cachedText);
-                                if(blink)
-                                    sb.Append(" ˇ");
-                                return true;
-                            }
+                                separatorIndex += 2; // move past ": "
+                                separatorIndex += 3; // move past "00:"
 
-                            // HACK must parse detailedInfo because there's no getter of the current time.
-                            string detailedInfo = timer.DetailedInfo;
-
-                            if(!string.IsNullOrEmpty(detailedInfo))
-                            {
-                                // expected format "<Whatever language>: 00:00:00" in first line
-
-                                int endLineIndex = detailedInfo.IndexOf('\n');
-
-                                if(endLineIndex == -1)
-                                    endLineIndex = detailedInfo.Length;
-
-                                int separatorIndex = detailedInfo.IndexOf(':', 0, endLineIndex);
-
-                                if(separatorIndex != -1)
+                                if(separatorIndex < detailedInfo.Length)
                                 {
-                                    separatorIndex += 2; // move past ": "
-                                    separatorIndex += 3; // move past "00:"
+                                    var time = detailedInfo.Substring(separatorIndex, endLineIndex - separatorIndex);
+                                    cachedStatusText.Add(block.EntityId, time);
 
-                                    if(separatorIndex < detailedInfo.Length)
-                                    {
-                                        var time = detailedInfo.Substring(separatorIndex, endLineIndex - separatorIndex);
-                                        cachedStatusText.Add(block.EntityId, time);
+                                    // keep blinking separate so it can blink faster
+                                    bool blink = DateTime.UtcNow.Millisecond >= 500;
+                                    sb.Append(blink ? "ˇ " : "  ");
+                                    sb.Append(time);
+                                    if(blink)
+                                        sb.Append(" ˇ");
 
-                                        // keep blinking separate so it can blink faster
-                                        bool blink = DateTime.UtcNow.Millisecond >= 500;
-                                        sb.Append(blink ? "ˇ " : "  ");
-                                        sb.Append(time);
-                                        if(blink)
-                                            sb.Append(" ˇ");
-
-                                        return true;
-                                    }
+                                    return true;
                                 }
                             }
-
-                            sb.Append("Running");
-                            cachedStatusText.Add(block.EntityId, "Running");
-                        }
-                        else
-                        {
-                            cachedStatusText.Remove(block.EntityId);
-                            sb.Append(working ? "Stopped" : "Off");
                         }
 
-                        return true;
+                        sb.Append("Running");
+                        cachedStatusText.Add(block.EntityId, "Running");
                     }
+                    else
+                    {
+                        cachedStatusText.Remove(block.EntityId);
+                        sb.Append(working ? "Stopped" : "Off");
+                    }
+
+                    return true;
+                }
             }
 
             return false;
@@ -327,57 +327,57 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             switch(actionLabel.Action.Id)
             {
                 case "Refill":
+                {
+                    string cachedText;
+                    if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
                     {
-                        string cachedText;
-                        if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
-                        {
-                            sb.Append(cachedText);
-                            return true;
-                        }
-
-                        int startIndex = Math.Max(0, sb.Length);
-                        var generator = (IMyGasGenerator)block;
-                        bool canFill = false;
-
-                        if(generator.IsWorking)
-                        {
-                            var generatorDef = (MyOxygenGeneratorDefinition)generator.SlimBlock.BlockDefinition;
-                            canFill = !(!MyAPIGateway.Session.SessionSettings.EnableOxygen && generatorDef.ProducedGases.TrueForAll((p) => p.Id == MyResourceDistributorComponent.OxygenId));
-                        }
-
-                        int itemsToFill = 0;
-                        bool hasIce = false;
-
-                        if(canFill)
-                        {
-                            var inv = block.GetInventory(0) as MyInventory;
-
-                            if(inv != null)
-                            {
-                                foreach(var item in inv.GetItems())
-                                {
-                                    var containerOB = item.Content as MyObjectBuilder_GasContainerObject;
-
-                                    if(containerOB == null)
-                                        hasIce = true;
-                                    else if(containerOB.GasLevel < 1f)
-                                        itemsToFill++;
-                                }
-                            }
-                        }
-
-                        if(hasIce && itemsToFill > 0)
-                        {
-                            sb.Append("Refill:").Append('\n').Append(itemsToFill);
-                        }
-                        else
-                        {
-                            sb.Append(hasIce ? "No Bottles" : "No Ice");
-                        }
-
-                        cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                        sb.Append(cachedText);
                         return true;
                     }
+
+                    int startIndex = Math.Max(0, sb.Length);
+                    var generator = (IMyGasGenerator)block;
+                    bool canFill = false;
+
+                    if(generator.IsWorking)
+                    {
+                        var generatorDef = (MyOxygenGeneratorDefinition)generator.SlimBlock.BlockDefinition;
+                        canFill = !(!MyAPIGateway.Session.SessionSettings.EnableOxygen && generatorDef.ProducedGases.TrueForAll((p) => p.Id == MyResourceDistributorComponent.OxygenId));
+                    }
+
+                    int itemsToFill = 0;
+                    bool hasIce = false;
+
+                    if(canFill)
+                    {
+                        var inv = block.GetInventory(0) as MyInventory;
+
+                        if(inv != null)
+                        {
+                            foreach(var item in inv.GetItems())
+                            {
+                                var containerOB = item.Content as MyObjectBuilder_GasContainerObject;
+
+                                if(containerOB == null)
+                                    hasIce = true;
+                                else if(containerOB.GasLevel < 1f)
+                                    itemsToFill++;
+                            }
+                        }
+                    }
+
+                    if(hasIce && itemsToFill > 0)
+                    {
+                        sb.Append("Refill:").Append('\n').Append(itemsToFill);
+                    }
+                    else
+                    {
+                        sb.Append(hasIce ? "No Bottles" : "No Ice");
+                    }
+
+                    cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
             }
 
             return false;
@@ -388,56 +388,56 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             switch(actionLabel.Action.Id)
             {
                 case "Refill":
+                {
+                    string cachedText;
+                    if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
                     {
-                        string cachedText;
-                        if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
-                        {
-                            sb.Append(cachedText);
-                            return true;
-                        }
-
-                        var tank = (IMyGasTank)block;
-
-                        bool canFill = false;
-
-                        if(tank.IsWorking)
-                        {
-                            var tankDef = (MyGasTankDefinition)tank.SlimBlock.BlockDefinition;
-                            canFill = !(!MyAPIGateway.Session.SessionSettings.EnableOxygen && tankDef.StoredGasId == MyResourceDistributorComponent.OxygenId);
-                        }
-
-                        int itemsToFill = 0;
-
-                        if(canFill)
-                        {
-                            var inv = block.GetInventory(0) as MyInventory;
-
-                            if(inv != null)
-                            {
-                                foreach(var item in inv.GetItems())
-                                {
-                                    var containerOB = item.Content as MyObjectBuilder_GasContainerObject;
-
-                                    if(containerOB != null && containerOB.GasLevel < 1f)
-                                        itemsToFill++;
-                                }
-                            }
-                        }
-
-                        int startIndex = Math.Max(0, sb.Length);
-
-                        if(itemsToFill > 0)
-                        {
-                            sb.Append("Refill:").Append('\n').Append(itemsToFill);
-                        }
-                        else
-                        {
-                            sb.Append(tank.FilledRatio > 0 ? "No Bottles" : "No Gas");
-                        }
-
-                        cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                        sb.Append(cachedText);
                         return true;
                     }
+
+                    var tank = (IMyGasTank)block;
+
+                    bool canFill = false;
+
+                    if(tank.IsWorking)
+                    {
+                        var tankDef = (MyGasTankDefinition)tank.SlimBlock.BlockDefinition;
+                        canFill = !(!MyAPIGateway.Session.SessionSettings.EnableOxygen && tankDef.StoredGasId == MyResourceDistributorComponent.OxygenId);
+                    }
+
+                    int itemsToFill = 0;
+
+                    if(canFill)
+                    {
+                        var inv = block.GetInventory(0) as MyInventory;
+
+                        if(inv != null)
+                        {
+                            foreach(var item in inv.GetItems())
+                            {
+                                var containerOB = item.Content as MyObjectBuilder_GasContainerObject;
+
+                                if(containerOB != null && containerOB.GasLevel < 1f)
+                                    itemsToFill++;
+                            }
+                        }
+                    }
+
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    if(itemsToFill > 0)
+                    {
+                        sb.Append("Refill:").Append('\n').Append(itemsToFill);
+                    }
+                    else
+                    {
+                        sb.Append(tank.FilledRatio > 0 ? "No Bottles" : "No Gas");
+                    }
+
+                    cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
             }
 
             return false;
@@ -451,11 +451,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Shoot":
                 case "Shoot_On":
                 case "Shoot_Off":
-                    {
-                        var gun = (IMyGunObject<MyGunBase>)block;
-                        sb.Append(gun.GunBase.GetTotalAmmunitionAmount().ToString());
-                        return true;
-                    }
+                {
+                    var gun = (IMyGunObject<MyGunBase>)block;
+                    sb.Append(gun.GunBase.GetTotalAmmunitionAmount().ToString());
+                    return true;
+                }
             }
 
             return false;
@@ -469,37 +469,37 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "DecreaseDetonationTime": // ^
                 case "StartCountdown":
                 case "StopCountdown":
-                    {
-                        var warhead = (IMyWarhead)block;
+                {
+                    var warhead = (IMyWarhead)block;
 
-                        var span = TimeSpan.FromSeconds(warhead.DetonationTime);
-                        int minutes = span.Minutes;
+                    var span = TimeSpan.FromSeconds(warhead.DetonationTime);
+                    int minutes = span.Minutes;
 
-                        if(span.Hours > 0)
-                            minutes += span.Hours * 60;
+                    if(span.Hours > 0)
+                        minutes += span.Hours * 60;
 
-                        bool blink = (warhead.IsCountingDown && DateTime.UtcNow.Millisecond >= 500);
-                        sb.Append(blink ? "ˇ " : "  ");
+                    bool blink = (warhead.IsCountingDown && DateTime.UtcNow.Millisecond >= 500);
+                    sb.Append(blink ? "ˇ " : "  ");
 
-                        sb.Append(minutes.ToString("00")).Append(':').Append(span.Seconds.ToString("00"));
+                    sb.Append(minutes.ToString("00")).Append(':').Append(span.Seconds.ToString("00"));
 
-                        if(blink)
-                            sb.Append(" ˇ");
+                    if(blink)
+                        sb.Append(" ˇ");
 
-                        return true;
-                    }
+                    return true;
+                }
                 case "Safety":
-                    {
-                        var warhead = (IMyWarhead)block;
-                        sb.Append(warhead.IsArmed ? "Armed" : "Safe");
-                        return true;
-                    }
+                {
+                    var warhead = (IMyWarhead)block;
+                    sb.Append(warhead.IsArmed ? "Armed" : "Safe");
+                    return true;
+                }
                 case "Detonate":
-                    {
-                        var warhead = (IMyWarhead)block;
-                        sb.Append(warhead.IsArmed ? "Ready!" : "Safe");
-                        return true;
-                    }
+                {
+                    var warhead = (IMyWarhead)block;
+                    sb.Append(warhead.IsArmed ? "Ready!" : "Safe");
+                    return true;
+                }
             }
 
             return false;
@@ -510,21 +510,21 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             switch(actionLabel.Action.Id)
             {
                 case "Reverse":
-                    {
-                        var stator = (IMyMotorStator)block;
-                        sb.Append(stator.TargetVelocityRPM.ToString("0.##"));
-                        return true;
-                    }
+                {
+                    var stator = (IMyMotorStator)block;
+                    sb.Append(stator.TargetVelocityRPM.ToString("0.##"));
+                    return true;
+                }
 
                 case "Attach":
                 case "Detach":
                 case "Add Top Part":
                 case "Add Small Top Part":
-                    {
-                        var stator = (IMyMotorStator)block;
-                        sb.Append(stator.IsAttached ? "Atached" : "Detached");
-                        return true;
-                    }
+                {
+                    var stator = (IMyMotorStator)block;
+                    sb.Append(stator.IsAttached ? "Atached" : "Detached");
+                    return true;
+                }
             }
 
             return false;
@@ -535,11 +535,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             switch(actionLabel.Action.Id)
             {
                 case "Add Top Part":
-                    {
-                        var susp = (IMyMotorSuspension)block;
-                        sb.Append(susp.IsAttached ? "Atached" : "Detached");
-                        return true;
-                    }
+                {
+                    var susp = (IMyMotorSuspension)block;
+                    sb.Append(susp.IsAttached ? "Atached" : "Detached");
+                    return true;
+                }
             }
 
             return false;
@@ -552,20 +552,20 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Extend":
                 case "Retract":
                 case "Reverse":
-                    {
-                        var piston = (IMyPistonBase)block;
-                        sb.Append(piston.Velocity.ToString("0.##"));
-                        return true;
-                    }
+                {
+                    var piston = (IMyPistonBase)block;
+                    sb.Append(piston.Velocity.ToString("0.##"));
+                    return true;
+                }
 
                 case "Attach":
                 case "Detach":
                 case "Add Top Part":
-                    {
-                        var piston = (IMyPistonBase)block;
-                        sb.Append(piston.IsAttached ? "Atached" : "Detached");
-                        return true;
-                    }
+                {
+                    var piston = (IMyPistonBase)block;
+                    sb.Append(piston.IsAttached ? "Atached" : "Detached");
+                    return true;
+                }
             }
 
             return false;
@@ -578,18 +578,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Lock":
                 case "Unlock":
                 case "SwitchLock": // SwitchLock already has status but text is too long and clips
+                {
+                    var connector = (IMyShipConnector)block;
+
+                    switch(connector.Status)
                     {
-                        var connector = (IMyShipConnector)block;
-
-                        switch(connector.Status)
-                        {
-                            case MyShipConnectorStatus.Connected: sb.Append("Locked"); break;
-                            case MyShipConnectorStatus.Connectable: sb.Append("Ready"); break;
-                            case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); break;
-                        }
-
-                        return true;
+                        case MyShipConnectorStatus.Connected: sb.Append("Locked"); break;
+                        case MyShipConnectorStatus.Connectable: sb.Append("Ready"); break;
+                        case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); break;
                     }
+
+                    return true;
+                }
             }
 
             return false;
