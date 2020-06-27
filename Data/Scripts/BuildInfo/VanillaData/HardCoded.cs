@@ -196,9 +196,6 @@ namespace Digi.BuildInfo.VanillaData
         // from MySmallMissileLauncher & MySmallGatlingGun
         public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN;
 
-        // from MyMissile.UpdateBeforeSimulation()
-        public const float Missile_DesiredSpeedMultiplier = 0.7f;
-
         // from Sandbox.Game.Weapons.MyProjectile.Start()
         public const float Projectile_RangeMultiplier_Min = 0.8f;
         public const float Projectile_RangeMultiplier_Max = 1f;

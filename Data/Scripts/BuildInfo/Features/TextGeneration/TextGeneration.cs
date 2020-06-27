@@ -3210,7 +3210,7 @@ namespace Digi.BuildInfo.Features
                         if(!ammo.MissileSkipAcceleration)
                             GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").AccelerationFormat(ammo.MissileAcceleration);
                         else
-                            GetLine().SpeedFormat(ammo.DesiredSpeed * Hardcoded.Missile_DesiredSpeedMultiplier);
+                            GetLine().SpeedFormat(ammo.DesiredSpeed);
 
                         GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
                             .ResetColor().Append(")");
