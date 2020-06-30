@@ -256,7 +256,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_HorizontalAlign(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Horizontal Alignment",
+            var item = new ItemToggle(category, "Horizontal Anchor",
                 getter: () => Config.TextAPIAlign.IsSet(TextAlignFlags.Right),
                 setter: (v) =>
                 {
@@ -277,7 +277,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_VerticalAlign(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Vertical Alignment",
+            var item = new ItemToggle(category, "Vertical Anchor",
                 getter: () => Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom),
                 setter: (v) =>
                 {

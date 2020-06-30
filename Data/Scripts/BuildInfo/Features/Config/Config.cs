@@ -231,9 +231,10 @@ namespace Digi.BuildInfo.Features.Config
                     $"NOTE: Requires {TextAPICustomStyling.Name} = true"
                 });
 
-            TextAPIAlign = new TextAlignSetting(Handler, "TextAPI: Alignment", TextAlignFlags.Bottom | TextAlignFlags.Right,
+            TextAPIAlign = new TextAlignSetting(Handler, "TextAPI: Anchor", TextAlignFlags.Bottom | TextAlignFlags.Right,
                 "Determine the pivot point of the text info box. Stretches in opposite direction of that.",
                 $"NOTE: Requires {TextAPICustomStyling.Name} = true");
+            TextAPIAlign.AddCompatibilityName("TextAPI: Alignment");
 
             OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Always Visible", false,
                 "Setting to true causes the block overlays to be visible regardless of HUD state");
