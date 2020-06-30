@@ -14,7 +14,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.55 by Digi</para>
+    /// <para>Version 1.56 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -22,6 +22,7 @@ namespace Digi
         private static Log instance;
         private static Handler handler;
         private static bool unloaded = false;
+        private static long dateStarted;
 
         public const string FILE = "info.log";
         private const int DEFAULT_TIME_INFO = 3000;
@@ -78,10 +79,13 @@ namespace Digi
         private static void EnsureHandlerCreated()
         {
             if(unloaded)
-                throw new Exception("Digi.Log accessed after it was unloaded!");
+                throw new Exception($"{typeof(Log).FullName} accessed after it was unloaded! Date started: {new DateTime(dateStarted).ToString()}");
 
             if(handler == null)
+            {
                 handler = new Handler();
+                dateStarted = DateTime.Now.Ticks;
+            }
         }
         #endregion Handling of handler
 
@@ -328,12 +332,13 @@ namespace Digi
 
             private void InitMessage()
             {
+                var worldsettings = MyAPIGateway.Session.SessionSettings;
+
                 sb.Clear();
-                sb.Append("Initialized");
-                sb.Append("\nGameMode=").Append(MyAPIGateway.Session.SessionSettings.GameMode.ToString());
-                sb.Append("\nOnlineMode=").Append(MyAPIGateway.Session.SessionSettings.OnlineMode.ToString());
-                sb.Append("\nServer=").Append(MyAPIGateway.Session.IsServer);
-                sb.Append("\nDS=").Append(MyAPIGateway.Utilities.IsDedicated);
+                sb.Append("Initialized; ").Append(DateTime.Now.ToString("yyyy MMMM dd (dddd) HH:mm:ss")).Append("; GameVersion=").Append(MyAPIGateway.Session.Version.ToString());
+                sb.Append("\nModWorkshopId=").Append(WorkshopId).Append("; ModName=").Append(modName);
+                sb.Append("\nGameMode=").Append(worldsettings.GameMode.ToString()).Append("; OnlineMode=").Append(worldsettings.OnlineMode.ToString());
+                sb.Append("\nServer=").Append(MyAPIGateway.Session.IsServer).Append("; DS=").Append(MyAPIGateway.Utilities.IsDedicated);
                 sb.Append("\nDefined=");
 
 #if STABLE
