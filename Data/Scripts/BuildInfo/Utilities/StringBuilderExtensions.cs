@@ -602,6 +602,20 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##########"));
         }
 
+        public static StringBuilder ShortNumber(this StringBuilder s, float value)
+        {
+            if(!IsValid(s, value))
+                return s;
+
+            if(value >= 1000000)
+                return s.RoundedNumber(value / 1000, 0).Append("k");
+
+            if(value >= 1000)
+                return s.RoundedNumber(value / 1000, 1).Append("k");
+
+            return s.RoundedNumber(value, 1);
+        }
+
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
         {
             var modifier = Math.Round(upgrade.Modifier, 3);

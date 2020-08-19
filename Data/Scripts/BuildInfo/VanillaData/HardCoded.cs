@@ -31,6 +31,19 @@ namespace Digi.BuildInfo.VanillaData
             return physicalItemDefinition.Size.AbsMax() > 0.25f;
         }
 
+        // from MyAssembler
+        public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler)
+        {
+            float speed = (assemblerDef.AssemblySpeed + assembler.UpgradeValues["Productivity"]) * MyAPIGateway.Session.SessionSettings.AssemblerSpeedMultiplier;
+            return (bp.BaseProductionTimeInSeconds / speed);
+        }
+        // from MyRefinery
+        public static float Refinery_BpProductionTime(MyBlueprintDefinitionBase bp, MyRefineryDefinition refineryDef, IMyRefinery refinery)
+        {
+            float speed = (refineryDef.RefineSpeed + refinery.UpgradeValues["Productivity"]) * MyAPIGateway.Session.SessionSettings.RefinerySpeedMultiplier;
+            return (bp.BaseProductionTimeInSeconds / speed);
+        }
+
         // from MyShipConnector
         public const string ShipConnector_PowerGroup = "Conveyors";
         public static float ShipConnector_PowerReq(MyCubeBlockDefinition def)

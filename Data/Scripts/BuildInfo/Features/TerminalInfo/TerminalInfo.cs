@@ -37,7 +37,7 @@ namespace Digi.BuildInfo.Features
         private int delayCursorCheck = 0;
         private int refreshWaitForTick = 0;
         private int ticker;
-        private StringBuilder tmp = new StringBuilder();
+        private StringBuilder tmp = new StringBuilder(512);
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
@@ -702,6 +702,7 @@ namespace Digi.BuildInfo.Features
 
             var production = (IMyProductionBlock)block;
             var assembler = block as IMyAssembler;
+            var refinery = block as IMyRefinery;
 
             if(assembler != null)
             {
@@ -726,13 +727,64 @@ namespace Digi.BuildInfo.Features
             {
                 info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").NewLine();
 
-                var queue = production.GetQueue();
+                List<MyProductionQueueItem> queue = production.GetQueue(); // TODO avoid alloc here somehow?
 
-                for(int i = 0; i < queue.Count; ++i)
+                if(assembler != null || refinery != null)
                 {
-                    var item = queue[i];
+                    var assemblerDef = productionDef as MyAssemblerDefinition;
+                    var refineryDef = productionDef as MyRefineryDefinition;
 
-                    info.Append("• ").Number((float)item.Amount).Append("x ").Append(item.Blueprint.DisplayNameText).NewLine();
+                    tmp.Clear();
+                    float totalTime = 0;
+
+                    for(int i = 0; i < queue.Count; ++i)
+                    {
+                        MyProductionQueueItem item = queue[i];
+                        var bp = (MyBlueprintDefinitionBase)item.Blueprint;
+                        float amount = (float)item.Amount;
+
+                        float time = 0;
+                        if(assembler != null)
+                        {
+                            time = Hardcoded.Assembler_BpProductionTime(bp, assemblerDef, assembler);
+                            time *= amount;
+                            totalTime += time;
+
+                            // need access to MyAssembler.CurrentItemIndex to determine which queue item is actually being built
+
+                            tmp.Append("• x").ShortNumber(amount);
+                        }
+                        else // refinery
+                        {
+                            time = Hardcoded.Refinery_BpProductionTime(bp, refineryDef, refinery);
+                            time *= amount;
+                            totalTime += time;
+
+                            tmp.Append(i + 1).Append('.');
+
+                            if(bp.Prerequisites.Length == 1 && bp.Results.Length == 1)
+                            {
+                                amount = (float)bp.Results[0].Amount / (float)bp.Prerequisites[0].Amount;
+                                tmp.Append(" x").ShortNumber(amount);
+                            }
+                        }
+
+                        tmp.Append(' ').Append(item.Blueprint.DisplayNameText).Append(" (").TimeFormat(time).Append(')').NewLine();
+                    }
+
+                    info.Append("Total time: ").TimeFormat(totalTime).NewLine();
+                    info.AppendStringBuilder(tmp);
+                    tmp.Clear();
+                }
+                else // unknown production block
+                {
+                    for(int i = 0; i < queue.Count; ++i)
+                    {
+                        MyProductionQueueItem item = queue[i];
+                        float amount = (float)item.Amount;
+
+                        info.Append("• x").Number(amount).Append(" ").Append(item.Blueprint.DisplayNameText).NewLine();
+                    }
                 }
             }
         }
@@ -1153,7 +1205,7 @@ namespace Digi.BuildInfo.Features
                     info.Append("Current Usage: ").MassFormat(perSec).Append("/s").NewLine();
                     info.Append("Time Left: ").TimeFormat(seconds).NewLine();
                     info.Append("Uses Combined Fuels: ").NewLine();
-                    info.Append(tmp);
+                    info.AppendStringBuilder(tmp);
                     tmp.Clear();
                 }
             }
