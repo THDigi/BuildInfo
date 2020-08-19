@@ -990,76 +990,50 @@ namespace Digi.BuildInfo.Features
         private int otherSources = 0;
         private int otherSourcesWorking = 0;
 
-        private List<IMyTerminalBlock> powerSources = new List<IMyTerminalBlock>();
+        private readonly List<IMyTerminalBlock> powerSources = new List<IMyTerminalBlock>();
 
         private void FindPowerSources(IMyCubeGrid grid)
         {
-            if(powerSourcesCooldown > 0)
+            if(grid == null || powerSourcesCooldown > 0)
                 return;
 
             powerSourcesCooldown = 60 * 3;
 
             if(fullScan)
             {
-                reactors = 0;
-                reactorsWorking = 0;
-                engines = 0;
-                enginesWorking = 0;
-                batteries = 0;
-                batteriesWorking = 0;
-                solarPanels = 0;
-                solarPanelsWorking = 0;
-                windTurbines = 0;
-                windTurbinesWorking = 0;
-                otherSources = 0;
-                otherSourcesWorking = 0;
-
-                powerSources.Clear();
-
-                var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
-                gts.GetBlocksOfType(powerSources, ComputePowerSourceBlock);
+                FindPowerSources_FullScan(grid);
             }
             else
             {
-                reactorsWorking = 0;
-                enginesWorking = 0;
-                batteriesWorking = 0;
-                solarPanelsWorking = 0;
-                windTurbinesWorking = 0;
-                otherSourcesWorking = 0;
-
-                foreach(var block in powerSources)
-                {
-                    var source = block.Components.Get<MyResourceSourceComponent>();
-
-                    if(source == null)
-                        continue;
-
-                    bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
-
-                    if(!working)
-                        continue;
-
-                    if(block is IMyReactor)
-                        reactorsWorking++;
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
-                        enginesWorking++;
-                    else if(block is IMyBatteryBlock)
-                        batteriesWorking++;
-                    else if(block is IMySolarPanel)
-                        solarPanelsWorking++;
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
-                        windTurbinesWorking++;
-                    else
-                        otherSourcesWorking++;
-                }
+                FindPowerSources_UpdateWorking(grid);
             }
         }
 
-        private bool ComputePowerSourceBlock(IMyTerminalBlock block)
+        private void FindPowerSources_FullScan(IMyCubeGrid grid)
         {
-            var source = block.Components.Get<MyResourceSourceComponent>();
+            reactors = 0;
+            reactorsWorking = 0;
+            engines = 0;
+            enginesWorking = 0;
+            batteries = 0;
+            batteriesWorking = 0;
+            solarPanels = 0;
+            solarPanelsWorking = 0;
+            windTurbines = 0;
+            windTurbinesWorking = 0;
+            otherSources = 0;
+            otherSourcesWorking = 0;
 
+            powerSources.Clear();
+
+            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
+            if(gts != null)
+                gts.GetBlocksOfType(powerSources, FindPowerSources_ComputeBlock);
+        }
+
+        private bool FindPowerSources_ComputeBlock(IMyTerminalBlock block)
+        {
+            var source = block.Components?.Get<MyResourceSourceComponent>();
             if(source == null)
                 return false;
 
@@ -1117,6 +1091,40 @@ namespace Digi.BuildInfo.Features
             }
 
             return false;
+        }
+
+        private void FindPowerSources_UpdateWorking(IMyCubeGrid grid)
+        {
+            reactorsWorking = 0;
+            enginesWorking = 0;
+            batteriesWorking = 0;
+            solarPanelsWorking = 0;
+            windTurbinesWorking = 0;
+            otherSourcesWorking = 0;
+
+            foreach(var block in powerSources)
+            {
+                var source = block.Components?.Get<MyResourceSourceComponent>();
+                if(source == null)
+                    continue;
+
+                bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
+                if(!working)
+                    continue;
+
+                if(block is IMyReactor)
+                    reactorsWorking++;
+                else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
+                    enginesWorking++;
+                else if(block is IMyBatteryBlock)
+                    batteriesWorking++;
+                else if(block is IMySolarPanel)
+                    solarPanelsWorking++;
+                else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
+                    windTurbinesWorking++;
+                else
+                    otherSourcesWorking++;
+            }
         }
         #endregion ShipController extra stuff
 
