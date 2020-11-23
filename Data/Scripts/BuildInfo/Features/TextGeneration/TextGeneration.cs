@@ -1312,7 +1312,7 @@ namespace Digi.BuildInfo.Features
             {
                 foreach(var comp in def.Components)
                 {
-                    if(comp.DeconstructItem != comp.Definition)
+                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
                         AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
@@ -1471,7 +1471,7 @@ namespace Digi.BuildInfo.Features
             {
                 foreach(var comp in def.Components)
                 {
-                    if(comp.DeconstructItem != comp.Definition)
+                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
                         AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }

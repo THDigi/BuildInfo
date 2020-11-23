@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Features
                         computerComponentIndex = i;
                     }
 
-                    if(comp.DeconstructItem != comp.Definition)
+                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
                         AddCompLoss(i, comp.DeconstructItem);
                     }
