@@ -543,7 +543,6 @@ namespace Digi.Input
             AddInput(MyControlsSpace.CUBE_ROTATE_ROLL_NEGATIVE, CONTROL_PREFIX + "cuberotatez-", "Cube Rotate Z-");
             AddInput(MyControlsSpace.TOGGLE_HUD, CONTROL_PREFIX + "togglehud", "Toggle HUD");
             AddInput(MyControlsSpace.TOGGLE_SIGNALS, CONTROL_PREFIX + "togglesignals", "Toggle Signals");
-            AddInput(MyControlsSpace.MISSION_SETTINGS, CONTROL_PREFIX + "missionsettings", "Mission Settings");
             AddInput(MyControlsSpace.SUICIDE);
             AddInput(MyControlsSpace.CHAT_SCREEN, CONTROL_PREFIX + "chat", "Chat");
             AddInput(MyControlsSpace.PAUSE_GAME, CONTROL_PREFIX + "pause");
@@ -956,7 +955,6 @@ namespace Digi.Input
                 MyControlsSpace.SWITCH_COMPOUND,
                 MyControlsSpace.SWITCH_BUILDING_MODE,
                 MyControlsSpace.VOXEL_HAND_SETTINGS,
-                MyControlsSpace.MISSION_SETTINGS,
                 MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE,
                 MyControlsSpace.CUBE_DEFAULT_MOUNTPOINT,
                 MyControlsSpace.SLOT1,
