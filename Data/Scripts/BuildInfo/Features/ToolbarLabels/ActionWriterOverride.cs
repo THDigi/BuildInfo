@@ -131,7 +131,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             catch(Exception)
             {
                 ignoreWriter = true;
-                //Log.Error($"Error calling original writer on {block.GetType().Name} with action {Action.Id}\n{e}", Log.PRINT_MSG);
+                //Log.Error($"Error calling original writer on {block.GetType().Name} with action {Action.Id}\n{e}", Log.PRINT_MESSAGE);
             }
         }
 
@@ -251,8 +251,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 int startIndex = Math.Max(0, sb.Length);
 
                 AppendWordWrapped(sb, block.CustomName, MAX_NAME_LENGTH);
-                sb.Append('\n');
-                sb.Append('—', LINE_CHAR_STRETCH).Append('\n');
+                sb.Append('\n').Append('-', LINE_CHAR_STRETCH).Append('\n');
 
                 parsedCustomName = sb.ToString(startIndex, sb.Length - startIndex);
 
@@ -287,7 +286,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         // measured from "Argumen" word
         // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
         const int MAX_LINE_SIZE = 126;
-        const int LINE_CHAR_STRETCH = 16; // arbitrary size to guarantee to go from one side to the other
+        const int LINE_CHAR_STRETCH = 12; // arbitrary size to guarantee to go from one side to the other
 
         private static void AppendWordWrapped(StringBuilder sb, string text, int maxLength = 0)
         {

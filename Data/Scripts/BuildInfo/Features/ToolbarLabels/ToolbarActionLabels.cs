@@ -583,12 +583,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     switch(connector.Status)
                     {
-                        case MyShipConnectorStatus.Connected: sb.Append("Locked"); break;
-                        case MyShipConnectorStatus.Connectable: sb.Append("Ready"); break;
-                        case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); break;
+                        case MyShipConnectorStatus.Connected: sb.Append("Locked"); return true;
+                        case MyShipConnectorStatus.Connectable: sb.Append("Ready"); return true;
+                        case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); return true;
                     }
 
-                    return true;
+                    return false; // none of the above statuses matched, just let the game handle it then
                 }
             }
 
