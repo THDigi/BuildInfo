@@ -52,6 +52,7 @@ namespace Digi.BuildInfo.Features.Overlays
         #region Constants
         private const BlendTypeEnum OVERLAY_BLEND_TYPE = BlendTypeEnum.PostPP;
         public readonly MyStringId OVERLAY_SQUARE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Square");
+        public readonly MyStringId OVERLAY_LASER_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Laser");
         public readonly MyStringId OVERLAY_DOT_MATERIAL = MyStringId.GetOrCompute("WhiteDot");
 
         private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.SDR;
@@ -180,7 +181,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var m = shipController.WorldMatrix;
                 m.Translation = Vector3D.Transform(shipCtrlDef.RaycastOffset, m);
 
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, m.Translation, m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, color, m.Translation, m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
                 MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, m.Translation + m.Forward * REACH_DISTANCE, 0.015f, 0f, blendType: BLEND_TYPE);
             }
         }
@@ -520,8 +521,8 @@ namespace Digi.BuildInfo.Features.Overlays
             var cubeSize = def.Size * (cellSize * 0.5f);
             bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
-            if(!drawLabel && !DoorAirtightBlink)
-                return;
+            //if(!drawLabel && !DoorAirtightBlink)
+            //    return;
 
             bool fullyClosed = true;
 
@@ -562,7 +563,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         if(fullyClosed)
                             MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                         else
-                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_LASER_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                     }
 
                     if(drawLabel) // only label the first one
@@ -616,7 +617,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             if(fullyClosed)
                                 MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                             else
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_TOGGLE_COLOR, ref AIRTIGHT_TOGGLE_COLOR, MySimpleObjectRasterizer.Wireframe, 4, lineWidth: 0.01f, lineMaterial: OVERLAY_LASER_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                         }
 
                         if(drawLabel) // only label the first one
@@ -765,14 +766,15 @@ namespace Digi.BuildInfo.Features.Overlays
             var colorMineFace = colorMineText * 0.75f;
             var colorCarveText = Color.Red;
             var colorCarveFace = colorCarveText * 0.75f;
-            float lineThickness = 0.01f;
+            float lineThickness = 0.03f;
+            var material = OVERLAY_LASER_MATERIAL;
             bool drawLabels = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
 
             #region Mining
             var mineMatrix = drawMatrix;
             mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
             float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
-            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabels)
             {
@@ -785,7 +787,7 @@ namespace Digi.BuildInfo.Features.Overlays
             #region Carving
             var carveMatrix = mineMatrix;
             float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
-            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabels)
             {
@@ -802,7 +804,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
             {
-                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
             }
 
             if(drawLabels)
@@ -825,7 +827,7 @@ namespace Digi.BuildInfo.Features.Overlays
             const int wireDivRatio = 20;
             var color = Color.Lime;
             var colorFace = color * 0.75f;
-            float lineThickness = 0.01f;
+            float lineThickness = 0.03f;
 
             var toolDef = (MyShipToolDefinition)def;
             var matrix = data.DummyMatrix;
@@ -833,7 +835,7 @@ namespace Digi.BuildInfo.Features.Overlays
             drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
             var radius = toolDef.SensorRadius;
 
-            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled)
             {
@@ -854,6 +856,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             const int wireDivideRatio = 20;
             const float lineHeight = 0.3f;
+            const float lineThickness = 0.02f;
             var color = Color.Red;
             var colorFace = color * 0.5f;
             var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
@@ -865,7 +868,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Length * 0.5)); // capsule's position is in the center
 
                 float radius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
-                Utils.DrawTransparentCapsule(ref capsuleMatrix, radius, flame.Length, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+                Utils.DrawTransparentCapsule(ref capsuleMatrix, radius, flame.Length, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
                 if(drawLabel)
                 {
@@ -894,7 +897,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 m.Translation = obb.Center;
                 m *= drawMatrix;
 
-                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
 
                 if(drawLabel)
                 {
@@ -919,7 +922,7 @@ namespace Digi.BuildInfo.Features.Overlays
             var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
             var m = data.boxLocalMatrix * drawMatrix;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
 
             if(drawLabel)
             {
