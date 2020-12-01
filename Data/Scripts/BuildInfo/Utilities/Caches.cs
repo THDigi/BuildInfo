@@ -16,6 +16,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly StringBuilder SB = new StringBuilder(128);
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
+        public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
 
         public Caches(BuildInfoMod main) : base(main)
         {

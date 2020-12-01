@@ -852,7 +852,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(data == null)
                 return;
 
-            const int wireDivideRatio = 12;
+            const int wireDivideRatio = 20;
             const float lineHeight = 0.3f;
             var color = Color.Red;
             var colorFace = color * 0.5f;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -189,7 +190,7 @@ namespace Digi.BuildInfo.Utilities
 
             var vertices = BuildInfoMod.Instance.Caches.Vertices;
             vertices.Clear();
-            MyMeshHelper.GenerateSphere(ref worldMatrix, radius, wireDivideRatio, vertices);
+            GetSphereVertices(ref worldMatrix, radius, wireDivideRatio, vertices);
             Vector3D center = worldMatrix.Translation;
             MyQuadD quad;
 
@@ -271,13 +272,13 @@ namespace Digi.BuildInfo.Utilities
             MyQuadD quad;
 
             #region Sphere halves
-            var vertices = BuildInfoMod.Instance.Caches.Vertices;
-            vertices.Clear();
-
             MatrixD sphereMatrix = MatrixD.CreateRotationX(-MathHelperD.PiOver2);
             sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
             sphereMatrix *= worldMatrix;
-            MyMeshHelper.GenerateSphere(ref sphereMatrix, radius, wireDivideRatio, vertices);
+
+            var vertices = BuildInfoMod.Instance.Caches.Vertices;
+            vertices.Clear();
+            GetSphereVertices(ref sphereMatrix, radius, wireDivideRatio, vertices);
 
             int halfVerts = vertices.Count / 2;
             var addVec = worldMatrix.Down * height;
@@ -356,6 +357,82 @@ namespace Digi.BuildInfo.Utilities
                 }
             }
             #endregion
+        }
+
+        /// <summary>
+        /// Copied MyMeshHelper.GenerateSphere() to prevent a game crash from a list being accessed in a thread.
+        /// This was also optimized and even removed the need for the troublesome list.
+        /// Also added a cache for vertices, indexed by steps.
+        /// </summary>
+        public static void GetSphereVertices(ref MatrixD worldMatrix, float radius, int steps, List<Vector3D> vertices)
+        {
+            var generatedSphereData = BuildInfoMod.Instance.Caches.GeneratedSphereData;
+            List<Vector3D> cachedVerts;
+            if(!generatedSphereData.TryGetValue(steps, out cachedVerts))
+            {
+                cachedVerts = new List<Vector3D>();
+                generatedSphereData[steps] = cachedVerts;
+                GenerateSphere(ref worldMatrix, radius, steps, cachedVerts);
+            }
+
+            foreach(var vert in cachedVerts)
+            {
+                vertices.Add(Vector3D.Transform(vert * radius, worldMatrix));
+            }
+        }
+
+        private static void GenerateSphere(ref MatrixD worldMatrix, float radius, int steps, List<Vector3D> vertices)
+        {
+            double angleStep = MathHelperD.ToRadians(360 / steps);
+            double ang1max = MathHelperD.PiOver2 - angleStep;
+            double ang2max = MathHelperD.TwoPi - angleStep;
+            Vector3D vec;
+
+            for(double ang1 = 0f; ang1 <= ang1max; ang1 += angleStep)
+            {
+                var ang1sin = Math.Sin(ang1);
+                var ang1cos = Math.Cos(ang1);
+
+                for(double ang2 = 0f; ang2 <= ang2max; ang2 += angleStep)
+                {
+                    var ang2sin = Math.Sin(ang2);
+                    var ang2cos = Math.Cos(ang2);
+
+                    var nextAng1sin = Math.Sin(ang1 + angleStep);
+                    var nextAng1cos = Math.Cos(ang1 + angleStep);
+
+                    var nextAng2sin = Math.Sin(ang2 + angleStep);
+                    var nextAng2cos = Math.Cos(ang2 + angleStep);
+
+                    vec.X = ang2sin * ang1sin;
+                    vec.Y = ang2cos * ang1sin;
+                    vec.Z = ang1cos;
+                    vertices.Add(vec);
+
+                    vec.X = ang2sin * nextAng1sin;
+                    vec.Y = ang2cos * nextAng1sin;
+                    vec.Z = nextAng1cos;
+                    vertices.Add(vec);
+
+                    vec.X = nextAng2sin * ang1sin;
+                    vec.Y = nextAng2cos * ang1sin;
+                    vec.Z = ang1cos;
+                    vertices.Add(vec);
+
+                    vec.X = nextAng2sin * nextAng1sin;
+                    vec.Y = nextAng2cos * nextAng1sin;
+                    vec.Z = nextAng1cos;
+                    vertices.Add(vec);
+                }
+            }
+
+            // add the other half
+            int totalBeforeAdd = vertices.Count;
+            for(int i = 0; i < totalBeforeAdd; i++)
+            {
+                var v = vertices[i];
+                vertices.Add(new Vector3D(v.X, v.Y, 0.0 - v.Z));
+            }
         }
     }
 }
