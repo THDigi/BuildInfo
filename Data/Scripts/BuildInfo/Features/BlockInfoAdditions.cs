@@ -268,21 +268,22 @@ namespace Digi.BuildInfo.Features
                     if(TextAPIEnabled)
                     {
                         const double LEFT_OFFSET = 0.0183;
-                        const double TEXT_SCALE = 0.0011;
                         const string LABEL = "<color=255,255,0>Grinds to: ";
                         const int NAME_MAX_CHARACTERS = 21;
+                        double textScale = 0.0012 * DrawUtils.ScaleFOV;
 
                         worldPos += camMatrix.Left * (LEFT_OFFSET * DrawUtils.ScaleFOV);
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LABEL.Length + NAME_MAX_CHARACTERS), worldPos, camMatrix.Up, camMatrix.Left, TEXT_SCALE, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LABEL.Length + NAME_MAX_CHARACTERS), worldPos, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
                         }
                         else
                         {
                             info.Text.WorldPosition = worldPos;
                             info.Text.Left = camMatrix.Left;
                             info.Text.Up = camMatrix.Up;
+                            info.Text.Scale = textScale;
                         }
 
                         var sb = info.Text.Message.Clear();
