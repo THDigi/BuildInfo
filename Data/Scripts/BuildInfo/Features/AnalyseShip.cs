@@ -6,9 +6,11 @@ using Digi.BuildInfo.Utilities;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
@@ -709,12 +711,20 @@ namespace Digi.BuildInfo.Features
             {
                 foreach(var kv in dlcs)
                 {
-                    var dlc = kv.Key;
+                    var dlcId = kv.Key;
                     var objects = kv.Value;
 
-                    sb.Append("- ").Append(dlc).NewLine();
+                    string displayName = dlcId;
+                    MyDLCs.MyDLC dlc;
+                    if(MyDLCs.TryGetDLC(dlcId, out dlc))
+                    {
+                        displayName = MyTexts.GetString(dlc.DisplayName);
+                    }
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                    sb.Append("- ").Append(displayName).NewLine();
+
+                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
+                        .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
 
@@ -737,13 +747,14 @@ namespace Digi.BuildInfo.Features
                         sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
                     sb.Append(modId.ModName).NewLine();
 
-                    sb.Append(' ', 4).Append(objects.Blocks).Append(" blocks and ").Append(objects.SkinnedBlocks).Append(" skinned blocks.").NewLine();
+                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
+                        .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
 
             sb.NewLine();
             AppendTitle(sb, "Vanilla blocks altered by mods", modsChangingVanilla.Count);
-            sb.Append("NOTE: This list doesn't include mods that alter blocks via scripts.").NewLine();
+            sb.Append("NOTE: This list can't show mods that alter blocks only with scripts.").NewLine();
 
             if(modsChangingVanilla.Count == 0)
             {
@@ -761,7 +772,8 @@ namespace Digi.BuildInfo.Features
                         sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
                     sb.Append(modId.ModName).NewLine();
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" blocks").NewLine();
+                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? "." : "s.").NewLine();
+
                     sb.NewLine();
                 }
             }
