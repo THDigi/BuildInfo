@@ -80,6 +80,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_OWNER = new Color(55, 255, 255);
         public readonly Color COLOR_INFO = new Color(69, 177, 227);
         public readonly Color COLOR_INTERNAL = new Color(125, 125, 255);
+        public readonly Color COLOR_DLC = Color.DeepSkyBlue;
 
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
         public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
@@ -1389,7 +1390,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(TextAPIEnabled)
                 {
-                    AddLine().Color(COLOR_MOD).Append("Mod:").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
+                    AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
                     var id = context.GetWorkshopID();
 
@@ -1402,6 +1403,13 @@ namespace Digi.BuildInfo.Features
                 }
             }
             #endregion Optional: added by mod
+
+            #region Optional: requires DLC
+            if(Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
+            {
+                DLCFormat(def);
+            }
+            #endregion Optional: requires DLC
 
             #region Overlay hints
             if(Config.AimInfo.IsSet(AimInfoFlags.OverlayHint))
@@ -1532,6 +1540,13 @@ namespace Digi.BuildInfo.Features
                 AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
             }
             #endregion Added by mod
+
+            #region requires DLC
+            if(Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
+            {
+                DLCFormat(def);
+            }
+            #endregion Optional: requires DLC
 
             #region Overlay hints
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.OverlayHint))
@@ -3310,6 +3325,44 @@ namespace Digi.BuildInfo.Features
             Screens(def, store.ScreenAreas);
         }
         #endregion Per block info
+
+        private void DLCFormat(MyCubeBlockDefinition def)
+        {
+            if(def.DLCs == null || def.DLCs.Length == 0)
+                return;
+
+            AddLine(MyFontEnum.Blue).Color(COLOR_DLC);
+
+            bool multiDLC = def.DLCs.Length > 1;
+
+            if(multiDLC)
+                GetLine().Append("DLCs (").Append(def.DLCs.Length).Append("): ").ResetColor();
+            else
+                GetLine().Append("DLC: ").ResetColor();
+
+            for(int i = 0; i < def.DLCs.Length; ++i)
+            {
+                string dlcId = def.DLCs[i];
+
+                if(multiDLC && i > 0)
+                {
+                    if(TextAPIEnabled)
+                        AddLine().Append("               | ");
+                    else
+                        GetLine().Append(", ");
+                }
+
+                MyDLCs.MyDLC dlc;
+                if(MyDLCs.TryGetDLC(dlcId, out dlc))
+                {
+                    GetLine().Append(MyTexts.GetString(dlc.DisplayName));
+                }
+                else
+                {
+                    GetLine().Append("(Unknown: ").Color(COLOR_BAD).Append(dlcId).ResetColor().Append(")");
+                }
+            }
+        }
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {

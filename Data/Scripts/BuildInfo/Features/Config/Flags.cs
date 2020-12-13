@@ -20,6 +20,7 @@ namespace Digi.BuildInfo.Features.Config
         AddedByMod = (1 << 10),
         OverlayHint = (1 << 11),
         Projected = (1 << 12),
+        RequiresDLC = (1 << 13),
     }
 
     [Flags]
@@ -46,6 +47,7 @@ namespace Digi.BuildInfo.Features.Config
         ItemInputs = (1 << 16),
         AmmoDetails = (1 << 17),
         Warnings = (1 << 18),
+        RequiresDLC = (1 << 19),
     }
 
     [Flags]
