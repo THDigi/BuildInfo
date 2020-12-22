@@ -1118,15 +1118,19 @@ namespace Digi.BuildInfo.Features
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
-                int dmgResPercent = Utils.DamageMultiplierToResistance(aimedBlock.DamageRatio * def.GeneralDamageMultiplier);
-                int gridDmgResPercent = Utils.DamageMultiplierToResistance(((MyCubeGrid)grid).GridGeneralDamageModifier);
+                float dmgMul = aimedBlock.DamageRatio * def.GeneralDamageMultiplier;
+                float gridDmgMul = ((MyCubeGrid)grid).GridGeneralDamageModifier;
 
-                if(dmgResPercent != 0 || gridDmgResPercent != 0)
+                if(dmgMul != 1 || gridDmgMul != 1)
                 {
-                    AddLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append("Resistance: ").Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%").ResetColor();
+                    AddLine();
+                    ResistanceFormat(dmgMul);
 
-                    if(gridDmgResPercent != 0)
-                        GetLine().Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Append(" (Grid: ").Append(gridDmgResPercent > 0 ? "+" : "").Append(gridDmgResPercent).Append("%)").ResetColor();
+                    if(gridDmgMul != 1)
+                    {
+                        GetLine().Separator();
+                        ResistanceFormat(gridDmgMul, label: "Grid");
+                    }
                 }
 
                 // TODO: impact resistance? wheels in particular...
@@ -1612,14 +1616,11 @@ namespace Digi.BuildInfo.Features
                 if(deformable)
                     GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
 
-                int dmgResPercent = Utils.DamageMultiplierToResistance(def.GeneralDamageMultiplier);
-
-                if(dmgResPercent != 0)
+                float dmgMul = def.GeneralDamageMultiplier;
+                if(dmgMul != 1)
                 {
-                    GetLine().Separator()
-                        .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING))
-                        .Label("Resistance").Append(dmgResPercent > 0 ? "+" : "")
-                        .Append(dmgResPercent).Append("%").ResetColor();
+                    GetLine().Separator();
+                    ResistanceFormat(dmgMul);
                 }
             }
 
@@ -3331,14 +3332,9 @@ namespace Digi.BuildInfo.Features
             if(def.DLCs == null || def.DLCs.Length == 0)
                 return;
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_DLC);
+            AddLine(MyFontEnum.Blue).Color(COLOR_DLC).Label("DLC").ResetColor();
 
             bool multiDLC = def.DLCs.Length > 1;
-
-            if(multiDLC)
-                GetLine().Append("DLCs (").Append(def.DLCs.Length).Append("): ").ResetColor();
-            else
-                GetLine().Append("DLC: ").ResetColor();
 
             for(int i = 0; i < def.DLCs.Length; ++i)
             {
@@ -3362,6 +3358,15 @@ namespace Digi.BuildInfo.Features
                     GetLine().Append("(Unknown: ").Color(COLOR_BAD).Append(dlcId).ResetColor().Append(")");
                 }
             }
+        }
+
+        private void ResistanceFormat(float damageMultiplier, string label = "Resistance")
+        {
+            int dmgResPercent = Utils.DamageMultiplierToResistance(damageMultiplier);
+
+            GetLine()
+                .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%")
+                .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetColor();
         }
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
@@ -3420,7 +3425,7 @@ namespace Digi.BuildInfo.Features
         {
             if(invLimit != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Append("Inventory items ").Append(invLimit.IsWhitelist ? "allowed" : "NOT allowed").Append(":");
+                AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "Inventory items allowed" : "Inventory items NOT allowed");
 
                 foreach(var id in invLimit.ConstrainedIds)
                 {
