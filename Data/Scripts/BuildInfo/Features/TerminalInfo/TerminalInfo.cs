@@ -1136,10 +1136,10 @@ namespace Digi.BuildInfo.Features
 
             info.DetailInfo_InputPower(Sink);
 
-            if(Config.InternalInfo.Value)
+            var rotorStator = block as IMyMotorStator;
+            if(rotorStator != null && Config.InternalInfo.Value)
             {
-                var stator = (IMyMotorStator)block;
-                info.Append("API Angle: ").RoundedNumber(stator.Angle, 2).Append(" radians").NewLine();
+                info.Append("API Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians").NewLine();
             }
         }
 
