@@ -208,7 +208,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(!string.IsNullOrEmpty(pb.DetailedInfo))
                     {
-                        if(pb.DetailedInfo.StartsWith("Assembly not found"))
+                        if(pb.DetailedInfo.StartsWith("Main method not found"))
+                        {
+                            sb.Append("ERROR:\nNo Main");
+                        }
+                        else if(pb.DetailedInfo.StartsWith("Assembly not found"))
                         {
                             sb.Append("ERROR:\nCompile");
                         }
