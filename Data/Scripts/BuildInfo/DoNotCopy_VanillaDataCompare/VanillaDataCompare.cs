@@ -22,8 +22,6 @@ namespace Digi.BuildInfo
     public class VanillaDataCompare : MySessionComponentBase
     {
         const string NAME = "GameChecks";
-        const string LAST_CHECKED_VERSION = "v1.189.41";
-
         const string readFile = "Vanilla Detail Info LastCheck.xml";
         const string writeFile = "Vanilla Detail Info LastCheck.xml";
         const string backupFile = "Vanilla Detail Info Backup.xml";
