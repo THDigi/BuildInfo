@@ -119,6 +119,9 @@ namespace Digi.BuildInfo
 
             CharSize.Clear();
 
+            AddCharsSize(0, "\n\r");
+            AddCharsSize(2 * 8, "\t"); // 2x space
+
             // generated from fonts/white_shadow/FontDataPA.xml+FontDataCH.xml
             AddCharsSize(6, "'|¦ˉ‘’‚");
             AddCharsSize(7, "ј");

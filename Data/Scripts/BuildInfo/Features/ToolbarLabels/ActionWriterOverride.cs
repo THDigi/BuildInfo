@@ -363,7 +363,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             int chrSize;
             if(!charSizeDict.TryGetValue(chr, out chrSize))
             {
-                Log.Error($"Couldn't find character size for character: '{chr.ToString()}' ({((int)chr).ToString()}; {char.GetUnicodeCategory(chr).ToString()})", Log.PRINT_MESSAGE);
+                // only show this error for local mod version
+                if(Log.WorkshopId == 0)
+                    Log.Error($"Couldn't find character size for character: '{chr.ToString()}' ({((int)chr).ToString()}; {char.GetUnicodeCategory(chr).ToString()})", Log.PRINT_MESSAGE);
+
                 chrSize = charSizeDict[' '];
             }
             return chrSize;
