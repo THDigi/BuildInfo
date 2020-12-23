@@ -14,9 +14,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n##### Mount points & airtightness explained #####" +
             "\n" +
             "\n  Mount points define areas that can be attached to other block's mount points." +
-            "\n  Orange mount point is the one used for auto-rotation." +
+            "\n  Blue wireframe over mountpoint is the side and point used for auto-rotation." +
+            "\n  Red mountpoint has special rules attached to it and might not attach to other red mounts." +
             "\n" +
-            "\n  Airtightness also uses the mount points system, if a mount point spans accross an entire grid cell face then that face is airtight." +
+            "\n  Airtightness also uses the mount points system, if a mount point spans accross an entire cell face then that face is airtight." +
+            "\n  Blocks in construction stages are never airtight." +
             "\n" +
             "\n" +
             "\n##### Numbered markings in text explained #####" +
