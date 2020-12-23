@@ -92,7 +92,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 bool overrideCustomStatus = false;
 
-                if(mode != ToolbarActionLabelsMode.Off)
+                if(mode != ToolbarActionLabelsMode.Off && !MyAPIGateway.Input.IsJoystickLastUsed)
                 {
                     if(mode == ToolbarActionLabelsMode.AlwaysOn
                     || MyAPIGateway.Gui.IsCursorVisible
