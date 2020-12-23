@@ -26,6 +26,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         public int EnteredCockpitTicks = SHOW_ACTION_LABELS_FOR_TICKS;
 
+        public bool IsActionUseful(string actionId) => usefulActions.Contains(actionId);
+        private readonly HashSet<string> usefulActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
+        {
+            "View", // camera
+            "Open", "Open_On", "Open_Off", // doors and parachute
+            "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off", // weapons
+            "Control", // RC and turrets
+            "DrainAll", // conveyor sorter
+            "MainCockpit, MainRemoteControl", // cockpit/RC
+            "SwitchLock", // connector
+            "Reverse", "Extend", "Retract", // pistons/rotors
+            "Run", "RunWithDefaultArgument", // PB
+            "TriggerNow", "Start", "Stop", // timers
+            "Jump", // jumpdrive
+        };
+
         private readonly Dictionary<IMyTerminalAction, ActionWriterOverride> overriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);
 
         public ToolbarActionLabels(BuildInfoMod main) : base(main)
@@ -163,27 +179,31 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             Add(typeof(MyObjectBuilder_TimerBlock), Status_Timer);
 
-            Add(typeof(MyObjectBuilder_GasTank), Status_GasTank);
-            Add(typeof(MyObjectBuilder_OxygenTank), Status_GasTank);
+            var gasTank = new StatusDel(Status_GasTank);
+            Add(typeof(MyObjectBuilder_GasTank), gasTank);
+            Add(typeof(MyObjectBuilder_OxygenTank), gasTank);
 
             Add(typeof(MyObjectBuilder_OxygenGenerator), Status_OxygenGenerator);
 
-            Add(typeof(MyObjectBuilder_SmallGatlingGun), Status_Weapons);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncher), Status_Weapons);
-            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), Status_Weapons);
-            Add(typeof(MyObjectBuilder_InteriorTurret), Status_Weapons);
-            Add(typeof(MyObjectBuilder_LargeGatlingTurret), Status_Weapons);
-            Add(typeof(MyObjectBuilder_LargeMissileTurret), Status_Weapons);
+            var weapons = new StatusDel(Status_Weapons);
+            Add(typeof(MyObjectBuilder_SmallGatlingGun), weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncher), weapons);
+            Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), weapons);
+            Add(typeof(MyObjectBuilder_InteriorTurret), weapons);
+            Add(typeof(MyObjectBuilder_LargeGatlingTurret), weapons);
+            Add(typeof(MyObjectBuilder_LargeMissileTurret), weapons);
 
             Add(typeof(MyObjectBuilder_Warhead), Status_Warhead);
 
-            Add(typeof(MyObjectBuilder_MotorStator), Status_MotorStator);
-            Add(typeof(MyObjectBuilder_MotorAdvancedStator), Status_MotorStator);
+            var motors = new StatusDel(Status_MotorStator);
+            Add(typeof(MyObjectBuilder_MotorStator), motors);
+            Add(typeof(MyObjectBuilder_MotorAdvancedStator), motors);
 
             Add(typeof(MyObjectBuilder_MotorSuspension), Status_Suspension);
 
-            Add(typeof(MyObjectBuilder_ExtendedPistonBase), Status_Piston);
-            Add(typeof(MyObjectBuilder_PistonBase), Status_Piston);
+            var pistons = new StatusDel(Status_Piston);
+            Add(typeof(MyObjectBuilder_ExtendedPistonBase), pistons);
+            Add(typeof(MyObjectBuilder_PistonBase), pistons);
 
             Add(typeof(MyObjectBuilder_ShipConnector), Status_Connector);
         }
@@ -239,7 +259,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     }
                     else
                     {
-                        // TODO: print if it's running?
+                        // running or idle without any echo, nothing client can detect here
                     }
 
                     return true;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Systems;
@@ -24,12 +25,16 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         private ToolbarActionLabelsMode mode;
 
         private readonly string actionName;
-        private string actionNameWrapped;
+        private string actionNameCache;
 
         private bool ignoreWriter = false;
 
+        private bool showBlockName = false;
+
         private bool customStatusChecked = false;
         private ToolbarActionLabels.StatusDel customStatusFunc = null;
+
+        private static BuildInfoMod Main => BuildInfoMod.Instance;
 
         const int MAX_NAME_LENGTH = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
 
@@ -43,7 +48,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             Action.Writer = CustomWriter;
 
-            mode = (ToolbarActionLabelsMode)BuildInfoMod.Instance.Config.ToolbarActionLabels.Value;
+            mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
+
+            showBlockName = Main.ToolbarActionLabels.IsActionUseful(Action.Id);
 
             // HACK giving an icon for some iconless actions
             if(string.IsNullOrEmpty(action.Icon))
@@ -89,8 +96,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 {
                     if(mode == ToolbarActionLabelsMode.AlwaysOn
                     || MyAPIGateway.Gui.IsCursorVisible
-                    || BuildInfoMod.Instance.ToolbarActionLabels.EnteredCockpitTicks > 0
-                    || (mode == ToolbarActionLabelsMode.HudHints && (BuildInfoMod.Instance.GameConfig.HudState == HudState.HINTS || MyAPIGateway.Input.IsAnyAltKeyPressed()))
+                    || Main.ToolbarActionLabels.EnteredCockpitTicks > 0
+                    || (mode == ToolbarActionLabelsMode.HudHints && (Main.GameConfig.HudState == HudState.HINTS || MyAPIGateway.Input.IsAnyAltKeyPressed()))
                     || (mode == ToolbarActionLabelsMode.AltKey && MyAPIGateway.Input.IsAnyAltKeyPressed()))
                     {
                         AppendLabel(block, sb);
@@ -140,19 +147,19 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(customStatusChecked && customStatusFunc == null)
                 return false;
 
-            if(!BuildInfoMod.Instance.Config.ToolbarActionStatus.Value)
+            if(!Main.Config.ToolbarActionStatus.Value)
                 return false;
 
             if(!customStatusChecked)
             {
                 customStatusChecked = true;
-                customStatusFunc = BuildInfoMod.Instance.ToolbarActionLabels.GetCustomStatus(block.BlockDefinition.TypeId);
+                customStatusFunc = Main.ToolbarActionLabels.GetCustomStatus(block.BlockDefinition.TypeId);
             }
 
             if(customStatusFunc == null)
                 return false;
 
-            var tempSB = BuildInfoMod.Instance.Caches.SB;
+            var tempSB = Main.Caches.SB;
             tempSB.Clear();
             bool overrideStatus = customStatusFunc.Invoke(this, block, tempSB);
 
@@ -184,7 +191,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         void AppendLabel(IMyTerminalBlock block, StringBuilder sb)
         {
             AppendBlockName(block, sb);
-            AppendActionName(sb);
+            AppendActionName(block, sb);
 
             // over the vanilla inventory bar (collides with bar and selected tool text and "Toolbar" label in G menu)
             sb.Append('\n');
@@ -192,7 +199,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             sb.Append('\n');
 
             // over the 2nd inventory bar if shown
-            if(BuildInfoMod.Instance.ShipToolInventoryBar.Shown)
+            if(Main.ShipToolInventoryBar.Shown)
             {
                 sb.Append('\n');
                 sb.Append('\n');
@@ -208,7 +215,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             // TODO: toggleable per block somehow (maybe use Show In Toolbar Config?)
 
-            var blockNameMode = (ToolbarActionBlockNameMode)BuildInfoMod.Instance.Config.ToolbarActionBlockNames.Value;
+            var blockNameMode = (ToolbarActionBlockNameMode)Main.Config.ToolbarActionBlockNames.Value;
 
             if(blockNameMode == ToolbarActionBlockNameMode.Off)
                 return;
@@ -225,22 +232,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
             else if(blockNameMode == ToolbarActionBlockNameMode.Useful)
             {
-                // TODO: optimize?
-                show = (MyAPIGateway.Gui.IsCursorVisible // always show names when in menu
-                || (block is IMyCameraBlock && Action.Id == "View")
-                || (block is IMyProgrammableBlock && (Action.Id == "Run" || Action.Id == "RunWithDefaultArgument"))
-                || (block is IMyTimerBlock && (Action.Id == "TriggerNow" || Action.Id == "Start" || Action.Id == "Stop"))
-                || (block is IMyRemoteControl && Action.Id == "Control")
-                || (block is IMyLargeTurretBase && Action.Id == "Control")
-                || (block is IMyShipConnector && Action.Id == "SwitchLock")
-                || (block is IMyPistonBase && (Action.Id == "Reverse" || Action.Id == "Extend" || Action.Id == "Retract"))
-                || (block is IMyMotorStator && Action.Id == "Reverse"));
+                show = showBlockName || MyAPIGateway.Gui.IsCursorVisible;
             }
 
             if(!show)
                 return;
 
-            var parsedCustomName = BuildInfoMod.Instance.ToolbarActionLabels.GetCustomName(block.EntityId);
+            var parsedCustomName = Main.ToolbarActionLabels.GetCustomName(block.EntityId);
 
             if(parsedCustomName != null)
             {
@@ -255,31 +253,111 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 parsedCustomName = sb.ToString(startIndex, sb.Length - startIndex);
 
-                BuildInfoMod.Instance.ToolbarActionLabels.AddCustomNameCache(block, parsedCustomName);
+                Main.ToolbarActionLabels.AddCustomNameCache(block, parsedCustomName);
             }
         }
 
-        private void AppendActionName(StringBuilder sb)
+        private void AppendActionName(IMyTerminalBlock block, StringBuilder sb)
         {
-            if(actionNameWrapped == null)
+            if(actionNameCache == null)
             {
                 int startIndex = Math.Max(0, sb.Length);
+
+                // NOTE: the block condition's cases use 'return' to avoid caching because those actions are shared throughout multiple block types so can't be cached per action.
+
+                if(block is IMyShipGrinder)
+                {
+                    switch(Action.Id)
+                    {
+                        case "OnOff": AppendWordWrapped(sb, "Grind On/Off"); return;
+                        case "OnOff_On": AppendWordWrapped(sb, "Start grinding"); return;
+                        case "OnOff_Off": AppendWordWrapped(sb, "Stop grinding"); return;
+                    }
+                }
+
+                if(block is IMyShipWelder)
+                {
+                    switch(Action.Id)
+                    {
+                        case "OnOff": AppendWordWrapped(sb, "Weld On/Off"); return;
+                        case "OnOff_On": AppendWordWrapped(sb, "Start welding"); return;
+                        case "OnOff_Off": AppendWordWrapped(sb, "Stop welding"); return;
+                    }
+                }
+
+                if(block is IMyShipDrill)
+                {
+                    switch(Action.Id)
+                    {
+                        case "OnOff": AppendWordWrapped(sb, "Drill On/Off"); return;
+                        case "OnOff_On": AppendWordWrapped(sb, "Start drilling"); return;
+                        case "OnOff_Off": AppendWordWrapped(sb, "Stop drilling"); return;
+                    }
+                }
+
+                if(block is IMyRemoteControl)
+                {
+                    switch(Action.Id)
+                    {
+                        case "Forward": AppendWordWrapped(sb, "Set Direction Forward"); return;
+                        case "Backward": AppendWordWrapped(sb, "Set Direction Backward"); return;
+                        case "Left": AppendWordWrapped(sb, "Set Direction Left"); return;
+                        case "Right": AppendWordWrapped(sb, "Set Direction Right"); return;
+                        case "Up": AppendWordWrapped(sb, "Set Direction Up"); return;
+                        case "Down": AppendWordWrapped(sb, "Set Direction Down"); return;
+                    }
+                }
 
                 // shortened some action names
                 switch(Action.Id)
                 {
-                    case "RunWithDefaultArgument": AppendWordWrapped(sb, "Run\n(NoArgs)"); break;
+                    // generic functional
                     case "OnOff": AppendWordWrapped(sb, "On/Off"); break;
-                    case "OnOff_On": AppendWordWrapped(sb, "Turn ON"); break;
+                    case "OnOff_On": AppendWordWrapped(sb, "Turn On"); break;
                     case "OnOff_Off": AppendWordWrapped(sb, "Turn Off"); break;
-                    default: AppendWordWrapped(sb, actionName); break;
+
+                    // generic terminal
+                    case "ShowOnHUD": AppendWordWrapped(sb, "Toggle on HUD"); break;
+                    case "ShowOnHUD_On": AppendWordWrapped(sb, "Show on HUD"); break;
+                    case "ShowOnHUD_Off": AppendWordWrapped(sb, "Hide from HUD"); break;
+
+                    // weapons
+                    case "Shoot": AppendWordWrapped(sb, "Shoot On/Off"); break;
+                    case "Shoot_On": AppendWordWrapped(sb, "Start shooting"); break;
+                    case "Shoot_Off": AppendWordWrapped(sb, "Stop shooting"); break;
+
+                    // doors, parachute
+                    case "Open": AppendWordWrapped(sb, "Open/Close"); break;
+                    case "Open_On": AppendWordWrapped(sb, "Open"); break;
+                    case "Open_Off": AppendWordWrapped(sb, "Close"); break;
+
+                    // PB
+                    case "RunWithDefaultArgument": AppendWordWrapped(sb, "Run\n(NoArgs)"); break;
+
+                    // lights
+                    //case "IncreaseBlink Lenght": AppendWordWrapped(sb, "+ Blink Length"); break;
+                    //case "DecreaseBlink Lenght": AppendWordWrapped(sb, "+ Blink Length"); break;
+
+                    default:
+                    {
+                        string name = actionName;
+
+                        //if(Action.Id.StartsWith("Increase"))
+                        //    name = "+ " + Action.Id.Substring("Increase".Length);
+                        //else if(Action.Id.StartsWith("Decrease"))
+                        //    name = "- " + Action.Id.Substring("Decrease".Length);
+
+                        AppendWordWrapped(sb, name);
+                        break;
+                    }
                 }
 
-                actionNameWrapped = sb.ToString(startIndex, sb.Length - startIndex);
+                // cache name for later use
+                actionNameCache = sb.ToString(startIndex, sb.Length - startIndex);
             }
             else
             {
-                sb.Append(actionNameWrapped);
+                sb.Append(actionNameCache);
             }
         }
 
@@ -359,7 +437,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         private static int GetCharSize(char chr)
         {
-            var charSizeDict = BuildInfoMod.Instance.Constants.CharSize;
+            var charSizeDict = Main.Constants.CharSize;
             int chrSize;
             if(!charSizeDict.TryGetValue(chr, out chrSize))
             {

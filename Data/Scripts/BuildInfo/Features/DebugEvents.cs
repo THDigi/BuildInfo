@@ -1,7 +1,10 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using Digi.BuildInfo.Systems;
 using Draygo.API;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
@@ -53,6 +56,8 @@ namespace Digi.BuildInfo.Features
             //{
             //    MyAPIGateway.Multiplayer.RegisterMessageHandler(1337, ReceivedPacket);
             //}
+
+            //DumpActions();
         }
 
         protected override void UnregisterComponent()
@@ -71,6 +76,136 @@ namespace Digi.BuildInfo.Features
             //    MyAPIGateway.Multiplayer.UnregisterMessageHandler(1337, ReceivedPacket);
             //}
         }
+
+#if false
+        void DumpActions()
+        {
+            // NOTE: requires all blocks to be spawned in the world in order to get accurate actions
+
+            PrintActions<IMyLargeTurretBase>();
+            PrintActions<IMyShipDrill>();
+            PrintActions<IMyShipGrinder>();
+            PrintActions<IMyShipToolBase>();
+            PrintActions<IMySmallGatlingGun>();
+            PrintActions<IMySmallMissileLauncher>();
+            PrintActions<IMySmallMissileLauncherReload>();
+            PrintActions<IMyUserControllableGun>();
+            PrintActions<IMyAdvancedDoor>();
+            PrintActions<IMyAirtightHangarDoor>();
+            PrintActions<IMyAirtightSlideDoor>();
+            PrintActions<IMyCameraBlock>();
+            PrintActions<IMyCargoContainer>();
+            PrintActions<IMyCockpit>();
+            PrintActions<IMyConveyorSorter>();
+            PrintActions<IMyDoor>();
+            PrintActions<IMyGyro>();
+            PrintActions<IMyJumpDrive>();
+            PrintActions<IMyReflectorLight>();
+            PrintActions<IMyRemoteControl>();
+            PrintActions<IMyShipController>();
+            PrintActions<IMyThrust>();
+            PrintActions<IMyAssembler>();
+            PrintActions<IMyBeacon>();
+            PrintActions<IMyLaserAntenna>();
+            PrintActions<IMyMotorAdvancedStator>();
+            PrintActions<IMyMotorBase>();
+            PrintActions<IMyMotorStator>();
+            PrintActions<IMyMotorSuspension>();
+            PrintActions<IMyOreDetector>();
+            PrintActions<IMyProductionBlock>();
+            PrintActions<IMyRadioAntenna>();
+            PrintActions<IMyRefinery>();
+            PrintActions<IMyWarhead>();
+            PrintActions<IMyFunctionalBlock>();
+            PrintActions<IMyShipConnector>();
+            PrintActions<IMyTerminalBlock>();
+            PrintActions<IMyCollector>();
+            PrintActions<IMyCryoChamber>();
+            PrintActions<IMyDecoy>();
+            PrintActions<IMyExtendedPistonBase>();
+            PrintActions<IMyGasGenerator>();
+            PrintActions<IMyGasTank>();
+            PrintActions<IMyMechanicalConnectionBlock>();
+            PrintActions<IMyLightingBlock>();
+            PrintActions<IMyPistonBase>();
+            PrintActions<IMyProgrammableBlock>();
+            PrintActions<IMySensorBlock>();
+            PrintActions<IMyStoreBlock>();
+            PrintActions<IMyTextPanel>();
+            PrintActions<IMyProjector>();
+            PrintActions<IMyLargeConveyorTurretBase>();
+            PrintActions<IMyLargeGatlingTurret>();
+            PrintActions<IMyLargeInteriorTurret>();
+            PrintActions<IMyLargeMissileTurret>();
+            PrintActions<IMyAirVent>();
+            PrintActions<IMyButtonPanel>();
+            PrintActions<IMyControlPanel>();
+            PrintActions<IMyGravityGenerator>();
+            PrintActions<IMyGravityGeneratorBase>();
+            PrintActions<IMyGravityGeneratorSphere>();
+            PrintActions<IMyInteriorLight>();
+            PrintActions<IMyLandingGear>();
+            PrintActions<IMyMedicalRoom>();
+            PrintActions<IMyOxygenFarm>();
+            PrintActions<IMyShipMergeBlock>();
+            PrintActions<IMyShipWelder>();
+            PrintActions<IMySoundBlock>();
+            PrintActions<IMySpaceBall>();
+            PrintActions<IMyTimerBlock>();
+            PrintActions<IMyUpgradeModule>();
+            PrintActions<IMyVirtualMass>();
+            PrintActions<IMySafeZoneBlock>();
+
+            // not proper!
+            PrintActions<IMyBatteryBlock>();
+            PrintActions<IMyReactor>();
+            PrintActions<IMySolarPanel>();
+            PrintActions<IMyParachute>();
+            PrintActions<IMyExhaustBlock>();
+
+            // not terminal
+            //PrintActions<IMyConveyor>();
+            //PrintActions<IMyConveyorTube>();
+            //PrintActions<IMyWheel>();
+            //PrintActions<IMyPistonTop>();
+            //PrintActions<IMyMotorRotor>();
+            //PrintActions<IMyMotorAdvancedRotor>();
+            //PrintActions<IMyPassage>();
+            //PrintActions<IMyAttachableTopBlock>();
+
+            // not exist
+            //PrintActions<IMyContractBlock>();
+            //PrintActions<IMyLCDPanelsBlock>();
+            //PrintActions<IMyRealWheel>();
+            //PrintActions<IMyScenarioBuildingBlock>();
+            //PrintActions<IMyVendingMachine>();
+            //PrintActions<IMyEnvironmentalPowerProducer>();
+            //PrintActions<IMyGasFueledPowerProducer>();
+            //PrintActions<IMyHydrogenEngine>();
+            //PrintActions<IMyJukebox>();
+            //PrintActions<IMySurvivalKit>();
+            //PrintActions<IMyWindTurbine>();
+            //PrintActions<IMyLadder>();
+            //PrintActions<IMyKitchen>();
+            //PrintActions<IMyPlanter>();
+            //PrintActions<IMyDoorBase>();
+            //PrintActions<IMyEmissiveBlock>();
+            //PrintActions<IMyFueledPowerProducer>();
+        }
+
+        void PrintActions<T>()
+        {
+            List<IMyTerminalAction> actions;
+            MyAPIGateway.TerminalControls.GetActions<T>(out actions);
+
+            Log.Info($"Actions of {typeof(T).Name}");
+
+            foreach(var action in actions)
+            {
+                Log.Info($"    id='{action.Id}', name='{action.Name.ToString()}', icon='{action.Icon}'");
+            }
+        }
+#endif
 
         //void ReceivedPacket(byte[] rawData)
         //{
