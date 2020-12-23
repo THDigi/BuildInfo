@@ -47,6 +47,7 @@ namespace Digi.BuildInfo.Features
         private readonly HashSet<MyDefinitionId> ignoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private readonly HashSet<long> longSetTemp = new HashSet<long>();
+        private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
 
         private MyResourceSinkComponent _sinkCache = null;
         private MyResourceSourceComponent _sourceCache = null;
@@ -813,9 +814,11 @@ namespace Digi.BuildInfo.Features
 
                 // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
                 longSetTemp.Clear();
-                var nearbyBlocks = upgradeModule.SlimBlock.Neighbours;
 
-                foreach(var nearSlim in nearbyBlocks)
+                nearbyBlocksCache.Clear();
+                upgradeModule.SlimBlock.GetNeighbours(nearbyBlocksCache);
+
+                foreach(var nearSlim in nearbyBlocksCache)
                 {
                     if(nearSlim?.FatBlock == null)
                         continue;
@@ -846,6 +849,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
+                nearbyBlocksCache.Clear();
                 longSetTemp.Clear();
             }
             else

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Timers;
+using Digi.BuildInfo.Utilities;
 using ProtoBuf;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -234,12 +235,14 @@ namespace Digi.BuildInfo
 
         private void RemoveConnectedGrids(IMyCubeGrid grid)
         {
-            var grids = MyAPIGateway.GridGroups.GetGroup(grid, GridLinkTypeEnum.Physical);
+            var grids = Caches.GetGrids(grid, GridLinkTypeEnum.Physical);
 
             foreach(var g in grids)
             {
                 g.Close();
             }
+
+            grids.Clear();
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)

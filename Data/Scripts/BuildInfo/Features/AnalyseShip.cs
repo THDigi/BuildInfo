@@ -811,7 +811,7 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
 
-                var grids = MyAPIGateway.GridGroups.GetGroup(mainGrid, GridLinkTypeEnum.Mechanical);
+                var grids = Caches.GetGrids(mainGrid, GridLinkTypeEnum.Mechanical);
 
                 foreach(var grid in grids)
                 {
@@ -829,6 +829,7 @@ namespace Digi.BuildInfo.Features
 
                 GetInfoFromGrids(grids);
                 GenerateShipInfo(mainGrid, grids);
+                grids.Clear();
             }
             finally
             {
