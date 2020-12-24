@@ -114,35 +114,5 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 EnteredCockpitTicks--;
             }
         }
-
-        #region Custom name caching
-        private readonly Dictionary<long, string> cachedCustomName = new Dictionary<long, string>();
-
-        public string GetCustomName(long entityId)
-        {
-            return cachedCustomName.GetValueOrDefault(entityId, null);
-        }
-
-        public void AddCustomNameCache(IMyTerminalBlock block, string parsedName)
-        {
-            cachedCustomName[block.EntityId] = parsedName;
-
-            block.CustomNameChanged += Block_CustomNameChanged;
-            block.OnMarkForClose += Block_OnMarkForClose;
-        }
-
-        private void Block_CustomNameChanged(IMyTerminalBlock block)
-        {
-            cachedCustomName.Remove(block.EntityId);
-        }
-
-        private void Block_OnMarkForClose(IMyEntity ent)
-        {
-            var block = (IMyTerminalBlock)ent;
-            block.CustomNameChanged -= Block_CustomNameChanged;
-            block.OnMarkForClose -= Block_OnMarkForClose;
-            cachedCustomName.Remove(block.EntityId);
-        }
-        #endregion
     }
 }
