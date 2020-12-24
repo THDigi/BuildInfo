@@ -32,7 +32,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         private bool showBlockName = false;
 
         private bool customStatusChecked = false;
-        private ToolbarActionLabels.StatusDel customStatusFunc = null;
+        private ToolbarActionStatus.StatusDel customStatusFunc = null;
 
         private static BuildInfoMod Main => BuildInfoMod.Instance;
 
@@ -153,7 +153,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(!customStatusChecked)
             {
                 customStatusChecked = true;
-                customStatusFunc = Main.ToolbarActionLabels.GetCustomStatus(block.BlockDefinition.TypeId);
+                customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
             }
 
             if(customStatusFunc == null)
@@ -238,8 +238,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(!show)
                 return;
 
-            var parsedCustomName = Main.ToolbarActionLabels.GetCustomName(block.EntityId);
-
+            // this cache expires on its own when block's customname changes.
+            var parsedCustomName = Main.ToolbarParsedDataCache.GetNameCache(block.EntityId);
             if(parsedCustomName != null)
             {
                 sb.Append(parsedCustomName);
@@ -253,7 +253,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 parsedCustomName = sb.ToString(startIndex, sb.Length - startIndex);
 
-                Main.ToolbarActionLabels.AddCustomNameCache(block, parsedCustomName);
+                Main.ToolbarParsedDataCache.SetNameCache(block, parsedCustomName);
             }
         }
 

@@ -52,6 +52,8 @@ namespace Digi.BuildInfo
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
         public ToolbarActionLabels ToolbarActionLabels;
+        public ToolbarActionStatus ToolbarActionStatus;
+        public ToolbarParsedDataCache ToolbarParsedDataCache;
         public WhatsNew WhatsNew;
         public ItemTooltips ItemTooltips;
         public DebugEvents DebugEvents;
@@ -94,6 +96,8 @@ namespace Digi.BuildInfo
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             ToolbarActionLabels = new ToolbarActionLabels(this);
+            ToolbarActionStatus = new ToolbarActionStatus(this);
+            ToolbarParsedDataCache = new ToolbarParsedDataCache(this);
             WhatsNew = new WhatsNew(this);
             ItemTooltips = new ItemTooltips(this);
             DebugEvents = new DebugEvents(this);
