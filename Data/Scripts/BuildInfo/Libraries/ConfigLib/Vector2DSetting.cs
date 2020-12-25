@@ -8,6 +8,8 @@ namespace Digi.ConfigLib
         public readonly Vector2D Min;
         public readonly Vector2D Max;
 
+        private static readonly char[] Separator = new char[] { ',' };
+
         public Vector2DSetting(ConfigHandler configInstance, string name, Vector2D defaultValue, Vector2D min, Vector2D max, params string[] commentLines)
             : base(configInstance, name, defaultValue, commentLines)
         {
@@ -19,7 +21,7 @@ namespace Digi.ConfigLib
         {
             error = null;
             double x, y;
-            var coords = valueString.Split(',');
+            var coords = valueString.Split(Separator);
             if(coords.Length == 2 && double.TryParse(coords[0], out x) && double.TryParse(coords[1], out y))
                 Value = Vector2D.Clamp(new Vector2D(x, y), Min, Max);
             else

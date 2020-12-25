@@ -74,6 +74,7 @@ namespace Digi.BuildInfo
             resourceSourceGroups = 0;
             resourceSinkGroups = 0;
 
+            // from MyResourceDistributorComponent.InitializeMappings()
             var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
             var orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
 

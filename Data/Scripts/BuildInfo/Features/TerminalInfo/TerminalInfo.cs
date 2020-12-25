@@ -20,7 +20,6 @@ using VRage.ObjectBuilders;
 using VRageMath;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {

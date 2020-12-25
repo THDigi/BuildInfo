@@ -366,7 +366,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         const int MAX_LINE_SIZE = 126;
         const int LINE_CHAR_STRETCH = 12; // arbitrary size to guarantee to go from one side to the other
 
-        private static void AppendWordWrapped(StringBuilder sb, string text, int maxLength = 0)
+        public static void AppendWordWrapped(StringBuilder sb, string text, int maxLength = 0)
         {
             int textLength = text.Length;
             int lineSize = 0;
@@ -445,7 +445,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 if(Log.WorkshopId == 0)
                     Log.Error($"Couldn't find character size for character: '{chr.ToString()}' ({((int)chr).ToString()}; {char.GetUnicodeCategory(chr).ToString()})", Log.PRINT_MESSAGE);
 
-                chrSize = charSizeDict[' '];
+                chrSize = 8; // space's size
             }
             return chrSize;
         }
