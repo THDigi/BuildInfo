@@ -336,18 +336,21 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, m, " m"))
                 return s;
 
-            if(m >= 1000)
-                return s.Number(m / 1000).Append(" km");
-
-            if(digits <= -1)
+            if(digits < 0)
             {
+                if(m >= 1000)
+                    return s.Number(m / 1000).Append(" km");
+
                 if(m < 10)
-                    return s.RoundedNumber(m, 2).Append(" m");
+                    return s.Number(m).Append(" m");
 
                 return s.Append((int)m).Append(" m");
             }
             else
             {
+                if(m >= 1000)
+                    return s.RoundedNumber(m / 1000, digits).Append(" km");
+
                 return s.RoundedNumber(m, digits).Append(" m");
             }
         }
