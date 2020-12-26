@@ -207,9 +207,9 @@ namespace Digi.BuildInfo.Features.Config
             }
 
             ToolbarActionStatus = new BoolSetting(Handler, "HUD: Toolbar action status", true,
-                "Adds some statuses to some toolbar actions.",
-                "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, and quite a few more.",
-                "Toolbar action labels must not be OFF for this to work.");
+                "Adds some statuses to some toolbar actions, overwrite some others.",
+                "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
+                "This only works if 'Toolbar action labels' is not 0/off.");
 
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",

@@ -909,6 +909,19 @@ namespace Digi.BuildInfo.Features
                 info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
             }
 
+            var blockToolbarData = Main.ToolbarCustomNames.GetBlockData(block.EntityId);
+            if(blockToolbarData != null && blockToolbarData.ParseErrors.Count > 0)
+            {
+                info.Append("\nToolbar CustomData Errors:");
+
+                foreach(var line in blockToolbarData.ParseErrors)
+                {
+                    info.Append('\n').Append(line);
+                }
+
+                info.Append('\n');
+            }
+
             var def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
 
             if(def.EnableShipControl)

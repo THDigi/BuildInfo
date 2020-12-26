@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features.Config;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.Game;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using VRage.ModAPI;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
+    // TODO: optimize writer callbacks by ignoring ones that aren't visible, need page tracking with hotkeys.
+
     public class ToolbarActionLabels : ModComponent
     {
+        public static readonly bool TOOLBAR_DEBUG_LOGGING = false;
+
         public const int CockpitLabelsForTicks = Constants.TICKS_PER_SECOND * 3;
 
         public int EnteredCockpitTicks { get; private set; } = CockpitLabelsForTicks;
@@ -31,16 +37,24 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             "Jump", // jumpdrive
         };
 
+        private bool preRegister = true;
+
         private readonly Dictionary<IMyTerminalAction, ActionWriterOverride> overriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);
 
         public ToolbarActionLabels(BuildInfoMod main) : base(main)
         {
+            preRegister = true;
+
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
+
+            Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
 
         protected override void RegisterComponent()
         {
-            MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
+            preRegister = false;
+
+            ComputePreRegisterActions();
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
 
@@ -49,20 +63,29 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void UnregisterComponent()
         {
-            MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;
-
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
 
             Main.Config.ToolbarActionLabels.ValueAssigned -= ToolbarActionLabelModeChanged;
+
+            Main.BlockMonitor.BlockAdded -= BlockMonitor_BlockAdded;
+
+            foreach(var actionOverride in overriddenActions.Values)
+            {
+                actionOverride?.Cleanup();
+            }
+
+            overriddenActions.Clear();
         }
 
         void ToolbarActionLabelModeChanged(int oldValue, int newValue, SettingBase<int> setting)
         {
             if(oldValue != newValue)
             {
+                var mode = (ToolbarActionLabelsMode)newValue;
+
                 foreach(var actionLabel in overriddenActions.Values)
                 {
-                    actionLabel.SettingChanged(newValue);
+                    actionLabel.SettingChanged(mode);
                 }
             }
         }
@@ -72,7 +95,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             try
             {
                 var player = MyAPIGateway.Session?.Player;
-
                 if(player != null && player.IdentityId == playerId)
                 {
                     EnteredCockpitTicks = CockpitLabelsForTicks;
@@ -84,31 +106,50 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
         }
 
-        void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
+        void BlockMonitor_BlockAdded(IMySlimBlock slimBlock)
         {
-            try
+            var block = slimBlock.FatBlock as IMyTerminalBlock;
+            if(block == null)
+                return;
+
+            // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
+            // HACK #2: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
+            block.GetActions(null, CollectAction);
+        }
+
+        bool CollectAction(ITerminalAction a)
+        {
+            var action = (IMyTerminalAction)a;
+
+            if(!overriddenActions.ContainsKey(action))
             {
-                if(Main.Config.ToolbarActionLabels.Value == 0)
-                    return;
+                if(TOOLBAR_DEBUG_LOGGING)
+                    Log.Info($"Added action: {action.Id}");
 
-                for(int i = 0; i < actions.Count; i++)
-                {
-                    IMyTerminalAction action = actions[i];
-
-                    if(!overriddenActions.ContainsKey(action))
-                    {
-                        overriddenActions.Add(action, new ActionWriterOverride(action));
-                    }
-                }
+                // HACK: if it's before Register() then create it later as ActionWriterOverride() can't be created so early.
+                if(preRegister)
+                    overriddenActions.Add(action, null);
+                else
+                    overriddenActions.Add(action, new ActionWriterOverride(action));
             }
-            catch(Exception e)
+
+            return false; // null list, never add to it.
+        }
+
+        void ComputePreRegisterActions()
+        {
+            foreach(var action in new List<IMyTerminalAction>(overriddenActions.Keys))
             {
-                Log.Error(e);
+                if(overriddenActions[action] == null)
+                    overriddenActions[action] = new ActionWriterOverride(action);
             }
         }
 
         protected override void UpdateAfterSim(int tick)
         {
+            if(TOOLBAR_DEBUG_LOGGING)
+                Log.Info("---- AFTER SIM -----------------------------------");
+
             if(EnteredCockpitTicks > 0)
             {
                 EnteredCockpitTicks--;

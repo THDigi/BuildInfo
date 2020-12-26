@@ -12,7 +12,10 @@ using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.ObjectBuilders;
+using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
+
+// TODO: group combined status?
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
@@ -20,10 +23,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
     {
         public const int CacheLiveTicks = Constants.TICKS_PER_SECOND * 1;
 
-        public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb);
+        public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb);
+
+        public StatusDel GetCustomStatus(MyObjectBuilderType blockType)
+        {
+            return customStatus.GetValueOrDefault(blockType, null);
+        }
 
         private readonly Dictionary<MyObjectBuilderType, StatusDel> customStatus = new Dictionary<MyObjectBuilderType, StatusDel>(MyObjectBuilderType.Comparer);
-        private readonly Dictionary<long, string> cachedStatusText = new Dictionary<long, string>();
+
+        private readonly Dictionary<int, string> cachedStatusText = new Dictionary<int, string>();
+
+        private long previousShipController;
 
         public ToolbarActionStatus(BuildInfoMod main) : base(main)
         {
@@ -33,10 +44,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         protected override void RegisterComponent()
         {
             InitCustomStatus();
+
+            MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
         }
 
         protected override void UnregisterComponent()
         {
+            MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
         }
 
         protected override void UpdateAfterSim(int tick)
@@ -47,9 +61,164 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
         }
 
-        public StatusDel GetCustomStatus(MyObjectBuilderType blockType)
+        void EnteredCockpit(string entityName, long playerId, string gridName)
         {
-            return customStatus.GetValueOrDefault(blockType, null);
+            try
+            {
+                var player = MyAPIGateway.Session?.Player;
+                if(player != null && player.IdentityId == playerId)
+                {
+                    var controlled = MyAPIGateway.Session.ControlledObject as IMyShipController;
+
+                    if(controlled != null && previousShipController != controlled.EntityId)
+                    {
+                        previousShipController = controlled.EntityId;
+                        cachedStatusText.Clear(); // clear cache when entering new cockpit as they no longer are relevant, since they're per slot index
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        /// <summary>
+        /// Generic status that is only used after specific status callbacks return false or don't exist.
+        /// </summary>
+        public bool Status_GenericFallback(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            if(toolbarItem.GroupName != null)
+            {
+                switch(actionLabel.Action.Id)
+                {
+                    case "OnOff":
+                    case "OnOff_On":
+                    case "OnOff_Off":
+                    {
+                        // this is just a short-lived cache to aleviate callback spam
+                        string cachedText;
+                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
+                        {
+                            sb.Append(cachedText);
+                            return true;
+                        }
+
+                        int startIndex = Math.Max(0, sb.Length);
+
+                        var blocks = GetGroupBlocks(block, toolbarItem.GroupName);
+                        if(blocks == null)
+                            break;
+
+                        int on = 0;
+                        int off = 0;
+
+                        foreach(var b in blocks)
+                        {
+                            var func = b as IMyFunctionalBlock;
+                            if(func == null)
+                                continue;
+
+                            if(func.Enabled)
+                                on++;
+                            else
+                                off++;
+                        }
+
+                        blocks.Clear();
+
+                        if(off == 0)
+                            sb.Append("All On");
+                        else if(on == 0)
+                            sb.Append("All Off");
+                        else
+                            sb.Append(on).Append(" On\n").Append(off).Append(" Off");
+
+                        cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                        return true;
+                    }
+
+                    case "Open":
+                    case "Open_On":
+                    case "Open_Off":
+                    {
+                        string cachedText;
+                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
+                        {
+                            sb.Append(cachedText);
+                            return true;
+                        }
+
+                        int startIndex = Math.Max(0, sb.Length);
+
+                        var blocks = GetGroupBlocks(block, toolbarItem.GroupName);
+                        if(blocks == null)
+                            break;
+
+                        int open = 0;
+                        int closed = 0;
+                        int progress = 0;
+
+                        foreach(var b in blocks)
+                        {
+                            var door = b as IMyDoor;
+                            if(door == null)
+                                continue;
+
+                            switch(door.Status)
+                            {
+                                case DoorStatus.Open: open++; break;
+                                case DoorStatus.Closed: closed++; break;
+
+                                case DoorStatus.Opening:
+                                case DoorStatus.Closing:
+                                    progress++; break;
+                            }
+                        }
+
+                        blocks.Clear();
+
+                        // TODO: improve!
+
+                        if(progress > 0)
+                            sb.Append("...\n");
+
+                        if(closed == 0)
+                            sb.Append("All Open");
+                        else if(open == 0)
+                            sb.Append("All Closed");
+                        else
+                            sb.Append(open).Append(" Open\n").Append(closed).Append(" Closed");
+
+                        cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                        return true;
+                    }
+
+                    // TODO: more shared actions...
+                }
+            }
+            else
+            {
+                // TODO: non-group shared actions... ?
+            }
+
+            return false;
+        }
+
+        List<IMyTerminalBlock> GroupBlocks = new List<IMyTerminalBlock>();
+        private List<IMyTerminalBlock> GetGroupBlocks(IMyTerminalBlock firstBlock, string groupName)
+        {
+            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlock.CubeGrid);
+
+            var group = gts.GetBlockGroupWithName(groupName);
+
+            if(group == null)
+                return null;
+
+            GroupBlocks.Clear();
+            group.GetBlocks(GroupBlocks);
+
+            return GroupBlocks;
         }
 
         void InitCustomStatus()
@@ -95,8 +264,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         // NOTE: for groups only the first block gets the writer called, and no way to detect if it's a group.
         // TODO: one method per action ID instead for less switch() on runtime?
 
-        bool Status_PB(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_PB(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
+            if(toolbarItem.GroupName != null)
+            {
+                // TODO: group stuff?
+            }
+
             switch(actionLabel.Action.Id)
             {
                 case "Run":
@@ -147,7 +321,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Timer(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Timer(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -162,7 +336,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     if(working && timer.IsCountingDown)
                     {
                         string cachedText;
-                        if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
+                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
                         {
                             bool blink = DateTime.UtcNow.Millisecond >= 500;
                             sb.Append(blink ? "ˇ " : "  ");
@@ -194,7 +368,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 if(separatorIndex < detailedInfo.Length)
                                 {
                                     var time = detailedInfo.Substring(separatorIndex, endLineIndex - separatorIndex);
-                                    cachedStatusText.Add(block.EntityId, time);
+                                    cachedStatusText.Add(toolbarItem.Index, time);
 
                                     // keep blinking separate so it can blink faster
                                     bool blink = DateTime.UtcNow.Millisecond >= 500;
@@ -209,11 +383,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         }
 
                         sb.Append("Running");
-                        cachedStatusText.Add(block.EntityId, "Running");
+                        cachedStatusText.Add(toolbarItem.Index, "Running");
                     }
                     else
                     {
-                        cachedStatusText.Remove(block.EntityId);
+                        cachedStatusText.Remove(toolbarItem.Index);
                         sb.Append(working ? "Stopped" : "Off");
                     }
 
@@ -224,14 +398,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_OxygenGenerator(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_OxygenGenerator(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
                 case "Refill":
                 {
                     string cachedText;
-                    if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
+                    if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -277,7 +451,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(hasIce ? "No Bottles" : "No Ice");
                     }
 
-                    cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                    cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
                     return true;
                 }
             }
@@ -285,14 +459,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_GasTank(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_GasTank(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
                 case "Refill":
                 {
                     string cachedText;
-                    if(cachedStatusText.TryGetValue(block.EntityId, out cachedText))
+                    if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -337,7 +511,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(tank.FilledRatio > 0 ? "No Bottles" : "No Gas");
                     }
 
-                    cachedStatusText.Add(block.EntityId, sb.ToString(startIndex, sb.Length - startIndex));
+                    cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
                     return true;
                 }
             }
@@ -345,7 +519,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Weapons(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Weapons(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -363,7 +537,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Warhead(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Warhead(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -407,7 +581,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_MotorStator(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_MotorStator(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -432,7 +606,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Suspension(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Suspension(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -447,7 +621,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Piston(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Piston(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -473,7 +647,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_Connector(ActionWriterOverride actionLabel, IMyTerminalBlock block, StringBuilder sb)
+        bool Status_Connector(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {

@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Systems;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using SpaceEngineers.Game.ModAPI;
-
-// DEBUG TODO Customdata for labelling in order?
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
@@ -27,7 +23,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         private readonly string actionName;
         private string actionNameCache;
 
-        private bool ignoreWriter = false;
+        private bool originalWriterException = false;
 
         private bool showBlockName = false;
 
@@ -38,21 +34,26 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         const int MAX_NAME_LENGTH = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
 
+        // measured from "Argumen" word
+        // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
+        const int MAX_LINE_SIZE = 126;
+        const int SPACE_CHAR_STRETCH = 15; // arbitrary size to guarantee to go from one side to the other
+        const int LINE_CHAR_STRETCH = 15;
+
         public ActionWriterOverride(IMyTerminalAction action)
         {
             Action = action;
+
             OriginalWriter = action.Writer;
             CustomWriter = NewWriter;
 
             actionName = action.Name.ToString();
+            showBlockName = Main.ToolbarActionLabels.IsActionUseful(Action.Id);
+            mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
 
             Action.Writer = CustomWriter;
 
-            mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
-
-            showBlockName = Main.ToolbarActionLabels.IsActionUseful(Action.Id);
-
-            // HACK giving an icon for some iconless actions
+            // HACK: giving an icon for some iconless actions
             if(string.IsNullOrEmpty(action.Icon))
             {
                 if(Action.Id == "Attach")
@@ -66,9 +67,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
         }
 
-        public void SettingChanged(int newMode)
+        public void Cleanup()
         {
-            mode = (ToolbarActionLabelsMode)newMode;
+            try
+            {
+                // HACK: can't set to null because reasons
+                Action.Writer = (b, s) => { };
+            }
+            catch(Exception)
+            {
+                // ignore BS
+            }
+        }
+
+        public void SettingChanged(ToolbarActionLabelsMode newMode)
+        {
+            mode = newMode;
 
             // FIXME: uncomment once CustomWriter getter is no longer throwing exceptions for PB Run action
             //if(mode == ToolbarActionLabelsMode.Off)
@@ -92,18 +106,26 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 bool overrideCustomStatus = false;
 
+                // controller HUD not supported right now
                 if(mode != ToolbarActionLabelsMode.Off && !MyAPIGateway.Input.IsJoystickLastUsed)
                 {
+                    // HACK: accuracy of this relies on the order of this writer being the same order as the items in the toolbar
+                    // this method gets the current one and automatically switches to next.
+                    var toolbarItem = Main.ToolbarCustomNames.GetToolbarItem();
+
+                    if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+                        Log.Info($"NewWriter called: {Action.Id,-24} {toolbarItem.Index.ToString(),-4} label={toolbarItem.Label}, group={toolbarItem.GroupName}");
+
                     if(mode == ToolbarActionLabelsMode.AlwaysOn
                     || MyAPIGateway.Gui.IsCursorVisible
                     || Main.ToolbarActionLabels.EnteredCockpitTicks > 0
                     || (mode == ToolbarActionLabelsMode.HudHints && (Main.GameConfig.HudState == HudState.HINTS || MyAPIGateway.Input.IsAnyAltKeyPressed()))
                     || (mode == ToolbarActionLabelsMode.AltKey && MyAPIGateway.Input.IsAnyAltKeyPressed()))
                     {
-                        AppendLabel(block, sb);
+                        AppendLabel(block, sb, toolbarItem);
                     }
 
-                    sb.Append(' ', LINE_CHAR_STRETCH).Append('\n'); // left-align everything for consistency
+                    sb.Append(' ', SPACE_CHAR_STRETCH).Append('\n'); // left-align everything for consistency
 
                     // elevate the label above the icon so it's readable
                     // also required here to have some empty lines to remove for multi-line custom statuses
@@ -111,7 +133,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     sb.Append('\n');
                     sb.Append('\n');
 
-                    overrideCustomStatus = AppendCustomStatus(block, sb);
+                    overrideCustomStatus = AppendCustomStatus(block, sb, toolbarItem);
                 }
 
                 if(!overrideCustomStatus)
@@ -127,7 +149,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         void AppendOriginalStatus(IMyTerminalBlock block, StringBuilder sb)
         {
-            if(ignoreWriter)
+            if(originalWriterException)
                 return;
 
             // HACK invoking original Writer on any action that has no writer throws NRE inside the game code, undetectable in a graceful way.
@@ -137,15 +159,15 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
             catch(Exception)
             {
-                ignoreWriter = true;
+                originalWriterException = true;
                 //Log.Error($"Error calling original writer on {block.GetType().Name} with action {Action.Id}\n{e}", Log.PRINT_MESSAGE);
             }
         }
 
-        bool AppendCustomStatus(IMyTerminalBlock block, StringBuilder sb)
+        bool AppendCustomStatus(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
-            if(customStatusChecked && customStatusFunc == null)
-                return false;
+            //if(customStatusChecked && customStatusFunc == null)
+            //    return false;
 
             if(!Main.Config.ToolbarActionStatus.Value)
                 return false;
@@ -156,12 +178,16 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
             }
 
-            if(customStatusFunc == null)
-                return false;
-
             var tempSB = Main.Caches.SB;
             tempSB.Clear();
-            bool overrideStatus = customStatusFunc.Invoke(this, block, tempSB);
+
+            bool overrideStatus = false;
+
+            if(customStatusFunc != null)
+                overrideStatus = customStatusFunc.Invoke(this, block, toolbarItem, tempSB);
+
+            if(!overrideStatus)
+                overrideStatus = Main.ToolbarActionStatus.Status_GenericFallback(this, block, toolbarItem, tempSB);
 
             if(tempSB.Length > 0)
             {
@@ -188,15 +214,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return overrideStatus;
         }
 
-        void AppendLabel(IMyTerminalBlock block, StringBuilder sb)
+        void AppendLabel(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
-            AppendBlockName(block, sb);
-            AppendActionName(block, sb);
-
-            // over the vanilla inventory bar (collides with bar and selected tool text and "Toolbar" label in G menu)
-            sb.Append('\n');
-            sb.Append('\n');
-            sb.Append('\n');
+            // custom label from cockpit's CustomData replaces name and action
+            if(toolbarItem.Label != null)
+            {
+                sb.Append(toolbarItem.Label);
+            }
+            else
+            {
+                AppendBlockName(block, sb, toolbarItem);
+                AppendActionName(block, sb, toolbarItem);
+            }
 
             // over the 2nd inventory bar if shown
             if(Main.ShipToolInventoryBar.Shown)
@@ -205,21 +234,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 sb.Append('\n');
                 sb.Append('\n');
             }
+
+            // over the vanilla inventory bar (collides with bar and selected tool text and "Toolbar" label in G menu)
+            sb.Append('\n');
+            sb.Append('\n');
+            sb.Append('\n');
         }
 
-        private void AppendBlockName(IMyTerminalBlock block, StringBuilder sb)
+        private void AppendBlockName(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
-            // issues with printing block CustomName:
-            // - can't detect groups
-            // - gets kinda large
-
             // TODO: toggleable per block somehow (maybe use Show In Toolbar Config?)
 
             var blockNameMode = (ToolbarActionBlockNameMode)Main.Config.ToolbarActionBlockNames.Value;
-
             if(blockNameMode == ToolbarActionBlockNameMode.Off)
                 return;
 
+            bool isGroup = (toolbarItem.GroupName != null);
             bool show = false;
 
             if(blockNameMode == ToolbarActionBlockNameMode.All)
@@ -232,14 +262,35 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
             else if(blockNameMode == ToolbarActionBlockNameMode.Useful)
             {
-                show = showBlockName || MyAPIGateway.Gui.IsCursorVisible;
+                show = isGroup || showBlockName || MyAPIGateway.Gui.IsCursorVisible;
             }
 
             if(!show)
                 return;
 
+            if(isGroup)
+            {
+                var parsedGroupName = Main.ToolbarParsedDataCache.GetGroupNameCache(toolbarItem.Index);
+                if(parsedGroupName != null)
+                {
+                    sb.Append(parsedGroupName);
+                }
+                else
+                {
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    AppendWordWrapped(sb, toolbarItem.GroupName, MAX_NAME_LENGTH);
+                    sb.Append('\n').Append('¯', LINE_CHAR_STRETCH).Append('\n');
+
+                    parsedGroupName = sb.ToString(startIndex, sb.Length - startIndex);
+
+                    Main.ToolbarParsedDataCache.SetGroupNameCache(toolbarItem.Index, parsedGroupName);
+                }
+                return;
+            }
+
             // this cache expires on its own when block's customname changes.
-            var parsedCustomName = Main.ToolbarParsedDataCache.GetNameCache(block.EntityId);
+            var parsedCustomName = Main.ToolbarParsedDataCache.GetBlockNameCache(block.EntityId);
             if(parsedCustomName != null)
             {
                 sb.Append(parsedCustomName);
@@ -249,64 +300,70 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 int startIndex = Math.Max(0, sb.Length);
 
                 AppendWordWrapped(sb, block.CustomName, MAX_NAME_LENGTH);
-                sb.Append('\n').Append('-', LINE_CHAR_STRETCH).Append('\n');
+                sb.Append('\n').Append('¯', LINE_CHAR_STRETCH).Append('\n');
 
                 parsedCustomName = sb.ToString(startIndex, sb.Length - startIndex);
 
-                Main.ToolbarParsedDataCache.SetNameCache(block, parsedCustomName);
+                Main.ToolbarParsedDataCache.SetBlockNameCache(block, parsedCustomName);
             }
         }
 
-        private void AppendActionName(IMyTerminalBlock block, StringBuilder sb)
+        private void AppendActionName(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
+            // NOTE: the block condition's cases use 'return' to avoid caching because those actions are shared throughout multiple block types so can't be cached per action.
+
+            if(block is IMyShipGrinder)
+            {
+                switch(Action.Id)
+                {
+                    case "OnOff": AppendWordWrapped(sb, "Grind On/Off"); return;
+                    case "OnOff_On": AppendWordWrapped(sb, "Start grinding"); return;
+                    case "OnOff_Off": AppendWordWrapped(sb, "Stop grinding"); return;
+                }
+            }
+
+            if(block is IMyShipWelder)
+            {
+                switch(Action.Id)
+                {
+                    case "OnOff": AppendWordWrapped(sb, "Weld On/Off"); return;
+                    case "OnOff_On": AppendWordWrapped(sb, "Start welding"); return;
+                    case "OnOff_Off": AppendWordWrapped(sb, "Stop welding"); return;
+                }
+            }
+
+            if(block is IMyShipDrill)
+            {
+                switch(Action.Id)
+                {
+                    case "OnOff": AppendWordWrapped(sb, "Drill On/Off"); return;
+                    case "OnOff_On": AppendWordWrapped(sb, "Start drilling"); return;
+                    case "OnOff_Off": AppendWordWrapped(sb, "Stop drilling"); return;
+                }
+            }
+
+            if(block is IMyRemoteControl)
+            {
+                switch(Action.Id)
+                {
+                    case "Forward": AppendWordWrapped(sb, "Set Direction Forward"); return;
+                    case "Backward": AppendWordWrapped(sb, "Set Direction Backward"); return;
+                    case "Left": AppendWordWrapped(sb, "Set Direction Left"); return;
+                    case "Right": AppendWordWrapped(sb, "Set Direction Right"); return;
+                    case "Up": AppendWordWrapped(sb, "Set Direction Up"); return;
+                    case "Down": AppendWordWrapped(sb, "Set Direction Down"); return;
+                }
+            }
+
+            if(block is IMyProgrammableBlock && toolbarItem.PBRunArgument != null && Action.Id == "Run")
+            {
+                sb.Append(toolbarItem.PBRunArgument);
+                return; // no cache
+            }
+
             if(actionNameCache == null)
             {
                 int startIndex = Math.Max(0, sb.Length);
-
-                // NOTE: the block condition's cases use 'return' to avoid caching because those actions are shared throughout multiple block types so can't be cached per action.
-
-                if(block is IMyShipGrinder)
-                {
-                    switch(Action.Id)
-                    {
-                        case "OnOff": AppendWordWrapped(sb, "Grind On/Off"); return;
-                        case "OnOff_On": AppendWordWrapped(sb, "Start grinding"); return;
-                        case "OnOff_Off": AppendWordWrapped(sb, "Stop grinding"); return;
-                    }
-                }
-
-                if(block is IMyShipWelder)
-                {
-                    switch(Action.Id)
-                    {
-                        case "OnOff": AppendWordWrapped(sb, "Weld On/Off"); return;
-                        case "OnOff_On": AppendWordWrapped(sb, "Start welding"); return;
-                        case "OnOff_Off": AppendWordWrapped(sb, "Stop welding"); return;
-                    }
-                }
-
-                if(block is IMyShipDrill)
-                {
-                    switch(Action.Id)
-                    {
-                        case "OnOff": AppendWordWrapped(sb, "Drill On/Off"); return;
-                        case "OnOff_On": AppendWordWrapped(sb, "Start drilling"); return;
-                        case "OnOff_Off": AppendWordWrapped(sb, "Stop drilling"); return;
-                    }
-                }
-
-                if(block is IMyRemoteControl)
-                {
-                    switch(Action.Id)
-                    {
-                        case "Forward": AppendWordWrapped(sb, "Set Direction Forward"); return;
-                        case "Backward": AppendWordWrapped(sb, "Set Direction Backward"); return;
-                        case "Left": AppendWordWrapped(sb, "Set Direction Left"); return;
-                        case "Right": AppendWordWrapped(sb, "Set Direction Right"); return;
-                        case "Up": AppendWordWrapped(sb, "Set Direction Up"); return;
-                        case "Down": AppendWordWrapped(sb, "Set Direction Down"); return;
-                    }
-                }
 
                 // shortened some action names
                 switch(Action.Id)
@@ -360,11 +417,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 sb.Append(actionNameCache);
             }
         }
-
-        // measured from "Argumen" word
-        // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
-        const int MAX_LINE_SIZE = 126;
-        const int LINE_CHAR_STRETCH = 12; // arbitrary size to guarantee to go from one side to the other
 
         public static void AppendWordWrapped(StringBuilder sb, string text, int maxLength = 0)
         {

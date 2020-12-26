@@ -207,8 +207,11 @@
     <Compile Include="Features\TextAPIMenu\ModMenu.cs" />
     <Compile Include="Features\TextGeneration\TextGeneration.cs" />
     <Compile Include="Features\ToolbarLabels\ActionWriterOverride.cs" />
+    <Compile Include="Features\ToolbarLabels\BlockToolbarData.cs" />
+    <Compile Include="Features\ToolbarLabels\ToolbarItemData.cs" />
     <Compile Include="Features\ToolbarLabels\ToolbarParsedDataCache.cs" />
     <Compile Include="Features\ToolbarLabels\ToolbarActionStatus.cs" />
+    <Compile Include="Features\ToolbarLabels\ToolbarCustomNames.cs" />
     <Compile Include="Features\ToolbarLabels\ToolbarActionLabels.cs" />
     <Compile Include="Features\TurretHUD.cs" />
     <Compile Include="Features\WhatsNew.cs" />

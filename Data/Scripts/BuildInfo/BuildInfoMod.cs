@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         public ShipToolInventoryBar ShipToolInventoryBar;
         public ToolbarActionLabels ToolbarActionLabels;
         public ToolbarActionStatus ToolbarActionStatus;
+        public ToolbarCustomNames ToolbarCustomNames;
         public ToolbarParsedDataCache ToolbarParsedDataCache;
         public WhatsNew WhatsNew;
         public ItemTooltips ItemTooltips;
@@ -97,6 +98,7 @@ namespace Digi.BuildInfo
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             ToolbarActionLabels = new ToolbarActionLabels(this);
             ToolbarActionStatus = new ToolbarActionStatus(this);
+            ToolbarCustomNames = new ToolbarCustomNames(this);
             ToolbarParsedDataCache = new ToolbarParsedDataCache(this);
             WhatsNew = new WhatsNew(this);
             ItemTooltips = new ItemTooltips(this);

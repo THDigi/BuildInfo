@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
@@ -113,6 +114,14 @@ namespace Digi.BuildInfo.Systems
         /// Hand/ship tool definition id, default otherwise.
         /// </summary>
         public MyDefinitionId ToolDefId { get; private set; }
+
+        /// <summary>
+        /// WARNING: This is only for optimization in reducing OB calls, has quirks!
+        /// It doesn't get reliably nulled, nullcheck and test entityId matching before using.
+        /// Advantage is that it does get updated when UI gets closed, controller changes or toolbar navigates.
+        /// </summary>
+        public MyObjectBuilder_ShipController ShipControllerOB { get; private set; }
+        public event Action<MyObjectBuilder_ShipController> ShipControllerOBChanged;
 
         private IMyEntity prevHeldTool;
         private IMyControllableEntity prevControlled;
@@ -412,8 +421,10 @@ namespace Digi.BuildInfo.Systems
                 return;
 
             // TODO: find a better way to get selected tool type
-            var shipControllerObj = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
-            var selectedToolId = shipControllerObj.SelectedGunId;
+            ShipControllerOB = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
+            ShipControllerOBChanged?.Invoke(ShipControllerOB);
+
+            var selectedToolId = ShipControllerOB.SelectedGunId;
 
             if(selectedToolId.HasValue)
             {

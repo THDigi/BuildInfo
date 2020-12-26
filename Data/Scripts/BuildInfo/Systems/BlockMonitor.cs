@@ -15,6 +15,9 @@ namespace Digi.BuildInfo.Systems
         public bool CanAddTypes { get; private set; } = true;
 
         public delegate void CallbackDelegate(IMySlimBlock block);
+
+        public event CallbackDelegate BlockAdded;
+
         private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> monitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);
 
         private readonly List<IMySlimBlock> tmpBlocks = new List<IMySlimBlock>();
@@ -78,7 +81,7 @@ namespace Digi.BuildInfo.Systems
                 if(grid == null)
                     return;
 
-                grid.OnBlockAdded += BlockAdded;
+                grid.OnBlockAdded += BlockAdd;
                 grid.OnClose += GridClosed;
 
                 tmpBlocks.Clear();
@@ -86,7 +89,7 @@ namespace Digi.BuildInfo.Systems
 
                 foreach(var slim in tmpBlocks)
                 {
-                    BlockAdded(slim);
+                    BlockAdd(slim);
                 }
 
                 tmpBlocks.Clear();
@@ -100,18 +103,26 @@ namespace Digi.BuildInfo.Systems
         void GridClosed(IMyEntity ent)
         {
             var grid = (IMyCubeGrid)ent;
-            grid.OnBlockAdded -= BlockAdded;
+            grid.OnBlockAdded -= BlockAdd;
             grid.OnClose -= GridClosed;
         }
 
-        void BlockAdded(IMySlimBlock slim)
+        void BlockAdd(IMySlimBlock slim)
         {
             try
             {
+                try
+                {
+                    BlockAdded?.Invoke(slim);
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
+
                 var typeId = slim.BlockDefinition.Id.TypeId;
 
                 List<CallbackDelegate> callbacks;
-
                 if(!monitorBlockTypes.TryGetValue(typeId, out callbacks))
                     return;
 

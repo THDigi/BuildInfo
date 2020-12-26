@@ -123,7 +123,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
             ItemAdd_ToolbarActionLabels(Category_HUD);
             ItemAdd_ToolbarActionBlockNames(Category_HUD);
-            SimpleToggle(Category_HUD, "Toolbar Action Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
+            SimpleToggle(Category_HUD, "Toolbar Action Override Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
 
             SimpleColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld);
             SimpleColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay);
