@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
     {
         private readonly Dictionary<long, string> BlockNames = new Dictionary<long, string>();
 
-        private readonly Dictionary<int, string> GroupNames = new Dictionary<int, string>();
+        private readonly Dictionary<int, string> ActionNames = new Dictionary<int, string>();
 
         private long previousControlledEntId;
 
@@ -31,18 +31,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         /// <summary>
         /// Returns cache if exists, or null.
         /// </summary>
-        public string GetGroupNameCache(int index)
+        public string GetActionNameCache(int index)
         {
-            return GroupNames.GetValueOrDefault(index, null);
+            return ActionNames.GetValueOrDefault(index, null);
         }
 
         /// <summary>
-        /// Stores the specified group name for the specified index.
+        /// Stores the specified name for the specified index.
         /// Cache gets removed once player uses any GUI or changes cockpits.
         /// </summary>
-        public void SetGroupNameCache(int index, string parsedName)
+        public void SetActionNameCache(int index, string parsedName)
         {
-            GroupNames[index] = parsedName;
+            ActionNames[index] = parsedName;
         }
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
@@ -53,13 +53,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(previousControlledEntId != shipController.EntityId)
             {
                 previousControlledEntId = shipController.EntityId;
-                GroupNames.Clear();
+                ActionNames.Clear();
                 return;
             }
 
             if(MyAPIGateway.Gui.IsCursorVisible && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {
-                GroupNames.Clear();
+                ActionNames.Clear();
                 return;
             }
         }

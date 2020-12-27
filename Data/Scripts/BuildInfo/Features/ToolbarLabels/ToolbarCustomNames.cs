@@ -234,7 +234,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(keyString.Length != 3 || keyString[1] != KeySeparator)
                     {
-                        blockData.AddError($"{keyString} has bad format, expected: 1{KeySeparator.ToString()}1 = Label");
+                        blockData.AddError($"'{keyString}' is wrong, format: 1{KeySeparator.ToString()}1 = Label");
                         continue;
                     }
 
@@ -244,7 +244,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(page < 1 || page > 9 || slot < 1 || slot > 9)
                     {
-                        blockData.AddError($"{keyString} invalid values, page/slot must be between 1 and 9");
+                        blockData.AddError($"'{keyString}' wrong numbers, each must be 1 and 9.");
                         continue;
                     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
@@ -10,18 +11,19 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
 using VRage.ObjectBuilders;
+using VRageMath;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
-
-// TODO: group combined status?
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
     public class ToolbarActionStatus : ModComponent
     {
-        public const int CacheLiveTicks = Constants.TICKS_PER_SECOND * 1;
+        public const int ShortCacheLiveTicks = Constants.TICKS_PER_SECOND;
+        public const int ShorterCacheLiveTicks = Constants.TICKS_PER_SECOND / 4;
 
         public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb);
 
@@ -32,9 +34,16 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         private readonly Dictionary<MyObjectBuilderType, StatusDel> customStatus = new Dictionary<MyObjectBuilderType, StatusDel>(MyObjectBuilderType.Comparer);
 
-        private readonly Dictionary<int, string> cachedStatusText = new Dictionary<int, string>();
+        private readonly Dictionary<int, string> shortLivedCache = new Dictionary<int, string>();
+        private readonly Dictionary<int, string> shorterLivedCache = new Dictionary<int, string>();
+
+        private readonly List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
 
         private long previousShipController;
+
+        private bool animFlip = false;
+        private int animCycle = 0;
+        private const int animCycleMax = 4; // exclusive
 
         public ToolbarActionStatus(BuildInfoMod main) : base(main)
         {
@@ -55,9 +64,25 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(tick % CacheLiveTicks == 0)
+            if(tick % ShortCacheLiveTicks == 0)
             {
-                cachedStatusText.Clear();
+                shortLivedCache.Clear();
+            }
+
+            if(tick % ShorterCacheLiveTicks == 0)
+            {
+                shorterLivedCache.Clear();
+            }
+
+            if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
+            {
+                animFlip = !animFlip;
+            }
+
+            if(tick % (Constants.TICKS_PER_SECOND / 4) == 0)
+            {
+                if(++animCycle >= animCycleMax)
+                    animCycle = 0;
             }
         }
 
@@ -73,7 +98,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     if(controlled != null && previousShipController != controlled.EntityId)
                     {
                         previousShipController = controlled.EntityId;
-                        cachedStatusText.Clear(); // clear cache when entering new cockpit as they no longer are relevant, since they're per slot index
+
+                        // clear caches when entering new cockpit as they no longer are relevant, since they're per slot index
+                        shortLivedCache.Clear();
+                        shorterLivedCache.Clear();
                     }
                 }
             }
@@ -84,141 +112,87 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         }
 
         /// <summary>
-        /// Generic status that is only used after specific status callbacks return false or don't exist.
+        /// Generic status that is used only if the per-type statuses return false.
         /// </summary>
         public bool Status_GenericFallback(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
-            if(toolbarItem.GroupName != null)
-            {
-                switch(actionLabel.Action.Id)
-                {
-                    case "OnOff":
-                    case "OnOff_On":
-                    case "OnOff_Off":
-                    {
-                        // this is just a short-lived cache to aleviate callback spam
-                        string cachedText;
-                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
-                        {
-                            sb.Append(cachedText);
-                            return true;
-                        }
+            if(toolbarItem.GroupNameWrapped != null)
+                return Status_GenericGroupFallback(actionLabel, block, toolbarItem, sb);
 
-                        int startIndex = Math.Max(0, sb.Length);
-
-                        var blocks = GetGroupBlocks(block, toolbarItem.GroupName);
-                        if(blocks == null)
-                            break;
-
-                        int on = 0;
-                        int off = 0;
-
-                        foreach(var b in blocks)
-                        {
-                            var func = b as IMyFunctionalBlock;
-                            if(func == null)
-                                continue;
-
-                            if(func.Enabled)
-                                on++;
-                            else
-                                off++;
-                        }
-
-                        blocks.Clear();
-
-                        if(off == 0)
-                            sb.Append("All On");
-                        else if(on == 0)
-                            sb.Append("All Off");
-                        else
-                            sb.Append(on).Append(" On\n").Append(off).Append(" Off");
-
-                        cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
-                        return true;
-                    }
-
-                    case "Open":
-                    case "Open_On":
-                    case "Open_Off":
-                    {
-                        string cachedText;
-                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
-                        {
-                            sb.Append(cachedText);
-                            return true;
-                        }
-
-                        int startIndex = Math.Max(0, sb.Length);
-
-                        var blocks = GetGroupBlocks(block, toolbarItem.GroupName);
-                        if(blocks == null)
-                            break;
-
-                        int open = 0;
-                        int closed = 0;
-                        int progress = 0;
-
-                        foreach(var b in blocks)
-                        {
-                            var door = b as IMyDoor;
-                            if(door == null)
-                                continue;
-
-                            switch(door.Status)
-                            {
-                                case DoorStatus.Open: open++; break;
-                                case DoorStatus.Closed: closed++; break;
-
-                                case DoorStatus.Opening:
-                                case DoorStatus.Closing:
-                                    progress++; break;
-                            }
-                        }
-
-                        blocks.Clear();
-
-                        // TODO: improve!
-
-                        if(progress > 0)
-                            sb.Append("...\n");
-
-                        if(closed == 0)
-                            sb.Append("All Open");
-                        else if(open == 0)
-                            sb.Append("All Closed");
-                        else
-                            sb.Append(open).Append(" Open\n").Append(closed).Append(" Closed");
-
-                        cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
-                        return true;
-                    }
-
-                    // TODO: more shared actions...
-                }
-            }
-            else
-            {
-                // TODO: non-group shared actions... ?
-            }
+            // TODO: non-group shared actions... ?
 
             return false;
         }
 
-        List<IMyTerminalBlock> GroupBlocks = new List<IMyTerminalBlock>();
-        private List<IMyTerminalBlock> GetGroupBlocks(IMyTerminalBlock firstBlock, string groupName)
+        bool Status_GenericGroupFallback(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
-            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlock.CubeGrid);
+            switch(actionLabel.Action.Id)
+            {
+                case "OnOff":
+                case "OnOff_On":
+                case "OnOff_Off":
+                {
+                    // this is just a short-lived cache to aleviate callback spam
+                    string cachedText;
+                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
 
-            var group = gts.GetBlockGroupWithName(groupName);
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyFunctionalBlock>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
 
-            if(group == null)
-                return null;
+                    int on = 0;
+                    int off = 0;
 
-            GroupBlocks.Clear();
-            group.GetBlocks(GroupBlocks);
+                    foreach(IMyFunctionalBlock b in blocks)
+                    {
+                        if(b.Enabled)
+                            on++;
+                        else
+                            off++;
+                    }
 
-            return GroupBlocks;
+                    blocks.Clear();
+
+                    bool tooMany = (on + off) > 99;
+
+                    if(off == 0)
+                    {
+                        if(tooMany)
+                            sb.Append("All On");
+                        else
+                            sb.Append("All\n").Append(on).Append(" On");
+                    }
+                    else if(on == 0)
+                    {
+                        if(tooMany)
+                            sb.Append("All Off");
+                        else
+                            sb.Append("All\n").Append(off).Append(" Off");
+                    }
+                    else
+                    {
+                        if(tooMany)
+                            sb.Append("Mixed");
+                        else
+                            sb.Append(on).Append(" On\n").Append(off).Append(" Off");
+                    }
+
+                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
+
+                // TODO: more shared actions...
+            }
+
+            return false;
         }
 
         void InitCustomStatus()
@@ -254,6 +228,16 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             Add(typeof(MyObjectBuilder_PistonBase), pistons);
 
             Add(typeof(MyObjectBuilder_ShipConnector), Status_Connector);
+
+            var doors = new StatusDel(Status_Doors);
+            Add(typeof(MyObjectBuilder_DoorBase), doors);
+            Add(typeof(MyObjectBuilder_Door), doors);
+            Add(typeof(MyObjectBuilder_AdvancedDoor), doors);
+            Add(typeof(MyObjectBuilder_AirtightDoorGeneric), doors);
+            Add(typeof(MyObjectBuilder_AirtightHangarDoor), doors);
+            Add(typeof(MyObjectBuilder_AirtightSlideDoor), doors);
+
+            Add(typeof(MyObjectBuilder_Parachute), Status_Parachute);
         }
 
         void Add(MyObjectBuilderType type, StatusDel action)
@@ -266,7 +250,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         bool Status_PB(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
-            if(toolbarItem.GroupName != null)
+            if(toolbarItem.GroupNameWrapped != null)
             {
                 // TODO: group stuff?
             }
@@ -336,7 +320,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     if(working && timer.IsCountingDown)
                     {
                         string cachedText;
-                        if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
+                        if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                         {
                             bool blink = DateTime.UtcNow.Millisecond >= 500;
                             sb.Append(blink ? "ˇ " : "  ");
@@ -368,7 +352,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 if(separatorIndex < detailedInfo.Length)
                                 {
                                     var time = detailedInfo.Substring(separatorIndex, endLineIndex - separatorIndex);
-                                    cachedStatusText.Add(toolbarItem.Index, time);
+                                    shortLivedCache.Add(toolbarItem.Index, time);
 
                                     // keep blinking separate so it can blink faster
                                     bool blink = DateTime.UtcNow.Millisecond >= 500;
@@ -383,11 +367,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         }
 
                         sb.Append("Running");
-                        cachedStatusText.Add(toolbarItem.Index, "Running");
+                        shortLivedCache.Add(toolbarItem.Index, "Running");
                     }
                     else
                     {
-                        cachedStatusText.Remove(toolbarItem.Index);
+                        shortLivedCache.Remove(toolbarItem.Index);
                         sb.Append(working ? "Stopped" : "Off");
                     }
 
@@ -405,7 +389,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Refill":
                 {
                     string cachedText;
-                    if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -451,7 +435,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(hasIce ? "No Bottles" : "No Ice");
                     }
 
-                    cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
                     return true;
                 }
             }
@@ -466,7 +450,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Refill":
                 {
                     string cachedText;
-                    if(cachedStatusText.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -511,7 +495,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(tank.FilledRatio > 0 ? "No Bottles" : "No Gas");
                     }
 
-                    cachedStatusText.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
                     return true;
                 }
             }
@@ -621,8 +605,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
+        #region Pistons
         bool Status_Piston(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
+            if(toolbarItem.GroupNameWrapped != null)
+                return Status_PistonGroup(actionLabel, block, toolbarItem, sb);
+
             switch(actionLabel.Action.Id)
             {
                 case "Extend":
@@ -630,7 +618,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Reverse":
                 {
                     var piston = (IMyPistonBase)block;
-                    sb.Append(piston.Velocity.ToString("0.##"));
+
+                    float min = piston.MinLimit;
+                    float max = piston.MaxLimit;
+                    float travelRatio = (piston.CurrentPosition - min) / (max - min);
+
+                    sb.Append((int)(travelRatio * 100)).Append("%");
                     return true;
                 }
 
@@ -646,6 +639,106 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             return false;
         }
+
+        bool Status_PistonGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Extend":
+                case "Retract":
+                case "Reverse":
+                {
+                    string cachedText;
+                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyPistonBase>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
+
+                    float travelAverage = 0;
+                    bool allOn = true;
+
+                    foreach(IMyPistonBase piston in blocks)
+                    {
+                        if(!piston.Enabled)
+                            allOn = false;
+
+                        float min = piston.MinLimit;
+                        float max = piston.MaxLimit;
+                        float travelRatio = (piston.CurrentPosition - min) / (max - min);
+                        travelAverage += travelRatio;
+                    }
+
+                    if(travelAverage > 0)
+                        travelAverage /= blocks.Count;
+
+                    if(!allOn && animFlip)
+                        sb.Append("OFF!\n");
+
+                    sb.Append((int)(travelAverage * 100)).Append("%");
+
+                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
+
+                case "Attach":
+                case "Detach":
+                case "Add Top Part":
+                {
+                    string cachedText;
+                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyFunctionalBlock>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
+
+                    int attached = 0;
+
+                    foreach(IMyPistonBase piston in blocks)
+                    {
+                        if(piston.IsAttached)
+                            attached++;
+                    }
+
+                    int total = blocks.Count;
+
+                    if(attached < total)
+                    {
+                        sb.Append("Attached:\n").Append(attached).Append(" / ").Append(total);
+                    }
+                    else if(attached == total)
+                    {
+                        sb.Append("All\nattached");
+                    }
+                    else
+                    {
+                        sb.Append("All\ndetached");
+                    }
+
+                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Pistons
 
         bool Status_Connector(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
@@ -670,5 +763,399 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             return false;
         }
+
+        #region Doors
+        bool Status_Doors(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            if(toolbarItem.GroupNameWrapped != null)
+                return Status_DoorsGroup(actionLabel, block, toolbarItem, sb);
+
+            // TODO: does AdvancedDoor need special treatment for OpenRatio?
+
+            switch(actionLabel.Action.Id)
+            {
+                case "Open":
+                case "Open_On":
+                case "Open_Off":
+                {
+                    var door = (IMyDoor)block;
+                    if(!door.Enabled && animFlip)
+                        sb.Append("OFF!\n");
+
+                    switch(door.Status)
+                    {
+                        case DoorStatus.Opening:
+                        {
+                            float ratio = MathHelper.Clamp(door.OpenRatio, 0f, 1f);
+                            sb.Append("Opening\n").Append((int)(ratio * 100)).Append("%");
+                            break;
+                        }
+
+                        case DoorStatus.Closing:
+                        {
+                            float ratio = 1f - MathHelper.Clamp(door.OpenRatio, 0f, 1f);
+                            sb.Append("Closing\n").Append((int)(ratio * 100)).Append("%");
+                            break;
+                        }
+
+                        case DoorStatus.Open: sb.Append("Open"); break;
+                        case DoorStatus.Closed: sb.Append("Closed"); break;
+                        default: return false;
+                    }
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        bool Status_DoorsGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Open":
+                case "Open_On":
+                case "Open_Off":
+                {
+                    string cachedText;
+                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyDoor>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
+
+                    // TODO include off state?
+
+                    int open = 0;
+                    int closed = 0;
+                    int opening = 0;
+                    int closing = 0;
+
+                    float averageOpenRatio = 0;
+                    int doors = 0;
+
+                    foreach(IMyDoor door in blocks)
+                    {
+                        doors++;
+
+                        switch(door.Status)
+                        {
+                            case DoorStatus.Open: open++; break;
+                            case DoorStatus.Closed: closed++; break;
+
+                            case DoorStatus.Opening:
+                                averageOpenRatio += MathHelper.Clamp(door.OpenRatio, 0f, 1f);
+                                opening++;
+                                break;
+
+                            case DoorStatus.Closing:
+                                averageOpenRatio += MathHelper.Clamp(door.OpenRatio, 0f, 1f);
+                                closing++;
+                                break;
+                        }
+                    }
+
+                    blocks.Clear();
+
+                    if(doors == 0)
+                        return false;
+
+                    int startIndex = Math.Max(0, sb.Length);
+                    try
+                    {
+                        bool tooMany = (doors > 99);
+                        int moving = (closing + opening);
+
+                        if(moving == 0)
+                        {
+                            if(closed > 0 && open > 0)
+                            {
+                                if(tooMany)
+                                    sb.Append("Mixed");
+                                else
+                                {
+                                    sb.Append(open).Append(" open\n");
+                                    sb.Append(closed).Append(" closed");
+                                }
+                                return true;
+                            }
+                            else if(open > 0)
+                            {
+                                if(tooMany)
+                                    sb.Append("All\nopen");
+                                else
+                                    sb.Append("All\n").Append(open).Append(" open");
+                                return true;
+                            }
+                            else if(closed > 0)
+                            {
+                                if(tooMany)
+                                    sb.Append("All\nclosed");
+                                else
+                                    sb.Append("All\n").Append(closed).Append(" closed");
+                                return true;
+                            }
+                        }
+                        else if(moving > 0)
+                        {
+                            averageOpenRatio /= moving;
+
+                            if(closing == 0 && opening > 0)
+                            {
+                                sb.Append("Opening\n").Append((int)(averageOpenRatio * 100)).Append("%");
+                                return true;
+                            }
+                            else if(opening == 0 && closing > 0)
+                            {
+                                sb.Append('\n').Append("Closing\n").Append((int)((1 - averageOpenRatio) * 100)).Append("%");
+                                return true;
+                            }
+                        }
+
+                        if(tooMany)
+                        {
+                            sb.Append("InPrgrs\nMixed");
+                        }
+                        else
+                        {
+                            sb.Append(opening).Append("/").Append(opening + open).Append(" o\n");
+                            sb.Append(closing).Append("/").Append(closing + closed).Append(" c");
+                        }
+
+                        return true;
+                    }
+                    finally
+                    {
+                        shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    }
+                }
+            }
+
+            return false;
+        }
+        #endregion Doors
+
+        #region Parachutes
+        bool Status_Parachute(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            if(toolbarItem.GroupNameWrapped != null)
+                return Status_ParachuteGroup(actionLabel, block, toolbarItem, sb);
+
+            switch(actionLabel.Action.Id)
+            {
+                case "Open":
+                case "Open_On":
+                case "Open_Off":
+                {
+                    var parachute = (IMyParachute)block;
+                    bool hasAmmo = true;
+
+                    var inv = parachute.GetInventory();
+                    if(inv != null)
+                    {
+                        var def = (MyParachuteDefinition)block.SlimBlock.BlockDefinition;
+                        var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
+                        hasAmmo = (foundItems >= def.MaterialDeployCost);
+                    }
+
+                    if(!parachute.Enabled && animFlip)
+                        sb.Append("OFF!\n");
+
+                    if(!hasAmmo && !animFlip && parachute.Status != DoorStatus.Open)
+                        sb.Append("Empty!\n");
+
+                    switch(parachute.Status)
+                    {
+                        case DoorStatus.Opening: sb.Append("Deploying..."); break;
+                        case DoorStatus.Closing: sb.Append("Closing..."); break;
+                        case DoorStatus.Open: sb.Append("Deployed"); break;
+                        case DoorStatus.Closed: sb.Append("Ready"); break;
+                        default: return false;
+                    }
+                    return true;
+                }
+
+                case "AutoDeploy":
+                {
+                    var parachute = (IMyParachute)block;
+                    bool autoDeploy = parachute.GetValue<bool>("AutoDeploy"); // HACK: no interface members for this
+
+                    if(autoDeploy)
+                    {
+                        if(!parachute.Enabled && animFlip)
+                            sb.Append("OFF!\n");
+                        else
+                            sb.Append("Auto\n");
+
+                        float deployHeight = parachute.GetValue<float>("AutoDeployHeight");
+                        sb.DistanceFormat(deployHeight, 1);
+                    }
+                    else
+                    {
+                        sb.Append("Manual");
+                    }
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        bool Status_ParachuteGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Open":
+                case "Open_On":
+                case "Open_Off":
+                {
+                    string cachedText;
+                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyParachute>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
+
+                    int open = 0;
+                    int ready = 0;
+                    bool allAmmo = true;
+                    bool allOn = true;
+
+                    foreach(IMyParachute parachute in blocks)
+                    {
+                        if(parachute.Status != DoorStatus.Open)
+                        {
+                            var inv = parachute.GetInventory();
+                            if(inv != null)
+                            {
+                                var def = (MyParachuteDefinition)block.SlimBlock.BlockDefinition;
+                                var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
+                                if(foundItems < def.MaterialDeployCost)
+                                    allAmmo = false;
+                            }
+                        }
+
+                        if(!parachute.Enabled)
+                            allOn = false;
+
+                        switch(parachute.Status)
+                        {
+                            case DoorStatus.Open: open++; break;
+                            case DoorStatus.Closed: ready++; break;
+                        }
+                    }
+
+                    blocks.Clear();
+
+                    if(!allAmmo && animFlip)
+                        sb.Append("Empty!\n");
+
+                    if(!allOn && !animFlip)
+                        sb.Append("OFF!\n");
+
+                    if(open > 0 && ready > 0)
+                        sb.Append("Mixed");
+                    else if(open > 0)
+                        sb.Append("Deployed");
+                    else
+                        sb.Append("Ready");
+
+                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
+
+                case "AutoDeploy": // vanilla status is borked
+                {
+                    string cachedText;
+                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyParachute>(blocks);
+                    if(blocks.Count == 0)
+                        return false;
+
+                    bool allOn = true;
+                    int auto = 0;
+                    int manual = 0;
+
+                    bool hasSmallerDeploy = false;
+                    float highestDeploy = 0;
+
+                    foreach(IMyParachute parachute in blocks)
+                    {
+                        if(!parachute.Enabled)
+                            allOn = false;
+
+                        bool autoDeploy = parachute.GetValue<bool>("AutoDeploy");
+                        if(autoDeploy)
+                        {
+                            auto++;
+
+                            float deployHeight = parachute.GetValue<float>("AutoDeployHeight");
+                            if(deployHeight > highestDeploy)
+                            {
+                                if(highestDeploy != 0)
+                                    hasSmallerDeploy = true;
+
+                                highestDeploy = deployHeight;
+                            }
+                        }
+                        else
+                        {
+                            manual++;
+                        }
+                    }
+
+                    blocks.Clear();
+
+                    if(auto > 0)
+                    {
+                        if(!allOn && animFlip)
+                            sb.Append("OFF!\n");
+                        else if(manual > 0)
+                            sb.Append("Mixed\n");
+                        else
+                            sb.Append("Auto\n");
+
+                        if(hasSmallerDeploy)
+                            sb.Append('<');
+
+                        sb.DistanceFormat(highestDeploy, 1);
+                    }
+                    else if(manual > 0)
+                    {
+                        sb.Append("Manual");
+                    }
+
+                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Parachutes
     }
 }

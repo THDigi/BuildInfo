@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         private ToolbarActionLabelsMode mode;
 
         private readonly string actionName;
-        private string actionNameCache;
+        private string editedNameCache;
 
         private bool originalWriterException = false;
 
@@ -32,13 +32,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         private static BuildInfoMod Main => BuildInfoMod.Instance;
 
-        const int MAX_NAME_LENGTH = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
-
-        // measured from "Argumen" word
-        // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
-        const int MAX_LINE_SIZE = 126;
-        const int SPACE_CHAR_STRETCH = 15; // arbitrary size to guarantee to go from one side to the other
-        const int LINE_CHAR_STRETCH = 15;
+        const int MaxNameLength = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
+        const char LeftAlignChar = ' ';
+        const int LeftAlignCount = 15; // to align text on left side
+        const char SeparatorChar = '¯';
+        const int SeparatorCount = 15; // to separate block name from action name
 
         public ActionWriterOverride(IMyTerminalAction action)
         {
@@ -114,7 +112,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     var toolbarItem = Main.ToolbarCustomNames.GetToolbarItem();
 
                     if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
-                        Log.Info($"NewWriter called: {Action.Id,-24} {toolbarItem.Index.ToString(),-4} label={toolbarItem.Label}, group={toolbarItem.GroupName}");
+                        Log.Info($"NewWriter called: {Action.Id,-24} {toolbarItem.Index.ToString(),-4} label={toolbarItem.LabelWrapped}, group={toolbarItem.GroupName}");
 
                     if(mode == ToolbarActionLabelsMode.AlwaysOn
                     || MyAPIGateway.Gui.IsCursorVisible
@@ -125,7 +123,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         AppendLabel(block, sb, toolbarItem);
                     }
 
-                    sb.Append(' ', SPACE_CHAR_STRETCH).Append('\n'); // left-align everything for consistency
+                    sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // left-align everything for consistency
 
                     // elevate the label above the icon so it's readable
                     // also required here to have some empty lines to remove for multi-line custom statuses
@@ -172,11 +170,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(!Main.Config.ToolbarActionStatus.Value)
                 return false;
 
-            if(!customStatusChecked)
-            {
-                customStatusChecked = true;
-                customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
-            }
+            // TODO: needs proper cache to be aware of different block types using same actionId e.g. parachute vs doors
+            //if(!customStatusChecked)
+            //{
+            //    customStatusChecked = true;
+            //    customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
+            //}
+
+            customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
 
             var tempSB = Main.Caches.SB;
             tempSB.Clear();
@@ -217,9 +218,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         void AppendLabel(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
             // custom label from cockpit's CustomData replaces name and action
-            if(toolbarItem.Label != null)
+            if(toolbarItem.LabelWrapped != null)
             {
-                sb.Append(toolbarItem.Label);
+                sb.Append(toolbarItem.LabelWrapped);
             }
             else
             {
@@ -249,7 +250,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(blockNameMode == ToolbarActionBlockNameMode.Off)
                 return;
 
-            bool isGroup = (toolbarItem.GroupName != null);
+            bool isGroup = (toolbarItem.GroupNameWrapped != null);
             bool show = false;
 
             if(blockNameMode == ToolbarActionBlockNameMode.All)
@@ -270,22 +271,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             if(isGroup)
             {
-                var parsedGroupName = Main.ToolbarParsedDataCache.GetGroupNameCache(toolbarItem.Index);
-                if(parsedGroupName != null)
-                {
-                    sb.Append(parsedGroupName);
-                }
-                else
-                {
-                    int startIndex = Math.Max(0, sb.Length);
-
-                    AppendWordWrapped(sb, toolbarItem.GroupName, MAX_NAME_LENGTH);
-                    sb.Append('\n').Append('¯', LINE_CHAR_STRETCH).Append('\n');
-
-                    parsedGroupName = sb.ToString(startIndex, sb.Length - startIndex);
-
-                    Main.ToolbarParsedDataCache.SetGroupNameCache(toolbarItem.Index, parsedGroupName);
-                }
+                sb.Append(toolbarItem.GroupNameWrapped);
+                sb.Append('\n').Append(SeparatorChar, SeparatorCount).Append('\n');
                 return;
             }
 
@@ -299,8 +286,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 int startIndex = Math.Max(0, sb.Length);
 
-                AppendWordWrapped(sb, block.CustomName, MAX_NAME_LENGTH);
-                sb.Append('\n').Append('¯', LINE_CHAR_STRETCH).Append('\n');
+                ToolbarActionLabels.AppendWordWrapped(sb, block.CustomName, MaxNameLength);
+                sb.Append('\n').Append(SeparatorChar, SeparatorCount).Append('\n');
 
                 parsedCustomName = sb.ToString(startIndex, sb.Length - startIndex);
 
@@ -308,60 +295,32 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
         }
 
-        private void AppendActionName(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
+        void AppendActionName(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
-            // NOTE: the block condition's cases use 'return' to avoid caching because those actions are shared throughout multiple block types so can't be cached per action.
-
-            if(block is IMyShipGrinder)
+            // these are per-block conditions for actions used in multiple types of blocks so they can't be cached per action
+            // instead they're cached per slot
+            var parsedActionName = Main.ToolbarParsedDataCache.GetActionNameCache(toolbarItem.Index);
+            if(parsedActionName != null)
             {
-                switch(Action.Id)
+                sb.Append(parsedActionName);
+                return;
+            }
+            else
+            {
+                int startIndex = Math.Max(0, sb.Length);
+                if(AppendActionNameForSlot(block, sb, toolbarItem))
                 {
-                    case "OnOff": AppendWordWrapped(sb, "Grind On/Off"); return;
-                    case "OnOff_On": AppendWordWrapped(sb, "Start grinding"); return;
-                    case "OnOff_Off": AppendWordWrapped(sb, "Stop grinding"); return;
+                    Main.ToolbarParsedDataCache.SetActionNameCache(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    return;
                 }
             }
 
-            if(block is IMyShipWelder)
+            // and this is the name for this action regardless of block type, so it can be cached locally.
+            if(editedNameCache != null)
             {
-                switch(Action.Id)
-                {
-                    case "OnOff": AppendWordWrapped(sb, "Weld On/Off"); return;
-                    case "OnOff_On": AppendWordWrapped(sb, "Start welding"); return;
-                    case "OnOff_Off": AppendWordWrapped(sb, "Stop welding"); return;
-                }
+                sb.Append(editedNameCache);
             }
-
-            if(block is IMyShipDrill)
-            {
-                switch(Action.Id)
-                {
-                    case "OnOff": AppendWordWrapped(sb, "Drill On/Off"); return;
-                    case "OnOff_On": AppendWordWrapped(sb, "Start drilling"); return;
-                    case "OnOff_Off": AppendWordWrapped(sb, "Stop drilling"); return;
-                }
-            }
-
-            if(block is IMyRemoteControl)
-            {
-                switch(Action.Id)
-                {
-                    case "Forward": AppendWordWrapped(sb, "Set Direction Forward"); return;
-                    case "Backward": AppendWordWrapped(sb, "Set Direction Backward"); return;
-                    case "Left": AppendWordWrapped(sb, "Set Direction Left"); return;
-                    case "Right": AppendWordWrapped(sb, "Set Direction Right"); return;
-                    case "Up": AppendWordWrapped(sb, "Set Direction Up"); return;
-                    case "Down": AppendWordWrapped(sb, "Set Direction Down"); return;
-                }
-            }
-
-            if(block is IMyProgrammableBlock && toolbarItem.PBRunArgument != null && Action.Id == "Run")
-            {
-                sb.Append(toolbarItem.PBRunArgument);
-                return; // no cache
-            }
-
-            if(actionNameCache == null)
+            else
             {
                 int startIndex = Math.Max(0, sb.Length);
 
@@ -369,27 +328,31 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 switch(Action.Id)
                 {
                     // generic functional
-                    case "OnOff": AppendWordWrapped(sb, "On/Off"); break;
-                    case "OnOff_On": AppendWordWrapped(sb, "Turn On"); break;
-                    case "OnOff_Off": AppendWordWrapped(sb, "Turn Off"); break;
+                    case "OnOff": ToolbarActionLabels.AppendWordWrapped(sb, "On/Off"); break;
+                    case "OnOff_On": ToolbarActionLabels.AppendWordWrapped(sb, "Turn On"); break;
+                    case "OnOff_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Turn Off"); break;
 
                     // generic terminal
-                    case "ShowOnHUD": AppendWordWrapped(sb, "Toggle on HUD"); break;
-                    case "ShowOnHUD_On": AppendWordWrapped(sb, "Show on HUD"); break;
-                    case "ShowOnHUD_Off": AppendWordWrapped(sb, "Hide from HUD"); break;
+                    case "ShowOnHUD": ToolbarActionLabels.AppendWordWrapped(sb, "Toggle on HUD", "Tgl HUD"); break;
+                    case "ShowOnHUD_On": ToolbarActionLabels.AppendWordWrapped(sb, "Show on HUD", "HUD ON"); break;
+                    case "ShowOnHUD_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Hide from HUD", "HUD Off"); break;
 
                     // weapons
-                    case "Shoot": AppendWordWrapped(sb, "Shoot On/Off"); break;
-                    case "Shoot_On": AppendWordWrapped(sb, "Start shooting"); break;
-                    case "Shoot_Off": AppendWordWrapped(sb, "Stop shooting"); break;
+                    case "Shoot": ToolbarActionLabels.AppendWordWrapped(sb, "Shoot On/Off", "Tgl Shoot"); break;
+                    case "Shoot_On": ToolbarActionLabels.AppendWordWrapped(sb, "Start shooting", "Shoot ON"); break;
+                    case "Shoot_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Stop shooting", "Shoot Off"); break;
 
                     // doors, parachute
-                    case "Open": AppendWordWrapped(sb, "Open/Close"); break;
-                    case "Open_On": AppendWordWrapped(sb, "Open"); break;
-                    case "Open_Off": AppendWordWrapped(sb, "Close"); break;
+                    case "Open": ToolbarActionLabels.AppendWordWrapped(sb, "Open/Close", "Tgl Open"); break;
+                    case "Open_On": ToolbarActionLabels.AppendWordWrapped(sb, "Open"); break;
+                    case "Open_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Close"); break;
 
-                    // PB
-                    case "RunWithDefaultArgument": AppendWordWrapped(sb, "Run\n(NoArgs)"); break;
+                    // parachute
+                    case "AutoDeploy": ToolbarActionLabels.AppendWordWrapped(sb, "Togle Auto-\nDeploy", "Tgl Auto"); break;
+
+                    case "RunWithDefaultArgument": ToolbarActionLabels.AppendWordWrapped(sb, "Run\n(NoArgs)", "Run"); break;
+
+                    case "UseConveyor": ToolbarActionLabels.AppendWordWrapped(sb, "Toggle\nConveyors", "Conveyor"); break;
 
                     // lights
                     //case "IncreaseBlink Lenght": AppendWordWrapped(sb, "+ Blink Length"); break;
@@ -404,102 +367,68 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         //else if(Action.Id.StartsWith("Decrease"))
                         //    name = "- " + Action.Id.Substring("Decrease".Length);
 
-                        AppendWordWrapped(sb, name);
+                        ToolbarActionLabels.AppendWordWrapped(sb, name);
                         break;
                     }
                 }
 
                 // cache name for later use
-                actionNameCache = sb.ToString(startIndex, sb.Length - startIndex);
-            }
-            else
-            {
-                sb.Append(actionNameCache);
+                editedNameCache = sb.ToString(startIndex, sb.Length - startIndex);
             }
         }
 
-        public static void AppendWordWrapped(StringBuilder sb, string text, int maxLength = 0)
+        bool AppendActionNameForSlot(IMyTerminalBlock block, StringBuilder sb, ToolbarItemData toolbarItem)
         {
-            int textLength = text.Length;
-            int lineSize = 0;
-            int startIndex = 0;
-
-            if(maxLength > 0 && textLength > maxLength)
+            if(block is IMyShipGrinder)
             {
-                startIndex = (textLength - maxLength);
-
-                // avoid splitting word by jumping to next space
-                var nextSpace = text.IndexOf(' ', startIndex);
-                if(nextSpace != -1)
-                    startIndex = nextSpace + 1;
-
-                sb.Append('…');
-                lineSize += GetCharSize('…');
+                switch(Action.Id)
+                {
+                    case "OnOff": ToolbarActionLabels.AppendWordWrapped(sb, "Grind On/Off", "Tgl Grind"); return true;
+                    case "OnOff_On": ToolbarActionLabels.AppendWordWrapped(sb, "Start grinding", "Grind ON"); return true;
+                    case "OnOff_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Stop grinding", "Grind Off"); return true;
+                }
             }
 
-            for(int i = startIndex; i < textLength; ++i)
+            if(block is IMyShipWelder)
             {
-                var chr = text[i];
-
-                if(chr == '\n')
+                switch(Action.Id)
                 {
-                    lineSize = 0;
-                    sb.Append('\n');
-                    continue;
+                    case "OnOff": ToolbarActionLabels.AppendWordWrapped(sb, "Weld On/Off", "Tgl Weld"); return true;
+                    case "OnOff_On": ToolbarActionLabels.AppendWordWrapped(sb, "Start welding", "Weld ON"); return true;
+                    case "OnOff_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Stop welding", "Weld Off"); return true;
                 }
-
-                int chrSize = GetCharSize(chr);
-                lineSize += chrSize;
-
-                if(chr == ' ')
-                {
-                    // find next space and determine if adding the word would go over the limit
-                    int nextSpaceIndex = (textLength - 1);
-                    int nextSizeAdd = 0;
-
-                    for(int x = i + 1; x < textLength; ++x)
-                    {
-                        var chr2 = text[x];
-                        nextSizeAdd += GetCharSize(chr2);
-
-                        if(chr2 == ' ')
-                        {
-                            nextSpaceIndex = x;
-                            break;
-                        }
-                    }
-
-                    if((lineSize + nextSizeAdd) >= MAX_LINE_SIZE)
-                    {
-                        lineSize = 0;
-                        sb.Append('\n');
-                        continue;
-                    }
-                }
-
-                if(lineSize >= MAX_LINE_SIZE)
-                {
-                    lineSize = chrSize;
-                    sb.Append('\n');
-                }
-
-                sb.Append(chr);
             }
-        }
 
-        private static int GetCharSize(char chr)
-        {
-            var charSizeDict = Main.Constants.CharSize;
-            int chrSize;
-            if(!charSizeDict.TryGetValue(chr, out chrSize))
+            if(block is IMyShipDrill)
             {
-                // only show this error for local mod version
-                if(Log.WorkshopId == 0)
-                    Log.Error($"Couldn't find character size for character: '{chr.ToString()}' ({((int)chr).ToString()}; {char.GetUnicodeCategory(chr).ToString()})", Log.PRINT_MESSAGE);
-
-                chrSize = 8; // space's size
+                switch(Action.Id)
+                {
+                    case "OnOff": ToolbarActionLabels.AppendWordWrapped(sb, "Drill On/Off", "Tgl Drill"); return true;
+                    case "OnOff_On": ToolbarActionLabels.AppendWordWrapped(sb, "Start drilling", "Drill ON"); return true;
+                    case "OnOff_Off": ToolbarActionLabels.AppendWordWrapped(sb, "Stop drilling", "Drill Off"); return true;
+                }
             }
-            return chrSize;
+
+            if(block is IMyRemoteControl)
+            {
+                switch(Action.Id)
+                {
+                    case "Forward": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Forward", "D: Fwd"); return true;
+                    case "Backward": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Backward", "D: Back"); return true;
+                    case "Left": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Left", "D: Left"); return true;
+                    case "Right": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Right", "D: Right"); return true;
+                    case "Up": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Up", "D: Up"); return true;
+                    case "Down": ToolbarActionLabels.AppendWordWrapped(sb, "Set Direction Down", "D: Down"); return true;
+                }
+            }
+
+            if(block is IMyProgrammableBlock && toolbarItem.PBRunArgumentWrapped != null && Action.Id == "Run")
+            {
+                sb.Append("Run:\n").Append(toolbarItem.PBRunArgumentWrapped);
+                return true;
+            }
+
+            return false;
         }
     }
 }
