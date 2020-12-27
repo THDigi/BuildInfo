@@ -167,6 +167,7 @@
     <Compile Include="Features\Config\MenuCustomInput.cs" />
     <Compile Include="Features\Config\TextAlignSetting.cs" />
     <Compile Include="Features\DebugEvents.cs" />
+    <Compile Include="Features\FontsHandler.cs" />
     <Compile Include="Features\ItemTooltips.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />
     <Compile Include="Features\LeakInfo\DrawObjects.cs" />

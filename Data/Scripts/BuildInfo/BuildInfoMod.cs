@@ -34,6 +34,7 @@ namespace Digi.BuildInfo
         // Features
         public Config Config;
         public LegacyConfig LegacyConfig;
+        public FontsHandler FontsHandler;
         public ModMenu ModMenu;
         public LeakInfo LeakInfo;
         public Overlays Overlays;
@@ -79,6 +80,7 @@ namespace Digi.BuildInfo
             // Features
             Config = new Config(this);
             LegacyConfig = new LegacyConfig(this);
+            FontsHandler = new FontsHandler(this);
             ModMenu = new ModMenu(this);
             LeakInfo = new LeakInfo(this);
             Overlays = new Overlays(this);

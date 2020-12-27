@@ -796,18 +796,14 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public static int GetStringSizeNotif(StringBuilder builder)
+        int GetStringSizeNotif(StringBuilder builder)
         {
             int endLength = builder.Length;
-            int len;
             int size = 0;
 
             for(int i = 0; i < endLength; ++i)
             {
-                if(BuildInfoMod.Instance.Constants.CharSize.TryGetValue(builder[i], out len))
-                    size += len;
-                else
-                    size += 15;
+                size += Main.FontsHandler.GetCharSize(builder[i]);
             }
 
             return size;
