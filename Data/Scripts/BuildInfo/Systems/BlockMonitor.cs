@@ -63,7 +63,6 @@ namespace Digi.BuildInfo.Systems
                 throw new ArgumentException($"{GetType().Name}.MonitorType() does not accept a null callback.");
 
             List<CallbackDelegate> callbacks;
-
             if(!monitorBlockTypes.TryGetValue(blockType, out callbacks))
             {
                 callbacks = new List<CallbackDelegate>(1);
@@ -71,6 +70,21 @@ namespace Digi.BuildInfo.Systems
             }
 
             callbacks.Add(callback);
+        }
+
+        /// <summary>
+        /// Unregisters specified callback
+        /// </summary>
+        public void RemoveMonitor(MyObjectBuilderType blockType, CallbackDelegate callback)
+        {
+            List<CallbackDelegate> callbacks;
+            if(!monitorBlockTypes.TryGetValue(blockType, out callbacks))
+                return;
+
+            callbacks.Remove(callback);
+
+            if(callbacks.Count == 0)
+                monitorBlockTypes.Remove(blockType);
         }
 
         void EntitySpawned(IMyEntity ent)

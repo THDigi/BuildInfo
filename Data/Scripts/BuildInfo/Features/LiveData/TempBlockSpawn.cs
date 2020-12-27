@@ -17,12 +17,13 @@ namespace Digi.BuildInfo.Features.LiveData
     {
         public readonly bool DeleteGrid;
         public readonly MyCubeBlockDefinition BlockDef;
-        public event Action<IMyCubeBlock> AfterSpawn;
+        private readonly Action<IMySlimBlock> Callback;
 
-        public TempBlockSpawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true)
+        public TempBlockSpawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
         {
             BlockDef = def;
             DeleteGrid = deleteGridOnSpawn;
+            Callback = callback;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
@@ -91,15 +92,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
             try
             {
-                var block = grid?.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
-
+                var block = grid?.GetCubeBlock(Vector3I.Zero);
                 if(block == null)
                 {
                     Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"} (mod workshopId={BlockDef.Context.GetWorkshopID().ToString()})");
                     return;
                 }
 
-                AfterSpawn?.Invoke(block);
+                Callback?.Invoke(block);
             }
             catch(Exception e)
             {

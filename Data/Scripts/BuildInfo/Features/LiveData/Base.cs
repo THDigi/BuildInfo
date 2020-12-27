@@ -53,17 +53,15 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(Handler.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
             {
-                var spawn = new TempBlockSpawn(def);
-                spawn.AfterSpawn += SpawnComplete<T>;
+                new TempBlockSpawn(def, callback: SpawnComplete<T>);
             }
 
             return null;
         }
 
-        private static void SpawnComplete<T>(IMyCubeBlock block) where T : BData_Base, new()
+        private static void SpawnComplete<T>(IMySlimBlock block) where T : BData_Base, new()
         {
-            var defId = (MyDefinitionId)block.BlockDefinition;
-
+            var defId = block.BlockDefinition.Id;
             Handler.BlockSpawnInProgress.Remove(defId);
         }
 
