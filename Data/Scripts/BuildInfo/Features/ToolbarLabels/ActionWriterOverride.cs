@@ -47,7 +47,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             actionName = action.Name.ToString();
             showBlockName = Main.ToolbarActionLabels.IsActionUseful(Action.Id);
-            mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
+
+            if(Main?.Config?.ToolbarActionLabels != null)
+                mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
 
             Action.Writer = CustomWriter;
 
@@ -111,7 +113,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     // this method gets the current one and automatically switches to next.
                     var toolbarItem = Main.ToolbarCustomNames.GetToolbarItem();
 
-                    if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+                    if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"NewWriter called: {Action.Id,-24} {toolbarItem.Index.ToString(),-4} label={toolbarItem.LabelWrapped}, group={toolbarItem.GroupName}");
 
                     if(mode == ToolbarActionLabelsMode.AlwaysOn

@@ -16,14 +16,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
     public class ToolbarActionLabels : ModComponent
     {
-        public static readonly bool TOOLBAR_DEBUG_LOGGING = false;
+        public static readonly bool ToolbarDebugLogging = false;
 
         public const int CockpitLabelsForTicks = Constants.TICKS_PER_SECOND * 3;
 
         public int EnteredCockpitTicks { get; private set; } = CockpitLabelsForTicks;
 
-        public bool IsActionUseful(string actionId) => usefulActions.Contains(actionId);
-        private readonly HashSet<string> usefulActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
+        public bool IsActionUseful(string actionId) => UsefulActions.Contains(actionId);
+        readonly HashSet<string> UsefulActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
         {
             "View", // camera
             "Open", "Open_On", "Open_Off", // doors and parachute
@@ -38,13 +38,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             "Jump", // jumpdrive
         };
 
-        private bool preRegister = true;
+        readonly Dictionary<IMyTerminalAction, ActionWriterOverride> OverriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);
 
-        private readonly Dictionary<IMyTerminalAction, ActionWriterOverride> overriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);
+        readonly Func<ITerminalAction, bool> CollectActionFunc;
 
         public ToolbarActionLabels(BuildInfoMod main) : base(main)
         {
-            preRegister = true;
+            CollectActionFunc = new Func<ITerminalAction, bool>(CollectAction);
 
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
@@ -53,9 +53,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void RegisterComponent()
         {
-            preRegister = false;
-
-            ComputePreRegisterActions();
+            // ActionWriterOverride can't read the config that early so all are updated here.
+            UpdateOverridesMode((ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value);
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
 
@@ -70,24 +69,27 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             Main.BlockMonitor.BlockAdded -= BlockMonitor_BlockAdded;
 
-            foreach(var actionOverride in overriddenActions.Values)
+            foreach(var actionOverride in OverriddenActions.Values)
             {
                 actionOverride?.Cleanup();
             }
 
-            overriddenActions.Clear();
+            OverriddenActions.Clear();
         }
 
         void ToolbarActionLabelModeChanged(int oldValue, int newValue, SettingBase<int> setting)
         {
             if(oldValue != newValue)
             {
-                var mode = (ToolbarActionLabelsMode)newValue;
+                UpdateOverridesMode((ToolbarActionLabelsMode)newValue);
+            }
+        }
 
-                foreach(var actionLabel in overriddenActions.Values)
-                {
-                    actionLabel.SettingChanged(mode);
-                }
+        void UpdateOverridesMode(ToolbarActionLabelsMode mode)
+        {
+            foreach(var overriddenAction in OverriddenActions.Values)
+            {
+                overriddenAction.SettingChanged(mode);
             }
         }
 
@@ -113,42 +115,29 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(block == null)
                 return;
 
+            // HACK: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
             // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
-            // HACK #2: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
-            block.GetActions(null, CollectAction);
+            block.GetActions(null, CollectActionFunc);
         }
 
         bool CollectAction(ITerminalAction a)
         {
             var action = (IMyTerminalAction)a;
 
-            if(!overriddenActions.ContainsKey(action))
+            if(!OverriddenActions.ContainsKey(action))
             {
-                if(TOOLBAR_DEBUG_LOGGING)
+                if(ToolbarDebugLogging)
                     Log.Info($"Added action: {action.Id}");
 
-                // HACK: if it's before Register() then create it later as ActionWriterOverride() can't be created so early.
-                if(preRegister)
-                    overriddenActions.Add(action, null);
-                else
-                    overriddenActions.Add(action, new ActionWriterOverride(action));
+                OverriddenActions.Add(action, new ActionWriterOverride(action));
             }
 
             return false; // null list, never add to it.
         }
 
-        void ComputePreRegisterActions()
-        {
-            foreach(var action in new List<IMyTerminalAction>(overriddenActions.Keys))
-            {
-                if(overriddenActions[action] == null)
-                    overriddenActions[action] = new ActionWriterOverride(action);
-            }
-        }
-
         protected override void UpdateAfterSim(int tick)
         {
-            if(TOOLBAR_DEBUG_LOGGING)
+            if(ToolbarDebugLogging)
                 Log.Info("---- AFTER SIM -----------------------------------");
 
             if(EnteredCockpitTicks > 0)

@@ -128,7 +128,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             var data = Blocks.GetValueOrDefault(shipController.EntityId, null);
 
-            if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+            if(ToolbarActionLabels.ToolbarDebugLogging)
                 Log.Info($"Toolbar OB for {shipController.CustomName}:");
 
             for(int i = 0; i < ob.Toolbar.Slots.Count; i++)
@@ -142,7 +142,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     string customLabel = data?.GetCustomLabel(item.Index);
                     string groupName = blockGroup?.GroupName;
 
-                    if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+                    if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"    {item.Index.ToString(),-4} data={item.Data.GetType().Name,-48}, item={item.Item,-12}, customLabel={customLabel,-32}, groupName={groupName}");
 
                     // must add even if there's no useful data to keep the numbered order in sync.
@@ -150,12 +150,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 }
                 else
                 {
-                    if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+                    if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"    {item.Index.ToString(),-4} data={item.Data.GetType().Name,-48}, item={item.Item,-12}");
                 }
             }
 
-            if(ToolbarActionLabels.TOOLBAR_DEBUG_LOGGING)
+            if(ToolbarActionLabels.ToolbarDebugLogging)
                 Log.Info($"End toolbar");
         }
 
