@@ -27,9 +27,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         private bool showBlockName = false;
 
-        private bool customStatusChecked = false;
-        private ToolbarActionStatus.StatusDel customStatusFunc = null;
-
         private static BuildInfoMod Main => BuildInfoMod.Instance;
 
         const int MaxNameLength = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
@@ -113,6 +110,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     // this method gets the current one and automatically switches to next.
                     var toolbarItem = Main.ToolbarCustomNames.GetToolbarItem();
 
+                    int itemPage = (toolbarItem.Index / 9);
+                    if(Main.ToolbarActionLabels.ToolbarPage != itemPage)
+                    {
+                        sb.Append("ERROR\nPAGE\nDESYNC");
+                        return;
+                    }
+
                     if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"NewWriter called: {Action.Id,-24} {toolbarItem.Index.ToString(),-4} label={toolbarItem.LabelWrapped}, group={toolbarItem.GroupName}");
 
@@ -179,13 +183,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             //    customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
             //}
 
-            customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
-
             var tempSB = Main.Caches.SB;
             tempSB.Clear();
 
             bool overrideStatus = false;
 
+            var customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
             if(customStatusFunc != null)
                 overrideStatus = customStatusFunc.Invoke(this, block, toolbarItem, tempSB);
 

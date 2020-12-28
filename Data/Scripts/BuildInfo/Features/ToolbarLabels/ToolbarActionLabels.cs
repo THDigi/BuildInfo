@@ -8,7 +8,10 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
@@ -42,11 +45,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         readonly Func<ITerminalAction, bool> CollectActionFunc;
 
+        readonly Dictionary<long, int> PagePerCockpit = new Dictionary<long, int>();
+
         public ToolbarActionLabels(BuildInfoMod main) : base(main)
         {
             CollectActionFunc = new Func<ITerminalAction, bool>(CollectAction);
 
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_INPUT;
 
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
@@ -144,6 +149,99 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 EnteredCockpitTicks--;
             }
+        }
+
+        public int ToolbarPage;
+        private long prevShipCtrlId;
+
+        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        {
+            // NOTE: gamepad ignored since its HUD is not supported anyway
+            if(!anyKeyOrMouse || MyAPIGateway.Gui.ChatEntryVisible)
+                return;
+
+            var screen = MyAPIGateway.Gui.ActiveGamePlayScreen;
+            bool inToolbarConfig = screen == "MyGuiScreenCubeBuilder";
+            if(!(screen == null || inToolbarConfig)) // toolbar config menu only for cockpit, not for other blocks like timers' action toolbars
+                return;
+
+            var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            if(shipController == null)
+                return;
+
+            if(prevShipCtrlId != shipController.EntityId)
+            {
+                ToolbarPage = PagePerCockpit.GetValueOrDefault(shipController.EntityId, 0);
+                prevShipCtrlId = shipController.EntityId;
+            }
+
+            if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            {
+                var controlSlots = Main.Constants.CONTROL_SLOTS;
+
+                // intentionally skipping SLOT0
+                for(int i = 1; i < controlSlots.Length; ++i)
+                {
+                    if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
+                    {
+                        SetToolbarPage(shipController, i - 1);
+                    }
+                }
+            }
+
+            // HACK next/prev toolbar hotkeys don't work in the menu unless you click on the icons list...
+            // spectator condition is in game code so just adding it here since I can.
+            if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
+            {
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
+                {
+                    AdjustToolbarPage(shipController, 1);
+                }
+                else if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
+                {
+                    AdjustToolbarPage(shipController, -1);
+                }
+            }
+        }
+
+        void AdjustToolbarPage(IMyShipController shipController, int change)
+        {
+            int page;
+            if(!PagePerCockpit.TryGetValue(shipController.EntityId, out page))
+            {
+                shipController.OnMarkForClose += ShipController_OnMarkForClose;
+            }
+
+            page += (change > 0 ? 1 : -1);
+
+            // loop-around
+            if(page > 8)
+                page = 0;
+            else if(page < 0)
+                page = 8;
+
+            // add/update dictionary entry
+            PagePerCockpit[shipController.EntityId] = page;
+            ToolbarPage = page;
+        }
+
+        void SetToolbarPage(IMyShipController shipController, int set)
+        {
+            if(!PagePerCockpit.ContainsKey(shipController.EntityId))
+            {
+                shipController.OnMarkForClose += ShipController_OnMarkForClose;
+            }
+
+            int page = MathHelper.Clamp(set, 0, 8);
+
+            // add/update dictionary entry
+            PagePerCockpit[shipController.EntityId] = page;
+            ToolbarPage = page;
+        }
+
+        void ShipController_OnMarkForClose(IMyEntity ent)
+        {
+            PagePerCockpit.Remove(ent.EntityId);
         }
 
         // TODO needs various changes to be changeable in realtime
