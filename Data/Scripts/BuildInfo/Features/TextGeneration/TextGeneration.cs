@@ -2742,7 +2742,10 @@ namespace Digi.BuildInfo.Features
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Append("Discharge time: ").TimeFormat((battery.MaxStoredPower / battery.MaxPowerOutput) * 3600f).Separator().Append("Recharge time: ").TimeFormat((battery.MaxStoredPower / battery.RequiredPowerInput) * 3600f);
+                    float dischargeTime = (battery.MaxStoredPower * 60 * 60) / battery.MaxPowerOutput;
+                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * Hardcoded.BatteryRechargeMultiplier);
+                    AddLine().Label("Discharge time").TimeFormat(dischargeTime);
+                    AddLine().Label("Recharge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.BatteryRechargeMultiplier);
                 }
 
                 return;
@@ -3011,13 +3014,14 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                AddLine().Label("Power storage for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
+                AddLine().Label("Power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Charge time").TimeFormat((jumpDrive.PowerNeededForJump / jumpDrive.RequiredPowerInput) * 3600f);
-                AddLine().Label("Jump delay").TimeFormat(jumpDrive.JumpDelay);
+                float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * Hardcoded.JumpDriveRechargeMultiplier);
+                AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.JumpDriveRechargeMultiplier);
+                AddLine().Label("Jump process").TimeFormat(jumpDrive.JumpDelay);
                 AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance);
                 AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
             }

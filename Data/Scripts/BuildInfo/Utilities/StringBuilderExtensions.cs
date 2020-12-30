@@ -371,7 +371,7 @@ namespace Digi.BuildInfo.Utilities
             if(m1 < 10)
                 return s.Number(m1).Append("~").Number(m2).Append(" m");
 
-            return s.Append((int)m1).Append("~").Append((int)m2).Append(" m");
+            return s.RoundedNumber(m1, 0).Append("~").RoundedNumber(m2, 0).Append(" m");
         }
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
@@ -545,15 +545,15 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder TimeFormat(this StringBuilder s, float seconds)
+        public static StringBuilder TimeFormat(this StringBuilder s, float totalSeconds)
         {
-            if(!IsValid(s, seconds))
+            if(!IsValid(s, totalSeconds))
                 return s.Append(" seconds");
 
-            if(seconds > (60 * 60 * 24 * 365))
+            if(totalSeconds > (60 * 60 * 24 * 365))
                 return s.Append("1 y+");
 
-            var span = TimeSpan.FromSeconds(seconds);
+            var span = TimeSpan.FromSeconds(totalSeconds);
 
             if(span.Days > 7)
             {
@@ -584,11 +584,11 @@ namespace Digi.BuildInfo.Utilities
             if(span.Minutes > 0)
             {
                 s.Append(span.Minutes).Append('m');
-                s.Append(' ').Append((seconds % 60).ToString("0.#")).Append('s');
+                s.Append(' ').RoundedNumber(totalSeconds % 60, 0).Append('s');
                 return s;
             }
 
-            s.Append(seconds.ToString("0.#")).Append('s');
+            s.RoundedNumber(totalSeconds, 1).Append('s');
             return s;
         }
 
@@ -629,12 +629,12 @@ namespace Digi.BuildInfo.Utilities
             return s.SpeedFormat(metersPerSecondSquared).Append('²');
         }
 
-        public static StringBuilder ProportionToPercent(this StringBuilder s, float proportion)
+        public static StringBuilder ProportionToPercent(this StringBuilder s, float proportion, int digits = 0)
         {
             if(!IsValid(s, proportion))
                 return s.Append('%');
 
-            return s.Append((int)(proportion * 100)).Append('%');
+            return s.RoundedNumber(proportion * 100, digits).Append('%');
         }
 
         public static StringBuilder MultiplierFormat(this StringBuilder s, float mul)
