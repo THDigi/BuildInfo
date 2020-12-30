@@ -397,7 +397,11 @@ namespace Digi.BuildInfo.Utilities
             if(kg >= 0.001f)
                 return s.Number(kg * 1000f).Append(" grams");
 
-            return s.Number(kg * 1000000f).Append(" miligrams");
+            if(kg >= 0.000001f)
+                return s.Number(kg * 1000000f).Append(" mg");
+
+            //if(kg >= 0.000000001f)
+            return s.Number(kg * 1000000000f).Append(" µg");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
@@ -437,7 +441,14 @@ namespace Digi.BuildInfo.Utilities
             if(l >= 1000)
                 return s.Number(l / 1000f).Append(" kL");
 
-            return s.Number(l).Append(" L");
+            if(l >= 1)
+                return s.Number(l).Append(" L");
+
+            if(l >= 0.001f)
+                return s.Number(l * 1000f).Append(" mL");
+
+            //if(l >= 0.000001f)
+            return s.Number(l * 1000000f).Append(" µL");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
