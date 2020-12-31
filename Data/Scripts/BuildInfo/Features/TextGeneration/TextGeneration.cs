@@ -2194,26 +2194,23 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo) && thrust.ConsumptionFactorPerG != 0)
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label(thrust.ConsumptionFactorPerG > 0 ? "Added consumption" : "Reduced consumption").RoundedNumber(thrust.ConsumptionFactorPerG, 5).Append(" per g (natural gravity)");
+                // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
+                float consumptionMultiplier = 1f + (thrust.ConsumptionFactorPerG / Hardcoded.GAME_EARTH_GRAVITY);
+                //float consumptionMultiplier = 1f + thrust.ConsumptionFactorPerG;
+
+                bool show = true;
+                if(consumptionMultiplier > 1)
+                    AddLine(MyFontEnum.Red).Color(COLOR_BAD);
+                else if(consumptionMultiplier < 1)
+                    AddLine(MyFontEnum.Red).Color(COLOR_GOOD);
+                else
+                    show = false;
+
+                if(show)
+                    GetLine().Label("Consumption multiplier").Append("x").RoundedNumber(consumptionMultiplier, 2).Append(" per g (natural gravity)");
             }
-            // TODO: figure out what hidden math they use for ConsumptionFactorPerG because testing doesn't match this math
-            //if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
-            //{
-            //    float consumptionMultiplier = 1f + thrust.ConsumptionFactorPerG;
-            //    bool show = true;
-            //
-            //    if(consumptionMultiplier > 1)
-            //        AddLine(MyFontEnum.Red).Color(COLOR_BAD);
-            //    else if(consumptionMultiplier < 1)
-            //        AddLine(MyFontEnum.Red).Color(COLOR_GOOD);
-            //    else
-            //        show = false;
-            //
-            //    if(show)
-            //        GetLine().Label("Consumption multiplier").Append("x").RoundedNumber(consumptionMultiplier, 5).Append(" per g (natural gravity)");
-            //}
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
@@ -2395,7 +2392,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere);
                     AddLine().Label("Drag coefficient").Append(parachute.DragCoefficient.ToString("0.0####"));
-                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in ").AccelerationFormat(Hardcoded.GAME_EARTH_GRAVITY).Append(" and 1.0 air density.");
+                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in 1g and 1.0 air density.");
                 }
             }
         }

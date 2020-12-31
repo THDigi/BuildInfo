@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -23,6 +24,7 @@ namespace Digi.BuildInfo.Utilities
 
         public Caches(BuildInfoMod main) : base(main)
         {
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         protected override void RegisterComponent()
@@ -59,5 +61,29 @@ namespace Digi.BuildInfo.Utilities
             MyAPIGateway.GridGroups.GetGroup(mainGrid, type, grids);
             return grids;
         }
+
+        #region Per-grid gravity checking
+        Dictionary<long, float> GravityLengthAtGridCache = new Dictionary<long, float>();
+
+        protected override void UpdateAfterSim(int tick)
+        {
+            if(tick % 60 * 3 == 0)
+                GravityLengthAtGridCache.Clear();
+        }
+
+        public float GetGravityLengthAtGrid(IMyCubeGrid grid)
+        {
+            float length;
+            if(!GravityLengthAtGridCache.TryGetValue(grid.EntityId, out length))
+            {
+                float naturalInterference;
+                Vector3 vec = MyAPIGateway.Physics.CalculateNaturalGravityAt(grid.WorldVolume.Center, out naturalInterference);
+                length = vec.Length();
+
+                GravityLengthAtGridCache[grid.EntityId] = length;
+            }
+            return length;
+        }
+        #endregion
     }
 }

@@ -1303,6 +1303,13 @@ namespace Digi.BuildInfo.Features
 
             info.NewLine();
 
+            float gravityLength = Main.Caches.GetGravityLengthAtGrid(block.CubeGrid);
+
+            // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
+            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
+            //float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY);
+            bool hasDifferentConsumption = (Math.Abs(consumptionMultiplier - 1) > 0.001f);
+
             if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
             {
                 // HACK formula from MyEntityThrustComponent.PowerAmountToFuel()
@@ -1311,13 +1318,23 @@ namespace Digi.BuildInfo.Features
                 float maxFuelUsage = (maxPowerUsage / eff);
 
                 info.Append("Requires: ").Append(thrustInternal.FuelDefinition.Id.SubtypeName).NewLine();
-                info.Append("Current Usage: ").VolumeFormat(currentFuelUsage).Append("/s").NewLine();
+                info.Append("Current Usage: ").VolumeFormat(currentFuelUsage * consumptionMultiplier).Append("/s");
+
+                if(hasDifferentConsumption)
+                    info.Append(" (x").RoundedNumber(consumptionMultiplier, 2).Append(")");
+
+                info.NewLine();
                 info.Append("Max Usage: ").VolumeFormat(maxFuelUsage).Append("/s").NewLine();
             }
             else
             {
                 info.Append("Requires: Electricity").NewLine();
-                info.Append("Current Usage: ").PowerFormat(currentPowerUsage).NewLine();
+                info.Append("Current Usage: ").PowerFormat(currentPowerUsage * consumptionMultiplier);
+
+                if(hasDifferentConsumption)
+                    info.Append(" (x").RoundedNumber(consumptionMultiplier, 2).Append(")");
+
+                info.NewLine();
                 info.Append("Max Usage: ").PowerFormat(maxPowerUsage).NewLine();
             }
 

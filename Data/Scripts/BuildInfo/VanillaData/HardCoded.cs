@@ -218,7 +218,7 @@ namespace Digi.BuildInfo.VanillaData
         {
             float currentVolume = (float)(Math.Pow(radius, def.ConsumptionPower) * Math.PI * 0.75);
             float defaultVolume = (float)(Math.Pow(100, def.ConsumptionPower) * Math.PI * 0.75);
-            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / 9.81f);
+            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / GAME_EARTH_GRAVITY);
         }
 
         public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
