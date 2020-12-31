@@ -1341,31 +1341,52 @@ namespace Digi.BuildInfo.Features
             info.NewLine();
 
             // HACK NOTE: def.NeedsAtmosphereForInfluence does nothing, influence is always air density
-
             if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
             {
+                // renamed to what they actually are for simpler code
+                float minAir = def.MinPlanetaryInfluence;
+                float maxAir = def.MaxPlanetaryInfluence;
+                float thrustAtMinAir = def.EffectivenessAtMinInfluence;
+                float thrustAtMaxAir = def.EffectivenessAtMaxInfluence;
+
                 info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).NewLine();
                 info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
+                info.Append("Limits:").NewLine();
 
-                info.Append("Limits: ").NewLine();
-                info.Append("  ").ProportionToPercent(def.EffectivenessAtMaxInfluence).Append(" thrust ");
-                if(def.MaxPlanetaryInfluence < 1f)
-                    info.Append("in ").ProportionToPercent(def.MaxPlanetaryInfluence).Append(" atmosphere.");
-                else
-                    info.Append("in atmosphere.");
-                info.NewLine();
+                // if mod has weird values, can't really present them in an understandable manner so just printing the values instead
+                if(!Hardcoded.Thrust_HasSaneLimits(def))
+                {
+                    info.Append(" Min air density: ").ProportionToPercent(minAir).NewLine();
+                    info.Append(" Max air density: ").ProportionToPercent(maxAir).NewLine();
+                    info.Append(" Thrust at min air: ").ProportionToPercent(thrustAtMinAir).NewLine();
+                    info.Append(" Thrust at max air: ").ProportionToPercent(thrustAtMaxAir).NewLine();
 
-                info.Append("  ").ProportionToPercent(def.EffectivenessAtMinInfluence).Append(" thrust ");
-                if(def.MinPlanetaryInfluence > 0f)
-                    info.Append("below ").ProportionToPercent(def.MinPlanetaryInfluence).Append(" atmosphere.");
+                    if(def.NeedsAtmosphereForInfluence)
+                        info.Append(" No atmosphere causes 'thrust at min air'.").NewLine();
+                }
                 else
-                    info.Append("in space.");
-                info.NewLine();
+                {
+                    info.Append("  ").ProportionToPercent(thrustAtMaxAir).Append(" thrust ");
+                    if(maxAir <= 0f)
+                        info.Append("in vacuum.");
+                    else if(maxAir < 1f)
+                        info.Append("in ").ProportionToPercent(maxAir).Append(" air density.");
+                    else
+                        info.Append("in atmosphere.");
+                    info.NewLine();
+
+                    info.Append("  ").ProportionToPercent(thrustAtMinAir).Append(" thrust ");
+                    if(def.NeedsAtmosphereForInfluence || minAir <= 0f)
+                        info.Append("in vacuum.");
+                    else
+                        info.Append("below ").ProportionToPercent(minAir).Append(" air density.");
+                    info.NewLine();
+                }
             }
             else
             {
                 info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
-                info.Append("No thrust limits in space or atmosphere");
+                info.Append("No atmosphere or vacuum limits.");
             }
         }
 

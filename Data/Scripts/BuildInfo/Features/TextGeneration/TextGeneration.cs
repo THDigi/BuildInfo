@@ -2214,30 +2214,64 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Append("Force: ").ForceFormat(thrust.ForceMagnitude).Separator().Append("Dampener factor: ").RoundedNumber(thrust.SlowdownFactor, 2);
+                AddLine().Label("Force").ForceFormat(thrust.ForceMagnitude);
+
+                if(Math.Abs(thrust.SlowdownFactor - 1) > 0.001f)
+                    GetLine().Separator().Color(COLOR_WARNING).Label("Dampeners").Append("x").RoundedNumber(thrust.SlowdownFactor, 2);
+
+                AddLine().Label("Limits");
+                const int PrefixSpaces = 11;
 
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
                     // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var because planetary influence is air density.
                     // TODO: test if this NeedsAtmosphereForInfluence actually does anything with earth, mars, moon and space.
 
-                    AddLine(thrust.EffectivenessAtMaxInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMaxInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                        .ProportionToPercent(thrust.EffectivenessAtMaxInfluence).Append(" max thrust ");
-                    if(thrust.MaxPlanetaryInfluence < 1f)
-                        GetLine().Append("in ").ProportionToPercent(thrust.MaxPlanetaryInfluence).Append(" atmosphere");
-                    else
-                        GetLine().Append("in atmosphere");
+                    // renamed to what they actually are for simpler code
+                    float minAir = thrust.MinPlanetaryInfluence;
+                    float maxAir = thrust.MaxPlanetaryInfluence;
+                    float thrustAtMinAir = thrust.EffectivenessAtMinInfluence;
+                    float thrustAtMaxAir = thrust.EffectivenessAtMaxInfluence;
 
-                    AddLine(thrust.EffectivenessAtMinInfluence < 1f ? MyFontEnum.Red : MyFontEnum.White).Color(thrust.EffectivenessAtMinInfluence < 1f ? COLOR_BAD : COLOR_GOOD)
-                        .ProportionToPercent(thrust.EffectivenessAtMinInfluence).Append(" max thrust ");
-                    if(thrust.MinPlanetaryInfluence > 0f)
-                        GetLine().Append("below ").ProportionToPercent(thrust.MinPlanetaryInfluence).Append(" atmosphere");
+                    // flip values if they're in wrong order
+                    if(thrust.InvDiffMinMaxPlanetaryInfluence < 0)
+                    {
+                        minAir = thrust.MaxPlanetaryInfluence;
+                        maxAir = thrust.MinPlanetaryInfluence;
+                        thrustAtMinAir = thrust.EffectivenessAtMaxInfluence;
+                        thrustAtMaxAir = thrust.EffectivenessAtMinInfluence;
+                    }
+
+                    // if mod has weird values, can't really present them in an understandable manner so just printing the values instead
+                    if(!Hardcoded.Thrust_HasSaneLimits(thrust))
+                    {
+                        GetLine().Append("Min air density: ").ProportionToPercent(minAir);
+                        AddLine().Append(' ', PrefixSpaces).Append("| Max air density: ").ProportionToPercent(maxAir);
+                        AddLine().Append(' ', PrefixSpaces).Append("| Thrust at min air: ").ProportionToPercent(thrustAtMinAir);
+                        AddLine().Append(' ', PrefixSpaces).Append("| Thrust at max air: ").ProportionToPercent(thrustAtMaxAir);
+
+                        if(thrust.NeedsAtmosphereForInfluence)
+                            AddLine().Append("No atmosphere causes 'thrust at min air'.");
+                    }
                     else
-                        GetLine().Append("in space");
+                    {
+                        GetLine().Color(thrustAtMaxAir < 1f ? COLOR_BAD : COLOR_GOOD)
+                            .ProportionToPercent(thrustAtMaxAir).Append(" thrust ")
+                            // no "in atmosphere" because it needs to explicitly state that it expects 100% air density, which some planets do not have (like Mars)
+                            .Append("in ").ProportionToPercent(maxAir).Append(" air density");
+
+                        AddLine().Append(' ', PrefixSpaces).Append("| ")
+                            .Color(thrustAtMinAir < 1f ? COLOR_BAD : COLOR_GOOD)
+                            .ProportionToPercent(thrustAtMinAir).Append(" thrust ");
+                        if(minAir <= 0)
+                            GetLine().Append("in vacuum.");
+                        else
+                            GetLine().Append("below ").ProportionToPercent(minAir).Append(" air density");
+                    }
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("No thrust limits in space or planets");
+                    GetLine().Color(COLOR_GOOD).Append("full thrust in atmosphere and vacuum");
                 }
             }
 

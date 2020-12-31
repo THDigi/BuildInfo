@@ -223,6 +223,15 @@ namespace Digi.BuildInfo.VanillaData
 
         public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
 
+        // not from the game but it's relevant to mods using excessive values
+        public static bool Thrust_HasSaneLimits(MyThrustDefinition def)
+        {
+            return (def.MinPlanetaryInfluence >= 0 && def.MinPlanetaryInfluence <= 1f
+                 && def.MaxPlanetaryInfluence >= 0 && def.MaxPlanetaryInfluence <= 1f
+                 && def.EffectivenessAtMinInfluence >= 0 && def.EffectivenessAtMinInfluence <= 1f
+                 && def.EffectivenessAtMaxInfluence >= 0 && def.EffectivenessAtMaxInfluence <= 1f);
+        }
+
         // from MyAirVent.VentDummy getter
         public const string AirVent_DummyName = "vent_001";
 
