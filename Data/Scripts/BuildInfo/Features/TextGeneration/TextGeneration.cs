@@ -1931,9 +1931,7 @@ namespace Digi.BuildInfo.Features
         private void Format_Rotor(MyCubeBlockDefinition def)
         {
             var motor = (MyMotorStatorDefinition)def;
-
             var suspension = def as MyMotorSuspensionDefinition;
-
             if(suspension != null)
             {
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
@@ -1946,9 +1944,9 @@ namespace Digi.BuildInfo.Features
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Append("Axle Friction: ").TorqueFormat(suspension.AxleFriction);
-                    AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Append("Speed base: ").RotationSpeed(suspension.SteeringSpeed * 60);
-                    AddLine().Label("Ride height").DistanceFormat(suspension.MinHeight).Append(" to ").DistanceFormat(suspension.MaxHeight);
+                    AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Label("Axle Friction").TorqueFormat(suspension.AxleFriction);
+                    AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Label("Speed base").RotationSpeed(suspension.SteeringSpeed * 60);
+                    AddLine().Label("Ride height").DistanceRangeFormat(suspension.MinHeight, suspension.MaxHeight);
                 }
             }
             else
@@ -1961,12 +1959,12 @@ namespace Digi.BuildInfo.Features
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
-                        AddLine().Label("Displacement Large Top").DistanceFormat(motor.RotorDisplacementMin).Append(" to ").DistanceFormat(motor.RotorDisplacementMax);
+                        AddLine().Label("Displacement Large Top").DistanceRangeFormat(motor.RotorDisplacementMin, motor.RotorDisplacementMax);
                     }
 
                     if(motor.RotorDisplacementMinSmall < motor.RotorDisplacementMaxSmall)
                     {
-                        AddLine().Label("Displacement Small Top").DistanceFormat(motor.RotorDisplacementMinSmall).Append(" to ").DistanceFormat(motor.RotorDisplacementMaxSmall);
+                        AddLine().Label("Displacement Small Top").DistanceRangeFormat(motor.RotorDisplacementMinSmall, motor.RotorDisplacementMaxSmall);
                     }
                 }
             }
@@ -2160,29 +2158,62 @@ namespace Digi.BuildInfo.Features
 
             if(!thrust.FuelConverter.FuelId.IsNull())
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
-                {
-                    AddLine().Append("Requires power to be controlled");
-
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
-                }
-
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
-                    AddLine().Append("Requires fuel: ").Append(thrust.FuelConverter.FuelId.SubtypeId).Separator().Append("Efficiency: ").Number(thrust.FuelConverter.Efficiency * 100).Append("%");
+                    MyGasProperties fuelDef;
+                    if(MyDefinitionManager.Static.TryGetDefinition(thrust.FuelConverter.FuelId, out fuelDef))
+                    {
+                        // HACK formula from MyEntityThrustComponent.PowerAmountToFuel()
+                        float eff = (fuelDef.EnergyDensity * thrust.FuelConverter.Efficiency);
+                        float minFuelUsage = thrust.MinPowerConsumption / eff;
+                        float maxFuelUsage = thrust.MaxPowerConsumption / eff;
+
+                        AddLine().Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId);
+
+                        if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                            GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
+
+                        AddLine().Label("Consumption, Max").VolumeFormat(maxFuelUsage).Append("/s").Separator().Label("Idle").VolumeFormat(minFuelUsage).Append("/s");
+                    }
+                    else
+                    {
+                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId).Append(" (does not exist)");
+                    }
                 }
             }
             else
             {
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
-                    AddLine().Append("Power: ").PowerFormat(thrust.MaxPowerConsumption).Separator().Append("Idle: ").PowerFormat(thrust.MinPowerConsumption);
+                    AddLine().Label("Requires").Append("Electricity");
 
                     if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
+
+                    AddLine().Label("Consumption, Max").PowerFormat(thrust.MaxPowerConsumption).Separator().Label("Idle").PowerFormat(thrust.MinPowerConsumption);
                 }
             }
+
+            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo) && thrust.ConsumptionFactorPerG != 0)
+            {
+                AddLine().Label(thrust.ConsumptionFactorPerG > 0 ? "Added consumption" : "Reduced consumption").RoundedNumber(thrust.ConsumptionFactorPerG, 5).Append(" per g (natural gravity)");
+            }
+            // TODO: figure out what hidden math they use for ConsumptionFactorPerG because testing doesn't match this math
+            //if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            //{
+            //    float consumptionMultiplier = 1f + thrust.ConsumptionFactorPerG;
+            //    bool show = true;
+            //
+            //    if(consumptionMultiplier > 1)
+            //        AddLine(MyFontEnum.Red).Color(COLOR_BAD);
+            //    else if(consumptionMultiplier < 1)
+            //        AddLine(MyFontEnum.Red).Color(COLOR_GOOD);
+            //    else
+            //        show = false;
+            //
+            //    if(show)
+            //        GetLine().Label("Consumption multiplier").Append("x").RoundedNumber(consumptionMultiplier, 5).Append(" per g (natural gravity)");
+            //}
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
@@ -2215,15 +2246,11 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                if(thrust.ConsumptionFactorPerG > 0)
-                    AddLine(MyFontEnum.Red).Append("Extra consumption: +").ProportionToPercent(thrust.ConsumptionFactorPerG).Append(" per natural g acceleration");
-
                 var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
-
                 if(data != null)
                 {
-                    AddLine().Append("Flames: ").Append(data.Flames.Count).Separator().Append("Max distance: ").DistanceFormat(data.HighestLength, 2);
-                    AddLine().Append("Ship damage: ").Number(data.TotalBlockDamage).Append("/s").Separator().Append("Other damage:").Number(data.TotalOtherDamage).Append("/s");
+                    AddLine().Label("Flames").Append(data.Flames.Count).Separator().Label("Max distance").DistanceFormat(data.HighestLength, 2);
+                    AddLine().Label("Damage to ships").Number(data.TotalBlockDamage).Append("/s").Separator().Label("to other").Number(data.TotalOtherDamage).Append("/s");
                 }
 
                 if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)

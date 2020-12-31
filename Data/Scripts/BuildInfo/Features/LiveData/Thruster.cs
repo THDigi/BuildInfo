@@ -55,7 +55,6 @@ namespace Digi.BuildInfo.Features.LiveData
             HighestRadius = 0;
             TotalBlockDamage = 0;
             TotalOtherDamage = 0;
-            const int DAMAGE_TICKS = 60;
 
             thrust.Model.GetDummies(dummies);
 
@@ -92,8 +91,8 @@ namespace Digi.BuildInfo.Features.LiveData
                     HighestLength = Math.Max(HighestLength, length);
                     HighestRadius = Math.Max(HighestRadius, radius);
 
-                    TotalBlockDamage += DAMAGE_TICKS * thrustDef.FlameDamage; // from MyThrust.DamageGrid()
-                    TotalOtherDamage += DAMAGE_TICKS * radius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()
+                    TotalBlockDamage += Constants.TICKS_PER_SECOND * thrustDef.FlameDamage; // from MyThrust.DamageGrid()
+                    TotalOtherDamage += Constants.TICKS_PER_SECOND * radius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()
                 }
             }
 

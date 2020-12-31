@@ -1307,8 +1307,8 @@ namespace Digi.BuildInfo.Features
             {
                 // HACK formula from MyEntityThrustComponent.PowerAmountToFuel()
                 float eff = (thrustInternal.FuelDefinition.EnergyDensity * thrustInternal.FuelConverterDefinition.Efficiency);
-                float currentFuelUsage = currentPowerUsage / eff;
-                float maxFuelUsage = maxPowerUsage / eff;
+                float currentFuelUsage = (currentPowerUsage / eff);
+                float maxFuelUsage = (maxPowerUsage / eff);
 
                 info.Append("Requires: ").Append(thrustInternal.FuelDefinition.Id.SubtypeName).NewLine();
                 info.Append("Current Usage: ").VolumeFormat(currentFuelUsage).Append("/s").NewLine();
