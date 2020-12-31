@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
 using Sandbox.Common.ObjectBuilders;
@@ -53,15 +54,19 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             Main.Config.ToolbarActionLabels.ValueAssigned -= ToolbarActionLabelModeChanged;
         }
 
-        public ToolbarItemData GetToolbarItem()
+        public ToolbarItemData NextToolbarItem(string expectedActionId)
         {
-            int oldIndex = SortedIndex;
-            SortedIndex++;
+            int nextIndex = SortedIndex + 1;
 
-            if(oldIndex < 0 || oldIndex >= SortedData.Count)
+            if(nextIndex >= SortedData.Count)
                 return default(ToolbarItemData);
 
-            return SortedData[oldIndex];
+            var item = SortedData[nextIndex];
+            if(item.ActionId != expectedActionId)
+                return default(ToolbarItemData);
+
+            SortedIndex++;
+            return item;
         }
 
         public List<ToolbarItemData> ToolbarSlotData => SortedData;
@@ -134,19 +139,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             for(int i = 0; i < ob.Toolbar.Slots.Count; i++)
             {
                 var item = ob.Toolbar.Slots[i];
-                var blockItem = item.Data as MyObjectBuilder_ToolbarItemTerminalBlock;
-                var blockGroup = (blockItem != null ? null : item.Data as MyObjectBuilder_ToolbarItemTerminalGroup);
-
-                if(blockItem != null || blockGroup != null)
+                var blockItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
+                if(blockItem != null)
                 {
+                    string actionId = blockItem?._Action;
                     string customLabel = data?.GetCustomLabel(item.Index);
-                    string groupName = blockGroup?.GroupName;
+                    string groupName = (item.Data as MyObjectBuilder_ToolbarItemTerminalGroup)?.GroupName;
 
                     if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"    {item.Index.ToString(),-4} data={item.Data.GetType().Name,-48}, item={item.Item,-12}, customLabel={customLabel,-32}, groupName={groupName}");
 
                     // must add even if there's no useful data to keep the numbered order in sync.
-                    SortedData.Add(new ToolbarItemData(item.Index, customLabel, groupName, blockItem));
+                    SortedData.Add(new ToolbarItemData(item.Index, actionId, customLabel, groupName, blockItem));
                 }
                 else
                 {

@@ -13,7 +13,8 @@ namespace Digi.BuildInfo.Utilities
     {
         public readonly Dictionary<string, IMyModelDummy> Dummies = new Dictionary<string, IMyModelDummy>();
         public readonly HashSet<Vector3I> Vector3ISet = new HashSet<Vector3I>(Vector3I.Comparer);
-        public readonly StringBuilder SB = new StringBuilder(128);
+        public readonly StringBuilder WordWrapTempSB = new StringBuilder(512);
+        public readonly StringBuilder StatusTempSB = new StringBuilder(512);
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
         public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();

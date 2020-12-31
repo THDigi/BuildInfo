@@ -15,19 +15,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
     {
         public readonly IMyTerminalAction Action;
 
-        public readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
-        public readonly Action<IMyTerminalBlock, StringBuilder> OriginalWriter;
+        public int TriggeredTick = 0;
+        readonly Action<IMyTerminalBlock> OriginalAction;
 
-        private ToolbarActionLabelsMode mode;
+        readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
+        readonly Action<IMyTerminalBlock, StringBuilder> OriginalWriter;
 
-        private readonly string actionName;
-        private string editedNameCache;
+        ToolbarActionLabelsMode mode;
 
-        private bool originalWriterException = false;
+        readonly string actionName;
+        string editedNameCache;
 
-        private bool showBlockName = false;
+        bool originalWriterException = false;
 
-        private static BuildInfoMod Main => BuildInfoMod.Instance;
+        bool showBlockName = false;
+
+        static BuildInfoMod Main => BuildInfoMod.Instance;
 
         const int MaxNameLength = 22; // prints this many characters from the end of the name, will try to avoid splitting word and print from next space.
         const char LeftAlignChar = ' ';
@@ -39,11 +42,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             Action = action;
 
-            OriginalWriter = action.Writer;
+            OriginalWriter = Action.Writer;
             CustomWriter = NewWriter;
 
-            actionName = action.Name.ToString();
-            showBlockName = Main.ToolbarActionLabels.IsActionUseful(Action.Id);
+            OriginalAction = Action.Action;
+            Action.Action = Triggered;
+
+            actionName = Action.Name.ToString();
+            showBlockName = Main.ToolbarActionLabels.ShowBlockNameForAction(Action.Id);
 
             if(Main?.Config?.ToolbarActionLabels != null)
                 mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
@@ -51,30 +57,31 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             Action.Writer = CustomWriter;
 
             // HACK: giving an icon for some iconless actions
-            if(string.IsNullOrEmpty(action.Icon))
+            if(string.IsNullOrEmpty(Action.Icon))
             {
                 if(Action.Id == "Attach")
                 {
-                    action.Icon = @"Textures\GUI\Icons\Lock.png";
+                    Action.Icon = @"Textures\GUI\Icons\Lock.png";
                 }
                 else if(Action.Id == "Detach")
                 {
-                    action.Icon = @"Textures\GUI\Icons\DisconnectedPlayerIcon.png";
+                    Action.Icon = @"Textures\GUI\Icons\DisconnectedPlayerIcon.png";
                 }
             }
         }
 
         public void Cleanup()
         {
-            try
-            {
-                // HACK: can't set to null because reasons
-                Action.Writer = (b, s) => { };
-            }
-            catch(Exception)
-            {
-                // ignore BS
-            }
+            // unnecessary, gets collected just fine
+            //try
+            //{
+            //    // HACK: can't set to null because reasons
+            //    Action.Writer = (b, s) => { };
+            //}
+            //catch(Exception)
+            //{
+            //    // ignore BS
+            //}
         }
 
         public void SettingChanged(ToolbarActionLabelsMode newMode)
@@ -94,6 +101,27 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             //}
         }
 
+        void Triggered(IMyTerminalBlock block)
+        {
+            int tick = Main.Tick + 1; // 1 tick leeway for status to get a chance to have updated data
+
+            // HACK: infinite loop prevention as calling OriginalAction calls my overwritten action instead of storing the original... captured context madness.
+            if(TriggeredTick == tick)
+                return;
+
+            // used for ignoring cache in the status
+            TriggeredTick = tick;
+
+            try
+            {
+                OriginalAction?.Invoke(block);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
         void NewWriter(IMyTerminalBlock block, StringBuilder sb)
         {
             try
@@ -101,19 +129,26 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 if(block == null || block.MarkedForClose || sb == null)
                     return;
 
-                bool overrideCustomStatus = false;
+                bool overriddenStatus = false;
 
                 // controller HUD not supported right now
                 if(mode != ToolbarActionLabelsMode.Off && !MyAPIGateway.Input.IsJoystickLastUsed)
                 {
-                    // HACK: accuracy of this relies on the order of this writer being the same order as the items in the toolbar
-                    // this method gets the current one and automatically switches to next.
-                    var toolbarItem = Main.ToolbarCustomNames.GetToolbarItem();
+                    // HACK: accuracy of this relies on the order of this writer being the same order as the items in the toolbar.
+                    // this method gets the current one and automatically switches to next if the given actionId matches.
+                    var toolbarItem = Main.ToolbarCustomNames.NextToolbarItem(Action.Id);
+
+                    // invalid item, actionId likely didn't match or this called extra writer because it does that.
+                    // or wrong slot, happens when adding new things and desyncs them, just ignore it and it'll get fixed when they leave the menu.
+                    if(toolbarItem.ActionId == null)
+                        return;
 
                     int itemPage = (toolbarItem.Index / 9);
                     if(Main.ToolbarActionLabels.ToolbarPage != itemPage)
                     {
-                        sb.Append("ERROR\nPAGE\nDESYNC");
+                        // if player sees this then they'll know something is wrong and hopefully press Ctrl+<Num> to resync xD
+                        //sb.Append("ERROR\nDESYNC");
+                        // or just don't print anything as it'll fix itself when they hopefully do Ctrl+<num> by accident.
                         return;
                     }
 
@@ -137,10 +172,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     sb.Append('\n');
                     sb.Append('\n');
 
-                    overrideCustomStatus = AppendCustomStatus(block, sb, toolbarItem);
+                    overriddenStatus = AppendCustomStatus(block, sb, toolbarItem);
                 }
 
-                if(!overrideCustomStatus)
+                if(!overriddenStatus)
                 {
                     AppendOriginalStatus(block, sb);
                 }
@@ -183,17 +218,25 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             //    customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
             //}
 
-            var tempSB = Main.Caches.SB;
+            var tempSB = Main.Caches.StatusTempSB;
             tempSB.Clear();
 
             bool overrideStatus = false;
 
-            var customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
-            if(customStatusFunc != null)
-                overrideStatus = customStatusFunc.Invoke(this, block, toolbarItem, tempSB);
+            try
+            {
+                var customStatusFunc = Main.ToolbarActionStatus.GetCustomStatus(block.BlockDefinition.TypeId);
+                if(customStatusFunc != null)
+                    overrideStatus = customStatusFunc.Invoke(this, block, toolbarItem, tempSB);
 
-            if(!overrideStatus)
-                overrideStatus = Main.ToolbarActionStatus.Status_GenericFallback(this, block, toolbarItem, tempSB);
+                if(!overrideStatus)
+                    overrideStatus = Main.ToolbarActionStatus.Status_GenericFallback(this, block, toolbarItem, tempSB);
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in status :: block={block.BlockDefinition.ToString()}; action={Action.Id}; index={toolbarItem.Index.ToString()}; group={toolbarItem.GroupName}\n{e.ToString()}");
+                return false;
+            }
 
             if(tempSB.Length > 0)
             {
@@ -357,7 +400,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     case "RunWithDefaultArgument": ToolbarActionLabels.AppendWordWrapped(sb, "Run\n(NoArgs)", "Run"); break;
 
-                    case "UseConveyor": ToolbarActionLabels.AppendWordWrapped(sb, "Toggle\nConveyors", "Conveyor"); break;
+                    case "UseConveyor": ToolbarActionLabels.AppendWordWrapped(sb, "Toggle\nConvey", "Convey"); break;
 
                     // lights
                     //case "IncreaseBlink Lenght": AppendWordWrapped(sb, "+ Blink Length"); break;

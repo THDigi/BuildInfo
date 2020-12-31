@@ -25,14 +25,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         public int EnteredCockpitTicks { get; private set; } = CockpitLabelsForTicks;
 
-        public bool IsActionUseful(string actionId) => UsefulActions.Contains(actionId);
-        readonly HashSet<string> UsefulActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
+        public bool ShowBlockNameForAction(string actionId) => ShowNameForActions.Contains(actionId);
+        readonly HashSet<string> ShowNameForActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
         {
             "View", // camera
             "Open", "Open_On", "Open_Off", // doors and parachute
             "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off", // weapons
             "Control", // RC and turrets
-            "DrainAll", // conveyor sorter
+            "DrainAll", // conveyor sorter, connector
             "MainCockpit, MainRemoteControl", // cockpit/RC
             "SwitchLock", // connector
             "Reverse", "Extend", "Retract", // pistons/rotors

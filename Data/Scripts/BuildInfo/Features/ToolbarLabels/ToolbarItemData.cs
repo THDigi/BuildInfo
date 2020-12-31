@@ -5,14 +5,16 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
     public struct ToolbarItemData
     {
         public readonly int Index;
+        public readonly string ActionId;
         public readonly string LabelWrapped;
         public readonly string GroupName;
         public readonly string GroupNameWrapped;
         public readonly string PBRunArgumentWrapped;
 
-        public ToolbarItemData(int index, string label, string group, MyObjectBuilder_ToolbarItemTerminalBlock blockItem)
+        public ToolbarItemData(int index, string actionId, string label, string group, MyObjectBuilder_ToolbarItemTerminal blockItem)
         {
             Index = index;
+            ActionId = actionId;
             LabelWrapped = GetWrappedText(label);
             GroupName = group;
             GroupNameWrapped = GetWrappedText(group);
@@ -37,7 +39,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(text == string.Empty)
                 return string.Empty;
 
-            var sb = BuildInfoMod.Instance.Caches.SB;
+            var sb = BuildInfoMod.Instance.Caches.WordWrapTempSB;
             sb.Clear();
             ToolbarActionLabels.AppendWordWrapped(sb, text, maxLength);
             return sb.ToString();

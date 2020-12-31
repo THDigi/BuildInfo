@@ -9,12 +9,16 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
+using Sandbox.Game.Localization;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
+using ChargeMode = Sandbox.ModAPI.Ingame.ChargeMode;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
@@ -29,21 +33,29 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         public StatusDel GetCustomStatus(MyObjectBuilderType blockType)
         {
-            return customStatus.GetValueOrDefault(blockType, null);
+            return CustomStatus.GetValueOrDefault(blockType, null);
         }
 
-        private readonly Dictionary<MyObjectBuilderType, StatusDel> customStatus = new Dictionary<MyObjectBuilderType, StatusDel>(MyObjectBuilderType.Comparer);
+        readonly Dictionary<MyObjectBuilderType, StatusDel> CustomStatus = new Dictionary<MyObjectBuilderType, StatusDel>(MyObjectBuilderType.Comparer);
 
-        private readonly Dictionary<int, string> shortLivedCache = new Dictionary<int, string>();
-        private readonly Dictionary<int, string> shorterLivedCache = new Dictionary<int, string>();
+        readonly Dictionary<int, string> ShortLivedCache = new Dictionary<int, string>();
+        readonly Dictionary<int, string> ShorterLivedCache = new Dictionary<int, string>();
 
-        private readonly List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+        readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
 
-        private long previousShipController;
+        long PreviousShipController;
 
-        private bool animFlip = false;
-        private int animCycle = 0;
-        private const int animCycleMax = 4; // exclusive
+        bool AnimFlip = false;
+        int AnimCycle = 0;
+        const int AnimCycleMax = 4; // exclusive
+
+        string PBDIE_NoMain;
+        string PBDIE_NoValidCtor;
+        string PBDIE_NoAssembly;
+        string PBDIE_OwnershipChanged;
+        string PBDIE_NestedTooComplex;
+        string PBDIE_TooComplex;
+        string PBDIE_Caught;
 
         public ToolbarActionStatus(BuildInfoMod main) : base(main)
         {
@@ -55,34 +67,39 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             InitCustomStatus();
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
+
+            Main.GameConfig.OptionsMenuClosed += UpdatePBExceptionPrefixes;
+            UpdatePBExceptionPrefixes();
         }
 
         protected override void UnregisterComponent()
         {
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
+
+            Main.GameConfig.OptionsMenuClosed -= UpdatePBExceptionPrefixes;
         }
 
         protected override void UpdateAfterSim(int tick)
         {
             if(tick % ShortCacheLiveTicks == 0)
             {
-                shortLivedCache.Clear();
+                ShortLivedCache.Clear();
             }
 
             if(tick % ShorterCacheLiveTicks == 0)
             {
-                shorterLivedCache.Clear();
+                ShorterLivedCache.Clear();
             }
 
             if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
             {
-                animFlip = !animFlip;
+                AnimFlip = !AnimFlip;
             }
 
             if(tick % (Constants.TICKS_PER_SECOND / 4) == 0)
             {
-                if(++animCycle >= animCycleMax)
-                    animCycle = 0;
+                if(++AnimCycle >= AnimCycleMax)
+                    AnimCycle = 0;
             }
         }
 
@@ -94,14 +111,13 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 if(player != null && player.IdentityId == playerId)
                 {
                     var controlled = MyAPIGateway.Session.ControlledObject as IMyShipController;
-
-                    if(controlled != null && previousShipController != controlled.EntityId)
+                    if(controlled != null && PreviousShipController != controlled.EntityId)
                     {
-                        previousShipController = controlled.EntityId;
+                        PreviousShipController = controlled.EntityId;
 
                         // clear caches when entering new cockpit as they no longer are relevant, since they're per slot index
-                        shortLivedCache.Clear();
-                        shorterLivedCache.Clear();
+                        ShortLivedCache.Clear();
+                        ShorterLivedCache.Clear();
                     }
                 }
             }
@@ -119,12 +135,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(toolbarItem.GroupNameWrapped != null)
                 return Status_GenericGroupFallback(actionLabel, block, toolbarItem, sb);
 
-            // TODO: non-group shared actions... ?
+            switch(actionLabel.Action.Id)
+            {
+                case "UseConveyor":
+                {
+                    bool useConveyor = block.GetValueBool("UseConveyor"); // TODO: other better way?
+                    sb.Append(useConveyor ? "Share" : "Isolate");
+                    return true;
+                }
+
+                // TODO: more non-group shared actions?
+            }
 
             return false;
         }
 
-        bool Status_GenericGroupFallback(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        bool Status_GenericGroupFallback(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -133,33 +159,32 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "OnOff_Off":
                 {
                     // this is just a short-lived cache to aleviate callback spam
+                    // the tick check is for the cache to be ignored the tick that the action is executed in, so that it instantly updates.
                     string cachedText;
-                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
                     int startIndex = Math.Max(0, sb.Length);
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyFunctionalBlock>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyFunctionalBlock>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     int on = 0;
                     int off = 0;
 
-                    foreach(IMyFunctionalBlock b in blocks)
+                    foreach(IMyFunctionalBlock b in Blocks)
                     {
                         if(b.Enabled)
                             on++;
                         else
                             off++;
                     }
-
-                    blocks.Clear();
 
                     bool tooMany = (on + off) > 99;
 
@@ -185,7 +210,62 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             sb.Append(on).Append(" On\n").Append(off).Append(" Off");
                     }
 
-                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+
+                case "UseConveyor":
+                {
+                    // this is just a short-lived cache to aleviate callback spam
+                    // the tick check is for the cache to be ignored the tick that the action is executed in, so that it instantly updates.
+                    string cachedText;
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyTerminalBlock>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    int useConveyor = 0;
+
+                    foreach(IMyTerminalBlock b in Blocks)
+                    {
+                        // TODO: other better way?
+                        var prop = b.GetProperty("UseConveyor");
+                        if(prop != null)
+                        {
+                            if(prop.AsBool().GetValue(b))
+                                useConveyor++;
+                        }
+                    }
+
+                    int total = Blocks.Count;
+                    int noConveyor = (total - useConveyor);
+
+                    if(useConveyor == total)
+                    {
+                        sb.Append("All\nShared");
+                    }
+                    else if(noConveyor == total)
+                    {
+                        sb.Append("All\nIsolate");
+                    }
+                    else
+                    {
+                        sb.Append(useConveyor).Append(" shared\n");
+                        sb.Append(noConveyor).Append(" isolate");
+                    }
+
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
 
@@ -200,6 +280,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             Add(typeof(MyObjectBuilder_MyProgrammableBlock), Status_PB);
 
             Add(typeof(MyObjectBuilder_TimerBlock), Status_Timer);
+
+            Add(typeof(MyObjectBuilder_BatteryBlock), Status_Battery);
 
             var gasTank = new StatusDel(Status_GasTank);
             Add(typeof(MyObjectBuilder_GasTank), gasTank);
@@ -242,7 +324,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         void Add(MyObjectBuilderType type, StatusDel action)
         {
-            customStatus.Add(type, action);
+            CustomStatus.Add(type, action);
         }
 
         // NOTE: for groups only the first block gets the writer called, and no way to detect if it's a group.
@@ -250,54 +332,156 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         bool Status_PB(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
-            if(toolbarItem.GroupNameWrapped != null)
-            {
-                // TODO: group stuff?
-            }
+            if(toolbarItem.GroupName != null)
+                return Status_PBGroup(actionLabel, block, toolbarItem, sb);
 
             switch(actionLabel.Action.Id)
             {
                 case "Run":
                 case "RunWithDefaultArgument":
                 {
+                    if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
+                    {
+                        sb.Append("ERROR:\nNotAllowed");
+                        return true;
+                    }
+
                     var pb = (IMyProgrammableBlock)block;
 
-                    if(!string.IsNullOrEmpty(pb.DetailedInfo))
+                    if(AnimFlip && !pb.Enabled)
                     {
-                        if(pb.DetailedInfo.StartsWith("Main method not found"))
-                        {
-                            sb.Append("ERROR:\nNo Main");
-                        }
-                        else if(pb.DetailedInfo.StartsWith("Assembly not found"))
-                        {
-                            sb.Append("ERROR:\nCompile");
-                        }
-                        else if(pb.DetailedInfo.Contains("Caught exception"))
-                        {
-                            sb.Append("ERROR:\nException");
-                        }
-                        else
-                        {
-                            // append this max amount of lines from PB detailedinfo/echo
-                            const int MAX_LINES = 2;
-                            int allowedLines = MAX_LINES;
-
-                            for(int i = 0; i < pb.DetailedInfo.Length; ++i)
-                            {
-                                var chr = pb.DetailedInfo[i];
-
-                                if(chr == '\n' && --allowedLines == 0)
-                                    break;
-
-                                sb.Append(chr);
-                            }
-                        }
+                        sb.Append("OFF!");
                     }
                     else
                     {
-                        // running or idle without any echo, nothing client can detect here
+                        string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
+
+                        if(!string.IsNullOrEmpty(detailInfo))
+                        {
+                            if(detailInfo.StartsWith(PBDIE_NoMain))
+                            {
+                                sb.Append("ERROR:\nNo Main()");
+                            }
+                            else if(detailInfo.StartsWith(PBDIE_NoValidCtor))
+                            {
+                                sb.Append("ERROR:\nInvalid");
+                            }
+                            else if(detailInfo.StartsWith(PBDIE_NoAssembly)
+                                 || detailInfo.StartsWith(PBDIE_OwnershipChanged))
+                            {
+                                sb.Append("ERROR:\nCompile");
+                            }
+                            else if(detailInfo.StartsWith(PBDIE_TooComplex)
+                                 || detailInfo.StartsWith(PBDIE_NestedTooComplex))
+                            {
+                                sb.Append("ERROR:\nTooComplex");
+                            }
+                            else if(detailInfo.StartsWith(PBDIE_Caught))
+                            {
+                                sb.Append("ERROR:\nException");
+                            }
+                            else
+                            {
+                                // append this max amount of lines from PB detailedinfo/echo
+                                int allowedLines = 2;
+
+                                for(int i = 0; i < detailInfo.Length; ++i)
+                                {
+                                    var chr = detailInfo[i];
+                                    if(chr == '\n' && --allowedLines == 0)
+                                        break;
+
+                                    sb.Append(chr);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // running or idle without any echo, nothing client can detect here
+                        }
                     }
 
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        bool Status_PBGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Run":
+                case "RunWithDefaultArgument":
+                {
+                    if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
+                    {
+                        sb.Append("ERROR:\nNotAllowed");
+                        return true;
+                    }
+
+                    string cachedText;
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyProgrammableBlock>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    bool allOn = true;
+                    int errors = 0;
+                    int echo = 0;
+
+                    foreach(IMyProgrammableBlock pb in Blocks)
+                    {
+                        if(allOn && !pb.Enabled)
+                            allOn = false;
+
+                        string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
+
+                        if(!string.IsNullOrEmpty(detailInfo))
+                        {
+                            if(detailInfo.StartsWith(PBDIE_NoMain)
+                            || detailInfo.StartsWith(PBDIE_NoValidCtor)
+                            || detailInfo.StartsWith(PBDIE_NoAssembly)
+                            || detailInfo.StartsWith(PBDIE_OwnershipChanged)
+                            || detailInfo.StartsWith(PBDIE_TooComplex)
+                            || detailInfo.StartsWith(PBDIE_NestedTooComplex)
+                            || detailInfo.StartsWith(PBDIE_Caught))
+                            {
+                                errors++;
+                            }
+                            else
+                            {
+                                echo++;
+                            }
+                        }
+                    }
+
+                    int total = Blocks.Count;
+
+                    if(!allOn)
+                        sb.Append("OFF!\n");
+
+                    if(errors == 0)
+                    {
+                        sb.Append(echo).Append(" msg");
+                    }
+                    else
+                    {
+                        sb.Append(errors).Append(" error");
+                    }
+
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
             }
@@ -313,37 +497,32 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Stop":
                 case "TriggerNow":
                 {
-                    int startIndex = Math.Max(0, sb.Length);
                     var timer = (IMyTimerBlock)block;
                     bool working = timer.IsWorking;
 
                     if(working && timer.IsCountingDown)
                     {
                         string cachedText;
-                        if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                        if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                         {
-                            bool blink = DateTime.UtcNow.Millisecond >= 500;
-                            sb.Append(blink ? "ˇ " : "  ");
-                            sb.Append(cachedText);
-                            if(blink)
-                                sb.Append(" ˇ");
+                            if(AnimFlip)
+                                sb.Append("  ").Append(cachedText);
+                            else
+                                sb.Append("ˇ ").Append(cachedText).Append(" ˇ");
                             return true;
                         }
 
                         // HACK must parse detailedInfo because there's no getter of the current time.
                         string detailedInfo = timer.DetailedInfo;
-
                         if(!string.IsNullOrEmpty(detailedInfo))
                         {
                             // expected format "<Whatever language>: 00:00:00" in first line
 
                             int endLineIndex = detailedInfo.IndexOf('\n');
-
                             if(endLineIndex == -1)
                                 endLineIndex = detailedInfo.Length;
 
                             int separatorIndex = detailedInfo.IndexOf(':', 0, endLineIndex);
-
                             if(separatorIndex != -1)
                             {
                                 separatorIndex += 2; // move past ": "
@@ -352,28 +531,88 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 if(separatorIndex < detailedInfo.Length)
                                 {
                                     var time = detailedInfo.Substring(separatorIndex, endLineIndex - separatorIndex);
-                                    shortLivedCache.Add(toolbarItem.Index, time);
+                                    ShortLivedCache[toolbarItem.Index] = time;
 
-                                    // keep blinking separate so it can blink faster
-                                    bool blink = DateTime.UtcNow.Millisecond >= 500;
-                                    sb.Append(blink ? "ˇ " : "  ");
-                                    sb.Append(time);
-                                    if(blink)
-                                        sb.Append(" ˇ");
-
+                                    // keep blinking separate from cache so it can blink faster.
+                                    if(AnimFlip)
+                                        sb.Append("  ").Append(time);
+                                    else
+                                        sb.Append("ˇ ").Append(time).Append(" ˇ");
                                     return true;
                                 }
                             }
                         }
 
                         sb.Append("Running");
-                        shortLivedCache.Add(toolbarItem.Index, "Running");
+                        ShortLivedCache[toolbarItem.Index] = "Running";
                     }
                     else
                     {
-                        shortLivedCache.Remove(toolbarItem.Index);
+                        ShortLivedCache.Remove(toolbarItem.Index);
                         sb.Append(working ? "Stopped" : "Off");
                     }
+
+                    return true;
+                }
+
+                case "Silent":
+                {
+                    var timer = (IMyTimerBlock)block;
+                    sb.Append(timer.Silent ? "Silent" : "Loud");
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        #region Batteries
+        bool Status_Battery(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            if(toolbarItem.GroupName != null)
+                return Status_BatteryGroup(actionLabel, block, toolbarItem, sb);
+
+            switch(actionLabel.Action.Id)
+            {
+                case "ChargeMode":
+                case "Recharge":
+                case "Discharge":
+                case "Auto":
+                {
+                    var battery = (IMyBatteryBlock)block;
+
+                    if(AnimFlip && !battery.Enabled)
+                    {
+                        sb.Append("OFF!");
+                    }
+                    else
+                    {
+                        switch(battery.ChargeMode)
+                        {
+                            case ChargeMode.Auto: sb.Append("Auto"); break;
+                            case ChargeMode.Recharge: sb.Append("Charge"); break;
+                            case ChargeMode.Discharge: sb.Append("Drain"); break;
+                        }
+                    }
+
+                    sb.Append("\n");
+
+                    int filledPercent = (int)((battery.CurrentStoredPower / battery.MaxStoredPower) * 100);
+                    sb.Append(filledPercent).Append("% ");
+
+                    const float RatioOfMaxForDoubleArrows = 0.9f;
+
+                    float powerFlow = (battery.CurrentInput - battery.CurrentOutput);
+                    bool highFlow = false;
+                    if(powerFlow > 0)
+                        highFlow = (powerFlow > battery.MaxInput * RatioOfMaxForDoubleArrows);
+                    else if(powerFlow < 0)
+                        highFlow = (Math.Abs(powerFlow) > battery.MaxOutput * RatioOfMaxForDoubleArrows);
+
+                    if(AnimFlip && powerFlow > 0)
+                        sb.Append(highFlow ? "++" : "+");
+                    else if(AnimFlip && powerFlow < 0)
+                        sb.Append(highFlow ? "--" : "-");
 
                     return true;
                 }
@@ -382,6 +621,111 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
+        bool Status_BatteryGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "ChargeMode":
+                case "Recharge":
+                case "Discharge":
+                case "Auto":
+                {
+                    string cachedText;
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyBatteryBlock>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    bool allOn = true;
+                    float averageFilled = 0f;
+                    float averageFlow = 0f;
+                    float totalFlow = 0f;
+                    float maxInput = 0f;
+                    float maxOutput = 0f;
+                    int auto = 0;
+                    int recharge = 0;
+                    int discharge = 0;
+
+                    foreach(IMyBatteryBlock battery in Blocks)
+                    {
+                        if(!battery.Enabled)
+                            allOn = false;
+
+                        averageFilled += (battery.CurrentStoredPower / battery.MaxStoredPower);
+                        totalFlow += (battery.CurrentInput - battery.CurrentOutput);
+
+                        maxInput += battery.MaxInput;
+                        maxOutput += battery.MaxOutput;
+
+                        switch(battery.ChargeMode)
+                        {
+                            case ChargeMode.Auto: auto++; break;
+                            case ChargeMode.Recharge: recharge++; break;
+                            case ChargeMode.Discharge: discharge++; break;
+                        }
+                    }
+
+                    int total = Blocks.Count;
+
+                    if(averageFilled > 0)
+                    {
+                        averageFilled /= total;
+                        averageFilled *= 100;
+                    }
+
+                    if(totalFlow != 0) // can be negative too
+                        averageFlow = totalFlow / total;
+
+                    if(AnimFlip && !allOn)
+                    {
+                        sb.Append("OFF!\n");
+                    }
+                    else
+                    {
+                        if(auto == total)
+                            sb.Append("Auto\n");
+                        else if(recharge == total)
+                            sb.Append("Charge\n");
+                        else if(discharge == total)
+                            sb.Append("Drain\n");
+                        else
+                            sb.Append("Mixed\n");
+                    }
+
+                    sb.Append((int)averageFilled).Append("% ");
+
+                    const float RatioOfMaxForDoubleArrows = 0.9f;
+
+                    bool highFlow = false;
+                    if(averageFlow > 0)
+                        highFlow = (averageFlow > maxInput * RatioOfMaxForDoubleArrows);
+                    else if(averageFlow < 0)
+                        highFlow = (Math.Abs(averageFlow) > maxOutput * RatioOfMaxForDoubleArrows);
+
+                    if(AnimFlip && averageFlow > 0)
+                        sb.Append(highFlow ? "++" : "+");
+                    else if(AnimFlip && averageFlow < 0)
+                        sb.Append(highFlow ? "--" : "-");
+
+                    Blocks.Clear();
+                    ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Batteries
+
         bool Status_OxygenGenerator(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
@@ -389,7 +733,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Refill":
                 {
                     string cachedText;
-                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -435,7 +779,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(hasIce ? "No Bottles" : "No Ice");
                     }
 
-                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
             }
@@ -450,7 +794,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Refill":
                 {
                     string cachedText;
-                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
@@ -495,7 +839,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(tank.FilledRatio > 0 ? "No Bottles" : "No Gas");
                     }
 
-                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
             }
@@ -565,14 +909,38 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
+        #region Rotors
         bool Status_MotorStator(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
+            if(toolbarItem.GroupName != null)
+                return Status_MotorStatorGroup(actionLabel, block, toolbarItem, sb);
+
             switch(actionLabel.Action.Id)
             {
                 case "Reverse":
                 {
                     var stator = (IMyMotorStator)block;
-                    sb.Append(stator.TargetVelocityRPM.ToString("0.##"));
+                    float angleRad = stator.Angle;
+
+                    if(AnimFlip && !stator.Enabled)
+                        sb.Append("OFF!\n");
+                    else if(!AnimFlip && stator.TargetVelocityRPM == 0)
+                        sb.Append("NoVel!\n");
+
+                    float minRad = stator.LowerLimitRad;
+                    float maxRad = stator.UpperLimitRad;
+
+                    // is rotor limited in both directions
+                    if(minRad >= -MathHelper.TwoPi && maxRad <= MathHelper.TwoPi)
+                    {
+                        float progress = (angleRad - minRad) / (maxRad - minRad);
+                        sb.ProportionToPercent(progress);
+                    }
+                    else
+                    {
+                        sb.AngleFormat(angleRad, 0);
+                    }
+
                     return true;
                 }
 
@@ -590,8 +958,149 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
+        bool Status_MotorStatorGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Reverse":
+                {
+                    string cachedText;
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyMotorStator>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    bool allLimited = true;
+                    bool allOn = true;
+                    bool allCanMove = true;
+                    float travelAverage = 0;
+                    float angleMin = float.MaxValue;
+                    float angleMax = float.MinValue;
+
+                    foreach(IMyMotorStator stator in Blocks)
+                    {
+                        if(!stator.Enabled)
+                            allOn = false;
+
+                        if(stator.TargetVelocityRPM == 0)
+                            allCanMove = false;
+
+                        float angle = stator.Angle;
+
+                        angleMin = Math.Min(angleMin, angle);
+                        angleMax = Math.Max(angleMax, angle);
+
+                        float minRad = stator.LowerLimitRad;
+                        float maxRad = stator.UpperLimitRad;
+
+                        // is rotor limited in both directions
+                        if(minRad >= -MathHelper.TwoPi && maxRad <= MathHelper.TwoPi)
+                            travelAverage += (angle - minRad) / (maxRad - minRad);
+                        else
+                            allLimited = false;
+                    }
+
+                    int total = Blocks.Count;
+
+                    if(travelAverage > 0)
+                        travelAverage /= total;
+
+                    if(AnimFlip && !allOn)
+                        sb.Append("OFF!\n");
+
+                    if(!AnimFlip && allCanMove)
+                        sb.Append("NoVel!\n");
+
+                    if(allLimited)
+                    {
+                        sb.ProportionToPercent(travelAverage);
+                    }
+                    else
+                    {
+                        if(Math.Abs(angleMin - angleMax) <= 0.1f)
+                        {
+                            sb.AngleFormat(angleMin, 0);
+                        }
+                        else
+                        {
+                            sb.AngleFormat(angleMin, 0).Append("~").AngleFormat(angleMax);
+                        }
+                    }
+
+                    Blocks.Clear();
+                    ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+
+                case "Attach":
+                case "Detach":
+                case "Add Top Part":
+                case "Add Small Top Part":
+                {
+                    string cachedText;
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyMotorStator>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    int attached = 0;
+
+                    foreach(IMyMotorStator stator in Blocks)
+                    {
+                        if(stator.IsAttached)
+                            attached++;
+                    }
+
+                    int total = Blocks.Count;
+                    int detached = (total - attached);
+
+                    if(attached == total)
+                    {
+                        sb.Append("All\nAttached");
+                    }
+                    else if(detached == total)
+                    {
+                        sb.Append("All\nDetached");
+                    }
+                    else
+                    {
+                        sb.Append("Detached:\n").Append(detached);
+                    }
+
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Rotors
+
+        #region Suspensions
         bool Status_Suspension(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
+            if(toolbarItem.GroupName != null)
+                return Status_SuspensionGroup(actionLabel, block, toolbarItem, sb);
+
             switch(actionLabel.Action.Id)
             {
                 case "Add Top Part":
@@ -604,6 +1113,61 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             return false;
         }
+
+        bool Status_SuspensionGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Add Top Part":
+                {
+                    string cachedText;
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyMotorSuspension>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    int attached = 0;
+
+                    foreach(IMyMotorSuspension stator in Blocks)
+                    {
+                        if(stator.IsAttached)
+                            attached++;
+                    }
+
+                    int total = Blocks.Count;
+                    int detached = (total - attached);
+
+                    if(attached == total)
+                    {
+                        sb.Append("All\nAttached");
+                    }
+                    else if(detached == total)
+                    {
+                        sb.Append("All\nDetached");
+                    }
+                    else
+                    {
+                        sb.Append("Detached:\n").Append(detached);
+                    }
+
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Suspensions
 
         #region Pistons
         bool Status_Piston(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
@@ -640,7 +1204,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_PistonGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        bool Status_PistonGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -649,24 +1213,24 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Reverse":
                 {
                     string cachedText;
-                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
                     int startIndex = Math.Max(0, sb.Length);
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyPistonBase>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyPistonBase>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     float travelAverage = 0;
                     bool allOn = true;
 
-                    foreach(IMyPistonBase piston in blocks)
+                    foreach(IMyPistonBase piston in Blocks)
                     {
                         if(!piston.Enabled)
                             allOn = false;
@@ -678,14 +1242,15 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     }
 
                     if(travelAverage > 0)
-                        travelAverage /= blocks.Count;
+                        travelAverage /= Blocks.Count;
 
-                    if(!allOn && animFlip)
+                    if(AnimFlip && !allOn)
                         sb.Append("OFF!\n");
 
                     sb.Append((int)(travelAverage * 100)).Append("%");
 
-                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    Blocks.Clear();
+                    ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
 
@@ -694,29 +1259,29 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Add Top Part":
                 {
                     string cachedText;
-                    if(shortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
                     int startIndex = Math.Max(0, sb.Length);
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyFunctionalBlock>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyPistonBase>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     int attached = 0;
 
-                    foreach(IMyPistonBase piston in blocks)
+                    foreach(IMyPistonBase piston in Blocks)
                     {
                         if(piston.IsAttached)
                             attached++;
                     }
 
-                    int total = blocks.Count;
+                    int total = Blocks.Count;
 
                     if(attached < total)
                     {
@@ -731,7 +1296,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append("All\ndetached");
                     }
 
-                    shortLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
             }
@@ -779,7 +1345,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_Off":
                 {
                     var door = (IMyDoor)block;
-                    if(!door.Enabled && animFlip)
+
+                    if(AnimFlip && !door.Enabled)
                         sb.Append("OFF!\n");
 
                     switch(door.Status)
@@ -809,7 +1376,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_DoorsGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        bool Status_DoorsGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -818,17 +1385,17 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_Off":
                 {
                     string cachedText;
-                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyDoor>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyDoor>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     // TODO include off state?
@@ -841,7 +1408,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     float averageOpenRatio = 0;
                     int doors = 0;
 
-                    foreach(IMyDoor door in blocks)
+                    foreach(IMyDoor door in Blocks)
                     {
                         doors++;
 
@@ -861,8 +1428,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 break;
                         }
                     }
-
-                    blocks.Clear();
 
                     if(doors == 0)
                         return false;
@@ -933,7 +1498,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     }
                     finally
                     {
-                        shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                        Blocks.Clear();
+                        ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     }
                 }
             }
@@ -965,10 +1531,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         hasAmmo = (foundItems >= def.MaterialDeployCost);
                     }
 
-                    if(!parachute.Enabled && animFlip)
+                    if(AnimFlip && !parachute.Enabled)
                         sb.Append("OFF!\n");
 
-                    if(!hasAmmo && !animFlip && parachute.Status != DoorStatus.Open)
+                    if(!AnimFlip && !hasAmmo && parachute.Status != DoorStatus.Open)
                         sb.Append("Empty!\n");
 
                     switch(parachute.Status)
@@ -989,7 +1555,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(autoDeploy)
                     {
-                        if(!parachute.Enabled && animFlip)
+                        if(AnimFlip && !parachute.Enabled)
                             sb.Append("OFF!\n");
                         else
                             sb.Append("Auto\n");
@@ -1008,7 +1574,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
 
-        bool Status_ParachuteGroup(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        bool Status_ParachuteGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
             {
@@ -1017,18 +1583,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_Off":
                 {
                     string cachedText;
-                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
                     int startIndex = Math.Max(0, sb.Length);
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyParachute>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyParachute>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     int open = 0;
@@ -1036,14 +1602,15 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     bool allAmmo = true;
                     bool allOn = true;
 
-                    foreach(IMyParachute parachute in blocks)
+                    foreach(IMyParachute parachute in Blocks)
                     {
                         if(parachute.Status != DoorStatus.Open)
                         {
                             var inv = parachute.GetInventory();
                             if(inv != null)
                             {
-                                var def = (MyParachuteDefinition)block.SlimBlock.BlockDefinition;
+                                // HACK block cast needed because modAPI IMyParachute implements ingame interfaces instead of modAPI ones.
+                                var def = (MyParachuteDefinition)((IMyTerminalBlock)parachute).SlimBlock.BlockDefinition;
                                 var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
                                 if(foundItems < def.MaterialDeployCost)
                                     allAmmo = false;
@@ -1060,13 +1627,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         }
                     }
 
-                    blocks.Clear();
-
-                    if(!allAmmo && animFlip)
-                        sb.Append("Empty!\n");
-
-                    if(!allOn && !animFlip)
+                    if(AnimFlip && !allOn)
                         sb.Append("OFF!\n");
+
+                    if(!AnimFlip && !allAmmo)
+                        sb.Append("Empty!\n");
 
                     if(open > 0 && ready > 0)
                         sb.Append("Mixed");
@@ -1075,25 +1640,26 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     else
                         sb.Append("Ready");
 
-                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    Blocks.Clear();
+                    ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
 
                 case "AutoDeploy": // vanilla status is borked
                 {
                     string cachedText;
-                    if(shorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(ShorterLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
                     {
                         sb.Append(cachedText);
                         return true;
                     }
                     int startIndex = Math.Max(0, sb.Length);
 
-                    blocks.Clear();
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
                     var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<IMyParachute>(blocks);
-                    if(blocks.Count == 0)
+                    group?.GetBlocksOfType<IMyParachute>(Blocks);
+                    if(Blocks.Count == 0)
                         return false;
 
                     bool allOn = true;
@@ -1103,7 +1669,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     bool hasSmallerDeploy = false;
                     float highestDeploy = 0;
 
-                    foreach(IMyParachute parachute in blocks)
+                    foreach(IMyParachute parachute in Blocks)
                     {
                         if(!parachute.Enabled)
                             allOn = false;
@@ -1128,11 +1694,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         }
                     }
 
-                    blocks.Clear();
-
                     if(auto > 0)
                     {
-                        if(!allOn && animFlip)
+                        if(AnimFlip && !allOn)
                             sb.Append("OFF!\n");
                         else if(manual > 0)
                             sb.Append("Mixed\n");
@@ -1149,7 +1713,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append("Manual");
                     }
 
-                    shorterLivedCache.Add(toolbarItem.Index, sb.ToString(startIndex, sb.Length - startIndex));
+                    Blocks.Clear();
+                    ShorterLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
                     return true;
                 }
             }
@@ -1157,5 +1722,22 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             return false;
         }
         #endregion Parachutes
+
+        void UpdatePBExceptionPrefixes()
+        {
+            PBDIE_NoMain = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_NoMain);
+            PBDIE_NoValidCtor = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_NoValidConstructor);
+            PBDIE_NoAssembly = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_NoAssembly);
+            PBDIE_OwnershipChanged = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_Ownershipchanged);
+            PBDIE_NestedTooComplex = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_NestedTooComplex);
+            PBDIE_TooComplex = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_TooComplex);
+            PBDIE_Caught = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_ExceptionCaught);
+        }
+
+        string GetTranslatedLimited(MyStringId langKey, int maxLength = 10)
+        {
+            string text = MyTexts.GetString(langKey);
+            return text.Substring(0, Math.Min(text.Length, maxLength));
+        }
     }
 }
