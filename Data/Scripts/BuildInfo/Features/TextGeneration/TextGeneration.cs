@@ -3076,7 +3076,7 @@ namespace Digi.BuildInfo.Features
             {
                 float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * Hardcoded.JumpDriveRechargeMultiplier);
                 AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.JumpDriveRechargeMultiplier);
-                AddLine().Label("Jump process").TimeFormat(jumpDrive.JumpDelay);
+                AddLine().LabelHardcoded("Jump process").TimeFormat(Hardcoded.JumpDriveJumpDelay); // HACK: jumpDrive.JumpDelay is not used in game code
                 AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance);
                 AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
             }

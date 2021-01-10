@@ -300,5 +300,8 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyJumpDrive.StorePower()
         public const float JumpDriveRechargeMultiplier = 0.8f;
+
+        // from MyGridJumpDriveSystem.Jump()
+        public const float JumpDriveJumpDelay = 10f;
     }
 }
