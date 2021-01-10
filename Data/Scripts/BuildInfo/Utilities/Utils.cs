@@ -19,6 +19,19 @@ namespace Digi.BuildInfo.Utilities
     /// </summary>
     public static class Utils
     {
+        public static bool AssertMainThread(bool throwException = true)
+        {
+            if(Environment.CurrentManagedThreadId != 1)
+            {
+                if(throwException)
+                    throw new Exception($"Called in thread #{Environment.CurrentManagedThreadId.ToString()}");
+
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.

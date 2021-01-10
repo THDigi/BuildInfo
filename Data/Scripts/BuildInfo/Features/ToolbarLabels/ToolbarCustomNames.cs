@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Game;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.ModAPI;
@@ -19,10 +17,12 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         public const char KeySeparator = '-';
         public const int CustomLabelMaxLength = 60;
 
-        ToolbarActionLabelsMode mode;
+        ToolbarActionLabelsMode Mode;
 
-        long previousControlledEntId = 0;
-        string previousCustomDataParse = null;
+        long PreviousControlledEntId = 0;
+        string PreviousCustomDataParse = null;
+
+        long LastViewedTerminalEntId;
 
         int SortedIndex = 0;
         List<ToolbarItemData> SortedData = new List<ToolbarItemData>(9 * 9);
@@ -38,12 +38,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void RegisterComponent()
         {
-            mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
+            Mode = (ToolbarActionLabelsMode)Main.Config.ToolbarActionLabels.Value;
 
             EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
             EquipmentMonitor.ShipControllerOBChanged += EquipmentMonitor_ShipControllerOBChanged;
 
             Main.Config.ToolbarActionLabels.ValueAssigned += ToolbarActionLabelModeChanged;
+
+            MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
 
         protected override void UnregisterComponent()
@@ -52,6 +54,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             EquipmentMonitor.ShipControllerOBChanged -= EquipmentMonitor_ShipControllerOBChanged;
 
             Main.Config.ToolbarActionLabels.ValueAssigned -= ToolbarActionLabelModeChanged;
+
+            MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
         }
 
         public ToolbarItemData NextToolbarItem(string expectedActionId)
@@ -77,7 +81,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             if(oldValue != newValue)
             {
-                mode = (ToolbarActionLabelsMode)newValue;
+                Mode = (ToolbarActionLabelsMode)newValue;
             }
         }
 
@@ -88,9 +92,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             SortedIndex = 0;
 
-            if(previousControlledEntId != shipController.EntityId)
+            if(PreviousControlledEntId != shipController.EntityId)
             {
-                previousControlledEntId = shipController.EntityId;
+                PreviousControlledEntId = shipController.EntityId;
                 ShipControllerChanged(shipController);
             }
 
@@ -105,7 +109,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             SortedData.Clear();
 
-            if(mode == ToolbarActionLabelsMode.Off)
+            if(Mode == ToolbarActionLabelsMode.Off)
                 return;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
@@ -191,11 +195,11 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         void ParseCustomData(IMyTerminalBlock block)
         {
-            if(mode == ToolbarActionLabelsMode.Off)
+            if(Mode == ToolbarActionLabelsMode.Off)
                 return;
 
             string customData = block.CustomData;
-            if(object.ReferenceEquals(customData, previousCustomDataParse))
+            if(object.ReferenceEquals(customData, PreviousCustomDataParse))
                 return;
 
             //if(customData.Equals(previousCustomDataParse))
@@ -204,7 +208,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             //    return;
             //}
 
-            previousCustomDataParse = customData;
+            PreviousCustomDataParse = customData;
 
             BlockToolbarData blockData;
             if(!Blocks.TryGetValue(block.EntityId, out blockData))
@@ -271,21 +275,19 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             // HACK forcing refresh of detailed info panel
 
-            var internalBlock = (MyCubeBlock)block;
-            if(internalBlock.IDModule != null)
-            {
-                // this sends ownership change events
-                var shareMode = internalBlock.IDModule.ShareMode;
-                internalBlock.ChangeOwner(block.OwnerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
-                internalBlock.ChangeOwner(block.OwnerId, shareMode);
-            }
-            else
+            // only trigger it for player that is viewing this block in terminal
+            if(LastViewedTerminalEntId == block.EntityId && MyAPIGateway.Gui.IsCursorVisible && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {
                 // this sends network messages
                 bool original = block.ShowInToolbarConfig;
                 block.ShowInToolbarConfig = !original;
                 block.ShowInToolbarConfig = original;
             }
+        }
+
+        void CustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
+        {
+            LastViewedTerminalEntId = (block == null ? 0 : block.EntityId);
         }
     }
 }

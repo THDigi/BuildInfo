@@ -1039,10 +1039,10 @@ namespace Digi.BuildInfo.Features
                     {
                         if(Math.Abs(grid.Physics.Mass) <= 0.000001f)
                         {
-                            #region Manually compute mass for static grids
+                            // HACK: Manually compute mass for static grids
                             if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
                             {
-                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 since this method executes very 10 ticks
+                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
                                 prevSelectedGrid = grid.EntityId;
 
                                 var internalGrid = (MyCubeGrid)grid;
@@ -1061,10 +1061,9 @@ namespace Digi.BuildInfo.Features
                                             gridMassCache += cockpit.Pilot.BaseMass;
                                         }
 
-                                        for(int i = block.FatBlock.InventoryCount - 1; i >= 0; --i)
+                                        for(int i = (block.FatBlock.InventoryCount - 1); i >= 0; --i)
                                         {
                                             var inv = block.FatBlock.GetInventory(i);
-
                                             if(inv != null)
                                                 gridMassCache += (float)inv.CurrentMass * cargoMassMultiplier;
                                         }
@@ -1075,14 +1074,13 @@ namespace Digi.BuildInfo.Features
                                     }
                                 }
                             }
-
-                            GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
-                            #endregion Manually compute mass for static grids
                         }
                         else
                         {
-                            GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(grid.Physics.Mass);
+                            gridMassCache = grid.Physics.Mass;
                         }
+
+                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
                     }
                 }
             }
@@ -1160,7 +1158,7 @@ namespace Digi.BuildInfo.Features
                     {
                         GetLine().Append("Owner: ");
 
-                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
+                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
                         var factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
@@ -1265,11 +1263,10 @@ namespace Digi.BuildInfo.Features
 
                 if(!EquipmentMonitor.IsAnyGrinder)
                 {
-                    var time = buildTime * (1 - integrityRatio);
-
+                    float time = buildTime * (1 - integrityRatio);
                     if(time > 0)
                     {
-                        AddLine().Append("Complete: ").TimeFormat(buildTime * (1 - integrityRatio));
+                        AddLine().Append("Complete: ").TimeFormat(time);
 
                         if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
                         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.Game;
@@ -102,6 +103,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             try
             {
+                Utils.AssertMainThread();
+
                 var player = MyAPIGateway.Session?.Player;
                 if(player != null && player.IdentityId == playerId)
                 {

@@ -260,11 +260,8 @@ namespace Digi.BuildInfo.Features.Overlays
             var aimedBlock = EquipmentMonitor.AimedBlock;
             var cellSize = EquipmentMonitor.BlockGridSize;
 
-            if(LockOverlay.LockedOnBlock != null)
-            {
-                if(!LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
-                    return;
-            }
+            if(LockOverlay.LockedOnBlock != null && !LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
+                return;
 
             try
             {
@@ -282,7 +279,6 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
                     {
                         var hitEnt = GetHitEnt(MyCubeBuilder.Static.HitInfo.Value);
-
                         if(hitEnt != null && hitEnt is IMyVoxelBase)
                             drawMatrix.Translation = GetHitPos(MyCubeBuilder.Static.HitInfo.Value); // required for position to be accurate when aiming at a planet
                         else
@@ -292,7 +288,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     {
                         //drawMatrix.Translation = box.Center;
 
-                        // HACK potential fix for jittery overlays when aiming at a grid.
+                        // HACK: potential fix for jittery overlays when aiming at a grid.
                         Vector3D addPosition;
                         MyCubeBuilder.Static.GetAddPosition(out addPosition);
                         drawMatrix.Translation = addPosition;

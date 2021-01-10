@@ -107,6 +107,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         {
             try
             {
+                Utils.AssertMainThread();
+
                 var player = MyAPIGateway.Session?.Player;
                 if(player != null && player.IdentityId == playerId)
                 {
