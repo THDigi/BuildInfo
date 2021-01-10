@@ -29,6 +29,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         public bool ShowBlockNameForAction(string actionId) => ShowNameForActions.Contains(actionId);
         readonly HashSet<string> ShowNameForActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
         {
+            "OnOff", "OnOff_On", "OnOff_Off", // generic
             "View", // camera
             "Open", "Open_On", "Open_Off", // doors and parachute
             "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off", // weapons
@@ -39,7 +40,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             "Reverse", "Extend", "Retract", // pistons/rotors
             "Run", "RunWithDefaultArgument", // PB
             "TriggerNow", "Start", "Stop", // timers
-            "Jump", // jumpdrive
+            "Jump", "Recharge", "Recharge_On", "Recharge_Off", // jumpdrive
         };
 
         readonly Dictionary<IMyTerminalAction, ActionWriterOverride> OverriddenActions = new Dictionary<IMyTerminalAction, ActionWriterOverride>(16);

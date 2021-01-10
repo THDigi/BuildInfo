@@ -13,6 +13,7 @@ using Sandbox.Game.Localization;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.ObjectBuilders;
@@ -20,6 +21,7 @@ using VRage.Utils;
 using VRageMath;
 using ChargeMode = Sandbox.ModAPI.Ingame.ChargeMode;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
+using MyJumpDriveStatus = Sandbox.ModAPI.Ingame.MyJumpDriveStatus;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
@@ -284,6 +286,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             Add(typeof(MyObjectBuilder_TimerBlock), Status_Timer);
 
             Add(typeof(MyObjectBuilder_BatteryBlock), Status_Battery);
+
+            Add(typeof(MyObjectBuilder_JumpDrive), Status_JumpDrive);
 
             var gasTank = new StatusDel(Status_GasTank);
             Add(typeof(MyObjectBuilder_GasTank), gasTank);
@@ -728,6 +732,203 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         }
         #endregion Batteries
 
+        #region Jumpdrives
+        bool Status_JumpDrive(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            if(toolbarItem.GroupName != null)
+                return Status_JumpDriveGroup(actionLabel, block, toolbarItem, sb);
+
+            switch(actionLabel.Action.Id)
+            {
+                case "Jump":
+                case "Recharge":
+                case "Recharge_On":
+                case "Recharge_Off":
+                {
+                    bool jumpAction = (actionLabel.Action.Id == "Jump");
+
+                    if(jumpAction)
+                    {
+                        float countdown = Main.JumpDriveMonitor.GetJumpCountdown(block.CubeGrid.EntityId);
+                        if(countdown > 0)
+                        {
+                            sb.Append("Jumping\n");
+                            sb.TimeFormat(countdown);
+                            return true;
+                        }
+                    }
+
+                    var jd = (IMyJumpDrive)block;
+                    if(!jd.Enabled)
+                    {
+                        sb.Append("Off"); // no blink here because Status gets changed to weird stuff when off.
+                    }
+                    else
+                    {
+                        switch(jd.Status)
+                        {
+                            case MyJumpDriveStatus.Charging:
+                            {
+                                var recharge = jd.GetValueBool("Recharge");
+                                sb.Append(recharge ? "Charge" : "Stop");
+                                break;
+                            }
+                            case MyJumpDriveStatus.Ready: sb.Append("Ready"); break;
+                            case MyJumpDriveStatus.Jumping: sb.Append("Jump..."); break;
+                            default: return false;
+                        }
+                    }
+
+                    sb.Append("\n");
+
+                    int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
+                    sb.Append(filledPercent).Append("%");
+
+                    var sink = jd.Components.Get<MyResourceSinkComponent>();
+                    if(sink != null)
+                    {
+                        const float RatioOfMaxForDoubleArrows = 0.9f;
+
+                        float input = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+                        float maxInput = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                        bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
+
+                        if(AnimFlip && input > 0)
+                            sb.Append(highFlow ? "++" : "+");
+                    }
+
+                    return true;
+                }
+
+                case "IncreaseJumpDistance":
+                case "DecreaseJumpDistance":
+                {
+                    var jd = (IMyJumpDrive)block;
+
+                    if(AnimFlip)
+                    {
+                        var prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
+                        if(prop != null && !prop.Enabled.Invoke(block))
+                        {
+                            sb.Append("GPS!");
+                            return true;
+                        }
+                    }
+
+                    if(actionLabel.OriginalWriter != null)
+                    {
+                        int startIndex = sb.Length;
+
+                        // vanilla writer but with some alterations as it's easier than re-doing the entire math for jump distance.
+                        actionLabel.OriginalWriter.Invoke(block, sb);
+
+                        for(int i = startIndex; i < sb.Length; i++)
+                        {
+                            char c = sb[i];
+                            if(c == '%' && sb.Length > (i + 2))
+                            {
+                                sb[i + 2] = '\n'; // replace starting paranthesis with newline
+                                sb.Length -= 1; // remove ending paranthesis
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        bool Status_JumpDriveGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Recharge":
+                case "Recharge_On":
+                case "Recharge_Off":
+                {
+                    string cachedText;
+                    if(actionLabel.TriggeredTick != Main.Tick && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                    {
+                        sb.Append(cachedText);
+                        return true;
+                    }
+                    int startIndex = Math.Max(0, sb.Length);
+
+                    Blocks.Clear();
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(firstBlockInGroup.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<IMyJumpDrive>(Blocks);
+                    if(Blocks.Count == 0)
+                        return false;
+
+                    bool allOn = true;
+                    float averageFilled = 0f;
+                    float input = 0f;
+                    float maxInput = 0f;
+                    int ready = 0;
+                    int charge = 0;
+
+                    foreach(IMyJumpDrive jd in Blocks)
+                    {
+                        if(!jd.Enabled)
+                            allOn = false;
+
+                        averageFilled += (jd.CurrentStoredPower / jd.MaxStoredPower);
+
+                        var sink = jd.Components.Get<MyResourceSinkComponent>();
+                        if(sink != null)
+                        {
+                            input += sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+                            maxInput += sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                        }
+
+                        switch(jd.Status)
+                        {
+                            case MyJumpDriveStatus.Ready: ready++; break;
+                            case MyJumpDriveStatus.Charging: charge++; break;
+                        }
+                    }
+
+                    int total = Blocks.Count;
+
+                    if(averageFilled > 0)
+                    {
+                        averageFilled /= total;
+                        averageFilled *= 100;
+                    }
+
+                    float averageInput = 0;
+                    if(input > 0)
+                        averageInput = input / total;
+
+                    if(AnimFlip && !allOn)
+                    {
+                        sb.Append("OFF!\n");
+                    }
+                    else
+                    {
+                        if(ready == total)
+                            sb.Append("Ready\n");
+                        else if(charge == total)
+                            sb.Append("Charge\n");
+                        else
+                            sb.Append("Mixed\n");
+                    }
+
+                    sb.Append((int)averageFilled).Append("%");
+
+                    Blocks.Clear();
+                    ShortLivedCache[toolbarItem.Index] = sb.ToString(startIndex, sb.Length - startIndex);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        #endregion Jumpdrives
+
         bool Status_OxygenGenerator(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
             switch(actionLabel.Action.Id)
@@ -740,8 +941,8 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         sb.Append(cachedText);
                         return true;
                     }
-
                     int startIndex = Math.Max(0, sb.Length);
+
                     var generator = (IMyGasGenerator)block;
                     bool canFill = false;
 
