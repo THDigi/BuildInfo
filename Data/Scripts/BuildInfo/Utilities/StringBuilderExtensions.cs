@@ -379,7 +379,7 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, kg, " kg"))
                 return s;
 
-            if(Math.Abs(kg) < 0.0000001f)
+            if(kg == 0)
                 return s.Append("0 kg");
 
             if(kg >= 1000000000)
@@ -426,8 +426,11 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder VolumeFormat(this StringBuilder s, float l)
         {
-            if(!IsValid(s, l, " l"))
+            if(!IsValid(s, l, " L"))
                 return s;
+
+            if(l == 0)
+                return s.Append("0 L");
 
             if(l >= 1000000000000)
                 return s.Number(l / 1000000000000f).Append(" TL");
