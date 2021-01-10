@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game.ModAPI;
@@ -142,18 +143,37 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             for(int i = 0; i < ob.Toolbar.Slots.Count; i++)
             {
                 var item = ob.Toolbar.Slots[i];
-                var blockItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
-                if(blockItem != null)
+                var terminalItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
+                if(terminalItem != null)
                 {
-                    string actionId = blockItem._Action;
+                    string groupName = null;
+
+                    var groupItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalGroup;
+                    if(groupItem != null)
+                    {
+                        if(!MyEntities.EntityExists(groupItem.BlockEntityId))
+                            continue;
+
+                        groupName = groupItem.GroupName;
+                    }
+                    else
+                    {
+                        var blockItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalBlock;
+                        if(blockItem != null)
+                        {
+                            if(!MyEntities.EntityExists(blockItem.BlockEntityId))
+                                continue;
+                        }
+                    }
+
+                    string actionId = terminalItem._Action;
                     string customLabel = data?.GetCustomLabel(item.Index);
-                    string groupName = (item.Data as MyObjectBuilder_ToolbarItemTerminalGroup)?.GroupName;
 
                     if(ToolbarActionLabels.ToolbarDebugLogging)
                         Log.Info($"    {item.Index.ToString(),-4} data={item.Data.GetType().Name,-48}, actionId={actionId,-20}, item={item.Item,-12}, customLabel={customLabel,-32}, groupName={groupName}");
 
                     // must add even if there's no useful data to keep the numbered order in sync.
-                    SortedData.Add(new ToolbarItemData(item.Index, actionId, customLabel, groupName, blockItem));
+                    SortedData.Add(new ToolbarItemData(item.Index, actionId, customLabel, groupName, terminalItem));
                 }
                 else
                 {
