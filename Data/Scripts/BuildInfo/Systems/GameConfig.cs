@@ -12,6 +12,8 @@ namespace Digi.BuildInfo.Systems
         BASIC = 2
     }
 
+    // TODO: add UI scale if/when API gets it
+
     public class GameConfig : ModComponent
     {
         public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);

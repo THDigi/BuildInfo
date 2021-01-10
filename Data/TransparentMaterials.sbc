@@ -46,14 +46,14 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
-        <SubtypeId>BuildInfo_UI_ToolInventoryBarBg</SubtypeId>
+        <SubtypeId>BuildInfo_UI_ToolInventoryIcon</SubtypeId>
       </Id>
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
-      <Texture>Textures\ToolInventoryBarBg.dds</Texture>
+      <Texture>Textures\ToolInventoryIcon.dds</Texture>
       <UseAtlas>false</UseAtlas>
       <UVOffset>
         <X>0</X>
@@ -67,14 +67,14 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
-        <SubtypeId>BuildInfo_UI_ToolInventoryBarProgress</SubtypeId>
+        <SubtypeId>BuildInfo_UI_ToolInventoryBar</SubtypeId>
       </Id>
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
-      <Texture>Textures\ToolInventoryBarProgress.dds</Texture>
+      <Texture>Textures\ToolInventoryBar.dds</Texture>
       <UseAtlas>false</UseAtlas>
       <UVOffset>
         <X>0</X>
