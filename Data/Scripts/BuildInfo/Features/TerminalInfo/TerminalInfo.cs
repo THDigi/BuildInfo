@@ -438,10 +438,11 @@ namespace Digi.BuildInfo.Features
 
             if(newBlock != null)
             {
+                if(!Config.TerminalDetailInfoAdditions.Value)
+                    return;
+
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
-                {
                     return; // ignore blocks that don't need stats
-                }
 
                 viewedInTerminal = newBlock;
 
@@ -456,6 +457,9 @@ namespace Digi.BuildInfo.Features
 
         void UpdateDetailInfo(bool force = false)
         {
+            if(!Config.TerminalDetailInfoAdditions.Value)
+                return;
+
             if(!force && refreshWaitForTick > Main.Tick)
                 return;
 
@@ -473,6 +477,9 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
+                if(!Config.TerminalDetailInfoAdditions.Value)
+                    return;
+
                 if(currentFormatCall == null)
                     return;
 

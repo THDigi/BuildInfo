@@ -30,6 +30,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ItemTooltipAdditions;
         public IntegerSetting ToolbarActionLabels;
         public IntegerSetting ToolbarActionBlockNames;
+        public BoolSetting TerminalDetailInfoAdditions;
         public BoolSetting ToolbarActionStatus;
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
@@ -210,6 +211,10 @@ namespace Digi.BuildInfo.Features.Config
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
                 "This only works if 'Toolbar action labels' is not 0/off.");
+
+            TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
+                "Adds some extra info bottom-right in terminal of certain blocks.",
+                "Does not (and cannot) replace any vanilla info.");
 
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",

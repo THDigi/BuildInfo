@@ -22,6 +22,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private MenuCategoryBase Category_AimInfo;
         private MenuCategoryBase Category_Overlays;
         private MenuCategoryBase Category_HUD;
+        private MenuCategoryBase Category_Toolbar;
+        private MenuCategoryBase Category_Terminal;
         private MenuCategoryBase Category_LeakInfo;
         private MenuCategoryBase Category_Binds;
         private MenuCategoryBase Category_Misc;
@@ -93,8 +95,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             Category_Textbox = AddCategory("Text box", Category_Mod);
             Category_Overlays = AddCategory("Overlays", Category_Mod);
-            Category_HUD = AddCategory("HUD Additions", Category_Mod);
-            Category_LeakInfo = AddCategory("Leak Info", Category_Mod);
+            Category_HUD = AddCategory("HUD", Category_Mod);
+            Category_Toolbar = AddCategory("Toolbar", Category_Mod);
+            Category_Terminal = AddCategory("Terminal", Category_Mod);
+            Category_LeakInfo = AddCategory("Air Leak Info", Category_Mod);
             Category_Binds = AddCategory("Binds", Category_Mod);
             Category_Misc = AddCategory("Misc", Category_Mod);
 
@@ -121,9 +125,12 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
             SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
-            ItemAdd_ToolbarActionLabels(Category_HUD);
-            ItemAdd_ToolbarActionBlockNames(Category_HUD);
-            SimpleToggle(Category_HUD, "Toolbar Action Override Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
+
+            ItemAdd_ToolbarActionLabels(Category_Toolbar);
+            ItemAdd_ToolbarActionBlockNames(Category_Toolbar);
+            SimpleToggle(Category_Toolbar, "Toolbar Action Override Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
+
+            SimpleToggle(Category_Terminal, "Detail Info Additions", Config.TerminalDetailInfoAdditions);
 
             SimpleColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld);
             SimpleColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay);
