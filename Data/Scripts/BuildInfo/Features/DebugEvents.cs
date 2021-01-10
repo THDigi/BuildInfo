@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Draygo.API;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
@@ -76,6 +78,12 @@ namespace Digi.BuildInfo.Features
             //    MyAPIGateway.Multiplayer.UnregisterMessageHandler(1337, ReceivedPacket);
             //}
         }
+
+        //public void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
+        //{
+        //    Utils.AssertMainThread();
+        //    Log.Info($"ToolbarItemChanged :: entId={entityId}; id={typeId}/{subtypeId}; page={page}; slot={slot}");
+        //}
 
 #if false
         void DumpActions()

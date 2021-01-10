@@ -95,7 +95,6 @@ namespace Digi.BuildInfo.Features.Config
             }
 
             var cfgv = Handler.ConfigVersion.Value;
-
             if(cfgv >= CFGV_LATEST)
                 return;
 

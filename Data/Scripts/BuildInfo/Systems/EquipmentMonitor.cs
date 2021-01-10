@@ -425,7 +425,6 @@ namespace Digi.BuildInfo.Systems
             ShipControllerOBChanged?.Invoke(ShipControllerOB);
 
             var selectedToolId = ShipControllerOB.SelectedGunId;
-
             if(selectedToolId.HasValue)
             {
                 SetTool(selectedToolId.Value);

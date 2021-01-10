@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         readonly Action<IMyTerminalBlock> OriginalAction;
 
         readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
-        readonly Action<IMyTerminalBlock, StringBuilder> OriginalWriter;
+        public readonly Action<IMyTerminalBlock, StringBuilder> OriginalWriter;
 
         ToolbarActionLabelsMode mode;
 
@@ -141,7 +141,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     // invalid item, actionId likely didn't match or this called extra writer because it does that.
                     // or wrong slot, happens when adding new things and desyncs them, just ignore it and it'll get fixed when they leave the menu.
                     if(toolbarItem.ActionId == null)
+                    {
+                        //sb.Append("ERROR\nINVALID\nITEM");
                         return;
+                    }
 
                     int itemPage = (toolbarItem.Index / 9);
                     if(Main.ToolbarActionLabels.ToolbarPage != itemPage)
