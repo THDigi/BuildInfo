@@ -11,7 +11,7 @@ namespace Digi.BuildInfo
 {
     public class Constants : ModComponent
     {
-        public const int MOD_VERSION = 2; // notifies player of notable changes and links them to workshop's changelog.
+        public const int MOD_VERSION = 3; // notifies player of notable changes and links them to workshop's changelog.
 
         public readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
         public const float ASPECT_RATIO_54_FIX = 0.938f;
