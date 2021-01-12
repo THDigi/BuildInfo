@@ -26,6 +26,18 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         public int EnteredCockpitTicks { get; private set; } = CockpitLabelsForTicks;
 
+        /// <summary>
+        /// Current visible toolbar page, 0 to 8.
+        /// </summary>
+        public int ToolbarPage { get; private set; }
+        private long prevShipCtrlId;
+
+        /// <summary>
+        /// Triggered toolbar slot index (which includes page), 0 to 80
+        /// </summary>
+        public int TriggeredIndex { get; private set; }
+        public int TriggeredAtTick { get; private set; }
+
         public bool ShowBlockNameForAction(string actionId) => ShowNameForActions.Contains(actionId);
         readonly HashSet<string> ShowNameForActions = new HashSet<string>() // shows block name for these actions if the "useful" setting is used
         {
@@ -155,9 +167,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             }
         }
 
-        public int ToolbarPage;
-        private long prevShipCtrlId;
-
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             // NOTE: gamepad ignored since its HUD is not supported anyway
@@ -179,16 +188,21 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 prevShipCtrlId = shipController.EntityId;
             }
 
-            if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-            {
-                var controlSlots = Main.Constants.CONTROL_SLOTS;
+            bool isCtrl = MyAPIGateway.Input.IsAnyCtrlKeyPressed();
+            var controlSlots = Main.Constants.CONTROL_SLOTS;
 
-                // intentionally skipping SLOT0
-                for(int i = 1; i < controlSlots.Length; ++i)
+            for(int i = 1; i < controlSlots.Length; ++i) // intentionally skipping SLOT0
+            {
+                if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
                 {
-                    if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
+                    if(isCtrl)
                     {
                         SetToolbarPage(shipController, i - 1);
+                    }
+                    else
+                    {
+                        TriggeredIndex = (ToolbarPage * 9) + (i - 1);
+                        TriggeredAtTick = Main.Tick + 2; // refresh soon after, not exactly same tick
                     }
                 }
             }

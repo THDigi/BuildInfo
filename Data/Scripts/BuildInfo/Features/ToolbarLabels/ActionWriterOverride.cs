@@ -15,9 +15,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
     {
         public readonly IMyTerminalAction Action;
 
-        public int TriggeredTick = 0;
-        readonly Action<IMyTerminalBlock> OriginalAction;
-
         readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
         public readonly Action<IMyTerminalBlock, StringBuilder> OriginalWriter;
 
@@ -44,9 +41,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             OriginalWriter = Action.Writer;
             CustomWriter = NewWriter;
-
-            OriginalAction = Action.Action;
-            Action.Action = Triggered;
 
             actionName = Action.Name.ToString();
             showBlockName = Main.ToolbarActionLabels.ShowBlockNameForAction(Action.Id);
@@ -99,27 +93,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             //    Action.Writer = CustomWriter;
             //    Log.Info($"Reset writer to custom for action {Action.Name}"); // DEBUG
             //}
-        }
-
-        void Triggered(IMyTerminalBlock block)
-        {
-            int tick = Main.Tick + 1; // 1 tick leeway for status to get a chance to have updated data
-
-            // HACK: infinite loop prevention as calling OriginalAction calls my overwritten action instead of storing the original... captured context madness.
-            if(TriggeredTick == tick)
-                return;
-
-            // used for ignoring cache in the status
-            TriggeredTick = tick;
-
-            try
-            {
-                OriginalAction?.Invoke(block);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
         }
 
         void NewWriter(IMyTerminalBlock block, StringBuilder sb)
