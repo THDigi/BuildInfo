@@ -274,7 +274,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             if(blockNameMode == ToolbarActionBlockNameMode.Off)
                 return;
 
-            bool isGroup = (toolbarItem.GroupNameWrapped != null);
+            bool isGroup = (toolbarItem.GroupName != null);
             bool show = false;
 
             if(blockNameMode == ToolbarActionBlockNameMode.All)
@@ -448,7 +448,10 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             if(block is IMyProgrammableBlock && toolbarItem.PBRunArgumentWrapped != null && Action.Id == "Run")
             {
-                sb.Append("Run:\n").Append(toolbarItem.PBRunArgumentWrapped);
+                if(string.IsNullOrEmpty(toolbarItem.PBRunArgumentWrapped))
+                    sb.Append("Run");
+                else
+                    sb.Append("Run:\n").Append(toolbarItem.PBRunArgumentWrapped);
                 return true;
             }
 
