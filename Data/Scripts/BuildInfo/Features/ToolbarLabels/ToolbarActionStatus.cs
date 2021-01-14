@@ -29,9 +29,6 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 {
     public class ToolbarActionStatus : ModComponent
     {
-        public const int ShortCacheLiveTicks = Constants.TICKS_PER_SECOND;
-        public const int ShorterCacheLiveTicks = Constants.TICKS_PER_SECOND / 4;
-
         public delegate bool StatusDel(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb);
 
         public StatusDel GetCustomStatus(MyObjectBuilderType blockType)
@@ -50,6 +47,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void RegisterComponent()
         {
+            InitCache();
             InitCustomStatus();
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
@@ -67,52 +65,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(tick % ShortCacheLiveTicks == 0)
-            {
-                ShortLivedCache.Clear();
-            }
-
-            if(tick % ShorterCacheLiveTicks == 0)
-            {
-                ShorterLivedCache.Clear();
-            }
-
             if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
             {
                 AnimFlip = !AnimFlip;
-            }
-        }
-
-        void EnteredCockpit(string entityName, long playerId, string gridName)
-        {
-            try
-            {
-                Utils.AssertMainThread();
-
-                var player = MyAPIGateway.Session?.Player;
-                if(player != null && player.IdentityId == playerId)
-                {
-                    var controlled = MyAPIGateway.Session.ControlledObject as IMyShipController;
-                    if(controlled != null && PreviousShipController != controlled.EntityId)
-                    {
-                        PreviousShipController = controlled.EntityId;
-
-                        // clear caches when entering a different cockpit as they no longer are relevant, since they're per slot index
-
-                        foreach(var sb in ShortLivedCache.Values)
-                            SBCachePool.Return(sb.Clear());
-
-                        foreach(var sb in ShorterLivedCache.Values)
-                            SBCachePool.Return(sb.Clear());
-
-                        ShortLivedCache.Clear();
-                        ShorterLivedCache.Clear();
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
             }
         }
 
@@ -148,7 +103,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "OnOff_On":
                 case "OnOff_Off":
                 {
-                    using(var token = new CacheGroupToken<IMyFunctionalBlock>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyFunctionalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -192,14 +147,14 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 case "UseConveyor":
                 {
-                    using(var token = new CacheGroupToken<IMyTerminalBlock>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
 
                         int useConveyor = 0;
 
-                        foreach(IMyTerminalBlock b in Blocks)
+                        foreach(IMyTerminalBlock b in token.Blocks)
                         {
                             var prop = b.GetProperty("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
                             if(prop != null)
@@ -209,7 +164,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             }
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
                         int noConveyor = (total - useConveyor);
 
                         if(useConveyor == total)
@@ -313,7 +268,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     var pb = (IMyProgrammableBlock)block;
 
-                    if(AnimFlip && !pb.Enabled)
+                    if(AnimFlip && !pb.IsWorking)
                     {
                         sb.Append("OFF!");
                     }
@@ -398,7 +353,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         return true;
                     }
 
-                    using(var token = new CacheGroupToken<IMyProgrammableBlock>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyProgrammableBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -407,9 +362,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         int errors = 0;
                         int echo = 0;
 
-                        foreach(IMyProgrammableBlock pb in Blocks)
+                        foreach(IMyProgrammableBlock pb in token.Blocks)
                         {
-                            if(allOn && !pb.Enabled)
+                            if(allOn && !pb.IsWorking)
                                 allOn = false;
 
                             string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
@@ -433,7 +388,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             }
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
 
                         if(!allOn)
                             sb.Append("OFF!\n");
@@ -456,82 +411,71 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         }
         #endregion Programmable Blocks
 
+        #region Timers
         bool Status_Timer(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
         {
+            if(toolbarItem.GroupName != null)
+                return Status_TimerGroup(actionLabel, block, toolbarItem, sb);
+
             switch(actionLabel.Action.Id)
             {
                 case "Start":
                 case "Stop":
-                case "TriggerNow":
+                //case "TriggerNow":
                 {
                     var timer = (IMyTimerBlock)block;
                     bool working = timer.IsWorking;
-                    StringBuilder cachedText;
 
                     if(working && timer.IsCountingDown)
                     {
-                        // manually caching so that we can animate faster than the cache
-                        if(!WasJustTriggered(actionLabel, toolbarItem) && ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
+                        using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeQuick, block, toolbarItem, sb))
                         {
-                            if(AnimFlip)
-                                sb.Append("  ").AppendStringBuilder(cachedText);
-                            else
-                                sb.Append("ˇ ").AppendStringBuilder(cachedText).Append(" ˇ");
-                            return true;
-                        }
+                            if(token.ReturnEarly)
+                                return token.ReturnVal;
 
-                        // HACK must parse detailedInfo because there's no getter of the current time.
-                        string detailedInfo = timer.DetailedInfo;
-                        if(!string.IsNullOrEmpty(detailedInfo))
-                        {
-                            // expected format "<Whatever language>: 00:00:00" in first line
-
-                            int endLineIndex = detailedInfo.IndexOf('\n');
-                            if(endLineIndex == -1)
-                                endLineIndex = detailedInfo.Length;
-
-                            int separatorIndex = detailedInfo.IndexOf(':', 0, endLineIndex);
-                            if(separatorIndex != -1)
+                            // HACK must parse detailedInfo because there's no getter of the current time.
+                            string detailedInfo = timer.DetailedInfo;
+                            if(!string.IsNullOrEmpty(detailedInfo))
                             {
-                                separatorIndex += 2; // move past ": "
-                                separatorIndex += 3; // move past "00:"
+                                // expected format "<Whatever language>: 00:00:00" in first line
 
-                                if(separatorIndex < detailedInfo.Length)
+                                int lineStartIndex = 0;
+
+                                int endLineIndex = detailedInfo.IndexOf('\n');
+                                if(endLineIndex == -1)
+                                    endLineIndex = detailedInfo.Length;
+
+                                int separatorIndex = detailedInfo.IndexOf(':', lineStartIndex, endLineIndex - lineStartIndex);
+                                if(separatorIndex != -1)
                                 {
-                                    if(!ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
-                                        ShortLivedCache[toolbarItem.Index] = cachedText = SBCachePool.Get();
+                                    separatorIndex += 2; // move past ": "
+                                    separatorIndex += 3; // move past "00:"
 
-                                    cachedText.Clear().AppendSubstring(detailedInfo, separatorIndex, endLineIndex - separatorIndex);
+                                    if(separatorIndex < endLineIndex)
+                                    {
+                                        if(!AnimFlip)
+                                            sb.Append("  ");
+                                        else
+                                            sb.Append("ˇ ");
 
-                                    // keep blinking separate from cache so it can blink faster.
-                                    if(AnimFlip)
-                                        sb.Append("  ").AppendStringBuilder(cachedText);
-                                    else
-                                        sb.Append("ˇ ").AppendStringBuilder(cachedText).Append(" ˇ");
-                                    return true;
+                                        sb.AppendSubstring(detailedInfo, separatorIndex, endLineIndex - separatorIndex);
+
+                                        if(AnimFlip)
+                                            sb.Append(" ˇ");
+                                        return true;
+                                    }
                                 }
                             }
+
+                            // fallback to vanilla status if detailinfo couldn't be parsed
+                            return false;
                         }
-
-                        sb.Append("Running");
-
-                        if(!ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
-                            ShortLivedCache[toolbarItem.Index] = cachedText = SBCachePool.Get();
-
-                        cachedText.Clear().Append("Running");
                     }
                     else
                     {
-                        if(ShortLivedCache.TryGetValue(toolbarItem.Index, out cachedText))
-                        {
-                            SBCachePool.Return(cachedText.Clear());
-                            ShortLivedCache.Remove(toolbarItem.Index);
-                        }
-
                         sb.Append(working ? "Stopped" : "Off");
+                        return true;
                     }
-
-                    return true;
                 }
 
                 case "Silent":
@@ -544,6 +488,80 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             return false;
         }
+
+        bool Status_TimerGroup(ActionWriterOverride actionLabel, IMyTerminalBlock firstBlockInGroup, ToolbarItemData toolbarItem, StringBuilder sb)
+        {
+            switch(actionLabel.Action.Id)
+            {
+                case "Start":
+                case "Stop":
+                //case "TriggerNow":
+                {
+                    using(var token = new CacheToken<IMyTimerBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    {
+                        if(token.ReturnEarly)
+                            return token.ReturnVal;
+
+                        bool allOn = true;
+                        int counting = 0;
+
+                        foreach(IMyTimerBlock timer in token.Blocks)
+                        {
+                            if(allOn && !timer.IsWorking)
+                                allOn = false;
+
+                            if(timer.IsCountingDown)
+                                counting++;
+                        }
+
+                        int total = token.Blocks.Count;
+
+                        if(AnimFlip && !allOn)
+                            sb.Append("OFF!\n");
+
+                        if(counting == total)
+                            sb.Append("Running");
+                        else if(counting == 0)
+                            sb.Append("Stopped");
+                        else
+                            sb.Append("Mixed");
+
+                        return true;
+                    }
+                }
+
+                case "Silent":
+                {
+                    using(var token = new CacheToken<IMyTimerBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    {
+                        if(token.ReturnEarly)
+                            return token.ReturnVal;
+
+                        int silent = 0;
+
+                        foreach(IMyTimerBlock timer in token.Blocks)
+                        {
+                            if(timer.Silent)
+                                silent++;
+                        }
+
+                        int total = token.Blocks.Count;
+
+                        if(total == silent)
+                            sb.Append("All\nSilent");
+                        else if(silent == 0)
+                            sb.Append("All\nLoud");
+                        else
+                            sb.Append("Mixed");
+
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        #endregion Timers
 
         #region Batteries
         bool Status_Battery(ActionWriterOverride actionLabel, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
@@ -560,7 +578,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 {
                     var battery = (IMyBatteryBlock)block;
 
-                    if(AnimFlip && !battery.Enabled)
+                    if(AnimFlip && !battery.IsWorking)
                     {
                         sb.Append("OFF!");
                     }
@@ -609,7 +627,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Discharge":
                 case "Auto":
                 {
-                    using(var token = new CacheGroupToken<IMyBatteryBlock>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyBatteryBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -624,9 +642,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         int recharge = 0;
                         int discharge = 0;
 
-                        foreach(IMyBatteryBlock battery in Blocks)
+                        foreach(IMyBatteryBlock battery in token.Blocks)
                         {
-                            if(!battery.Enabled)
+                            if(!battery.IsWorking)
                                 allOn = false;
 
                             averageFilled += (battery.CurrentStoredPower / battery.MaxStoredPower);
@@ -643,7 +661,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             }
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
 
                         if(averageFilled > 0)
                         {
@@ -721,7 +739,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     }
 
                     var jd = (IMyJumpDrive)block;
-                    if(!jd.Enabled)
+                    if(!jd.IsWorking)
                     {
                         sb.Append("Off"); // no blink here because Status gets changed to weird stuff when off.
                     }
@@ -810,7 +828,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Recharge_On":
                 case "Recharge_Off":
                 {
-                    using(var token = new CacheGroupToken<IMyJumpDrive>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyJumpDrive>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -822,9 +840,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         int ready = 0;
                         int charge = 0;
 
-                        foreach(IMyJumpDrive jd in Blocks)
+                        foreach(IMyJumpDrive jd in token.Blocks)
                         {
-                            if(!jd.Enabled)
+                            if(!jd.IsWorking)
                                 allOn = false;
 
                             averageFilled += (jd.CurrentStoredPower / jd.MaxStoredPower);
@@ -843,7 +861,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             }
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
 
                         if(averageFilled > 0)
                         {
@@ -886,7 +904,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Refill":
                 {
-                    using(var token = new CacheToken(CacheType.Short, block, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, block, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -944,7 +962,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Refill":
                 {
-                    using(var token = new CacheToken(CacheType.Short, block, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, block, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1069,7 +1087,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                     var stator = (IMyMotorStator)block;
                     float angleRad = stator.Angle;
 
-                    if(AnimFlip && !stator.Enabled)
+                    if(AnimFlip && !stator.IsWorking)
                         sb.Append("OFF!\n");
                     else if(!AnimFlip && stator.TargetVelocityRPM == 0)
                         sb.Append("NoVel!\n");
@@ -1111,7 +1129,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Reverse":
                 {
-                    using(var token = new CacheGroupToken<IMyMotorStator>(CacheType.Shorter, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyMotorStator>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1123,9 +1141,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         float angleMin = float.MaxValue;
                         float angleMax = float.MinValue;
 
-                        foreach(IMyMotorStator stator in Blocks)
+                        foreach(IMyMotorStator stator in token.Blocks)
                         {
-                            if(!stator.Enabled)
+                            if(!stator.IsWorking)
                                 allOn = false;
 
                             if(stator.TargetVelocityRPM == 0)
@@ -1146,7 +1164,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 allLimited = false;
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
 
                         if(travelAverage > 0)
                             travelAverage /= total;
@@ -1182,20 +1200,20 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Add Top Part":
                 case "Add Small Top Part":
                 {
-                    using(var token = new CacheGroupToken<IMyMotorStator>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyMotorStator>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
 
                         int attached = 0;
 
-                        foreach(IMyMotorStator stator in Blocks)
+                        foreach(IMyMotorStator stator in token.Blocks)
                         {
                             if(stator.IsAttached)
                                 attached++;
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
                         int detached = (total - attached);
 
                         if(attached == total)
@@ -1245,20 +1263,20 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Add Top Part":
                 {
-                    using(var token = new CacheGroupToken<IMyMotorSuspension>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyMotorSuspension>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
 
                         int attached = 0;
 
-                        foreach(IMyMotorSuspension stator in Blocks)
+                        foreach(IMyMotorSuspension stator in token.Blocks)
                         {
                             if(stator.IsAttached)
                                 attached++;
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
                         int detached = (total - attached);
 
                         if(attached == total)
@@ -1326,7 +1344,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Retract":
                 case "Reverse":
                 {
-                    using(var token = new CacheGroupToken<IMyPistonBase>(CacheType.Shorter, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyPistonBase>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1334,9 +1352,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         float travelAverage = 0;
                         bool allOn = true;
 
-                        foreach(IMyPistonBase piston in Blocks)
+                        foreach(IMyPistonBase piston in token.Blocks)
                         {
-                            if(!piston.Enabled)
+                            if(!piston.IsWorking)
                                 allOn = false;
 
                             float min = piston.MinLimit;
@@ -1346,7 +1364,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         }
 
                         if(travelAverage > 0)
-                            travelAverage /= Blocks.Count;
+                            travelAverage /= token.Blocks.Count;
 
                         if(AnimFlip && !allOn)
                             sb.Append("OFF!\n");
@@ -1361,20 +1379,20 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Detach":
                 case "Add Top Part":
                 {
-                    using(var token = new CacheGroupToken<IMyPistonBase>(CacheType.Short, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyPistonBase>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
 
                         int attached = 0;
 
-                        foreach(IMyPistonBase piston in Blocks)
+                        foreach(IMyPistonBase piston in token.Blocks)
                         {
                             if(piston.IsAttached)
                                 attached++;
                         }
 
-                        int total = Blocks.Count;
+                        int total = token.Blocks.Count;
 
                         if(attached < total)
                         {
@@ -1438,7 +1456,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 {
                     var door = (IMyDoor)block;
 
-                    if(AnimFlip && !door.Enabled)
+                    if(AnimFlip && !door.IsWorking)
                         sb.Append("OFF!\n");
 
                     switch(door.Status)
@@ -1476,7 +1494,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_On":
                 case "Open_Off":
                 {
-                    using(var token = new CacheGroupToken<IMyDoor>(CacheType.Shorter, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyDoor>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1490,7 +1508,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                         float averageOpenRatio = 0;
 
-                        foreach(IMyDoor door in Blocks)
+                        foreach(IMyDoor door in token.Blocks)
                         {
                             switch(door.Status)
                             {
@@ -1509,7 +1527,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             }
                         }
 
-                        int doors = Blocks.Count;
+                        int doors = token.Blocks.Count;
                         bool tooMany = (doors > 99);
                         int moving = (closing + opening);
 
@@ -1601,7 +1619,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         hasAmmo = (foundItems >= def.MaterialDeployCost);
                     }
 
-                    if(AnimFlip && !parachute.Enabled)
+                    if(AnimFlip && !parachute.IsWorking)
                         sb.Append("OFF!\n");
 
                     if(!AnimFlip && !hasAmmo && parachute.Status != DoorStatus.Open)
@@ -1625,7 +1643,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(autoDeploy)
                     {
-                        if(AnimFlip && !parachute.Enabled)
+                        if(AnimFlip && !parachute.IsWorking)
                             sb.Append("OFF!\n");
                         else
                             sb.Append("Auto\n");
@@ -1652,7 +1670,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_On":
                 case "Open_Off":
                 {
-                    using(var token = new CacheGroupToken<IMyParachute>(CacheType.Shorter, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1662,7 +1680,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         bool allAmmo = true;
                         bool allOn = true;
 
-                        foreach(IMyParachute parachute in Blocks)
+                        foreach(IMyParachute parachute in token.Blocks)
                         {
                             if(parachute.Status != DoorStatus.Open)
                             {
@@ -1677,7 +1695,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                                 }
                             }
 
-                            if(!parachute.Enabled)
+                            if(!parachute.IsWorking)
                                 allOn = false;
 
                             switch(parachute.Status)
@@ -1706,7 +1724,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 case "AutoDeploy": // vanilla status is borked
                 {
-                    using(var token = new CacheGroupToken<IMyParachute>(CacheType.Shorter, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = new CacheToken<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1718,9 +1736,9 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         bool hasSmallerDeploy = false;
                         float highestDeploy = 0;
 
-                        foreach(IMyParachute parachute in Blocks)
+                        foreach(IMyParachute parachute in token.Blocks)
                         {
-                            if(!parachute.Enabled)
+                            if(!parachute.IsWorking)
                                 allOn = false;
 
                             bool autoDeploy = parachute.GetValue<bool>("AutoDeploy");
@@ -1772,185 +1790,156 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         #endregion Parachutes
 
         #region Caching
-        long PreviousShipController;
+        const float CacheTimeNormal = 1f;
+        const float CacheTimeQuick = 0.5f;
 
-        readonly MyConcurrentPool<StringBuilder> SBCachePool = new MyConcurrentPool<StringBuilder>(activator: () => new StringBuilder(256));
+        const int CacheSBMaxChars = 64;
+        const int CacheArraySize = 9 * 9;
+        readonly CacheData[] CachePerSlot = new CacheData[CacheArraySize];
+        int HighestSlotCached = 0;
 
-        readonly Dictionary<int, StringBuilder> ShortLivedCache = new Dictionary<int, StringBuilder>();
-        readonly Dictionary<int, StringBuilder> ShorterLivedCache = new Dictionary<int, StringBuilder>();
-
-        readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
-
-        bool WasJustTriggered(ActionWriterOverride actionLabel, ToolbarItemData toolbarItem)
+        class CacheData
         {
-            return (Main.Tick == Main.ToolbarActionLabels.TriggeredAtTick && toolbarItem.Index == Main.ToolbarActionLabels.TriggeredIndex);
+            public readonly StringBuilder TextSB = new StringBuilder(CacheSBMaxChars);
+            public int ExpiresAtTick;
         }
 
-        public enum CacheType
+        readonly List<IMyTerminalBlock> GroupBlocksTemp = new List<IMyTerminalBlock>();
+
+        void InitCache()
         {
-            /// <summary>
-            /// Don't use any cache
-            /// </summary>
-            None = 0,
-
-            /// <summary>
-            /// Use the short cache (1s)
-            /// </summary>
-            Short = 1,
-
-            /// <summary>
-            /// Shorter cache (0.25s)
-            /// </summary>
-            Shorter = 2,
+            for(int i = 0; i < CacheArraySize; i++)
+            {
+                CachePerSlot[i] = new CacheData();
+            }
         }
 
-        public struct CacheGroupToken<T> : IDisposable where T : class
+        void ResetCache()
         {
-            readonly int CacheIndex;
-            readonly Dictionary<int, StringBuilder> Cache;
+            int maxIndex = Math.Min(HighestSlotCached, CacheArraySize - 1);
+            for(int i = 0; i <= maxIndex; i++)
+            {
+                var cacheData = CachePerSlot[i];
+                cacheData.ExpiresAtTick = 0;
+                cacheData.TextSB.Clear();
+            }
+            HighestSlotCached = 0;
+        }
 
-            readonly StringBuilder SB;
+        public struct CacheToken<T> : IDisposable where T : class
+        {
+            readonly float CacheSeconds;
+            readonly int SlotIndex;
+            readonly CacheData CacheData;
+
+            readonly StringBuilder StatusSB;
             readonly int TextIndex;
 
             public readonly List<IMyTerminalBlock> Blocks;
-
             public readonly bool ReturnEarly;
             public readonly bool ReturnVal;
 
-            public CacheGroupToken(CacheType cacheType, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+            public CacheToken(float cacheSeconds, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder statusSB)
             {
-                if(toolbarItem.GroupName == null)
-                    throw new Exception($"CacheGroupToken has been given null group! block={block.CustomName} ({block.EntityId.ToString()}) on grid={block.CubeGrid.CustomName} ({block.CubeGrid.EntityId.ToString()}), slot index={toolbarItem.Index.ToString()}");
-
                 BuildInfoMod Main = BuildInfoMod.Instance;
 
-                switch(cacheType)
+                SlotIndex = toolbarItem.Index;
+                if(SlotIndex < 0 || SlotIndex >= ToolbarActionStatus.CacheArraySize)
                 {
-                    case CacheType.None: Cache = null; break;
-                    case CacheType.Short: Cache = Main.ToolbarActionStatus.ShortLivedCache; break;
-                    case CacheType.Shorter: Cache = Main.ToolbarActionStatus.ShorterLivedCache; break;
-                    default: throw new Exception($"Unimplemented cache type: {cacheType} (num={(int)cacheType})");
+                    var cockpit = MyAPIGateway.Session?.ControlledObject?.Entity as IMyShipController;
+                    throw new Exception($"Toolbar slot out of valid range (0 to {(CacheArraySize - 1).ToString()}), got={SlotIndex.ToString()} for cockpit={cockpit?.CustomName} ({cockpit?.EntityId.ToString()}) on grid={cockpit?.CubeGrid?.CustomName} ({cockpit?.CubeGrid?.EntityId.ToString()})");
                 }
 
-                CacheIndex = toolbarItem.Index;
+                CacheSeconds = cacheSeconds;
+                CacheData = null;
 
-                SB = sb;
+                StatusSB = statusSB;
                 TextIndex = 0;
 
                 Blocks = null;
-
                 ReturnEarly = false;
                 ReturnVal = false;
 
-                // this is just a short-lived cache to aleviate callback spam
-                if(Cache != null)
+                if(cacheSeconds > 0)
                 {
                     // when toolbar slot is pressed the TriggeredIndex and TriggeredAtTick are set, this will force a cache refresh.
                     bool skipCache = (Main.Tick == Main.ToolbarActionLabels.TriggeredAtTick && toolbarItem.Index == Main.ToolbarActionLabels.TriggeredIndex);
-
-                    StringBuilder cachedText;
-                    if(!skipCache && Cache.TryGetValue(toolbarItem.Index, out cachedText))
+                    if(!skipCache)
                     {
-                        sb.AppendStringBuilder(cachedText);
-                        Cache = null; // no cache update in Dispose()
-                        ReturnEarly = true; // no reprocessing
-                        ReturnVal = true; // true = status was added
-                        return;
+                        CacheData = Main.ToolbarActionStatus.CachePerSlot[SlotIndex];
+                        if(Main.Tick < CacheData.ExpiresAtTick)
+                        {
+                            statusSB.AppendStringBuilder(CacheData.TextSB);
+                            ReturnEarly = true; // no reprocessing or caching
+                            ReturnVal = true; // true = status was added
+                            return;
+                        }
                     }
 
-                    TextIndex = Math.Max(0, sb.Length); // start inedx of cached text
+                    TextIndex = Math.Max(0, statusSB.Length); // start inedx of cached text
                 }
 
-                Blocks = Main.ToolbarActionStatus.Blocks;
-                Blocks.Clear();
+                if(toolbarItem.GroupName != null) // group is optional
+                {
+                    Blocks = Main.ToolbarActionStatus.GroupBlocksTemp;
+                    Blocks.Clear();
 
-                var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
-                var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                group?.GetBlocksOfType<T>(Blocks);
+                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                    group?.GetBlocksOfType<T>(Blocks);
 
-                // if group exists and requested blocks are found then group is valid, otherwise ignore this status.
-                ReturnEarly = (Blocks == null || Blocks.Count <= 0);
-                ReturnVal = ReturnEarly;
+                    // if group exists and requested blocks are found then group is valid, otherwise ignore this status.
+                    ReturnVal = ReturnEarly = (Blocks == null || Blocks.Count <= 0);
+                }
             }
 
             public void Dispose()
             {
                 Blocks?.Clear();
 
-                if(Cache != null) // update cache if it should
-                {
-                    StringBuilder cachedText;
-                    if(!Cache.TryGetValue(CacheIndex, out cachedText))
-                        Cache[CacheIndex] = cachedText = BuildInfoMod.Instance.ToolbarActionStatus.SBCachePool.Get();
+                if(ReturnEarly || CacheSeconds <= 0)
+                    return;
 
-                    cachedText.Clear().AppendSubstring(SB, TextIndex, SB.Length - TextIndex);
-                }
+                BuildInfoMod Main = BuildInfoMod.Instance;
+
+                var cacheData = CacheData ?? Main.ToolbarActionStatus.CachePerSlot[SlotIndex];
+
+                // cache the text segment that was added since the creation of this token
+                cacheData.TextSB.Clear().AppendSubstring(StatusSB, TextIndex, StatusSB.Length - TextIndex);
+
+                //if(cacheData.TextSB.Length > ToolbarActionStatus.CacheSBMaxChars)
+                //    Log.Error($"WARNING: Cache SB for toolbar status went over {ToolbarActionStatus.CacheSBMaxChars.ToString()} to {cacheData.TextSB.Length.ToString()}", Log.PRINT_MESSAGE);
+
+                cacheData.ExpiresAtTick = Main.Tick + (int)(CacheSeconds * Constants.TICKS_PER_SECOND);
+
+                // a small optimization to reduce iterations when clearing
+                Main.ToolbarActionStatus.HighestSlotCached = Math.Max(Main.ToolbarActionStatus.HighestSlotCached, SlotIndex);
             }
         }
 
-        public struct CacheToken : IDisposable
+        long PreviousShipController;
+        void EnteredCockpit(string entityName, long playerId, string gridName)
         {
-            readonly int CacheIndex;
-            readonly Dictionary<int, StringBuilder> Cache;
-
-            readonly StringBuilder SB;
-            readonly int TextIndex;
-
-            public readonly bool ReturnEarly;
-            public readonly bool ReturnVal;
-
-            public CacheToken(CacheType cacheType, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder sb)
+            try
             {
-                BuildInfoMod Main = BuildInfoMod.Instance;
+                Utils.AssertMainThread();
 
-                switch(cacheType)
+                var player = MyAPIGateway.Session?.Player;
+                if(player != null && player.IdentityId == playerId)
                 {
-                    case CacheType.None: Cache = null; break;
-                    case CacheType.Short: Cache = Main.ToolbarActionStatus.ShortLivedCache; break;
-                    case CacheType.Shorter: Cache = Main.ToolbarActionStatus.ShorterLivedCache; break;
-                    default: throw new Exception($"Unimplemented cache type: {cacheType} (num={(int)cacheType})");
-                }
-
-                CacheIndex = toolbarItem.Index;
-
-                SB = sb;
-                TextIndex = 0;
-
-                ReturnEarly = false;
-                ReturnVal = false;
-
-                // this is just a short-lived cache to aleviate callback spam
-                if(Cache != null)
-                {
-                    // when toolbar slot is pressed the TriggeredIndex and TriggeredAtTick are set, this will force a cache refresh.
-                    bool skipCache = (Main.Tick == Main.ToolbarActionLabels.TriggeredAtTick && toolbarItem.Index == Main.ToolbarActionLabels.TriggeredIndex);
-
-                    StringBuilder cachedText;
-                    if(!skipCache && Cache.TryGetValue(toolbarItem.Index, out cachedText))
+                    var controlled = MyAPIGateway.Session.ControlledObject as IMyShipController;
+                    if(controlled != null && PreviousShipController != controlled.EntityId)
                     {
-                        sb.AppendStringBuilder(cachedText);
-                        Cache = null; // no cache update in Dispose()
-                        ReturnEarly = true; // no reprocessing
-                        ReturnVal = true; // true = status was added
-                        return;
+                        PreviousShipController = controlled.EntityId;
+
+                        // clear caches when entering a different cockpit as they no longer are relevant, since they're per slot index
+                        ResetCache();
                     }
-
-                    TextIndex = Math.Max(0, sb.Length); // start inedx of cached text
                 }
-
-                ReturnVal = true;
             }
-
-            public void Dispose()
+            catch(Exception e)
             {
-                if(Cache != null) // update cache if it should
-                {
-                    StringBuilder cachedText;
-                    if(!Cache.TryGetValue(CacheIndex, out cachedText))
-                        Cache[CacheIndex] = cachedText = BuildInfoMod.Instance.ToolbarActionStatus.SBCachePool.Get();
-
-                    cachedText.Clear().AppendSubstring(SB, TextIndex, SB.Length - TextIndex);
-                }
+                Log.Error(e);
             }
         }
         #endregion Caching
