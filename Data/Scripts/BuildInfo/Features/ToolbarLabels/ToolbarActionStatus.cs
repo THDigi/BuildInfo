@@ -16,7 +16,6 @@ using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
-using VRage.Collections;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -103,7 +102,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "OnOff_On":
                 case "OnOff_Off":
                 {
-                    using(var token = new CacheToken<IMyFunctionalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyFunctionalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -147,7 +146,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 case "UseConveyor":
                 {
-                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyTerminalBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -353,7 +352,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                         return true;
                     }
 
-                    using(var token = new CacheToken<IMyProgrammableBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyProgrammableBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -428,7 +427,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                     if(working && timer.IsCountingDown)
                     {
-                        using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeQuick, block, toolbarItem, sb))
+                        using(var token = Cache.Use(CacheTimeQuick, block, toolbarItem, sb))
                         {
                             if(token.ReturnEarly)
                                 return token.ReturnVal;
@@ -497,7 +496,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Stop":
                 //case "TriggerNow":
                 {
-                    using(var token = new CacheToken<IMyTimerBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyTimerBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -532,7 +531,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 case "Silent":
                 {
-                    using(var token = new CacheToken<IMyTimerBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyTimerBlock>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -627,7 +626,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Discharge":
                 case "Auto":
                 {
-                    using(var token = new CacheToken<IMyBatteryBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyBatteryBlock>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -828,7 +827,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Recharge_On":
                 case "Recharge_Off":
                 {
-                    using(var token = new CacheToken<IMyJumpDrive>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyJumpDrive>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -904,7 +903,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Refill":
                 {
-                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, block, toolbarItem, sb))
+                    using(var token = Cache.Use(CacheTimeNormal, block, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -962,7 +961,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Refill":
                 {
-                    using(var token = new CacheToken<IMyTerminalBlock>(CacheTimeNormal, block, toolbarItem, sb))
+                    using(var token = Cache.Use(CacheTimeNormal, block, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1129,7 +1128,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Reverse":
                 {
-                    using(var token = new CacheToken<IMyMotorStator>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyMotorStator>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1200,7 +1199,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Add Top Part":
                 case "Add Small Top Part":
                 {
-                    using(var token = new CacheToken<IMyMotorStator>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyMotorStator>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1263,7 +1262,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             {
                 case "Add Top Part":
                 {
-                    using(var token = new CacheToken<IMyMotorSuspension>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyMotorSuspension>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1344,7 +1343,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Retract":
                 case "Reverse":
                 {
-                    using(var token = new CacheToken<IMyPistonBase>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyPistonBase>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1379,7 +1378,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Detach":
                 case "Add Top Part":
                 {
-                    using(var token = new CacheToken<IMyPistonBase>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyPistonBase>(CacheTimeNormal, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1494,7 +1493,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_On":
                 case "Open_Off":
                 {
-                    using(var token = new CacheToken<IMyDoor>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyDoor>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1670,7 +1669,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                 case "Open_On":
                 case "Open_Off":
                 {
-                    using(var token = new CacheToken<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1724,7 +1723,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
                 case "AutoDeploy": // vanilla status is borked
                 {
-                    using(var token = new CacheToken<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
+                    using(var token = Cache.UseGroup<IMyParachute>(CacheTimeQuick, firstBlockInGroup, toolbarItem, sb))
                     {
                         if(token.ReturnEarly)
                             return token.ReturnVal;
@@ -1804,7 +1803,7 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
             public int ExpiresAtTick;
         }
 
-        readonly List<IMyTerminalBlock> GroupBlocksTemp = new List<IMyTerminalBlock>();
+        readonly CacheHandler Cache = new CacheHandler();
 
         void InitCache()
         {
@@ -1817,48 +1816,64 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
         void ResetCache()
         {
             int maxIndex = Math.Min(HighestSlotCached, CacheArraySize - 1);
+
             for(int i = 0; i <= maxIndex; i++)
             {
                 var cacheData = CachePerSlot[i];
                 cacheData.ExpiresAtTick = 0;
                 cacheData.TextSB.Clear();
             }
+
             HighestSlotCached = 0;
         }
 
-        public struct CacheToken<T> : IDisposable where T : class
+        class CacheHandler : IDisposable
         {
-            readonly float CacheSeconds;
-            readonly int SlotIndex;
-            readonly CacheData CacheData;
+            public bool ReturnEarly { get; private set; }
+            public bool ReturnVal { get; private set; }
 
-            readonly StringBuilder StatusSB;
-            readonly int TextIndex;
+            /// <summary>
+            /// Filled only if <see cref="ToolbarItemData.GroupName"/> is not null and the given type is in the group.
+            /// </summary>
+            public readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
 
-            public readonly List<IMyTerminalBlock> Blocks;
-            public readonly bool ReturnEarly;
-            public readonly bool ReturnVal;
+            int SlotIndex;
+            float CacheSeconds;
+            CacheData CacheData;
 
-            public CacheToken(float cacheSeconds, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder statusSB)
+            StringBuilder StatusSB;
+            int TextIndex;
+
+            bool Disposed = true;
+
+            /// <summary>
+            /// Expected to be used with using() expression or call <see cref="Dispose"/> manually after.
+            /// </summary>
+            public CacheHandler UseGroup<T>(float cacheSeconds, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder statusSB) where T : class
             {
-                BuildInfoMod Main = BuildInfoMod.Instance;
+                if(toolbarItem.GroupName == null)
+                    ThrowErrorWithDetails($"UseGroup<T> used for non-group slot");
+
+                if(!Disposed)
+                    throw new Exception("Can't stack CacheUsing!");
+
+                ReturnEarly = false;
+                ReturnVal = false;
+                Blocks.Clear();
 
                 SlotIndex = toolbarItem.Index;
-                if(SlotIndex < 0 || SlotIndex >= ToolbarActionStatus.CacheArraySize)
-                {
-                    var cockpit = MyAPIGateway.Session?.ControlledObject?.Entity as IMyShipController;
-                    throw new Exception($"Toolbar slot out of valid range (0 to {(CacheArraySize - 1).ToString()}), got={SlotIndex.ToString()} for cockpit={cockpit?.CustomName} ({cockpit?.EntityId.ToString()}) on grid={cockpit?.CubeGrid?.CustomName} ({cockpit?.CubeGrid?.EntityId.ToString()})");
-                }
-
                 CacheSeconds = cacheSeconds;
                 CacheData = null;
 
                 StatusSB = statusSB;
                 TextIndex = 0;
 
-                Blocks = null;
-                ReturnEarly = false;
-                ReturnVal = false;
+                Disposed = false;
+
+                BuildInfoMod Main = BuildInfoMod.Instance;
+
+                if(SlotIndex < 0 || SlotIndex >= ToolbarActionStatus.CacheArraySize)
+                    ThrowErrorWithDetails($"Toolbar slot out of valid range (0 to {(CacheArraySize - 1).ToString()}), got={SlotIndex.ToString()}");
 
                 if(cacheSeconds > 0)
                 {
@@ -1872,48 +1887,103 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
                             statusSB.AppendStringBuilder(CacheData.TextSB);
                             ReturnEarly = true; // no reprocessing or caching
                             ReturnVal = true; // true = status was added
-                            return;
+                            return this;
                         }
                     }
 
                     TextIndex = Math.Max(0, statusSB.Length); // start inedx of cached text
                 }
 
-                if(toolbarItem.GroupName != null) // group is optional
+                var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
+                var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
+                group?.GetBlocksOfType<T>(Blocks);
+
+                // if group exists and requested blocks are found then group is valid, otherwise ignore this status.
+                ReturnVal = ReturnEarly = (Blocks == null || Blocks.Count <= 0);
+
+                return this;
+            }
+
+            /// <summary>
+            /// Expected to be used with using() expression or call <see cref="Dispose"/> manually after.
+            /// </summary>
+            public CacheHandler Use(float cacheSeconds, IMyTerminalBlock block, ToolbarItemData toolbarItem, StringBuilder statusSB)
+            {
+                // duplicated code of UseGroup<T>() because modprofiler...
+                if(!Disposed)
+                    throw new Exception("Can't stack CacheUsing!");
+
+                ReturnEarly = false;
+                ReturnVal = false;
+                Blocks.Clear();
+
+                SlotIndex = toolbarItem.Index;
+                CacheSeconds = cacheSeconds;
+                CacheData = null;
+
+                StatusSB = statusSB;
+                TextIndex = 0;
+
+                Disposed = false;
+
+                BuildInfoMod Main = BuildInfoMod.Instance;
+
+                if(SlotIndex < 0 || SlotIndex >= ToolbarActionStatus.CacheArraySize)
+                    ThrowErrorWithDetails($"Toolbar slot out of valid range (0 to {(CacheArraySize - 1).ToString()}), got={SlotIndex.ToString()}");
+
+                if(cacheSeconds > 0)
                 {
-                    Blocks = Main.ToolbarActionStatus.GroupBlocksTemp;
-                    Blocks.Clear();
+                    // when toolbar slot is pressed the TriggeredIndex and TriggeredAtTick are set, this will force a cache refresh.
+                    bool skipCache = (Main.Tick == Main.ToolbarActionLabels.TriggeredAtTick && toolbarItem.Index == Main.ToolbarActionLabels.TriggeredIndex);
+                    if(!skipCache)
+                    {
+                        CacheData = Main.ToolbarActionStatus.CachePerSlot[SlotIndex];
+                        if(Main.Tick < CacheData.ExpiresAtTick)
+                        {
+                            statusSB.AppendStringBuilder(CacheData.TextSB);
+                            ReturnEarly = true; // no reprocessing or caching
+                            ReturnVal = true; // true = status was added
+                            return this;
+                        }
+                    }
 
-                    var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(block.CubeGrid);
-                    var group = gts?.GetBlockGroupWithName(toolbarItem.GroupName);
-                    group?.GetBlocksOfType<T>(Blocks);
-
-                    // if group exists and requested blocks are found then group is valid, otherwise ignore this status.
-                    ReturnVal = ReturnEarly = (Blocks == null || Blocks.Count <= 0);
+                    TextIndex = Math.Max(0, statusSB.Length); // start inedx of cached text
                 }
+
+                return this;
             }
 
             public void Dispose()
             {
-                Blocks?.Clear();
-
-                if(ReturnEarly || CacheSeconds <= 0)
-                    return;
-
                 BuildInfoMod Main = BuildInfoMod.Instance;
 
-                var cacheData = CacheData ?? Main.ToolbarActionStatus.CachePerSlot[SlotIndex];
+                Blocks.Clear();
 
-                // cache the text segment that was added since the creation of this token
-                cacheData.TextSB.Clear().AppendSubstring(StatusSB, TextIndex, StatusSB.Length - TextIndex);
+                if(!ReturnEarly && CacheSeconds > 0)
+                {
+                    var cacheData = CacheData ?? Main.ToolbarActionStatus.CachePerSlot[SlotIndex];
 
-                //if(cacheData.TextSB.Length > ToolbarActionStatus.CacheSBMaxChars)
-                //    Log.Error($"WARNING: Cache SB for toolbar status went over {ToolbarActionStatus.CacheSBMaxChars.ToString()} to {cacheData.TextSB.Length.ToString()}", Log.PRINT_MESSAGE);
+                    // cache the text segment that was added since the creation of this token
+                    cacheData.TextSB.Clear().AppendSubstring(StatusSB, TextIndex, StatusSB.Length - TextIndex);
 
-                cacheData.ExpiresAtTick = Main.Tick + (int)(CacheSeconds * Constants.TICKS_PER_SECOND);
+                    //if(cacheData.TextSB.Length > ToolbarActionStatus.CacheSBMaxChars)
+                    //    Log.Error($"WARNING: Cache SB for toolbar status went over {ToolbarActionStatus.CacheSBMaxChars.ToString()} to {cacheData.TextSB.Length.ToString()}", Log.PRINT_MESSAGE);
 
-                // a small optimization to reduce iterations when clearing
-                Main.ToolbarActionStatus.HighestSlotCached = Math.Max(Main.ToolbarActionStatus.HighestSlotCached, SlotIndex);
+                    cacheData.ExpiresAtTick = Main.Tick + (int)(CacheSeconds * Constants.TICKS_PER_SECOND);
+
+                    // a small optimization to reduce iterations when clearing
+                    Main.ToolbarActionStatus.HighestSlotCached = Math.Max(Main.ToolbarActionStatus.HighestSlotCached, SlotIndex);
+
+                    CacheData = null;
+                }
+
+                Disposed = true;
+            }
+
+            void ThrowErrorWithDetails(string message)
+            {
+                var cockpit = MyAPIGateway.Session?.ControlledObject?.Entity as IMyShipController;
+                throw new Exception($"{message}; cockpit={cockpit?.CustomName} ({cockpit?.EntityId.ToString()}) on grid={cockpit?.CubeGrid?.CustomName} ({cockpit?.CubeGrid?.EntityId.ToString()})");
             }
         }
 
