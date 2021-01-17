@@ -16,8 +16,6 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarLabels
 {
-    // TODO: optimize writer callbacks by ignoring ones that aren't visible, need page tracking with hotkeys.
-
     public class ToolbarActionLabels : ModComponent
     {
         public static readonly bool ToolbarDebugLogging = false;
@@ -209,13 +207,15 @@ namespace Digi.BuildInfo.Features.ToolbarLabels
 
             // HACK next/prev toolbar hotkeys don't work in the menu unless you click on the icons list...
             // spectator condition is in game code so just adding it here since I can.
+            // also MUST be after the slot checks to match the vanilla code's behavior
             if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             {
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
                 {
                     AdjustToolbarPage(shipController, 1);
                 }
-                else if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
+                // no 'else' because that's how the game handles it, meaning pressing both controls in same tick would do both actions.
+                if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
                 {
                     AdjustToolbarPage(shipController, -1);
                 }
