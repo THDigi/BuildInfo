@@ -1,5 +1,7 @@
-﻿using Sandbox.ModAPI;
+﻿using ProtoBuf;
+using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using VRage;
 using VRage.Input;
@@ -76,7 +78,8 @@ namespace Draygo.API
             RemoveMessage = null;
             registered = false;
             m_onRegisteredAction = null;
-            instance = null;
+            if(instance == this)
+                instance = null;
         }
         private enum RegistrationEnum : int
         {
@@ -153,6 +156,7 @@ namespace Draygo.API
             BillBoardHUDMessage,
             EntityMessage,
             SpaceMessage,
+
             MenuItem = 20,
             MenuSubCategory,
             MenuRootCategory,
@@ -160,7 +164,14 @@ namespace Draygo.API
             MenuSliderItem,
             MenuTextInput,
             MenuKeybindInput,
-            MenuColorPickerInput
+            MenuColorPickerInput,
+
+            BoxUIContainer = 40,
+            BoxUIText,
+            BoxUIImage,
+
+            UIDefinition = 60,
+            UIBehaviourDefinition
         }
         #region Info
         public static class APIinfo
@@ -168,7 +179,11 @@ namespace Draygo.API
             private enum APIinfoMembers : int
             {
                 ScreenPositionOnePX = 1000,
-                OnScreenUpdate
+                OnScreenUpdate,
+                GetBoxUIDefinition,
+                GetBoxUIBehaviour,
+                GetFontDefinition,
+                GetFonts
 
             }
             /// <summary>
@@ -181,6 +196,36 @@ namespace Draygo.API
                     return (Vector2D)instance.MessageGet(null, (int)APIinfoMembers.ScreenPositionOnePX);
                 }
             }
+            /// <summary>
+            /// Available definitions: None, Default, Square
+            /// </summary>
+            /// <param name="DefinitionName"></param>
+            /// <returns></returns>
+            public static BoxUIDefinition GetBoxUIDefinition(MyStringId DefinitionName)
+            {
+                return new BoxUIDefinition(instance.MessageGet(DefinitionName, (int)APIinfoMembers.GetBoxUIDefinition));
+
+            }
+            public static BoxUIBehaviourDef GetBoxUIBehaviour(MyStringId DefinitionName)
+            {
+                return new BoxUIBehaviourDef(instance.MessageGet(DefinitionName, (int)APIinfoMembers.GetBoxUIBehaviour));
+
+            }
+
+            public static FontDefinition GetFontDefinition(MyStringId DefinitionName)
+            {
+                object retval = instance.MessageGet(DefinitionName, (int)APIinfoMembers.GetFontDefinition);
+                return new FontDefinition(retval);
+
+            }
+            /// <summary>
+            /// Gives a list of fonts currently available in the TextHudAPI
+            /// </summary>
+            /// <param name="collection">Fonts will be added to the collection, if null a new collection will be allocated</param>
+            public static void GetFonts(List<MyStringId> collection)
+            {
+                instance.MessageGet(collection, (int)APIinfoMembers.GetFonts);
+            }
 
 
         }
@@ -191,7 +236,9 @@ namespace Draygo.API
             None = 0x0,
             HideHud = 0x1,
             Shadowing = 0x2,
-            Fixed = 0x4
+            Fixed = 0x4,
+            FOVScale = 0x8,
+            Pixel = 0x10
         }
         private enum MessageBaseMembers : int
         {
@@ -454,7 +501,7 @@ namespace Draygo.API
                 }
             }
             /// <summary>
-            /// Font, default is "white", "monospace" also supported, modded fonts will be supported in the future.
+            /// Font, default is "white", "monospace" is also included. 
             /// </summary>
             public string Font
             {
@@ -549,7 +596,8 @@ namespace Draygo.API
                 Origin = 10,
                 Options,
                 ShadowColor,
-                Font
+                Font,
+                InitalColor
             }
             #region Properties
             /// <summary>
@@ -611,6 +659,21 @@ namespace Draygo.API
                     instance.MessageSet(BackingObject, (int)EntityMembers.Font, value);
                 }
             }
+
+            /// <summary>
+            /// Sets the initial color of the text, Default: White
+            /// </summary>
+            public Color InitialColor
+            {
+                get
+                {
+                    return (Color)(instance.MessageGet(BackingObject, (int)EntityMembers.InitalColor));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.InitalColor, value);
+                }
+            }
             #endregion
 
             public HUDMessage(StringBuilder Message, Vector2D Origin, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1.0d, bool HideHud = true, bool Shadowing = false, Color? ShadowColor = null, BlendTypeEnum Blend = BlendTypeEnum.SDR, string Font = "white")
@@ -667,7 +730,11 @@ namespace Draygo.API
                 Material,
                 Rotation,
                 Width,
-                Height
+                Height,
+                uvOffset,
+                uvSize,
+                TextureSize,
+                uvEnabled
             }
 
             #region Properties
@@ -780,6 +847,63 @@ namespace Draygo.API
                     instance.MessageSet(BackingObject, (int)EntityMembers.Height, value);
                 }
             }
+
+            /// <summary>
+            /// UV offset in pixels
+            /// </summary>
+            public Vector2 uvOffset
+            {
+                get
+                {
+                    return (Vector2)instance.MessageGet(BackingObject, (int)EntityMembers.uvOffset);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.uvOffset, value);
+                }
+            }
+            /// <summary>
+            /// Size in pixels
+            /// </summary>
+            public Vector2 uvSize
+            {
+                get
+                {
+                    return (Vector2)instance.MessageGet(BackingObject, (int)EntityMembers.uvSize);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.uvSize, value);
+                }
+            }
+            /// <summary>
+            /// Size of image in pixels (please note the height and width of the image must be the same)
+            /// </summary>
+            public float TextureSize
+            {
+                get
+                {
+                    return (float)instance.MessageGet(BackingObject, (int)EntityMembers.TextureSize);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.TextureSize, value);
+                }
+            }
+            /// <summary>
+            /// Use uv parameters. Default is false.
+            /// </summary>
+            public bool uvEnabled
+            {
+                get
+                {
+                    return (bool)instance.MessageGet(BackingObject, (int)EntityMembers.uvEnabled);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)EntityMembers.uvEnabled, value);
+                }
+            }
             #endregion
 
             public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = true, BlendTypeEnum Blend = BlendTypeEnum.SDR)
@@ -789,6 +913,44 @@ namespace Draygo.API
 
                 if(BackingObject != null)
                 {
+                    this.TimeToLive = TimeToLive;
+                    this.Origin = Origin;
+                    this.Options = Options.None;
+                    if(HideHud)
+                        this.Options |= Options.HideHud;
+                    if(Shadowing)
+                        this.Options |= Options.Shadowing;
+                    this.BillBoardColor = BillBoardColor;
+                    this.Scale = Scale;
+                    this.Material = Material;
+                    this.Rotation = Rotation;
+                    this.Blend = Blend;
+                    if(Offset.HasValue)
+                    {
+                        this.Offset = Offset.Value;
+                    }
+                    else
+                    {
+                        this.Offset = Vector2D.Zero;
+                    }
+                    this.Width = Width;
+                    this.Height = Height;
+                }
+
+
+            }
+
+            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 uvOffset, Vector2 uvSize, float TextureSize, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = true, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.BillBoardHUDMessage);
+
+                if(BackingObject != null)
+                {
+                    this.uvEnabled = true;
+                    this.uvOffset = uvOffset;
+                    this.uvSize = uvSize;
+                    this.TextureSize = TextureSize;
                     this.TimeToLive = TimeToLive;
                     this.Origin = Origin;
                     this.Options = Options.None;
@@ -1682,6 +1844,448 @@ namespace Draygo.API
                 this.InitialPercent = InitialPercent;
                 this.OnCancel = OnCancel;
                 this.Parent = Parent;
+            }
+        }
+        #endregion
+
+
+        /// <summary>
+        /// Class to allow adding fonts to the TextHUDApi
+        /// </summary>
+        public class FontDefinition
+        {
+            enum FontDefinitionMembers : int
+            {
+                AddCharacter = 0,
+                DefineFont,
+                AddKerning,
+                ReadOnly
+
+            }
+
+            [ProtoContract]
+            public struct FontCharacterDefinitionData
+            {
+                [ProtoMember(1)]
+                public char character;
+                [ProtoMember(2)]
+                public int texturesize;
+                [ProtoMember(3)]
+                public string charactercode;
+                [ProtoMember(4)]
+                public int uv1x;
+                [ProtoMember(5)]
+                public int uv1y;
+                [ProtoMember(6)]
+                public int sizex;
+                [ProtoMember(7)]
+                public int sizey;
+                [ProtoMember(8)]
+                public int aw;
+                [ProtoMember(9)]
+                public int lsb;
+                [ProtoMember(10)]
+                public bool forcewhite;
+                [ProtoMember(11)]
+                public MyStringId MaterialId;
+            }
+
+            public object BackingDefinition;
+
+            public FontDefinition(object BackingObject)
+            {
+                BackingDefinition = BackingObject;
+            }
+
+            /// <summary>
+            /// Checks to see if the object is readonly. Once the definition is read only none of its properties can be modified or character definitions replaced. New character definitions can still be added if none exist.
+            /// </summary>
+            public bool ReadOnly
+            {
+                get
+                {
+                    return (bool)instance.MessageGet(BackingDefinition, (int)FontDefinitionMembers.ReadOnly);
+                }
+                set
+                {
+                    instance.MessageSet(BackingDefinition, (int)FontDefinitionMembers.ReadOnly, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the global parameters for a font
+            /// </summary>
+            public void DefineFont(int fontbase, int lineheight, int fontsize)
+            {
+                MyTuple<int, int, int> data = new MyTuple<int, int, int>(fontbase, lineheight, fontsize);
+                instance.MessageSet(BackingDefinition, (int)FontDefinitionMembers.DefineFont, data);
+            }
+
+            /// <summary>
+            /// Adds a character glyph
+            /// </summary>
+            /// <param name="material">TransparentMaterial definitions subtype id</param>
+            /// <param name="materialtexturesize">must be square</param>
+            /// <param name="charactercode">code in hex</param>
+            /// <param name="uv1x">origin x</param>
+            /// <param name="uv1y">origin y</param>
+            /// <param name="sizex">size x</param>
+            /// <param name="sizey">size y</param>
+            /// <param name="aw">advance width</param>
+            /// <param name="lsb">left side bearing</param>
+            /// <param name="forcewhite">force character to grayscale in render</param>
+            public void AddCharacter(char character, MyStringId material, int materialtexturesize, string charactercode, int uv1x, int uv1y, int sizex, int sizey, int aw, int lsb, bool forcewhite = false)
+            {
+                var data = new FontCharacterDefinitionData { character = character, MaterialId = material, texturesize = materialtexturesize, charactercode = charactercode, uv1x = uv1x, uv1y = uv1y, sizex = sizex, sizey = sizey, aw = aw, lsb = lsb, forcewhite = forcewhite };
+                instance.MessageSet(BackingDefinition, (int)FontDefinitionMembers.AddCharacter, MyAPIGateway.Utilities.SerializeToBinary(data));
+            }
+
+            /// <summary>
+            /// Sets the kerning parameters. Right character must be defined first!
+            /// </summary>
+            /// <param name="adjust">how many pixels to move the right char</param>
+            /// <param name="right">char that will be moved by the kerning</param>
+            /// <param name="left"></param>
+            public void AddKerning(int adjust, char right, char left)
+            {
+                MyTuple<int, char, char> data = new MyTuple<int, char, char>(adjust, right, left);
+                instance.MessageSet(BackingDefinition, (int)FontDefinitionMembers.AddKerning, data);
+            }
+
+        }
+
+
+        #region BoxUI
+        /// <summary>
+        /// Creates a new BoxUIDefinition. This defines exactly how the UI texture is laid out on the screen. 
+        /// </summary>
+        public class BoxUIDefinition
+        {
+
+            public object BackingDefinition;
+            [ProtoContract]
+            public struct BoxUIDefinitionData
+            {
+                [ProtoMember(1)]
+                public MyStringId Material;
+                [ProtoMember(2)]
+                public int imagesize;
+                [ProtoMember(3)]
+                public int topwidthpx;
+                [ProtoMember(4)]
+                public int leftwidthpx;
+                [ProtoMember(5)]
+                public int bottomwidthpx;
+                [ProtoMember(6)]
+                public int rightwidthpx;
+                [ProtoMember(7)]
+                public int margin;
+                [ProtoMember(8)]
+                public int padding;
+            }
+
+            public BoxUIDefinitionData BoxUIDef
+            {
+                set
+                {
+                    instance.MessageSet(BackingDefinition, (int)BoxUIDefinitionMembers.Definition, MyAPIGateway.Utilities.SerializeToBinary(value));
+                }
+            }
+
+            /// <summary>
+            /// Returns the margin + padding + border values. subtract this from the total size to get the size of the content area of the object. 
+            /// </summary>
+            public Vector2I Min
+            {
+                get
+                {
+                    return (Vector2I)instance.MessageGet(BackingDefinition, (int)BoxUIDefinitionMembers.Min);
+                }
+            }
+
+            enum BoxUIDefinitionMembers : int
+            {
+                Definition = 0,
+                Min
+            }
+
+
+
+            public BoxUIDefinition()
+            {
+                BackingDefinition = instance.CreateMessage(MessageTypes.UIDefinition);
+            }
+            public BoxUIDefinition(MyStringId Material, int imagesize, int topwidthpx, int leftwidthpx, int bottomwidthpx, int rightwidthpx, int margin = 0, int padding = 0)
+            {
+                BackingDefinition = instance.CreateMessage(MessageTypes.UIDefinition);
+                var data = new BoxUIDefinitionData()
+                {
+                    Material = Material,
+                    imagesize = imagesize,
+                    topwidthpx = topwidthpx,
+                    leftwidthpx = leftwidthpx,
+                    bottomwidthpx = bottomwidthpx,
+                    rightwidthpx = rightwidthpx,
+                    margin = margin,
+                    padding = padding
+                };
+                BoxUIDef = data;
+
+            }
+            public BoxUIDefinition(object BackingObject)
+            {
+                BackingDefinition = BackingObject;
+            }
+        }
+
+
+        /// <summary>
+        /// Unused at the moment, but will be expanded on in the future. 
+        /// </summary>
+        public class BoxUIBehaviourDef
+        {
+            public object BackingDefinition;
+
+            public BoxUIBehaviourDef()
+            {
+                BackingDefinition = instance.CreateMessage(MessageTypes.UIBehaviourDefinition);
+            }
+            public BoxUIBehaviourDef(object BackingObject)
+            {
+                BackingDefinition = BackingObject;
+            }
+        }
+
+        public abstract class BoxUIBase
+        {
+            internal object BackingObject;
+            internal BoxUIBase m_Parent;
+            private enum BoxUIBaseMembers : int
+            {
+                Origin = 0,
+                BackgroundColor,
+                Width,
+                Height,
+                Definition,
+                Behaviour,
+                Visible,
+                Parent,
+                HideHud
+            }
+
+            /// <summary>
+            /// Sets the BoxUI's position in PX values. 
+            /// </summary>
+            public Vector2I Origin
+            {
+                get
+                {
+                    return (Vector2I)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Origin);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Origin, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the width of the box in PX values
+            /// </summary>
+            public int Width
+            {
+                get
+                {
+                    return (int)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Width);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Width, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the Height in PX values
+            /// </summary>
+            public int Height
+            {
+                get
+                {
+                    return (int)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Height);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Height, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the background color, default White
+            /// </summary>
+            public Color BackgroundColor
+            {
+                get
+                {
+                    return (Color)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.BackgroundColor);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.BackgroundColor, value);
+                }
+            }
+            /// <summary>
+            /// Element and subelements visible
+            /// </summary>
+            public bool Visible
+            {
+                get
+                {
+                    return (bool)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Visible);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Visible, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the backing UI definition, please set using SetDefinition
+            /// </summary>
+            public object DefinitionObject
+            {
+                get
+                {
+                    return (object)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Definition);
+                }
+                set
+                {
+                    if(value is BoxUIDefinition)
+                    {
+                        instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Definition, (value as BoxUIDefinition).BackingDefinition);
+                        return;
+                    }
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Definition, value);
+                }
+            }
+
+            /// <summary>
+            /// Sets the backing behaviour object, please set using SetBehaviour
+            /// </summary>
+            public object BehaviourObject
+            {
+                get
+                {
+                    return (object)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.Behaviour);
+                }
+                set
+                {
+                    if(value is BoxUIBehaviourDef)
+                    {
+                        instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Behaviour, (value as BoxUIDefinition).BackingDefinition);
+                        return;
+                    }
+
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Behaviour, value);
+                }
+            }
+
+            /// <summary>
+            /// Defaults to true. 
+            /// </summary>
+            public bool HideHud
+            {
+                get
+                {
+                    return (bool)instance.MessageGet(BackingObject, (int)BoxUIBaseMembers.HideHud);
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.HideHud, value);
+                }
+            }
+
+            /// <summary>
+            /// Gets or sets the parent object, please be careful not to create a circular reference. Sub objects are automatically offset by the top left corner of the parent object. 
+            /// </summary>
+            public BoxUIBase Parent
+            {
+                get
+                {
+                    return m_Parent;
+
+                }
+                set
+                {
+                    m_Parent = value;
+                    instance.MessageSet(BackingObject, (int)BoxUIBaseMembers.Parent, m_Parent.BackingObject);
+                }
+            }
+
+
+            public void SetDefinition(BoxUIDefinition def)
+            {
+                DefinitionObject = def.BackingDefinition;
+            }
+
+            public void SetBehaviour(BoxUIBehaviourDef def)
+            {
+                BehaviourObject = def.BackingDefinition;
+            }
+
+        }
+        public class BoxUIContainer : BoxUIBase
+        {
+
+
+            public BoxUIContainer()
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.BoxUIContainer);
+            }
+        }
+        public class BoxUIText : BoxUIBase
+        {
+
+            enum BoxUITextMembers : int
+            {
+                SetTextContent = 100
+            }
+
+            public BoxUIText()
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.BoxUIText);
+            }
+
+            /// <summary>
+            /// Automatically sets the message to use the pixel offset types. Please note that the BoxUI will control the .Origin of the Message, you can use the offset value in PX to move it. Please note Scale is now the pt size of the font. 
+            /// </summary>
+            /// <param name="Message"></param>
+            public void SetTextContent(HUDMessage Message)
+            {
+                instance.MessageSet(BackingObject, (int)BoxUITextMembers.SetTextContent, Message.BackingObject);
+            }
+        }
+
+        public class BoxUIImage : BoxUIBase
+        {
+            enum BoxUIImageMembers : int
+            {
+                SetImageContent = 100
+            }
+
+            public BoxUIImage()
+            {
+                instance.RegisterCheck();
+                BackingObject = instance.CreateMessage(MessageTypes.BoxUIImage);
+            }
+
+            /// <summary>
+            /// Sets the image, please note that image parameters will now be forced to the Pixel setting. Height and Width parameters are measured in px
+            /// </summary>
+            /// <param name="Message"></param>
+            public void SetImageContent(BillBoardHUDMessage Message)
+            {
+                instance.MessageSet(BackingObject, (int)BoxUIImageMembers.SetImageContent, Message.BackingObject);
             }
         }
         #endregion
