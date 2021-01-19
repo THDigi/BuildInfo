@@ -129,18 +129,6 @@ namespace Digi.BuildInfo.Utilities
             return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
         }
 
-        public static StringBuilder AppendSubstring(this StringBuilder sb, string text, int start, int count)
-        {
-            sb.EnsureCapacity(sb.Length + count);
-
-            for(int i = 0; i < count; i++)
-            {
-                sb.Append(text[start + i]);
-            }
-
-            return sb;
-        }
-
         public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength, bool addDots = true, bool noNewLines = true)
         {
             if(text == null)
@@ -156,9 +144,9 @@ namespace Digi.BuildInfo.Utilities
             if(text.Length > maxLength)
             {
                 if(addDots)
-                    s.AppendSubstring(text, 0, maxLength - 1).Append('…');
+                    s.Append(text, 0, maxLength - 1).Append('…');
                 else
-                    s.AppendSubstring(text, 0, maxLength);
+                    s.Append(text, 0, maxLength);
             }
             else
             {
