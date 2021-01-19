@@ -39,6 +39,91 @@ namespace Digi.BuildInfo.Utilities
             return sb;
         }
 
+        public static int IndexOf(this StringBuilder sb, char findCharacter, int startIndex = 0, bool ignoreCase = false)
+        {
+            int length = sb.Length;
+            if(length == 0)
+                return -1;
+
+            if(startIndex >= length)
+                throw new Exception($"startIndex ({startIndex.ToString()}) is out of range ({length.ToString()})!");
+
+            if(ignoreCase)
+            {
+                findCharacter = char.ToUpperInvariant(findCharacter);
+
+                for(int i = startIndex; i < length; i++)
+                {
+                    if(char.ToUpperInvariant(sb[i]) == findCharacter)
+                        return i;
+                }
+            }
+            else
+            {
+                for(int i = startIndex; i < length; i++)
+                {
+                    if(sb[i] == findCharacter)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int IndexOf(this StringBuilder sb, string findString, int startIndex = 0, bool ignoreCase = false)
+        {
+            int length = sb.Length;
+            if(length == 0)
+                return -1;
+
+            if(startIndex >= length)
+                throw new Exception($"startIndex ({startIndex.ToString()}) is out of range ({length.ToString()})!");
+
+            int findLength = findString.Length;
+            int maxSearchLength = (length - findLength) + 1;
+
+            if(ignoreCase)
+            {
+                char firstChar = char.ToUpperInvariant(findString[0]);
+
+                for(int i = startIndex; i < maxSearchLength; i++)
+                {
+                    if(char.ToUpperInvariant(sb[i]) == firstChar)
+                    {
+                        int index = 1;
+
+                        // can safely assume sb index lookup is within limits because of maxSearchLength
+                        while((index < findLength) && (char.ToUpperInvariant(sb[i + index]) == char.ToUpperInvariant(findString[index])))
+                        {
+                            index++;
+                        }
+
+                        if(index == findLength)
+                            return i;
+                    }
+                }
+            }
+            else
+            {
+                for(int i = startIndex; i < maxSearchLength; i++)
+                {
+                    if(sb[i] == findString[0])
+                    {
+                        int index = 1;
+                        while((index < findLength) && (sb[i + index] == findString[index]))
+                        {
+                            index++;
+                        }
+
+                        if(index == findLength)
+                            return i;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
         public static StringBuilder AppendRGBA(this StringBuilder sb, Color color)
         {
             return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
