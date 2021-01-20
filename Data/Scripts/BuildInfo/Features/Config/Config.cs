@@ -281,8 +281,9 @@ namespace Digi.BuildInfo.Features.Config
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",
                 "Currently it adds:",
-                "- Block Type+SubType and BlockPairName in aim&place info",
+                "- Block Type+SubType and BlockPairName in aim&place info.",
                 "- Rotor angle from API in terminal info as it differs from what game already prints.",
+                "- Item Type+Subtype in item's tooltip.",
                 "- Piston extended position from API in terminal info in case it differs in some cases.");
 
             Debug = new BoolSetting(Handler, "Debug", false,
