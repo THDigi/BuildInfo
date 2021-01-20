@@ -27,6 +27,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ShipToolInventoryBar;
         public BoolSetting RelativeDampenerInfo;
         public BoolSetting TurretHUD;
+        public BoolSetting ItemTooltipAdditions;
         public IntegerSetting ToolbarActionLabels;
         public IntegerSetting ToolbarActionBlockNames;
         public BoolSetting ToolbarActionStatus;
@@ -147,6 +148,10 @@ namespace Digi.BuildInfo.Features.Config
             TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
             TurretHUD.AddCompatibilityName("HUD: Turret Ammo");
+
+            ItemTooltipAdditions = new BoolSetting(Handler, "Item Tooltip Additions", true,
+                "Info about mod and conveyor tube size requirements for item tooltips, seen in inventories.",
+                "Includes the '*' from the icon when large conveyor is required.");
 
             {
                 var names = Enum.GetNames(typeof(ToolbarActionLabelsMode));

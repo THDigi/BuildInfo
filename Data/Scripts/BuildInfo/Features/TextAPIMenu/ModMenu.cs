@@ -120,6 +120,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
+            SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
             ItemAdd_ToolbarActionLabels(Category_HUD);
             ItemAdd_ToolbarActionBlockNames(Category_HUD);
             SimpleToggle(Category_HUD, "Toolbar Action Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
