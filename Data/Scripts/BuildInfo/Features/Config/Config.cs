@@ -17,7 +17,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FILE_NAME = "config.ini";
         public const int CFGV_MENU_BIND = 2;
-        public const int CFGV_LATEST = 3;
+        //public const int CFGV_TOOLBAR_LABELS_REDESIGN = 4;
+        public const int CFGV_LATEST = 4;
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
