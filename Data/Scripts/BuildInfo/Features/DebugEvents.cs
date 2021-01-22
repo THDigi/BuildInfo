@@ -2,6 +2,7 @@
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -11,6 +12,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
 using VRageMath;
+using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
@@ -41,6 +43,7 @@ namespace Digi.BuildInfo.Features
     {
         public DebugEvents(BuildInfoMod main) : base(main)
         {
+            //UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
         protected override void RegisterComponent()
@@ -53,11 +56,6 @@ namespace Digi.BuildInfo.Features
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
             }
-
-            //if(MyAPIGateway.Multiplayer.IsServer)
-            //{
-            //    MyAPIGateway.Multiplayer.RegisterMessageHandler(1337, ReceivedPacket);
-            //}
 
             //DumpActions();
         }
@@ -72,11 +70,6 @@ namespace Digi.BuildInfo.Features
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
-
-            //if(MyAPIGateway.Multiplayer.IsServer)
-            //{
-            //    MyAPIGateway.Multiplayer.UnregisterMessageHandler(1337, ReceivedPacket);
-            //}
         }
 
         //public void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
@@ -215,26 +208,6 @@ namespace Digi.BuildInfo.Features
         }
 #endif
 
-        //void ReceivedPacket(byte[] rawData)
-        //{
-        //    try
-        //    {
-        //        var packet = MyAPIGateway.Utilities.SerializeFromBinary<TestPacket>(rawData);
-        //
-        //        if(packet == null)
-        //            return;
-        //
-        //        MyLog.Default.WriteLineAndConsole($"### DEBUG: Received packet for identity={packet.IdentityId}; blockId={packet.BlockId}; slot={packet.Slot}");
-        //
-        //        var blockDefId = MyDefinitionId.Parse(packet.BlockId);
-        //        MyVisualScriptLogicProvider.SetToolbarSlotToItem(packet.Slot - 1, blockDefId, packet.IdentityId);
-        //    }
-        //    catch(Exception e)
-        //    {
-        //        Log.Error(e);
-        //    }
-        //}
-
         //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
         //{
         //    MyAPIGateway.Utilities.ShowNotification($"entId={entityId.ToString()}; id={typeId}/{subtypeId}; page={page.ToString()}; slot={slot.ToString()}", 5000);
@@ -273,6 +246,45 @@ namespace Digi.BuildInfo.Features
                 {
                     debugEquipmentMsg.Visible = false;
                 }
+            }
+        }
+
+        private HudAPIv2.HUDMessage debugAllCharacters;
+
+        protected override void UpdateDraw()
+        {
+            if(TextAPI.WasDetected && Config.Debug.Value && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            {
+                int charsPerRow = (int)Dev.GetValueScroll("charsPerRow", 16, 1, VRage.Input.MyKeys.D1);
+                var chars = Main.FontsHandler.CharSize;
+
+                if(debugAllCharacters == null)
+                {
+                    debugAllCharacters = new HudAPIv2.HUDMessage(new StringBuilder(chars.Count * 15), new Vector2D(-0.8, 0.7), Blend: BlendType.PostPP);
+                }
+
+                var sb = debugAllCharacters.Message.Clear();
+                int perRow = 0;
+                foreach(var kv in chars)
+                {
+                    sb.Append(kv.Key);
+
+                    sb.Append(" <color=0,100,0>").AppendFormat("{0:X}", (int)kv.Key).Append("<color=white>   ");
+
+                    perRow++;
+                    if(perRow > charsPerRow)
+                    {
+                        perRow = 0;
+                        sb.Append('\n');
+                    }
+                }
+
+                debugAllCharacters.Visible = true;
+            }
+            else
+            {
+                if(debugAllCharacters != null)
+                    debugAllCharacters.Visible = false;
             }
         }
 

@@ -12,7 +12,8 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
-    // TODO: configurable position and scale too?
+    // TODO: configurable position and scale?
+    // TODO: compatible with gamepad HUD too?
 
     public class ShipToolInventoryBar : ModComponent
     {
@@ -83,12 +84,9 @@ namespace Digi.BuildInfo.Features
 
         private void UpdateShow()
         {
-            ShouldShow = (GameConfig.HudState != HudState.OFF && (EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
-
-            //show = (EquipmentMonitor.IsAnyTool
-            //    && !EquipmentMonitor.IsCubeBuilder
-            //    && EquipmentMonitor.HandEntity == null
-            //    && GameConfig.HudState != HudState.OFF);
+            ShouldShow = (GameConfig.HudState != HudState.OFF
+                      //&& !MyAPIGateway.Input.IsJoystickLastUsed // not even working properly with gamepad, apart from not looking properly
+                      && (EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
         }
 
         private void ComputeFillRatio()
@@ -114,14 +112,13 @@ namespace Digi.BuildInfo.Features
             float volume = 0;
             float maxVolume = 0;
 
-            // ship tool toolbar actuates tools beyond rotors/pistons and connectors!
+            // NOTE: ship tool toolbar triggers tools beyond rotors/pistons and connectors aswell, so no filtering.
             var GTS = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             GTS.GetBlocksOfType(blocks);
 
             foreach(T block in blocks)
             {
                 var inv = block.GetInventory(0);
-
                 if(inv == null)
                     continue;
 

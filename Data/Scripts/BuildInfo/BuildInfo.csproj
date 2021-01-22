@@ -255,6 +255,7 @@
     <Compile Include="Systems\TextAPIHandler.cs" />
     <Compile Include="Systems\WeaponCoreAPIHandler.cs" />
     <Compile Include="Utilities\Caches.cs" />
+    <Compile Include="Utilities\DevUtils.cs" />
     <Compile Include="Utilities\DrawUtils.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\StringBuilderExtensions.cs" />
