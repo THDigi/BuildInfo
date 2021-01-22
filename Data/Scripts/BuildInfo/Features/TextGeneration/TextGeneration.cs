@@ -768,7 +768,7 @@ namespace Digi.BuildInfo.Features
 
             if(TextAPIEnabled)
             {
-                textAPIlines.ResetColor().Append('\n');
+                textAPIlines.ResetFormatting().Append('\n');
             }
             else
             {
@@ -803,7 +803,7 @@ namespace Digi.BuildInfo.Features
 
             for(int i = 0; i < endLength; ++i)
             {
-                size += Main.FontsHandler.GetCharSize(builder[i]);
+                size += Main.FontsHandler.CharSize.GetValueOrDefault(builder[i], FontsHandler.DefaultCharSize);
             }
 
             return size;
@@ -883,7 +883,7 @@ namespace Digi.BuildInfo.Features
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Config.CycleOverlaysBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetColor();
+                GetLine().Append(")").ResetFormatting();
             }
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
@@ -891,7 +891,7 @@ namespace Digi.BuildInfo.Features
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Config.ToggleTransparencyBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetColor();
+                GetLine().Append(")").ResetFormatting();
             }
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
@@ -899,7 +899,7 @@ namespace Digi.BuildInfo.Features
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
                 Config.FreezePlacementBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetColor();
+                GetLine().Append(")").ResetFormatting();
             }
 
             AddMenuItemLine(i++, TextAPI.WasDetected).Append("Use TextAPI: ");
@@ -913,7 +913,7 @@ namespace Digi.BuildInfo.Features
             if(TextAPIEnabled)
                 AddLine();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetColor().Append(' ', 10);
+            AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
 
             EndAddedLines();
         }
@@ -948,11 +948,11 @@ namespace Digi.BuildInfo.Features
             {
                 if(terminalBlock != null)
                 {
-                    AddLine().Append('"').Color(COLOR_BLOCKTITLE).AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+                    AddLine().Append('"').Color(COLOR_BLOCKTITLE).AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
                 }
                 else if(projected) // show block def name because game might not.
                 {
-                    AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetColor();
+                    AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetFormatting();
                 }
             }
             #endregion Block name
@@ -970,7 +970,7 @@ namespace Digi.BuildInfo.Features
             #region Projector info and status
             if(projected && Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
-                AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetColor().Append('"');
+                AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
 
                 // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
                 var canBuild = projectedBy.CanBuild(aimedBlock, checkHavokIntersections: true);
@@ -1080,7 +1080,7 @@ namespace Digi.BuildInfo.Features
                             gridMassCache = grid.Physics.Mass;
                         }
 
-                        GetLine().ResetColor().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
+                        GetLine().ResetFormatting().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
                     }
                 }
             }
@@ -1093,13 +1093,13 @@ namespace Digi.BuildInfo.Features
                 {
                     var originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
-                    AddLine().ResetColor().Append("Original integrity: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
-                        .ProportionToPercent(originalIntegrity).ResetColor();
+                    AddLine().ResetFormatting().Append("Original integrity: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
+                        .ProportionToPercent(originalIntegrity).ResetFormatting();
                 }
                 else
                 {
-                    AddLine().ResetColor().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
-                        .IntegrityFormat(aimedBlock.Integrity).ResetColor()
+                    AddLine().ResetFormatting().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
+                        .IntegrityFormat(aimedBlock.Integrity).ResetFormatting()
                         .Append(" / ").IntegrityFormat(aimedBlock.MaxIntegrity);
 
                     if(def.BlockTopology == MyBlockTopology.Cube && aimedBlock.HasDeformation)
@@ -1167,7 +1167,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
                     }
 
-                    GetLine().ResetColor().Separator();
+                    GetLine().ResetFormatting().Separator();
 
                     if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
                     {
@@ -1392,7 +1392,7 @@ namespace Digi.BuildInfo.Features
                     var id = context.GetWorkshopID();
 
                     if(id > 0)
-                        AddLine().Color(COLOR_MOD).Append("       | ").ResetColor().Append("Workshop ID: ").Append(id);
+                        AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("Workshop ID: ").Append(id);
                 }
                 else
                 {
@@ -1584,15 +1584,15 @@ namespace Digi.BuildInfo.Features
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding);
 
-                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetColor().Separator()
+                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetFormatting().Separator()
                     .Size3DFormat(def.Size).Separator()
-                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetColor();
+                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetFormatting();
 
                 if(Math.Abs(grindRatio - 1) >= 0.0001f)
-                    GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetColor();
+                    GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetFormatting();
 
                 if(!buildModels)
-                    GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetColor();
+                    GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetFormatting();
             }
             #endregion Mass/size/build time/deconstruct time/no models
 
@@ -1602,7 +1602,7 @@ namespace Digi.BuildInfo.Features
                 AddLine();
 
                 if(part)
-                    GetLine().Color(COLOR_PART).Append(padding).ResetColor();
+                    GetLine().Color(COLOR_PART).Append(padding).ResetFormatting();
 
                 GetLine().Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
@@ -1874,7 +1874,7 @@ namespace Digi.BuildInfo.Features
                     if(data.CanConnect)
                         AddLine().Append("Connectable: Yes");
                     else
-                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetColor();
+                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetFormatting();
 
                     GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes");
                 }
@@ -2136,7 +2136,7 @@ namespace Digi.BuildInfo.Features
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetColor().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
+                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetFormatting().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
                         }
                         else
                         {
@@ -2423,7 +2423,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere);
                     AddLine().Label("Drag coefficient").Append(parachute.DragCoefficient.ToString("0.0####"));
-                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetColor().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in 1g and 1.0 air density.");
+                    AddLine().Label("Load estimate").Color(COLOR_INFO).MassFormat(maxMass).ResetFormatting().Append(" falling at ").SpeedFormat(TARGET_DESCEND_VELOCITY).Append(" in 1g and 1.0 air density.");
                 }
             }
         }
@@ -2446,15 +2446,15 @@ namespace Digi.BuildInfo.Features
 
                         if(string.IsNullOrEmpty(medicalRoom.RespawnSuitName))
                         {
-                            GetLine().Color(COLOR_BAD).Append("(Error: empty)").ResetColor();
+                            GetLine().Color(COLOR_BAD).Append("(Error: empty)").ResetFormatting();
                         }
                         else
                         {
                             MyCharacterDefinition charDef;
                             if(MyDefinitionManager.Static.Characters.TryGetValue(medicalRoom.RespawnSuitName, out charDef))
-                                GetLine().Append(charDef.Name).ResetColor();
+                                GetLine().Append(charDef.Name).ResetFormatting();
                             else
-                                GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)").ResetColor();
+                                GetLine().Append(medicalRoom.RespawnSuitName).Color(COLOR_BAD).Append(" (Error: not found)").ResetFormatting();
                         }
                     }
                     else
@@ -2471,12 +2471,12 @@ namespace Digi.BuildInfo.Features
                 if(medicalRoom.HealingAllowed)
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.MedRoomHeal * 60), 2).Append("hp/s");
                 else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Healing").Append("No").ResetColor();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Healing").Append("No").ResetFormatting();
 
                 if(medicalRoom.RefuelAllowed)
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x5)");
                 else
-                    AddLine(MyFontEnum.Red).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetColor();
+                    AddLine(MyFontEnum.Red).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2500,7 +2500,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("(all)");
                 }
                 else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetColor();
+                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetFormatting();
             }
 
             Screens(def, medicalRoom.ScreenAreas);
@@ -2527,7 +2527,7 @@ namespace Digi.BuildInfo.Features
                     var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
+                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
                 }
             }
 
@@ -2550,7 +2550,7 @@ namespace Digi.BuildInfo.Features
                 {
                     var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
-                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetColor().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
+                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
                 }
             }
 
@@ -2762,7 +2762,7 @@ namespace Digi.BuildInfo.Features
                         if(hasOneFuel)
                             AddLine().Append("Needs fuel: ");
                         else
-                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetColor();
+                            AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetFormatting();
 
                         foreach(var fuel in reactor.FuelInfos)
                         {
@@ -2868,7 +2868,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().DistanceFormat(laserAntenna.MaxRange);
 
-                GetLine().ResetColor().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
+                GetLine().ResetFormatting().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
 
                 AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees);
                 AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * Hardcoded.LaserAntenna_RotationSpeedMul);
@@ -3114,7 +3114,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetColor().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
                     if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
@@ -3122,14 +3122,14 @@ namespace Digi.BuildInfo.Features
                     else
                         GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(turret.MinElevationDegrees).Append(" to ").AngleFormatDeg(turret.MaxElevationDegrees);
 
-                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul).Separator();
+                    GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul).Separator();
 
                     if(turret.MinAzimuthDegrees <= -180 && turret.MaxAzimuthDegrees >= 180)
                         GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
                     else
                         GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
 
-                    GetLine().ResetColor().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
+                    GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
 
                     // TODO: visualize angle limits?
                 }
@@ -3215,12 +3215,12 @@ namespace Digi.BuildInfo.Features
                     else
                         GetLine().Append(projectilesData.ShotsInBurst);
 
-                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")");
+                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetFormatting().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
 
                     for(int i = 0; i < ammoProjectiles.Count; ++i)
                     {
@@ -3228,22 +3228,22 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (");
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetFormatting().Append(" (");
 
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
 
-                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetColor().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetColor().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetColor().Append(", ");
+                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetFormatting().Append(", ");
 
                         if(ammo.SpeedVar > 0)
                             GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
                         else
                             GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetColor().Append(", ")
-                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Max).ResetColor().Append(")");
+                        GetLine().ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Max).ResetFormatting().Append(")");
                     }
                 }
 
@@ -3258,11 +3258,11 @@ namespace Digi.BuildInfo.Features
                     else
                         GetLine().Append(missileData.ShotsInBurst);
 
-                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetColor().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetColor().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetColor().Append(")");
+                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetFormatting().Append(" (")
+                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -3270,9 +3270,9 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetColor().Append(" (")
-                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetColor().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetColor().Append(", ");
+                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetFormatting().Append(" (")
+                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
 
                         // SpeedVar is not used for missiles
 
@@ -3283,8 +3283,8 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetColor().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
-                            .ResetColor().Append(")");
+                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                            .ResetFormatting().Append(")");
                     }
                 }
 
@@ -3387,7 +3387,7 @@ namespace Digi.BuildInfo.Features
             if(def.DLCs == null || def.DLCs.Length == 0)
                 return;
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_DLC).Label("DLC").ResetColor();
+            AddLine(MyFontEnum.Blue).Color(COLOR_DLC).Label("DLC").ResetFormatting();
 
             bool multiDLC = def.DLCs.Length > 1;
 
@@ -3410,7 +3410,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    GetLine().Append("(Unknown: ").Color(COLOR_BAD).Append(dlcId).ResetColor().Append(")");
+                    GetLine().Append("(Unknown: ").Color(COLOR_BAD).Append(dlcId).ResetFormatting().Append(")");
                 }
             }
         }
@@ -3421,7 +3421,7 @@ namespace Digi.BuildInfo.Features
 
             GetLine()
                 .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%")
-                .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetColor();
+                .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetFormatting();
         }
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
@@ -3451,7 +3451,7 @@ namespace Digi.BuildInfo.Features
 
                 if(groupName != MyStringHash.NullOrEmpty && Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
-                    GetLine().ResetColor().Separator().ResourcePriority(groupName, groupHardcoded);
+                    GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }
             }
         }
@@ -3490,7 +3490,7 @@ namespace Digi.BuildInfo.Features
 
                     if(itemDef == null)
                     {
-                        GetLine().Color(COLOR_BAD).Append("ERROR: NOT FOUND!").ResetColor();
+                        GetLine().Color(COLOR_BAD).Append("ERROR: NOT FOUND!").ResetFormatting();
                     }
                     else
                     {

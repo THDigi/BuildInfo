@@ -144,7 +144,7 @@ namespace Digi.BuildInfo.Utilities
             if(text.Length > maxLength)
             {
                 if(addDots)
-                    s.Append(text, 0, maxLength - 1).Append('…');
+                    s.Append(text, 0, maxLength - 1).Append("...");
                 else
                     s.Append(text, 0, maxLength);
             }
@@ -199,15 +199,12 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder ResetColor(this StringBuilder s)
+        public static StringBuilder ResetFormatting(this StringBuilder s)
         {
             if(TextAPIEnabled)
-            {
-                var color = TextGeneration.COLOR_NORMAL;
-                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
-            }
-
-            return s;
+                return s.Append("<reset>");
+            else
+                return s;
         }
 
         // Some ResourceSinkGroup are string and some are MyStringHash...
@@ -506,7 +503,7 @@ namespace Digi.BuildInfo.Utilities
                 MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
 
                 if(Math.Abs(mul - 1) > 0.001f)
-                    s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetColor();
+                    s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetFormatting();
             }
             else
             {

@@ -4,9 +4,11 @@ namespace Digi.BuildInfo.Features
 {
     public class FontsHandler : ModComponent
     {
-        readonly Dictionary<char, int> CharSize = new Dictionary<char, int>();
-
-        public int GetCharSize(char chr) => CharSize.GetValueOrDefault(chr, 33); // 33 = chinese characters' aw
+        /// <summary>
+        /// Must be used when CharSize doesn't have the char you want because it's most likely a chinese character.
+        /// </summary>
+        public const int DefaultCharSize = 33;
+        public readonly Dictionary<char, int> CharSize = new Dictionary<char, int>();
 
         public FontsHandler(BuildInfoMod main) : base(main)
         {

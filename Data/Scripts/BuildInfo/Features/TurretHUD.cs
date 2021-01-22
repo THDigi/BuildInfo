@@ -193,7 +193,7 @@ namespace Digi.BuildInfo.Features
                 else
                     sb.Append(ammo);
 
-                sb.ResetColor().Append(" / ").Append(ammoMax).NewLine();
+                sb.ResetFormatting().Append(" / ").Append(ammoMax).NewLine();
             }
 
             if(magDef != null)
