@@ -39,7 +39,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup groupAimInfo = new ItemGroup();
         private readonly ItemGroup groupPlaceInfoToggle = new ItemGroup();
         private readonly ItemGroup groupPlaceInfo = new ItemGroup();
-        private readonly ItemGroup groupToolbarActionLabels = new ItemGroup();
+        private readonly ItemGroup groupToolbarLabels = new ItemGroup();
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
 
@@ -104,7 +104,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             ItemAdd_TextShow(Category_Textbox);
             SimpleToggle(Category_Textbox, "Show when HUD is off", Config.TextAlwaysVisible, groupTextInfo);
-            SimpleSlider(Category_Textbox, "Text Scale", Config.TextAPIScale);
+            SimpleSlider(Category_Textbox, "Text Scale", Config.TextAPIScale, groupTextInfo);
             ItemAdd_BackgroundOpacity(Category_Textbox);
             ItemAdd_CustomStyling(Category_Textbox);
             ItemAdd_ScreenPosition(Category_Textbox);
@@ -120,15 +120,18 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_Overlays, "Show when HUD is off", Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
 
-            SimpleToggle(Category_HUD, "Block Info Stages", Config.BlockInfoStages);
+            SimpleToggle(Category_HUD, "Block Info Additions", Config.BlockInfoAdditions);
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
             SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
 
-            ItemAdd_ToolbarActionLabels(Category_Toolbar);
-            ItemAdd_ToolbarActionBlockNames(Category_Toolbar);
-            SimpleToggle(Category_Toolbar, "Toolbar Action Override Status", Config.ToolbarActionStatus, groupToolbarActionLabels);
+            ItemAdd_ToolbarActionLabels(Category_Toolbar, "Labels Mode");
+            ItemAdd_ToolbarActionBlockNames(Category_Toolbar, "Toolbar Item Names Mode");
+            ItemAdd_ToolbarLabelsPosition(Category_Toolbar, "Labels Box HUD Position", Config.ToolbarLabelsPosition);
+            ItemAdd_ToolbarLabelsPosition(Category_Toolbar, "Labels Box In-Menu Position", Config.ToolbarLabelsInMenuPosition);
+            SimpleSlider(Category_Toolbar, "Labels Box Scale", Config.ToolbarLabelsScale, groupToolbarLabels);
+            SimpleToggle(Category_Toolbar, "Override Action Status", Config.ToolbarActionStatus);
 
             SimpleToggle(Category_Terminal, "Detail Info Additions", Config.TerminalDetailInfoAdditions);
 
@@ -163,7 +166,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             // gray out items that need to start like that
             groupTextInfo.SetInteractable(Config.TextShow.Value);
             groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
-            groupToolbarActionLabels.SetInteractable(Config.ToolbarActionLabels.Value != (int)ToolbarActionLabelsMode.Off);
+            groupToolbarLabels.SetInteractable(Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
 
             Config.Handler.SettingsLoaded += Handler_SettingsLoaded;
         }
@@ -333,35 +336,61 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             groupAll.Add(item);
         }
 
-        private void ItemAdd_ToolbarActionLabels(MenuCategoryBase category)
+        private void ItemAdd_ToolbarActionLabels(MenuCategoryBase category, string label)
         {
-            var item = new ItemEnumCycle(category, "Toolbar Action Label Mode",
-                getter: () => Config.ToolbarActionLabels.Value,
+            var item = new ItemEnumCycle(category, label,
+                getter: () => Config.ToolbarLabels.Value,
                 setter: (v) =>
                 {
-                    Config.ToolbarActionLabels.Value = v;
+                    Config.ToolbarLabels.Value = v;
                     ApplySettings(redraw: false);
-                    groupToolbarActionLabels.SetInteractable(v != (int)ToolbarActionLabelsMode.Off);
+                    groupToolbarLabels.SetInteractable(v != (int)ToolbarLabelsMode.Off);
                 },
-                enumType: typeof(ToolbarActionLabelsMode),
-                defaultValue: Config.ToolbarActionLabels.DefaultValue);
+                enumType: typeof(ToolbarLabelsMode),
+                defaultValue: Config.ToolbarLabels.DefaultValue);
 
             groupAll.Add(item);
         }
 
-        private void ItemAdd_ToolbarActionBlockNames(MenuCategoryBase category)
+        private void ItemAdd_ToolbarActionBlockNames(MenuCategoryBase category, string label)
         {
-            var item = new ItemEnumCycle(category, "Toolbar Action Block Names",
-                getter: () => Config.ToolbarActionBlockNames.Value,
+            var item = new ItemEnumCycle(category, label,
+                getter: () => Config.ToolbarItemNameMode.Value,
                 setter: (v) =>
                 {
-                    Config.ToolbarActionBlockNames.Value = v;
+                    Config.ToolbarItemNameMode.Value = v;
                     ApplySettings(redraw: false);
                 },
-                enumType: typeof(ToolbarActionBlockNameMode),
-                defaultValue: Config.ToolbarActionBlockNames.DefaultValue);
+                enumType: typeof(ToolbarNameMode),
+                defaultValue: Config.ToolbarItemNameMode.DefaultValue);
 
-            groupToolbarActionLabels.Add(item);
+            groupToolbarLabels.Add(item);
+            groupAll.Add(item);
+        }
+
+        private void ItemAdd_ToolbarLabelsPosition(MenuCategoryBase category, string label, Vector2DSetting setting)
+        {
+            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 3,
+                getter: () => setting.Value,
+                setter: (pos) =>
+                {
+                    setting.Value = pos;
+                    Config.Save();
+                },
+                selected: (pos) =>
+                {
+                    setting.Value = pos;
+                },
+                moving: (pos) =>
+                {
+                    setting.Value = pos;
+                },
+                cancelled: (origPos) =>
+                {
+                    setting.Value = origPos;
+                });
+
+            groupToolbarLabels.Add(item);
             groupAll.Add(item);
         }
 
@@ -404,7 +433,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             groupAll.Add(item);
         }
 
-        private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting)
+        private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting, ItemGroup group = null)
         {
             var item = new ItemSlider(category, title, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
                 getter: () => setting.Value,
@@ -424,11 +453,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     ApplySettings(save: false);
                 });
 
-            groupTextInfo.Add(item);
+            group?.Add(item);
             groupAll.Add(item);
         }
 
-        private void SimpleBind(MenuCategoryBase category, string name, string inputName, InputCombinationSetting setting, ItemGroup addToGroup = null, ItemGroup updateGroupOnSet = null)
+        private void SimpleBind(MenuCategoryBase category, string name, string inputName, InputCombinationSetting setting, ItemGroup group = null, ItemGroup updateGroupOnSet = null)
         {
             var item = new ItemInput(category, name, inputName,
                 getter: () => setting.Value,
@@ -440,7 +469,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 },
                 defaultValue: setting.DefaultValue);
 
-            addToGroup?.Add(item);
+            group?.Add(item);
             groupAll.Add(item);
         }
 

@@ -40,6 +40,9 @@ namespace Digi.BuildInfo.Systems
         public event EventHandlerUpdateControlled UpdateControlled;
         public delegate void EventHandlerUpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick);
 
+        public event EventHandlerControlledChanged ControlledChanged;
+        public delegate void EventHandlerControlledChanged(IMyControllableEntity controlled);
+
         /// <summary>
         /// Aimed-at block with ship welder/grinder, null if nothing is aimed at.
         /// </summary>
@@ -167,6 +170,9 @@ namespace Digi.BuildInfo.Systems
             {
                 UpdateInCharacter(character, controllerChanged);
             }
+
+            if(controllerChanged)
+                ControlledChanged?.Invoke(controlled);
 
             UpdateControlled?.Invoke(character, shipController, controlled, tick);
         }
@@ -367,6 +373,9 @@ namespace Digi.BuildInfo.Systems
             bool check = controllerChanged || closedSomeUI; // check tools if controller was just changed or UI closed (because you can change tools in G menu)
             closedSomeUI = false;
 
+            if(!check && Features.ToolbarInfo.ToolbarMonitor.EnableGamepadSupport && Main.Tick % 60 == 0)
+                check = true;
+
             #region Check if any toolbar slot or next/prev was pressed
             if(!check && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible)
             {
@@ -404,14 +413,29 @@ namespace Digi.BuildInfo.Systems
                     }
                 }
 
-                // no FAST shortcut for checking if any joystick button is pressed
-                if(!check)
+                // no fast shortcut for checking if any joystick button is pressed
+                if(MyAPIGateway.Input.IsJoystickLastUsed && MyAPIGateway.Input.IsAnyNewMouseOrJoystickPressed())
                 {
-                    // HACK hardcoded gamepad controls for next/prev toolbar items from MySpaceBindingCreator
-                    if(MyAPIGateway.Input.IsJoystickButtonNewPressed(MyJoystickButtonsEnum.JDRight)
-                    || MyAPIGateway.Input.IsJoystickButtonNewPressed(MyJoystickButtonsEnum.JDLeft))
+                    if(!check)
                     {
-                        check = true;
+                        // selecting slot
+                        if(MyAPIGateway.Input.IsNewJoystickButtonReleased(MyJoystickButtonsEnum.JDRight)
+                        || MyAPIGateway.Input.IsNewJoystickButtonReleased(MyJoystickButtonsEnum.JDLeft)
+                        || MyAPIGateway.Input.IsNewJoystickButtonReleased(MyJoystickButtonsEnum.JDDown)
+                        || MyAPIGateway.Input.IsNewJoystickButtonReleased(MyJoystickButtonsEnum.JDUp))
+                        {
+                            check = true;
+                        }
+                    }
+
+                    if(!check)
+                    {
+                        // next/prev toolbar
+                        if((MyAPIGateway.Input.IsJoystickButtonNewPressed(MyJoystickButtonsEnum.J01) || MyAPIGateway.Input.IsJoystickButtonNewPressed(MyJoystickButtonsEnum.J02))
+                        && MyAPIGateway.Input.IsJoystickButtonPressed(MyJoystickButtonsEnum.J09))
+                        {
+                            check = true;
+                        }
                     }
                 }
             }

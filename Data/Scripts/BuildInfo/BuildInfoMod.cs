@@ -6,7 +6,7 @@ using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.TextAPIMenu;
-using Digi.BuildInfo.Features.ToolbarLabels;
+using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -53,12 +53,13 @@ namespace Digi.BuildInfo
         public BlockInfoAdditions BlockInfoAdditions;
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
-        public ToolbarActionLabels ToolbarActionLabels;
-        public ToolbarActionStatus ToolbarActionStatus;
-        public ToolbarCustomNames ToolbarCustomNames;
-        public ToolbarParsedDataCache ToolbarParsedDataCache;
         public WhatsNew WhatsNew;
         public ItemTooltips ItemTooltips;
+        public ToolbarOverride ToolbarOverride;
+        public ToolbarMonitor ToolbarMonitor;
+        public ToolbarCustomLabels ToolbarCustomLabels;
+        public ToolbarStatusProcessor ToolbarStatusProcessor;
+        public ToolbarLabelRender ToolbarLabelRender;
         public DebugEvents DebugEvents;
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
@@ -100,12 +101,13 @@ namespace Digi.BuildInfo
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
-            ToolbarActionLabels = new ToolbarActionLabels(this);
-            ToolbarActionStatus = new ToolbarActionStatus(this);
-            ToolbarCustomNames = new ToolbarCustomNames(this);
-            ToolbarParsedDataCache = new ToolbarParsedDataCache(this);
             WhatsNew = new WhatsNew(this);
             ItemTooltips = new ItemTooltips(this);
+            ToolbarOverride = new ToolbarOverride(this);
+            ToolbarMonitor = new ToolbarMonitor(this);
+            ToolbarCustomLabels = new ToolbarCustomLabels(this);
+            ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
+            ToolbarLabelRender = new ToolbarLabelRender(this);
             DebugEvents = new DebugEvents(this);
         }
     }

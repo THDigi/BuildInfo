@@ -21,36 +21,55 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
+
         public FlagsSetting<PlaceInfoFlags> PlaceInfo;
         public FlagsSetting<AimInfoFlags> AimInfo;
-        public BoolSetting BlockInfoStages;
+
+        public BoolSetting BlockInfoAdditions;
+
         public BoolSetting ShipToolInventoryBar;
+
         public BoolSetting RelativeDampenerInfo;
-        public BoolSetting TurretHUD;
+
         public BoolSetting ItemTooltipAdditions;
-        public IntegerSetting ToolbarActionLabels;
-        public IntegerSetting ToolbarActionBlockNames;
-        public BoolSetting TerminalDetailInfoAdditions;
+
+        public BoolSetting TurretHUD;
+
+        public IntegerSetting ToolbarLabels;
+        public IntegerSetting ToolbarItemNameMode;
+        public Vector2DSetting ToolbarLabelsPosition;
+        public Vector2DSetting ToolbarLabelsInMenuPosition;
+        public FloatSetting ToolbarLabelsScale;
         public BoolSetting ToolbarActionStatus;
+
+        public BoolSetting TerminalDetailInfoAdditions;
+
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
         public TextAlignSetting TextAPIAlign;
         public FloatSetting TextAPIScale;
         public BackgroundOpacitySetting TextAPIBackgroundOpacity;
+
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
+
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;
+
         public BoolSetting AdjustBuildDistanceSurvival;
         public BoolSetting AdjustBuildDistanceShipCreative;
+
         public InputCombinationSetting MenuBind;
         public InputCombinationSetting CycleOverlaysBind;
         public InputCombinationSetting ToggleTransparencyBind;
         public InputCombinationSetting FreezePlacementBind;
         public InputCombinationSetting BlockPickerBind;
         public InputCombinationSetting LockOverlayBind;
+
         public BoolSetting InternalInfo;
+
         public BoolSetting Debug;
+
         public IntegerSetting ModVersion;
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
@@ -139,28 +158,35 @@ namespace Digi.BuildInfo.Features.Config
                 "Choose what information is shown in the text box when aiming at a block with a tool.",
                 "Disabling all of them will effectively hide the box.");
 
-            BlockInfoStages = new BoolSetting(Handler, "HUD: Block Info Stages", true,
-                "Shows red line for functional and blue line for ownership on components list in block info panel.");
+            BlockInfoAdditions = new BoolSetting(Handler, "HUD: Block Info Additions", true,
+                "Shows red line for functional and blue line for ownership on components list in block info panel.",
+                "Also shows components that grind into something else (e.g. battery's power cells) if textAPI is allowed, otherwise it highlights the component yellow.");
+            BlockInfoAdditions.AddCompatibilityNames("HUD: Block Info Stages");
 
             ShipToolInventoryBar = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship tool is selected.");
 
             TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
-            TurretHUD.AddCompatibilityName("HUD: Turret Ammo");
+            TurretHUD.AddCompatibilityNames("HUD: Turret Ammo");
 
             ItemTooltipAdditions = new BoolSetting(Handler, "Item Tooltip Additions", true,
                 "Info about mod and conveyor tube size requirements for item tooltips, seen in inventories.",
                 "Includes the '*' from the icon when large conveyor is required.");
 
-            {
-                var names = Enum.GetNames(typeof(ToolbarActionLabelsMode));
-                var values = (int[])Enum.GetValues(typeof(ToolbarActionLabelsMode));
+            RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
+                "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
+                "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
 
-                int extraLines = 2;
+            {
+                var names = Enum.GetNames(typeof(ToolbarLabelsMode));
+                var values = (int[])Enum.GetValues(typeof(ToolbarLabelsMode));
+
+                int extraLines = 3;
                 string[] comments = new string[names.Length + extraLines];
                 comments[0] = "Customize ship toolbar block action's labels.";
                 comments[1] = "Turning this off turns off the rest of the toolbar action stuff.";
+                comments[3] = $"Also, upon entering a cockpit labels are shown for {(ToolbarInfo.ToolbarLabelRender.ShowForTicks / Constants.TICKS_PER_SECOND).ToString()} seconds for HudHints&AltKey modes.";
 
                 for(int i = 0; i < names.Length; ++i)
                 {
@@ -168,19 +194,18 @@ namespace Digi.BuildInfo.Features.Config
                     int index = i + extraLines;
                     comments[index] = $"    {val.ToString()} = {names[i]}";
 
-                    if(val == (int)ToolbarActionLabelsMode.HudHints)
+                    if(val == (int)ToolbarLabelsMode.HudHints)
                     {
                         comments[i + extraLines] += " (can also be shown with ALT in this mode)";
                     }
                 }
 
-                ToolbarActionLabels = new IntegerSetting(Handler, "HUD: Toolbar action labels", defaultValue: (int)ToolbarActionLabelsMode.HudHints, min: values[0], max: values[values.Length - 1], commentLines: comments);
-                ToolbarActionLabels.AddCompatibilityName("Show toolbar action");
+                ToolbarLabels = new IntegerSetting(Handler, "Toolbar: Labels Mode", defaultValue: (int)ToolbarLabelsMode.AlwaysOn, min: values[0], max: values[values.Length - 1], commentLines: comments);
             }
 
             {
-                var names = Enum.GetNames(typeof(ToolbarActionBlockNameMode));
-                var values = (int[])Enum.GetValues(typeof(ToolbarActionBlockNameMode));
+                var names = Enum.GetNames(typeof(ToolbarNameMode));
+                var values = (int[])Enum.GetValues(typeof(ToolbarNameMode));
 
                 int extraLines = 2;
                 string[] comments = new string[names.Length + extraLines];
@@ -193,37 +218,55 @@ namespace Digi.BuildInfo.Features.Config
                     int index = i + extraLines;
                     comments[index] = $"    {val.ToString()} = {names[i]}";
 
-                    if(val == (int)ToolbarActionBlockNameMode.OffExceptGUI)
+                    if(val == (int)ToolbarNameMode.InMenuOnly)
                     {
-                        comments[index] += " (only shown when menus are open)";
+                        comments[index] += " (only shown when toolbar menu is open)";
                     }
-                    else if(val == (int)ToolbarActionBlockNameMode.Useful)
+                    else if(val == (int)ToolbarNameMode.GroupsOnly)
                     {
-                        comments[index] += " (PBs, timers, connectors, etc)";
+                        comments[index] += " (only block group names)";
                     }
                 }
 
-                ToolbarActionBlockNames = new IntegerSetting(Handler, "HUD: Toolbar action block name", defaultValue: (int)ToolbarActionBlockNameMode.Useful, min: values[0], max: values[values.Length - 1], commentLines: comments);
+                ToolbarItemNameMode = new IntegerSetting(Handler, "Toolbar: Item Name Mode", defaultValue: (int)ToolbarNameMode.AlwaysShow, min: values[0], max: values[values.Length - 1], commentLines: comments);
             }
 
-            ToolbarActionStatus = new BoolSetting(Handler, "HUD: Toolbar action status", true,
+            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position", defaultValue: new Vector2D(-0.716, -0.707), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The position of the toolbar labels on the HUD.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+
+            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position In-Menu", defaultValue: new Vector2D(0.128, -0.957), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The position of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+
+            ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: Labels Box Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            {
+                "The scale of the toolbar labels box."
+            });
+
+            ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
-                "This only works if 'Toolbar action labels' is not 0/off.");
+                "This is independent of the toolbar labels feature."
+            );
+            ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
 
             TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
                 "Adds some extra info bottom-right in terminal of certain blocks.",
                 "Does not (and cannot) replace any vanilla info.");
 
-            RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
-                "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
-                "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
-
             TextAPIScale = new FloatSetting(Handler, "TextAPI: Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
-                {
-                    "The overall text info panel scale."
-                });
+            {
+                "The overall text info panel scale."
+            });
 
+            // TODO: rename prefix on these to be Block Info or something
             TextAPIBackgroundOpacity = new BackgroundOpacitySetting(Handler, "TextAPI: Background Opacity", -1,
                 "Text info background opacity.",
                 "Set to '-1' or 'HUD' to use game HUD's background opacity.");
@@ -234,16 +277,16 @@ namespace Digi.BuildInfo.Features.Config
                 "(If false) With rotation hints off, text info will be set top-left, otherwise top-right.");
 
             TextAPIScreenPosition = new Vector2DSetting(Handler, "TextAPI: Screen Position", defaultValue: new Vector2D(0.9692, 0.26), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
-                {
-                    "Screen position in X and Y coordinates where 0,0 is the screen center.",
-                    "Positive values are right and up, while negative ones are opposite of that.",
-                    $"NOTE: Requires {TextAPICustomStyling.Name} = true"
-                });
+            {
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+                $"NOTE: Requires {TextAPICustomStyling.Name} = true"
+            });
 
             TextAPIAlign = new TextAlignSetting(Handler, "TextAPI: Anchor", TextAlignFlags.Bottom | TextAlignFlags.Right,
                 "Determine the pivot point of the text info box. Stretches in opposite direction of that.",
                 $"NOTE: Requires {TextAPICustomStyling.Name} = true");
-            TextAPIAlign.AddCompatibilityName("TextAPI: Alignment");
+            TextAPIAlign.AddCompatibilityNames("TextAPI: Alignment");
 
             OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Always Visible", false,
                 "Setting to true causes the block overlays to be visible regardless of HUD state");

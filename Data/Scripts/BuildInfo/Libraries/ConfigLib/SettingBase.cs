@@ -53,9 +53,14 @@ namespace Digi.ConfigLib
             configInstance.Settings.Add(Name, this);
         }
 
-        public void AddCompatibilityName(string name)
+        public void AddCompatibilityNames(string name1, string name2 = null, string name3 = null, string name4 = null, string name5 = null, string name6 = null)
         {
-            configInstance.SettingsAlias.Add(name, this);
+            if(name1 != null) configInstance.SettingsAlias.Add(name1, this);
+            if(name2 != null) configInstance.SettingsAlias.Add(name2, this);
+            if(name3 != null) configInstance.SettingsAlias.Add(name3, this);
+            if(name4 != null) configInstance.SettingsAlias.Add(name4, this);
+            if(name5 != null) configInstance.SettingsAlias.Add(name5, this);
+            if(name6 != null) configInstance.SettingsAlias.Add(name6, this);
         }
 
         public override string ToString()

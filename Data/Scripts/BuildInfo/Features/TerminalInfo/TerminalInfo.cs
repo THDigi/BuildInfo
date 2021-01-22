@@ -916,7 +916,7 @@ namespace Digi.BuildInfo.Features
                 info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
             }
 
-            var blockToolbarData = Main.ToolbarCustomNames.GetBlockData(block.EntityId);
+            var blockToolbarData = Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(block.EntityId, null);
             if(blockToolbarData != null && blockToolbarData.ParseErrors.Count > 0)
             {
                 info.Append("\nToolbar CustomData Errors:");

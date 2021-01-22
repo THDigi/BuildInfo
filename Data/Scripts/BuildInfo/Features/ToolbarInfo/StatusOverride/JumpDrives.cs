@@ -1,0 +1,181 @@
+﻿using System.Text;
+using Digi.BuildInfo.Utilities;
+using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.EntityComponents;
+using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using MyJumpDriveStatus = Sandbox.ModAPI.Ingame.MyJumpDriveStatus;
+
+namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
+{
+    internal class JumpDrives : StatusOverrideBase
+    {
+        public JumpDrives(ToolbarStatusProcessor processor) : base(processor)
+        {
+            var type = typeof(MyObjectBuilder_TimerBlock);
+
+            processor.AddStatus(type, Recharge, "Jump", "Recharge", "Recharge_On", "Recharge_Off");
+            processor.AddStatus(type, JumpDistance, "IncreaseJumpDistance", "DecreaseJumpDistance");
+
+            processor.AddGroupStatus(type, GroupRecharge, "Recharge", "Recharge_On", "Recharge_Off");
+        }
+
+        bool Recharge(StringBuilder sb, ToolbarItem item)
+        {
+            var jd = (IMyJumpDrive)item.Block;
+            bool jumpAction = (item.ActionId == "Jump");
+
+            if(jumpAction)
+            {
+                float countdown = Main.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
+                if(countdown > 0)
+                {
+                    sb.Append("Jumping\n");
+                    sb.TimeFormat(countdown);
+                    return true;
+                }
+            }
+
+            if(!jd.IsWorking)
+            {
+                sb.Append("Off"); // no blink here because Status gets changed to weird stuff when off.
+            }
+            else
+            {
+                switch(jd.Status)
+                {
+                    case MyJumpDriveStatus.Charging:
+                    {
+                        var recharge = jd.GetValueBool("Recharge");
+                        sb.Append(recharge ? "Charge" : "Stop");
+                        break;
+                    }
+                    case MyJumpDriveStatus.Ready: sb.Append("Ready"); break;
+                    case MyJumpDriveStatus.Jumping: sb.Append("Jump..."); break;
+                    default: return false;
+                }
+            }
+
+            sb.Append("\n");
+
+            int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
+            sb.Append(filledPercent).Append("%");
+
+            var sink = jd.Components.Get<MyResourceSinkComponent>();
+            if(sink != null)
+            {
+                const float RatioOfMaxForDoubleArrows = 0.9f;
+
+                float input = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+                float maxInput = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
+
+                if(Processor.AnimFlip && input > 0)
+                    sb.Append(highFlow ? "++" : "+");
+            }
+
+            return true;
+        }
+
+        bool JumpDistance(StringBuilder sb, ToolbarItem item)
+        {
+            var jd = (IMyJumpDrive)item.Block;
+
+            if(Processor.AnimFlip)
+            {
+                var prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
+                if(prop != null && !prop.Enabled.Invoke(jd))
+                {
+                    sb.Append("GPS!");
+                    return true;
+                }
+            }
+
+            if(item.ActionWrapper.OriginalWriter != null)
+            {
+                int startIndex = sb.Length;
+
+                // vanilla writer but with some alterations as it's easier than re-doing the entire math for jump distance.
+                item.ActionWrapper.OriginalWriter.Invoke(jd, sb);
+
+                for(int i = startIndex; i < sb.Length; i++)
+                {
+                    char c = sb[i];
+                    if(c == '%' && sb.Length > (i + 2))
+                    {
+                        sb[i + 2] = '\n'; // replace starting paranthesis with newline
+                        sb.Length -= 1; // remove ending paranthesis
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        bool GroupRecharge(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        {
+            if(!groupData.GetGroupBlocks<IMyJumpDrive>())
+                return false;
+
+            bool allOn = true;
+            float averageFilled = 0f;
+            float input = 0f;
+            float maxInput = 0f;
+            int ready = 0;
+            int charge = 0;
+
+            foreach(IMyJumpDrive jd in groupData.Blocks)
+            {
+                if(!jd.IsWorking)
+                    allOn = false;
+
+                averageFilled += (jd.CurrentStoredPower / jd.MaxStoredPower);
+
+                var sink = jd.Components.Get<MyResourceSinkComponent>();
+                if(sink != null)
+                {
+                    input += sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+                    maxInput += sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                }
+
+                switch(jd.Status)
+                {
+                    case MyJumpDriveStatus.Ready: ready++; break;
+                    case MyJumpDriveStatus.Charging: charge++; break;
+                }
+            }
+
+            int total = groupData.Blocks.Count;
+
+            if(averageFilled > 0)
+            {
+                averageFilled /= total;
+                averageFilled *= 100;
+            }
+
+            float averageInput = 0;
+            if(input > 0)
+                averageInput = input / total;
+
+            if(Processor.AnimFlip && !allOn)
+            {
+                sb.Append("OFF!\n");
+            }
+            else
+            {
+                if(ready == total)
+                    sb.Append("Ready\n");
+                else if(charge == total)
+                    sb.Append("Charge\n");
+                else
+                    sb.Append("Mixed\n");
+            }
+
+            sb.Append((int)averageFilled).Append("%");
+
+            return true;
+        }
+    }
+}

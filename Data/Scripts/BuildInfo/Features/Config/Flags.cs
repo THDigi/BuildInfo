@@ -68,19 +68,19 @@ namespace Digi.BuildInfo.Features.Config
         Other = (1 << 1),
     }
 
-    public enum ToolbarActionLabelsMode
+    public enum ToolbarLabelsMode
     {
         Off = 0,
-        AltKey = 1,
-        HudHints = 2,
-        AlwaysOn = 3,
+        AlwaysOn = 1,
+        AltKey = 2,
+        HudHints = 3,
     }
 
-    public enum ToolbarActionBlockNameMode
+    public enum ToolbarNameMode
     {
         Off = 0,
-        OffExceptGUI = 1,
-        Useful = 2,
-        All = 3,
+        AlwaysShow = 1,
+        GroupsOnly = 2,
+        InMenuOnly = 3,
     }
 }

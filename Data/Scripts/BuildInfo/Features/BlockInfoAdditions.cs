@@ -199,7 +199,7 @@ namespace Digi.BuildInfo.Features
 #endif
 
             #region Lines on top of block info
-            if(Config.BlockInfoStages.Value)
+            if(Config.BlockInfoAdditions.Value)
             {
                 var blockDef = EquipmentMonitor.BlockDef;
                 var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;

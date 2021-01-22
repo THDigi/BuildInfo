@@ -3,6 +3,7 @@ using System.Linq;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using VRage.Game;
+using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -36,7 +37,7 @@ namespace Digi.BuildInfo
 
         public readonly MyStringId[] CONTROL_SLOTS = new MyStringId[]
         {
-            MyControlsSpace.SLOT0,
+            MyControlsSpace.SLOT0, // do not edit order
             MyControlsSpace.SLOT1,
             MyControlsSpace.SLOT2,
             MyControlsSpace.SLOT3,
@@ -46,6 +47,22 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT7,
             MyControlsSpace.SLOT8,
             MyControlsSpace.SLOT9,
+        };
+
+        public readonly MyJoystickButtonsEnum[] DPAD_NAMES = new MyJoystickButtonsEnum[]
+        {
+            MyJoystickButtonsEnum.JDUp, // do not edit order
+            MyJoystickButtonsEnum.JDLeft,
+            MyJoystickButtonsEnum.JDRight,
+            MyJoystickButtonsEnum.JDDown,
+        };
+
+        public readonly char[] DPAD_CHARS = new char[]
+        {
+            '\ue011', // do not edit order
+            '\ue010',
+            '\ue012',
+            '\ue013',
         };
 
         public Constants(BuildInfoMod main) : base(main)
