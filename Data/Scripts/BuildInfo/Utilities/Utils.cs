@@ -32,6 +32,11 @@ namespace Digi.BuildInfo.Utilities
             return true;
         }
 
+        public static string GetModFullPath(string relativePath)
+        {
+            return BuildInfoMod.Instance.Session.ModContext.ModPath + @"\" + relativePath;
+        }
+
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.
