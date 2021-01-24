@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
@@ -9,6 +10,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -305,4 +307,123 @@ namespace Digi.BuildInfo.Features
             #endregion Lines on top of block info
         }
     }
+
+#if true // tested component scrolling for blocks with too many things, it's kinda glitchy
+    // HACK: needs to be right after MyCubeBuilder session comp
+    [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation, priority: 1005)]
+    public class TestSession : MySessionComponentBase
+    {
+        const int ScrollIfPast = 9;
+        const int ScrollShow = 9;
+
+        private readonly List<MyHudBlockInfo.ComponentInfo> CycleComponents = new List<MyHudBlockInfo.ComponentInfo>(16);
+        int index = 0;
+        bool scrollDown = true;
+        int tick;
+
+        private MyDefinitionId prevId;
+
+        public override void UpdateAfterSimulation()
+        {
+            try
+            {
+                var cubeBuilder = MyCubeBuilder.Static;
+                var currentDef = cubeBuilder.CurrentBlockDefinition;
+
+                if(currentDef != null && cubeBuilder.IsActivated)
+                {
+                    if(prevId != currentDef.Id)
+                    {
+                        index = 0;
+                        tick = 9999;
+                        CycleComponents.Clear();
+
+                        prevId = currentDef.Id;
+                        var comps = MyHud.BlockInfo.Components;
+
+                        if(comps.Count > ScrollIfPast)
+                        {
+                            for(int i = 0; i < comps.Count; i++)
+                            {
+                                var comp = comps[i];
+                                comp.ComponentName = $"{(i + 1).ToString()}. {comp.ComponentName}";
+                                CycleComponents.Add(comp);
+                            }
+
+                            comps.Clear();
+                        }
+                    }
+
+                    if(CycleComponents.Count > 0 && ++tick > 30)
+                    {
+                        tick = 0;
+                        var comps = MyHud.BlockInfo.Components;
+
+                        comps.Clear();
+
+                        // TODO: critical/ownership lines need to move with these too now.
+                        // TODO: always show first and last component and have the middle ones scroll, with some dividing line...
+
+                        //if(scrollDown)
+                        //{
+                        //comps.Add(new MyHudBlockInfo.ComponentInfo()
+                        //{
+                        //    ComponentName = "More components below",
+                        //    Icons = new string[] { @"C:\Steam\steamapps\common\SpaceEngineers\Content\Textures\GUI\Icons\star.png" },
+                        //    AvailableAmount = 0,
+                        //    StockpileCount = 0,
+                        //    MountedCount = 0,
+                        //    TotalCount = 0,
+                        //});
+                        //}
+
+                        for(int i = 0; i < ScrollShow; ++i)
+                        {
+                            comps.Add(CycleComponents[i + index]);
+                        }
+
+                        //if(!scrollDown)
+                        //{
+                        //comps.Add(new MyHudBlockInfo.ComponentInfo()
+                        //{
+                        //    ComponentName = "More components above",
+                        //    Icons = new string[] { @"C:\Steam\steamapps\common\SpaceEngineers\Content\Textures\GUI\Icons\star.png" },
+                        //    AvailableAmount = 0,
+                        //    StockpileCount = 0,
+                        //    MountedCount = 0,
+                        //    TotalCount = 0,
+                        //});
+                        //}
+
+                        if(scrollDown)
+                        {
+                            index++;
+                            if((index + ScrollShow) >= CycleComponents.Count)
+                            {
+                                scrollDown = !scrollDown;
+                                index--;
+                            }
+                        }
+                        else
+                        {
+                            index--;
+                            if(index < 0)
+                            {
+                                scrollDown = !scrollDown;
+                                index++;
+                            }
+                        }
+
+                        // HACK: this causes Version++
+                        MyHud.BlockInfo.DefinitionId = MyHud.BlockInfo.DefinitionId;
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+    }
+#endif
 }

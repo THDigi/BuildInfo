@@ -60,11 +60,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 return; // no tracking of weaponcore blocks
 
             var gunBlock = block.FatBlock as IMyUserControllableGun;
-
             if(gunBlock != null)
             {
                 var weapon = weaponPool.Get();
-
                 if(!weapon.Init(gunBlock))
                 {
                     weaponPool.Return(weapon);
@@ -80,7 +78,6 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             for(int i = (weapons.Count - 1); i >= 0; --i)
             {
                 var weapon = weapons[i];
-
                 if(!weapon.Update(tick))
                 {
                     weapons.RemoveAtFast(i);

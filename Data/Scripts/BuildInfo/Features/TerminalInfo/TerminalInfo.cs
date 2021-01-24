@@ -665,7 +665,6 @@ namespace Digi.BuildInfo.Features
             int totalAmmo = gun.GunBase.GetTotalAmmunitionAmount();
 
             var weaponTracker = Main.ReloadTracking.GetWeaponInfo((IMyUserControllableGun)block);
-
             if(weaponTracker != null)
             {
                 info.Append("Ammo: ");

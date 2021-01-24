@@ -57,7 +57,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     {
                         case "Attach": action.Icon = @"Textures\GUI\Icons\Lock.png"; break;
                         case "Detach": action.Icon = @"Textures\GUI\Icons\DisconnectedPlayerIcon.png"; break;
-                        default: Log.Info($"Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
+                        default: Log.Info($"Warning: Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
                     }
                 }
             }

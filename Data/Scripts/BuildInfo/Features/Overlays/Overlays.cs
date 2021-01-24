@@ -309,7 +309,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 #region Draw mount points
                 if(TextAPIEnabled)
                 {
-                    DrawMountPointAxixText(def, cellSize, ref drawMatrix);
+                    DrawMountPointAxisText(def, cellSize, ref drawMatrix);
                 }
                 else
                 {
@@ -1011,7 +1011,7 @@ namespace Digi.BuildInfo.Features.Overlays
             return (float)(LABEL_OFFSET.X + (textSize.X * LABEL_TEXT_SCALE));
         }
 
-        private void DrawMountPointAxixText(MyCubeBlockDefinition def, float gridSize, ref MatrixD drawMatrix)
+        private void DrawMountPointAxisText(MyCubeBlockDefinition def, float gridSize, ref MatrixD drawMatrix)
         {
             var matrix = MatrixD.CreateScale(def.Size * gridSize);
             matrix.Translation = (def.Center - (def.Size * 0.5f));

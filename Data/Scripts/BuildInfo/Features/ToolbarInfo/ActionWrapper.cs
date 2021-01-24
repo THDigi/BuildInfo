@@ -22,8 +22,35 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             OriginalWriter = Action.Writer;
             CustomWriter = NewWriter;
 
-            DisplayName = Action.Name.ToString();
             Action.Writer = CustomWriter;
+
+            switch(Action.Id)
+            {
+                default: DisplayName = Action.Name.ToString(); break;
+
+                    // TODO: rename some actions?
+                    //case "OnOff": DisplayName = "On/Off"; break;
+                    //case "OnOff_On": DisplayName = "Turn On"; break;
+                    //case "OnOff_Off": DisplayName = "Turn Off"; break;
+
+                    //case "ShowOnHUD": DisplayName = "Toggle on HUD"; break;
+                    //case "ShowOnHUD_On": DisplayName = "Show on HUD"; break;
+                    //case "ShowOnHUD_Off": DisplayName = "Hide from HUD"; break;
+
+                    //case "Shoot": DisplayName = "Shoot On/Off"; break;
+                    //case "Shoot_On": DisplayName = "Start shooting"; break;
+                    //case "Shoot_Off": DisplayName = "Stop shooting"; break;
+
+                    //case "Open": DisplayName = "Open/Close"; break;
+                    //case "Open_On": DisplayName = "Open"; break;
+                    //case "Open_Off": DisplayName = "Close"; break;
+
+                    //case "AutoDeploy": DisplayName = "Toggle Auto-Deploy"; break;
+
+                    //case "UseConveyor": DisplayName = "Toggle Use Conveyor"; break;
+
+                    //case "RunWithDefaultArgument": DisplayName = "Run (no args)"; break;
+            }
         }
 
         void NewWriter(IMyTerminalBlock block, StringBuilder sb)

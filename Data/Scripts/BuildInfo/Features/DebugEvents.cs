@@ -44,6 +44,9 @@ namespace Digi.BuildInfo.Features
         public DebugEvents(BuildInfoMod main) : base(main)
         {
             //UpdateMethods = UpdateFlags.UPDATE_DRAW;
+
+            //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
+            //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
         }
 
         protected override void RegisterComponent()
@@ -62,6 +65,12 @@ namespace Digi.BuildInfo.Features
 
         protected override void UnregisterComponent()
         {
+            //MyAPIGateway.Gui.GuiControlCreated -= GuiControlCreated;
+            //MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
             if(Main.IsPlayer)
             {
                 //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
@@ -249,44 +258,94 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private HudAPIv2.HUDMessage debugAllCharacters;
+        //List<string> ScreensShown = new List<string>();
 
-        protected override void UpdateDraw()
-        {
-            if(TextAPI.WasDetected && Config.Debug.Value && MyAPIGateway.Input.IsAnyShiftKeyPressed())
-            {
-                int charsPerRow = (int)Dev.GetValueScroll("charsPerRow", 16, 1, VRage.Input.MyKeys.D1);
-                var chars = Main.FontsHandler.CharSize;
+        //void GuiControlCreated(object screen)
+        //{
+        //    string name = screen.GetType().FullName;
+        //    ScreensShown.Add(name);
+        //}
 
-                if(debugAllCharacters == null)
-                {
-                    debugAllCharacters = new HudAPIv2.HUDMessage(new StringBuilder(chars.Count * 15), new Vector2D(-0.8, 0.7), Blend: BlendType.PostPP);
-                }
+        //void GuiControlRemoved(object screen)
+        //{
+        //    string name = screen.GetType().FullName;
+        //    ScreensShown.Remove(name);
+        //}
 
-                var sb = debugAllCharacters.Message.Clear();
-                int perRow = 0;
-                foreach(var kv in chars)
-                {
-                    sb.Append(kv.Key);
+        //private HudAPIv2.HUDMessage debugScreenInfo;
+        //private HudAPIv2.HUDMessage debugAllCharacters;
 
-                    sb.Append(" <color=0,100,0>").AppendFormat("{0:X}", (int)kv.Key).Append("<color=white>   ");
+        //protected override void UpdateDraw()
+        //{
+        //    if(!TextAPI.WasDetected)
+        //        return;
 
-                    perRow++;
-                    if(perRow > charsPerRow)
-                    {
-                        perRow = 0;
-                        sb.Append('\n');
-                    }
-                }
+        //    if(!Config.Debug.Value)
+        //    {
+        //        if(debugScreenInfo != null)
+        //            debugScreenInfo.Visible = false;
 
-                debugAllCharacters.Visible = true;
-            }
-            else
-            {
-                if(debugAllCharacters != null)
-                    debugAllCharacters.Visible = false;
-            }
-        }
+        //        if(debugAllCharacters != null)
+        //            debugAllCharacters.Visible = false;
+
+        //        return;
+        //    }
+
+        //    {
+        //        if(debugScreenInfo == null)
+        //            debugScreenInfo = new HudAPIv2.HUDMessage(new StringBuilder(256), new Vector2D(-0.98, 0.98), Shadowing: true, Blend: BlendType.PostPP);
+
+        //        var sb = debugScreenInfo.Message.Clear();
+
+        //        sb.Append("ActiveGamePlayScreen=").Append(MyAPIGateway.Gui.ActiveGamePlayScreen);
+        //        sb.Append("\nGetCurrentScreen=").Append(MyAPIGateway.Gui.GetCurrentScreen.ToString());
+        //        sb.Append("\nIsCursorVisible=").Append(MyAPIGateway.Gui.IsCursorVisible);
+        //        sb.Append("\nChatEntryVisible=").Append(MyAPIGateway.Gui.ChatEntryVisible);
+        //        sb.Append("\nInteractedEntity=").Append(MyAPIGateway.Gui.InteractedEntity);
+
+        //        sb.Append("\n\nScreensShown:");
+        //        foreach(var screen in ScreensShown)
+        //        {
+        //            sb.Append("\n - ").Append(screen);
+        //        }
+
+        //        debugScreenInfo.Visible = true;
+        //    }
+
+        //    if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+        //    {
+        //        int charsPerRow = (int)Dev.GetValueScroll("charsPerRow", 16, 1, VRage.Input.MyKeys.D1);
+        //        var chars = Main.FontsHandler.CharSize;
+
+        //        if(debugAllCharacters == null)
+        //        {
+        //            debugAllCharacters = new HudAPIv2.HUDMessage(new StringBuilder(chars.Count * 15), new Vector2D(-0.8, 0.7), Blend: BlendType.PostPP);
+        //        }
+
+        //        var sb = debugAllCharacters.Message.Clear();
+        //        int perRow = 0;
+        //        foreach(var kv in chars)
+        //        {
+        //            sb.Append(kv.Key);
+
+        //            sb.Append(" <color=0,100,0>").AppendFormat("{0:X}", (int)kv.Key).Append("<color=white>   ");
+
+        //            perRow++;
+        //            if(perRow > charsPerRow)
+        //            {
+        //                perRow = 0;
+        //                sb.Append('\n');
+        //            }
+        //        }
+
+        //        debugAllCharacters.Visible = true;
+        //    }
+        //    else
+        //    {
+        //        if(debugAllCharacters != null)
+        //            debugAllCharacters.Visible = false;
+        //    }
+        //}
 
         //private HudAPIv2.HUDMessage debugHudMsg;
 

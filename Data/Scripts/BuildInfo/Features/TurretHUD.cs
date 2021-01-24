@@ -132,7 +132,6 @@ namespace Digi.BuildInfo.Features
                 return;
 
             var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
-
             if(turret != null)
             {
                 if(prevTurret != turret)
