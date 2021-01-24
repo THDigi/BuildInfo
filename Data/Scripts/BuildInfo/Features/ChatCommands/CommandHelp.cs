@@ -35,7 +35,24 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n   If a hub is on the line then it splits the line in 2 lines." +
             "\n   For example, 2 refineries that are placed to be connected with one port will form a conveyor line there." +
             "\n   Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
-            "\n";
+            "\n" +
+            "\n" +
+            "\n##### Custom labels for toolbar slots per cockpit #####" +
+            "\n  Using a cockpit's CustomData you can set custom label per slot using ini format." +
+            "\n  This can be added anywhere in CustomData, but it must be in this order:" +
+            "\n [Toolbar]" +
+            "\n page-slot = label" +
+            "\n (and more like above)" +
+            "\n" +
+            "\n Functional example:" +
+            "\n [Toolbar]" +
+            "\n 1-1 = Named the first slot!" +
+            "\n 2-5 = <color=lime>Do stuff" +
+            "\n" +
+            "\n  You can also use textAPI's formatting:" +
+            "\n    <color=red> or <color=255,0,0> (no end tag)." +
+            "\n    <i> and </i> for italicized text." +
+            "\n  Max line 128 chars including formatting, and multilines are removed.";
 
         private StringBuilder sb = new StringBuilder(1024);
 
