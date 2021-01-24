@@ -12,8 +12,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        private List<Weapon> weapons = new List<Weapon>();
-        private MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
+        private readonly List<Weapon> weapons = new List<Weapon>();
+        private readonly Dictionary<long, Weapon> weaponLookup = new Dictionary<long, Weapon>();
+        private readonly MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
@@ -35,20 +36,13 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         protected override void UnregisterComponent()
         {
             weapons.Clear();
+            weaponLookup.Clear();
             weaponPool.Clean();
         }
 
-        public Weapon GetWeaponInfo(IMyUserControllableGun gunBlock)
+        public Weapon GetWeaponInfo(IMyCubeBlock block)
         {
-            for(int i = (weapons.Count - 1); i >= 0; --i)
-            {
-                var weapon = weapons[i];
-
-                if(weapon.Block == gunBlock)
-                    return weapon;
-            }
-
-            return null;
+            return weaponLookup.GetValueOrDefault(block.EntityId, null);
         }
 
         private void WeaponBlockAdded(IMySlimBlock block)
@@ -70,6 +64,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 }
 
                 weapons.Add(weapon);
+                weaponLookup.Add(gunBlock.EntityId, weapon);
             }
         }
 
@@ -81,6 +76,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 if(!weapon.Update(tick))
                 {
                     weapons.RemoveAtFast(i);
+                    weaponLookup.Remove(weapon.Block.EntityId);
                     weaponPool.Return(weapon);
                     continue;
                 }
