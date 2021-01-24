@@ -113,6 +113,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return;
             }
 
+            if(!MyIni.HasSection(customData, IniSection))
+                return; // required because ini.TryParse() requires the section if specified
+
             MyIniParseResult result;
             if(!IniParser.TryParse(customData, IniSection, out result))
             {
