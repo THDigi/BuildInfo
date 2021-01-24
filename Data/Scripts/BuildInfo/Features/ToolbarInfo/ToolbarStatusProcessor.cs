@@ -146,8 +146,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 AnimFlip = !AnimFlip;
             }
 
-            // update 1 valid slot every 3 ticks
-            if(tick % 3 != 0)
+            if(tick % 2 != 0)
                 return;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
@@ -166,11 +165,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             int toolbarPage = (gamepadHUD ? Main.ToolbarMonitor.GamepadToolbarPage : Main.ToolbarMonitor.ToolbarPage);
             int slotsPerPage = (gamepadHUD ? ToolbarMonitor.SlotsPerPageGamepad : ToolbarMonitor.SlotsPerPage);
-            int slotOffset = toolbarPage * slotsPerPage;
+            int pageOffset = toolbarPage * slotsPerPage;
+
+            bool refreshTriggered = (!FullRefresh && tick == Main.ToolbarMonitor.TriggeredAtTick);
 
             for(int i = 0; i < slotsPerPage; i++)
             {
-                int index = slotOffset + ((CurrentSlot + i) % slotsPerPage);
+                int index;
+                if(refreshTriggered)
+                {
+                    index = Main.ToolbarMonitor.TriggeredIndex;
+                    refreshTriggered = false;
+                }
+                else
+                {
+                    index = pageOffset + ((CurrentSlot + i) % slotsPerPage);
+                }
+
                 if(index > Main.ToolbarMonitor.HighestIndexUsed)
                     continue; // not break because it can loop-around to lower values
 

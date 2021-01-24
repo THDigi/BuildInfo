@@ -281,7 +281,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     else
                     {
                         TriggeredIndex = (ToolbarPage * SlotsPerPage) + (i - 1);
-                        TriggeredAtTick = Main.Tick + 2; // refresh soon after, not exactly same tick
+                        TriggeredAtTick = Main.Tick + 1; // refresh soon after, not exactly same tick
                         ToolbarSlotTriggered?.Invoke(TriggeredIndex);
                     }
                 }
@@ -314,7 +314,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     if(MyAPIGateway.Input.IsNewJoystickButtonReleased(dpad[i]))
                     {
                         TriggeredIndex = (GamepadToolbarPage * SlotsPerPageGamepad) + i;
-                        TriggeredAtTick = Main.Tick + 2; // refresh soon after, not exactly same tick
+                        TriggeredAtTick = Main.Tick + 1; // refresh soon after, not exactly same tick
                         ToolbarSlotTriggered?.Invoke(TriggeredIndex);
                     }
                 }
