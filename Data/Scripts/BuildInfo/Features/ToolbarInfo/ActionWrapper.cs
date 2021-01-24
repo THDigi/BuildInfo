@@ -2,6 +2,7 @@
 using System.Text;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {
@@ -81,7 +82,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 // writers get called in sequence that they are in the toolbar so this should pair them exactly
                 Main.ToolbarMonitor.WrapperSlotIndex++;
 
-                if(Main.ToolbarMonitor.ToolbarPage != (toolbarItem.Index / 9))
+                if(Main.ToolbarMonitor.ToolbarPage != (toolbarItem.Index / ToolbarMonitor.SlotsPerPage))
                     return;
 
                 // update some properties that are easily accessible in this context.
@@ -95,6 +96,61 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         toolbarItem.Name = block.CustomName;
                     else
                         toolbarItem.Name = "<ERROR Should See CustomLabel>"; // required non-null to simplify checks in other classes
+
+                    // customized action names depending on block+action.
+
+                    if(block is IMyShipGrinder)
+                    {
+                        switch(Action.Id)
+                        {
+                            case "OnOff": toolbarItem.ActionName = "Grind On/Off"; break;
+                            case "OnOff_On": toolbarItem.ActionName = "Start grinding"; break;
+                            case "OnOff_Off": toolbarItem.ActionName = "Stop grinding"; break;
+                        }
+                    }
+
+                    if(block is IMyShipWelder)
+                    {
+                        switch(Action.Id)
+                        {
+                            case "OnOff": toolbarItem.ActionName = "Weld On/Off"; break;
+                            case "OnOff_On": toolbarItem.ActionName = "Start welding"; break;
+                            case "OnOff_Off": toolbarItem.ActionName = "Stop welding"; break;
+                        }
+                    }
+
+                    if(block is IMyShipDrill)
+                    {
+                        switch(Action.Id)
+                        {
+                            case "OnOff": toolbarItem.ActionName = "Drill On/Off"; break;
+                            case "OnOff_On": toolbarItem.ActionName = "Start drilling"; break;
+                            case "OnOff_Off": toolbarItem.ActionName = "Stop drilling"; break;
+                        }
+                    }
+
+                    if(block is IMyRemoteControl)
+                    {
+                        switch(Action.Id)
+                        {
+                            case "Forward": toolbarItem.ActionName = "Set Direction Forward"; break;
+                            case "Backward": toolbarItem.ActionName = "Set Direction Backward"; break;
+                            case "Left": toolbarItem.ActionName = "Set Direction Left"; break;
+                            case "Right": toolbarItem.ActionName = "Set Direction Right"; break;
+                            case "Up": toolbarItem.ActionName = "Set Direction Up"; break;
+                            case "Down": toolbarItem.ActionName = "Set Direction Down"; break;
+                        }
+                    }
+
+                    //if(block is IMyParachute)
+                    //{
+                    //    switch(Action.Id)
+                    //    {
+                    //        case "Open": toolbarItem.ActionName = "Deploy/Close"; break;
+                    //        case "Open_On": toolbarItem.ActionName = "Deploy"; break;
+                    //        case "Open_Off": toolbarItem.ActionName = "Close"; break;
+                    //    }
+                    //}
                 }
 
                 sb.AppendStringBuilder(toolbarItem.StatusSB);
