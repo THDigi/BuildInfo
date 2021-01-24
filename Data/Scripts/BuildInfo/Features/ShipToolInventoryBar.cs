@@ -27,12 +27,13 @@ namespace Digi.BuildInfo.Features
         private readonly List<IMyShipDrill> Drills = new List<IMyShipDrill>();
         private readonly List<IMyShipGrinder> Grinders = new List<IMyShipGrinder>();
 
-        private readonly MyStringId IconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryIcon");
+        private readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
+        private readonly MyStringId DrillIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
         private readonly MyStringId BarMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
         private readonly Vector2 HudPosition = new Vector2(0.5f, 0.835f); // textures are designed to be centered on the HUD
         private readonly Vector2 Size = new Vector2(32f, 2.8f) * 0.001f;
         private readonly Vector4 BgColor = (new Color(80, 100, 120) * (120f / 255f)).ToVector4();
-        private readonly Vector4 IconColor = new Color(186, 238, 249).ToVector4();
+        private readonly Vector4 IconColor = Color.White.ToVector4(); // new Color(186, 238, 249).ToVector4();
         private readonly Vector4 BarColor = new Color(136, 218, 240).ToVector4();
         private const float WarnAboveFillRatio = 0.7f;
         private readonly Vector4 BarWarnColor1 = new Color(200, 80, 0).ToVector4();
@@ -144,7 +145,14 @@ namespace Digi.BuildInfo.Features
             float h = Size.Y * DrawUtils.ScaleFOV;
 
             MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
-            MyTransparentGeometry.AddBillboardOriented(IconMaterial, IconColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
+
+            MyStringId iconMaterial;
+            if(EquipmentMonitor.IsAnyGrinder)
+                iconMaterial = GrinderIconMaterial;
+            else
+                iconMaterial = DrillIconMaterial;
+
+            MyTransparentGeometry.AddBillboardOriented(iconMaterial, IconColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             if(FilledRatio > 0)
             {
