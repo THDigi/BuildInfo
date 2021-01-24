@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features
 
         private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
         private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.PostPP;
-        private readonly Color BG_COLOR = new Vector4(0.20784314f, 0.266666681f, 0.298039228f, 1f);
+        private readonly Color BG_COLOR = new Color(41, 54, 62);
         private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
         private const float MENU_BG_OPACITY = 0.7f;
@@ -498,9 +498,26 @@ namespace Digi.BuildInfo.Features
             if(showMenu || selectedBlock == null)
 #endif
             {
+                Color color = BG_COLOR;
+                if(QuickMenu.Shown)
+                {
+                    color *= MENU_BG_OPACITY;
+                }
+                else if(Config.TextAPIBackgroundOpacity.Value >= 0)
+                {
+                    color *= Config.TextAPIBackgroundOpacity.Value;
+                }
+                else
+                {
+                    // HACK: matching vanilla HUD transparency better
+                    float opacity = GameConfig.HudBackgroundOpacity;
+                    color *= opacity * (opacity * 1.075f);
+                    color.A = (byte)(opacity * 255);
+                }
+
                 float edge = BG_EDGE * TextAPIScale;
-                float bgOpacity = (QuickMenu.Shown ? MENU_BG_OPACITY : (Config.TextAPIBackgroundOpacity.Value < 0 ? GameConfig.HudBackgroundOpacity : Config.TextAPIBackgroundOpacity.Value));
-                bgObject.BillBoardColor = BG_COLOR * bgOpacity;
+
+                bgObject.BillBoardColor = color;
                 bgObject.Origin = textPos;
                 bgObject.Width = (float)Math.Abs(textSize.X) + edge;
                 bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
