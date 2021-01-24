@@ -60,7 +60,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(block == null || block.MarkedForClose || sb == null)
                     return;
 
-                if(!ToolbarMonitor.EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed)
+                // HACK: not overriding status when in GUI because it can be for timers/other toolbars and no idea which is which...
+                // TODO: maybe find a way to detect them and maybe even label events slots for airvent and such...
+                // Also no status override for gamepad HUD because it doesn't sync with the rest of the system so won't work.
+                if((MyAPIGateway.Gui.IsCursorVisible && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
+                || (!ToolbarMonitor.EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed))
                 {
                     AppendOriginalStatus(block, sb);
                     return;
