@@ -12,11 +12,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             var type = typeof(MyObjectBuilder_Warhead);
 
             processor.AddStatus(type, Countdown, "IncreaseDetonationTime", "DecreaseDetonationTime", "StartCountdown", "StopCountdown");
-            processor.AddStatus(type, Countdown, "Safety");
-            processor.AddStatus(type, Countdown, "Detonate");
+            processor.AddStatus(type, Safety, "Safety", "Detonate");
 
-            // TODO: group support
-            //processor.AddGroupStatus(type, StatusGroup, "Run", "RunWithDefaultArgument", "", "");
+            processor.AddGroupStatus(type, GroupSafety, "Safety", "Detonate");
         }
 
         bool Countdown(StringBuilder sb, ToolbarItem item)
@@ -42,23 +40,62 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         bool Safety(StringBuilder sb, ToolbarItem item)
         {
             var warhead = (IMyWarhead)item.Block;
-            sb.Append(warhead.IsArmed ? "Armed" : "Safe");
+            if(warhead.IsArmed)
+            {
+                bool isTrigger = (item.ActionId == "Detonate");
+
+                sb.Append(Processor.AnimFlip ? "!" : " ");
+                sb.Append(isTrigger ? "EXPLODE" : "Armed");
+
+                if(Processor.AnimFlip)
+                    sb.Append("!");
+            }
+            else
+            {
+                sb.Append("Safe");
+            }
             return true;
         }
 
-        bool Detonate(StringBuilder sb, ToolbarItem item)
+        bool GroupSafety(StringBuilder sb, ToolbarItem item, GroupData groupData)
         {
-            var warhead = (IMyWarhead)item.Block;
-            sb.Append(warhead.IsArmed ? "Ready!" : "Safe");
+            if(!groupData.GetGroupBlocks<IMyWarhead>())
+                return false;
+
+            int armed = 0;
+
+            foreach(IMyWarhead warhead in groupData.Blocks)
+            {
+                if(warhead.IsArmed)
+                    armed++;
+            }
+
+            int total = groupData.Blocks.Count;
+
+            bool isTrigger = (item.ActionId == "Detonate");
+
+            if(armed == total)
+            {
+                sb.Append("All\n");
+
+                sb.Append(Processor.AnimFlip ? "!" : " ");
+                sb.Append(isTrigger ? "EXPLODE" : "Armed");
+
+                if(Processor.AnimFlip)
+                    sb.Append("!");
+            }
+            else if(armed == 0)
+            {
+                sb.Append("All\nSafe");
+            }
+            else
+            {
+                sb.Append(Processor.AnimFlip ? "!!!\n" : "");
+                sb.Append("SAF:").Append(total - armed);
+                sb.Append("\nARM:").Append(armed);
+            }
+
             return true;
         }
-
-        //bool StatusGroup(StringBuilder sb, ToolbarItem item, GroupData groupData)
-        //{
-        //    if(!groupData.GetGroupBlocks<Status_Warhead>())
-        //        return false;
-
-        //    return true;
-        //}
     }
 }
