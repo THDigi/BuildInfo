@@ -11,10 +11,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             var type = typeof(MyObjectBuilder_ShipConnector);
 
-            processor.AddStatus(type, LockState, "Run", "RunWithDefaultArgument");
+            processor.AddStatus(type, LockState, "SwitchLock", "Lock", "Unlock");
 
-            // TODO: group support
-            //processor.AddGroupStatus(type, StatusGroup, "Run", "RunWithDefaultArgument");
+            processor.AddGroupStatus(type, GroupLockState, "SwitchLock", "Lock", "Unlock");
         }
 
         bool LockState(StringBuilder sb, ToolbarItem item)
@@ -34,12 +33,62 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        //bool StatusGroup(StringBuilder sb, ToolbarItem item, GroupData groupData)
-        //{
-        //    if(!groupData.GetGroupBlocks<CHANGE_ME>())
-        //        return false;
+        bool GroupLockState(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        {
+            if(!groupData.GetGroupBlocks<IMyShipConnector>())
+                return false;
 
-        //    return true;
-        //}
+            int connected = 0;
+            int ready = 0;
+            int disconnected = 0;
+
+            foreach(IMyShipConnector connector in groupData.Blocks)
+            {
+                switch(connector.Status)
+                {
+                    case MyShipConnectorStatus.Connected: connected++; break;
+                    case MyShipConnectorStatus.Connectable: ready++; break;
+                    case MyShipConnectorStatus.Unconnected: disconnected++; break;
+                }
+            }
+
+            int total = groupData.Blocks.Count;
+
+            if(connected == total)
+            {
+                sb.Append("All\nLocked");
+            }
+            else if(ready == total)
+            {
+                sb.Append("All\nReady");
+            }
+            else if(disconnected == total)
+            {
+                sb.Append("All\nUnlocked");
+            }
+            else
+            {
+                if(connected > 0)
+                    sb.Append(connected).Append(" lock");
+
+                if(ready > 0)
+                {
+                    if(connected > 0)
+                        sb.Append('\n');
+
+                    sb.Append(ready).Append(" rdy");
+                }
+
+                if(disconnected > 0)
+                {
+                    if(ready > 0 || connected > 0)
+                        sb.Append('\n');
+
+                    sb.Append(disconnected).Append(" unlk");
+                }
+            }
+
+            return true;
+        }
     }
 }
