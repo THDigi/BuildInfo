@@ -50,14 +50,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ActionWrappers.Add(action, new ActionWrapper(action));
 
-                // HACK: giving an icon for some iconless actions
                 if(string.IsNullOrEmpty(action.Icon))
                 {
+                    // HACK: giving an icon for some iconless actions
                     switch(action.Id)
                     {
                         case "Attach": action.Icon = @"Textures\GUI\Icons\Lock.png"; break;
                         case "Detach": action.Icon = @"Textures\GUI\Icons\DisconnectedPlayerIcon.png"; break;
                         default: Log.Info($"Warning: Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
+                    }
+                }
+                else
+                {
+                    // replace some icons with better ones
+                    switch(action.Id)
+                    {
+                        case "Detonate": action.Icon = @"Textures\GUI\Icons\warning.png"; break;
                     }
                 }
             }
