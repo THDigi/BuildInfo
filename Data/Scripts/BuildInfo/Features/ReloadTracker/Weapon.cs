@@ -73,13 +73,37 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 return false;
 
             if(weaponDef.HasProjectileAmmoDefined)
-                projectilesUtilReload = projectileShotsInBurst = weaponDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed].ShotsInBurst;
+            {
+                projectileShotsInBurst = weaponDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed].ShotsInBurst;
+                projectilesUtilReload = projectileShotsInBurst;
+            }
 
             if(weaponDef.HasMissileAmmoDefined)
-                missilesUntilReload = missileShotsInBurst = weaponDef.WeaponAmmoDatas[(int)MyAmmoType.Missile].ShotsInBurst;
+            {
+                missileShotsInBurst = weaponDef.WeaponAmmoDatas[(int)MyAmmoType.Missile].ShotsInBurst;
+                missilesUntilReload = missileShotsInBurst;
+            }
 
-            if(projectilesUtilReload == 0 && missilesUntilReload == 0)
+            if(projectileShotsInBurst == 0 && missileShotsInBurst == 0)
                 return false;
+
+            //int ammo = gun.GunBase.GetTotalAmmunitionAmount();
+            //if(ammo == 0)
+            //{
+            //    var gunUser = (IMyGunBaseUser)gun;
+            //    ammo = (int)gunUser.AmmoInventory.GetItemAmount(gun.GunBase.CurrentAmmoMagazineId) * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
+            //}
+
+            //Log.Info($"{GetType().Name} :: {gunBlock.CustomName}: totalAmmo={gun.GunBase.GetTotalAmmunitionAmount()}; inventoryAmmo={ammo}; CurrentAmmo={gun.GunBase.CurrentAmmo}");
+
+            //if(gun.GunBase.CurrentAmmoDefinition.AmmoType == MyAmmoType.HighSpeed)
+            //{
+            //    projectilesUtilReload = Math.Min(ammo, projectileShotsInBurst);
+            //}
+            //else if(gun.GunBase.CurrentAmmoDefinition.AmmoType == MyAmmoType.Missile)
+            //{
+            //    missilesUntilReload = Math.Min(ammo, missileShotsInBurst);
+            //}
 
             lastShotTime = gun.GunBase.LastShootTime.Ticks; // needed because it starts non-0 as it is serialized to save.
             return true;
@@ -118,7 +142,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 {
                     if(--projectilesUtilReload == 0)
                     {
-                        projectilesUtilReload = projectileShotsInBurst;
+                        projectilesUtilReload = Math.Min(gun.GunBase.GetTotalAmmunitionAmount(), projectileShotsInBurst);
                         reloading = true;
                     }
                 }
@@ -126,7 +150,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 {
                     if(--missilesUntilReload == 0)
                     {
-                        missilesUntilReload = missileShotsInBurst;
+                        missilesUntilReload = Math.Min(gun.GunBase.GetTotalAmmunitionAmount(), missileShotsInBurst);
                         reloading = true;
                     }
                 }
