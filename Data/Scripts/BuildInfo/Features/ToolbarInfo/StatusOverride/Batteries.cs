@@ -50,9 +50,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 highFlow = (Math.Abs(powerFlow) > battery.MaxOutput * RatioOfMaxForDoubleArrows);
 
             if(Processor.AnimFlip && powerFlow > 0)
-                sb.Append(highFlow ? "++" : "+");
+                sb.Append(highFlow ? "++" : "+   ");
             else if(Processor.AnimFlip && powerFlow < 0)
-                sb.Append(highFlow ? "--" : "-");
+                sb.Append(highFlow ? "--" : "-   ");
+            else
+                sb.Append("     ");
 
             return true;
         }
@@ -129,9 +131,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 highFlow = (Math.Abs(averageFlow) > maxOutput * RatioOfMaxForDoubleArrows);
 
             if(Processor.AnimFlip && averageFlow > 0)
-                sb.Append(highFlow ? "++" : "+");
+                sb.Append(highFlow ? "++" : "+   ");
             else if(Processor.AnimFlip && averageFlow < 0)
-                sb.Append(highFlow ? "--" : "-");
+                sb.Append(highFlow ? "--" : "-   ");
+            else
+                sb.Append("     ");
 
             return true;
         }

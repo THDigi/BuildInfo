@@ -60,7 +60,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             sb.Append("\n");
 
             int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
-            sb.Append(filledPercent).Append("%");
+            sb.Append(filledPercent).Append("% ");
 
             var sink = jd.Components.Get<MyResourceSinkComponent>();
             if(sink != null)
@@ -72,7 +72,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
 
                 if(Processor.AnimFlip && input > 0)
-                    sb.Append(highFlow ? "++" : "+");
+                    sb.Append(highFlow ? "++" : "+   ");
+                else
+                    sb.Append("     ");
             }
 
             return true;
@@ -173,7 +175,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     sb.Append("Mixed\n");
             }
 
-            sb.Append((int)averageFilled).Append("%");
+            sb.Append((int)averageFilled).Append("% ");
+
+            const float RatioOfMaxForDoubleArrows = 0.9f;
+            bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
+
+            if(Processor.AnimFlip && input > 0)
+                sb.Append(highFlow ? "++" : "+   ");
+            else
+                sb.Append("     ");
 
             return true;
         }
