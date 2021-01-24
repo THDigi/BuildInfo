@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features
 
             OriginalItemData.Clear();
 
-            Config.InternalInfo.ValueAssigned += ConfigValueChanged;
+            Config.InternalInfo.ValueAssigned -= ConfigValueChanged;
             Config.ItemTooltipAdditions.ValueAssigned -= ConfigValueChanged;
         }
 

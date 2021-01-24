@@ -91,7 +91,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
+            Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
         }
 
         #region Registering methods
