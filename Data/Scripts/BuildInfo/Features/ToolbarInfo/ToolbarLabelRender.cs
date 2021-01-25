@@ -193,6 +193,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CornerBotomLeft.Visible = false;
             Backgrounds.Add(CornerBotomLeft);
 
+            foreach(var bg in Backgrounds)
+            {
+                bg.Width = 0f;
+                bg.Height = 0f;
+            }
+
             Shadows = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             Shadows.InitialColor = Color.Black;
             Shadows.Visible = false;
@@ -449,15 +455,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int highestUsedIndex = Main.ToolbarMonitor.HighestIndexUsed;
             int maxUsedIndex = Math.Min(highestUsedIndex, maxIndexPage);
 
-            // if any slot is partially filled (needs info from wrapper) then skip this tick.
-            for(int i = startIndex; i <= maxUsedIndex; i++)
+            if(ForceRefreshAtTick != Main.Tick)
             {
-                var item = Main.ToolbarMonitor.Slots[i];
-                if(item.ActionId != null && item.ActionWrapper == null)
+                // if any slot is partially filled (needs info from wrapper) then skip this tick.
+                for(int i = startIndex; i <= maxUsedIndex; i++)
                 {
-                    // wait until wrapper fills in the details
-                    ForceRefreshAtTick = Main.Tick + 1;
-                    return;
+                    var item = Main.ToolbarMonitor.Slots[i];
+                    if(item.ActionId != null && item.ActionWrapper == null)
+                    {
+                        // wait until wrapper fills in the details
+                        ForceRefreshAtTick = Main.Tick + 1;
+                        return;
+                    }
                 }
             }
 

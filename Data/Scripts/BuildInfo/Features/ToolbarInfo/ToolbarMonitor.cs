@@ -191,8 +191,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 var terminalItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
                 if(terminalItem != null)
                 {
-                    slotData.ActionId = terminalItem._Action;
-
                     bool isValid = true;
 
                     // HACK: major assumptions here, but there's no other use case and some stuff is prohibited so just w/e
@@ -224,7 +222,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                     // these must only be added for valid toolbar items!
                     if(isValid)
+                    {
+                        slotData.ActionId = terminalItem._Action;
                         SequencedItems.Add(slotData);
+                    }
 
                     // other fields are set in the wrapper.NewWriter() as they're readily available there
                 }
