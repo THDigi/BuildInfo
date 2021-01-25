@@ -54,18 +54,21 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 return; // no tracking of weaponcore blocks
 
             var gunBlock = block.FatBlock as IMyUserControllableGun;
-            if(gunBlock != null)
-            {
-                var weapon = weaponPool.Get();
-                if(!weapon.Init(gunBlock))
-                {
-                    weaponPool.Return(weapon);
-                    return;
-                }
+            if(gunBlock == null)
+                return;
 
-                weapons.Add(weapon);
-                weaponLookup.Add(gunBlock.EntityId, weapon);
+            if(weaponLookup.ContainsKey(gunBlock.EntityId))
+                return; // ignore grid merge/split if gun is already tracked
+
+            var weapon = weaponPool.Get();
+            if(!weapon.Init(gunBlock))
+            {
+                weaponPool.Return(weapon);
+                return;
             }
+
+            weapons.Add(weapon);
+            weaponLookup.Add(gunBlock.EntityId, weapon);
         }
 
         protected override void UpdateAfterSim(int tick)
