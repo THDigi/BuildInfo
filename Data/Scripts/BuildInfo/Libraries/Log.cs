@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using ParallelTasks;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Utils;
+using VRageMath;
 
 namespace Digi
 {
@@ -241,6 +243,8 @@ namespace Digi
             private string errorPrintText;
             private bool sessionReady = false;
 
+            private double chatMessageCooldown;
+
             private IMyHudNotification notifyInfo;
             private IMyHudNotification notifyError;
 
@@ -371,7 +375,7 @@ namespace Digi
 
             private void ComputeErrorPrintText()
             {
-                errorPrintText = $"[ {modName} ERROR, report contents of: %AppData%/SpaceEngineers/Storage/{MyAPIGateway.Utilities.GamePaths.ModScopeName}/{FILE} ]";
+                errorPrintText = $"report contents of: %AppData%/SpaceEngineers/Storage/{MyAPIGateway.Utilities.GamePaths.ModScopeName}/{FILE}";
             }
 
             public void IncreaseIndent()
@@ -415,31 +419,59 @@ namespace Digi
                     if(!sessionReady || printText == null || MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
                         return;
 
-                    if(printText == PRINT_GENERIC_ERROR)
+                    if(MyAPIGateway.Session?.Player != null)
                     {
-                        printText = errorPrintText;
-                    }
-                    else if(printText == PRINT_MESSAGE)
-                    {
-                        if(font == MyFontEnum.Red)
-                            printText = $"[{modName} ERROR: {message}]";
-                        else
-                            printText = $"[{modName} WARNING: {message}]";
+                        double timeSec = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
+                        if(chatMessageCooldown <= timeSec)
+                        {
+                            chatMessageCooldown = timeSec + 60;
+
+                            if(printText == PRINT_GENERIC_ERROR)
+                            {
+                                MyVisualScriptLogicProvider.SendChatMessageColored(errorPrintText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                            }
+                            else if(printText == PRINT_MESSAGE)
+                            {
+                                if(font == MyFontEnum.Red)
+                                    MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                else
+                                    MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                            }
+                            else
+                            {
+                                if(font == MyFontEnum.Red)
+                                    MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                else
+                                    MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                            }
+                        }
                     }
 
-                    if(notify == null)
-                    {
-                        notify = MyAPIGateway.Utilities.CreateNotification(printText, printTime, font);
-                    }
-                    else
-                    {
-                        notify.Hide(); // required since SE v1.194
-                        notify.Text = printText;
-                        notify.AliveTime = printTime;
-                        notify.ResetAliveTime();
-                    }
-
-                    notify.Show();
+                    //if(printText == PRINT_GENERIC_ERROR)
+                    //{
+                    //    printText =  $"[{modName} ERROR: {errorPrintText}]";
+                    //}
+                    //else if(printText == PRINT_MESSAGE)
+                    //{
+                    //    if(font == MyFontEnum.Red)
+                    //        printText = $"[{modName} ERROR: {message}]";
+                    //    else
+                    //        printText = $"[{modName} WARNING: {message}]";
+                    //}
+                    //
+                    //if(notify == null)
+                    //{
+                    //    notify = MyAPIGateway.Utilities.CreateNotification(printText, printTime, font);
+                    //}
+                    //else
+                    //{
+                    //    notify.Hide(); // required since SE v1.194
+                    //    notify.Text = printText;
+                    //    notify.AliveTime = printTime;
+                    //    notify.ResetAliveTime();
+                    //}
+                    //
+                    //notify.Show();
                 }
                 catch(Exception e)
                 {
