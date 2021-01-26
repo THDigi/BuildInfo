@@ -10,6 +10,8 @@ namespace Digi.ConfigLib
 
         private static readonly char[] Separator = new char[] { ',' };
 
+        private const string FORMAT = "0.0#####";
+
         public Vector2DSetting(ConfigHandler configInstance, string name, Vector2D defaultValue, Vector2D min, Vector2D max, params string[] commentLines)
             : base(configInstance, name, defaultValue, commentLines)
         {
@@ -30,12 +32,12 @@ namespace Digi.ConfigLib
 
         public override void WriteValue(StringBuilder output)
         {
-            output.Append(Value.X.ToString(FLOAT_FORMAT)).Append(", ").Append(Value.Y.ToString(FLOAT_FORMAT));
+            output.Append(Value.X.ToString(FORMAT)).Append(", ").Append(Value.Y.ToString(FORMAT));
         }
 
         public override void WriteDefaultValue(StringBuilder output)
         {
-            output.Append(DefaultValue.X.ToString(FLOAT_FORMAT)).Append(", ").Append(DefaultValue.Y.ToString(FLOAT_FORMAT));
+            output.Append(DefaultValue.X.ToString(FORMAT)).Append(", ").Append(DefaultValue.Y.ToString(FORMAT));
         }
 
         protected override void AppendDefaultValue(StringBuilder output)
@@ -48,9 +50,9 @@ namespace Digi.ConfigLib
             if(AddValidRangeComment)
             {
                 output.Append("Value range: ");
-                output.Append(Min.X.ToString(FLOAT_FORMAT)).Append(", ").Append(Min.Y.ToString(FLOAT_FORMAT));
+                output.Append(Min.X.ToString(FORMAT)).Append(", ").Append(Min.Y.ToString(FORMAT));
                 output.Append(" to ");
-                output.Append(Max.X.ToString(FLOAT_FORMAT)).Append(", ").Append(Max.Y.ToString(FLOAT_FORMAT));
+                output.Append(Max.X.ToString(FORMAT)).Append(", ").Append(Max.Y.ToString(FORMAT));
                 output.Append(". ");
             }
 
