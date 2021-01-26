@@ -77,13 +77,28 @@ namespace Digi.BuildInfo.Utilities
 
         /// <summary>
         /// Transforms screen coordinates to world coordinates.
-        /// <para><paramref name="textAPIcoords"/>=true => -1,-1 = bottom-left; 0,0 = center; 1,1 = top-right.</para>
-        /// <para><paramref name="textAPIcoords"/>=false is in game HUD coords => 0,0 = top-left; 1,1 = bottom-right, no negative values.</para>
         /// </summary>
-        public Vector3D HUDtoWorld(Vector2 hud, bool textAPIcoords = false)
+        public Vector3D HUDtoWorld(Vector2 hud)
         {
-            double hudX = (textAPIcoords ? hud.X : (2.0 * hud.X - 1));
-            double hudY = (textAPIcoords ? hud.Y : (1 - 2.0 * hud.Y));
+            double hudX = (2.0 * hud.X - 1);
+            double hudY = (1 - 2.0 * hud.Y);
+
+            // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
+            var matrix = ViewProjectionInv;
+            double x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
+            double y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
+            double z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
+            double w = hudX * matrix.M14 + hudY * matrix.M24 + /* 0 * matrix.M34 + 1 * */ matrix.M44;
+            return new Vector3D(x / w, y / w, z / w);
+        }
+
+        /// <summary>
+        /// Transforms textAPI screen coordinates to world coordinates.
+        /// </summary>
+        public Vector3D TextAPIHUDtoWorld(Vector2D hud)
+        {
+            double hudX = (2.0 * hud.X - 1);
+            double hudY = (1 - 2.0 * hud.Y);
 
             // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
             var matrix = ViewProjectionInv;

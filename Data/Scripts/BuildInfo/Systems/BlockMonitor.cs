@@ -16,6 +16,9 @@ namespace Digi.BuildInfo.Systems
 
         public delegate void CallbackDelegate(IMySlimBlock block);
 
+        /// <summary>
+        /// WARNING: gets called for grid merge/unmerge which means the same entity can be added multiple times.
+        /// </summary>
         public event CallbackDelegate BlockAdded;
 
         private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> monitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);

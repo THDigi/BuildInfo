@@ -22,16 +22,13 @@ namespace Digi.BuildInfo.Features
         private bool ShouldShow = false;
 
         private float FilledRatio = 0f;
-        private int FillComputeTick = SkipTicks;
-        private const int SkipTicks = 10; // how many ticks to skip to run one fill ratio update
-        private readonly List<IMyShipDrill> Drills = new List<IMyShipDrill>();
-        private readonly List<IMyShipGrinder> Grinders = new List<IMyShipGrinder>();
+        private readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>(4);
 
+        private const int FillComputeEveryTicks = 30; // computes fill every these ticks
         private readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
         private readonly MyStringId DrillIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
         private readonly MyStringId BarMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
-        private readonly Vector2 HudPosition = new Vector2(0.5f, 0.835f); // textures are designed to be centered on the HUD
-        private readonly Vector2 Size = new Vector2(32f, 2.8f) * 0.001f;
+        private readonly Vector2D DefaultSize = new Vector2D(32, 2.8) * 0.001;
         private readonly Vector4 BgColor = (new Color(80, 100, 120) * (120f / 255f)).ToVector4();
         private readonly Vector4 IconColor = Color.White.ToVector4(); // new Color(186, 238, 249).ToVector4();
         private readonly Vector4 BarColor = new Color(136, 218, 240).ToVector4();
@@ -47,6 +44,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
+            Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
             GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
@@ -54,80 +52,91 @@ namespace Digi.BuildInfo.Features
 
         protected override void UnregisterComponent()
         {
+            Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
             GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
         }
 
-        private void GameConfig_HudStateChanged(HudState prevState, HudState newState)
+        void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
             UpdateShow();
         }
 
-        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        void GameConfig_HudStateChanged(HudState prevState, HudState newState)
         {
             UpdateShow();
         }
 
-        private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
+        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            if(shipController != null && ShouldShow)
-            {
-                if(++FillComputeTick > SkipTicks)
-                {
-                    FillComputeTick = 0;
-
-                    if(TextAPIEnabled && Main.Config.ShipToolInventoryBar.Value && !MyAPIGateway.Gui.IsCursorVisible)
-                        ComputeFillRatio();
-                }
-            }
+            UpdateShow();
+            UpdateFillRatio(MyAPIGateway.Session.ControlledObject as IMyShipController);
         }
 
-        private void UpdateShow()
+        void UpdateShow()
         {
             ShouldShow = (GameConfig.HudState != HudState.OFF
+                      && Config.ShipToolInvBarShow.Value
                       //&& !MyAPIGateway.Input.IsJoystickLastUsed // not even working properly with gamepad, apart from not looking properly
                       && (EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
         }
 
-        private void ComputeFillRatio()
+        void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
-            FilledRatio = 0;
-
-            var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
-            if(shipController == null)
+            if(shipController == null || !ShouldShow || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
-            if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
+            if(tick % FillComputeEveryTicks == 0)
             {
-                FilledRatio = GetFilledRatio(shipController.CubeGrid, Drills);
-            }
-            else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
-            {
-                FilledRatio = GetFilledRatio(shipController.CubeGrid, Grinders);
+                UpdateFillRatio(shipController);
             }
         }
 
-        private static float GetFilledRatio<T>(IMyCubeGrid grid, List<T> blocks) where T : class, IMyTerminalBlock
+        void UpdateFillRatio(IMyShipController shipController)
+        {
+            if(shipController == null)
+                return;
+
+            FilledRatio = 0;
+
+            if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
+            {
+                FilledRatio = GetFilledRatio<IMyShipDrill>(shipController.CubeGrid, Blocks);
+            }
+            else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            {
+                FilledRatio = GetFilledRatio<IMyShipGrinder>(shipController.CubeGrid, Blocks);
+            }
+        }
+
+        static float GetFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
         {
             float volume = 0;
             float maxVolume = 0;
 
-            // NOTE: ship tool toolbar triggers tools beyond rotors/pistons and connectors aswell, so no filtering.
-            var GTS = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
-            GTS.GetBlocksOfType(blocks);
-
-            foreach(T block in blocks)
-            {
-                var inv = block.GetInventory(0);
-                if(inv == null)
-                    continue;
-
-                volume += (float)inv.CurrentVolume;
-                maxVolume += (float)inv.MaxVolume;
-            }
-
             blocks.Clear();
+
+            // NOTE: ship tool toolbar item's click turns on tools beyond rotors/pistons and connectors aswell, so no filtering here.
+            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
+            gts?.GetBlocksOfType<T>(blocks);
+
+            try
+            {
+                foreach(T block in blocks)
+                {
+                    var inv = block.GetInventory(0);
+                    if(inv == null)
+                        continue;
+
+                    volume += (float)inv.CurrentVolume;
+                    maxVolume += (float)inv.MaxVolume;
+                }
+            }
+            finally
+            {
+                blocks.Clear();
+            }
 
             return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
         }
@@ -136,13 +145,17 @@ namespace Digi.BuildInfo.Features
         {
             Shown = false;
 
-            if(!ShouldShow || !TextAPIEnabled || !Main.Config.ShipToolInventoryBar.Value || MyAPIGateway.Gui.IsCursorVisible)
+            if(!ShouldShow || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
+            Shown = true;
+
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var worldPos = DrawUtils.HUDtoWorld(HudPosition);
-            float w = Size.X * DrawUtils.ScaleFOV;
-            float h = Size.Y * DrawUtils.ScaleFOV;
+            var worldPos = DrawUtils.TextAPIHUDtoWorld(Config.ShipToolInvBarPosition.Value);
+
+            Vector2D size = DefaultSize * Config.ShipToolInvBarScale.Value;
+            float w = (float)(size.X * DrawUtils.ScaleFOV);
+            float h = (float)(size.Y * DrawUtils.ScaleFOV);
 
             MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
@@ -176,12 +189,10 @@ namespace Digi.BuildInfo.Features
                 var barFill = min + ((max - min) * FilledRatio);
                 var uv = new Vector2(-(1 - barFill), 0);
 
-                worldPos += camMatrix.Left * ((1 - barFill) * Size.X * 2 * DrawUtils.ScaleFOV);
+                worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * DrawUtils.ScaleFOV);
 
                 MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, camMatrix.Left, camMatrix.Up, w, h, uv, blendType: BlendType);
             }
-
-            Shown = true;
         }
     }
 }

@@ -83,8 +83,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             TextAPI.Detected += TextAPIDetected;
 
+            Config.ToolbarLabelsShowTitle.ValueAssigned += ConfigBoolChanged;
             Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
             Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
+            Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
             Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
             Config.ToolbarItemNameMode.ValueAssigned += ConfigIntChanged;
             Config.ToolbarLabels.ValueAssigned += ConfigIntChanged;
@@ -104,8 +106,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             TextAPI.Detected -= TextAPIDetected;
 
+            Config.ToolbarLabelsShowTitle.ValueAssigned -= ConfigBoolChanged;
             Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
             Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
+            Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
             Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
             Config.ToolbarItemNameMode.ValueAssigned -= ConfigIntChanged;
             Config.ToolbarLabels.ValueAssigned -= ConfigIntChanged;
@@ -116,6 +120,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
+        }
+
+        void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            UpdateFromConfig();
         }
 
         void ConfigIntChanged(int oldValue, int newValue, ConfigLib.SettingBase<int> setting)
@@ -149,6 +158,32 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 Labels.Scale = Scale;
                 UpdateBgOpacity(GameConfig.HudBackgroundOpacity);
             }
+
+            ForceRefreshAtTick = Main.Tick + 10;
+        }
+
+        void UpdatePosition()
+        {
+            Vector2D bottomLeftPos;
+            if(InToolbarConfig)
+            {
+                bottomLeftPos = PosInGUI;
+            }
+            else
+            {
+                if(Main.ShipToolInventoryBar.Shown)
+                    bottomLeftPos = PosOnHUD + Config.ToolbarLabelsOffsetForInvBar.Value;
+                else
+                    bottomLeftPos = PosOnHUD;
+            }
+
+            foreach(var bg in Backgrounds)
+            {
+                bg.Origin = bottomLeftPos;
+            }
+
+            Shadows.Origin = bottomLeftPos;
+            Labels.Origin = bottomLeftPos;
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
@@ -391,23 +426,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(!WasInToolbarConfig.HasValue || InToolbarConfig != WasInToolbarConfig.Value)
             {
-                var bottomLeftPos = (InToolbarConfig ? PosInGUI : PosOnHUD);
-
-                foreach(var bg in Backgrounds)
-                {
-                    bg.Origin = bottomLeftPos;
-                }
-
-                Labels.Origin = bottomLeftPos;
-                Shadows.Origin = bottomLeftPos;
-
                 WasInToolbarConfig = InToolbarConfig;
 
+                UpdatePosition();
                 UpdateBgOpacity(InToolbarConfig ? 1f : GameConfig.HudBackgroundOpacity);
 
                 // refresh instantly to update names
                 if(MustBeVisible && NamesMode == ToolbarNameMode.InMenuOnly)
                     UpdateRender();
+            }
+
+            if(WasShipBarShown != Main.ShipToolInventoryBar.Shown)
+            {
+                WasShipBarShown = Main.ShipToolInventoryBar.Shown;
+                UpdatePosition();
             }
 
             if(MustBeVisible != WereVisible)
@@ -464,6 +496,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             double topLinesWidth = 0;
 
             var sb = Labels.Message.Clear();
+
+            if(Config.ToolbarLabelsShowTitle.Value)
+                sb.Append("<color=255,240,220>Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i><color=gray>(BuildInfo Mod)<reset>\n");
 
             for(int i = 0; i < slotsPerPage; i++)
             {
@@ -624,7 +659,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CornerBotomLeft.Offset = new Vector2D((cornerWidth) / 2, (cornerHeight) / 2);
 
             // DEBUG TODO better maffs!
-            float topRightCornerScale = (float)MathHelper.Clamp((1f - (topLinesWidth / TextSize.X)) * 4, 1, 3);
+            float topRightCornerScale = 2f; // (float)MathHelper.Clamp((1f - (topLinesWidth / TextSize.X)) * 4, 1, 3);
 
             CornerTopRight.Width = cornerWidth * topRightCornerScale;
             CornerTopRight.Height = cornerHeight * topRightCornerScale;

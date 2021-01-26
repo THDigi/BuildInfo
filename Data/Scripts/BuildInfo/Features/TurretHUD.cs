@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Features
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-            var pos = DrawUtils.HUDtoWorld(new Vector2(0, -0.5f), true);
+            var pos = DrawUtils.TextAPIHUDtoWorld(new Vector2D(0, -0.5));
 
             var scaleFOV = DrawUtils.ScaleFOV;
             var length = 0.01f * scaleFOV;

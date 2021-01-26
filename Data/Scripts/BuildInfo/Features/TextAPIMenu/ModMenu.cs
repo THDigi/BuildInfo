@@ -40,6 +40,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup groupPlaceInfoToggle = new ItemGroup();
         private readonly ItemGroup groupPlaceInfo = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
+        private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
 
@@ -121,16 +122,21 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             ItemAdd_OverlayLabelToggles(Category_Overlays);
 
             SimpleToggle(Category_HUD, "Block Info Additions", Config.BlockInfoAdditions);
-            SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInventoryBar);
+            SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInvBarShow);
+            SimpleScreenPosition(Category_HUD, "Ship Tool Inventory Bar Position", Config.ShipToolInvBarPosition, groupShipToolInvBar);
+            SimpleDualSlider(Category_HUD, "Ship Tool Inventory Bar Scale", Config.ShipToolInvBarScale, groupShipToolInvBar);
+
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
             SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
 
             ItemAdd_ToolbarActionLabels(Category_Toolbar, "Labels Mode");
             ItemAdd_ToolbarActionBlockNames(Category_Toolbar, "Toolbar Item Names Mode");
-            ItemAdd_ToolbarLabelsPosition(Category_Toolbar, "Labels Box HUD Position", Config.ToolbarLabelsPosition);
-            ItemAdd_ToolbarLabelsPosition(Category_Toolbar, "Labels Box In-Menu Position", Config.ToolbarLabelsInMenuPosition);
+            SimpleToggle(Category_Toolbar, "Labels Show Title", Config.ToolbarLabelsShowTitle);
+            SimpleScreenPosition(Category_Toolbar, "Labels Box HUD Position", Config.ToolbarLabelsPosition, groupToolbarLabels);
+            SimpleScreenPosition(Category_Toolbar, "Labels Box In-Menu Position", Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, "Labels Box Scale", Config.ToolbarLabelsScale, groupToolbarLabels);
+            SimpleDualSlider(Category_Toolbar, "Labels Box ShipToolInvBar Offset", Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, "Override Action Status", Config.ToolbarActionStatus);
 
             SimpleToggle(Category_Terminal, "Detail Info Additions", Config.TerminalDetailInfoAdditions);
@@ -368,32 +374,6 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             groupAll.Add(item);
         }
 
-        private void ItemAdd_ToolbarLabelsPosition(MenuCategoryBase category, string label, Vector2DSetting setting)
-        {
-            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 3,
-                getter: () => setting.Value,
-                setter: (pos) =>
-                {
-                    setting.Value = pos;
-                    Config.Save();
-                },
-                selected: (pos) =>
-                {
-                    setting.Value = pos;
-                },
-                moving: (pos) =>
-                {
-                    setting.Value = pos;
-                },
-                cancelled: (origPos) =>
-                {
-                    setting.Value = origPos;
-                });
-
-            groupToolbarLabels.Add(item);
-            groupAll.Add(item);
-        }
-
         #region Helper methods
         private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent, string header = null, ItemGroup group = null)
         {
@@ -433,6 +413,46 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             groupAll.Add(item);
         }
 
+        private void SimpleDualSlider(MenuCategoryBase category, string title, Vector2DSetting setting, ItemGroup group = null)
+        {
+            var itemForX = new ItemSlider(category, title + " X", min: (float)setting.Min.X, max: (float)setting.Max.X, defaultValue: (float)setting.DefaultValue.X, rounding: 2,
+                getter: () => (float)setting.Value.X,
+                setter: (val) =>
+                {
+                    setting.Value = new Vector2D(val, setting.Value.Y);
+                    Config.Save();
+                },
+                sliding: (val) =>
+                {
+                    setting.Value = new Vector2D(val, setting.Value.Y);
+                },
+                cancelled: (orig) =>
+                {
+                    setting.Value = new Vector2D(orig, setting.Value.Y);
+                });
+
+            var itemForY = new ItemSlider(category, title + " Y", min: (float)setting.Min.Y, max: (float)setting.Max.Y, defaultValue: (float)setting.DefaultValue.Y, rounding: 2,
+                getter: () => (float)setting.Value.Y,
+                setter: (val) =>
+                {
+                    setting.Value = new Vector2D(setting.Value.X, val);
+                    Config.Save();
+                },
+                sliding: (val) =>
+                {
+                    setting.Value = new Vector2D(setting.Value.X, val);
+                },
+                cancelled: (orig) =>
+                {
+                    setting.Value = new Vector2D(setting.Value.X, orig);
+                });
+
+            group?.Add(itemForX);
+            group?.Add(itemForY);
+            groupAll.Add(itemForX);
+            groupAll.Add(itemForY);
+        }
+
         private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting, ItemGroup group = null)
         {
             var item = new ItemSlider(category, title, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
@@ -468,6 +488,32 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                     updateGroupOnSet?.Update();
                 },
                 defaultValue: setting.DefaultValue);
+
+            group?.Add(item);
+            groupAll.Add(item);
+        }
+
+        private void SimpleScreenPosition(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null)
+        {
+            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 3,
+                getter: () => setting.Value,
+                setter: (pos) =>
+                {
+                    setting.Value = pos;
+                    Config.Save();
+                },
+                selected: (pos) =>
+                {
+                    setting.Value = pos;
+                },
+                moving: (pos) =>
+                {
+                    setting.Value = pos;
+                },
+                cancelled: (origPos) =>
+                {
+                    setting.Value = origPos;
+                });
 
             group?.Add(item);
             groupAll.Add(item);

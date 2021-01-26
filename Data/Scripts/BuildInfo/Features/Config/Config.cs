@@ -17,8 +17,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FILE_NAME = "config.ini";
         public const int CFGV_MENU_BIND = 2;
-        //public const int CFGV_TOOLBAR_LABELS_REDESIGN = 4;
-        public const int CFGV_LATEST = 4;
+        public const int CFGV_TOOLBAR_LABELS_REDESIGN = 4;
+        public const int CFGV_LATEST = 5;
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
@@ -28,7 +28,9 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting BlockInfoAdditions;
 
-        public BoolSetting ShipToolInventoryBar;
+        public BoolSetting ShipToolInvBarShow;
+        public Vector2DSetting ShipToolInvBarPosition;
+        public Vector2DSetting ShipToolInvBarScale;
 
         public BoolSetting RelativeDampenerInfo;
 
@@ -37,10 +39,12 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting TurretHUD;
 
         public IntegerSetting ToolbarLabels;
+        public BoolSetting ToolbarLabelsShowTitle;
         public IntegerSetting ToolbarItemNameMode;
         public Vector2DSetting ToolbarLabelsPosition;
         public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
+        public Vector2DSetting ToolbarLabelsOffsetForInvBar;
         public BoolSetting ToolbarActionStatus;
 
         public BoolSetting TerminalDetailInfoAdditions;
@@ -122,6 +126,18 @@ namespace Digi.BuildInfo.Features.Config
             if(cfgv >= CFGV_LATEST)
                 return;
 
+            if(cfgv == CFGV_TOOLBAR_LABELS_REDESIGN)
+            {
+                // change default position of the labels box
+
+                if(Vector2D.DistanceSquared(ToolbarLabelsPosition.Value, new Vector2D(-0.716, -0.707)) <= 0.001)
+                {
+                    ToolbarLabelsPosition.ResetToDefault();
+
+                    Log.Info($"NOTE: Default value for '{ToolbarLabelsPosition.Name}' changed and yours was the old default, setting reset to new default.");
+                }
+            }
+
             if(cfgv == CFGV_MENU_BIND)
             {
                 // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
@@ -168,8 +184,20 @@ namespace Digi.BuildInfo.Features.Config
                 "Also shows components that grind into something else (e.g. battery's power cells) if textAPI is allowed, otherwise it highlights the component yellow.");
             BlockInfoAdditions.AddCompatibilityNames("HUD: Block Info Stages");
 
-            ShipToolInventoryBar = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
+            ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship tool is selected.");
+
+            ShipToolInvBarPosition = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Position", defaultValue: new Vector2D(0.5f, 0.840f), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The screen position (center pivot) of the ship tool inventory bar.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+
+            ShipToolInvBarScale = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Scale", defaultValue: new Vector2D(1, 1), min: new Vector2D(0.1, 0.1), max: new Vector2D(3, 3), commentLines: new string[]
+            {
+                "The width and height scale of the ship tool inventory bar.",
+            });
 
             TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
@@ -236,16 +264,21 @@ namespace Digi.BuildInfo.Features.Config
                 ToolbarItemNameMode = new IntegerSetting(Handler, "Toolbar: Item Name Mode", defaultValue: (int)ToolbarNameMode.AlwaysShow, min: values[0], max: values[values.Length - 1], commentLines: comments);
             }
 
-            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position", defaultValue: new Vector2D(-0.716, -0.707), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsShowTitle = new BoolSetting(Handler, "Toolbar: Toolbar Labels Show Title", true,
+                "Toggles if the 'Toolbar Info  (BuildInfo Mod)' title is shown on the box.",
+                "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
+
+            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
-                "The position of the toolbar labels on the HUD.",
+                "The position (bottom-left corner pivot) of the toolbar labels on the HUD.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "It can fit nicely in the bottom-left side of the HUD aswell if you don't use shields, position for that: -0.716, -0.707",
                 "Positive values are right and up, while negative ones are opposite of that.",
             });
 
             ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position In-Menu", defaultValue: new Vector2D(0.128, -0.957), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
-                "The position of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
+                "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
                 "Positive values are right and up, while negative ones are opposite of that.",
             });
@@ -253,6 +286,12 @@ namespace Digi.BuildInfo.Features.Config
             ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: Labels Box Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
             {
                 "The scale of the toolbar labels box."
+            });
+
+            ToolbarLabelsOffsetForInvBar = new Vector2DSetting(Handler, "Toolbar: Labels Box Offset for InvBar", defaultValue: new Vector2D(0, 0.06), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "When the 'Ship Tool Inventory Bar' is visible this vector is added to the HUD position defined above." +
+                "Useful when you want to place the labels box in the center over the toolbar.",
             });
 
             ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
