@@ -9,7 +9,6 @@ using Draygo.API;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -29,6 +28,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const int MaxArgLength = 24; // first X characters
 
         public const int ShowForTicks = (int)(Constants.TICKS_PER_SECOND * 3f);
+
+        public int ForceRefreshAtTick;
 
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
         Vector2D PosInGUI = new Vector2D(0.5, -0.5);
@@ -52,7 +53,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         bool InToolbarConfig;
         bool? WasInToolbarConfig;
 
-        int ForceRefreshAtTick;
+        bool WasShipBarShown;
 
         int ShowUntilTick;
         bool BeenFaded = false;
@@ -91,7 +92,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
 
-            Main.ToolbarMonitor.ToolbarPageChanged += UpdateRender;
+            Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
         }
@@ -112,7 +113,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
 
-            Main.ToolbarMonitor.ToolbarPageChanged -= UpdateRender;
+            Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
         }
@@ -227,6 +228,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 Log.Error(e);
             }
+        }
+
+        void ToolbarPageChanged()
+        {
+            Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
         }
 
         //HudAPIv2.HUDMessage DebugMousePos;
@@ -454,21 +460,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int maxIndexPage = (startIndex + slotsPerPage - 1);
             int highestUsedIndex = Main.ToolbarMonitor.HighestIndexUsed;
             int maxUsedIndex = Math.Min(highestUsedIndex, maxIndexPage);
-
-            if(ForceRefreshAtTick != Main.Tick)
-            {
-                // if any slot is partially filled (needs info from wrapper) then skip this tick.
-                for(int i = startIndex; i <= maxUsedIndex; i++)
-                {
-                    var item = Main.ToolbarMonitor.Slots[i];
-                    if(item.ActionId != null && item.ActionWrapper == null)
-                    {
-                        // wait until wrapper fills in the details
-                        ForceRefreshAtTick = Main.Tick + 1;
-                        return;
-                    }
-                }
-            }
 
             double topLinesWidth = 0;
 

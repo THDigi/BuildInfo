@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -15,9 +16,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     {
         public readonly Dictionary<IMyTerminalAction, ActionWrapper> ActionWrappers = new Dictionary<IMyTerminalAction, ActionWrapper>(16);
         readonly Func<ITerminalAction, bool> CollectActionFunc;
+        readonly Queue<QueuedActionGet> QueuedTypes = new Queue<QueuedActionGet>();
+        HashSet<Type> CheckedTypes = new HashSet<Type>();
+
+        struct QueuedActionGet
+        {
+            public readonly int ReadAtTick;
+            public readonly Type BlockType;
+
+            public QueuedActionGet(int readAtTick, Type blockType)
+            {
+                ReadAtTick = readAtTick;
+                BlockType = blockType;
+            }
+        }
 
         public ToolbarOverride(BuildInfoMod main) : base(main)
         {
+            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
+
             CollectActionFunc = new Func<ITerminalAction, bool>(CollectAction);
 
             Main.BlockMonitor.BlockAdded += BlockAdded;
@@ -30,6 +47,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         protected override void UnregisterComponent()
         {
             Main.BlockMonitor.BlockAdded -= BlockAdded;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
+            MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;
         }
 
         void BlockAdded(IMySlimBlock slimBlock)
@@ -38,9 +60,41 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(block == null)
                 return;
 
-            // HACK: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
-            // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
-            block.GetActions(null, CollectActionFunc);
+            if(CheckedTypes.Contains(block.GetType()))
+                return;
+
+            QueuedTypes.Enqueue(new QueuedActionGet(Main.Tick + 60, block.GetType()));
+        }
+
+        protected override void UpdateAfterSim(int tick)
+        {
+            if(tick % Constants.TICKS_PER_SECOND == 0)
+            {
+                // HACK: must register late as possible
+                MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;
+                MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
+            }
+
+            while(QueuedTypes.Count > 0 && QueuedTypes.Peek().ReadAtTick <= tick)
+            {
+                var data = QueuedTypes.Dequeue();
+
+                // no remove from CheckedType, any new real-time-added actions should be caught by the CustomActionGetter... unless it's only used in a group.
+
+                // HACK: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
+                // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
+                // HACK: can't call it in BlockAdded because it can make some mods' terminal controls vanish...
+                MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectActionFunc);
+            }
+        }
+
+        void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
+        {
+            // required to catch mod actions that are only added to this event
+            for(int i = 0; i < actions.Count; i++)
+            {
+                CollectAction(actions[i]);
+            }
         }
 
         bool CollectAction(ITerminalAction a)

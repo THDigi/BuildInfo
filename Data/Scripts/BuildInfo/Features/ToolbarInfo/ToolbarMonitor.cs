@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.ShipControllerOBChanged += EquipmentMonitor_ShipControllerOBChanged;
+            EquipmentMonitor.ShipControllerOBChanged += ToolbarOBChanged;
         }
 
         protected override void UnregisterComponent()
@@ -110,11 +110,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
-            EquipmentMonitor.ShipControllerOBChanged -= EquipmentMonitor_ShipControllerOBChanged;
+            EquipmentMonitor.ShipControllerOBChanged -= ToolbarOBChanged;
         }
 
-        void EquipmentMonitor_ShipControllerOBChanged(MyObjectBuilder_ShipController ob)
+        void ToolbarOBChanged(MyObjectBuilder_ShipController ob)
         {
+            // refresh render 1 tick later so that Writer can finish updating the items too.
+            Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
+
             if(Main.Config.ToolbarLabels.Value == 0)
                 return;
 
@@ -191,22 +194,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 var terminalItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
                 if(terminalItem != null)
                 {
-                    bool isValid = true;
-
                     // HACK: major assumptions here, but there's no other use case and some stuff is prohibited so just w/e
                     if(terminalItem?.Parameters != null && terminalItem.Parameters.Count > 0 && terminalItem._Action == "Run")
                     {
                         string arg = terminalItem.Parameters[0]?.Value;
                         if(!string.IsNullOrEmpty(arg))
                             slotData.PBArgument = arg;
+
+                        if(DebugLogging)
+                            Log.Info($"    ^-- got PB arg = '{arg}'");
                     }
+
+                    IMyTerminalBlock block = null;
 
                     // checking if slot is valid otherwise it'll break the sequence for Writer.
                     var groupItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalGroup;
                     if(groupItem != null)
                     {
-                        if(!MyEntities.EntityExists(groupItem.BlockEntityId))
-                            isValid = false;
+                        // NOTE: this is always the toolbar host, not the first block in the group!
+                        block = MyEntities.GetEntityById(groupItem.BlockEntityId) as IMyTerminalBlock;
 
                         slotData.GroupName = groupItem.GroupName;
                     }
@@ -215,19 +221,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         var blockItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalBlock;
                         if(blockItem != null)
                         {
-                            if(!MyEntities.EntityExists(blockItem.BlockEntityId))
-                                isValid = false;
+                            block = MyEntities.GetEntityById(blockItem.BlockEntityId) as IMyTerminalBlock;
                         }
                     }
+
+                    bool isValid = (block != null);
+
+                    if(DebugLogging)
+                        Log.Info($"    ^-- got terminalItem, isValid={isValid.ToString()}; block={block}");
 
                     // these must only be added for valid toolbar items!
                     if(isValid)
                     {
-                        slotData.ActionId = terminalItem._Action;
-                        SequencedItems.Add(slotData);
-                    }
+                        SequencedItems.Add(slotData); // required for status
 
-                    // other fields are set in the wrapper.NewWriter() as they're readily available there
+                        slotData.ActionId = terminalItem._Action;
+                        // other fields are set in the wrapper.NewWriter() as they're readily available there
+                    }
                 }
                 else
                 {

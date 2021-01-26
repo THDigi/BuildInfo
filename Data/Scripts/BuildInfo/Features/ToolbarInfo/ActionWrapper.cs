@@ -71,16 +71,24 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return;
                 }
 
+                int max = Main.ToolbarMonitor.SequencedItems.Count;
                 int num = Main.ToolbarMonitor.WrapperSlotIndex;
-                if(num >= Main.ToolbarMonitor.SequencedItems.Count)
+                if(num >= max)
                     return;
 
+                // HACK: find next matching slot, it could not match if a mod adds actions via event which won't have this status override class
                 var toolbarItem = Main.ToolbarMonitor.SequencedItems[num];
-                if(toolbarItem.ActionId != Action.Id)
-                    return;
+                while(toolbarItem.ActionId != Action.Id)
+                {
+                    num++;
+                    if(num >= max)
+                        return;
+
+                    toolbarItem = Main.ToolbarMonitor.SequencedItems[num];
+                }
 
                 // writers get called in sequence that they are in the toolbar so this should pair them exactly
-                Main.ToolbarMonitor.WrapperSlotIndex++;
+                Main.ToolbarMonitor.WrapperSlotIndex = num + 1;
 
                 if(Main.ToolbarMonitor.ToolbarPage != (toolbarItem.Index / ToolbarMonitor.SlotsPerPage))
                     return;
