@@ -297,11 +297,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 var mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
                 var mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
 
-                Vector2D bottomLeftPos = (InToolbarConfig ? PosInGUI : PosOnHUD);
+                Vector2D bottomLeftPos = Labels.Origin;
                 float edge = (float)(BackgroundPadding * Scale);
                 var box = new BoundingBox2D(bottomLeftPos, bottomLeftPos + new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y)) + edge);
                 box.Min = Vector2D.Min(box.Min, box.Max);
                 box.Max = Vector2D.Max(box.Min, box.Max);
+
+                //{
+                //    var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+                //    float w = (0.032f * DrawUtils.ScaleFOV);
+                //    float h = w;
+
+                //    var worldPos = DrawUtils.TextAPIHUDtoWorld(box.Min);
+                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
+
+                //    worldPos = DrawUtils.TextAPIHUDtoWorld(box.Max);
+                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Red, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
+                //}
 
                 //if(DebugMousePos == null)
                 //    DebugMousePos = new HudAPIv2.HUDMessage(new StringBuilder(128), Vector2D.Zero, Shadowing: true, Blend: BlendType.PostPP);
