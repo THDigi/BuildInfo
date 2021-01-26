@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public LegacyConfig(BuildInfoMod main) : base(main)
         {
-            newConfigExists = MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FILE_NAME, typeof(Config));
+            newConfigExists = MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FileName, typeof(Config));
         }
 
         protected override void RegisterComponent()
@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features.Config
             string error;
             setting.ReadValue(value, out error);
             if(error != null)
-                Log.Error($"Legacy {FILE} got an error on load: {error}\nOriginal line: {line}\nIf this was a custom setting please transfer the value manually to the new config: {Config.FILE_NAME}");
+                Log.Error($"Legacy {FILE} got an error on load: {error}\nOriginal line: {line}\nIf this was a custom setting please transfer the value manually to the new config: {Config.FileName}");
         }
 
         private void ReadSettings(TextReader file)

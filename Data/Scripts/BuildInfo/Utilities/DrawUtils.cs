@@ -76,7 +76,7 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// Transforms screen coordinates to world coordinates.
+        /// Transforms 0~1 screen coordinates to world coordinates.
         /// </summary>
         public Vector3D HUDtoWorld(Vector2 hud)
         {
@@ -93,12 +93,12 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// Transforms textAPI screen coordinates to world coordinates.
+        /// Transforms -1~1 textAPI screen coordinates to world coordinates.
         /// </summary>
         public Vector3D TextAPIHUDtoWorld(Vector2D hud)
         {
-            double hudX = (2.0 * hud.X - 1);
-            double hudY = (1 - 2.0 * hud.Y);
+            double hudX = hud.X;
+            double hudY = hud.Y;
 
             // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
             var matrix = ViewProjectionInv;

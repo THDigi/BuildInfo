@@ -15,10 +15,11 @@ namespace Digi.BuildInfo.Features.Config
     {
         public readonly ConfigHandler Handler;
 
-        public const string FILE_NAME = "config.ini";
-        public const int CFGV_MENU_BIND = 2;
-        public const int CFGV_TOOLBAR_LABELS_REDESIGN = 4;
-        public const int CFGV_LATEST = 5;
+        public const string FileName = "config.ini";
+        public const int ConfigVersion = 6;
+        public const int VersionCompat_ShipToolInvBar_FixPosition = 5;
+        public const int VersionCompat_ToolbarLabels_Redesign = 4;
+        public const int VersionCompat_MenuBind = 2;
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
@@ -86,7 +87,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public Config(BuildInfoMod main) : base(main)
         {
-            Handler = new ConfigHandler(FILE_NAME, CFGV_LATEST);
+            Handler = new ConfigHandler(FileName, ConfigVersion);
         }
 
         protected override void RegisterComponent()
@@ -123,10 +124,21 @@ namespace Digi.BuildInfo.Features.Config
             }
 
             var cfgv = Handler.ConfigVersion.Value;
-            if(cfgv >= CFGV_LATEST)
+            if(cfgv >= ConfigVersion)
                 return;
 
-            if(cfgv == CFGV_TOOLBAR_LABELS_REDESIGN)
+            if(cfgv == VersionCompat_ShipToolInvBar_FixPosition)
+            {
+                // old defaults were in the wrong value ranges, convert values to new space.
+                // e.g. 0.5, 0.84 => 0.0, -0.68
+
+                var oldVec = ShipToolInvBarPosition.Value;
+                ShipToolInvBarPosition.Value = new Vector2D((oldVec.X * 2) - 1, 1 - (oldVec.Y * 2));
+
+                Log.Info($"NOTE: Value for '{ShipToolInvBarPosition.Name}' was changed into a different space (the proper one), your setting was automatically calculated into it so no changes are necessary.");
+            }
+
+            if(cfgv == VersionCompat_ToolbarLabels_Redesign)
             {
                 // change default position of the labels box
 
@@ -138,7 +150,7 @@ namespace Digi.BuildInfo.Features.Config
                 }
             }
 
-            if(cfgv == CFGV_MENU_BIND)
+            if(cfgv == VersionCompat_MenuBind)
             {
                 // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
 
@@ -187,7 +199,7 @@ namespace Digi.BuildInfo.Features.Config
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship tool is selected.");
 
-            ShipToolInvBarPosition = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Position", defaultValue: new Vector2D(0.5f, 0.840f), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ShipToolInvBarPosition = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Position", defaultValue: new Vector2D(0f, -0.68f), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The screen position (center pivot) of the ship tool inventory bar.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
