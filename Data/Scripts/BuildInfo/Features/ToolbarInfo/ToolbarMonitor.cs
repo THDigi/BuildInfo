@@ -118,8 +118,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // refresh render 1 tick later so that Writer can finish updating the items too.
             Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
 
-            if(Main.Config.ToolbarLabels.Value == 0)
-                return;
+            // can't disable this just for the visual toolbar because status relies on this aswell.
+            //if(Main.Config.ToolbarLabels.Value == 0)
+            //    return;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
 

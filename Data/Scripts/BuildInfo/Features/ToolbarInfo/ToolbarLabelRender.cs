@@ -25,7 +25,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     {
         public const int MaxBlockNameLength = 32; // last X characters
         public const int MaxActionNameLength = 28; // first X characters
-        public const int MaxArgLength = 24; // first X characters
+        public const int MaxArgLength = 16; // first X characters
+
+        public const double SplitModeLeftSideMinWidth = 0.32;
 
         public const int ShowForTicks = (int)(Constants.TICKS_PER_SECOND * 3f);
 
@@ -45,10 +47,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         ToolbarLabelsMode LabelsMode;
         ToolbarNameMode NamesMode;
+        ToolbarStyle StyleMode;
         float Scale;
 
         bool MustBeVisible;
-        bool WereVisible;
+        bool? WereVisible;
 
         bool InToolbarConfig;
         bool? WasInToolbarConfig;
@@ -72,6 +75,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         HudAPIv2.BillBoardHUDMessage CornerTopRight;
         HudAPIv2.HUDMessage Shadows;
         HudAPIv2.HUDMessage Labels;
+        HudAPIv2.HUDMessage ShadowsLine2;
+        HudAPIv2.HUDMessage LabelsLine2;
         List<HudAPIv2.BillBoardHUDMessage> Backgrounds;
 
         public ToolbarLabelRender(BuildInfoMod main) : base(main)
@@ -88,6 +93,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
             Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
             Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
+            Config.ToolbarStyleMode.ValueAssigned += ConfigIntChanged;
             Config.ToolbarItemNameMode.ValueAssigned += ConfigIntChanged;
             Config.ToolbarLabels.ValueAssigned += ConfigIntChanged;
             GameConfig.OptionsMenuClosed += UpdateFromConfig;
@@ -111,6 +117,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
             Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
             Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
+            Config.ToolbarStyleMode.ValueAssigned -= ConfigIntChanged;
             Config.ToolbarItemNameMode.ValueAssigned -= ConfigIntChanged;
             Config.ToolbarLabels.ValueAssigned -= ConfigIntChanged;
             GameConfig.OptionsMenuClosed -= UpdateFromConfig;
@@ -146,6 +153,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             LabelsMode = (ToolbarLabelsMode)Config.ToolbarLabels.Value;
             NamesMode = (ToolbarNameMode)Config.ToolbarItemNameMode.Value;
+            StyleMode = (ToolbarStyle)Config.ToolbarStyleMode.Value;
             PosInGUI = Config.ToolbarLabelsInMenuPosition.Value;
             PosOnHUD = Config.ToolbarLabelsPosition.Value;
             Scale = (float)(TextScaleMultiplier * Config.ToolbarLabelsScale.Value);
@@ -155,10 +163,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(Labels != null)
             {
                 Shadows.Scale = Scale;
+                ShadowsLine2.Scale = Scale;
                 Labels.Scale = Scale;
+                LabelsLine2.Scale = Scale;
                 UpdateBgOpacity(GameConfig.HudBackgroundOpacity);
             }
 
+            WereVisible = null;
             ForceRefreshAtTick = Main.Tick + 10;
         }
 
@@ -183,7 +194,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             Shadows.Origin = bottomLeftPos;
+            ShadowsLine2.Origin = bottomLeftPos;
             Labels.Origin = bottomLeftPos;
+            LabelsLine2.Origin = bottomLeftPos;
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
@@ -239,10 +252,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Shadows.InitialColor = Color.Black;
             Shadows.Visible = false;
 
+            ShadowsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            ShadowsLine2.InitialColor = Color.Black;
+            ShadowsLine2.Visible = false;
+
             Labels = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             Labels.Visible = false;
 
-            WereVisible = false;
+            LabelsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            LabelsLine2.Visible = false;
+
+            WereVisible = null;
 
             UpdateFromConfig();
         }
@@ -454,7 +474,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 UpdatePosition();
             }
 
-            if(MustBeVisible != WereVisible)
+            if(!WereVisible.HasValue || MustBeVisible != WereVisible)
             {
                 foreach(var bg in Backgrounds)
                 {
@@ -463,6 +483,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 Shadows.Visible = MustBeVisible;
                 Labels.Visible = MustBeVisible;
+
+                bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
+                ShadowsLine2.Visible = splitMode && MustBeVisible;
+                LabelsLine2.Visible = splitMode && MustBeVisible;
 
                 WereVisible = MustBeVisible;
 
@@ -507,13 +531,26 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             double topLinesWidth = 0;
 
-            var sb = Labels.Message.Clear();
+            StringBuilder sb = Labels.Message.Clear();
+            StringBuilder sb2 = null;
+
+            bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
+
+            if(splitMode)
+            {
+                sb2 = LabelsLine2.Message.Clear();
+            }
 
             if(Config.ToolbarLabelsShowTitle.Value)
+            {
                 sb.Append("<color=255,240,220>Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i><color=gray>(BuildInfo Mod)<reset>\n");
+            }
 
             for(int i = 0; i < slotsPerPage; i++)
             {
+                if(splitMode && i >= 4)
+                    sb = sb2;
+
                 int index = startIndex + i;
                 var item = Main.ToolbarMonitor.Slots[index];
                 if(item.Name == null)
@@ -545,10 +582,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             if(item.GroupName != null)
                                 sb.Color(new Color(155, 220, 255)).Append('*');
 
+                            int maxNameLength = (item.PBArgument != null ? 16 : MaxBlockNameLength);
                             string blockName = item.GroupName ?? item.Name;
                             int blockNameLen = blockName.Length;
-                            if(blockNameLen > MaxBlockNameLength)
-                                sb.Append("...").Append(blockName, blockNameLen - MaxBlockNameLength, MaxBlockNameLength);
+                            if(blockNameLen > maxNameLength)
+                                sb.Append("...").Append(blockName, blockNameLen - maxNameLength, maxNameLength);
                             else
                                 sb.Append(blockName);
 
@@ -603,52 +641,35 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             // remove last new line
-            if(sb.Length > 0)
-                sb.Length -= 1;
-
-            #region Update shadow SB
-            var shadowSB = Shadows.Message.Clear();
-            shadowSB.EnsureCapacity(sb.Length);
-
-            // append to shadow without color tags
-            for(int i = 0; i < sb.Length; ++i)
+            if(splitMode)
             {
-                char c = sb[i];
-
-                // skip <color=...>
-                if(c == '<' && i + 6 <= sb.Length)
-                {
-                    if(sb[i + 1] == 'c'
-                    && sb[i + 2] == 'o'
-                    && sb[i + 3] == 'l'
-                    && sb[i + 4] == 'o'
-                    && sb[i + 5] == 'r'
-                    && sb[i + 6] == '=')
-                    {
-                        // seek ahead for end char
-                        int endChar = -1;
-                        for(int s = i + 6; s < sb.Length; s++)
-                        {
-                            if(sb[s] == '>')
-                            {
-                                endChar = s;
-                                break;
-                            }
-                        }
-
-                        if(endChar != -1)
-                        {
-                            i = endChar;
-                            continue;
-                        }
-                    }
-                }
-
-                shadowSB.Append(c);
+                sb = Labels.Message;
+                sb2.Length -= 1;
             }
-            #endregion Update shadow SB
+            sb.Length -= 1;
 
-            TextSize = Labels.GetTextLength();
+            UpdateShadow(sb, Shadows.Message);
+
+            if(splitMode)
+                UpdateShadow(sb2, ShadowsLine2.Message);
+
+            float separator = 0f;
+
+            Vector2D labelsTextSize = Labels.GetTextLength();
+            Vector2D labelsLine2TextSize = Vector2D.Zero;
+
+            if(splitMode)
+            {
+                labelsTextSize.X = Math.Max(labelsTextSize.X, SplitModeLeftSideMinWidth);
+
+                separator = (0.015f * Scale);
+                labelsLine2TextSize = LabelsLine2.GetTextLength();
+                TextSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
+            }
+            else
+            {
+                TextSize = labelsTextSize;
+            }
 
             float cornerHeight = (float)(CornerSize * Scale);
             float cornerWidth = (float)(cornerHeight / GameConfig.AspectRatio);
@@ -658,9 +679,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             float bgHeight = (float)Math.Abs(TextSize.Y) + edge;
             Vector2D halfEdgeVec = new Vector2D(edge / 2);
 
+            Vector2D shadowOffset = new Vector2D(ShadowOffset, -ShadowOffset);
+
             var textOffset = new Vector2D(0, -TextSize.Y); // bottom-left pivot
             Labels.Offset = textOffset + halfEdgeVec;
-            Shadows.Offset = textOffset + new Vector2D(ShadowOffset, -ShadowOffset) + halfEdgeVec;
+            Shadows.Offset = textOffset + halfEdgeVec + shadowOffset;
+
+            if(splitMode)
+            {
+                var l2offset = new Vector2D(labelsTextSize.X + separator, -TextSize.Y);
+                LabelsLine2.Offset = l2offset + halfEdgeVec;
+                ShadowsLine2.Offset = l2offset + halfEdgeVec + shadowOffset;
+            }
 
             BackgroundBottom.Width = bgWidth - cornerWidth;
             BackgroundBottom.Height = cornerHeight;
@@ -684,6 +714,49 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Background.Width = bgWidth;
             Background.Height = bgHeight - cornerHeight - (cornerHeight * topRightCornerScale);
             Background.Offset = textOffset + (TextSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
+        }
+
+        void UpdateShadow(StringBuilder text, StringBuilder shadow)
+        {
+            shadow.Clear();
+            shadow.EnsureCapacity(text.Length);
+
+            // append to shadow without color tags
+            for(int i = 0; i < text.Length; ++i)
+            {
+                char c = text[i];
+
+                // skip <color=...>
+                if(c == '<' && i + 6 <= text.Length)
+                {
+                    if(text[i + 1] == 'c'
+                    && text[i + 2] == 'o'
+                    && text[i + 3] == 'l'
+                    && text[i + 4] == 'o'
+                    && text[i + 5] == 'r'
+                    && text[i + 6] == '=')
+                    {
+                        // seek ahead for end char
+                        int endChar = -1;
+                        for(int s = i + 6; s < text.Length; s++)
+                        {
+                            if(text[s] == '>')
+                            {
+                                endChar = s;
+                                break;
+                            }
+                        }
+
+                        if(endChar != -1)
+                        {
+                            i = endChar;
+                            continue;
+                        }
+                    }
+                }
+
+                shadow.Append(c);
+            }
         }
     }
 }

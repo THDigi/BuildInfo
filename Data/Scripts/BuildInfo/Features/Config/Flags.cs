@@ -83,4 +83,10 @@ namespace Digi.BuildInfo.Features.Config
         GroupsOnly = 2,
         InMenuOnly = 3,
     }
+
+    public enum ToolbarStyle
+    {
+        SingleList = 0,
+        TwoColumns = 1,
+    }
 }

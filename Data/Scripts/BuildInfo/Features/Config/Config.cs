@@ -1,13 +1,14 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Digi.BuildInfo.Features.ChatCommands;
 using Digi.ConfigLib;
 using Digi.Input;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Input;
 using VRageMath;
-using Digi.BuildInfo.Features.ChatCommands;
 using static Digi.Input.InputLib;
-using System;
 
 namespace Digi.BuildInfo.Features.Config
 {
@@ -40,8 +41,9 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting TurretHUD;
 
         public IntegerSetting ToolbarLabels;
-        public BoolSetting ToolbarLabelsShowTitle;
         public IntegerSetting ToolbarItemNameMode;
+        public BoolSetting ToolbarLabelsShowTitle;
+        public IntegerSetting ToolbarStyleMode;
         public Vector2DSetting ToolbarLabelsPosition;
         public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
@@ -127,7 +129,7 @@ namespace Digi.BuildInfo.Features.Config
             if(cfgv >= ConfigVersion)
                 return;
 
-            if(cfgv == VersionCompat_ShipToolInvBar_FixPosition)
+            if(cfgv <= VersionCompat_ShipToolInvBar_FixPosition)
             {
                 // old defaults were in the wrong value ranges, convert values to new space.
                 // e.g. 0.5, 0.84 => 0.0, -0.68
@@ -136,6 +138,14 @@ namespace Digi.BuildInfo.Features.Config
                 ShipToolInvBarPosition.Value = new Vector2D((oldVec.X * 2) - 1, 1 - (oldVec.Y * 2));
 
                 Log.Info($"NOTE: Value for '{ShipToolInvBarPosition.Name}' was changed into a different space (the proper one), your setting was automatically calculated into it so no changes are necessary.");
+
+                // old in-menu default wasn't adjusted for recent title addition
+                if(Vector2D.DistanceSquared(ToolbarLabelsInMenuPosition.Value, new Vector2D(0.128, -0.957)) <= 0.001)
+                {
+                    ToolbarLabelsInMenuPosition.ResetToDefault();
+
+                    Log.Info($"NOTE: Default value for '{ToolbarLabelsInMenuPosition.Name}' changed and yours was the old default, setting reset to new default.");
+                }
             }
 
             if(cfgv == VersionCompat_ToolbarLabels_Redesign)
@@ -223,62 +233,36 @@ namespace Digi.BuildInfo.Features.Config
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
 
+            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.AlwaysOn, new string[]
             {
-                var names = Enum.GetNames(typeof(ToolbarLabelsMode));
-                var values = (int[])Enum.GetValues(typeof(ToolbarLabelsMode));
-
-                int extraLines = 3;
-                string[] comments = new string[names.Length + extraLines];
-                comments[0] = "Customize ship toolbar block action's labels.";
-                comments[1] = "Turning this off turns off the rest of the toolbar action stuff.";
-                comments[3] = $"Also, upon entering a cockpit labels are shown for {(ToolbarInfo.ToolbarLabelRender.ShowForTicks / Constants.TICKS_PER_SECOND).ToString()} seconds for HudHints&AltKey modes.";
-
-                for(int i = 0; i < names.Length; ++i)
-                {
-                    var val = values[i];
-                    int index = i + extraLines;
-                    comments[index] = $"    {val.ToString()} = {names[i]}";
-
-                    if(val == (int)ToolbarLabelsMode.HudHints)
-                    {
-                        comments[i + extraLines] += " (can also be shown with ALT in this mode)";
-                    }
-                }
-
-                ToolbarLabels = new IntegerSetting(Handler, "Toolbar: Labels Mode", defaultValue: (int)ToolbarLabelsMode.AlwaysOn, min: values[0], max: values[values.Length - 1], commentLines: comments);
-            }
-
+                "Customize ship toolbar block action's labels.",
+                "Turning this off turns off the rest of the toolbar action stuff.",
+                $"Also, upon entering a cockpit labels are shown for {(ToolbarInfo.ToolbarLabelRender.ShowForTicks / Constants.TICKS_PER_SECOND).ToString()} seconds for HudHints&AltKey modes."
+            },
+            new Dictionary<ToolbarLabelsMode, string>()
             {
-                var names = Enum.GetNames(typeof(ToolbarNameMode));
-                var values = (int[])Enum.GetValues(typeof(ToolbarNameMode));
+                [ToolbarLabelsMode.HudHints] = "can also be shown with ALT in this mode",
+            });
 
-                int extraLines = 2;
-                string[] comments = new string[names.Length + extraLines];
-                comments[0] = "Pick what blocks should have their custom name printed in the action label.";
-                comments[1] = "Visibility of this is affected by the above setting.";
-
-                for(int i = 0; i < names.Length; ++i)
-                {
-                    var val = values[i];
-                    int index = i + extraLines;
-                    comments[index] = $"    {val.ToString()} = {names[i]}";
-
-                    if(val == (int)ToolbarNameMode.InMenuOnly)
-                    {
-                        comments[index] += " (only shown when toolbar menu is open)";
-                    }
-                    else if(val == (int)ToolbarNameMode.GroupsOnly)
-                    {
-                        comments[index] += " (only block group names)";
-                    }
-                }
-
-                ToolbarItemNameMode = new IntegerSetting(Handler, "Toolbar: Item Name Mode", defaultValue: (int)ToolbarNameMode.AlwaysShow, min: values[0], max: values[values.Length - 1], commentLines: comments);
-            }
+            ToolbarItemNameMode = CreateEnumSetting("Toolbar: Item Name Mode", ToolbarNameMode.AlwaysShow, new string[]
+            {
+                "Pick what blocks should have their custom name printed in the action label.",
+                "Visibility of this is affected by the above setting."
+            },
+            new Dictionary<ToolbarNameMode, string>()
+            {
+                [ToolbarNameMode.InMenuOnly] = "only shown when toolbar menu is open",
+                [ToolbarNameMode.GroupsOnly] = "only block group names",
+            });
 
             ToolbarLabelsShowTitle = new BoolSetting(Handler, "Toolbar: Toolbar Labels Show Title", true,
                 "Toggles if the 'Toolbar Info  (BuildInfo Mod)' title is shown on the box.",
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
+
+            ToolbarStyleMode = CreateEnumSetting("Toolbar: Label Box Style", ToolbarStyle.SingleList, new string[]
+            {
+                "Changes the visual layout of the toolbar labels box.",
+            });
 
             ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
@@ -288,7 +272,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Positive values are right and up, while negative ones are opposite of that.",
             });
 
-            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position In-Menu", defaultValue: new Vector2D(0.128, -0.957), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position In-Menu", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
@@ -403,6 +387,32 @@ namespace Digi.BuildInfo.Features.Config
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;
             ModVersion.AddValidRangeComment = false;
+        }
+
+        IntegerSetting CreateEnumSetting<T>(string title, T defaultValue, string[] comments, Dictionary<T, string> enumComments = null)
+        {
+            string[] names = Enum.GetNames(typeof(T));
+            int[] values = (int[])Enum.GetValues(typeof(T));
+
+            string[] finalComments = new string[names.Length + comments.Length];
+
+            for(int i = 0; i < comments.Length; i++)
+            {
+                finalComments[i] = comments[i];
+            }
+
+            for(int n = 0; n < names.Length; ++n)
+            {
+                int enumInt = values[n];
+                int index = n + comments.Length;
+                finalComments[index] = $"    {enumInt.ToString()} = {names[n]}";
+
+                string comment;
+                if(enumComments != null && enumComments.TryGetValue((T)(object)n, out comment))
+                    finalComments[index] += "  (" + comment + ")";
+            }
+
+            return new IntegerSetting(Handler, title, defaultValue: (int)(object)defaultValue, min: values[0], max: values[values.Length - 1], commentLines: finalComments);
         }
 
         public void Save()
