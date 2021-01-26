@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             else if(round > 0)
             {
                 var mul = Math.Pow(10, round);
-                value = (float)Math.Round((Math.Floor(value * mul) / mul), round); // floor-based rounding to avoid skipping numbers due to slider resolution
+                value = (float)Math.Round(((value * mul) / mul), round);
             }
 
             return value;
