@@ -46,11 +46,11 @@ namespace Digi.ConfigLib
             HeaderComments.Add($"Lines starting with {COMMENT_PREFIX} are comments. All values are case and space insensitive unless otherwise specified.");
             HeaderComments.Add("NOTE: This file gets overwritten after being loaded.");
 
-            ConfigVersion = new IntegerSetting(this, "ConfigVersion", defaultValue: configVersion, min: int.MaxValue, max: int.MaxValue, commentLines: new string[]
-                {
-                    "Used for partial config edits for compatibility.",
-                    "Do not change."
-                });
+            ConfigVersion = new IntegerSetting(this, "ConfigVersion", defaultValue: configVersion, min: 0, max: int.MaxValue, commentLines: new string[]
+            {
+                "Used for partial config edits for compatibility.",
+                "Do not change."
+            });
             ConfigVersion.AddDefaultValueComment = false;
             ConfigVersion.AddValidRangeComment = false;
         }

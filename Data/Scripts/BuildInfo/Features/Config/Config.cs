@@ -97,6 +97,10 @@ namespace Digi.BuildInfo.Features.Config
 
         protected override void UnregisterComponent()
         {
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Handler.SettingsLoaded -= SettingsLoaded;
         }
 
         private void SettingsLoaded()
