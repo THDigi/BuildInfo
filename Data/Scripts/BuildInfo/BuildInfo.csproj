@@ -168,6 +168,7 @@
     <Compile Include="Features\Config\TextAlignSetting.cs" />
     <Compile Include="Features\DebugEvents.cs" />
     <Compile Include="Features\FontsHandler.cs" />
+    <Compile Include="Features\InventoryBar.cs" />
     <Compile Include="Features\ItemTooltips.cs" />
     <Compile Include="Features\JumpDriveMonitor.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />

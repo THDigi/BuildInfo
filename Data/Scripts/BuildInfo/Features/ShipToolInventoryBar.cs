@@ -12,17 +12,17 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
-    // TODO: configurable position and scale?
     // TODO: compatible with gamepad HUD too?
 
     public class ShipToolInventoryBar : ModComponent
     {
         public bool Shown { get; private set; } = false;
 
+        public readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>(4);
+
         private bool ShouldShow = false;
 
         private float FilledRatio = 0f;
-        private readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>(4);
 
         private const int FillComputeEveryTicks = 30; // computes fill every these ticks
         private readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
@@ -121,22 +121,17 @@ namespace Digi.BuildInfo.Features
             var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             gts?.GetBlocksOfType<T>(blocks);
 
-            try
+            foreach(T block in blocks)
             {
-                foreach(T block in blocks)
-                {
-                    var inv = block.GetInventory(0);
-                    if(inv == null)
-                        continue;
+                var inv = block.GetInventory(0);
+                if(inv == null)
+                    continue;
 
-                    volume += (float)inv.CurrentVolume;
-                    maxVolume += (float)inv.MaxVolume;
-                }
+                volume += (float)inv.CurrentVolume;
+                maxVolume += (float)inv.MaxVolume;
             }
-            finally
-            {
-                blocks.Clear();
-            }
+
+            blocks.Clear();
 
             return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
         }

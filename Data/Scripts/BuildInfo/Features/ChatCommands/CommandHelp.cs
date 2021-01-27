@@ -37,6 +37,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n   Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
             "\n" +
             "\n" +
+            "\n##### Inventory bar in ships #####" +
+            "\nThe vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +
+            "\nOptionally you can declare a group 'Cargo' to use for the bar (no matter the type)." +
+            "\n" +
+            "\n" +
             "\n##### Custom labels for toolbar slots per cockpit #####" +
             "\n  Using a cockpit's CustomData you can set custom label per slot using ini format." +
             "\n  This can be added anywhere in CustomData, but it must be in this order:" +
