@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             var titleColor = (Item.Interactable ? "" : "<color=gray>");
             var valueIntColor = (Item.Interactable ? Utils.ColorTag(ColorValue) : "");
             var valueNameColor = (Item.Interactable ? Utils.ColorTag(ColorValueName) : "");
-            Item.Text = $"{titleColor}{Title}: {valueIntColor}{val.ToString()} {valueNameColor}({names[val]}){(defaultValue == val ? " <color=gray>[default]" : "")}";
+            Item.Text = $"{titleColor}{Title}: {valueIntColor}{val.ToString()} of {(names.Length - 1).ToString()} {valueNameColor}({names[val]}){(defaultValue == val ? " <color=gray>[default]" : "")}";
         }
 
         private void OnClick()
