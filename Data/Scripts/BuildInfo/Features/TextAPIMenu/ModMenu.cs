@@ -497,6 +497,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     setting.Value = v;
                     setGroupInteractable?.SetInteractable(v != offValue);
+                    Config.Save();
                 },
                 enumType: enumType,
                 defaultValue: setting.DefaultValue);
