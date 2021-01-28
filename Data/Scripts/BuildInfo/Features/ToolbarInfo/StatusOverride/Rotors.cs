@@ -137,7 +137,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(Processor.AnimFlip && !allOn)
                 sb.Append("OFF!\n");
 
-            if(!Processor.AnimFlip && allCanMove)
+            if(!Processor.AnimFlip && !allCanMove)
                 sb.Append("NoVel!\n");
 
             if(allLimited)
