@@ -84,6 +84,7 @@ namespace Digi.BuildInfo.Features
 
             DefineVanillaBlocks();
             GetArmorSkinDefinitions();
+            CheckVanillaHardcoded();
 
             WindowClosedAction = new Action<ResultEnum>(WindowClosed);
         }
@@ -133,6 +134,23 @@ namespace Digi.BuildInfo.Features
                     Analyse(projector.ProjectedGrid);
             };
             projectorButton = c;
+        }
+
+        void CheckVanillaHardcoded()
+        {
+            bool notify = (Log.WorkshopId == 0); // notify on HUD only if it's the local mod
+
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var blockDef = def as MyCubeBlockDefinition;
+                if(blockDef == null)
+                    continue;
+
+                if(blockDef.Context.IsBaseGame && !vanillaDefinitions.Contains(blockDef.Id))
+                {
+                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", notify ? Log.PRINT_MESSAGE : null);
+                }
+            }
         }
 
         void GetArmorSkinDefinitions()
