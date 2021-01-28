@@ -36,6 +36,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             float max = piston.MaxLimit;
             float travelRatio = (piston.CurrentPosition - min) / (max - min);
 
+            if(Processor.AnimFlip && !piston.IsWorking)
+                sb.Append("OFF!\n");
+
+            if(!Processor.AnimFlip && piston.Velocity == 0)
+                sb.Append("No Vel\n");
+
             sb.Append((int)(travelRatio * 100)).Append("%");
             return true;
         }
@@ -78,11 +84,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             float travelAverage = 0;
             bool allOn = true;
+            bool allCanMove = true;
 
             foreach(IMyPistonBase piston in groupData.Blocks)
             {
-                if(!piston.IsWorking)
+                if(allOn && !piston.IsWorking)
                     allOn = false;
+
+                if(allCanMove && piston.Velocity == 0)
+                    allCanMove = false;
 
                 float min = piston.MinLimit;
                 float max = piston.MaxLimit;
@@ -95,6 +105,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(Processor.AnimFlip && !allOn)
                 sb.Append("OFF!\n");
+
+            if(!Processor.AnimFlip && !allCanMove)
+                sb.Append("No Vel\n");
 
             sb.Append((int)(travelAverage * 100)).Append("%");
 

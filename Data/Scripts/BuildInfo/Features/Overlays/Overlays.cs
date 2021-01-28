@@ -306,6 +306,30 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
                 #endregion DrawMatrix and other needed data
 
+                //if(aimedBlock != null)
+                //{
+                //    var neighbours = aimedBlock.Neighbours; // DEBUG TODO: change to non-alloc if implemented properly
+                //    MyAPIGateway.Utilities.ShowNotification($"neighbours = {neighbours.Count}", 16);
+                //    foreach(var n in neighbours)
+                //    {
+                //        Matrix m;
+                //        Vector3D center;
+                //        n.Orientation.GetMatrix(out m);
+                //        n.ComputeWorldCenter(out center);
+
+                //        var wm = m * n.CubeGrid.WorldMatrix;
+                //        wm.Translation = center;
+
+                //        var nd = (MyCubeBlockDefinition)n.BlockDefinition;
+                //        var halfExtents = nd.Size * (cellSize * 0.5);
+                //        var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
+
+                //        var color = Color.Lime;
+
+                //        MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, MySimpleObjectRasterizer.Wireframe, 4, 0.001f, lineMaterial: MyStringId.GetOrCompute("Square"), blendType: BlendTypeEnum.PostPP);
+                //    }
+                //}
+
                 #region Draw mount points
                 if(TextAPIEnabled)
                 {

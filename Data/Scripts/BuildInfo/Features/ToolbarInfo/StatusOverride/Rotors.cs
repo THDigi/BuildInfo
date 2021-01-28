@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(Processor.AnimFlip && !stator.IsWorking)
                 sb.Append("OFF!\n");
             else if(!Processor.AnimFlip && stator.TargetVelocityRPM == 0)
-                sb.Append("NoVel!\n");
+                sb.Append("No Vel\n");
 
             float minRad = stator.LowerLimitRad;
             float maxRad = stator.UpperLimitRad;
@@ -108,10 +108,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyMotorStator stator in groupData.Blocks)
             {
-                if(!stator.IsWorking)
+                if(allOn && !stator.IsWorking)
                     allOn = false;
 
-                if(stator.TargetVelocityRPM == 0)
+                if(allCanMove && stator.TargetVelocityRPM == 0)
                     allCanMove = false;
 
                 float angle = stator.Angle;
@@ -119,29 +119,32 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 angleMin = Math.Min(angleMin, angle);
                 angleMax = Math.Max(angleMax, angle);
 
-                float minRad = stator.LowerLimitRad;
-                float maxRad = stator.UpperLimitRad;
+                if(allLimited)
+                {
+                    float minRad = stator.LowerLimitRad;
+                    float maxRad = stator.UpperLimitRad;
 
-                // is rotor limited in both directions
-                if(minRad >= -MathHelper.TwoPi && maxRad <= MathHelper.TwoPi)
-                    travelAverage += (angle - minRad) / (maxRad - minRad);
-                else
-                    allLimited = false;
+                    // is rotor limited in both directions
+                    if(minRad >= -MathHelper.TwoPi && maxRad <= MathHelper.TwoPi)
+                        travelAverage += (angle - minRad) / (maxRad - minRad);
+                    else
+                        allLimited = false;
+                }
             }
 
             int total = groupData.Blocks.Count;
-
-            if(travelAverage > 0)
-                travelAverage /= total;
 
             if(Processor.AnimFlip && !allOn)
                 sb.Append("OFF!\n");
 
             if(!Processor.AnimFlip && !allCanMove)
-                sb.Append("NoVel!\n");
+                sb.Append("No Vel\n");
 
             if(allLimited)
             {
+                if(travelAverage > 0)
+                    travelAverage /= total;
+
                 sb.ProportionToPercent(travelAverage);
             }
             else

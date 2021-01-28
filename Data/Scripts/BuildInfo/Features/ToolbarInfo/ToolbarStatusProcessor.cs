@@ -44,7 +44,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
         public const int MaxLineSize = 120;
 
-        public bool AnimFlip;
+        public const char LeftAlignChar = ' ';
+        public const int LeftAlignCount = 16;
+
+        public bool AnimFlip { get; private set; }
 
         int CurrentSlot = 0; // for calling one status callback per tick
         bool FullRefresh = false;
@@ -200,6 +203,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     try
                     {
+                        // TODO: use left-align?
+                        //sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align text to left
+
                         if(item.GroupName == null)
                         {
                             StatusDel func = StatusOverrides.GetValueOrDefault(item.Block.BlockDefinition.TypeId, null)?.GetValueOrDefault(item.ActionId, null);
@@ -241,13 +247,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     catch(Exception e)
                     {
                         Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupName}\n{e.ToString()}");
-                        sb.Clear().Append("ERROR!\nSeeModLog");
+                        sb.Clear().Append("ERROR!\nSeeMod\nLog");
                         overrideStatus = true;
                     }
                 }
 
                 if(!overrideStatus)
                 {
+                    sb.Clear(); // erase left-align
                     item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
                 }
 
