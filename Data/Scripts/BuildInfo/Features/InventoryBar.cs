@@ -8,6 +8,8 @@ namespace Digi.BuildInfo.Features
 {
     public class HudStat_InventoryBar : IMyHudStat
     {
+        public const string GroupName = "Cargo";
+
         public MyStringHash Id => MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
         public float CurrentValue { get; private set; }
         public float MinValue => 0;
@@ -17,13 +19,19 @@ namespace Digi.BuildInfo.Features
             // TODO toggle formatting?
             const string format = "###,###,###,###,##0.##";
             if(WasInShip)
-                return $"{Containers.ToString()} containers: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+            {
+                if(UsingGroup)
+                    return $"{Containers.ToString()} containers: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+                else
+                    return $"'{GroupName}' group: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+            }
             else
                 return $"Backpack: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
         }
 
         int Containers = 0;
         bool WasInShip = false;
+        bool UsingGroup;
 
         public void Update()
         {
@@ -58,8 +66,9 @@ namespace Digi.BuildInfo.Features
                     var blocks = BuildInfoMod.Instance.ShipToolInventoryBar.Blocks;
                     blocks.Clear();
 
-                    var group = gts.GetBlockGroupWithName("Cargo");
-                    if(group != null)
+                    var group = gts.GetBlockGroupWithName(GroupName);
+                    UsingGroup = (group != null);
+                    if(UsingGroup)
                     {
                         group.GetBlocksOfType(blocks);
                     }
