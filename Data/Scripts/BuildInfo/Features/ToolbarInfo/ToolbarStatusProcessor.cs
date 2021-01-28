@@ -146,7 +146,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 AnimFlip = !AnimFlip;
             }
 
-            if(tick % 2 != 0)
+            bool refreshTriggered = (!FullRefresh && tick == Main.ToolbarMonitor.TriggeredAtTick);
+
+            if(!refreshTriggered && tick % 2 != 0)
                 return;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
@@ -166,8 +168,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int toolbarPage = (gamepadHUD ? Main.ToolbarMonitor.GamepadToolbarPage : Main.ToolbarMonitor.ToolbarPage);
             int slotsPerPage = (gamepadHUD ? ToolbarMonitor.SlotsPerPageGamepad : ToolbarMonitor.SlotsPerPage);
             int pageOffset = toolbarPage * slotsPerPage;
-
-            bool refreshTriggered = (!FullRefresh && tick == Main.ToolbarMonitor.TriggeredAtTick);
 
             for(int i = 0; i < slotsPerPage; i++)
             {
