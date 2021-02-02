@@ -6,8 +6,8 @@
       <TypeId>MyObjectBuilder_CubeBuilderDefinition</TypeId>
       <SubtypeId>CubeBuilderBase</SubtypeId>
     </Id>
-    
-    <!--Building distance settings-->
+
+    <!-- Needed to allow vast placement distances, these are capped by script but cannot be increased by script so that's why this SBC is here. -->
     <DefaultBlockBuildingDistance>20</DefaultBlockBuildingDistance>
     <MaxBlockBuildingDistance>100</MaxBlockBuildingDistance>
     <MinBlockBuildingDistance>1</MinBlockBuildingDistance>
@@ -16,13 +16,13 @@
     <BuildingDistLargeSurvivalShip>50</BuildingDistLargeSurvivalShip>
     <BuildingDistSmallSurvivalShip>50</BuildingDistSmallSurvivalShip>
 
-    <!--Placement settings-->
+    <!-- From here on are just vanilla settings that I had to include to not break stuff. -->
     <BuildingSettings>
       <StaticGridAlignToCenter>false</StaticGridAlignToCenter>
       <SmallStaticGrid>
         <SnapMode>OneFreeAxis</SnapMode>
         <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
-        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <SearchHalfExtentsDeltaAbsolute>-0.057</SearchHalfExtentsDeltaAbsolute>
         <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
         <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
         <!--Voxel Placement Settings: Possible settings Both,InVoxel,OutsideVoxel,Volumetric. If volumetric set than MaxAllowed and MinAllowed will be used.-->
@@ -33,7 +33,7 @@
       <SmallGrid>
         <SnapMode>OneFreeAxis</SnapMode>
         <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
-        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <SearchHalfExtentsDeltaAbsolute>-0.057</SearchHalfExtentsDeltaAbsolute>
         <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
         <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
         <VoxelPlacement>
@@ -43,7 +43,7 @@
       <LargeStaticGrid>
         <SnapMode>Base6Directions</SnapMode>
         <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
-        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <SearchHalfExtentsDeltaAbsolute>-0.065</SearchHalfExtentsDeltaAbsolute>
         <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
         <EnablePreciseRotationWhenSnapped>true</EnablePreciseRotationWhenSnapped>
         <VoxelPlacement>
@@ -53,7 +53,7 @@
       <LargeGrid>
         <SnapMode>OneFreeAxis</SnapMode>
         <SearchHalfExtentsDeltaRatio>-0.1</SearchHalfExtentsDeltaRatio>
-        <SearchHalfExtentsDeltaAbsolute>-0.13</SearchHalfExtentsDeltaAbsolute>
+        <SearchHalfExtentsDeltaAbsolute>-0.065</SearchHalfExtentsDeltaAbsolute>
         <CanAnchorToStaticGrid>false</CanAnchorToStaticGrid>
         <EnablePreciseRotationWhenSnapped>false</EnablePreciseRotationWhenSnapped>
         <VoxelPlacement>
