@@ -33,6 +33,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public string PBArgument;
 
+        public MyObjectBuilder_Toolbar.Slot SlotOB;
+
         public ToolbarItem(int index)
         {
             Index = index;
@@ -140,6 +142,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 slot.ActionName = null;
                 slot.GroupName = null;
                 slot.PBArgument = null;
+                slot.SlotOB = default(MyObjectBuilder_Toolbar.Slot);
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
 
@@ -186,6 +189,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     break; // HACK: gamepad pages can go forever...
 
                 var slotData = Slots[item.Index];
+
+                slotData.SlotOB = item;
 
                 if(DebugLogging)
                     Log.Info($"    {item.Index.ToString(),-4} data={item.Data.GetType().Name,-48} id={item.Data.TypeId.ToString()}/{item.Data.SubtypeName}");
@@ -247,7 +252,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     {
                         var def = MyDefinitionManager.Static.GetDefinition(itemDef.DefinitionId);
                         if(def != null)
+                        {
                             slotData.Name = def.DisplayNameText;
+                        }
                     }
                 }
             }

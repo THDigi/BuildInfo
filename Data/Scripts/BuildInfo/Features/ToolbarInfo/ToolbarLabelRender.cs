@@ -9,6 +9,7 @@ using Draygo.API;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -24,6 +25,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     public class ToolbarLabelRender : ModComponent
     {
         public const int MaxBlockNameLength = 32; // last X characters
+        public const int MaxBlockNameLengthIfPbArg = MaxBlockNameLength - MaxArgLength; // last X characters
         public const int MaxActionNameLength = 28; // first X characters
         public const int MaxArgLength = 16; // first X characters
 
@@ -582,7 +584,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             if(item.GroupName != null)
                                 sb.Color(new Color(155, 220, 255)).Append('*');
 
-                            int maxNameLength = (item.PBArgument != null ? 16 : MaxBlockNameLength);
+                            int maxNameLength = (item.PBArgument != null ? MaxBlockNameLengthIfPbArg : MaxBlockNameLength);
                             string blockName = item.GroupName ?? item.Name;
                             int blockNameLen = blockName.Length;
                             if(blockNameLen > maxNameLength)
@@ -620,7 +622,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
                 else if(item.Name != null)
                 {
-                    sb.Color(new Color(255, 220, 155));
+                    bool isWeaponSlot = (item.SlotOB.Data is MyObjectBuilder_ToolbarItemWeapon);
+
+                    if(isWeaponSlot)
+                        sb.Color(new Color(255, 220, 155));
+                    else
+                        sb.Color(new Color(200, 210, 215));
+
+                    if(item.SlotOB.Data is MyObjectBuilder_ToolbarItemEmote || item.SlotOB.Data is MyObjectBuilder_ToolbarItemAnimation)
+                    {
+                        sb.Append("Emote - ");
+                    }
 
                     string name = item.CustomLabel ?? item.Name;
                     int nameLen = name.Length;
