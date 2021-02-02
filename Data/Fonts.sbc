@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<Definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Fonts>
+    <!--
+      To help with readability in toolbar status text made the font used there use the shadowed font and made it white.
+    -->
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>Blue</SubtypeId>
+      </Id>
+      <ColorMask>
+        <X>255</X>
+        <Y>255</Y>
+        <Z>255</Z>
+      </ColorMask>
+      <Resources>
+        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
+      </Resources>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+  </Fonts>
+</Definitions>
