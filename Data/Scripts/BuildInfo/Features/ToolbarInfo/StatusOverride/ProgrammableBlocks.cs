@@ -97,6 +97,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                                 sb.Append(chr);
                             }
                         }
+
+                        if(sb.Length > 0 && sb[sb.Length - 1] == '\n')
+                            sb.Length -= 1; // strip last newline
                     }
                 }
                 else
