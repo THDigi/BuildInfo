@@ -126,7 +126,7 @@ namespace Digi.BuildInfo.Features.Config
             }
 
             var cfgv = Handler.ConfigVersion.Value;
-            if(cfgv >= ConfigVersion)
+            if(cfgv <= 0 || cfgv >= ConfigVersion)
                 return;
 
             if(cfgv <= VersionCompat_ShipToolInvBar_FixPosition)
