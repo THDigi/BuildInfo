@@ -703,6 +703,29 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(value, 1);
         }
 
+        public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxDigits = 2)
+        {
+            if(value < 0)
+                throw new Exception("negative values not supported");
+
+            if(maxDigits <= 0)
+                throw new Exception("max digits can't be <= 0");
+
+            if(maxDigits > 3)
+                throw new Exception("max digits supported up to 3");
+
+            if(maxDigits == 1 && value > 9)
+                return s.Append("9+");
+
+            if(maxDigits == 2 && value > 99)
+                return s.Append("99+");
+
+            if(maxDigits == 3 && value > 999)
+                return s.Append("999+");
+
+            return s.Append(value);
+        }
+
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
         {
             var modifier = Math.Round(upgrade.Modifier, 3);

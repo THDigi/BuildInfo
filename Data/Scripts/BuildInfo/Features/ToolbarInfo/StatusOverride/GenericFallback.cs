@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 
@@ -34,29 +35,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     on++;
             }
 
-            int off = (groupData.Blocks.Count - on);
-            bool tooMany = (groupData.Blocks.Count) > 99;
+            int total = groupData.Blocks.Count;
 
-            if(off == 0)
+            if(on == total)
             {
-                if(tooMany)
-                    sb.Append("All On");
-                else
-                    sb.Append("All\n").Append(on).Append(" On");
+                sb.Append("All on");
             }
             else if(on == 0)
             {
-                if(tooMany)
-                    sb.Append("All Off");
-                else
-                    sb.Append("All\n").Append(off).Append(" Off");
+                sb.Append("All off");
             }
             else
             {
-                if(tooMany)
-                    sb.Append("Mixed");
-                else
-                    sb.Append(on).Append(" On\n").Append(off).Append(" Off");
+                sb.NumberCapped(on).Append(" on\n");
+                sb.NumberCapped(total - on).Append(" off");
             }
 
             return true;
@@ -84,16 +76,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(useConveyor == total)
             {
-                sb.Append("All\nShared");
+                sb.Append("All share");
             }
             else if(noConveyor == total)
             {
-                sb.Append("All\nIsolate");
+                sb.Append("All isolate");
             }
             else
             {
-                sb.Append(useConveyor).Append(" shared\n");
-                sb.Append(noConveyor).Append(" isolate");
+                sb.NumberCapped(noConveyor).Append(" iso\n");
+                sb.NumberCapped(useConveyor).Append(" share"); // NOTE: this line is too wide with "99+ share", must be last.
             }
 
             return true;
