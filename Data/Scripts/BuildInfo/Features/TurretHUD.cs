@@ -17,7 +17,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 namespace Digi.BuildInfo.Features
 {
     // Overriding controlled_is_turret hud stat to show the HUD while controlling turret.
-    public class HudStat_TurretControl : IMyHudStat
+    public class TurretControlStat : IMyHudStat
     {
         public MyStringHash Id => MyStringHash.GetOrCompute("controlled_is_turret");
         public float CurrentValue { get; private set; }

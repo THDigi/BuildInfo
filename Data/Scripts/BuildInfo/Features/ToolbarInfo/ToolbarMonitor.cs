@@ -406,7 +406,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void ShipControllerMarkedForClose(IMyEntity ent)
         {
-            // DEBUG TODO: check if a de-streamed entity in MP gets its page preserved when you re-stream it
             PagePerCockpit.Remove(ent.EntityId);
             GamepadPagePerCockpit.Remove(ent.EntityId);
         }

@@ -226,6 +226,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                             try
                             {
+                                // TODO: implement some other way...
+                                //sb.Append("Group:\n\n");
+
                                 GroupStatusDel func = GroupStatusOverrides.GetValueOrDefault(item.Block.BlockDefinition.TypeId, null)?.GetValueOrDefault(item.ActionId, null);
                                 if(func != null)
                                     overrideStatus = func.Invoke(sb, item, GroupDataToken);
@@ -254,7 +257,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(!overrideStatus)
                 {
-                    sb.Clear(); // erase left-align
+                    sb.Clear(); // erase any partial appends
+
+                    // TODO: implement some other way...
+                    //if(item.GroupName != null)
+                    //    sb.Append("First block status only...");
+
                     item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
                 }
 

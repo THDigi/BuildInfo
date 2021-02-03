@@ -7,8 +7,7 @@ namespace Digi.BuildInfo.Features
 {
     public class JumpDriveMonitor : ModComponent
     {
-        public Dictionary<long, int> JumpStartAt = new Dictionary<long, int>();
-
+        private readonly Dictionary<long, int> JumpStartAt = new Dictionary<long, int>();
         private int CleanAtTick = -1;
 
         public JumpDriveMonitor(BuildInfoMod main) : base(main)

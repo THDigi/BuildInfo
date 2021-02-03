@@ -6,8 +6,6 @@ using Digi.ConfigLib;
 using Sandbox.Definitions;
 using VRage.Utils;
 
-// DEBUG TODO: get rid of keen's notifications and use textAPI
-
 namespace Digi.BuildInfo.Features
 {
     public class ItemTooltips : ModComponent

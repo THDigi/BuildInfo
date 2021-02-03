@@ -6,9 +6,11 @@ using VRage.Utils;
 
 namespace Digi.BuildInfo.Features
 {
-    public class HudStat_InventoryBar : IMyHudStat
+    public class InventoryBarStat : IMyHudStat
     {
         public const string GroupName = "Cargo";
+        public const int UpdateFrequencyTicks = (int)(Constants.TICKS_PER_SECOND * 1.0);
+        public const string TextFormat = "###,###,###,###,##0.##";
 
         public MyStringHash Id => MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
         public float CurrentValue { get; private set; }
@@ -16,17 +18,15 @@ namespace Digi.BuildInfo.Features
         public float MaxValue { get; private set; }
         public string GetValueString()
         {
-            // TODO toggle formatting?
-            const string format = "###,###,###,###,##0.##";
             if(WasInShip)
             {
                 if(UsingGroup)
-                    return $"{Containers.ToString()} containers: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+                    return $"{Containers.ToString()} containers: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
                 else
-                    return $"'{GroupName}' group: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+                    return $"'{GroupName}' group: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
             }
             else
-                return $"Backpack: {CurrentValue.ToString(format)} / {MaxValue.ToString(format)}";
+                return $"Backpack: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
         }
 
         int Containers = 0;
@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features
             var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
             if(controlled != null)
             {
-                if(!WasInShip || BuildInfoMod.Instance.Tick % Constants.TICKS_PER_SECOND == 0)
+                if(!WasInShip || BuildInfoMod.Instance.Tick % UpdateFrequencyTicks == 0)
                 {
                     CurrentValue = 0f;
                     MaxValue = 0f;
@@ -100,7 +100,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(BuildInfoMod.Instance.Tick % 10 == 0)
+                if(WasInShip || BuildInfoMod.Instance.Tick % 10 == 0)
                 {
                     WasInShip = false;
 
