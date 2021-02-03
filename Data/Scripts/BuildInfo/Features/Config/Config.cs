@@ -34,6 +34,8 @@ namespace Digi.BuildInfo.Features.Config
         public Vector2DSetting ShipToolInvBarPosition;
         public Vector2DSetting ShipToolInvBarScale;
 
+        public BoolSetting InventoryBarOverride;
+
         public BoolSetting RelativeDampenerInfo;
 
         public BoolSetting ItemTooltipAdditions;
@@ -220,6 +222,11 @@ namespace Digi.BuildInfo.Features.Config
             {
                 "The width and height scale of the ship tool inventory bar.",
             });
+
+            InventoryBarOverride = new BoolSetting(Handler, "HUD: Bag Inventory Bar Override", true,
+                "This affects the vanilla inventory bar (with a backpack icon), if enabled:",
+                "When in a seat, it shows the filled ratio of ship's Cargo Containers.",
+                $"If a group named {BackpackBarStat.GroupName} exists, the bar will show filled ratio of all blocks there (regardless of type).");
 
             TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");

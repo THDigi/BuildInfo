@@ -6,18 +6,23 @@ using VRage.Utils;
 
 namespace Digi.BuildInfo.Features
 {
-    public class InventoryBarStat : IMyHudStat
+    public class BackpackBarStat : IMyHudStat
     {
         public const string GroupName = "Cargo";
         public const int UpdateFrequencyTicks = (int)(Constants.TICKS_PER_SECOND * 1.0);
         public const string TextFormat = "###,###,###,###,##0.##";
 
-        public MyStringHash Id => MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
+        public MyStringHash Id { get; private set; }
         public float CurrentValue { get; private set; }
         public float MinValue => 0;
         public float MaxValue { get; private set; }
         public string GetValueString()
         {
+            bool enabled = BuildInfoMod.Instance.Config.InventoryBarOverride.Value;
+            if(!enabled)
+                return CurrentValue.ToString(TextFormat);
+
+            // TODO toggle string formatting?
             if(WasInShip)
             {
                 if(UsingGroup)
@@ -33,11 +38,16 @@ namespace Digi.BuildInfo.Features
         bool WasInShip = false;
         bool UsingGroup;
 
+        public BackpackBarStat()
+        {
+            Id = MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
+        }
+
         public void Update()
         {
-            // TODO toggle feature?
+            bool enabled = BuildInfoMod.Instance.Config.InventoryBarOverride.Value;
 
-            if(MyAPIGateway.Session?.ControlledObject == null)
+            if(enabled && MyAPIGateway.Session?.ControlledObject == null)
             {
                 CurrentValue = 0f;
                 MaxValue = 0f;
@@ -46,7 +56,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+            var controlled = (enabled ? MyAPIGateway.Session.ControlledObject as IMyTerminalBlock : null);
             if(controlled != null)
             {
                 if(!WasInShip || BuildInfoMod.Instance.Tick % UpdateFrequencyTicks == 0)
@@ -69,16 +79,15 @@ namespace Digi.BuildInfo.Features
                     var group = gts.GetBlockGroupWithName(GroupName);
                     UsingGroup = (group != null);
                     if(UsingGroup)
-                    {
-                        group.GetBlocksOfType(blocks);
-                    }
+                        group.GetBlocks(blocks);
                     else
-                    {
                         gts.GetBlocksOfType<IMyCargoContainer>(blocks);
-                    }
 
                     foreach(var block in blocks)
                     {
+                        //if(!UsingGroup && !(block is IMyCargoContainer || block is IMyShipConnector || block is IMyCollector))
+                        //    continue;
+
                         if(!block.IsSameConstructAs(controlled))
                             continue;
 
