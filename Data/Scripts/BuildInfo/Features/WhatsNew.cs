@@ -13,7 +13,8 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            if(Main.Config.ModVersion.Value < Constants.MOD_VERSION)
+            int modVersion = Main.Config.ModVersion.Value;
+            if(modVersion > 0 && modVersion < Constants.MOD_VERSION)
             {
                 UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
             }
@@ -29,7 +30,6 @@ namespace Digi.BuildInfo.Features
                 return;
 
             var character = MyAPIGateway.Session?.Player?.Character;
-
             if(character != null) // wait until first spawn
             {
                 Main.Config.ModVersion.Value = Constants.MOD_VERSION;
