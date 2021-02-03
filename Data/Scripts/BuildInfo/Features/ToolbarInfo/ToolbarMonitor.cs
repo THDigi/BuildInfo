@@ -125,7 +125,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             //    return;
 
             var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
-
             if(shipController != null)
                 Main.ToolbarCustomLabels.ParseCustomData(shipController);
 

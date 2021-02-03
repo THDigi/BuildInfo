@@ -62,7 +62,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             // HACK: because CustomDataChanged doesn't work for sender
-            if(tick % (60 * 2) == 0 && MyAPIGateway.Gui.IsCursorVisible)
+            if(tick % 30 == 0)
             {
                 ParseCustomData(shipController);
             }
@@ -172,6 +172,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(hadErrors || labelData.ParseErrors.Count > 0)
             {
                 RefreshDetailInfo(block);
+            }
+
+            // refresh slot labels
+            var slots = Main.ToolbarMonitor.Slots;
+            for(int index = slots.Length - 1; index >= 0; index--)
+            {
+                var slot = slots[index];
+                slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
         }
 
