@@ -1,6 +1,6 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -21,9 +21,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         bool StartStop(StringBuilder sb, ToolbarItem item)
         {
             var timer = (IMyTimerBlock)item.Block;
-            bool working = timer.IsWorking;
 
-            if(working && timer.IsCountingDown)
+            Processor.AppendSingleStats(sb, item.Block);
+
+            if(timer.IsCountingDown)
             {
                 // HACK must parse detailedInfo because there's no getter of the current time.
                 string detailedInfo = timer.DetailedInfo;
@@ -45,15 +46,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                         if(separatorIndex < endLineIndex)
                         {
-                            if(!Processor.AnimFlip)
-                                sb.Append("  ");
-                            else
+                            bool enabled = timer.Enabled;
+                            if(enabled && Processor.AnimFlip)
                                 sb.Append("ˇ ");
+                            else
+                                sb.Append("  ");
 
                             sb.Append(detailedInfo, separatorIndex, endLineIndex - separatorIndex);
 
-                            if(Processor.AnimFlip)
+                            if(enabled && Processor.AnimFlip)
                                 sb.Append(" ˇ");
+                            else
+                                sb.Append("  ");
+
                             return true;
                         }
                     }
@@ -64,7 +69,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
-                sb.Append(working ? "Stopped" : "Off");
+                sb.Append("Stopped");
                 return true;
             }
         }
@@ -81,13 +86,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyTimerBlock>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             int counting = 0;
 
             foreach(IMyTimerBlock timer in groupData.Blocks)
             {
-                if(allOn && !timer.IsWorking)
-                    allOn = false;
+                if(!timer.IsFunctional)
+                    broken++;
+
+                if(!timer.Enabled)
+                    off++;
 
                 if(timer.IsCountingDown)
                     counting++;
@@ -95,15 +104,21 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
-            if(Processor.AnimFlip && !allOn)
-                sb.Append("OFF!\n");
+            Processor.AppendGroupStats(sb, broken, off);
 
             if(counting == total)
-                sb.Append("Running");
+            {
+                sb.Append("All run");
+            }
             else if(counting == 0)
-                sb.Append("Stopped");
+            {
+                sb.Append("All stop");
+            }
             else
-                sb.Append("Mixed");
+            {
+                sb.NumberCapped(counting).Append(" run\n");
+                sb.NumberCapped(total - counting).Append(" stop");
+            }
 
             return true;
         }
@@ -123,12 +138,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
-            if(total == silent)
-                sb.Append("All\nSilent");
+            if(silent == total)
+            {
+                sb.Append("All silent");
+            }
             else if(silent == 0)
-                sb.Append("All\nLoud");
+            {
+                sb.Append("All loud");
+            }
             else
-                sb.Append("Mixed");
+            {
+                sb.NumberCapped(silent).Append(" silent\n");
+                sb.NumberCapped(total - silent).Append(" loud");
+            }
 
             return true;
         }

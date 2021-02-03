@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
@@ -20,13 +21,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             var connector = (IMyShipConnector)item.Block;
 
-            if(Processor.AnimFlip && !connector.IsWorking)
-                sb.Append("OFF!\n");
+            Processor.AppendSingleStats(sb, item.Block);
 
             switch(connector.Status)
             {
                 case MyShipConnectorStatus.Connected: sb.Append("Locked"); break;
-                case MyShipConnectorStatus.Connectable: sb.Append("Ready"); break;
+                case MyShipConnectorStatus.Connectable: sb.Append("Proximity"); break;
                 case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); break;
             }
 
@@ -38,12 +38,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyShipConnector>())
                 return false;
 
+            int broken = 0;
+            int off = 0;
             int connected = 0;
             int ready = 0;
             int disconnected = 0;
 
             foreach(IMyShipConnector connector in groupData.Blocks)
             {
+                if(!connector.IsFunctional)
+                    broken++;
+
+                if(!connector.Enabled)
+                    off++;
+
                 switch(connector.Status)
                 {
                     case MyShipConnectorStatus.Connected: connected++; break;
@@ -54,29 +62,31 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
+            Processor.AppendGroupStats(sb, broken, off);
+
             if(connected == total)
             {
-                sb.Append("All\nLocked");
+                sb.Append("All lock");
             }
             else if(ready == total)
             {
-                sb.Append("All\nReady");
+                sb.Append("All prox");
             }
             else if(disconnected == total)
             {
-                sb.Append("All\nUnlocked");
+                sb.Append("All unlk");
             }
             else
             {
                 if(connected > 0)
-                    sb.Append(connected).Append(" lock");
+                    sb.NumberCapped(connected).Append(" lock");
 
                 if(ready > 0)
                 {
                     if(connected > 0)
                         sb.Append('\n');
 
-                    sb.Append(ready).Append(" rdy");
+                    sb.NumberCapped(ready).Append(" prox");
                 }
 
                 if(disconnected > 0)
@@ -84,7 +94,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     if(ready > 0 || connected > 0)
                         sb.Append('\n');
 
-                    sb.Append(disconnected).Append(" unlk");
+                    sb.NumberCapped(disconnected).Append(" unlk");
                 }
             }
 

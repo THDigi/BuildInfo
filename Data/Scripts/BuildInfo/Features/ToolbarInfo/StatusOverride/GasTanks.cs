@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             // TODO: group status for gas tank
             //GroupStatusDel groupFunc = StatusGroup;
             //processor.AddGroupStatus(typeof(MyObjectBuilder_GasTank), groupFunc, "Refill");
-            //processor.AddGroupStatus(typeof(MyObjectBuilder_GasTank), groupFunc, "Refill");
+            //processor.AddGroupStatus(typeof(MyObjectBuilder_OxygenTank), groupFunc, "Refill");
         }
 
         bool Refill(StringBuilder sb, ToolbarItem item)

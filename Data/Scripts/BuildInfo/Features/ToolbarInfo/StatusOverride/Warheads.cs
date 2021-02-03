@@ -28,11 +28,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             bool blink = (warhead.IsCountingDown && Processor.AnimFlip);
             sb.Append(blink ? "ˇ " : "  ");
-
             sb.Append(minutes.ToString("00")).Append(':').Append(span.Seconds.ToString("00"));
-
-            if(blink)
-                sb.Append(" ˇ");
+            sb.Append(blink ? " ˇ" : "  ");
 
             return true;
         }
@@ -43,12 +40,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(warhead.IsArmed)
             {
                 bool isTrigger = (item.ActionId == "Detonate");
-
-                sb.Append(Processor.AnimFlip ? "!" : " ");
-                sb.Append(isTrigger ? "EXPLODE" : "Armed");
-
-                if(Processor.AnimFlip)
-                    sb.Append("!");
+                sb.Append(Processor.AnimFlip ? "! " : "  ");
+                sb.Append(isTrigger ? "BOOM" : "Armed");
+                sb.Append(Processor.AnimFlip ? " !" : "  ");
             }
             else
             {

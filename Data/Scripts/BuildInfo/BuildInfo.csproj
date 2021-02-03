@@ -213,7 +213,7 @@
     <Compile Include="Features\ToolbarInfo\ActionWrapper.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Connectors.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\GasTanks.cs" />
-    <Compile Include="Features\ToolbarInfo\StatusOverride\OxygenGenerators.cs" />
+    <Compile Include="Features\ToolbarInfo\StatusOverride\GasGenerators.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Doors.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Parachutes.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Pistons.cs" />
@@ -225,6 +225,7 @@
     <Compile Include="Features\ToolbarInfo\StatusOverride\Batteries.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\JumpDrives.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Warheads.cs" />
+    <Compile Include="Features\ToolbarInfo\StatusOverride\Thrusters.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\Weapons.cs" />
     <Compile Include="Features\ToolbarInfo\ToolbarMonitor.cs" />
     <Compile Include="Features\ToolbarInfo\ToolbarCustomLabels.cs" />

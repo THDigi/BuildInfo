@@ -35,8 +35,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 hasAmmo = (foundItems >= def.MaterialDeployCost);
             }
 
-            if(Processor.AnimFlip && !parachute.IsWorking)
-                sb.Append("OFF!\n");
+            Processor.AppendSingleStats(sb, item.Block);
 
             if(!Processor.AnimFlip && !hasAmmo && parachute.Status != DoorStatus.Open)
                 sb.Append("Empty!\n");
@@ -60,9 +59,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(autoDeploy)
             {
-                if(Processor.AnimFlip && !parachute.IsWorking)
-                    sb.Append("OFF!\n");
-                else
+                if(!Processor.AppendSingleStats(sb, item.Block))
                     sb.Append("Auto\n");
 
                 float deployHeight = parachute.GetValue<float>("AutoDeployHeight");
@@ -80,28 +77,32 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyParachute>())
                 return false;
 
+            int broken = 0;
+            int off = 0;
             int open = 0;
             int ready = 0;
             bool allAmmo = true;
-            bool allOn = true;
 
             foreach(IMyParachute parachute in groupData.Blocks)
             {
+                if(!parachute.IsFunctional)
+                    broken++;
+
+                if(!parachute.Enabled)
+                    off++;
+
                 if(parachute.Status != DoorStatus.Open)
                 {
                     var inv = parachute.GetInventory();
                     if(inv != null)
                     {
-                        // HACK block cast needed because modAPI IMyParachute implements ingame interfaces instead of modAPI ones.
+                        // HACK: block cast needed because modAPI IMyParachute implements ingame interfaces instead of modAPI ones.
                         var def = (MyParachuteDefinition)((IMyTerminalBlock)parachute).SlimBlock.BlockDefinition;
                         var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
                         if(foundItems < def.MaterialDeployCost)
                             allAmmo = false;
                     }
                 }
-
-                if(!parachute.IsWorking)
-                    allOn = false;
 
                 switch(parachute.Status)
                 {
@@ -110,18 +111,26 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            if(Processor.AnimFlip && !allOn)
-                sb.Append("OFF!\n");
+            Processor.AppendGroupStats(sb, broken, off);
 
             if(!Processor.AnimFlip && !allAmmo)
                 sb.Append("Empty!\n");
 
-            if(open > 0 && ready > 0)
-                sb.Append("Mixed");
-            else if(open > 0)
-                sb.Append("Deployed");
+            int total = groupData.Blocks.Count;
+
+            if(open == total)
+            {
+                sb.Append("All open");
+            }
+            else if(open == 0)
+            {
+                sb.Append("All ready");
+            }
             else
-                sb.Append("Ready");
+            {
+                sb.NumberCapped(open).Append(" open\n");
+                sb.NumberCapped(ready).Append(" rdy");
+            }
 
             return true;
         }
@@ -131,17 +140,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyParachute>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             int auto = 0;
-            int manual = 0;
 
             bool hasSmallerDeploy = false;
             float highestDeploy = 0;
 
             foreach(IMyParachute parachute in groupData.Blocks)
             {
-                if(!parachute.IsWorking)
-                    allOn = false;
+                if(!parachute.IsFunctional)
+                    broken++;
+
+                if(!parachute.Enabled)
+                    off++;
 
                 bool autoDeploy = parachute.GetValue<bool>("AutoDeploy");
                 if(autoDeploy)
@@ -157,30 +169,29 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                         highestDeploy = deployHeight;
                     }
                 }
-                else
-                {
-                    manual++;
-                }
             }
 
             if(auto > 0)
-            {
-                if(Processor.AnimFlip && !allOn)
-                    sb.Append("OFF!\n");
-                else if(manual > 0)
-                    sb.Append("Mixed\n");
-                else
-                    sb.Append("Auto\n");
+                Processor.AppendGroupStats(sb, broken, off);
 
-                if(hasSmallerDeploy)
-                    sb.Append('<');
+            int total = groupData.Blocks.Count;
 
-                sb.DistanceFormat(highestDeploy, 1);
-            }
-            else if(manual > 0)
+            if(auto == 0)
             {
-                sb.Append("Manual");
+                sb.Append("Manual\n");
             }
+            else if(auto == total)
+            {
+                sb.Append("Auto\n");
+            }
+            else
+            {
+                sb.Append("(Mixed)\n");
+            }
+
+            if(hasSmallerDeploy)
+                sb.Append('<');
+            sb.DistanceFormat(highestDeploy, 1);
 
             return true;
         }

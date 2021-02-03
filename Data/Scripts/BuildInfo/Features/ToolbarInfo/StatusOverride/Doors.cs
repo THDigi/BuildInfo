@@ -1,10 +1,7 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using SpaceEngineers.Game.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
@@ -34,8 +31,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             var door = (IMyDoor)item.Block;
 
-            if(Processor.AnimFlip && !door.IsWorking)
-                sb.Append("OFF!\n");
+            Processor.AppendSingleStats(sb, item.Block);
 
             // TODO: does AdvancedDoor need special treatment for OpenRatio?
 
@@ -68,8 +64,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyDoor>())
                 return false;
 
-            // TODO include off state?
-
+            int broken = 0;
+            int off = 0;
             int open = 0;
             int closed = 0;
             int opening = 0;
@@ -79,6 +75,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyDoor door in groupData.Blocks)
             {
+                if(!door.IsFunctional)
+                    broken++;
+
+                if(!door.Enabled)
+                    off++;
+
                 switch(door.Status)
                 {
                     case DoorStatus.Open: open++; break;
@@ -96,37 +98,28 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
+            Processor.AppendGroupStats(sb, broken, off);
+
             int doors = groupData.Blocks.Count;
-            bool tooMany = (doors > 99);
             int moving = (closing + opening);
+            bool tooMany = (doors > 99);
 
             if(moving == 0)
             {
                 if(closed > 0 && open > 0)
                 {
-                    if(tooMany)
-                        sb.Append("Mixed");
-                    else
-                    {
-                        sb.Append(open).Append(" open\n");
-                        sb.Append(closed).Append(" closed");
-                    }
+                    sb.NumberCapped(open).Append(" open\n");
+                    sb.NumberCapped(closed).Append(" closed");
                     return true;
                 }
                 else if(open > 0)
                 {
-                    if(tooMany)
-                        sb.Append("All\nopen");
-                    else
-                        sb.Append("All\n").Append(open).Append(" open");
+                    sb.Append("All open");
                     return true;
                 }
                 else if(closed > 0)
                 {
-                    if(tooMany)
-                        sb.Append("All\nclosed");
-                    else
-                        sb.Append("All\n").Append(closed).Append(" closed");
+                    sb.Append("All closed");
                     return true;
                 }
             }
@@ -148,7 +141,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(tooMany)
             {
-                sb.Append("InPrgrs\nMixed");
+                sb.Append("(Mixed)");
             }
             else
             {

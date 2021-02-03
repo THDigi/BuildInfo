@@ -56,7 +56,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool GroupUseConveyor(StringBuilder sb, ToolbarItem item, GroupData groupData)
         {
-            if(!groupData.GetGroupBlocks<IMyFunctionalBlock>())
+            if(!groupData.GetGroupBlocks<IMyTerminalBlock>())
                 return false;
 
             int useConveyor = 0;

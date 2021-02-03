@@ -41,9 +41,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             var stator = (IMyMotorStator)item.Block;
             float angleRad = stator.Angle;
 
-            if(Processor.AnimFlip && !stator.IsWorking)
-                sb.Append("OFF!\n");
-            else if(!Processor.AnimFlip && stator.TargetVelocityRPM == 0)
+            if(!Processor.AppendSingleStats(sb, item.Block) && !Processor.AnimFlip && stator.TargetVelocityRPM == 0)
                 sb.Append("No Vel\n");
 
             float minRad = stator.LowerLimitRad;
@@ -76,19 +74,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
 
             int total = groupData.Blocks.Count;
-            int detached = (total - attached);
 
             if(attached == total)
             {
-                sb.Append("All\nAttached");
+                sb.Append("Attached");
             }
-            else if(detached == total)
+            else if(attached == 0)
             {
-                sb.Append("All\nDetached");
+                sb.Append("Detached");
             }
             else
             {
-                sb.Append("Detached:\n").Append(detached);
+                sb.NumberCapped(attached).Append(" att\n");
+                sb.NumberCapped(total - attached).Append(" det");
             }
 
             return true;
@@ -99,8 +97,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyMotorStator>())
                 return false;
 
+            int broken = 0;
+            int off = 0;
             bool allLimited = true;
-            bool allOn = true;
             bool allCanMove = true;
             float travelAverage = 0;
             float angleMin = float.MaxValue;
@@ -108,8 +107,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyMotorStator stator in groupData.Blocks)
             {
-                if(allOn && !stator.IsWorking)
-                    allOn = false;
+                if(!stator.IsFunctional)
+                    broken++;
+
+                if(!stator.Enabled)
+                    off++;
 
                 if(allCanMove && stator.TargetVelocityRPM == 0)
                     allCanMove = false;
@@ -132,13 +134,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            int total = groupData.Blocks.Count;
-
-            if(Processor.AnimFlip && !allOn)
-                sb.Append("OFF!\n");
+            Processor.AppendGroupStats(sb, broken, off);
 
             if(!Processor.AnimFlip && !allCanMove)
                 sb.Append("No Vel\n");
+
+            int total = groupData.Blocks.Count;
 
             if(allLimited)
             {

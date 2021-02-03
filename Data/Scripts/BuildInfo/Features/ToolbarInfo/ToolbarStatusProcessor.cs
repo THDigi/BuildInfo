@@ -69,6 +69,34 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
+        public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
+        {
+            if(!AnimFlip)
+                return false;
+
+            // doesn't need IsFunctional, slot is grayed out in that case
+
+            var toggleable = block as IMyFunctionalBlock;
+            if(toggleable != null && !toggleable.Enabled)
+            {
+                sb.Append("OFF\n");
+                return true;
+            }
+
+            return false;
+        }
+
+        public void AppendGroupStats(StringBuilder sb, int broken, int off)
+        {
+            if(!AnimFlip)
+                return;
+
+            if(broken > 0)
+                sb.Append("BROKEN\n");
+            else if(off > 0)
+                sb.Append("OFF\n");
+        }
+
         protected override void RegisterComponent()
         {
             new StatusOverride.GenericFallback(this);
@@ -77,7 +105,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             new StatusOverride.Batteries(this);
             new StatusOverride.JumpDrives(this);
             new StatusOverride.GasTanks(this);
-            new StatusOverride.OxygenGenerators(this);
+            new StatusOverride.GasGenerators(this);
             new StatusOverride.Weapons(this);
             new StatusOverride.Warheads(this);
             new StatusOverride.Rotors(this);
@@ -85,6 +113,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             new StatusOverride.Connectors(this);
             new StatusOverride.Parachutes(this);
             new StatusOverride.Doors(this);
+            new StatusOverride.Thrusters(this);
 
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
         }

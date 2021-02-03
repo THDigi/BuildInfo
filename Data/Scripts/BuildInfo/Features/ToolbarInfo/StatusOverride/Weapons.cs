@@ -50,16 +50,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             //    ammo = gun.GunBase.CurrentAmmo + (int)gunUser.AmmoInventory.GetItemAmount(gun.GunBase.CurrentAmmoMagazineId) * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
             //}
 
-            var functional = item.Block as IMyFunctionalBlock;
-            if(functional != null && !functional.Enabled)
-            {
-                sb.Append("Safe");
-            }
-            else if(!item.Block.IsWorking)
-            {
-                sb.Append("Broken");
-            }
-            else if(weaponInfo.Reloading)
+            Processor.AppendSingleStats(sb, item.Block);
+
+            if(weaponInfo.Reloading)
             {
                 sb.Append("Reload");
             }
@@ -87,7 +80,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyUserControllableGun>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             int total = 0;
             int reloading = 0;
             int leastAmmo = int.MaxValue;
@@ -99,8 +93,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(weaponInfo == null)
                     continue; // likely weaponcore or other unsupported weapon
 
-                if(allOn && !gun.IsWorking)
-                    allOn = false;
+                if(!gun.IsFunctional)
+                    broken++;
+
+                if(!gun.Enabled)
+                    off++;
 
                 if(weaponInfo.Reloading)
                     reloading++;
@@ -120,14 +117,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(total == 0)
                 return false; // no supported weapons
 
-            if(Processor.AnimFlip && !allOn)
-            {
-                sb.Append("OFF!\n");
-            }
+            Processor.AppendGroupStats(sb, broken, off);
 
             if(reloading == total)
             {
-                sb.Append("All\nReload");
+                sb.Append("All reload");
             }
             else
             {
@@ -140,8 +134,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
                 else
                 {
-                    sb.Append("H: ").Append(mostAmmo);
-                    sb.Append("\nL: ").Append(leastAmmo);
+                    sb.Append("L: ").Append(leastAmmo);
+                    sb.Append("\nH: ").Append(mostAmmo);
                 }
             }
 

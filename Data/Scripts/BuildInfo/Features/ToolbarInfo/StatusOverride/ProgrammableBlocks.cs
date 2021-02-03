@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
@@ -40,9 +41,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             var pb = (IMyProgrammableBlock)item.Block;
 
-            if(Processor.AnimFlip && !pb.IsWorking)
+            if(Processor.AnimFlip && !pb.Enabled)
             {
-                sb.Append("OFF!");
+                Processor.AppendSingleStats(sb, item.Block);
             }
             else
             {
@@ -122,14 +123,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyProgrammableBlock>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             int errors = 0;
             int echo = 0;
 
             foreach(IMyProgrammableBlock pb in groupData.Blocks)
             {
-                if(allOn && !pb.IsWorking)
-                    allOn = false;
+                if(!pb.IsFunctional)
+                    broken++;
+
+                if(!pb.Enabled)
+                    off++;
 
                 string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
 
@@ -152,18 +157,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            int total = groupData.Blocks.Count;
+            Processor.AppendGroupStats(sb, broken, off);
 
-            if(!allOn)
-                sb.Append("OFF!\n");
+            int total = groupData.Blocks.Count;
 
             if(errors == 0)
             {
-                sb.Append(echo).Append(" msg");
+                sb.NumberCapped(echo).Append(" msg");
+            }
+            else if(errors == total)
+            {
+                sb.Append("All error");
             }
             else
             {
-                sb.Append(errors).Append(" error");
+                sb.NumberCapped(echo).Append(" msg\n");
+                sb.NumberCapped(errors).Append(" error");
             }
 
             return true;

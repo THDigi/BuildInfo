@@ -37,27 +37,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            if(!jd.IsWorking)
+            Processor.AppendSingleStats(sb, item.Block);
+
+            switch(jd.Status)
             {
-                sb.Append("Off"); // no blink here because Status gets changed to weird stuff when off.
-            }
-            else
-            {
-                switch(jd.Status)
+                case MyJumpDriveStatus.Charging:
                 {
-                    case MyJumpDriveStatus.Charging:
-                    {
-                        var recharge = jd.GetValueBool("Recharge");
-                        sb.Append(recharge ? "Charge" : "Stop");
-                        break;
-                    }
-                    case MyJumpDriveStatus.Ready: sb.Append("Ready"); break;
-                    case MyJumpDriveStatus.Jumping: sb.Append("Jump..."); break;
-                    default: return false;
+                    var recharge = jd.GetValueBool("Recharge");
+                    sb.Append(recharge ? "Charge" : "Stop");
+                    break;
                 }
+                case MyJumpDriveStatus.Ready: sb.Append("Ready"); break;
+                case MyJumpDriveStatus.Jumping: sb.Append("Jump..."); break;
+                default: return false;
             }
 
-            sb.Append("\n");
+            sb.Append('\n');
 
             int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
             sb.Append(filledPercent).Append("% ");
@@ -71,7 +66,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 float maxInput = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
                 bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
 
-                if(Processor.AnimFlip && input > 0)
+                if(input > 0)
                     sb.Append(highFlow ? "++" : "+   ");
                 else
                     sb.Append("     ");
@@ -86,11 +81,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(Processor.AnimFlip)
             {
+                // HACK: JumpDistance slider is disabled if a GPS target is selected.
                 var prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
                 if(prop != null && !prop.Enabled.Invoke(jd))
                 {
-                    sb.Append("GPS!");
-                    return true;
+                    sb.Append("GPS!\n");
                 }
             }
 
@@ -121,7 +116,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyJumpDrive>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             float averageFilled = 0f;
             float input = 0f;
             float maxInput = 0f;
@@ -130,8 +126,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyJumpDrive jd in groupData.Blocks)
             {
-                if(!jd.IsWorking)
-                    allOn = false;
+                if(!jd.IsFunctional)
+                    broken++;
+
+                if(!jd.Enabled)
+                    off++;
 
                 averageFilled += (jd.CurrentStoredPower / jd.MaxStoredPower);
 
@@ -151,6 +150,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
+            Processor.AppendGroupStats(sb, broken, off);
+
             if(averageFilled > 0)
             {
                 averageFilled /= total;
@@ -161,26 +162,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(input > 0)
                 averageInput = input / total;
 
-            if(Processor.AnimFlip && !allOn)
-            {
-                sb.Append("OFF!\n");
-            }
+            if(ready == total)
+                sb.Append("Ready\n");
+            else if(charge == total)
+                sb.Append("Charge\n");
             else
-            {
-                if(ready == total)
-                    sb.Append("Ready\n");
-                else if(charge == total)
-                    sb.Append("Charge\n");
-                else
-                    sb.Append("Mixed\n");
-            }
+                sb.Append("(Mixed)\n");
 
             sb.Append((int)averageFilled).Append("% ");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
             bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
 
-            if(Processor.AnimFlip && input > 0)
+            if(input > 0)
                 sb.Append(highFlow ? "++" : "+   ");
             else
                 sb.Append("     ");

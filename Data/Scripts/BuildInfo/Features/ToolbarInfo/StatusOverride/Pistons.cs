@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using VRage.ObjectBuilders;
@@ -36,8 +37,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             float max = piston.MaxLimit;
             float travelRatio = (piston.CurrentPosition - min) / (max - min);
 
-            if(Processor.AnimFlip && !piston.IsWorking)
-                sb.Append("OFF!\n");
+            Processor.AppendSingleStats(sb, item.Block);
 
             if(!Processor.AnimFlip && piston.Velocity == 0)
                 sb.Append("No Vel\n");
@@ -61,17 +61,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
-            if(attached < total)
+            if(attached == total)
             {
-                sb.Append("Attached:\n").Append(attached).Append(" / ").Append(total);
+                sb.Append("Attached");
             }
-            else if(attached == total)
+            else if(attached == 0)
             {
-                sb.Append("All\nattached");
+                sb.Append("Detached");
             }
             else
             {
-                sb.Append("All\ndetached");
+                sb.NumberCapped(attached).Append(" att\n");
+                sb.NumberCapped(total - attached).Append(" det");
             }
 
             return true;
@@ -82,14 +83,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyPistonBase>())
                 return false;
 
+            int broken = 0;
+            int off = 0;
             float travelAverage = 0;
-            bool allOn = true;
             bool allCanMove = true;
 
             foreach(IMyPistonBase piston in groupData.Blocks)
             {
-                if(allOn && !piston.IsWorking)
-                    allOn = false;
+                if(!piston.IsFunctional)
+                    broken++;
+
+                if(!piston.Enabled)
+                    off++;
 
                 if(allCanMove && piston.Velocity == 0)
                     allCanMove = false;
@@ -100,14 +105,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 travelAverage += travelRatio;
             }
 
-            if(travelAverage > 0)
-                travelAverage /= groupData.Blocks.Count;
-
-            if(Processor.AnimFlip && !allOn)
-                sb.Append("OFF!\n");
+            Processor.AppendGroupStats(sb, broken, off);
 
             if(!Processor.AnimFlip && !allCanMove)
                 sb.Append("No Vel\n");
+
+            if(travelAverage > 0)
+                travelAverage /= groupData.Blocks.Count;
 
             sb.Append((int)(travelAverage * 100)).Append("%");
 

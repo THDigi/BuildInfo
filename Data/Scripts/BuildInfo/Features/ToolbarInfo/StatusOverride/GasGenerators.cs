@@ -8,16 +8,16 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
-    internal class OxygenGenerators : StatusOverrideBase
+    internal class GasGenerators : StatusOverrideBase
     {
-        public OxygenGenerators(ToolbarStatusProcessor processor) : base(processor)
+        public GasGenerators(ToolbarStatusProcessor processor) : base(processor)
         {
             var type = typeof(MyObjectBuilder_OxygenGenerator);
 
             processor.AddStatus(type, Refill, "Refill");
 
-            // TODO: group support
-            //processor.AddGroupStatus(type, StatusGroup, "Refill");
+            // TODO: gas gen group?
+            //processor.AddGroupStatus(type, GroupRefill, "Refill");
         }
 
         bool Refill(StringBuilder sb, ToolbarItem item)
@@ -69,10 +69,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        //bool StatusGroup(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        //bool GroupRefill(StringBuilder sb, ToolbarItem item, GroupData groupData)
         //{
-        //    if(!groupData.GetGroupBlocks<IMyOxygenGenerator>())
+        //    if(!groupData.GetGroupBlocks<IMyGasGenerator>())
         //        return false;
+
+        //    foreach(IMyGasGenerator generator in groupData.Blocks)
+        //    {
+        //    }
+
+        //    int total = groupData.Blocks.Count;
 
         //    return true;
         //}

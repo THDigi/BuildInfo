@@ -21,18 +21,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             var battery = (IMyBatteryBlock)item.Block;
 
-            if(Processor.AnimFlip && !battery.IsWorking)
+            Processor.AppendSingleStats(sb, item.Block);
+
+            switch(battery.ChargeMode)
             {
-                sb.Append("OFF!");
-            }
-            else
-            {
-                switch(battery.ChargeMode)
-                {
-                    case ChargeMode.Auto: sb.Append("Auto"); break;
-                    case ChargeMode.Recharge: sb.Append("Charge"); break;
-                    case ChargeMode.Discharge: sb.Append("Drain"); break;
-                }
+                case ChargeMode.Auto: sb.Append("Auto"); break;
+                case ChargeMode.Recharge: sb.Append("Charge"); break;
+                case ChargeMode.Discharge: sb.Append("Drain"); break;
             }
 
             sb.Append("\n");
@@ -49,9 +44,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             else if(powerFlow < 0)
                 highFlow = (Math.Abs(powerFlow) > battery.MaxOutput * RatioOfMaxForDoubleArrows);
 
-            if(Processor.AnimFlip && powerFlow > 0)
+            if(powerFlow > 0)
                 sb.Append(highFlow ? "++" : "+   ");
-            else if(Processor.AnimFlip && powerFlow < 0)
+            else if(powerFlow < 0)
                 sb.Append(highFlow ? "--" : "-   ");
             else
                 sb.Append("     ");
@@ -64,7 +59,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!groupData.GetGroupBlocks<IMyBatteryBlock>())
                 return false;
 
-            bool allOn = true;
+            int broken = 0;
+            int off = 0;
             float averageFilled = 0f;
             float averageFlow = 0f;
             float totalFlow = 0f;
@@ -76,8 +72,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyBatteryBlock battery in groupData.Blocks)
             {
-                if(!battery.IsWorking)
-                    allOn = false;
+                if(!battery.IsFunctional)
+                    broken++;
+
+                if(!battery.Enabled)
+                    off++;
 
                 averageFilled += (battery.CurrentStoredPower / battery.MaxStoredPower);
                 totalFlow += (battery.CurrentInput - battery.CurrentOutput);
@@ -95,34 +94,29 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
+            Processor.AppendGroupStats(sb, broken, off);
+
+            if(auto == total)
+                sb.Append("Auto\n");
+            else if(recharge == total)
+                sb.Append("Charge\n");
+            else if(discharge == total)
+                sb.Append("Drain\n");
+            else
+                sb.Append("(Mixed)\n");
+
             if(averageFilled > 0)
             {
                 averageFilled /= total;
                 averageFilled *= 100;
             }
 
-            if(totalFlow != 0) // can be negative too
-                averageFlow = totalFlow / total;
-
-            if(Processor.AnimFlip && !allOn)
-            {
-                sb.Append("OFF!\n");
-            }
-            else
-            {
-                if(auto == total)
-                    sb.Append("Auto\n");
-                else if(recharge == total)
-                    sb.Append("Charge\n");
-                else if(discharge == total)
-                    sb.Append("Drain\n");
-                else
-                    sb.Append("Mixed\n");
-            }
-
             sb.Append((int)averageFilled).Append("% ");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
+
+            if(totalFlow != 0) // can be negative too
+                averageFlow = totalFlow / total;
 
             bool highFlow = false;
             if(averageFlow > 0)
@@ -130,9 +124,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             else if(averageFlow < 0)
                 highFlow = (Math.Abs(averageFlow) > maxOutput * RatioOfMaxForDoubleArrows);
 
-            if(Processor.AnimFlip && averageFlow > 0)
+            if(averageFlow > 0)
                 sb.Append(highFlow ? "++" : "+   ");
-            else if(Processor.AnimFlip && averageFlow < 0)
+            else if(averageFlow < 0)
                 sb.Append(highFlow ? "--" : "-   ");
             else
                 sb.Append("     ");
