@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
@@ -8,6 +9,7 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
@@ -43,7 +45,7 @@ namespace Digi.BuildInfo.Features
     {
         public DebugEvents(BuildInfoMod main) : base(main)
         {
-            //UpdateMethods = UpdateFlags.UPDATE_DRAW;
+            //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
 
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
             //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -81,10 +83,27 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        //public void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
+        //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
         //{
         //    Utils.AssertMainThread();
         //    Log.Info($"ToolbarItemChanged :: entId={entityId}; id={typeId}/{subtypeId}; page={page}; slot={slot}");
+        //}
+
+        //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
+        //{
+        //    MyAPIGateway.Utilities.ShowNotification($"entId={entityId.ToString()}; id={typeId}/{subtypeId}; page={page.ToString()}; slot={slot.ToString()}", 5000);
+        //}
+
+        //private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        //{
+        //    if(Config.Debug)
+        //        MyAPIGateway.Utilities.ShowNotification($"Equipment.ToolChanged :: {toolDefId}", 1000, MyFontEnum.Green);
+        //}
+
+        //private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
+        //{
+        //    if(Config.Debug)
+        //        MyAPIGateway.Utilities.ShowNotification($"Equipment.BlockChanged :: {def?.Id.ToString() ?? "Unequipped"}, {(def == null ? "" : (block != null ? "Aimed" : "Held"))}", 1000);
         //}
 
 #if false
@@ -216,23 +235,6 @@ namespace Digi.BuildInfo.Features
             }
         }
 #endif
-
-        //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
-        //{
-        //    MyAPIGateway.Utilities.ShowNotification($"entId={entityId.ToString()}; id={typeId}/{subtypeId}; page={page.ToString()}; slot={slot.ToString()}", 5000);
-        //}
-
-        //private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
-        //{
-        //    if(Config.Debug)
-        //        MyAPIGateway.Utilities.ShowNotification($"Equipment.ToolChanged :: {toolDefId}", 1000, MyFontEnum.Green);
-        //}
-
-        //private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
-        //{
-        //    if(Config.Debug)
-        //        MyAPIGateway.Utilities.ShowNotification($"Equipment.BlockChanged :: {def?.Id.ToString() ?? "Unequipped"}, {(def == null ? "" : (block != null ? "Aimed" : "Held"))}", 1000);
-        //}
 
         private HudAPIv2.HUDMessage debugEquipmentMsg;
 
