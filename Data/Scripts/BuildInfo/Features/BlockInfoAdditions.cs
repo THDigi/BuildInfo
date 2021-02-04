@@ -308,7 +308,8 @@ namespace Digi.BuildInfo.Features
         }
     }
 
-#if true // tested component scrolling for blocks with too many things, it's kinda glitchy
+#if false
+    // tested component scrolling for blocks with too many things, it's kinda glitchy
     // HACK: needs to be right after MyCubeBuilder session comp
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation, priority: 1005)]
     public class TestSession : MySessionComponentBase
