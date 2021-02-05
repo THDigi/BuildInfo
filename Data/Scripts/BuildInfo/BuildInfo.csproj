@@ -170,7 +170,8 @@
     <Compile Include="Features\DebugLog.cs" />
     <Compile Include="Features\DebugEvents.cs" />
     <Compile Include="Features\FontsHandler.cs" />
-    <Compile Include="Features\BackpackBar.cs" />
+    <Compile Include="Features\HUD\BackpackBar.cs" />
+    <Compile Include="Features\HUD\TurretControlStat.cs" />
     <Compile Include="Features\ItemTooltips.cs" />
     <Compile Include="Features\JumpDriveMonitor.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />

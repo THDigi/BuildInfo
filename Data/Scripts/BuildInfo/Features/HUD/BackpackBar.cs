@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.HUD
 {
     public class BackpackBarStat : IMyHudStat
     {
@@ -12,9 +12,9 @@ namespace Digi.BuildInfo.Features
         public const int UpdateFrequencyTicks = (int)(Constants.TICKS_PER_SECOND * 1.0);
         public const string TextFormat = "###,###,###,###,##0.##";
 
-        public MyStringHash Id { get; private set; }
+        public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
         public float CurrentValue { get; private set; }
-        public float MinValue => 0;
+        public float MinValue { get; private set; }
         public float MaxValue { get; private set; }
         public string GetValueString()
         {
@@ -40,7 +40,6 @@ namespace Digi.BuildInfo.Features
 
         public BackpackBarStat()
         {
-            Id = MyStringHash.GetOrCompute("player_inventory_capacity"); // overwrites this stat's script
         }
 
         public void Update()

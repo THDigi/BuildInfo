@@ -16,41 +16,6 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
-    // Overriding controlled_is_turret hud stat to show the HUD while controlling turret.
-    public class TurretControlStat : IMyHudStat
-    {
-        public MyStringHash Id { get; private set; }
-        public float CurrentValue { get; private set; }
-        public float MinValue => 0;
-        public float MaxValue => 1;
-        public string GetValueString() => CurrentValue.ToString("0.00");
-
-        public TurretControlStat()
-        {
-            Id = MyStringHash.GetOrCompute("controlled_is_turret");
-        }
-
-        public void Update()
-        {
-            var setting = BuildInfoMod.Instance?.Config?.TurretHUD;
-
-            if(setting != null && setting.Value)
-            {
-                CurrentValue = 0f;
-            }
-            else
-            {
-                // vanilla game's logic for this stat
-                var controlled = MyAPIGateway.Session?.ControlledObject;
-
-                if(controlled == null)
-                    CurrentValue = 0f;
-                else
-                    CurrentValue = ((controlled is IMyUserControllableGun) ? 1 : 0);
-            }
-        }
-    }
-
     public class TurretHUD : ModComponent
     {
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.

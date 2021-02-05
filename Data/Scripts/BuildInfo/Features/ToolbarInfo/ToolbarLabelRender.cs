@@ -712,7 +712,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CornerBotomLeft.Height = cornerHeight;
             CornerBotomLeft.Offset = new Vector2D((cornerWidth) / 2, (cornerHeight) / 2);
 
-            // DEBUG TODO better maffs!
+            // TODO: better math needed!
             float topRightCornerScale = 2f; // (float)MathHelper.Clamp((1f - (topLinesWidth / TextSize.X)) * 4, 1, 3);
 
             CornerTopRight.Width = cornerWidth * topRightCornerScale;
