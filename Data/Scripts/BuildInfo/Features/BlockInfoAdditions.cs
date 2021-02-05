@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
@@ -10,7 +9,6 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
-using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -36,14 +34,14 @@ namespace Digi.BuildInfo.Features
         private readonly MyStringId SELECT_GIZMO_RED = MyStringId.GetOrCompute("GizmoDrawLineRed");
         private const int SELECT_CANBUILD_SKIP_TICKS = 15;
 
-        private int computerComponentIndex = -1;
+        private int ComputerComponentIndex = -1;
 
-        private int componentReplaceInfoCount = 0;
-        private readonly List<ComponentReplaceInfo> componentReplaceInfo = new List<ComponentReplaceInfo>(10);
+        private int ComponentReplaceInfoCount = 0;
+        private readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(10);
 
-        private BuildCheckResult projectedCanBuildCached;
+        private BuildCheckResult ProjectedCanBuildCached;
 
-        private class ComponentReplaceInfo
+        private class ComponentInfo
         {
             public int Index;
             public MyPhysicalItemDefinition Replaced;
@@ -81,13 +79,13 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            for(int i = 0; i < componentReplaceInfoCount; ++i)
+            for(int i = 0; i < ComponentReplaceInfoCount; ++i)
             {
-                componentReplaceInfo[i].Clear();
+                ComponentReplaceInfo[i].Clear();
             }
 
-            componentReplaceInfoCount = 0;
-            computerComponentIndex = -1;
+            ComponentReplaceInfoCount = 0;
+            ComputerComponentIndex = -1;
 
             if(def != null)
             {
@@ -95,9 +93,9 @@ namespace Digi.BuildInfo.Features
                 {
                     var comp = def.Components[i];
 
-                    if(computerComponentIndex == -1 && comp.Definition.Id == Constants.COMPUTER_COMPONENT_ID)
+                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Constants.COMPUTER_COMPONENT_ID)
                     {
-                        computerComponentIndex = i;
+                        ComputerComponentIndex = i;
                     }
 
                     if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
@@ -110,34 +108,34 @@ namespace Digi.BuildInfo.Features
 
         private void AddCompLoss(int index, MyPhysicalItemDefinition replaced)
         {
-            ComponentReplaceInfo info = null;
+            ComponentInfo info = null;
 
-            if(componentReplaceInfoCount >= componentReplaceInfo.Count)
+            if(ComponentReplaceInfoCount >= ComponentReplaceInfo.Count)
             {
-                info = new ComponentReplaceInfo();
-                componentReplaceInfo.Add(info);
+                info = new ComponentInfo();
+                ComponentReplaceInfo.Add(info);
             }
             else
             {
-                info = componentReplaceInfo[componentReplaceInfoCount];
+                info = ComponentReplaceInfo[ComponentReplaceInfoCount];
             }
 
             info.Set(index, replaced);
-            componentReplaceInfoCount++;
+            ComponentReplaceInfoCount++;
         }
 
         private void DrawProjectedSelection()
         {
-            var aimedBlock = EquipmentMonitor.AimedBlock;
-            var projector = EquipmentMonitor.AimedProjectedBy;
+            IMySlimBlock aimedBlock = EquipmentMonitor.AimedBlock;
+            IMyProjector projector = EquipmentMonitor.AimedProjectedBy;
 
             if(aimedBlock == null || projector == null)
                 return;
 
-            var canBuild = projectedCanBuildCached;
+            BuildCheckResult canBuild = ProjectedCanBuildCached;
 
             if(Main.Tick % SELECT_CANBUILD_SKIP_TICKS == 0)
-                canBuild = projectedCanBuildCached = projector.CanBuild(aimedBlock, checkHavokIntersections: true);
+                canBuild = ProjectedCanBuildCached = projector.CanBuild(aimedBlock, checkHavokIntersections: true);
 
             if(canBuild == BuildCheckResult.OK) // buildable blocks already have a selection box
                 return;
@@ -206,18 +204,20 @@ namespace Digi.BuildInfo.Features
                 var blockDef = EquipmentMonitor.BlockDef;
                 var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-                var posCompList = DrawUtils.GetHudComponentListStart();
-                var totalComps = blockDef.Components.Length;
+                Vector2 posCompList = DrawUtils.GetHudComponentListStart();
+                int totalComps = blockDef.Components.Length;
+
+                int scrollIndexOffset = ScrollableComponents.Instance.IndexOffset;
 
                 // for debugging
-                //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Shift))
+                //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Control))
                 //{
                 //    for(int i = totalComps - 1; i >= 0; --i)
                 //    {
                 //        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * DrawUtils.ScaleFOV);
                 //
                 //        var hud = posCompList;
-                //        hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - i - 1);
+                //        hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - i - scrollIndexOffset - 1);
                 //
                 //        var worldPos = DrawUtils.HUDtoWorld(hud);
                 //
@@ -228,12 +228,13 @@ namespace Digi.BuildInfo.Features
                 //}
 
                 // red functionality line
-                if(blockDef.CriticalGroup >= 0 && blockDef.CriticalGroup < totalComps)
+                int critIndex = blockDef.CriticalGroup + scrollIndexOffset;
+                if(critIndex >= 0 && critIndex < totalComps)
                 {
                     var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * DrawUtils.ScaleFOV);
 
                     var hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - blockDef.CriticalGroup - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - critIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
                     var worldPos = DrawUtils.HUDtoWorld(hud);
 
@@ -243,12 +244,13 @@ namespace Digi.BuildInfo.Features
                 }
 
                 // blue hacking line
-                if(computerComponentIndex != -1)
+                int compIndex = ComputerComponentIndex + scrollIndexOffset;
+                if(compIndex >= 0 && compIndex < totalComps)
                 {
                     var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * DrawUtils.ScaleFOV);
 
                     var hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - computerComponentIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - compIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
                     var worldPos = DrawUtils.HUDtoWorld(hud);
 
@@ -258,12 +260,15 @@ namespace Digi.BuildInfo.Features
                 }
 
                 // different return item on grind
-                for(int i = componentReplaceInfoCount - 1; i >= 0; --i)
+                for(int i = ComponentReplaceInfoCount - 1; i >= 0; --i)
                 {
-                    var info = componentReplaceInfo[i];
+                    var info = ComponentReplaceInfo[i];
+                    int index = info.Index + scrollIndexOffset;
+                    if(index < 0)
+                        continue;
 
                     var hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - info.Index - 1);
+                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - index - 1);
 
                     var worldPos = DrawUtils.HUDtoWorld(hud);
 
@@ -307,124 +312,4 @@ namespace Digi.BuildInfo.Features
             #endregion Lines on top of block info
         }
     }
-
-#if false
-    // tested component scrolling for blocks with too many things, it's kinda glitchy
-    // HACK: needs to be right after MyCubeBuilder session comp
-    [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation, priority: 1005)]
-    public class TestSession : MySessionComponentBase
-    {
-        const int ScrollIfPast = 9;
-        const int ScrollShow = 9;
-
-        private readonly List<MyHudBlockInfo.ComponentInfo> CycleComponents = new List<MyHudBlockInfo.ComponentInfo>(16);
-        int index = 0;
-        bool scrollDown = true;
-        int tick;
-
-        private MyDefinitionId prevId;
-
-        public override void UpdateAfterSimulation()
-        {
-            try
-            {
-                var cubeBuilder = MyCubeBuilder.Static;
-                var currentDef = cubeBuilder.CurrentBlockDefinition;
-
-                if(currentDef != null && cubeBuilder.IsActivated)
-                {
-                    if(prevId != currentDef.Id)
-                    {
-                        index = 0;
-                        tick = 9999;
-                        CycleComponents.Clear();
-
-                        prevId = currentDef.Id;
-                        var comps = MyHud.BlockInfo.Components;
-
-                        if(comps.Count > ScrollIfPast)
-                        {
-                            for(int i = 0; i < comps.Count; i++)
-                            {
-                                var comp = comps[i];
-                                comp.ComponentName = $"{(i + 1).ToString()}. {comp.ComponentName}";
-                                CycleComponents.Add(comp);
-                            }
-
-                            comps.Clear();
-                        }
-                    }
-
-                    if(CycleComponents.Count > 0 && ++tick > 30)
-                    {
-                        tick = 0;
-                        var comps = MyHud.BlockInfo.Components;
-
-                        comps.Clear();
-
-                        // TODO: critical/ownership lines need to move with these too now.
-                        // TODO: always show first and last component and have the middle ones scroll, with some dividing line...
-
-                        //if(scrollDown)
-                        //{
-                        //comps.Add(new MyHudBlockInfo.ComponentInfo()
-                        //{
-                        //    ComponentName = "More components below",
-                        //    Icons = new string[] { @"C:\Steam\steamapps\common\SpaceEngineers\Content\Textures\GUI\Icons\star.png" },
-                        //    AvailableAmount = 0,
-                        //    StockpileCount = 0,
-                        //    MountedCount = 0,
-                        //    TotalCount = 0,
-                        //});
-                        //}
-
-                        for(int i = 0; i < ScrollShow; ++i)
-                        {
-                            comps.Add(CycleComponents[i + index]);
-                        }
-
-                        //if(!scrollDown)
-                        //{
-                        //comps.Add(new MyHudBlockInfo.ComponentInfo()
-                        //{
-                        //    ComponentName = "More components above",
-                        //    Icons = new string[] { @"C:\Steam\steamapps\common\SpaceEngineers\Content\Textures\GUI\Icons\star.png" },
-                        //    AvailableAmount = 0,
-                        //    StockpileCount = 0,
-                        //    MountedCount = 0,
-                        //    TotalCount = 0,
-                        //});
-                        //}
-
-                        if(scrollDown)
-                        {
-                            index++;
-                            if((index + ScrollShow) >= CycleComponents.Count)
-                            {
-                                scrollDown = !scrollDown;
-                                index--;
-                            }
-                        }
-                        else
-                        {
-                            index--;
-                            if(index < 0)
-                            {
-                                scrollDown = !scrollDown;
-                                index++;
-                            }
-                        }
-
-                        // HACK: this causes Version++
-                        MyHud.BlockInfo.DefinitionId = MyHud.BlockInfo.DefinitionId;
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-    }
-#endif
 }
