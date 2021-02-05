@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Features
         const string ReqLargeConveyorSymbol = "*";
         const string ReqLargeConveyorSymbolAdd = "\n*";
 
-        List<OriginalData> OriginalItemData = new List<OriginalData>();
+        readonly List<OriginalData> OriginalItemData = new List<OriginalData>();
 
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
@@ -63,10 +63,11 @@ namespace Digi.BuildInfo.Features
 
                 if(storeOriginal)
                 {
-                    if(physDef.IconSymbol.HasValue || (physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.Length > 0))
-                    {
-                        OriginalItemData.Add(new OriginalData(physDef, physDef.ExtraInventoryTooltipLine?.ToString(), physDef.IconSymbol));
-                    }
+                    string tooltip = null;
+                    if(physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.Length > 0)
+                        tooltip = physDef.ExtraInventoryTooltipLine.ToString();
+
+                    OriginalItemData.Add(new OriginalData(physDef, tooltip, physDef.IconSymbol));
                 }
 
                 #region Symbol handling
