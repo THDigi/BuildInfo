@@ -170,6 +170,39 @@ namespace Digi.BuildInfo.Utilities
             return null;
         }
 
+        //public static float GuessGridMass(MyCubeGrid grid)
+        //{
+        //    var caches = BuildInfoMod.Instance.Caches;
+        //    var avgMassPerType = (grid.GridSizeEnum == MyCubeSize.Large ? caches.AverageMassPerTypeLargeGrid : caches.AverageMassPerTypeLargeGrid);
+        //    int nonDecorative = 0;
+        //    float mass = 0;
+
+        //    foreach(var kv in grid.BlocksCounters)
+        //    {
+        //        int amount = kv.Value;
+        //        nonDecorative += amount;
+
+        //        var info = avgMassPerType.GetValueOrDefault(kv.Key, null);
+        //        if(info != null)
+        //        {
+        //            mass += info.AverageMass * amount;
+        //        }
+        //    }
+
+        //    // BlocksCounters don't include MyObjectBuilder_CubeBlock types
+        //    int decorative = grid.BlocksCount - nonDecorative;
+        //    if(decorative > 0)
+        //    {
+        //        var info = avgMassPerType.GetValueOrDefault(typeof(MyObjectBuilder_CubeBlock), null);
+        //        if(info != null)
+        //        {
+        //            mass += info.AverageMass * decorative;
+        //        }
+        //    }
+
+        //    return mass;
+        //}
+
         public static float ComputeGridMass(MyCubeGrid grid)
         {
             float blockInvSizeMul = MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;

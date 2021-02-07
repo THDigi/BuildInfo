@@ -17,10 +17,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         protected override void Update(int tick)
         {
-            IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyShipController;
-            if(controlled == null)
-                controlled = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
-
+            IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
             if(controlled == null)
             {
                 CurrentValue = 0f;

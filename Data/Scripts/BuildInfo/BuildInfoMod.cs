@@ -61,7 +61,7 @@ namespace Digi.BuildInfo
         public ToolbarStatusProcessor ToolbarStatusProcessor;
         public ToolbarLabelRender ToolbarLabelRender;
         public DebugEvents DebugEvents;
-        //public DebugLog DebugLog;
+        public DebugLog DebugLog;
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
         {
@@ -110,7 +110,7 @@ namespace Digi.BuildInfo
             ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
             ToolbarLabelRender = new ToolbarLabelRender(this);
             DebugEvents = new DebugEvents(this);
-            //DebugLog = new DebugLog(this);
+            DebugLog = new DebugLog(this);
         }
     }
 }
