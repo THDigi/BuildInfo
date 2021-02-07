@@ -26,11 +26,12 @@ namespace Digi.BuildInfo.Features
     public class TerminalInfo : ModComponent
     {
         #region Constants
-        public const long MOD_API_ID = 514062285; // API id for other mods to use, must not be changed if you want to support the API users; see "API Information"
         private const int REFRESH_MIN_TICKS = 30; // minimum amount of ticks between refresh calls
 
         private readonly string[] tickerText = { "–––", "•––", "–•–", "––•" };
         #endregion Constants
+
+        public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private IMyTerminalBlock viewedInTerminal;
         private int delayCursorCheck = 0;
@@ -42,8 +43,6 @@ namespace Digi.BuildInfo.Features
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
         private readonly Dictionary<MyObjectBuilderType, CustomInfoCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, CustomInfoCall>(MyObjectBuilderType.Comparer);
-
-        private readonly HashSet<MyDefinitionId> ignoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private readonly HashSet<long> longSetTemp = new HashSet<long>();
         private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
@@ -76,15 +75,11 @@ namespace Digi.BuildInfo.Features
         {
             RegisterFormats();
 
-            MyAPIGateway.Utilities.RegisterMessageHandler(MOD_API_ID, ModMessageReceived);
-
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
         }
 
         protected override void UnregisterComponent()
         {
-            MyAPIGateway.Utilities.UnregisterMessageHandler(MOD_API_ID, ModMessageReceived);
-
             MyAPIGateway.TerminalControls.CustomControlGetter -= TerminalCustomControlGetter;
         }
 
@@ -483,7 +478,7 @@ namespace Digi.BuildInfo.Features
                 if(currentFormatCall == null)
                     return;
 
-                if(ignoreModBlocks.Contains(block.BlockDefinition))
+                if(IgnoreModBlocks.Contains(block.BlockDefinition))
                     return;
 
                 // Append other mod's info after my own.
@@ -1552,25 +1547,5 @@ namespace Digi.BuildInfo.Features
             }
         }
         #endregion Text formatting per block type
-
-        // called when another mod uses this mod's API, for details see "API Information" file.
-        void ModMessageReceived(object obj)
-        {
-            try
-            {
-                if(obj is MyDefinitionId)
-                {
-                    var id = (MyDefinitionId)obj;
-                    ignoreModBlocks.Add(id);
-                    return;
-                }
-
-                Log.Error($"A mod sent an unknwon mod message to this mod; data={obj}");
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
     }
 }
