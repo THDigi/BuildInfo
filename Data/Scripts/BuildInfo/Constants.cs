@@ -2,6 +2,7 @@
 using System.Linq;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using VRage;
 using VRage.Game;
 using VRage.Input;
 using VRage.ObjectBuilders;
@@ -63,6 +64,30 @@ namespace Digi.BuildInfo
             '\ue010',
             '\ue012',
             '\ue013',
+        };
+
+        // need to be static for StatBase as it gets instanced before LoadData()...
+        public static readonly MyTuple<float, string>[] UnitMulipliers = new MyTuple<float, string>[]
+        {
+            new MyTuple<float, string>(1000000000000, "T"),
+            new MyTuple<float, string>(1000000000, "G"),
+            new MyTuple<float, string>(1000000, "M"),
+            new MyTuple<float, string>(1000, "k"),
+            new MyTuple<float, string>(1, ""),
+            new MyTuple<float, string>(1/1000f, "m"),
+            new MyTuple<float, string>(1/1000000f, "µ"),
+        };
+
+        // need to be static for StatBase as it gets instanced before LoadData()...
+        public static readonly string[] DigitFormats = new string[]
+        {
+            "0",
+            "0.0",
+            "0.00",
+            "0.000",
+            "0.0000",
+            "0.00000",
+            "0.000000",
         };
 
         public Constants(BuildInfoMod main) : base(main)

@@ -44,5 +44,27 @@ namespace Digi.BuildInfo.Utilities
                 set.Add(read[i]);
             }
         }
+
+        public static int GetDigitCount(this int value, bool includeSign = true)
+        {
+            int sign = 0;
+            if(value < 0)
+            {
+                value = -value;
+                if(includeSign)
+                    sign = 1;
+            }
+
+            if(value <= 9) return sign + 1;
+            if(value <= 99) return sign + 2;
+            if(value <= 999) return sign + 3;
+            if(value <= 9999) return sign + 4;
+            if(value <= 99999) return sign + 5;
+            if(value <= 999999) return sign + 6;
+            if(value <= 9999999) return sign + 7;
+            if(value <= 99999999) return sign + 8;
+            if(value <= 999999999) return sign + 9;
+            return sign + 10;
+        }
     }
 }
