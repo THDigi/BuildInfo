@@ -59,6 +59,16 @@ namespace Digi.BuildInfo.Features
                         return;
                     }
 
+                    if(target.Equals("NoItemTooltip", Compare))
+                    {
+                        Main.ItemTooltips.IgnoreModItems.Add(defId);
+
+                        if(Main.Config.InternalInfo.Value)
+                            Log.Info($"Mod '{data.Item1}' asked BuildInfo to not show extra ItemTooltip for {defId.ToString()}");
+
+                        return;
+                    }
+
                     Log.Error($"Mod {data.Item1} sent an unknown target='{target}'; defId={defId.ToString()}");
                     return;
                 }

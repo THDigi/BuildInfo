@@ -1,13 +1,33 @@
 ﻿This mod contains an API for other mods to use.
 
-Currently the only API feature is to disable this mod's detail info for certain block type+subtype.
+Current API:
 
-To use it, call:
+1. Prevent specific type+subtype blocks from having custom detailed info
+  Useful for avoiding this mod to add irrelvant info to your repurposed blocks.
 
-    MyAPIGateway.Utilities.SendModMessage(514062285, new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "YourSubtypeId"));
+  To use, call in BeforeStart():
+
+    MyAPIGateway.Utilities.SendModMessage(514062285, new MyTuple<string, string, MyDefinitionId>("your mod name", "NoDetailInfo", new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "YourSubtypeId")));
 
 
-The upgrade module being an example type, you can send any block type you want and you can send as many as you want.
+2. Prevent specific type+subtype items from getting crafting info appended to their tooltips.
+  Useful if you already include such data yourself.
 
-The method must be called on clients and server, and must be done after this mod's LoadData().
-Alternatively use MyAPIGateway.Utilities.InvokeOnGameThread() to execute it next tick.
+  To use, call in BeforeStart():
+
+    MyAPIGateway.Utilities.SendModMessage(514062285, new MyTuple<string, string, MyDefinitionId>("your mod name", "NoItemTooltip", new MyDefinitionId(typeof(MyObjectBuilder_Ore), "YourSubtypeId")));
+
+  Must be within the first 25 ticks because tooltip strings are generated once.
+
+
+
+For both of these:
+  Method must be called for everyone (it's not MP synchronized).
+
+  The method's parameters explained:
+  - The 514062285 number is the mod's API ID, leave it be.
+  - "your mod name" is for error information, you could feed ModContext.ModName there if you're calling it from a session component.
+  - 2nd string defines what the requested thing is, only the ones I specified are supported (case insensitive btw).
+  - and finally the MyDefinitionId is the ID my mod will ignore for that request.
+
+  If 'Internal Info' is enabled during loading, the mod's log will list the API-received items/blocks.
