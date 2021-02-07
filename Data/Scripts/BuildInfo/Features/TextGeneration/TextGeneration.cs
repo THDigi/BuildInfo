@@ -11,7 +11,6 @@ using Digi.Input;
 using Draygo.API;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -1054,36 +1053,22 @@ namespace Digi.BuildInfo.Features
 
                     if(grid.Physics != null)
                     {
-                        GetLine().ResetFormatting().Separator().Append("Grid mass: ");
+                        float physMass = grid.Physics.Mass;
 
                         // HACK: manually compute mass for static grids
-                        if(grid.IsStatic)
+                        if(grid.IsStatic && physMass == 0)
                         {
-                            var internalGrid = (MyCubeGrid)grid;
-                            bool compute = true;
-                            if(internalGrid.BlocksCount > 10000)
-                                compute = MyAPIGateway.Input.IsAnyShiftKeyPressed();
-
-                            if(!compute)
+                            if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
                             {
-                                GetLine().Append("(Huge grid, hold Shift)");
+                                prevSelectedGrid = grid.EntityId;
+                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
+                                gridMassCache = BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(grid);
                             }
-                            else
-                            {
-                                if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
-                                {
-                                    prevSelectedGrid = grid.EntityId;
-                                    gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
-                                    gridMassCache = Utils.ComputeGridMass(internalGrid);
-                                }
 
-                                GetLine().MassFormat(gridMassCache);
-                            }
+                            physMass = gridMassCache;
                         }
-                        else
-                        {
-                            GetLine().MassFormat(grid.Physics.Mass);
-                        }
+
+                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").MassFormat(physMass);
                     }
                 }
             }

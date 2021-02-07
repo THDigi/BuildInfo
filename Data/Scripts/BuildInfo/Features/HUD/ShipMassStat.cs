@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Digi.BuildInfo.Utilities;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -10,6 +9,9 @@ namespace Digi.BuildInfo.Features.HUD
 {
     public class ShipMassStat : IMyHudStat
     {
+        public const string NumberFormat = "###,###,###,###,###,###,###";
+        public const int BlocksForApproxMass = 10000;
+
         public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_mass");
         public float CurrentValue { get; private set; }
         public float MinValue => 0f;
@@ -25,13 +27,13 @@ namespace Digi.BuildInfo.Features.HUD
         public string GetValueString()
         {
             // HACK: can't add unit because HUD hardcodes unit into itself.
-            return CurrentValue.ToString("###,###,###,###,###,###,###");
+            return CurrentValue.ToString(NumberFormat);
         }
 
         public void Update()
         {
             var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
-            if(controlled == null || controlled.CubeGrid.IsStatic)
+            if(controlled == null)
             {
                 CurrentValue = 0f;
                 PrevGridId = 0;
@@ -45,58 +47,46 @@ namespace Digi.BuildInfo.Features.HUD
             {
                 PrevGridId = ctrlGrid.EntityId;
 
-                // TODO: use
-                //float mass = 0;
+                float mass = 0;
 
-                //Grids.Clear();
-                //MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
+                Grids.Clear();
+                MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
 
-                //foreach(IMyCubeGrid g in Grids)
-                //{
-                //    if(g.Physics == null || !g.Physics.Enabled)
-                //        continue;
+                foreach(IMyCubeGrid g in Grids)
+                {
+                    if(g.Physics == null || !g.Physics.Enabled)
+                        continue;
 
-                //    if(g.IsStatic)
-                //    {
-                //        //using(new DevProfiler("CalculateStaticGridMass()")) // DEBUG profiling
-                //        //{
-                //        //    mass += Utils.CalculateStaticGridMass(g); // DEBUG << needs caching or something...
-                //        //}
+                    float physMass = g.Physics.Mass;
 
-                //        using(new DevProfiler("StaticGridMassCache")) // DEBUG profiling
-                //        {
-                //            mass += BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(g);
-                //        }
-                //    }
-                //    else
-                //    {
-                //        mass += g.Physics.Mass;
-                //    }
-                //}
+                    if(g.IsStatic && physMass == 0)
+                    {
+                        mass += BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(g);
+                    }
+                    else
+                    {
+                        mass += physMass;
+                    }
+                }
 
-                //Grids.Clear();
-
-                float baseMass;
-                float physMass;
-                float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
+                Grids.Clear();
 
                 // must be kept as kg because of the "<value> Kg" in the HUD definition.
-                CurrentValue = physMass;
+                CurrentValue = mass;
             }
         }
     }
 
-    // TODO: use
     // prevent HUD from showing "Station" and allows the ShipMassStat to show mass instead.
-    //public class ShipIsStatic : IMyHudStat
-    //{
-    //    public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_is_static");
-    //    public float CurrentValue => 0;
-    //    public float MinValue => 0f;
-    //    public float MaxValue => 1f;
-    //    public string GetValueString() => "0";
+    public class ShipIsStatic : IMyHudStat
+    {
+        public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_is_static");
+        public float CurrentValue => 0;
+        public float MinValue => 0f;
+        public float MaxValue => 1f;
+        public string GetValueString() => "0";
 
-    //    public ShipIsStatic() { }
-    //    public void Update() { }
-    //}
+        public ShipIsStatic() { }
+        public void Update() { }
+    }
 }

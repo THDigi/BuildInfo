@@ -60,6 +60,7 @@ namespace Digi.BuildInfo
         public ToolbarCustomLabels ToolbarCustomLabels;
         public ToolbarStatusProcessor ToolbarStatusProcessor;
         public ToolbarLabelRender ToolbarLabelRender;
+        public StaticGridMassCache StaticGridMassCache;
         public InterModAPI InterModAPI;
         public DebugEvents DebugEvents;
         public DebugLog DebugLog;
@@ -110,6 +111,7 @@ namespace Digi.BuildInfo
             ToolbarCustomLabels = new ToolbarCustomLabels(this);
             ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
             ToolbarLabelRender = new ToolbarLabelRender(this);
+            StaticGridMassCache = new StaticGridMassCache(this);
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);
