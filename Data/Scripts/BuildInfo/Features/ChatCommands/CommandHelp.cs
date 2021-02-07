@@ -28,6 +28,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n" +
             "\n[2] No standalone means the block can't exist as the only block in the grid." +
             "\n   Blocks with no collisions also have this limitation." +
+            "\n   Also no-collision blocks provide no mass to the grid." +
             "\n" +
             "\n[3] Explaining conveyor power usage:" +
             "\n   A hub is a conveyor hub or a block with ports (assembler, reactor, etc), but not conveyor tubes, those are one kind of conveyor lines." +

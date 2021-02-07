@@ -1025,7 +1025,7 @@ namespace Digi.BuildInfo.Features
             #region Mass, grid mass
             if(Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
-                var mass = def.Mass;
+                var mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
                 var massColor = Color.GreenYellow;
 
                 if(projected)
@@ -1587,7 +1587,8 @@ namespace Digi.BuildInfo.Features
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding);
 
-                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.Mass).ResetFormatting().Separator()
+                // HACK: game doesn't use mass from blocks with HasPhysics=false
+                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator()
                     .Size3DFormat(def.Size).Separator()
                     .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetFormatting();
 

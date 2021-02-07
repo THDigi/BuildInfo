@@ -177,6 +177,10 @@ namespace Digi.BuildInfo.Utilities
 
             foreach(IMySlimBlock slimBlock in grid.GetBlocks())
             {
+                var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                if(!def.HasPhysics)
+                    continue; // HACK: for some reason the game does this for mass computing
+
                 var fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
                 {
