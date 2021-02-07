@@ -6,12 +6,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class CommandHelp : Command
     {
-        private const string FOOTER =
-            "\n##### Asterisk in labels explained #####" +
+        private const string Footer =
+            SegmentPrefix + "Asterisk in labels explained" + SegmentSuffix +
             "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means that the value is calculated from hardcoded values taken from the game source, they might become inaccurate with updates." +
             "\n" +
             "\n" +
-            "\n##### Mount points & airtightness explained #####" +
+            "\n" + SegmentPrefix + " Mount points & airtightness explained" + SegmentSuffix +
             "\n" +
             "\n  Mount points define areas that can be attached to other block's mount points." +
             "\n  Blue wireframe over mountpoint is the side and point used for auto-rotation." +
@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Blocks in construction stages are never airtight." +
             "\n" +
             "\n" +
-            "\n##### Numbered markings in text explained #####" +
+            "\n" + SegmentPrefix + "Numbered markings in text explained" + SegmentSuffix +
             "\n" +
             "\n[1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
             "\n   To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
@@ -38,12 +38,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n   Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
             "\n" +
             "\n" +
-            "\n##### Inventory bar in ships #####" +
+            "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
             "\nThe vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +
             "\nOptionally you can declare a group 'Cargo' to use for the bar (no matter the type)." +
             "\n" +
             "\n" +
-            "\n##### Custom labels for toolbar slots per cockpit #####" +
+            "\n" + SegmentPrefix + "Custom labels for toolbar slots per cockpit" + SegmentSuffix +
             "\n  Using a cockpit's CustomData you can set custom label per slot using ini format." +
             "\n  This can be added anywhere in CustomData, but it must be in this order:" +
             "\n [Toolbar]" +
@@ -60,6 +60,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n    <i> and </i> for italicized text." +
             "\n  Max line 128 chars including formatting, and multilines are removed.";
 
+        private const string SegmentPrefix = "  "; //  menu;  windows
+        private const string SegmentSuffix = ""; // " —————————";
+
         private StringBuilder sb = new StringBuilder(1024);
 
         public CommandHelp() : base("", "help")
@@ -69,19 +72,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void Execute(Arguments args)
         {
             sb.Clear();
-            sb.Append("##### Chat Commands #####").NewLine();
-            sb.NewLine();
-
-            foreach(var handler in Main.ChatCommandHandler.Commands)
-            {
-                handler.PrintHelp(sb);
-                sb.NewLine();
-            }
-
-            sb.NewLine();
-            sb.NewLine();
-            sb.Append("##### Config #####").NewLine();
-            sb.Append("You can edit the config ingame via textAPI Mod menu").NewLine();
+            sb.Append(SegmentPrefix).Append("Config").Append(SegmentSuffix).NewLine();
+            sb.Append("You can edit the config ingame with TextAPI Mod menu").NewLine();
             sb.Append("Open chat and press F2.").NewLine();
             sb.NewLine();
             sb.Append("Or you can edit the config file at:").NewLine();
@@ -89,10 +81,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append(@"    \").Append(Log.WorkshopId).Append(@".sbm_BuildInfo\settings.cfg").NewLine();
             sb.NewLine();
             sb.Append("And can be reloaded with: ").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).NewLine();
+
             sb.NewLine();
             sb.NewLine();
-            sb.NewLine();
-            sb.Append("##### Hotkeys #####").NewLine();
+
+            sb.Append(SegmentPrefix).Append("Hotkeys").Append(SegmentSuffix).NewLine();
 
             sb.NewLine();
             sb.Append("  ");
@@ -131,13 +124,28 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append("     Keep overlay active so you can move around.").NewLine();
 
             sb.NewLine();
-            sb.Append(FOOTER);
+            sb.NewLine();
+
+            sb.Append(SegmentPrefix).Append("Chat Commands").Append(SegmentSuffix).NewLine();
+            sb.NewLine();
+
+            foreach(var handler in Main.ChatCommandHandler.Commands)
+            {
+                handler.PrintHelp(sb);
+                sb.NewLine();
+            }
+
+            sb.NewLine();
+            sb.NewLine();
+
+            sb.Append(Footer);
 
             MyAPIGateway.Utilities.ShowMissionScreen(BuildInfoMod.MOD_NAME + " help", null, null, sb.ToString(), null, "Close");
         }
 
         public override void PrintHelp(StringBuilder sb)
         {
+            sb.Append(ChatCommandHandler.HELP_ALT).NewLine();
             sb.Append(ChatCommandHandler.MAIN_COMMAND).NewLine();
             sb.Append(ChatCommandHandler.MAIN_COMMAND).Append(" help").NewLine();
             sb.Append("  Shows this window.").NewLine();

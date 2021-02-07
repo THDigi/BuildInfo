@@ -9,6 +9,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
     public class ChatCommandHandler : ModComponent
     {
         public const string MAIN_COMMAND = "/bi";
+        public const string HELP_ALT = "/buildinfo";
 
         public readonly List<Command> Commands = new List<Command>();
         public readonly Dictionary<string, Command> AliasToCommand = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
@@ -55,6 +56,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             try
             {
+                if(text.StartsWith(HELP_ALT))
+                {
+                    CommandHelp.ExecuteNoArgs();
+                    return;
+                }
+
                 if(!text.StartsWith(MAIN_COMMAND))
                     return;
 
@@ -68,7 +75,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                 if(AliasToCommand.TryGetValue(alias, out cmd))
                 {
-                    args.IndexOffset = 2; // so commands can start from index 0
+                    args.IndexOffset = 2; // skip past main and sub-command so that parameters start from index 0
                     cmd.Execute(args);
                 }
                 else
