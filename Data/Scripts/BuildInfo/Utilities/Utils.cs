@@ -170,6 +170,40 @@ namespace Digi.BuildInfo.Utilities
             return null;
         }
 
+        public static float ComputeGridMass(MyCubeGrid grid)
+        {
+            float blockInvSizeMul = MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
+            float mass = 0;
+
+            foreach(IMySlimBlock slimBlock in grid.GetBlocks())
+            {
+                var fatBlock = slimBlock.FatBlock;
+                if(fatBlock != null)
+                {
+                    mass += fatBlock.Mass;
+
+                    var seat = slimBlock.FatBlock as IMyCockpit;
+                    if(seat != null && seat.Pilot != null)
+                    {
+                        mass += seat.Pilot.BaseMass;
+                    }
+
+                    for(int i = (slimBlock.FatBlock.InventoryCount - 1); i >= 0; --i)
+                    {
+                        var inv = slimBlock.FatBlock.GetInventory(i);
+                        if(inv != null)
+                            mass += (float)inv.CurrentMass / blockInvSizeMul;
+                    }
+                }
+                else
+                {
+                    mass += slimBlock.Mass;
+                }
+            }
+
+            return mass;
+        }
+
         public static string ColorTag(Color color)
         {
             return $"<color={color.R.ToString()},{color.G.ToString()},{color.B.ToString()}>";

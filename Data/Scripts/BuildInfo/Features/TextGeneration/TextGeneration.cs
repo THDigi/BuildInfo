@@ -1054,50 +1054,36 @@ namespace Digi.BuildInfo.Features
 
                     if(grid.Physics != null)
                     {
-                        if(Math.Abs(grid.Physics.Mass) <= 0.000001f)
+                        GetLine().ResetFormatting().Separator().Append("Grid mass: ");
+
+                        // HACK: manually compute mass for static grids
+                        if(grid.IsStatic)
                         {
-                            // HACK: Manually compute mass for static grids
-                            if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
+                            var internalGrid = (MyCubeGrid)grid;
+                            bool compute = true;
+                            if(internalGrid.BlocksCount > 10000)
+                                compute = MyAPIGateway.Input.IsAnyShiftKeyPressed();
+
+                            if(!compute)
                             {
-                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
-                                prevSelectedGrid = grid.EntityId;
-
-                                var internalGrid = (MyCubeGrid)grid;
-                                float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
-                                gridMassCache = 0;
-
-                                foreach(IMySlimBlock block in internalGrid.GetBlocks())
+                                GetLine().Append("(Huge grid, hold Shift)");
+                            }
+                            else
+                            {
+                                if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
                                 {
-                                    if(block.FatBlock != null)
-                                    {
-                                        gridMassCache += block.FatBlock.Mass;
-
-                                        var cockpit = block.FatBlock as IMyCockpit;
-                                        if(cockpit != null && cockpit.Pilot != null)
-                                        {
-                                            gridMassCache += cockpit.Pilot.BaseMass;
-                                        }
-
-                                        for(int i = (block.FatBlock.InventoryCount - 1); i >= 0; --i)
-                                        {
-                                            var inv = block.FatBlock.GetInventory(i);
-                                            if(inv != null)
-                                                gridMassCache += (float)inv.CurrentMass * cargoMassMultiplier;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        gridMassCache += block.Mass;
-                                    }
+                                    prevSelectedGrid = grid.EntityId;
+                                    gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
+                                    gridMassCache = Utils.ComputeGridMass(internalGrid);
                                 }
+
+                                GetLine().MassFormat(gridMassCache);
                             }
                         }
                         else
                         {
-                            gridMassCache = grid.Physics.Mass;
+                            GetLine().MassFormat(grid.Physics.Mass);
                         }
-
-                        GetLine().ResetFormatting().Separator().Append(" Grid mass: ").MassFormat(gridMassCache);
                     }
                 }
             }
