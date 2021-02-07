@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -21,9 +22,7 @@ namespace Digi.BuildInfo.Systems
         /// </summary>
         public event CallbackDelegate BlockAdded;
 
-        private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> monitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);
-
-        private readonly List<IMySlimBlock> tmpBlocks = new List<IMySlimBlock>();
+        private readonly Dictionary<MyObjectBuilderType, List<CallbackDelegate>> MonitorBlockTypes = new Dictionary<MyObjectBuilderType, List<CallbackDelegate>>(MyObjectBuilderType.Comparer);
 
         public BlockMonitor(BuildInfoMod main) : base(main)
         {
@@ -66,10 +65,10 @@ namespace Digi.BuildInfo.Systems
                 throw new ArgumentException($"{GetType().Name}.MonitorType() does not accept a null callback.");
 
             List<CallbackDelegate> callbacks;
-            if(!monitorBlockTypes.TryGetValue(blockType, out callbacks))
+            if(!MonitorBlockTypes.TryGetValue(blockType, out callbacks))
             {
                 callbacks = new List<CallbackDelegate>(1);
-                monitorBlockTypes.Add(blockType, callbacks);
+                MonitorBlockTypes.Add(blockType, callbacks);
             }
 
             callbacks.Add(callback);
@@ -81,13 +80,13 @@ namespace Digi.BuildInfo.Systems
         public void RemoveMonitor(MyObjectBuilderType blockType, CallbackDelegate callback)
         {
             List<CallbackDelegate> callbacks;
-            if(!monitorBlockTypes.TryGetValue(blockType, out callbacks))
+            if(!MonitorBlockTypes.TryGetValue(blockType, out callbacks))
                 return;
 
             callbacks.Remove(callback);
 
             if(callbacks.Count == 0)
-                monitorBlockTypes.Remove(blockType);
+                MonitorBlockTypes.Remove(blockType);
         }
 
         void EntitySpawned(IMyEntity ent)
@@ -101,15 +100,11 @@ namespace Digi.BuildInfo.Systems
                 grid.OnBlockAdded += BlockAdd;
                 grid.OnClose += GridClosed;
 
-                tmpBlocks.Clear();
-                grid.GetBlocks(tmpBlocks);
-
-                foreach(var slim in tmpBlocks)
+                var internalGrid = (MyCubeGrid)grid;
+                foreach(IMySlimBlock slim in internalGrid.CubeBlocks)
                 {
                     BlockAdd(slim);
                 }
-
-                tmpBlocks.Clear();
             }
             catch(Exception e)
             {
@@ -140,7 +135,7 @@ namespace Digi.BuildInfo.Systems
                 var typeId = slim.BlockDefinition.Id.TypeId;
 
                 List<CallbackDelegate> callbacks;
-                if(!monitorBlockTypes.TryGetValue(typeId, out callbacks))
+                if(!MonitorBlockTypes.TryGetValue(typeId, out callbacks))
                     return;
 
                 for(int i = 0; i < callbacks.Count; ++i)
