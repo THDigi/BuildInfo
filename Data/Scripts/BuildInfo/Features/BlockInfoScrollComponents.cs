@@ -37,7 +37,6 @@ namespace Digi.BuildInfo.Features
 
         public BlockInfoScrollComponents(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
         protected override void RegisterComponent()
@@ -47,6 +46,8 @@ namespace Digi.BuildInfo.Features
             EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
 
             HudState = Main.GameConfig.HudState;
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Config.BlockInfoAdditions.Value);
         }
 
         protected override void UnregisterComponent()
@@ -61,6 +62,8 @@ namespace Digi.BuildInfo.Features
 
         void BlockInfoAdditionsChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, newValue);
+
             Index = 0;
             IndexOffset = 0;
 
@@ -72,9 +75,12 @@ namespace Digi.BuildInfo.Features
         {
             HudState = state;
 
-            MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
-            MyHud.BlockInfo.Components.Clear();
-            Refresh = true;
+            if(Config.BlockInfoAdditions.Value)
+            {
+                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+                MyHud.BlockInfo.Components.Clear();
+                Refresh = true;
+            }
         }
 
         void EquipmentBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
@@ -82,6 +88,9 @@ namespace Digi.BuildInfo.Features
             Index = 0;
             IndexOffset = 0;
             ShowScrollHint = true;
+
+            if(!Config.BlockInfoAdditions.Value)
+                return;
 
             if(slimBlock != null)
             {
@@ -99,6 +108,12 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateDraw()
         {
+            if(HudState == HudState.OFF)
+                return;
+
+            if(!Config.BlockInfoAdditions.Value)
+                return;
+
             if(EquipmentMonitor.BlockDef == null)
                 return;
 
