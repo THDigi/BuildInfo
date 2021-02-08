@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         public BlockInfoAdditions BlockInfoAdditions;
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
+        public BlockInfoScrollComponents BlockInfoScrollComponents;
         public WhatsNew WhatsNew;
         public ItemTooltips ItemTooltips;
         public ToolbarOverride ToolbarOverride;
@@ -104,6 +105,7 @@ namespace Digi.BuildInfo
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
+            BlockInfoScrollComponents = new BlockInfoScrollComponents(this);
             WhatsNew = new WhatsNew(this);
             ItemTooltips = new ItemTooltips(this);
             ToolbarOverride = new ToolbarOverride(this);

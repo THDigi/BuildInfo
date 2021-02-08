@@ -320,6 +320,8 @@ namespace Digi.BuildInfo.Features
                 AppendCraftList(s, "\nUsed in:", usedBy);
             }
 
+            // TODO: show blocks/items used for crafting if they're less than a few
+
             if(usedForAssembly > 0)
             {
                 s.Append("\nUsed for crafting ").Append(usedForAssembly).Append(" items.");

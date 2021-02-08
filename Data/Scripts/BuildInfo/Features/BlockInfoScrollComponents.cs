@@ -1,74 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
+using Digi.ComponentLib;
 using Digi.Input;
+using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
-using VRage.Game.Components;
+using VRage.Game.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
-    // HACK: 1005 priority as it needs to be right after MyCubeBuilder.UpdateAfterSimulation() which is also a session comp.
-    [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation, priority: 1005)]
-    public class ScrollableComponents : MySessionComponentBase
+    public class BlockInfoScrollComponents : ModComponent
     {
         public const int MaxVisibleHudHints = 9;
         public const int MaxVisibleHudMinChar = 13;
         public const int MaxVisibleHudMinShip = 7;
 
-        public static ScrollableComponents Instance { get; private set; }
-
         public int IndexOffset { get; private set; }
         public int Index { get; private set; }
-        public int MaxVisible { get; private set; } = 9;
+        public int MaxVisible { get; private set; } = MaxVisibleHudHints;
+
+        bool Refresh;
+        bool ShowScrollHint;
+        HudState HudState;
 
         readonly List<MyHudBlockInfo.ComponentInfo> CycleComponents = new List<MyHudBlockInfo.ComponentInfo>(16);
 
-        MyDefinitionId PrevHeldId;
-        HudState HudState;
-        int Counter;
-        bool Refresh;
-        bool ShowScrollHint = true;
-
         MyHudBlockInfo.ComponentInfo HintComponent = new MyHudBlockInfo.ComponentInfo()
         {
-            ComponentName = "^ Shift+Scroll ^",
             Icons = new string[] { @"Textures\GUI\Icons\HUD 2017\HelpScreen.png" },
         };
 
-        private static BuildInfoMod Main => BuildInfoMod.Instance;
-
-        public override void LoadData()
+        public BlockInfoScrollComponents(BuildInfoMod main) : base(main)
         {
-            Instance = this;
+            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        public override void BeforeStart()
+        protected override void RegisterComponent()
         {
-            // HACK: avoid some issue with first equipped block after reloading
-            if(MyHud.BlockInfo != null)
-            {
-                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
-                MyHud.BlockInfo.Components?.Clear();
-            }
+            Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
+            GameConfig.HudStateChanged += HudStateChanged;
+            EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
 
-            Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
-            Main.GameConfig.HudStateChanged += HudStateChanged;
             HudState = Main.GameConfig.HudState;
         }
 
-        protected override void UnloadData()
+        protected override void UnregisterComponent()
         {
-            Instance = null;
-
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditionsChanged;
-            Main.GameConfig.HudStateChanged -= HudStateChanged;
+            Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditionsChanged;
+            GameConfig.HudStateChanged -= HudStateChanged;
+            EquipmentMonitor.BlockChanged -= EquipmentBlockChanged;
         }
 
         void BlockInfoAdditionsChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -76,125 +64,144 @@ namespace Digi.BuildInfo.Features
             Index = 0;
             IndexOffset = 0;
 
-            // force refresh, both in this mod and in game code
-            MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
             MyHud.BlockInfo.Components.Clear();
+            MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
         }
 
         void HudStateChanged(HudState prevState, HudState state)
         {
-            HudState = Main.GameConfig.HudState;
+            HudState = state;
 
-            // refresh all the things
-            PrevHeldId = default(MyDefinitionId);
             MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
             MyHud.BlockInfo.Components.Clear();
             Refresh = true;
         }
 
-        public override void UpdateAfterSimulation()
+        void EquipmentBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
-            try
+            Index = 0;
+            IndexOffset = 0;
+            ShowScrollHint = true;
+
+            if(slimBlock != null)
             {
-                if(!Main.Config.BlockInfoAdditions.Value)
-                    return;
+                // auto-scroll to higher if block is built
+                Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
+            }
 
-                var cubeBuilder = MyCubeBuilder.Static;
-                var currentDef = cubeBuilder?.CurrentBlockDefinition;
-                if(currentDef == null || !cubeBuilder.IsActivated)
-                    return;
+            if(CycleComponents.Count > 0)
+            {
+                int maxIndex = CycleComponents.Count - MaxVisible;
+                Index = MathHelper.Clamp(Index, 0, maxIndex);
+                IndexOffset = maxIndex - Index;
+            }
+        }
 
-                MaxVisible = MaxVisibleHudHints;
-                if(HudState == HudState.BASIC)
+        protected override void UpdateDraw()
+        {
+            if(EquipmentMonitor.BlockDef == null)
+                return;
+
+            MaxVisible = MaxVisibleHudHints;
+            if(HudState == HudState.BASIC)
+            {
+                if(MyAPIGateway.Session.ControlledObject is IMyShipController)
+                    MaxVisible = MaxVisibleHudMinShip;
+                else
+                    MaxVisible = MaxVisibleHudMinChar;
+            }
+
+            var hudComps = MyHud.BlockInfo.Components;
+            if(hudComps.Count > MaxVisible)
+            {
+                CycleComponents.Clear();
+
+                for(int i = 0; i < hudComps.Count; i++)
                 {
-                    if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                        MaxVisible = MaxVisibleHudMinShip;
-                    else
-                        MaxVisible = MaxVisibleHudMinChar;
+                    var comp = hudComps[i];
+
+                    // rename it in comps list (not the def) to better visually track
+                    comp.ComponentName = $"{(i + 1).ToString()}. {comp.ComponentName}";
+
+                    CycleComponents.Add(comp);
                 }
 
-                if(PrevHeldId != currentDef.Id)
+                Refresh = true;
+            }
+
+            if(CycleComponents.Count == 0)
+                return;
+
+            bool inChar = InputLib.IsInputReadable(checkSpectator: false);
+            if(inChar && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            {
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll > 0)
                 {
-                    Index = 0;
-                    IndexOffset = 0;
-                    Counter = 9999;
-                    CycleComponents.Clear();
+                    Index++;
                     Refresh = true;
-                    ShowScrollHint = true;
-
-                    PrevHeldId = currentDef.Id;
-                    var comps = MyHud.BlockInfo.Components;
-
-                    if(comps.Count == 0)
-                    {
-                        // force component list update
-                        MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
-                        CubeBuilderHax.RefreshBlockInfoHud();
-                    }
-
-                    if(comps.Count > MaxVisible)
-                    {
-                        for(int i = 0; i < comps.Count; i++)
-                        {
-                            var comp = comps[i];
-
-                            // rename it in comps list (not the def) to better visually track
-                            comp.ComponentName = $"{(i + 1).ToString()}. {comp.ComponentName}";
-
-                            CycleComponents.Add(comp);
-                        }
-                    }
+                    ShowScrollHint = false;
                 }
-
-                if(CycleComponents.Count == 0)
-                    return;
-
-                if(InputLib.IsInputReadable(checkSpectator: false) && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                else if(scroll < 0)
                 {
-                    int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
-                    if(scroll > 0)
-                    {
-                        Index++;
-                        Refresh = true;
-                        ShowScrollHint = false;
-                    }
-                    else if(scroll < 0)
-                    {
-                        Index--;
-                        Refresh = true;
-                        ShowScrollHint = false;
-                    }
-                }
-
-                if(Refresh)
-                {
-                    Counter = 0;
-                    var comps = MyHud.BlockInfo.Components;
-
-                    comps.Clear();
-
-                    int scrollShow = MaxVisible;
-                    int maxIndex = CycleComponents.Count - scrollShow;
-                    Index = MathHelper.Clamp(Index, 0, maxIndex);
-                    IndexOffset = maxIndex - Index;
-
-                    int show = (ShowScrollHint ? scrollShow - 1 : scrollShow);
-
-                    for(int i = 0; i < show; ++i)
-                    {
-                        comps.Add(CycleComponents[i + Index]);
-                    }
-
-                    if(ShowScrollHint)
-                        comps.Add(HintComponent);
-
-                    // HACK: this causes Version++ making the HUD to refresh component draw
-                    MyHud.BlockInfo.DefinitionId = MyHud.BlockInfo.DefinitionId;
+                    Index--;
+                    Refresh = true;
+                    ShowScrollHint = false;
                 }
             }
-            catch(Exception e)
+
+            if(Refresh)
             {
-                Log.Error(e);
+                Refresh = false;
+
+                var comps = MyHud.BlockInfo.Components;
+                comps.Clear();
+
+                // auto-scroll while welding/grinding the block
+                // also nice side effect of this not triggering unless components change
+                if(inChar && EquipmentMonitor.AimedBlock != null && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION))
+                {
+                    Index = MathHelper.FloorToInt(Math.Max(0, EquipmentMonitor.AimedBlock.BuildLevelRatio * CycleComponents.Count - 6));
+                }
+
+                int scrollShow = MaxVisible;
+                int maxIndex = CycleComponents.Count - scrollShow;
+                Index = MathHelper.Clamp(Index, 0, maxIndex);
+                IndexOffset = maxIndex - Index;
+
+                bool showUpHint = (ShowScrollHint && Index == 0);
+                bool showDownHint = (!showUpHint && ShowScrollHint && Index > 0);
+
+                if(showDownHint)
+                {
+                    // TODO: gamepad control to scroll?
+                    if(MyAPIGateway.Input.IsJoystickLastUsed)
+                        HintComponent.ComponentName = "v More components v";
+                    else
+                        HintComponent.ComponentName = "v Shift+Scroll v";
+
+                    comps.Add(HintComponent);
+                }
+
+                int loopStart = (showDownHint ? 1 : 0);
+                int loopEnd = (showUpHint ? scrollShow - 1 : scrollShow);
+                for(int i = loopStart; i < loopEnd; ++i)
+                {
+                    comps.Add(CycleComponents[i + Index]);
+                }
+
+                if(showUpHint)
+                {
+                    if(MyAPIGateway.Input.IsJoystickLastUsed)
+                        HintComponent.ComponentName = "^ More components ^";
+                    else
+                        HintComponent.ComponentName = "^ Shift+Scroll ^";
+
+                    comps.Add(HintComponent);
+                }
+
+                // HACK: this causes Version++ making the HUD to refresh component draw
+                MyHud.BlockInfo.DefinitionId = MyHud.BlockInfo.DefinitionId;
             }
         }
 

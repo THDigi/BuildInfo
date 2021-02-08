@@ -207,7 +207,7 @@ namespace Digi.BuildInfo.Features
                 Vector2 posCompList = DrawUtils.GetHudComponentListStart();
                 int totalComps = blockDef.Components.Length;
 
-                int scrollIndexOffset = ScrollableComponents.Instance.IndexOffset;
+                int scrollIndexOffset = Main.BlockInfoScrollComponents.IndexOffset;
 
                 // for debugging
                 //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Control))
