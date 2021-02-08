@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Features.HUD
         public float MaxValue { get; private set; }
         public string GetValueString()
         {
-            bool enabled = BuildInfoMod.Instance.Config.InventoryBarOverride.Value;
+            bool enabled = BuildInfoMod.Instance.Config.BackpackBarOverride.Value;
             if(!enabled)
                 return CurrentValue.ToString(TextFormat);
 
@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public void Update()
         {
-            bool enabled = BuildInfoMod.Instance.Config.InventoryBarOverride.Value;
+            bool enabled = BuildInfoMod.Instance.Config.BackpackBarOverride.Value;
 
             if(enabled && MyAPIGateway.Session?.ControlledObject == null)
             {
