@@ -47,6 +47,12 @@ namespace Digi.BuildInfo.Utilities
 
         public static int GetDigitCount(this int value, bool includeSign = true)
         {
+            if(value == int.MinValue)
+                return (includeSign ? 11 : 10);
+
+            if(value == int.MaxValue)
+                return 10;
+
             int sign = 0;
             if(value < 0)
             {

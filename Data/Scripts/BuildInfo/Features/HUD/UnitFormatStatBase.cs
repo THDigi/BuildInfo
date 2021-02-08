@@ -82,7 +82,10 @@ namespace Digi.BuildInfo.Features.HUD
         {
             if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
             {
-                return (_currentValue * 100).ToString("0");
+                if(_maxValue > 0)
+                    return ((_currentValue / _maxValue) * 100).ToString("0");
+                else
+                    return "0";
             }
 
             if(_maxValue == 0)
@@ -94,11 +97,14 @@ namespace Digi.BuildInfo.Features.HUD
             int width = rounded.GetDigitCount();
             int round = Math.Max(maxWidth - width, 0);
 
-            // if "1234".Length <= "1.23k".Length then print first one
-            int rawRounded = (int)Math.Round(_currentValue, 0);
-            int finalWidth = width + 1 + round;
-            if(rawRounded.GetDigitCount() <= finalWidth)
-                return rawRounded.ToString() + UnitSymbol;
+            if(_currentValue < 99999) // if it's this large then don't bother, also avoid overflow issues
+            {
+                // if "1234".Length <= "1.23k".Length then print first one
+                int rawRounded = (int)Math.Round(_currentValue, 0);
+                int finalWidth = width + 1 + round;
+                if(rawRounded.GetDigitCount() <= finalWidth)
+                    return rawRounded.ToString() + UnitSymbol;
+            }
 
             var formats = Constants.DigitFormats;
             round = Math.Min(round, formats.Length - 1);
