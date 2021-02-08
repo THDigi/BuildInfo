@@ -4,7 +4,7 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class HydrogenStat : StatBase
+    public class HydrogenStat : UnitFormatStatBase
     {
         long PrevCharId;
 

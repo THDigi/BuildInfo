@@ -5,7 +5,7 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class ShipHydrogenStat : StatBase
+    public class ShipHydrogenStat : UnitFormatStatBase
     {
         long PrevGridId = 0;
         List<IMyGasTank> HydrogenTanks = new List<IMyGasTank>();

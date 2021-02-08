@@ -3,7 +3,7 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class EnergyStat : StatBase
+    public class EnergyStat : UnitFormatStatBase
     {
         public EnergyStat() : base("player_energy")
         {

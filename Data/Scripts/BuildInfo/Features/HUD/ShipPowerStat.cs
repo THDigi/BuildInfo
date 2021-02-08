@@ -5,7 +5,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class ShipPowerStat : StatBase
+    public class ShipPowerStat : UnitFormatStatBase
     {
         public ShipPowerStat() : base("controlled_power_usage")
         {

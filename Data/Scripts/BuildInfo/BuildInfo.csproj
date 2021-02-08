@@ -179,7 +179,7 @@
     <Compile Include="Features\HUD\ShipPowerStat.cs" />
     <Compile Include="Features\HUD\ShipMassStat.cs" />
     <Compile Include="Features\HUD\OxygenStat.cs" />
-    <Compile Include="Features\HUD\StatBase.cs" />
+    <Compile Include="Features\HUD\UnitFormatStatBase.cs" />
     <Compile Include="Features\ItemTooltips.cs" />
     <Compile Include="Features\JumpDriveMonitor.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />

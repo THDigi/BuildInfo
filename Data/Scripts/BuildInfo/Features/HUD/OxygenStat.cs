@@ -3,7 +3,7 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class OxygenStat : StatBase
+    public class OxygenStat : UnitFormatStatBase
     {
         public OxygenStat() : base("player_oxygen")
         {

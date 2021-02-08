@@ -3,7 +3,7 @@ using Sandbox.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class HealthStat : StatBase
+    public class HealthStat : UnitFormatStatBase
     {
         public HealthStat() : base("player_health")
         {

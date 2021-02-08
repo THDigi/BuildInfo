@@ -5,7 +5,7 @@ using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public abstract class StatBase : IMyHudStat
+    public abstract class UnitFormatStatBase : IMyHudStat
     {
         public MyStringHash Id { get; private set; }
 
@@ -73,7 +73,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         private bool? PrevSetting = null;
 
-        public StatBase(string id)
+        public UnitFormatStatBase(string id)
         {
             Id = MyStringHash.GetOrCompute(id); // overwrites this stat's script
         }
