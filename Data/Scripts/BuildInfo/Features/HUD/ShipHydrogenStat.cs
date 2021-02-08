@@ -15,13 +15,13 @@ namespace Digi.BuildInfo.Features.HUD
             UnitSymbol = "L";
         }
 
-        protected override void Update(int tick)
+        protected override void Update(int tick, bool enabled)
         {
             IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
             if(controlled == null)
             {
-                CurrentValue = 0f;
                 MaxValue = 0f;
+                CurrentValue = 0f;
                 HydrogenTanks.Clear();
                 return;
             }
@@ -59,8 +59,8 @@ namespace Digi.BuildInfo.Features.HUD
 
             if(HydrogenTanks.Count == 0)
             {
-                CurrentValue = 0f;
                 MaxValue = 0f;
+                CurrentValue = 0f;
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.HUD
                 filled += ((float)tank.FilledRatio * capacity);
             }
 
-            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            if(!enabled)
             {
                 MaxValue = max;
                 CurrentValue = filled;

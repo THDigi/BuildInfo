@@ -9,7 +9,7 @@ namespace Digi.BuildInfo.Features.HUD
         {
         }
 
-        protected override void Update(int tick)
+        protected override void Update(int tick, bool enabled)
         {
             var chr = MyAPIGateway.Session?.Player?.Character;
             if(chr == null)
@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.HUD
             if(statComp == null)
                 return;
 
-            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            if(!enabled)
             {
                 MaxValue = 1f;
                 MinValue = 0f;

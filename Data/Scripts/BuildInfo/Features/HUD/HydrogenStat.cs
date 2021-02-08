@@ -13,7 +13,7 @@ namespace Digi.BuildInfo.Features.HUD
             UnitSymbol = "L";
         }
 
-        protected override void Update(int tick)
+        protected override void Update(int tick, bool enabled)
         {
             var chr = MyAPIGateway.Session?.Player?.Character;
             if(chr == null)
@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features.HUD
             if(comp == null)
                 return;
 
-            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            if(!enabled)
             {
                 MaxValue = 1f;
                 CurrentValue = comp.GetGasFillLevel(MyCharacterOxygenComponent.HydrogenId);

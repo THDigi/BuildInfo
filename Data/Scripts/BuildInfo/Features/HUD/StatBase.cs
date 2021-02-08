@@ -71,6 +71,8 @@ namespace Digi.BuildInfo.Features.HUD
         public int UpdateTicks { get; protected set; } = 10;
         public string ValueStringCache { get; private set; } = "";
 
+        private bool? PrevSetting = null;
+
         public StatBase(string id)
         {
             Id = MyStringHash.GetOrCompute(id); // overwrites this stat's script
@@ -103,7 +105,7 @@ namespace Digi.BuildInfo.Features.HUD
             return val.ToString(formats[round]) + UnitPrefix + UnitSymbol;
         }
 
-        protected abstract void Update(int tick);
+        protected abstract void Update(int tick, bool enabled);
 
         protected void UpdateString()
         {
@@ -116,7 +118,16 @@ namespace Digi.BuildInfo.Features.HUD
             {
                 int tick = BuildInfoMod.Instance.Tick;
                 if(UpdateTicks <= 0 || tick % UpdateTicks == 0)
-                    Update(tick);
+                {
+                    var setting = BuildInfoMod.Instance.Config.HudStatOverrides.Value;
+                    if(!PrevSetting.HasValue || PrevSetting.Value != setting)
+                    {
+                        PrevSetting = setting;
+                        UpdateString();
+                    }
+
+                    Update(tick, setting);
+                }
             }
             catch(Exception e)
             {

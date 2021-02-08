@@ -12,7 +12,7 @@ namespace Digi.BuildInfo.Features.HUD
             UnitSymbol = "W";
         }
 
-        protected override void Update(int tick)
+        protected override void Update(int tick, bool enabled)
         {
             MyShipController shipCtrl = MyAPIGateway.Session?.ControlledObject as MyShipController;
             if(shipCtrl == null)
@@ -24,15 +24,15 @@ namespace Digi.BuildInfo.Features.HUD
 
             if(shipCtrl == null || shipCtrl.GridResourceDistributor == null)
             {
-                CurrentValue = 0f;
                 MaxValue = 0f;
+                CurrentValue = 0f;
                 return;
             }
 
             float maxAvailable = shipCtrl.GridResourceDistributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
             float totalRequired = MathHelper.Clamp(shipCtrl.GridResourceDistributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId), 0f, maxAvailable);
 
-            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            if(!enabled)
             {
                 MaxValue = maxAvailable;
                 CurrentValue = totalRequired;
