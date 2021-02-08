@@ -26,9 +26,9 @@ namespace Digi.BuildInfo.Features.HUD
             if(WasInShip)
             {
                 if(UsingGroup)
-                    return $"{Containers.ToString()} containers: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
-                else
                     return $"'{GroupName}' group: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
+                else
+                    return $"{Containers.ToString()} containers: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
             }
             else
                 return $"Backpack: {CurrentValue.ToString(TextFormat)} / {MaxValue.ToString(TextFormat)}";
