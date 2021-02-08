@@ -141,6 +141,6 @@ namespace Digi.BuildInfo.Features.HUD
             }
         }
 
-        string IMyHudStat.GetValueString() => ValueStringCache;
+        string IMyHudStat.GetValueString() => ValueStringCache ?? ""; // must never return null
     }
 }

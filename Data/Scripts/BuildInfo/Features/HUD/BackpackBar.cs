@@ -45,7 +45,6 @@ namespace Digi.BuildInfo.Features.HUD
         public void Update()
         {
             bool enabled = BuildInfoMod.Instance.Config.BackpackBarOverride.Value;
-
             if(enabled && MyAPIGateway.Session?.ControlledObject == null)
             {
                 CurrentValue = 0f;

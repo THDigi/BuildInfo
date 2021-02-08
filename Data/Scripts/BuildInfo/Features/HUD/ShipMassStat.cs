@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features.HUD
         public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_mass");
         public float MinValue => 0f;
         public float MaxValue => 1f;
-        public string GetValueString() => StringValueCache;
+        public string GetValueString() => StringValueCache ?? ""; // must never be null
 
         private float _currentValue;
         public float CurrentValue
@@ -33,7 +33,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         private long PrevGridId;
         private HashSet<IMyCubeGrid> Grids = new HashSet<IMyCubeGrid>();
-        private string StringValueCache;
+        private string StringValueCache = "";
 
         public ShipMassStat()
         {
