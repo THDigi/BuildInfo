@@ -19,6 +19,14 @@ namespace Digi.BuildInfo.Features.HUD
             if(statComp == null)
                 return;
 
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = 1f;
+                MinValue = 0f;
+                CurrentValue = statComp.HealthRatio;
+                return;
+            }
+
             MaxValue = statComp.Health.MaxValue; // NOTE: max must be set first to declare unit multipliers
             MinValue = statComp.Health.MinValue;
             CurrentValue = statComp.Health.Value;

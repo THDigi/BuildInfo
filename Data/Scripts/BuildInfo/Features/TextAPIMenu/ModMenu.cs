@@ -128,6 +128,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleDualSlider(Category_HUD, "Ship Tool Inventory Bar Scale", Config.ShipToolInvBarScale, groupShipToolInvBar);
             SimpleToggle(Category_HUD, "Bag Inventory Bar Override", Config.InventoryBarOverride);
             SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
+            SimpleToggle(Category_HUD, "HUD Stat Overrides", Config.HudStatOverrides);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
             SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
 

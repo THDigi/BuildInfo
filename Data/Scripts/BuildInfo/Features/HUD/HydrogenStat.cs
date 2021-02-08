@@ -23,6 +23,13 @@ namespace Digi.BuildInfo.Features.HUD
             if(comp == null)
                 return;
 
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = 1f;
+                CurrentValue = comp.GetGasFillLevel(MyCharacterOxygenComponent.HydrogenId);
+                return;
+            }
+
             if(PrevCharId != chr.EntityId || tick % 6 == 0)
             {
                 PrevCharId = chr.EntityId;

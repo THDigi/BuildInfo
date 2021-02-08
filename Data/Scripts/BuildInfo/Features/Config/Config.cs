@@ -41,6 +41,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting ItemTooltipAdditions;
 
+        public BoolSetting HudStatOverrides;
+
         public BoolSetting TurretHUD;
 
         public IntegerSetting ToolbarLabels;
@@ -232,6 +234,9 @@ namespace Digi.BuildInfo.Features.Config
             TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
                 "Shows turret ammo and some ship stats because the entire HUD is missing.");
             TurretHUD.AddCompatibilityNames("HUD: Turret Ammo");
+
+            HudStatOverrides = new BoolSetting(Handler, "HUD: Stat Overrides", true,
+                "Overrides some values from the HUD (health, energy, hydrogen, etc), showing units and some behaviors slightly altered.");
 
             ItemTooltipAdditions = new BoolSetting(Handler, "Item Tooltip Additions", true,
                 "Info about mod and conveyor tube size requirements for item tooltips, seen in inventories.",

@@ -9,7 +9,6 @@ namespace Digi.BuildInfo.Features.HUD
         {
             ValueWidth = 2;
             UnitSymbol = "Wh";
-            MaxValue = MyEnergyConstants.BATTERY_MAX_CAPACITY * 1000000f; // MW to W
         }
 
         protected override void Update(int tick)
@@ -18,6 +17,14 @@ namespace Digi.BuildInfo.Features.HUD
             if(chr == null)
                 return;
 
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = 1f;
+                CurrentValue = chr.SuitEnergyLevel;
+                return;
+            }
+
+            MaxValue = MyEnergyConstants.BATTERY_MAX_CAPACITY * 1000000f; // HACK: character battery capacity is hardcoded in game
             CurrentValue = chr.SuitEnergyLevel * MaxValue;
         }
     }

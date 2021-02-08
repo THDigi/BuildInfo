@@ -34,6 +34,8 @@ namespace Digi.BuildInfo.Features.HUD
 
                 HydrogenTanks.Clear();
 
+                // TODO: get ones on rotors/pistons too? remember to disable that via config if adding
+
                 foreach(var block in grid.GetFatBlocks())
                 {
                     var tank = block as IMyGasTank;
@@ -79,8 +81,15 @@ namespace Digi.BuildInfo.Features.HUD
                 filled += ((float)tank.FilledRatio * capacity);
             }
 
-            MaxValue = max;
-            CurrentValue = filled;
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = max;
+                CurrentValue = filled;
+                return;
+            }
+
+            MaxValue = max * 1000; // m3 to L
+            CurrentValue = filled * 1000;
         }
     }
 }

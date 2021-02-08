@@ -29,8 +29,19 @@ namespace Digi.BuildInfo.Features.HUD
                 return;
             }
 
-            MaxValue = shipCtrl.GridResourceDistributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId) * 1000000f; // MW to W
-            CurrentValue = MathHelper.Clamp(shipCtrl.GridResourceDistributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId), 0f, MaxValue) * 1000000f; // MW to W
+            float maxAvailable = shipCtrl.GridResourceDistributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+            float totalRequired = MathHelper.Clamp(shipCtrl.GridResourceDistributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId), 0f, maxAvailable);
+
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = maxAvailable;
+                CurrentValue = totalRequired;
+                return;
+            }
+
+            // MW to W
+            MaxValue = maxAvailable * 1000000f;
+            CurrentValue = totalRequired * 1000000f;
         }
     }
 }

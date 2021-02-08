@@ -20,6 +20,13 @@ namespace Digi.BuildInfo.Features.HUD
             if(comp == null)
                 return;
 
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                MaxValue = 1f;
+                CurrentValue = comp.SuitOxygenLevel;
+                return;
+            }
+
             MaxValue = comp.OxygenCapacity; // NOTE: max must be set first to declare unit multipliers
             CurrentValue = comp.SuitOxygenAmount;
         }

@@ -78,17 +78,22 @@ namespace Digi.BuildInfo.Features.HUD
 
         protected virtual string ValueAsString()
         {
-            if(MaxValue == 0 && CurrentValue == 0)
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                return (_currentValue * 100).ToString("0");
+            }
+
+            if(_maxValue == 0)
                 return "N/A";
 
-            float val = CurrentValue * UnitMultiplier;
+            float val = _currentValue * UnitMultiplier;
             int rounded = (int)Math.Round(val, 0);
             int maxWidth = 4 - UnitPrefix.Length - UnitSymbol.Length;
             int width = rounded.GetDigitCount();
             int round = Math.Max(maxWidth - width, 0);
 
             // if "1234".Length <= "1.23k".Length then print first one
-            int rawRounded = (int)Math.Round(CurrentValue, 0);
+            int rawRounded = (int)Math.Round(_currentValue, 0);
             int finalWidth = width + 1 + round;
             if(rawRounded.GetDigitCount() <= finalWidth)
                 return rawRounded.ToString() + UnitSymbol;

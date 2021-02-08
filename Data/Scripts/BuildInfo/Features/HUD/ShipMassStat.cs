@@ -13,21 +13,30 @@ namespace Digi.BuildInfo.Features.HUD
         public const int BlocksForApproxMass = 10000;
 
         public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_mass");
-        public float CurrentValue { get; private set; }
         public float MinValue => 0f;
         public float MaxValue => 1f;
+        public string GetValueString() => StringValueCache;
+
+        private float _currentValue;
+        public float CurrentValue
+        {
+            get { return _currentValue; }
+            set
+            {
+                if(_currentValue != value)
+                {
+                    _currentValue = value;
+                    StringValueCache = value.ToString(NumberFormat);
+                }
+            }
+        }
 
         private long PrevGridId;
         private HashSet<IMyCubeGrid> Grids = new HashSet<IMyCubeGrid>();
+        private string StringValueCache;
 
         public ShipMassStat()
         {
-        }
-
-        public string GetValueString()
-        {
-            // HACK: can't add unit because HUD hardcodes unit into itself.
-            return CurrentValue.ToString(NumberFormat);
         }
 
         public void Update()
@@ -46,6 +55,14 @@ namespace Digi.BuildInfo.Features.HUD
             if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
             {
                 PrevGridId = ctrlGrid.EntityId;
+
+                if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+                {
+                    if(!ctrlGrid.IsStatic)
+                        CurrentValue = ctrlGrid.GetCurrentMass();
+
+                    return;
+                }
 
                 float mass = 0;
 
@@ -81,12 +98,27 @@ namespace Digi.BuildInfo.Features.HUD
     public class ShipIsStatic : IMyHudStat
     {
         public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_is_static");
-        public float CurrentValue => 0;
+        public float CurrentValue { get; private set; }
         public float MinValue => 0f;
         public float MaxValue => 1f;
-        public string GetValueString() => "0";
+        public string GetValueString() => (CurrentValue > 0.5f ? "1" : "0");
 
-        public ShipIsStatic() { }
-        public void Update() { }
+        public ShipIsStatic()
+        {
+        }
+
+        public void Update()
+        {
+            CurrentValue = 0;
+
+            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            {
+                var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                if(controlled != null)
+                {
+                    CurrentValue = (controlled.CubeGrid.IsStatic ? 1 : 0);
+                }
+            }
+        }
     }
 }
