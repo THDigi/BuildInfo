@@ -246,7 +246,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
 
-            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.AlwaysOn, new string[]
+            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.AltKey, new string[]
             {
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the toolbar action stuff.",
@@ -272,7 +272,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Toggles if the 'Toolbar Info  (BuildInfo Mod)' title is shown on the box.",
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
 
-            ToolbarStyleMode = CreateEnumSetting("Toolbar: Label Box Style", ToolbarStyle.SingleList, new string[]
+            ToolbarStyleMode = CreateEnumSetting("Toolbar: Label Box Style", ToolbarStyle.TwoColumns, new string[]
             {
                 "Changes the visual layout of the toolbar labels box.",
             });
