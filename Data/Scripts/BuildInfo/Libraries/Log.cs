@@ -251,6 +251,7 @@ namespace Digi
             private StringBuilder sb = new StringBuilder(64);
 
             private List<string> preInitMessages;
+            private bool preInitErrors = false;
 
             public bool AutoClose { get; set; } = true;
 
@@ -321,7 +322,11 @@ namespace Digi
                 if(preInitMessages == null)
                     return;
 
-                Info($"{modName} WARNING: there are log messages before the mod initialized!", PRINT_MESSAGE, 10000);
+                if(preInitErrors)
+                    Error($"Got errors occurred during loading:", PRINT_GENERIC_ERROR, 10000);
+                else
+                    Info($"Got log messages during loading:", PRINT_GENERIC_ERROR, 10000);
+
                 Info($"--- pre-init messages ---");
 
                 foreach(var msg in preInitMessages)
@@ -501,9 +506,12 @@ namespace Digi
                     if(writer == null)
                     {
                         if(preInitMessages == null)
-                            preInitMessages = new List<string>();
+                            preInitMessages = new List<string>(2);
 
                         preInitMessages.Add(sb.ToString());
+
+                        if(!preInitErrors && prefix != null && prefix.IndexOf("ERROR", StringComparison.OrdinalIgnoreCase) != -1)
+                            preInitErrors = true;
                     }
                     else
                     {
