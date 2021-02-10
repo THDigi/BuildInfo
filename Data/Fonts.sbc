@@ -37,7 +37,7 @@
       </Id>
       <ColorMask>
         <X>100</X>
-        <Y>200</Y>
+        <Y>240</Y>
         <Z>100</Z>
       </ColorMask>
       <Resources>
@@ -57,9 +57,9 @@
         <SubtypeId>BI_SkyBlue</SubtypeId>
       </Id>
       <ColorMask>
-        <X>55</X>
+        <X>0</X>
         <Y>155</Y>
-        <Z>200</Z>
+        <Z>255</Z>
       </ColorMask>
       <Resources>
         <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
@@ -78,9 +78,9 @@
         <SubtypeId>BI_Yellow</SubtypeId>
       </Id>
       <ColorMask>
-        <X>200</X>
-        <Y>200</Y>
-        <Z>55</Z>
+        <X>255</X>
+        <Y>255</Y>
+        <Z>0</Z>
       </ColorMask>
       <Resources>
         <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
