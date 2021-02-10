@@ -247,10 +247,6 @@ namespace Digi.BuildInfo.Features.Overlays
             drawLookup.Add(blockType, call);
         }
 
-        // boxless HitInfo getters
-        IMyEntity GetHitEnt<T>(T val) where T : IHitInfo => val.HitEntity;
-        Vector3D GetHitPos<T>(T val) where T : IHitInfo => val.Position;
-
         protected override void UpdateDraw()
         {
             if(DrawOverlay == 0 || (LockOverlay.LockedOnBlock == null && EquipmentMonitor.BlockDef == null) || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
@@ -278,9 +274,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
                     {
-                        var hitEnt = GetHitEnt(MyCubeBuilder.Static.HitInfo.Value);
+                        var hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
                         if(hitEnt != null && hitEnt is IMyVoxelBase)
-                            drawMatrix.Translation = GetHitPos(MyCubeBuilder.Static.HitInfo.Value); // required for position to be accurate when aiming at a planet
+                            drawMatrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
                         else
                             drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
                     }

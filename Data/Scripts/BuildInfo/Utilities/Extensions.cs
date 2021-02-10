@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Game.ModAPI;
+using VRage.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Utilities
 {
@@ -72,5 +75,15 @@ namespace Digi.BuildInfo.Utilities
             if(value <= 999999999) return sign + 9;
             return sign + 10;
         }
+
+        /// <summary>
+        /// Hopefully boxless getter, must be fed MyPhysics.HitInfo.
+        /// </summary>
+        public static IMyEntity GetHitEnt<T>(this T val) where T : IHitInfo => val.HitEntity;
+
+        /// <summary>
+        /// Hopefully boxless getter, must be fed MyPhysics.HitInfo.
+        /// </summary>
+        public static Vector3D GetHitPos<T>(this T val) where T : IHitInfo => val.Position;
     }
 }
