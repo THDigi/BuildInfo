@@ -3,7 +3,6 @@ using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -15,6 +14,8 @@ namespace Digi.BuildInfo.Features.Overlays
         public IMySlimBlock LockedOnBlock { get; private set; }
         public MyCubeBlockDefinition LockedOnBlockDef { get; private set; }
         private IMyHudNotification Notification;
+
+        const string NotifyPrefix = "Overlay Lock-On: ";
 
         public LockOverlay(BuildInfoMod main) : base(main)
         {
@@ -31,17 +32,35 @@ namespace Digi.BuildInfo.Features.Overlays
 
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(!paused && !inMenu && Config.LockOverlayBind.Value.IsJustPressed())
+            if(paused || inMenu)
+                return;
+
+            if(Config.LockOverlayBind.Value.IsJustPressed())
             {
                 LockOverlayToAimedBlock();
             }
+        }
+
+        protected override void UpdateDraw()
+        {
+            if(LockedOnBlock == null)
+                return;
+
+            // alternate update for when overlays doesn't update this
+            if(Overlays.DrawOverlay > 0)
+                return;
+
+            var def = EquipmentMonitor.BlockDef;
+            var aimedBlock = EquipmentMonitor.AimedBlock;
+            var cellSize = EquipmentMonitor.BlockGridSize;
+            LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize);
         }
 
         public void LockOverlayToAimedBlock()
         {
             if(LockedOnBlock == null && EquipmentMonitor.AimedBlock == null)
             {
-                NotifyLockOverlay("Aim at a block with welder/grinder first.", 2000, FontsHandler.RedSh);
+                SetNotification("Aim at a block with welder/grinder first.", 2000, FontsHandler.RedSh);
                 return;
             }
 
@@ -75,7 +94,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > maxRangeSq)
             {
-                SetLockOnBlock(null, "Too far from block, disabled overlay lock.");
+                SetLockOnBlock(null, "Turned off, too far.");
                 return false;
             }
 
@@ -83,10 +102,10 @@ namespace Digi.BuildInfo.Features.Overlays
             def = LockedOnBlockDef;
             cellSize = LockedOnBlock.CubeGrid.GridSize;
 
-            if(!MyParticlesManager.Paused && Notification != null)
-            {
-                Notification.Show();
-            }
+            if(Overlays.DrawOverlay == 0)
+                SetNotification($"Overlays off. [{Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
+            else
+                SetNotification($"{LockedOnBlockDef.DisplayNameText}. [{Config.LockOverlayBind.Value.GetBinds()}] to change/unlock.", 100);
 
             return true;
         }
@@ -106,6 +125,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             LockedOnBlock = block;
 
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (LockedOnBlock != null));
+
             // hook new
             if(LockedOnBlock != null)
             {
@@ -115,16 +136,14 @@ namespace Digi.BuildInfo.Features.Overlays
                 LockedOnBlockDef = (MyCubeBlockDefinition)LockedOnBlock.BlockDefinition;
 
                 Overlays.SetOverlayCallFor(LockedOnBlockDef.Id);
-
-                NotifyLockOverlay($"Locked overlay to {LockedOnBlockDef.DisplayNameText}. [{Config.LockOverlayBind.Value.GetBinds()}] to unlock/change to aimed.", 100);
             }
             else
             {
-                NotifyLockOverlay(message ?? "Turned off overlay lock.");
+                SetNotification(message ?? "Turned off");
             }
         }
 
-        void NotifyLockOverlay(string message, int aliveTimeMs = 2000, string font = FontsHandler.WhiteSh)
+        void SetNotification(string message, int aliveTimeMs = 2000, string font = FontsHandler.WhiteSh)
         {
             if(Notification == null)
                 Notification = MyAPIGateway.Utilities.CreateNotification("");
@@ -132,7 +151,7 @@ namespace Digi.BuildInfo.Features.Overlays
             Notification.Hide(); // required since SE v1.194
             Notification.AliveTime = aliveTimeMs;
             Notification.Font = font;
-            Notification.Text = message;
+            Notification.Text = NotifyPrefix + message;
             Notification.Show();
         }
 
@@ -148,7 +167,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(LockedOnBlock == null || block != LockedOnBlock.FatBlock)
                     return;
 
-                SetLockOnBlock(null, "Block removed, disabled overlay lock.");
+                SetLockOnBlock(null, "Turned off, block was removed.");
             }
             catch(Exception e)
             {
