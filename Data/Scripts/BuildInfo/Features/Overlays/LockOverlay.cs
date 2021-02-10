@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             if(LockedOnBlock == null && EquipmentMonitor.AimedBlock == null)
             {
-                NotifyLockOverlay("Aim at a block with welder/grinder first.", 2000, MyFontEnum.Red);
+                NotifyLockOverlay("Aim at a block with welder/grinder first.", 2000, FontsHandler.RedSh);
                 return;
             }
 
@@ -124,7 +124,7 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        void NotifyLockOverlay(string message, int aliveTimeMs = 2000, string font = MyFontEnum.White)
+        void NotifyLockOverlay(string message, int aliveTimeMs = 2000, string font = FontsHandler.WhiteSh)
         {
             if(Notification == null)
                 Notification = MyAPIGateway.Utilities.CreateNotification("");

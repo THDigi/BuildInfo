@@ -2,7 +2,6 @@
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
 using Sandbox.ModAPI;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -16,7 +15,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
             {
-                Utils.ShowColoredChatMessage(MainAlias, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                PrintChat(Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
                 return;
             }
 
@@ -31,11 +30,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     {
                         MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot - 1, Main.EquipmentMonitor.BlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
-                        Utils.ShowColoredChatMessage(MainAlias, $"{Main.EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", MyFontEnum.Green);
+                        PrintChat($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} placed in slot {slot.ToString()}.", FontsHandler.GreenSh);
                     }
                     else
                     {
-                        Utils.ShowColoredChatMessage(MainAlias, $"'{slotStr}' is not a number from 1 to 9.", MyFontEnum.Red);
+                        PrintChat($"'{slotStr}' is not a number from 1 to 9.", FontsHandler.RedSh);
                     }
 
                     return;
@@ -46,7 +45,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             }
             else
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Aim at a block with a welder or grinder first.", MyFontEnum.Red);
+                Utils.ShowColoredChatMessage(MainAlias, "Aim at a block with a welder or grinder first.", FontsHandler.RedSh);
             }
         }
 

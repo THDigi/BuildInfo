@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features
                 Main.Config.Save();
 
                 UpdateMethods = UpdateFlags.NONE;
-                Utils.ShowColoredChatMessage(Log.ModName, "New notable changes! For changelog type in chat: /bi changelog", MyFontEnum.Green);
+                Utils.ShowColoredChatMessage(Log.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
             }
         }
     }

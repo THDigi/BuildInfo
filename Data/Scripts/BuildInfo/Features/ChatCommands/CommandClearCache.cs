@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -14,7 +13,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             Main.TextGeneration.CachedBuildInfoNotification.Clear();
             Main.TextGeneration.CachedBuildInfoTextAPI.Clear();
-            Utils.ShowColoredChatMessage(MainAlias, "Emptied block info cache.", MyFontEnum.Green);
+            PrintChat("Emptied block info cache.", FontsHandler.GreenSh);
         }
 
         public override void PrintHelp(StringBuilder sb)

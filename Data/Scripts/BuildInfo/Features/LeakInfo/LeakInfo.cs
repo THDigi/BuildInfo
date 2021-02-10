@@ -95,7 +95,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
             if(Status == ThreadStatus.RUNNING) // notify the player that a background task is running.
             {
-                NotifyHUD("Computing path...", 100, MyFontEnum.Blue);
+                NotifyHUD("Computing path...", 100, FontsHandler.SkyBlueSh);
             }
 
             if(tick % 30 == 0) // every half a second, update the custom detail info on the currently selected air vent in the terminal.
@@ -262,21 +262,21 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 Status = ThreadStatus.IDLE;
                 ClearStatus();
 
-                NotifyHUD("Cancelled.", 1000, MyFontEnum.White);
+                NotifyHUD("Cancelled.", 1000, FontsHandler.YellowSh);
             }
             else if(crumb == null)
             {
                 Status = ThreadStatus.IDLE;
                 selectedGrid = null;
 
-                NotifyHUD("No leaks!", 2000, MyFontEnum.Green);
+                NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
             }
             else
             {
                 Status = ThreadStatus.DRAW;
                 drawTicks = (int)MathHelper.Clamp((lines.Count * 60 * 2 * selectedGrid.GridSize), 60 * MIN_DRAW_SECONDS, 60 * MAX_DRAW_SECONDS);
 
-                NotifyHUD("Found leak, path rendered.", 2000, MyFontEnum.White);
+                NotifyHUD("Found leak, path rendered.", 2000, FontsHandler.YellowSh);
             }
 
             ViewedVentControlPanel?.RefreshCustomInfo();
@@ -294,7 +294,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         /// <summary>
         /// Prints a message to the player, repeated calls to this method will overwrite the previous message on the HUD, therefore preventing spam.
         /// </summary>
-        private void NotifyHUD(string message, int time = 3000, string font = MyFontEnum.White)
+        private void NotifyHUD(string message, int time = 3000, string font = FontsHandler.WhiteSh)
         {
             if(notify == null)
                 notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);

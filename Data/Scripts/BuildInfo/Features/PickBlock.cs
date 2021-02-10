@@ -4,7 +4,6 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features
 {
@@ -43,7 +42,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
                     return;
                 }
 
@@ -56,7 +55,7 @@ namespace Digi.BuildInfo.Features
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     PickedBlockDef = null;
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
                     return;
                 }
 
@@ -112,7 +111,7 @@ namespace Digi.BuildInfo.Features
                 {
                     MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot - 1, PickedBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
-                    MyAPIGateway.Utilities.ShowNotification($"{PickedBlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, MyFontEnum.Green);
+                    MyAPIGateway.Utilities.ShowNotification($"{PickedBlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, FontsHandler.GreenSh);
 
                     PickedBlockDef = null;
                 }
@@ -123,7 +122,7 @@ namespace Digi.BuildInfo.Features
         {
             if(PickedBlockDef != null && tick % 5 == 0)
             {
-                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{PickedBlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, MyFontEnum.Blue);
+                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{PickedBlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, FontsHandler.SkyBlueSh);
             }
         }
     }

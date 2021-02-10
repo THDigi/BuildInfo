@@ -198,7 +198,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(showNotification)
             {
                 if(OverlayNotification == null)
-                    OverlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, MyFontEnum.White);
+                    OverlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, FontsHandler.WhiteSh);
 
                 OverlayNotification.Hide(); // required since SE v1.194
                 OverlayNotification.Text = "Overlays: " + NAMES[DrawOverlay];

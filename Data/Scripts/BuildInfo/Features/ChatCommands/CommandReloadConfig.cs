@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -13,9 +12,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void Execute(Arguments args)
         {
             if(Main.Config.Load())
-                Utils.ShowColoredChatMessage(MainAlias, "Config loaded.", MyFontEnum.Green);
+                PrintChat("Config loaded.", FontsHandler.GreenSh);
             else
-                Utils.ShowColoredChatMessage(MainAlias, "Config created and loaded default settings.", MyFontEnum.Green);
+                PrintChat("Config created and loaded default settings.", FontsHandler.GreenSh);
 
             Main.Config.Save();
             Main.TextGeneration.OnConfigReloaded();

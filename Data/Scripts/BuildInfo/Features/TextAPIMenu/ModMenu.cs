@@ -164,7 +164,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 Config.Handler.ResetToDefaults();
                 Config.Handler.SaveToFile();
                 Config.Reload();
-                MyAPIGateway.Utilities.ShowNotification("Config reset to defaults and saved.", 3000, MyFontEnum.Red);
+                MyAPIGateway.Utilities.ShowNotification("Config reset to defaults and saved.", 3000, FontsHandler.RedSh);
             });
             // FIXME: resetting to defaults (probably happens with delete config+reload too) doesn't update interactible properly, might need redesign...
 

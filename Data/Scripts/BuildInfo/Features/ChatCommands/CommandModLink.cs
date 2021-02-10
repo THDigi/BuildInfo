@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -25,16 +24,16 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                         MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 
-                        Utils.ShowColoredChatMessage(MainAlias, $"Opened steam overlay with {link}", MyFontEnum.Green);
+                        PrintChat($"Opened steam overlay with {link}", FontsHandler.GreenSh);
                     }
                     else
-                        Utils.ShowColoredChatMessage(MainAlias, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
+                        PrintChat("Can't find mod workshop ID, probably it's a local mod?", FontsHandler.RedSh);
                 }
                 else
-                    Utils.ShowColoredChatMessage(MainAlias, $"{Main.EquipmentMonitor.BlockDef.DisplayNameText} is not added by a mod.", MyFontEnum.Red);
+                    PrintChat($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} is not added by a mod.", FontsHandler.RedSh);
             }
             else
-                Utils.ShowColoredChatMessage(MainAlias, "No block selected/equipped.", MyFontEnum.Red);
+                PrintChat("No block selected/equipped.", FontsHandler.RedSh);
         }
 
         public override void PrintHelp(StringBuilder sb)

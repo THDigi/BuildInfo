@@ -110,16 +110,16 @@ namespace Digi.BuildInfo.Features
                             Main.PickBlock.PickedBlockDef = EquipmentMonitor.BlockDef;
                         }
                         else
-                            MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, MyFontEnum.Red);
+                            MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, FontsHandler.RedSh);
                         break;
                     case 2:
                         if(EquipmentMonitor.BlockDef == null)
                         {
-                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, MyFontEnum.Red);
+                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else if(EquipmentMonitor.BlockDef.Context.IsBaseGame)
                         {
-                            MyAPIGateway.Utilities.ShowNotification($"{EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, MyFontEnum.Red);
+                            MyAPIGateway.Utilities.ShowNotification($"{EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else
                         {
@@ -223,7 +223,7 @@ namespace Digi.BuildInfo.Features
             else
             {
                 CloseMenu();
-                MyAPIGateway.Utilities.ShowNotification("TextAPI mod not detected! (workshop id: 758597413)", 3000, MyFontEnum.Red);
+                MyAPIGateway.Utilities.ShowNotification("TextAPI mod not detected! (workshop id: 758597413)", 3000, FontsHandler.RedSh);
             }
         }
 
@@ -250,19 +250,19 @@ namespace Digi.BuildInfo.Features
             if(!EquipmentMonitor.IsCubeBuilder)
             {
                 freezeGizmoNotification.Text = "Equip a block and aim at a grid.";
-                freezeGizmoNotification.Font = MyFontEnum.Red;
+                freezeGizmoNotification.Font = FontsHandler.RedSh;
             }
             else if(value && MyCubeBuilder.Static.DynamicMode) // requires a grid target to turn on
             {
                 freezeGizmoNotification.Text = "Aim at a grid.";
-                freezeGizmoNotification.Font = MyFontEnum.Red;
+                freezeGizmoNotification.Font = FontsHandler.RedSh;
             }
             else
             {
                 MyCubeBuilder.Static.FreezeGizmo = value;
 
                 freezeGizmoNotification.Text = (value ? "Freeze placement position ON" : "Freeze placement position OFF");
-                freezeGizmoNotification.Font = MyFontEnum.White;
+                freezeGizmoNotification.Font = FontsHandler.WhiteSh;
 
                 if(value) // store the frozen position to check distance for auto-unfreeze
                     MyCubeBuilder.Static.GetAddPosition(out TextGeneration.lastGizmoPosition);
@@ -279,11 +279,10 @@ namespace Digi.BuildInfo.Features
             if(showNotification)
             {
                 if(transparencyNotification == null)
-                    transparencyNotification = MyAPIGateway.Utilities.CreateNotification("");
+                    transparencyNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, FontsHandler.WhiteSh);
 
                 transparencyNotification.Hide(); // required since SE v1.194
                 transparencyNotification.Text = (MyCubeBuilder.Static.UseTransparency ? "Placement transparency ON" : "Placement transparency OFF");
-                transparencyNotification.Font = MyFontEnum.White;
                 transparencyNotification.Show();
             }
         }

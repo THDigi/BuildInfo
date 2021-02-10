@@ -1,8 +1,5 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
-using Sandbox.ModAPI;
-using VRage.Game;
-using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -15,19 +12,17 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void Execute(Arguments args)
         {
             var aimedGrid = Main.EquipmentMonitor?.AimedBlock?.CubeGrid;
-
             if(aimedGrid == null)
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Aim at a ship with a welder/grinder first.", MyFontEnum.Red);
-                Utils.ShowColoredChatMessage(MainAlias, "This feature is also in projectors' terminal.", MyFontEnum.White);
+                PrintChat("Aim at a ship with a welder/grinder first.", FontsHandler.RedSh);
+                PrintChat("This feature is also in projectors' terminal.", FontsHandler.RedSh);
                 return;
             }
 
             bool allowed = Main.AnalyseShip.Analyse(aimedGrid);
-
             if(!allowed)
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Can't be used on enemy ships.", MyFontEnum.Red);
+                PrintChat("Can't be used on enemy ships.", FontsHandler.RedSh);
             }
         }
 

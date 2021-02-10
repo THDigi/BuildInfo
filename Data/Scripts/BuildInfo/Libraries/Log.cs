@@ -414,7 +414,7 @@ namespace Digi
                 LogMessage(message); // write to custom log
 
                 if(printText != null) // printing to HUD is optional
-                    ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.White);
+                    ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.Debug);
             }
 
             private void ShowHudMessage(ref IMyHudNotification notify, string message, string printText, int printTime, string font)

@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features
             if(relativeEntId == 0)
             {
                 notify.Text = "Dampeners no longer relative";
-                notify.Font = MyFontEnum.Red;
+                notify.Font = FontsHandler.YellowSh;
             }
             else
             {
@@ -82,7 +82,7 @@ namespace Digi.BuildInfo.Features
 
                     //notify.Hide(); // required since SE v1.194
                     //notify.Text = "Target farther than [100m].";
-                    //notify.Font = MyFontEnum.Red;
+                    //notify.Font = FontsHandler.RedSh;
                     //notify.Show();
 
                     return;
@@ -108,7 +108,7 @@ namespace Digi.BuildInfo.Features
                 sb.Append(']');
 
                 notify.Text = sb.ToString();
-                notify.Font = MyFontEnum.White;
+                notify.Font = FontsHandler.WhiteSh;
             }
 
             notify.Show();

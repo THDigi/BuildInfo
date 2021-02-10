@@ -2,7 +2,8 @@
 <Definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Fonts>
     <!--
-      To help with readability in toolbar status text made the font used there use the shadowed font and made it white.
+      To help with readability in toolbar status text, I made the font used there (Blue) to use the shadowed font and made it white.
+      It's used in a few other places on GUI so I can't give it a color that stands out.
     -->
     <Font>
       <Id>
@@ -13,6 +14,94 @@
         <X>255</X>
         <Y>255</Y>
         <Z>255</Z>
+      </ColorMask>
+      <Resources>
+        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
+      </Resources>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+
+    <!--
+      Custom versions of existing fonts to have more colors and use shadowed version.
+    -->
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_Green</SubtypeId>
+      </Id>
+      <ColorMask>
+        <X>100</X>
+        <Y>200</Y>
+        <Z>100</Z>
+      </ColorMask>
+      <Resources>
+        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
+      </Resources>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_SkyBlue</SubtypeId>
+      </Id>
+      <ColorMask>
+        <X>55</X>
+        <Y>155</Y>
+        <Z>200</Z>
+      </ColorMask>
+      <Resources>
+        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
+      </Resources>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_Yellow</SubtypeId>
+      </Id>
+      <ColorMask>
+        <X>200</X>
+        <Y>200</Y>
+        <Z>55</Z>
+      </ColorMask>
+      <Resources>
+        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
+      </Resources>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_Gray</SubtypeId>
+      </Id>
+      <ColorMask>
+        <X>125</X>
+        <Y>125</Y>
+        <Z>125</Z>
       </ColorMask>
       <Resources>
         <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>

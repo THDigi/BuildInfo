@@ -752,7 +752,7 @@ namespace Digi.BuildInfo.Features
             addLineCalled = false;
         }
 
-        private StringBuilder AddLine(string font = MyFontEnum.White)
+        private StringBuilder AddLine(string font = FontsHandler.WhiteSh)
         {
             EndAddedLines();
             addLineCalled = true;
@@ -806,7 +806,7 @@ namespace Digi.BuildInfo.Features
             // TODO: remove last condition when adding overlay
             if(Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
-                AddLine(MyFontEnum.DarkBlue).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
+                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
                 Config.CycleOverlaysBind.Value.GetBinds(GetLine());
                 GetLine().Append(" to cycle)");
             }
@@ -829,7 +829,7 @@ namespace Digi.BuildInfo.Features
         #region Menu generation
         private StringBuilder AddMenuItemLine(int item, bool enabled = true)
         {
-            AddLine(font: (QuickMenu.SelectedItem == item ? MyFontEnum.Green : (enabled ? MyFontEnum.White : MyFontEnum.Red)));
+            AddLine(font: (QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
 
             if(QuickMenu.SelectedItem == item)
                 GetLine().Color(COLOR_GOOD).Append("  > ");
@@ -843,7 +843,7 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.MOD_NAME).Append(" mod");
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.MOD_NAME).Append(" mod");
 
             int i = 0;
 
@@ -929,7 +929,7 @@ namespace Digi.BuildInfo.Features
             if(TextAPIEnabled)
                 AddLine();
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
 
             EndAddedLines();
         }
@@ -1300,7 +1300,7 @@ namespace Digi.BuildInfo.Features
                 {
                     if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
                 }
             }
@@ -1346,9 +1346,9 @@ namespace Digi.BuildInfo.Features
                         var speed = impulse / aimedBlock.CubeGrid.Physics.Mass;
 
                         if(speed >= 0.5f)
-                            AddLine(MyFontEnum.Red).Color(COLOR_BAD);
+                            AddLine(FontsHandler.RedSh).Color(COLOR_BAD);
                         else
-                            AddLine(MyFontEnum.Red).Color(COLOR_WARNING);
+                            AddLine(FontsHandler.RedSh).Color(COLOR_WARNING);
 
                         GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")");
                     }
@@ -1363,7 +1363,7 @@ namespace Digi.BuildInfo.Features
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
                 if(willSplitGrid == GridSplitType.Split)
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("Grid will split if removed!");
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Grid will split if removed!");
 
                 // TODO: find if split grid will vanish due to no physics/no standalone
             }
@@ -1384,7 +1384,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Blue).Append("Mod: ").ModFormat(context);
+                    AddLine(FontsHandler.SkyBlueSh).Append("Mod: ").ModFormat(context);
                 }
             }
             #endregion Optional: added by mod
@@ -1466,7 +1466,7 @@ namespace Digi.BuildInfo.Features
                 {
                     if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("When grinding: ").Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
                     }
                 }
             }
@@ -1500,9 +1500,9 @@ namespace Digi.BuildInfo.Features
                 {
                     MyCubeBlockDefinition mirrorDef;
                     if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(new MyDefinitionId(def.Id.TypeId, def.MirroringBlock), out mirrorDef))
-                        AddLine(MyFontEnum.Blue).Color(COLOR_GOOD).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText);
+                        AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Mirrors with: ").Append(mirrorDef.DisplayNameText);
                     else
-                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)");
+                        AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Mirrors with: ").Append(def.MirroringBlock).Append(" (Error: not found)");
                 }
             }
             #endregion Optional - creative-only stuff
@@ -1522,7 +1522,7 @@ namespace Digi.BuildInfo.Features
             #region Added by mod
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
+                AddLine(FontsHandler.SkyBlueSh).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
             }
             #endregion Added by mod
 
@@ -1562,7 +1562,7 @@ namespace Digi.BuildInfo.Features
             string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
 
             if(part)
-                AddLine(MyFontEnum.Blue).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText);
+                AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText);
 
             #region Mass/size/build time/deconstruct time/no models
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
@@ -1629,7 +1629,7 @@ namespace Digi.BuildInfo.Features
             #region Airtightness
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
             {
-                AddLine(font: (airTight == AirTightMode.SEALED ? MyFontEnum.Green : (airTight == AirTightMode.NOT_SEALED ? MyFontEnum.Red : MyFontEnum.Blue)));
+                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh)));
 
                 if(part)
                     GetLine().Color(COLOR_PART).Append(padding);
@@ -2095,10 +2095,6 @@ namespace Digi.BuildInfo.Features
                     GetLine().Length -= 2; // remove last comma
                     GetLine().Append(".");
                 }
-
-                //AddLine((shipController.EnableShipControl ? MyFontEnum.Green : MyFontEnum.Red)).Append("Ship controls: ").Append(shipController.EnableShipControl ? "Yes" : "No");
-                //AddLine((shipController.EnableFirstPerson ? MyFontEnum.Green : MyFontEnum.Red)).Append("First person view: ").Append(shipController.EnableFirstPerson ? "Yes" : "No");
-                //AddLine((shipController.EnableBuilderCockpit ? MyFontEnum.Green : MyFontEnum.Red)).Append("Can build: ").Append(shipController.EnableBuilderCockpit ? "Yes" : "No");
             }
 
             var cockpit = def as MyCockpitDefinition;
@@ -2109,7 +2105,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine((cockpit.IsPressurized ? MyFontEnum.Green : MyFontEnum.Red))
+                    AddLine((cockpit.IsPressurized ? FontsHandler.GreenSh : FontsHandler.RedSh))
                        .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
                        .Label("Pressurized");
 
@@ -2125,11 +2121,11 @@ namespace Digi.BuildInfo.Features
                         {
                             // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
                             //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
-                            AddLine(MyFontEnum.Green).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetFormatting().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
+                            AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetFormatting().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
                         }
                         else
                         {
-                            AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)");
+                            AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Custom HUD: ").Append(cockpit.HUD).Append("  (Error: not found)");
                         }
                     }
                 }
@@ -2163,7 +2159,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        AddLine(MyFontEnum.Red).Color(COLOR_BAD).Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId).Append(" (does not exist)");
+                        AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId).Append(" (does not exist)");
                     }
                 }
             }
@@ -2188,9 +2184,9 @@ namespace Digi.BuildInfo.Features
 
                 bool show = true;
                 if(consumptionMultiplier > 1)
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD);
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD);
                 else if(consumptionMultiplier < 1)
-                    AddLine(MyFontEnum.Red).Color(COLOR_GOOD);
+                    AddLine(FontsHandler.RedSh).Color(COLOR_GOOD);
                 else
                     show = false;
 
@@ -2451,7 +2447,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Respawn").Append("No");
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Label("Respawn").Append("No");
                 }
             }
 
@@ -2460,12 +2456,12 @@ namespace Digi.BuildInfo.Features
                 if(medicalRoom.HealingAllowed)
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.MedRoomHeal * 60), 2).Append("hp/s");
                 else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Healing").Append("No").ResetFormatting();
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Label("Healing").Append("No").ResetFormatting();
 
                 if(medicalRoom.RefuelAllowed)
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x5)");
                 else
-                    AddLine(MyFontEnum.Red).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
+                    AddLine(FontsHandler.RedSh).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2480,7 +2476,7 @@ namespace Digi.BuildInfo.Features
                         {
                             MyCharacterDefinition charDef;
                             if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
-                                AddLine(MyFontEnum.Red).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)");
+                                AddLine(FontsHandler.RedSh).Append("    ").Append(charName).Color(COLOR_BAD).Append(" (not found in definitions)");
                             else
                                 AddLine().Append("    ").Append(charDef.DisplayNameText);
                         }
@@ -2489,7 +2485,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("(all)");
                 }
                 else
-                    AddLine(MyFontEnum.Red).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetFormatting();
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetFormatting();
             }
 
             Screens(def, medicalRoom.ScreenAreas);
@@ -2572,7 +2568,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        AddLine(MyFontEnum.Red).Append("Produces: <N/A>");
+                        AddLine(FontsHandler.RedSh).Append("Produces: <N/A>");
                     }
                 }
             }
@@ -2595,7 +2591,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(production.BlueprintClasses.Count == 0)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Has no blueprint classes.");
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Has no blueprint classes.");
                 }
                 else
                 {
@@ -2655,7 +2651,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine(oxygenFarm.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided");
+                AddLine(oxygenFarm.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided");
             }
         }
 
@@ -2696,7 +2692,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                 {
-                    AddLine(MyFontEnum.Red).Color(COLOR_BAD).Append("Upgrades: N/A");
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Upgrades: N/A");
                 }
                 else
                 {
@@ -2773,7 +2769,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
-                    AddLine(battery.AdaptibleInput ? MyFontEnum.White : MyFontEnum.Red).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
+                    AddLine(battery.AdaptibleInput ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
 
                     if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup);
@@ -2800,7 +2796,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine(solarPanel.IsTwoSided ? MyFontEnum.White : MyFontEnum.Red).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided");
+                    AddLine(solarPanel.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided");
                 }
 
                 return;
@@ -2849,7 +2845,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine(laserAntenna.RequireLineOfSight ? MyFontEnum.White : MyFontEnum.Green)
+                AddLine(laserAntenna.RequireLineOfSight ? FontsHandler.YellowSh : FontsHandler.GreenSh)
                     .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
 
                 if(laserAntenna.MaxRange < 0)
@@ -3085,7 +3081,7 @@ namespace Digi.BuildInfo.Features
 
             if(wepDef == null)
             {
-                AddLine(MyFontEnum.Red).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString());
+                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString());
                 return;
             }
 
@@ -3376,7 +3372,7 @@ namespace Digi.BuildInfo.Features
             if(def.DLCs == null || def.DLCs.Length == 0)
                 return;
 
-            AddLine(MyFontEnum.Blue).Color(COLOR_DLC).Label("DLC").ResetFormatting();
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_DLC).Label("DLC").ResetFormatting();
 
             bool multiDLC = def.DLCs.Length > 1;
 
@@ -3469,7 +3465,7 @@ namespace Digi.BuildInfo.Features
         {
             if(invLimit != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
-                AddLine(MyFontEnum.Blue).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "Inventory items allowed" : "Inventory items NOT allowed");
+                AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "Inventory items allowed" : "Inventory items NOT allowed");
 
                 foreach(var id in invLimit.ConstrainedIds)
                 {

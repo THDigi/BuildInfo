@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -40,9 +41,11 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.
-        /// <paramref name="identityId"/> set to 0 will show to all players, default (-1) will show to local player.
+        /// <para><paramref name="identityId"/> set to 0 will show to all players, default (-1) will show to local player.</para>
+        /// <para><paramref name="senderFont"/> sets the font for timestamp and sender name.</para>
+        /// <para><paramref name="senderColor"/> sets the color for the sender name, multiplies with <paramref name="senderFont"/>'s color.</para>
         /// </summary>
-        public static void ShowColoredChatMessage(string from, string message, MyFontEnum font, long identityId = -1)
+        public static void ShowColoredChatMessage(string from, string message, string senderFont = null, Color? senderColor = null, long identityId = -1)
         {
             if(identityId == -1)
             {
@@ -52,8 +55,14 @@ namespace Digi.BuildInfo.Utilities
                 identityId = MyAPIGateway.Session.Player.IdentityId;
             }
 
+            if(!senderColor.HasValue)
+                senderColor = Color.White;
+
+            if(senderFont == null)
+                senderFont = FontsHandler.WhiteSh;
+
             // NOTE: this is sent to all players and only shown if their identityId matches the one sent.
-            MyVisualScriptLogicProvider.SendChatMessage(message, from, identityId, font);
+            MyVisualScriptLogicProvider.SendChatMessageColored(message, senderColor.Value, from, identityId, senderFont);
         }
 
         public static MyOwnershipShareModeEnum GetBlockShareMode(IMyCubeBlock block)

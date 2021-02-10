@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -21,11 +20,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                 MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 
-                Utils.ShowColoredChatMessage(MainAlias, $"Opened steam overlay with {link}", MyFontEnum.Green);
+                PrintChat($"Opened steam overlay with {link}", FontsHandler.GreenSh);
             }
             else
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Can't find mod workshop ID, probably it's a local mod?", MyFontEnum.Red);
+                PrintChat("Can't find mod workshop ID, probably it's a local mod?", FontsHandler.RedSh);
             }
         }
 

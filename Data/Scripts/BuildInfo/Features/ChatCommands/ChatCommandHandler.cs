@@ -80,7 +80,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
                 else
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Unknown command: {MAIN_COMMAND} {alias}", MyFontEnum.Red);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Unknown command: {MAIN_COMMAND} {alias}", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"To see available commands type just: {MAIN_COMMAND}", FontsHandler.RedSh);
                 }
             }
             catch(Exception e)

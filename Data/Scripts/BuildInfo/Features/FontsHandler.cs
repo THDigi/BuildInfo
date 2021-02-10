@@ -10,6 +10,13 @@ namespace Digi.BuildInfo.Features
         public const int DefaultCharSize = 33;
         public readonly Dictionary<char, int> CharSize = new Dictionary<char, int>();
 
+        public const string RedSh = "Red";
+        public const string WhiteSh = "Debug";
+        public const string GreenSh = "BI_Green";
+        public const string SkyBlueSh = "BI_SkyBlue";
+        public const string YellowSh = "BI_Yellow";
+        public const string GraySh = "BI_Gray";
+
         public FontsHandler(BuildInfoMod main) : base(main)
         {
             ComputeCharacterSizes();

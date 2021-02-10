@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Utilities;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -14,6 +15,15 @@ namespace Digi.BuildInfo.Features.ChatCommands
             Aliases = commands;
             MainAlias = ChatCommandHandler.MAIN_COMMAND + " " + Aliases[0];
             Main.ChatCommandHandler.AddCommand(this);
+        }
+
+        /// <summary>
+        /// Shows a chat message with the current command as sender.
+        /// <para><paramref name="commandFont"/> will color only the sender (in this case the command text)</para>
+        /// </summary>
+        protected void PrintChat(string message, string commandFont = FontsHandler.WhiteSh)
+        {
+            Utils.ShowColoredChatMessage(MainAlias, message, senderFont: commandFont);
         }
 
         /// <summary>

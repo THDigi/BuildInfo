@@ -74,7 +74,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             if(input == null)
             {
-                MyAPIGateway.Utilities.ShowNotification($"Unknown key: {key.ToString()}", 5000, MyFontEnum.Red);
+                MyAPIGateway.Utilities.ShowNotification($"Unknown key: {key.ToString()}", 5000, FontsHandler.RedSh);
                 return null;
             }
 
@@ -85,11 +85,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             if(error != null)
             {
-                MyAPIGateway.Utilities.ShowNotification($"Error binding: {error}", 5000, MyFontEnum.Red);
+                MyAPIGateway.Utilities.ShowNotification($"Error binding: {error}", 5000, FontsHandler.RedSh);
                 return null;
             }
 
-            MyAPIGateway.Utilities.ShowNotification($"Bound succesfully to: {combination}", 3000, MyFontEnum.Green);
+            MyAPIGateway.Utilities.ShowNotification($"Bound succesfully to: {combination}", 3000, FontsHandler.GreenSh);
             return combination;
         }
     }

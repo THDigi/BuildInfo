@@ -17,7 +17,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public override void Execute(Arguments args)
         {
             var antennaDef = Main.EquipmentMonitor.BlockDef as MyLaserAntennaDefinition;
-
             if(antennaDef != null)
             {
                 if(args != null && args.Count > 0)
@@ -33,21 +32,21 @@ namespace Digi.BuildInfo.Features.ChatCommands
                         sb.Clear();
                         sb.PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(" for ").Append(antennaDef.DisplayNameText).Append(antennaDef.CubeSize == MyCubeSize.Large ? " (large grid)" : " (small grid)");
 
-                        Utils.ShowColoredChatMessage(MainAlias, sb.ToString(), MyFontEnum.Green);
+                        PrintChat(sb.ToString(), FontsHandler.GreenSh);
                     }
                     else
                     {
-                        Utils.ShowColoredChatMessage(MainAlias, $"'{kmStr}' is not a number larger than 0.", MyFontEnum.Red);
+                        PrintChat($"'{kmStr}' is not a number larger than 0.", FontsHandler.RedSh);
                     }
                 }
                 else
                 {
-                    Utils.ShowColoredChatMessage(MainAlias, $"Need a distance in kilometers, e.g. {MainAlias} 500", MyFontEnum.Red);
+                    PrintChat($"Need a distance in kilometers, e.g. {MainAlias} 500", FontsHandler.RedSh);
                 }
             }
             else
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Need a reference Laser Antenna type block, equip or aim at one first then the command.", MyFontEnum.Red);
+                PrintChat("Need a reference Laser Antenna type block, equip or aim at one first then the command.", FontsHandler.RedSh);
             }
         }
 

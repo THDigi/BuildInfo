@@ -40,7 +40,7 @@ namespace Digi
                 Log.Info(text);
 
                 if(notify > 0)
-                    MyAPIGateway.Utilities.ShowNotification(text, notify, MyFontEnum.Blue);
+                    MyAPIGateway.Utilities.ShowNotification(text, notify, MyFontEnum.Debug);
             }
         }
     }
@@ -85,7 +85,7 @@ namespace Digi
             {
                 if(notify == null)
                 {
-                    notify = MyAPIGateway.Utilities.CreateNotification(text, NotifyMs, MyFontEnum.Blue);
+                    notify = MyAPIGateway.Utilities.CreateNotification(text, NotifyMs, MyFontEnum.Debug);
                 }
                 else
                 {
