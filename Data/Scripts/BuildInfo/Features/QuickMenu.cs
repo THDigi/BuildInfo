@@ -61,10 +61,7 @@ namespace Digi.BuildInfo.Features
             if(inMenu)
                 return;
 
-            if(EquipmentMonitor.IsBuildTool || EquipmentMonitor.IsCubeBuilder)
-            {
-                UpdateHotkeys();
-            }
+            UpdateHotkeys();
 
             if(!Shown)
                 return;
@@ -160,9 +157,10 @@ namespace Digi.BuildInfo.Features
 
         private void UpdateHotkeys()
         {
+            bool toolEquipped = (EquipmentMonitor.IsBuildTool || EquipmentMonitor.IsCubeBuilder);
             var context = InputLib.GetCurrentInputContext();
 
-            if(Config.ToggleTransparencyBind.Value.IsPressed(context))
+            if(toolEquipped && Config.ToggleTransparencyBind.Value.IsPressed(context))
             {
                 if(Config.ToggleTransparencyBind.Value.IsJustPressed(context))
                 {
@@ -173,7 +171,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(Config.CycleOverlaysBind.Value.IsPressed(context))
+            if((toolEquipped || LockOverlay.LockedOnBlock != null) && Config.CycleOverlaysBind.Value.IsPressed(context))
             {
                 if(Config.CycleOverlaysBind.Value.IsJustPressed(context))
                 {
@@ -184,7 +182,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(Config.FreezePlacementBind.Value.IsPressed(context))
+            if(toolEquipped && Config.FreezePlacementBind.Value.IsPressed(context))
             {
                 if(Config.FreezePlacementBind.Value.IsJustPressed(context))
                 {
@@ -195,7 +193,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(Config.MenuBind.Value.IsPressed(context))
+            if(toolEquipped && Config.MenuBind.Value.IsPressed(context))
             {
                 if(Config.MenuBind.Value.IsJustPressed(context))
                 {
