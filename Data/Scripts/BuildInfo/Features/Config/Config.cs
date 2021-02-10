@@ -97,7 +97,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public Config(BuildInfoMod main) : base(main)
         {
-            Handler = new ConfigHandler(FileName, ConfigVersion);
+            const int ConfigSizeByteEst = 17500;
+            Handler = new ConfigHandler(FileName, ConfigVersion, ConfigSizeByteEst / 2);
         }
 
         protected override void RegisterComponent()

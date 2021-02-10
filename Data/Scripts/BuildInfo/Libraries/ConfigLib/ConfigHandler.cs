@@ -21,7 +21,7 @@ namespace Digi.ConfigLib
         public readonly Dictionary<string, ISetting> SettingsAlias = new Dictionary<string, ISetting>(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly char[] separatorCache = { VALUE_SEPARATOR };
-        private StringBuilder sb = new StringBuilder();
+        private readonly StringBuilder sb;
 
         public const char VALUE_SEPARATOR = '=';
         public const string COMMENT_PREFIX = "# ";
@@ -38,8 +38,9 @@ namespace Digi.ConfigLib
         /// </summary>
         public event Action SettingsSaving;
 
-        public ConfigHandler(string fileName, int configVersion)
+        public ConfigHandler(string fileName, int configVersion, int expectedExportCharacters)
         {
+            sb = new StringBuilder(expectedExportCharacters);
             FileName = fileName;
 
             HeaderComments.Add($"Config for {Log.ModName}.");
@@ -191,8 +192,6 @@ namespace Digi.ConfigLib
                 {
                     file.Write(sb.ToString());
                 }
-
-                sb.Clear();
             }
             catch(Exception e)
             {
