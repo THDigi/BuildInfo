@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Digi.ComponentLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -12,7 +14,7 @@ namespace Digi.BuildInfo.Features.HUD
         public const string NumberFormat = "###,###,###,###,###,###,###";
         public const int BlocksForApproxMass = 10000;
 
-        public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_mass");
+        public MyStringHash Id { get; private set; }
         public float MinValue => 0f;
         public float MaxValue => 1f;
         public string GetValueString() => StringValueCache ?? ""; // must never be null
@@ -37,59 +39,71 @@ namespace Digi.BuildInfo.Features.HUD
 
         public ShipMassStat()
         {
+            if(!BuildInfo_GameSession.IsKilled)
+                Id = MyStringHash.GetOrCompute("controlled_mass");
         }
 
         public void Update()
         {
-            var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
-            if(controlled == null)
-            {
-                CurrentValue = 0f;
-                PrevGridId = 0;
+            if(BuildInfo_GameSession.IsKilled)
                 return;
-            }
 
-            int tick = BuildInfoMod.Instance.Tick;
-            var ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
-
-            if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
+            try
             {
-                PrevGridId = ctrlGrid.EntityId;
-
-                if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+                var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                if(controlled == null)
                 {
-                    if(!ctrlGrid.IsStatic)
-                        CurrentValue = ctrlGrid.GetCurrentMass();
-
+                    CurrentValue = 0f;
+                    PrevGridId = 0;
                     return;
                 }
 
-                float mass = 0;
+                int tick = BuildInfoMod.Instance.Tick;
+                var ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
 
-                Grids.Clear();
-                MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
-
-                foreach(IMyCubeGrid g in Grids)
+                if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
                 {
-                    if(g.Physics == null || !g.Physics.Enabled)
-                        continue;
+                    PrevGridId = ctrlGrid.EntityId;
 
-                    float physMass = g.Physics.Mass;
+                    if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+                    {
+                        if(!ctrlGrid.IsStatic)
+                            CurrentValue = ctrlGrid.GetCurrentMass();
 
-                    if(g.IsStatic && physMass == 0)
-                    {
-                        mass += BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(g);
+                        return;
                     }
-                    else
+
+                    float mass = 0;
+
+                    Grids.Clear();
+                    MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
+
+                    foreach(IMyCubeGrid g in Grids)
                     {
-                        mass += physMass;
+                        if(g.Physics == null || !g.Physics.Enabled)
+                            continue;
+
+                        float physMass = g.Physics.Mass;
+
+                        if(g.IsStatic && physMass == 0)
+                        {
+                            mass += BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(g);
+                        }
+                        else
+                        {
+                            mass += physMass;
+                        }
                     }
+
+                    Grids.Clear();
+
+                    // must be kept as kg because of the "<value> Kg" in the HUD definition.
+                    CurrentValue = mass;
                 }
-
-                Grids.Clear();
-
-                // must be kept as kg because of the "<value> Kg" in the HUD definition.
-                CurrentValue = mass;
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
     }
@@ -97,7 +111,7 @@ namespace Digi.BuildInfo.Features.HUD
     // prevent HUD from showing "Station" and allows the ShipMassStat to show mass instead.
     public class ShipIsStatic : IMyHudStat
     {
-        public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_is_static");
+        public MyStringHash Id { get; private set; }
         public float CurrentValue { get; private set; }
         public float MinValue => 0f;
         public float MaxValue => 1f;
@@ -105,19 +119,31 @@ namespace Digi.BuildInfo.Features.HUD
 
         public ShipIsStatic()
         {
+            if(!BuildInfo_GameSession.IsKilled)
+                Id = MyStringHash.GetOrCompute("controlled_is_static");
         }
 
         public void Update()
         {
-            CurrentValue = 0;
+            if(BuildInfo_GameSession.IsKilled)
+                return;
 
-            if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+            try
             {
-                var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
-                if(controlled != null)
+                CurrentValue = 0;
+
+                if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
                 {
-                    CurrentValue = (controlled.CubeGrid.IsStatic ? 1 : 0);
+                    var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                    if(controlled != null)
+                    {
+                        CurrentValue = (controlled.CubeGrid.IsStatic ? 1 : 0);
+                    }
                 }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
     }

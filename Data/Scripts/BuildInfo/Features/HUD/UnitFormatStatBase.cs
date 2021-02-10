@@ -1,5 +1,6 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using VRage.ModAPI;
 using VRage.Utils;
 
@@ -17,6 +18,9 @@ namespace Digi.BuildInfo.Features.HUD
             get { return _currentValue; }
             set
             {
+                if(BuildInfo_GameSession.IsKilled)
+                    return;
+
                 try
                 {
                     if(Math.Abs(_currentValue - value) < CompareEpsilon)
@@ -40,6 +44,9 @@ namespace Digi.BuildInfo.Features.HUD
             get { return _maxValue; }
             set
             {
+                if(BuildInfo_GameSession.IsKilled)
+                    return;
+
                 try
                 {
                     if(Math.Abs(_maxValue - value) < CompareEpsilon)
@@ -75,7 +82,8 @@ namespace Digi.BuildInfo.Features.HUD
 
         public UnitFormatStatBase(string id)
         {
-            Id = MyStringHash.GetOrCompute(id); // overwrites this stat's script
+            if(!BuildInfo_GameSession.IsKilled)
+                Id = MyStringHash.GetOrCompute(id); // overwrites this stat's script
         }
 
         protected virtual string ValueAsString()
@@ -120,6 +128,9 @@ namespace Digi.BuildInfo.Features.HUD
 
         void IMyHudStat.Update()
         {
+            if(BuildInfo_GameSession.IsKilled)
+                return;
+
             try
             {
                 int tick = BuildInfoMod.Instance.Tick;

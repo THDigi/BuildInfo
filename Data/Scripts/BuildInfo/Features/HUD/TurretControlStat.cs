@@ -1,4 +1,6 @@
-﻿using Sandbox.ModAPI;
+﻿using System;
+using Digi.ComponentLib;
+using Sandbox.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 
@@ -7,7 +9,7 @@ namespace Digi.BuildInfo.Features.HUD
     // allow HUD to be shown when turret is controlled.
     public class TurretControlStat : IMyHudStat
     {
-        public MyStringHash Id { get; private set; } = MyStringHash.GetOrCompute("controlled_is_turret");
+        public MyStringHash Id { get; private set; }
         public float CurrentValue { get; private set; }
         public float MinValue => 0f;
         public float MaxValue => 1f;
@@ -15,23 +17,35 @@ namespace Digi.BuildInfo.Features.HUD
 
         public TurretControlStat()
         {
+            if(!BuildInfo_GameSession.IsKilled)
+                Id = MyStringHash.GetOrCompute("controlled_is_turret");
         }
 
         public void Update()
         {
-            var setting = BuildInfoMod.Instance?.Config?.TurretHUD;
-            if(setting != null && setting.Value)
+            if(BuildInfo_GameSession.IsKilled)
+                return;
+
+            try
             {
-                CurrentValue = 0f;
-            }
-            else
-            {
-                // vanilla game's logic for this stat
-                var controlled = MyAPIGateway.Session?.ControlledObject;
-                if(controlled == null)
+                var setting = BuildInfoMod.Instance?.Config?.TurretHUD;
+                if(setting != null && setting.Value)
+                {
                     CurrentValue = 0f;
+                }
                 else
-                    CurrentValue = (controlled is IMyUserControllableGun ? 1 : 0);
+                {
+                    // vanilla game's logic for this stat
+                    var controlled = MyAPIGateway.Session?.ControlledObject;
+                    if(controlled == null)
+                        CurrentValue = 0f;
+                    else
+                        CurrentValue = (controlled is IMyUserControllableGun ? 1 : 0);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
     }

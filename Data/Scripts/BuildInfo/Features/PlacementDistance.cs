@@ -1,5 +1,6 @@
 ﻿using System;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -29,15 +30,20 @@ namespace Digi.BuildInfo.Features
             // HACK hardcoded: from Data/Game/SessionComponents.sbc
 
             var def = EquipmentMonitor.BlockDef;
-            if(def == null || InShip)
+            if(def == null)
+                return 20f;
+
+            if(MyAPIGateway.Session.ControlledObject is IMyCubeBlock)
                 return 12.5f;
 
             return (def.CubeSize == MyCubeSize.Large ? 10f : 5f);
         }
 
-        private bool InShip => MyAPIGateway.Session.ControlledObject is IMyShipController;
-        private bool SurvivalCreativeTools => MyAPIGateway.Session.SurvivalMode && MyAPIGateway.Session.EnableCopyPaste;
-        private bool CreativeGameMode => MyAPIGateway.Session.CreativeMode;
+        public static void ResetDefaults()
+        {
+            if(!MyAPIGateway.Session.CreativeMode)
+                MyCubeBuilder.IntersectionDistance = 10f;
+        }
 
         public PlacementDistance(BuildInfoMod main) : base(main)
         {
@@ -63,7 +69,7 @@ namespace Digi.BuildInfo.Features
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             // reset survival distance if this feature is disabled
-            if(def != null && EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !CreativeGameMode && !SurvivalCreativeTools)
+            if(def != null && EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !MyAPIGateway.Session.CreativeMode && !Utils.CreativeToolsEnabled)
             {
                 MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance();
             }
@@ -75,9 +81,9 @@ namespace Digi.BuildInfo.Features
                 return;
 
             float maxRange = 0f;
-            bool inShip = InShip;
+            bool inShip = (MyAPIGateway.Session.ControlledObject is IMyCubeBlock);
 
-            if(CreativeGameMode)
+            if(MyAPIGateway.Session.CreativeMode)
             {
                 if(!inShip)
                     return;
@@ -87,7 +93,7 @@ namespace Digi.BuildInfo.Features
 
                 maxRange = VANILLA_CREATIVE_MAXDIST;
             }
-            else if(SurvivalCreativeTools)
+            else if(Utils.CreativeToolsEnabled)
             {
                 if(!Config.AdjustBuildDistanceShipCreative.Value)
                     return;

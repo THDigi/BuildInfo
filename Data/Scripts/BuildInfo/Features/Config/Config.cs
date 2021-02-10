@@ -18,10 +18,13 @@ namespace Digi.BuildInfo.Features.Config
         public readonly ConfigHandler Handler;
 
         public const string FileName = "config.ini";
+        public const string KillswitchName = "Killswitch";
         public const int ConfigVersion = 6;
         public const int VersionCompat_ShipToolInvBar_FixPosition = 5;
         public const int VersionCompat_ToolbarLabels_Redesign = 4;
         public const int VersionCompat_MenuBind = 2;
+
+        public BoolSetting Killswitch;
 
         public BoolSetting TextShow;
         public BoolSetting TextAlwaysVisible;
@@ -191,6 +194,10 @@ namespace Digi.BuildInfo.Features.Config
             var sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);
             Handler.FooterComments.Add(sb.ToString());
+
+            Killswitch = new BoolSetting(Handler, KillswitchName, false,
+                "Prevents the most of the mod scripts from loading.",
+                "Requires world reload/rejoin to work.");
 
             TextShow = new BoolSetting(Handler, "Text: Show", true,
                 "Toggles if both text info boxes are shown");

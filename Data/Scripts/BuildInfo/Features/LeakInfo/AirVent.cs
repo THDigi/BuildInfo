@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -27,6 +28,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
+            if(BuildInfo_GameSession.IsKilled)
+                return;
+
             block = (IMyAirVent)Entity;
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
         }
@@ -104,9 +108,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
             }
         }
 
-        public override void Close()
+        public override void MarkForClose()
         {
-            block.AppendingCustomInfo -= CustomInfo;
+            if(block != null)
+                block.AppendingCustomInfo -= CustomInfo;
         }
 
         #region Terminal control handling
@@ -123,13 +128,11 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     return;
 
                 var leakInfo = BuildInfoMod.Instance.LeakInfo;
-
                 if(!leakInfo.Enabled)
                     return;
 
                 var vent = (IMyAirVent)block;
                 var logic = block.GameLogic.GetAs<AirVent>();
-
                 if(logic == null)
                     return;
 

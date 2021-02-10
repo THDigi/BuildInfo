@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -32,6 +33,9 @@ namespace Digi.BuildInfo.Features
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
+            if(BuildInfo_GameSession.IsKilled)
+                return;
+
             block = (IMyShipMergeBlock)Entity;
             def = (MyMergeBlockDefinition)block.SlimBlock.BlockDefinition;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
@@ -47,9 +51,10 @@ namespace Digi.BuildInfo.Features
             block.AppendingCustomInfo += CustomInfo;
         }
 
-        public override void Close()
+        public override void MarkForClose()
         {
-            block.AppendingCustomInfo -= CustomInfo;
+            if(block != null)
+                block.AppendingCustomInfo -= CustomInfo;
         }
 
         public override void UpdateAfterSimulation10()
