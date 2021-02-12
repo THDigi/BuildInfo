@@ -244,7 +244,9 @@ namespace Digi.BuildInfo.Features.Config
             TurretHUD.AddCompatibilityNames("HUD: Turret Ammo");
 
             HudStatOverrides = new BoolSetting(Handler, "HUD: Stat Overrides", true,
-                "Overrides some values from the HUD (health, energy, hydrogen, etc), showing units and some behaviors slightly altered.");
+                "Overrides some HUD values' behavior/format. Currently affecting:",
+                " - character health showing actual hit points instead of percentage.",
+                " - ship mass has thousands separator and includes static grid mass.");
 
             ItemTooltipAdditions = new BoolSetting(Handler, "Item Tooltip Additions", true,
                 "Info about mod and conveyor tube size requirements for item tooltips, seen in inventories.",
