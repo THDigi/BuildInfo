@@ -364,6 +364,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             else if(page < 0)
                 page = 8;
 
+            // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
+            MyVisualScriptLogicProvider.SetToolbarPageLocal(page);
+
             PagePerCockpit[shipController.EntityId] = page; // add/update dictionary entry
             ToolbarPage = page;
             ToolbarPageChanged?.Invoke();
