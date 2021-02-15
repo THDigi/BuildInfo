@@ -12,7 +12,6 @@ namespace Digi.BuildInfo.Features.HUD
     public class ShipMassStat : IMyHudStat
     {
         public const string NumberFormat = "###,###,###,###,###,###,###";
-        public const int BlocksForApproxMass = 10000;
 
         public MyStringHash Id { get; private set; }
         public float MinValue => 0f;
@@ -58,18 +57,20 @@ namespace Digi.BuildInfo.Features.HUD
                     return;
                 }
 
-                int tick = BuildInfoMod.Instance.Tick;
+                var Main = BuildInfoMod.Instance;
+                int tick = Main.Tick;
                 var ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
 
                 if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
                 {
                     PrevGridId = ctrlGrid.EntityId;
 
-                    if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+                    if(!Main.Config.HudStatOverrides.Value)
                     {
                         if(!ctrlGrid.IsStatic)
                             CurrentValue = ctrlGrid.GetCurrentMass();
-
+                        else
+                            CurrentValue = 0;
                         return;
                     }
 
@@ -87,7 +88,7 @@ namespace Digi.BuildInfo.Features.HUD
 
                         if(g.IsStatic && physMass == 0)
                         {
-                            mass += BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(g);
+                            mass += Main.StaticGridMassCache.GetStaticGridMass(g);
                         }
                         else
                         {

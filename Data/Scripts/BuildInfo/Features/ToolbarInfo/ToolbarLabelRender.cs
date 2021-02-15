@@ -405,8 +405,31 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(MustBeVisible)
             {
+                string screenName = MyAPIGateway.Gui.ActiveGamePlayScreen;
+                bool newInToolbarConfig = (screenName == "MyGuiScreenCubeBuilder"); // from MyGuiScreenCubeBuilder.GetFriendlyName()
+
+                if(newInToolbarConfig != InToolbarConfig)
+                {
+                    InToolbarConfig = newInToolbarConfig;
+                    WereVisible = null; // refresh as it could be switching styles
+                }
+
+                if(MyAPIGateway.Gui.IsCursorVisible && !InToolbarConfig)
+                    MustBeVisible = false;
+            }
+
+            if(MustBeVisible)
+            {
+                bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.AltKey || LabelsMode == ToolbarLabelsMode.HudHints);
+
+                if(modeForFadeOut && Main.ToolbarMonitor.HighestIndexUsed == 0)
+                {
+                    // don't show+fade for empty toolbars
+                    ShowUntilTick = 0;
+                }
+
                 // if pressing alt in the right mode it just ignores the cockpit entering fade stuff
-                if(ShowUntilTick > tick && (LabelsMode == ToolbarLabelsMode.AltKey || LabelsMode == ToolbarLabelsMode.HudHints) && MyAPIGateway.Input.IsAnyAltKeyPressed())
+                if(modeForFadeOut && ShowUntilTick > tick && MyAPIGateway.Input.IsAnyAltKeyPressed())
                 {
                     ShowUntilTick = 0;
 
@@ -415,7 +438,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
 
                 // show and fade out when entering cockpit
-                if(ShowUntilTick > tick && LabelsMode != ToolbarLabelsMode.AlwaysOn)
+                if(modeForFadeOut && ShowUntilTick > tick && (LabelsMode != ToolbarLabelsMode.HudHints || GameConfig.HudState != HudState.HINTS))
                 {
                     MustBeVisible = true;
 
@@ -448,14 +471,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         MustBeVisible = false;
                     }
                 }
-            }
-
-            if(MustBeVisible)
-            {
-                string screenName = MyAPIGateway.Gui.ActiveGamePlayScreen;
-                InToolbarConfig = (screenName == "MyGuiScreenCubeBuilder");
-                if(MyAPIGateway.Gui.IsCursorVisible && !InToolbarConfig)
-                    MustBeVisible = false;
             }
 
             if(!WasInToolbarConfig.HasValue || InToolbarConfig != WasInToolbarConfig.Value)

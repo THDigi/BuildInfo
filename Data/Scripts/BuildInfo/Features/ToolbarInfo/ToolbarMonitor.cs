@@ -145,6 +145,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
 
+            HighestIndexUsed = 0;
             SequencedItems.Clear();
 
             if(shipController == null)
@@ -364,12 +365,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             else if(page < 0)
                 page = 8;
 
-            // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
-            MyVisualScriptLogicProvider.SetToolbarPageLocal(page);
-
             PagePerCockpit[shipController.EntityId] = page; // add/update dictionary entry
             ToolbarPage = page;
             ToolbarPageChanged?.Invoke();
+
+            // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
+            // HACK: needs to be delayed otherwise it jumps more than one page
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                MyVisualScriptLogicProvider.SetToolbarPageLocal(page);
+            });
         }
 
         void SetToolbarPage(IMyShipController shipController, int page)
