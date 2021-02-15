@@ -256,7 +256,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
 
-            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.AltKey, new string[]
+            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.HudHints, new string[]
             {
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the toolbar action stuff.",
