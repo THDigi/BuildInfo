@@ -78,7 +78,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.NewLine();
             sb.Append("Or you can edit the config file at:").NewLine();
             sb.Append(@"  %appdata%\SpaceEngineers\Storage").NewLine();
-            sb.Append(@"    \").Append(Log.WorkshopId).Append(@".sbm_BuildInfo\settings.cfg").NewLine();
+            sb.Append(@"    \").Append(MyAPIGateway.Utilities.GamePaths.ModScopeName).Append(@"\").Append(Main.Config.Handler.FileName).NewLine();
             sb.NewLine();
             sb.Append("And can be reloaded with: ").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).NewLine();
 
