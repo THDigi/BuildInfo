@@ -162,6 +162,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             AddTo(actions, func, actionId1, actionId2, actionId3, actionId4, actionId5, actionId6);
         }
 
+        internal void AddStatus(MyObjectBuilderType type, StatusDel func, params string[] actionIds)
+        {
+            Dictionary<string, StatusDel> actions;
+            if(!StatusOverrides.TryGetValue(type, out actions))
+                StatusOverrides[type] = actions = new Dictionary<string, StatusDel>();
+
+            foreach(var actionId in actionIds)
+            {
+                actions.Add(actionId, func);
+            }
+        }
+
         internal void AddGroupStatus(MyObjectBuilderType type, GroupStatusDel func, string actionId1, string actionId2 = null, string actionId3 = null, string actionId4 = null, string actionId5 = null, string actionId6 = null)
         {
             Dictionary<string, GroupStatusDel> actions;
@@ -169,6 +181,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 GroupStatusOverrides[type] = actions = new Dictionary<string, GroupStatusDel>();
 
             AddTo(actions, func, actionId1, actionId2, actionId3, actionId4, actionId5, actionId6);
+        }
+
+        internal void AddGroupStatus(MyObjectBuilderType type, GroupStatusDel func, params string[] actionIds)
+        {
+            Dictionary<string, GroupStatusDel> actions;
+            if(!GroupStatusOverrides.TryGetValue(type, out actions))
+                GroupStatusOverrides[type] = actions = new Dictionary<string, GroupStatusDel>();
+
+            foreach(var actionId in actionIds)
+            {
+                actions.Add(actionId, func);
+            }
         }
 
         void AddTo<T>(Dictionary<string, T> actions, T func, string actionId1, string actionId2, string actionId3, string actionId4, string actionId5, string actionId6)

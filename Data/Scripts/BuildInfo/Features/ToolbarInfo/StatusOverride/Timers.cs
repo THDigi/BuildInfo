@@ -46,15 +46,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                         if(separatorIndex < endLineIndex)
                         {
-                            bool enabled = timer.Enabled;
-                            if(enabled && Processor.AnimFlip)
+                            bool working = timer.IsWorking;
+                            if(working && Processor.AnimFlip)
                                 sb.Append("ˇ ");
                             else
                                 sb.Append("  ");
 
                             sb.Append(detailedInfo, separatorIndex, endLineIndex - separatorIndex);
 
-                            if(enabled && Processor.AnimFlip)
+                            if(working && Processor.AnimFlip)
                                 sb.Append(" ˇ");
                             else
                                 sb.Append("  ");
@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(!timer.Enabled)
                     off++;
 
-                if(timer.IsCountingDown)
+                if(timer.IsWorking && timer.IsCountingDown)
                     counting++;
             }
 

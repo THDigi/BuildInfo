@@ -22,16 +22,24 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         void RegisterFor(MyObjectBuilderType type)
         {
-            Processor.AddStatus(type, Attached, "Attach", "Detach", "Add Top Part", "Add Small Top Part");
+            string[] attachIds = new string[]
+            {
+                "Attach", "Detach",
+                "Add Top Part", "Add Small Top Part",
+                "AddRotorTopPart", "AddSmallRotorTopPart",
+                "AddHingeTopPart", "AddSmallHingeTopPart",
+            };
+
+            Processor.AddStatus(type, Attached, attachIds);
             Processor.AddStatus(type, Reverse, "Reverse");
 
-            Processor.AddGroupStatus(type, GroupAttached, "Attach", "Detach", "Add Top Part", "Add Small Top Part");
+            Processor.AddGroupStatus(type, GroupAttached, attachIds);
             Processor.AddGroupStatus(type, GroupReverse, "Reverse");
         }
 
         bool Attached(StringBuilder sb, ToolbarItem item)
         {
-            var stator = (IMyMotorStator)item.Block;
+            var stator = (IMyMotorBase)item.Block;
             sb.Append(stator.IsAttached ? "Atached" : "Detached");
             return true;
         }
@@ -62,12 +70,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool GroupAttached(StringBuilder sb, ToolbarItem item, GroupData groupData)
         {
-            if(!groupData.GetGroupBlocks<IMyMotorStator>())
+            if(!groupData.GetGroupBlocks<IMyMotorBase>())
                 return false;
 
             int attached = 0;
 
-            foreach(IMyMotorStator stator in groupData.Blocks)
+            foreach(IMyMotorBase stator in groupData.Blocks)
             {
                 if(stator.IsAttached)
                     attached++;
