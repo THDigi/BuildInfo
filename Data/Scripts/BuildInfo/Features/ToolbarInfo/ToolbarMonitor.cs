@@ -28,6 +28,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public string CustomLabel;
 
+        public long BlockEntId;
         public IMyTerminalBlock Block;
         public string Name;
 
@@ -91,6 +92,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         /// </summary>
         public List<ToolbarItem> SequencedItems = new List<ToolbarItem>(9);
         public int WrapperSlotIndex;
+        public IMyShipController ControlledBlock { get; private set; }
+
+        private List<IMyTerminalBlock> TmpBlocks = new List<IMyTerminalBlock>();
 
         public ToolbarMonitor(BuildInfoMod main) : base(main)
         {
@@ -134,6 +138,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             for(int index = Slots.Length - 1; index >= 0; index--)
             {
                 var slot = Slots[index];
+                slot.BlockEntId = 0;
                 slot.Block = null;
                 slot.Name = null;
                 slot.ActionWrapper = null;
@@ -215,10 +220,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                     // checking if slot is valid otherwise it'll break the sequence for Writer.
                     var groupItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalGroup;
-                    if(groupItem != null)
+                    if(groupItem != null && groupItem.GroupName != null)
                     {
-                        // NOTE: this is always the toolbar host, not the first block in the group!
-                        block = MyEntities.GetEntityById(groupItem.BlockEntityId) as IMyTerminalBlock;
+                        // groupItem.BlockEntityId is only the toolbar host, and we need first block in the group so we're looking for it:
+                        var toolbarBlock = MyEntities.GetEntityById(groupItem.BlockEntityId) as IMyTerminalBlock;
+                        if(toolbarBlock != null)
+                        {
+                            TmpBlocks.Clear();
+                            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(toolbarBlock.CubeGrid);
+                            var group = gts?.GetBlockGroupWithName(groupItem.GroupName);
+                            group?.GetBlocks(TmpBlocks);
+
+                            if(TmpBlocks.Count > 0)
+                                block = TmpBlocks[0];
+                        }
 
                         slotData.GroupName = groupItem.GroupName;
                     }
@@ -234,7 +249,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bool isValid = (block != null);
 
                     if(DebugLogging)
-                        Log.Info($"    ^-- got terminalItem, isValid={isValid.ToString()}; block={block}");
+                        Log.Info($"    ^-- got terminalItem, isValid={isValid.ToString()}; block={block?.CustomName}; action={terminalItem._Action}");
 
                     // these must only be added for valid toolbar items!
                     if(isValid)
@@ -242,6 +257,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         SequencedItems.Add(slotData); // required for status
 
                         slotData.ActionId = terminalItem._Action;
+                        slotData.BlockEntId = block.EntityId;
+
                         // other fields are set in the wrapper.NewWriter() as they're readily available there
                     }
                 }
@@ -266,6 +283,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         // Handling toolbar page and action trigger detection
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
+            if(!paused && DebugLogging)
+                Log.Info($"---------------------------------------- INDEX RESET ------------------------------------------");
+
+            ControlledBlock = null;
             WrapperSlotIndex = 0;
 
             if(MyAPIGateway.Gui.ChatEntryVisible)
@@ -286,6 +307,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 GamepadToolbarPage = GamepadPagePerCockpit.GetValueOrDefault(shipController.EntityId, 0);
                 CurrentShipControllerId = shipController.EntityId;
             }
+
+            ControlledBlock = shipController;
 
             var controlSlots = Main.Constants.CONTROL_SLOTS;
 

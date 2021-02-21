@@ -61,6 +61,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(block == null || block.MarkedForClose || sb == null)
                     return;
 
+                // not really necessary...
+                //var controlled = Main.ToolbarMonitor.ControlledBlock;
+                //if(controlled == null || !MyAPIGateway.GridGroups.HasConnection(controlled.CubeGrid, block.CubeGrid, GridLinkTypeEnum.Logical))
+                //    return;
+
                 // HACK: not overriding status when in GUI because it can be for timers/other toolbars and no idea which is which...
                 // TODO: maybe find a way to detect them and maybe even label events slots for airvent and such...
                 // Also no status override for gamepad HUD because it doesn't sync with the rest of the system so won't work.
@@ -71,14 +76,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return;
                 }
 
+                if(ToolbarMonitor.DebugLogging)
+                    Log.Info($"Writer :: action={Action.Id}; block={block.CustomName}; wrapperSlotIndex={Main.ToolbarMonitor.WrapperSlotIndex.ToString()}");
+
                 int max = Main.ToolbarMonitor.SequencedItems.Count;
                 int num = Main.ToolbarMonitor.WrapperSlotIndex;
                 if(num >= max)
                     return;
 
                 // HACK: find next matching slot, it could not match if a mod adds actions via event which won't have this status override class
+                // other issues are PBs or timer blocks calling actions and causing the writer to get triggered, desynchronizing the order.
                 var toolbarItem = Main.ToolbarMonitor.SequencedItems[num];
-                while(toolbarItem.ActionId != Action.Id)
+                while(toolbarItem.ActionId != Action.Id || toolbarItem.BlockEntId != block.EntityId)
                 {
                     num++;
                     if(num >= max)
@@ -104,6 +113,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         toolbarItem.Name = block.CustomName;
                     else
                         toolbarItem.Name = "<ERROR Should See CustomLabel>"; // required non-null to simplify checks in other classes
+
+                    if(ToolbarMonitor.DebugLogging)
+                        Log.Info($" ^-- filled data for slot #{toolbarItem.Index.ToString()}; name={toolbarItem.Name}");
 
                     // customized action names depending on block+action.
 
