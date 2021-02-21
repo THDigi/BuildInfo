@@ -25,6 +25,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public string ActionName;
 
         public string GroupName;
+        public IMyBlockGroup Group;
 
         public string CustomLabel;
 
@@ -145,6 +146,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 slot.ActionId = null;
                 slot.ActionName = null;
                 slot.GroupName = null;
+                slot.Group = null;
                 slot.PBArgument = null;
                 slot.SlotOB = default(MyObjectBuilder_Toolbar.Slot);
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
@@ -230,6 +232,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(toolbarBlock.CubeGrid);
                             var group = gts?.GetBlockGroupWithName(groupItem.GroupName);
                             group?.GetBlocks(TmpBlocks);
+
+                            slotData.Group = group;
 
                             if(TmpBlocks.Count > 0)
                             {

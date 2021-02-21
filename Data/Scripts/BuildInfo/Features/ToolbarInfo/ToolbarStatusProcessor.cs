@@ -18,6 +18,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public string GroupName;
 
         /// <summary>
+        /// Is set automatically before you get this object.
+        /// </summary>
+        public IMyBlockGroup Group;
+
+        /// <summary>
         /// Is set automatically before you get this object
         /// </summary>
         public IMyCubeGrid Grid;
@@ -28,12 +33,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         /// </summary>
         public bool GetGroupBlocks<T>() where T : class
         {
+            if(GroupName == null)
+                throw new Exception("Invalid state, GroupName is null!");
+
             Blocks.Clear();
 
-            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(Grid);
-            var group = gts?.GetBlockGroupWithName(GroupName);
-            group?.GetBlocksOfType<T>(Blocks);
+            if(Group == null)
+            {
+                var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(Grid);
+                Group = gts?.GetBlockGroupWithName(GroupName);
+            }
 
+            Group?.GetBlocksOfType<T>(Blocks);
             return (Blocks.Count > 0);
         }
     }
@@ -250,8 +261,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         }
                         else
                         {
-                            GroupDataToken.GroupName = item.GroupName;
                             GroupDataToken.Grid = item.Block.CubeGrid;
+                            GroupDataToken.Group = item.Group;
+                            GroupDataToken.GroupName = item.GroupName;
 
                             try
                             {
@@ -273,6 +285,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             {
                                 GroupDataToken.Blocks.Clear();
                                 GroupDataToken.Grid = null;
+                                GroupDataToken.Group = null;
+                                GroupDataToken.GroupName = null;
                             }
                         }
                     }
