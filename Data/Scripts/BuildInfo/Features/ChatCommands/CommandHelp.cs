@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 
@@ -11,8 +12,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means that the value is calculated from hardcoded values taken from the game source, they might become inaccurate with updates." +
             "\n" +
             "\n" +
-            "\n" + SegmentPrefix + " Mount points & airtightness explained" + SegmentSuffix +
-            "\n" +
+            "\n" + SegmentPrefix + " Mount points & airtightness" + SegmentSuffix +
             "\n  Mount points define areas that can be attached to other block's mount points." +
             "\n  Blue wireframe over mountpoint is the side and point used for auto-rotation." +
             "\n  Red mountpoint has special rules attached to it and might not attach to other red mounts." +
@@ -21,26 +21,32 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Blocks in construction stages are never airtight." +
             "\n" +
             "\n" +
-            "\n" + SegmentPrefix + "Numbered markings in text explained" + SegmentSuffix +
+            "\n" + SegmentPrefix + "Numbered markings in block text info box" + SegmentSuffix +
             "\n" +
             "\n[1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
-            "\n   To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
+            "\n  To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
             "\n" +
             "\n[2] No standalone means the block can't exist as the only block in the grid." +
-            "\n   Blocks with no collisions also have this limitation." +
-            "\n   Also no-collision blocks provide no mass to the grid." +
+            "\n  Blocks with no collisions also have this limitation." +
+            "\n  Also no-collision blocks provide no mass to the grid." +
             "\n" +
             "\n[3] Explaining conveyor power usage:" +
-            "\n   A hub is a conveyor hub or a block with ports (assembler, reactor, etc), but not conveyor tubes, those are one kind of conveyor lines." +
-            "\n   A conveyor line is a connection between 2 hubs with or without conveyor tubes." +
-            "\n   If a hub is on the line then it splits the line in 2 lines." +
-            "\n   For example, 2 refineries that are placed to be connected with one port will form a conveyor line there." +
-            "\n   Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
+            "\n  A hub is a conveyor hub or a block with ports (assembler, reactor, etc), but not conveyor tubes, those are one kind of conveyor lines." +
+            "\n  A conveyor line is a connection between 2 hubs with or without conveyor tubes." +
+            "\n  If a hub is on the line then it splits the line in 2 lines." +
+            "\n  For example, 2 refineries that are placed to be connected with one port will form a conveyor line there." +
+            "\n  Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
-            "\nThe vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +
-            "\nOptionally you can declare a group 'Cargo' to use for the bar (no matter the type)." +
+            "\n  The vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +
+            "\n  Optionally you can declare a group 'Cargo' to use for the bar (no matter the type)." +
+            "\n" +
+            "\n" +
+            "\n" + SegmentPrefix + "Toolbar block status with " + ToolbarStatusProcessor.CustomStatusTag + SegmentSuffix +
+            "\n  Block statuses that have " + ToolbarStatusProcessor.CustomStatusTag + " top-right means that their status is provided by this mod, which for groups also means that all blocks are computed towards the final status text." +
+            "\n  Any status that doesn't have that tag means it's the original status." +
+            "\n  Feel free to request block+action statuses in the mod's discussions page." +
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Custom labels for toolbar slots per cockpit" + SegmentSuffix +
@@ -135,7 +141,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 sb.NewLine();
             }
 
-            sb.NewLine();
             sb.NewLine();
 
             sb.Append(Footer);

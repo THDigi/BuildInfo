@@ -58,6 +58,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const char LeftAlignChar = ' ';
         public const int LeftAlignCount = 16;
 
+        public const string CustomStatusTag = "C";
+        public const int CustomTagPrefixSpaces = 8;
+
         public bool AnimFlip { get; private set; }
 
         int CurrentSlot = 0; // for calling one status callback per tick
@@ -74,6 +77,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         Dictionary<string, StatusDel> GenericFallback = new Dictionary<string, StatusDel>();
         Dictionary<string, GroupStatusDel> GenericGroupFallback = new Dictionary<string, GroupStatusDel>();
+
+        StringBuilder StatusSB = new StringBuilder(128);
 
         public ToolbarStatusProcessor(BuildInfoMod main) : base(main)
         {
@@ -212,7 +217,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int slotsPerPage = (gamepadHUD ? ToolbarMonitor.SlotsPerPageGamepad : ToolbarMonitor.SlotsPerPage);
             int pageOffset = toolbarPage * slotsPerPage;
 
-            for(int i = 0; i < slotsPerPage; i++)
+            for(int s = 0; s < slotsPerPage; s++)
             {
                 int index;
                 if(refreshTriggered)
@@ -222,7 +227,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
                 else
                 {
-                    index = pageOffset + ((CurrentSlot + i) % slotsPerPage);
+                    index = pageOffset + ((CurrentSlot + s) % slotsPerPage);
                 }
 
                 if(index > Main.ToolbarMonitor.HighestIndexUsed)
@@ -243,20 +248,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     try
                     {
-                        // TODO: use left-align?
-                        //sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align text to left
+                        StatusSB.Clear();
 
                         if(item.GroupName == null)
                         {
                             StatusDel func = StatusOverrides.GetValueOrDefault(item.Block.BlockDefinition.TypeId, null)?.GetValueOrDefault(item.ActionId, null);
                             if(func != null)
-                                overrideStatus = func.Invoke(sb, item);
+                                overrideStatus = func.Invoke(StatusSB, item);
 
                             if(!overrideStatus)
                             {
                                 func = GenericFallback?.GetValueOrDefault(item.ActionId, null);
                                 if(func != null)
-                                    overrideStatus = func.Invoke(sb, item);
+                                    overrideStatus = func.Invoke(StatusSB, item);
                             }
                         }
                         else
@@ -267,18 +271,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                             try
                             {
-                                // TODO: implement some other way...
-                                //sb.Append("Group:\n\n");
-
                                 GroupStatusDel func = GroupStatusOverrides.GetValueOrDefault(item.Block.BlockDefinition.TypeId, null)?.GetValueOrDefault(item.ActionId, null);
                                 if(func != null)
-                                    overrideStatus = func.Invoke(sb, item, GroupDataToken);
+                                    overrideStatus = func.Invoke(StatusSB, item, GroupDataToken);
 
                                 if(!overrideStatus)
                                 {
                                     func = GenericGroupFallback?.GetValueOrDefault(item.ActionId, null);
                                     if(func != null)
-                                        overrideStatus = func.Invoke(sb, item, GroupDataToken);
+                                        overrideStatus = func.Invoke(StatusSB, item, GroupDataToken);
                                 }
                             }
                             finally
@@ -288,6 +289,31 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                 GroupDataToken.Group = null;
                                 GroupDataToken.GroupName = null;
                             }
+                        }
+
+                        // tag custom statuses with something
+                        if(StatusSB.Length > 0)
+                        {
+                            // need to know how many lines have been appended to keep the tag at a certain height
+                            int lines = 0;
+                            for(int i = 0; i < StatusSB.Length; ++i)
+                            {
+                                var chr = StatusSB[i];
+                                if(chr == '\n')
+                                    lines++;
+                            }
+
+                            const int TotalLines = 3;
+                            int emptyLines = TotalLines - lines;
+
+                            sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align text to left
+
+                            if(emptyLines > 0)
+                                sb.Append(' ', CustomTagPrefixSpaces).Append(CustomStatusTag).Append('\n', TotalLines - lines);
+                            else if(Log.WorkshopId == 0) // only for local mod
+                                Log.Error($"Status for {item.ActionId} has too many lines!", Log.PRINT_MESSAGE);
+
+                            sb.AppendStringBuilder(StatusSB);
                         }
                     }
                     catch(Exception e)
@@ -301,11 +327,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(!overrideStatus)
                 {
                     sb.Clear(); // erase any partial appends
-
-                    // TODO: implement some other way...
-                    //if(item.GroupName != null)
-                    //    sb.Append("First block status only...");
-
                     item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
                 }
 
@@ -313,7 +334,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     continue;
 
                 // skip this one next for next tick
-                CurrentSlot = (CurrentSlot + i + 1) % ToolbarMonitor.SlotsPerPage;
+                CurrentSlot = (CurrentSlot + s + 1) % ToolbarMonitor.SlotsPerPage;
 
                 break; // found a valid slot, end loop
             }
