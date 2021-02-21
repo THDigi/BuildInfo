@@ -232,7 +232,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             group?.GetBlocks(TmpBlocks);
 
                             if(TmpBlocks.Count > 0)
-                                block = TmpBlocks[0];
+                            {
+                                long playerId = MyAPIGateway.Session.Player.IdentityId;
+
+                                // logic from MyToolbarItemTerminalGroup.FirstFunctional()
+                                foreach(IMyTerminalBlock b in TmpBlocks)
+                                {
+                                    if(b.IsFunctional && (b.HasPlayerAccess(playerId) || b.HasPlayerAccess(toolbarBlock.OwnerId)))
+                                    {
+                                        block = b;
+                                        break;
+                                    }
+                                }
+
+                                if(block == null)
+                                    block = TmpBlocks[0];
+                            }
                         }
 
                         slotData.GroupName = groupItem.GroupName;
