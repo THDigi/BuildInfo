@@ -1621,7 +1621,7 @@ namespace Digi.BuildInfo.Features
                     if(!def.HasPhysics)
                         GetLine().Separator();
 
-                    GetLine().Color(COLOR_WARNING).Append("No standalone").Color(COLOR_UNIMPORTANT).Append(" ([2] @ /bi help)");
+                    GetLine().Color(COLOR_WARNING).Append("No standalone").MoreInfoInHelp(2);
                 }
             }
             #endregion Integrity, deformable, damage intake
@@ -1841,7 +1841,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
 
-                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerLine).Append(" per line").Color(COLOR_UNIMPORTANT).Append(" ([3] @ /bi help)");
+                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerLine).Append(" per line").MoreInfoInHelp(3);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     AddLine().Append("    ").ResourcePriority(Hardcoded.Conveyors_PowerGroup, hardcoded: true);
@@ -1909,6 +1909,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity);
+                AddLine().Label("Max Force, Safe").ForceFormat(piston.UnsafeImpulseThreshold).Separator().Label("Unsafe").ForceFormat(piston.MaxImpulse);
             }
 
             Suffix_Mechanical(def, piston.TopPart);
@@ -1941,7 +1942,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Max torque").TorqueFormat(motor.MaxForceMagnitude);
+                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(4);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
@@ -1963,7 +1964,6 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
             {
                 var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
-
                 if(group == null)
                     return;
 
@@ -2836,7 +2836,7 @@ namespace Digi.BuildInfo.Features
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km").Color(COLOR_UNIMPORTANT).Append(" ([1] @ /bi help)");
+                AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km").MoreInfoInHelp(1);
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
                 if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
