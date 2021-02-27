@@ -67,12 +67,14 @@ namespace Digi.BuildInfo.Features
             Index = 0;
             IndexOffset = 0;
 
+            CycleComponents.Clear();
             MyHud.BlockInfo.Components.Clear();
             MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
         }
 
         void HudStateChanged(HudState prevState, HudState state)
         {
+            CycleComponents.Clear();
             HudState = state;
 
             if(Config.BlockInfoAdditions.Value)
@@ -85,6 +87,7 @@ namespace Digi.BuildInfo.Features
 
         void EquipmentBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
+            CycleComponents.Clear();
             Index = 0;
             IndexOffset = 0;
             ShowScrollHint = true;
@@ -202,7 +205,11 @@ namespace Digi.BuildInfo.Features
                 int loopEnd = (showUpHint ? scrollShow - 1 : scrollShow);
                 for(int i = loopStart; i < loopEnd; ++i)
                 {
-                    comps.Add(CycleComponents[i + Index]);
+                    int idx = i + Index;
+                    if(idx >= CycleComponents.Count)
+                        break; // final redundancy
+
+                    comps.Add(CycleComponents[idx]);
                 }
 
                 if(showUpHint)
