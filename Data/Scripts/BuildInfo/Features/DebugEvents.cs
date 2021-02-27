@@ -6,6 +6,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
@@ -15,6 +16,7 @@ using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
+using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
 {
@@ -62,6 +64,8 @@ namespace Digi.BuildInfo.Features
                 //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
             }
 
+            //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
             //DumpActions();
         }
 
@@ -82,6 +86,26 @@ namespace Digi.BuildInfo.Features
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
         }
+
+        //List<MyCubeGrid.DebugUpdateRecord> debugData = new List<MyCubeGrid.DebugUpdateRecord>();
+        //protected override void UpdateAfterSim(int tick)
+        //{
+        //    var block = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+        //    if(block == null)
+        //        return;
+
+        //    var grid = (MyCubeGrid)block.CubeGrid;
+
+        //    debugData.Clear();
+        //    grid.GetDebugUpdateInfo(debugData);
+
+        //    DebugLog.ClearHUD(this);
+
+        //    foreach(var debug in debugData)
+        //    {
+        //        DebugLog.PrintHUD(this, debug.ToString());
+        //    }
+        //}
 
         //void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
         //{

@@ -57,6 +57,16 @@ namespace Digi.BuildInfo.Features
             TextAPI.Detected -= TextAPIDetected;
         }
 
+        public static void ClearHUD(object caller)
+        {
+            if(Log.WorkshopId != 0)
+                return;
+
+            var debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
+            debugMsgs?.Clear();
+            PrintHUD(caller, "(log cleared)");
+        }
+
         public static void PrintHUD(object caller, string message)
         {
             if(Log.WorkshopId != 0)

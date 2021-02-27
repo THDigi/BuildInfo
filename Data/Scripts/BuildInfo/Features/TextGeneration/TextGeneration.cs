@@ -3287,11 +3287,59 @@ namespace Digi.BuildInfo.Features
         {
             // NOTE: this includes conveyor sorter too
 
-            AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats available)");
+            AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
 
-            //AddLine().Label("DEBUG_MaxPower").PowerFormat(WeaponCoreAPI.GetMaxPower(blockDef.Id));
-            //AddLine().Label("DEBUG_OptimalDPS").PowerFormat(WeaponCoreAPI.GetOptimalDps(blockDef.Id));
+            // bad:
+            // - text is cached so it needs to clear cache on hud mode cycling to refresh this
+            // - text is long, needs word wrapping
+            //if(GameConfig.HudState != HudState.HINTS)
+            //{
+            //    if(!string.IsNullOrEmpty(blockDef.DescriptionText))
+            //    {
+            //        if(string.IsNullOrEmpty(blockDef.DescriptionArgs))
+            //        {
+            //            AddLine().Append(blockDef.DescriptionText);
+            //        }
+            //        else
+            //        {
+            //            char[] separator = { ',' };
+            //            string[] args = blockDef.DescriptionArgs.Split(separator);
+            //            object[] formatParams = new object[args.Length];
+
+            //            for(int i = 0; i < args.Length; i++)
+            //            {
+            //                formatParams[i] = GetHighlightedControl(args[i]);
+            //            }
+
+            //            AddLine().AppendFormat(blockDef.DescriptionText, formatParams);
+            //        }
+            //    }
+            //}
         }
+
+        //static object GetHighlightedControl(string controlId)
+        //{
+        //    var control = MyAPIGateway.Input.GetGameControl(MyStringId.GetOrCompute(controlId));
+        //    if(control == null)
+        //        return controlId;
+
+        //    var kb = control.GetControlButtonName(MyGuiInputDeviceEnum.Keyboard) ?? control.GetControlButtonName(MyGuiInputDeviceEnum.KeyboardSecond);
+        //    var mb = control.GetControlButtonName(MyGuiInputDeviceEnum.Mouse);
+
+        //    bool hasKb = string.IsNullOrEmpty(kb);
+        //    bool hasMb = string.IsNullOrEmpty(mb);
+
+        //    if(hasKb && hasMb)
+        //        return $"<color=yellow>{kb} / {mb}<reset>";
+
+        //    if(hasKb)
+        //        return $"<color=yellow>{kb}<reset>";
+
+        //    if(hasMb)
+        //        return $"<color=yellow>{mb}<reset>";
+
+        //    return controlId;
+        //}
 
         private void Format_Warhead(MyCubeBlockDefinition def)
         {
