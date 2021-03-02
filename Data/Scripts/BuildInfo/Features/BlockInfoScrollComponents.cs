@@ -23,6 +23,8 @@ namespace Digi.BuildInfo.Features
         public int IndexOffset { get; private set; }
         public int Index { get; private set; }
         public int MaxVisible { get; private set; } = MaxVisibleHudHints;
+        public bool ShowUpHint { get; private set; }
+        public bool ShowDownHint { get; private set; }
 
         bool Refresh;
         bool ShowScrollHint;
@@ -64,24 +66,30 @@ namespace Digi.BuildInfo.Features
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, newValue);
 
+            CycleComponents.Clear();
             Index = 0;
             IndexOffset = 0;
+            ShowDownHint = false;
+            ShowUpHint = false;
 
-            CycleComponents.Clear();
             MyHud.BlockInfo.Components.Clear();
             MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
         }
 
         void HudStateChanged(HudState prevState, HudState state)
         {
-            CycleComponents.Clear();
             HudState = state;
+
+            CycleComponents.Clear();
+            Index = 0;
+            IndexOffset = 0;
+            ShowDownHint = false;
+            ShowUpHint = false;
 
             if(Config.BlockInfoAdditions.Value)
             {
                 MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
-                Refresh = true;
             }
         }
 
@@ -90,22 +98,14 @@ namespace Digi.BuildInfo.Features
             CycleComponents.Clear();
             Index = 0;
             IndexOffset = 0;
+            ShowDownHint = false;
+            ShowUpHint = false;
             ShowScrollHint = true;
 
-            if(!Config.BlockInfoAdditions.Value)
-                return;
-
-            if(slimBlock != null)
+            if(Config.BlockInfoAdditions.Value)
             {
-                // auto-scroll to higher if block is built
-                Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
-            }
-
-            if(CycleComponents.Count > 0)
-            {
-                int maxIndex = CycleComponents.Count - MaxVisible;
-                Index = MathHelper.Clamp(Index, 0, maxIndex);
-                IndexOffset = maxIndex - Index;
+                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+                MyHud.BlockInfo.Components.Clear();
             }
         }
 
@@ -145,6 +145,17 @@ namespace Digi.BuildInfo.Features
                 }
 
                 Refresh = true;
+
+                var slimBlock = EquipmentMonitor.AimedBlock;
+                if(slimBlock != null)
+                {
+                    // auto-scroll to higher if block is built
+                    Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
+                }
+
+                int maxIndex = CycleComponents.Count - MaxVisible;
+                Index = MathHelper.Clamp(Index, 0, maxIndex);
+                IndexOffset = maxIndex - Index;
             }
 
             if(CycleComponents.Count == 0)
@@ -187,10 +198,10 @@ namespace Digi.BuildInfo.Features
                 Index = MathHelper.Clamp(Index, 0, maxIndex);
                 IndexOffset = maxIndex - Index;
 
-                bool showUpHint = (ShowScrollHint && Index == 0);
-                bool showDownHint = (!showUpHint && ShowScrollHint && Index > 0);
+                ShowUpHint = (ShowScrollHint && Index == 0);
+                ShowDownHint = (!ShowUpHint && ShowScrollHint && Index > 0);
 
-                if(showDownHint)
+                if(ShowDownHint)
                 {
                     // TODO: gamepad control to scroll?
                     if(MyAPIGateway.Input.IsJoystickLastUsed)
@@ -201,8 +212,8 @@ namespace Digi.BuildInfo.Features
                     comps.Add(HintComponent);
                 }
 
-                int loopStart = (showDownHint ? 1 : 0);
-                int loopEnd = (showUpHint ? scrollShow - 1 : scrollShow);
+                int loopStart = (ShowDownHint ? 1 : 0);
+                int loopEnd = (ShowUpHint ? scrollShow - 1 : scrollShow);
                 for(int i = loopStart; i < loopEnd; ++i)
                 {
                     int idx = i + Index;
@@ -212,7 +223,7 @@ namespace Digi.BuildInfo.Features
                     comps.Add(CycleComponents[idx]);
                 }
 
-                if(showUpHint)
+                if(ShowUpHint)
                 {
                     if(MyAPIGateway.Input.IsJoystickLastUsed)
                         HintComponent.ComponentName = "^ More components ^";

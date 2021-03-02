@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features
         private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.PostPP;
         private const float BLOCKINFO_COMPONENT_HEIGHT = 0.037f; // component height in the vanilla block info
         private const float BLOCKINFO_COMPONENT_WIDTH = 0.011f;
-        private const float BLOCKINFO_COMPONENT_UNDERLINE_OFFSET = 0.0062f;
+        private const float BLOCKINFO_COMPONENT_UNDERLINE_OFFSET = 0.012f;
         private const float BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT = 0.0014f;
         private const float BLOCKINFO_Y_OFFSET = 0.12f;
         private const float BLOCKINFO_Y_OFFSET_2 = 0.0102f;
@@ -259,13 +259,26 @@ namespace Digi.BuildInfo.Features
                     MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
                 }
 
+                int maxVisible = Main.BlockInfoScrollComponents.MaxVisible;
+                int scrollIdx = Main.BlockInfoScrollComponents.Index;
+                int maxIdx = scrollIdx + maxVisible;
+
                 // different return item on grind
-                for(int i = ComponentReplaceInfoCount - 1; i >= 0; --i)
+                for(int i = (ComponentReplaceInfoCount - 1); i >= 0; --i)
                 {
                     var info = ComponentReplaceInfo[i];
                     int index = info.Index + scrollIndexOffset;
-                    if(index < 0)
+
+                    if(info.Index >= maxIdx // hide for components scrolled above
+                    || info.Index < scrollIdx // hide for components scrolled below
+                    || info.Index == (maxVisible - 1) && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
+                    || info.Index == (totalComps - maxVisible) && Main.BlockInfoScrollComponents.ShowDownHint) // hide for bottom hint component
+                    {
+                        if(info.Text != null)
+                            info.Text.Visible = false;
+
                         continue;
+                    }
 
                     var hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - index - 1);
@@ -274,16 +287,16 @@ namespace Digi.BuildInfo.Features
 
                     if(TextAPIEnabled)
                     {
-                        const double LEFT_OFFSET = 0.0183;
-                        const string LABEL = "<color=255,255,0>Grinds to: ";
-                        const int NAME_MAX_CHARACTERS = 21;
+                        const double LeftOffset = 0.0183;
+                        const string LabelPrefix = "<color=255,255,0>Grinds to: ";
+                        const int NameMaxChars = 21;
                         double textScale = 0.0012 * DrawUtils.ScaleFOV;
 
-                        worldPos += camMatrix.Left * (LEFT_OFFSET * DrawUtils.ScaleFOV);
+                        worldPos += camMatrix.Left * (LeftOffset * DrawUtils.ScaleFOV);
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LABEL.Length + NAME_MAX_CHARACTERS), worldPos, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), worldPos, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
                         }
                         else
                         {
@@ -294,9 +307,10 @@ namespace Digi.BuildInfo.Features
                         }
 
                         var sb = info.Text.Message.Clear();
-                        sb.Append(LABEL);
-                        sb.AppendMaxLength(info.Replaced.DisplayNameText, NAME_MAX_CHARACTERS);
+                        sb.Append(LabelPrefix);
+                        sb.AppendMaxLength(info.Replaced.DisplayNameText, NameMaxChars);
 
+                        info.Text.Visible = true;
                         info.Text.Draw();
                     }
                     else
