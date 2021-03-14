@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Input;
@@ -91,6 +94,8 @@ namespace Digi.BuildInfo
             "0.000000",
         };
 
+        public static string CurrencySuffix = "SC";
+
         public Constants(BuildInfoMod main) : base(main)
         {
             ComputeResourceGroups();
@@ -98,10 +103,29 @@ namespace Digi.BuildInfo
 
         protected override void RegisterComponent()
         {
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         protected override void UnregisterComponent()
         {
+        }
+
+        protected override void UpdateAfterSim(int tick)
+        {
+            // HACK: because it can be null in MP: https://support.keenswh.com/spaceengineers/pc/topic/01-190-101modapi-myapigateway-session-player-is-null-for-first-3-ticks-for-mp-clients
+            var localPlayer = MyAPIGateway.Session?.Player;
+            if(localPlayer != null)
+            {
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+                // HACK: only way to get currency short name is by getting it from a player or faction's balance string...
+                var balanceText = localPlayer.GetBalanceShortString();
+                if(balanceText != null)
+                {
+                    string[] parts = balanceText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    CurrencySuffix = parts[parts.Length - 1]; // last thing in the string must be the currency name
+                }
+            }
         }
 
         #region Resource group priorities

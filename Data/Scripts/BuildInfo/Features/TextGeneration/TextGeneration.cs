@@ -3403,16 +3403,41 @@ namespace Digi.BuildInfo.Features
         private void Format_StoreBlock(MyCubeBlockDefinition def)
         {
             var store = (MyStoreBlockDefinition)def;
-
-            // vending machine extends this, but has no info in it.
-            //var vending = def as MyVendingMachineDefinition;
-            //if(vending != null)
-            //{
-            //}
+            var vending = def as MyVendingMachineDefinition;
 
             InventoryStats(def);
 
             Screens(def, store.ScreenAreas);
+
+            if(vending != null)
+            {
+                if(vending.DefaultItems != null && vending.DefaultItems.Count > 0)
+                {
+                    AddLine().Label("Default store items:");
+
+                    foreach(var entry in vending.DefaultItems)
+                    {
+                        AddLine().Append("    ")
+                            .Append(entry.StoreItemType == StoreItemTypes.Offer ? "Sell: " : "Buy: ");
+
+                        switch(entry.ItemType)
+                        {
+                            case ItemTypes.Hydrogen:
+                                GetLine().Append("Hydrogen").Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                break;
+                            case ItemTypes.Oxygen:
+                                GetLine().Append("Oxygen").Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                break;
+                            case ItemTypes.PhysicalItem:
+                                GetLine().IdTypeSubtypeFormat(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                break;
+                            case ItemTypes.Grid:
+                                GetLine().Append(entry.PrefabName).Append(" (").Append(entry.PrefabTotalPcu).Append(" PCU)").Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                break;
+                        }
+                    }
+                }
+            }
         }
         #endregion Per block info
 

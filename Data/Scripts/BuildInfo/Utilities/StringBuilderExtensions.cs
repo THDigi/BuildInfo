@@ -240,6 +240,18 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        public static StringBuilder CurrencyFormat(this StringBuilder s, long money)
+        {
+            // game does this too, so why not.
+            if(money > 1000000000000L || money < -1000000000000L)
+            {
+                money /= 1000000000000L;
+                return s.Append(money.ToString("N0")).Append(" T ").Append(Constants.CurrencySuffix);
+            }
+
+            return s.Append(money.ToString("N0")).Append(" ").Append(Constants.CurrencySuffix);
+        }
+
         private static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
         {
             if(float.IsInfinity(f))
