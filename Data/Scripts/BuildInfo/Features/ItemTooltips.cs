@@ -169,24 +169,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(itemTooltipSB.Length >= tooltip.Length)
                 {
-                    TempSB.Clear();
-                    int sbLen = itemTooltipSB.Length;
-                    int scanIndex = 0;
-                    for(int i = 0; i < sbLen; i++)
-                    {
-                        char c = itemTooltipSB[i];
-
-                        if(scanIndex < tooltip.Length && c == tooltip[scanIndex])
-                        {
-                            scanIndex++;
-                            continue;
-                        }
-
-                        scanIndex = 0;
-                        TempSB.Append(c);
-                    }
-
-                    itemTooltipSB.Clear().AppendStringBuilder(TempSB);
+                    itemTooltipSB.Replace(tooltip, "");
                 }
 
                 if(Config.ItemTooltipAdditions.Value)
