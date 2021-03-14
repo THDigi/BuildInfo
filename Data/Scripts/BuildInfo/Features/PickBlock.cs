@@ -52,6 +52,13 @@ namespace Digi.BuildInfo.Features
             // waiting for a slot input...
             if(PickedBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
             {
+                if(MyAPIGateway.Session?.Player == null)
+                {
+                    PickedBlockDef = null;
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
+                    return;
+                }
+
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
                     PickedBlockDef = null;

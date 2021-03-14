@@ -940,11 +940,12 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            if(Config.AimInfo.Value == 0)
+            var localPlayer = MyAPIGateway.Session?.Player;
+
+            if(Config.AimInfo.Value == 0 || localPlayer == null)
                 return;
 
             var aimedBlock = EquipmentMonitor.AimedBlock;
-
             if(aimedBlock == null)
             {
                 Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MESSAGE);
@@ -1124,7 +1125,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!projected && hasComputer)
                 {
-                    var relation = (aimedBlock.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+                    var relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
                     var shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
 
                     AddLine();
@@ -1191,7 +1192,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else if(projected)
                 {
-                    var relation = (projectedBy.OwnerId > 0 ? MyAPIGateway.Session.Player.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+                    var relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
 
                     AddLine();
 
@@ -1266,7 +1267,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    bool hackable = hasComputer && aimedBlock.OwnerId != MyAPIGateway.Session.Player.IdentityId && (integrityRatio >= def.OwnershipIntegrityRatio);
+                    bool hackable = hasComputer && aimedBlock.OwnerId != localPlayer.IdentityId && (integrityRatio >= def.OwnershipIntegrityRatio);
                     float hackTime = 0f;
 
                     if(hackable)
@@ -2901,7 +2902,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Color(Color.Red).Append("In-game Scripts are disabled in this world");
                 }
-                else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+                else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
                 {
                     AddLine().Color(Color.Red).Append("Scripter role required to use In-game Scripts");
                 }

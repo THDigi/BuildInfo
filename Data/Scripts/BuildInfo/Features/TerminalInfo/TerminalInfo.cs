@@ -1541,7 +1541,7 @@ namespace Digi.BuildInfo.Features
             {
                 info.Append("In-game Scripts are disabled in world settings!\n");
             }
-            else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+            else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
             {
                 info.Append("Scripter role is required to use in-game scripts.\n");
             }

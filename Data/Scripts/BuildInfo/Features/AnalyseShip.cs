@@ -825,6 +825,12 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
+                if(MyAPIGateway.Session?.Player == null)
+                {
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
+                    return true; // must be true to avoid showing other messages
+                }
+
                 dlcs.Clear();
                 mods.Clear();
                 modsChangingVanilla.Clear();

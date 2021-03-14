@@ -237,7 +237,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                             if(TmpBlocks.Count > 0)
                             {
-                                long playerId = MyAPIGateway.Session.Player.IdentityId;
+                                long playerId = MyAPIGateway.Session?.Player?.IdentityId ?? 0;
 
                                 // logic from MyToolbarItemTerminalGroup.FirstFunctional()
                                 foreach(IMyTerminalBlock b in TmpBlocks)

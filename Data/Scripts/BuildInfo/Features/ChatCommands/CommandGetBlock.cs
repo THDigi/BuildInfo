@@ -13,6 +13,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
+            if(MyAPIGateway.Session?.Player == null)
+            {
+                PrintChat(Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
+                return;
+            }
+
             if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
             {
                 PrintChat(Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
