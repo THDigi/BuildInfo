@@ -28,6 +28,21 @@ namespace Digi.BuildInfo.Features
         readonly Dictionary<MyDefinitionId, string> Tooltips = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
         readonly StringBuilder TempSB = new StringBuilder(1024);
 
+        enum Sizes { Small, Large, Both }
+
+        HashSet<MyBlueprintDefinitionBase> BpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
+        HashSet<MyBlueprintDefinitionBase> BpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
+        Dictionary<string, Sizes> CreatedBy = new Dictionary<string, Sizes>();
+        Dictionary<string, Sizes> UsedBy = new Dictionary<string, Sizes>();
+
+        void DisposeTempCollections()
+        {
+            BpsThatResult = null;
+            BpsThatReq = null;
+            CreatedBy = null;
+            UsedBy = null;
+        }
+
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
@@ -51,7 +66,7 @@ namespace Digi.BuildInfo.Features
             if(OriginalItemData.Count > 0)
                 throw new Exception("OriginalItemData already has data before init?!");
 
-            SetupItems(init: true);
+            SetupItems(generate: true);
 
             Config.InternalInfo.ValueAssigned += ConfigValueChanged;
             Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
@@ -81,7 +96,7 @@ namespace Digi.BuildInfo.Features
                 SetupItems();
         }
 
-        void SetupItems(bool init = false)
+        void SetupItems(bool generate = false)
         {
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -89,7 +104,7 @@ namespace Digi.BuildInfo.Features
                 if(physDef == null)
                     continue;
 
-                if(init)
+                if(generate)
                 {
                     string tooltip = null;
                     if(physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.Length > 0)
@@ -99,7 +114,12 @@ namespace Digi.BuildInfo.Features
                 }
 
                 HandleSymbol(physDef);
-                HandleTooltip(physDef, init);
+                HandleTooltip(physDef, generate);
+            }
+
+            if(generate)
+            {
+                DisposeTempCollections();
             }
         }
 
@@ -144,12 +164,12 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void HandleTooltip(MyPhysicalItemDefinition physDef, bool init)
+        void HandleTooltip(MyPhysicalItemDefinition physDef, bool generate)
         {
             string tooltip = null;
-            if(init)
+            if(generate)
             {
-                // initialization, generate tooltips and cache them
+                // generate tooltips and cache them alone
                 TempSB.Clear();
                 GenerateTooltip(TempSB, physDef);
                 if(TempSB.Length > 0)
@@ -160,6 +180,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
+                // retrieve cached tooltip string
                 tooltip = Tooltips.GetValueOrDefault(physDef.Id, null);
             }
 
@@ -167,6 +188,7 @@ namespace Digi.BuildInfo.Features
 
             if(tooltip != null)
             {
+                // item tooltip likely contains the cached tooltip, get rid of it.
                 if(itemTooltipSB.Length >= tooltip.Length)
                 {
                     itemTooltipSB.Replace(tooltip, "");
@@ -244,10 +266,10 @@ namespace Digi.BuildInfo.Features
 
         void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
-            var bpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
-            var bpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
-            var createdBy = new Dictionary<string, Sizes>();
-            var usedBy = new Dictionary<string, Sizes>();
+            BpsThatResult.Clear();
+            BpsThatReq.Clear();
+            CreatedBy.Clear();
+            UsedBy.Clear();
 
             int usedForBlocks = 0;
             int usedForAssembly = 0;
@@ -260,7 +282,7 @@ namespace Digi.BuildInfo.Features
                 {
                     if(result.Id == physDef.Id)
                     {
-                        bpsThatResult.Add(bp);
+                        BpsThatResult.Add(bp);
                         isResult = true;
                         break;
                     }
@@ -273,34 +295,34 @@ namespace Digi.BuildInfo.Features
                         // bps that require same item as they result should be ignored.
                         if(isResult)
                         {
-                            bpsThatResult.Remove(bp);
+                            BpsThatResult.Remove(bp);
                             break;
                         }
 
-                        bpsThatReq.Add(bp);
+                        BpsThatReq.Add(bp);
                         break;
                     }
                 }
             }
 
-            if(bpsThatResult.Count > 0)
+            if(BpsThatResult.Count > 0)
             {
-                ComputeBps(bpsThatResult, createdBy, ref usedForBlocks);
+                ComputeBps(BpsThatResult, CreatedBy, ref usedForBlocks);
             }
 
-            if(bpsThatReq.Count > 0)
+            if(BpsThatReq.Count > 0)
             {
-                ComputeBps(bpsThatReq, usedBy, ref usedForAssembly);
+                ComputeBps(BpsThatReq, UsedBy, ref usedForAssembly);
             }
 
-            if(createdBy.Count > 0)
+            if(CreatedBy.Count > 0)
             {
-                AppendCraftList(s, "\nCreated by:", createdBy);
+                AppendCraftList(s, "\nCreated by:", CreatedBy);
             }
 
-            if(usedBy.Count > 0)
+            if(UsedBy.Count > 0)
             {
-                AppendCraftList(s, "\nUsed in:", usedBy);
+                AppendCraftList(s, "\nUsed in:", UsedBy);
             }
 
             // TODO: show blocks/items used for crafting if they're less than a few
