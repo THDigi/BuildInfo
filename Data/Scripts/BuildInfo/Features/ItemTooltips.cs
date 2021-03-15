@@ -28,19 +28,19 @@ namespace Digi.BuildInfo.Features
         readonly Dictionary<MyDefinitionId, string> Tooltips = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
         readonly StringBuilder TempSB = new StringBuilder(1024);
 
-        enum Sizes { Small, Large, Both }
+        enum Sizes { Small, Large, Both, HandWeapon }
 
         HashSet<MyBlueprintDefinitionBase> BpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
         HashSet<MyBlueprintDefinitionBase> BpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
-        Dictionary<string, Sizes> CreatedBy = new Dictionary<string, Sizes>();
-        Dictionary<string, Sizes> UsedBy = new Dictionary<string, Sizes>();
+        Dictionary<string, Sizes> NameAndSize = new Dictionary<string, Sizes>();
+        HashSet<MyDefinitionId> HasBP = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         void DisposeTempCollections()
         {
             BpsThatResult = null;
             BpsThatReq = null;
-            CreatedBy = null;
-            UsedBy = null;
+            NameAndSize = null;
+            HasBP = null;
         }
 
         public ItemTooltips(BuildInfoMod main) : base(main)
@@ -98,6 +98,11 @@ namespace Digi.BuildInfo.Features
 
         void SetupItems(bool generate = false)
         {
+            if(generate)
+            {
+                PreTooltipGeneration();
+            }
+
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 var physDef = def as MyPhysicalItemDefinition;
@@ -217,11 +222,34 @@ namespace Digi.BuildInfo.Features
             #endregion
         }
 
+        void PreTooltipGeneration()
+        {
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var prodDef = def as MyProductionBlockDefinition;
+                if(prodDef == null)
+                    continue;
+
+                foreach(var bpClass in prodDef.BlueprintClasses)
+                {
+                    foreach(var bp in bpClass)
+                    {
+                        foreach(var result in bp.Results)
+                        {
+                            HasBP.Add(result.Id);
+                        }
+                    }
+                }
+            }
+        }
+
         void GenerateTooltip(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
             if(!IgnoreModItems.Contains(physDef.Id))
             {
                 TooltipConsumable(s, physDef);
+                TooltipWeapon(s, physDef);
+                TooltipAmmo(s, physDef);
                 TooltipCrafting(s, physDef);
             }
 
@@ -262,14 +290,133 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        enum Sizes { Small, Large, Both }
+        void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef)
+        {
+            var weaponItemDef = physDef as MyWeaponItemDefinition;
+            if(weaponItemDef == null)
+                return;
+
+            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponItemDef.WeaponDefinitionId);
+            if(weaponDef == null)
+                return;
+
+            // TODO some weapon stats? they depend on the ammo tho...
+
+            if(weaponDef.AmmoMagazinesId != null && weaponDef.AmmoMagazinesId.Length > 0)
+            {
+                if(weaponDef.AmmoMagazinesId.Length == 1)
+                    s.Append("\nUses magazine:");
+                else
+                    s.Append("\nUses magazines:");
+
+                foreach(var magId in weaponDef.AmmoMagazinesId)
+                {
+                    s.Append("\n  ");
+
+                    var magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(magId);
+                    if(magDef == null)
+                        s.Append("(NotFound=").Append(magId.ToString()).Append(")");
+                    else
+                        s.Append(magDef.DisplayNameText);
+
+                    if(!HasBP.Contains(magId))
+                        s.Append(" (Not Craftable)");
+                }
+            }
+        }
+
+        void TooltipAmmo(StringBuilder s, MyPhysicalItemDefinition physDef)
+        {
+            var magDef = physDef as MyAmmoMagazineDefinition;
+            if(magDef == null)
+                return;
+
+            if(magDef.Capacity > 1)
+                s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
+
+            NameAndSize.Clear();
+
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var weaponItemDef = def as MyWeaponItemDefinition;
+                if(weaponItemDef != null)
+                {
+                    var wpDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponItemDef.WeaponDefinitionId);
+                    if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                    {
+                        foreach(var magId in wpDef.AmmoMagazinesId)
+                        {
+                            if(magId == magDef.Id)
+                            {
+                                NameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
+                                break;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                var weaponBlockDef = def as MyWeaponBlockDefinition;
+                if(weaponBlockDef != null)
+                {
+                    var wpDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
+                    if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                    {
+                        foreach(var magId in wpDef.AmmoMagazinesId)
+                        {
+                            if(magId == magDef.Id)
+                            {
+                                string key = def.DisplayNameText;
+                                Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                                Sizes existingSize;
+                                if(NameAndSize.TryGetValue(key, out existingSize))
+                                {
+                                    if(existingSize != Sizes.Both && existingSize != currentSize)
+                                        NameAndSize[key] = Sizes.Both;
+                                }
+                                else
+                                {
+                                    NameAndSize[key] = currentSize;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    continue;
+                }
+            }
+
+            if(NameAndSize.Count == 0)
+                return;
+
+            s.Append("\nUsed by:");
+
+            int limit = 0;
+            foreach(var kv in NameAndSize)
+            {
+                if(++limit > ListLimit)
+                {
+                    limit--;
+                    s.Append("\n  ...and ").Append(NameAndSize.Count - limit).Append(" more");
+                    break;
+                }
+
+                s.Append("\n  ").Append(kv.Key);
+
+                switch(kv.Value)
+                {
+                    case Sizes.Small: s.Append(" (Small Block)"); break;
+                    case Sizes.Large: s.Append(" (Large Block)"); break;
+                    case Sizes.Both: s.Append(" (Small + Large Block)"); break;
+                    case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
+                }
+            }
+        }
 
         void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
             BpsThatResult.Clear();
             BpsThatReq.Clear();
-            CreatedBy.Clear();
-            UsedBy.Clear();
 
             int usedForBlocks = 0;
             int usedForAssembly = 0;
@@ -307,22 +454,24 @@ namespace Digi.BuildInfo.Features
 
             if(BpsThatResult.Count > 0)
             {
-                ComputeBps(BpsThatResult, CreatedBy, ref usedForBlocks);
+                NameAndSize.Clear();
+                ComputeBps(BpsThatResult, NameAndSize, ref usedForBlocks);
+                if(NameAndSize.Count > 0)
+                    AppendCraftList(s, "\nCrafted by:", NameAndSize);
+            }
+            else
+            {
+                // TODO find if it's created by vending machines
+                // TODO find if it's sold by NPC stations
+                s.Append("\nNot Craftable.");
             }
 
             if(BpsThatReq.Count > 0)
             {
-                ComputeBps(BpsThatReq, UsedBy, ref usedForAssembly);
-            }
-
-            if(CreatedBy.Count > 0)
-            {
-                AppendCraftList(s, "\nCreated by:", CreatedBy);
-            }
-
-            if(UsedBy.Count > 0)
-            {
-                AppendCraftList(s, "\nUsed in:", UsedBy);
+                NameAndSize.Clear();
+                ComputeBps(BpsThatReq, NameAndSize, ref usedForAssembly);
+                if(NameAndSize.Count > 0)
+                    AppendCraftList(s, "\nUsed in:", NameAndSize);
             }
 
             // TODO: show blocks/items used for crafting if they're less than a few
