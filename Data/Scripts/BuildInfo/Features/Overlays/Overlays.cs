@@ -959,7 +959,7 @@ namespace Digi.BuildInfo.Features.Overlays
         private StringBuilder label = new StringBuilder(128);
         private StringBuilder LabelTextBuilder() => label.Clear();
 
-        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.3f, float lineThick = 0.005f)
+        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.3f, float lineThick = 0.005f, OverlayLabelsFlags settingFlag = OverlayLabelsFlags.Other)
         {
             var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
@@ -967,7 +967,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
-            if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Axis))
+            if(Config.OverlayLabels.IsSet(settingFlag))
             {
                 var textWorldPos = start + direction * lineHeight;
                 AnyLabelShown = true;
@@ -1046,7 +1046,7 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             var dir = Vector3D.TransformNormal(direction * 0.5f, matrix);
             var text = AXIS_LABELS[(int)id];
-            DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f);
+            DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f, settingFlag: OverlayLabelsFlags.Axis);
         }
         #endregion Draw helpers
     }
