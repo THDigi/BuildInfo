@@ -95,6 +95,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //MOUNT,
             //MOUNT_ROTATE,
             //MOUNT_DISABLED,
+            MODEL_OFFSET,
             DRILL_SENSOR,
             DRILL_MINE,
             DRILL_CARVE,
@@ -325,6 +326,27 @@ namespace Digi.BuildInfo.Features.Overlays
                 //        MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, MySimpleObjectRasterizer.Wireframe, 4, 0.001f, lineMaterial: MyStringId.GetOrCompute("Square"), blendType: BlendTypeEnum.PostPP);
                 //    }
                 //}
+
+                if(Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
+                {
+                    const float OffsetLineThickness = 0.005f;
+                    const float OffsetPointThickness = 0.05f;
+                    Color color = new Color(255, 0, 255);
+
+                    var start = drawMatrix.Translation;
+                    var dir = Vector3D.TransformNormal(def.ModelOffset, drawMatrix);
+
+                    var cm = MyAPIGateway.Session.Camera.WorldMatrix;
+                    var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
+
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, dir, 1f, OffsetLineThickness, LABEL_SHADOW_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, dir, 1f, OffsetLineThickness, blendType: OVERLAY_BLEND_TYPE);
+
+                    DrawLineLabel(TextAPIMsgIds.MODEL_OFFSET, drawMatrix.Translation + dir, dir, color, "Center", 0);
+
+                    MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, LABEL_SHADOW_COLOR, start + dir + offset, OffsetPointThickness, 0, blendType: OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, start + dir, OffsetPointThickness, 0, blendType: OVERLAY_BLEND_TYPE);
+                }
 
                 #region Draw mount points
                 if(TextAPIEnabled)

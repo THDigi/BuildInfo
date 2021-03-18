@@ -1453,8 +1453,12 @@ namespace Digi.BuildInfo.Features
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = def.Id.TypeId.ToString();
-                AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
-                AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
+                AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
+                AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Color(COLOR_NORMAL).Append(def.BlockPairName);
+
+                var offset = def.ModelOffset;
+                if(offset.LengthSquared() > 0)
+                    AddLine().Color(COLOR_INTERNAL).Label("ModelOffset").Color(COLOR_WARNING).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z);
             }
             #endregion Internal info
 
