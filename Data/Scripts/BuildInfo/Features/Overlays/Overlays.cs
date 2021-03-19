@@ -378,7 +378,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     var center = def.Center;
                     var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cellSize) * drawMatrix;
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
-                    bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+                    bool drawLabel = CanDrawLabel();
 
                     if(DrawOverlay == 1 && BlockFunctionalForPressure)
                     {
@@ -563,7 +563,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //}
 
             var cubeSize = def.Size * (cellSize * 0.5f);
-            bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+            bool drawLabel = CanDrawLabel();
 
             //if(!drawLabel && !DoorAirtightBlink)
             //    return;
@@ -738,7 +738,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
             //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
 
-            if(TextAPIEnabled && Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other))
+            if(CanDrawLabel())
             {
                 var labelDir = coneMatrix.Up;
                 var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
@@ -812,7 +812,7 @@ namespace Digi.BuildInfo.Features.Overlays
             var colorCarveFace = colorCarveText * 0.75f;
             float lineThickness = 0.03f;
             var material = OVERLAY_LASER_MATERIAL;
-            bool drawLabels = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+            bool drawLabel = CanDrawLabel();
 
             #region Mining
             var mineMatrix = drawMatrix;
@@ -820,7 +820,7 @@ namespace Digi.BuildInfo.Features.Overlays
             float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
             Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
-            if(drawLabels)
+            if(drawLabel)
             {
                 var labelDir = mineMatrix.Up;
                 var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
@@ -833,7 +833,7 @@ namespace Digi.BuildInfo.Features.Overlays
             float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
             Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
-            if(drawLabels)
+            if(drawLabel)
             {
                 var labelDir = carveMatrix.Up;
                 var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
@@ -851,7 +851,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref colorSensorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
             }
 
-            if(drawLabels)
+            if(drawLabel)
             {
                 var labelDir = drawMatrix.Left;
                 var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
@@ -881,7 +881,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Utils.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
-            if(Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled)
+            if(CanDrawLabel())
             {
                 bool isWelder = def is MyShipWelderDefinition;
                 var labelDir = drawMatrix.Down;
@@ -904,7 +904,7 @@ namespace Digi.BuildInfo.Features.Overlays
             var color = Color.Red;
             var colorFace = color * 0.5f;
             var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
-            bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+            bool drawLabel = CanDrawLabel();
 
             foreach(var flame in data.Flames)
             {
@@ -932,7 +932,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             var color = new Color(20, 255, 155);
             var colorFace = color * 0.5f;
-            bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+            bool drawLabel = CanDrawLabel();
 
             foreach(var obb in data.Magents)
             {
@@ -961,7 +961,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             var color = new Color(20, 255, 100);
             var colorFace = color * 0.5f;
-            bool drawLabel = Config.OverlayLabels.IsSet(OverlayLabelsFlags.Other) && TextAPIEnabled;
+            bool drawLabel = CanDrawLabel();
 
             var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
             var m = data.boxLocalMatrix * drawMatrix;
@@ -989,7 +989,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
-            if(Config.OverlayLabels.IsSet(settingFlag))
+            if(Config.OverlayLabels.IsSet(settingFlag) || (Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()))
             {
                 var textWorldPos = start + direction * lineHeight;
                 AnyLabelShown = true;
@@ -1071,5 +1071,10 @@ namespace Digi.BuildInfo.Features.Overlays
             DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f, settingFlag: OverlayLabelsFlags.Axis);
         }
         #endregion Draw helpers
+
+        private bool CanDrawLabel(OverlayLabelsFlags labelsSetting = OverlayLabelsFlags.Other)
+        {
+            return TextAPIEnabled && (Config.OverlayLabels.IsSet(labelsSetting) || (Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()));
+        }
     }
 }

@@ -68,6 +68,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
+        public BoolSetting OverlaysLabelsAlt;
 
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;
@@ -357,6 +358,9 @@ namespace Digi.BuildInfo.Features.Config
             OverlayLabels = new FlagsSetting<OverlayLabelsFlags>(Handler, "Overlay: Labels", OverlayLabelsFlags.All,
                 "Pick what labels can be shown for overlays.",
                 "Not yet fully expanded to include detailed settings, just axes and eveything else for now.");
+
+            OverlaysLabelsAlt = new BoolSetting(Handler, "Overlays: Show Labels with Alt key", true,
+                "Turning off labels above and having this setting on allows you to see labels when holding Alt key.");
 
             LeakParticleColorWorld = new ColorSetting(Handler, "LeakInfo: Particle Color World", new Color(0, 120, 255), false,
                 "Color of airleak indicator particles in world, only visible if nothing is in the way.");

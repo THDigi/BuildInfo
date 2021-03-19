@@ -42,6 +42,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private readonly ItemGroup groupPlaceInfo = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
+        private readonly ItemGroup groupOverlayLabelsAlt = new ItemGroup();
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
 
@@ -121,6 +122,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             SimpleToggle(Category_Overlays, "Show when HUD is off", Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
+            SimpleToggle(Category_Overlays, "Labels shown with ALT", Config.OverlaysLabelsAlt, groupOverlayLabelsAlt);
 
             SimpleToggle(Category_HUD, "Block Info Additions", Config.BlockInfoAdditions);
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
