@@ -33,18 +33,25 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         // groups of items to update on when other settings are changed
         private readonly ItemGroup groupTextInfo = new ItemGroup();
         private readonly ItemGroup groupCustomStyling = new ItemGroup();
-        private readonly ItemGroup groupBinds = new ItemGroup();
-        private readonly ItemGroup groupLabelsToggle = new ItemGroup();
-        private readonly ItemGroup groupLabels = new ItemGroup();
-        private readonly ItemGroup groupAimInfoToggle = new ItemGroup();
-        private readonly ItemGroup groupAimInfo = new ItemGroup();
-        private readonly ItemGroup groupPlaceInfoToggle = new ItemGroup();
-        private readonly ItemGroup groupPlaceInfo = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsAlt = new ItemGroup();
+        private readonly ItemGroup groupBinds = new ItemGroup(); // for updating titles on bindings that use other bindings
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
+
+        void RefreshAll()
+        {
+            groupTextInfo.SetInteractable(Config.TextShow.Value);
+            groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
+            groupToolbarLabels.SetInteractable(Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
+            groupShipToolInvBar.SetInteractable(Config.ShipToolInvBarShow.Value);
+            groupOverlayLabelsAlt.SetInteractable(Config.OverlayLabels.Value != int.MaxValue);
+
+            groupBinds.Update();
+
+            groupAll.Update();
+        }
 
         private readonly StringBuilder tmp = new StringBuilder();
 
@@ -167,24 +174,21 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 Config.Handler.SaveToFile();
                 Config.Reload();
                 MyAPIGateway.Utilities.ShowNotification("Config reset to defaults and saved.", 3000, FontsHandler.RedSh);
+                RefreshAll();
             });
-            // FIXME: resetting to defaults (probably happens with delete config+reload too) doesn't update interactible properly, might need redesign...
-
 
             var button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
             button.Interactable = (Log.WorkshopId > 0);
 
-            // gray out items that need to start like that
-            groupTextInfo.SetInteractable(Config.TextShow.Value);
-            groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
-            groupToolbarLabels.SetInteractable(Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
+            // set initial interactable states
+            RefreshAll();
 
             Config.Handler.SettingsLoaded += Handler_SettingsLoaded;
         }
 
         void Handler_SettingsLoaded()
         {
-            groupAll.Update();
+            RefreshAll();
         }
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
@@ -341,7 +345,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_OverlayLabelToggles(MenuCategoryBase category)
         {
             var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Config.OverlayLabels,
-                onValueSet: (flag, set) => ApplySettings(redraw: false)
+                onValueSet: (flag, set) =>
+                {
+                    groupOverlayLabelsAlt.SetInteractable(Config.OverlayLabels.Value != int.MaxValue);
+                    ApplySettings(redraw: false);
+                }
             );
 
             groupAll.Add(item);
