@@ -128,9 +128,10 @@ namespace Digi.ConfigLib
                         }
                     }
 
-                    SettingsLoaded?.Invoke();
                     success = true;
                 }
+
+                SettingsLoaded?.Invoke();
 
                 ConfigVersion.ResetToDefault(); // update config version
             }
