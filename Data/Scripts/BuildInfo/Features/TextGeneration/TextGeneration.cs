@@ -3081,23 +3081,23 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var weapon = (MyWeaponBlockDefinition)def;
-            var wepDef = MyDefinitionManager.Static.GetWeaponDefinition(weapon.WeaponDefinitionId);
+            var weaponDef = (MyWeaponBlockDefinition)def;
 
-            if(wepDef == null)
+            MyWeaponDefinition wpDef;
+            if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponDef.WeaponDefinitionId, out wpDef))
             {
-                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weapon.WeaponDefinitionId.ToString());
+                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weaponDef.WeaponDefinitionId.ToString());
                 return;
             }
 
             var turret = def as MyLargeTurretBaseDefinition;
             float requiredPowerInput = (turret != null ? Hardcoded.Turret_PowerReq : Hardcoded.ShipGun_PowerReq);
 
-            PowerRequired(requiredPowerInput, weapon.ResourceSinkGroup, powerHardcoded: true);
+            PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                AddLine().Label("Inventory").InventoryFormat(weapon.InventoryMaxVolume, wepDef.AmmoMagazinesId);
+                AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId);
             }
 
             if(turret != null)
@@ -3128,7 +3128,7 @@ namespace Digi.BuildInfo.Features
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 // accuracy cone diameter = tan(angle) * baseRadius * 2
-                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wepDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wepDef.ReloadTime / 1000);
+                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wpDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wpDef.ReloadTime / 1000);
             }
 
             if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
@@ -3136,13 +3136,13 @@ namespace Digi.BuildInfo.Features
                 ammoProjectiles.Clear();
                 ammoMissiles.Clear();
 
-                for(int i = 0; i < wepDef.AmmoMagazinesId.Length; i++)
+                for(int i = 0; i < wpDef.AmmoMagazinesId.Length; i++)
                 {
-                    var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wepDef.AmmoMagazinesId[i]);
+                    var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[i]);
                     var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
                     int ammoType = (int)ammo.AmmoType;
 
-                    if(wepDef.WeaponAmmoDatas[ammoType] != null)
+                    if(wpDef.WeaponAmmoDatas[ammoType] != null)
                     {
                         switch(ammoType)
                         {
@@ -3196,7 +3196,7 @@ namespace Digi.BuildInfo.Features
                 {
                     // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
 
-                    var projectilesData = wepDef.WeaponAmmoDatas[0];
+                    var projectilesData = wpDef.WeaponAmmoDatas[0];
 
                     AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
@@ -3239,7 +3239,7 @@ namespace Digi.BuildInfo.Features
 
                 if(ammoMissiles.Count > 0)
                 {
-                    var missileData = wepDef.WeaponAmmoDatas[1];
+                    var missileData = wpDef.WeaponAmmoDatas[1];
 
                     AddLine().Label("Missiles - Fire rate").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");

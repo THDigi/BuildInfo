@@ -65,9 +65,13 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         public bool Init(IMyUserControllableGun gunBlock)
         {
             Block = gunBlock;
-            gun = (IMyGunObject<MyGunBase>)gunBlock;
-            var blockDef = (MyWeaponBlockDefinition)gunBlock.SlimBlock.BlockDefinition;
-            weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(blockDef.WeaponDefinitionId);
+            gun = gunBlock as IMyGunObject<MyGunBase>;
+            var blockDef = gunBlock.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+            if(gun == null || blockDef == null)
+                return false;
+
+            if(!MyDefinitionManager.Static.TryGetWeaponDefinition(blockDef.WeaponDefinitionId, out weaponDef))
+                return false;
 
             if(weaponDef.ReloadTime == 0)
                 return false;

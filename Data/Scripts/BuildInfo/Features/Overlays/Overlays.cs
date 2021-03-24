@@ -705,8 +705,11 @@ namespace Digi.BuildInfo.Features.Overlays
             const float lineHeight = 0.5f;
             var color = Color.Red;
             var colorFace = color * 0.5f;
-            var weaponBlockDef = (MyWeaponBlockDefinition)def;
-            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
+            var weaponBlockDef = def as MyWeaponBlockDefinition;
+            MyWeaponDefinition weaponDef;
+            if(weaponBlockDef == null || !MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef))
+                return;
+
             MyAmmoDefinition ammo = null;
 
             IMySlimBlock block = GetOverlayBlock();

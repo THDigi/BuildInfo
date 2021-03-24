@@ -54,10 +54,10 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(tick >= 30)
+            if(tick == 30)
             {
-                DelayedRegister();
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+                DelayedRegister();
             }
         }
 
@@ -296,8 +296,8 @@ namespace Digi.BuildInfo.Features
             if(weaponItemDef == null)
                 return;
 
-            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponItemDef.WeaponDefinitionId);
-            if(weaponDef == null)
+            MyWeaponDefinition weaponDef;
+            if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out weaponDef))
                 return;
 
             // TODO some weapon stats? they depend on the ammo tho...
@@ -338,51 +338,60 @@ namespace Digi.BuildInfo.Features
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
-                var weaponItemDef = def as MyWeaponItemDefinition;
-                if(weaponItemDef != null)
                 {
-                    var wpDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponItemDef.WeaponDefinitionId);
-                    if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                    var weaponItemDef = def as MyWeaponItemDefinition;
+                    if(weaponItemDef != null)
                     {
-                        foreach(var magId in wpDef.AmmoMagazinesId)
-                        {
-                            if(magId == magDef.Id)
-                            {
-                                NameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
-                                break;
-                            }
-                        }
-                    }
-                    continue;
-                }
+                        MyWeaponDefinition wpDef;
+                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out wpDef))
+                            continue;
 
-                var weaponBlockDef = def as MyWeaponBlockDefinition;
-                if(weaponBlockDef != null)
-                {
-                    var wpDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
-                    if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
-                    {
-                        foreach(var magId in wpDef.AmmoMagazinesId)
+                        if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
                         {
-                            if(magId == magDef.Id)
+                            foreach(var magId in wpDef.AmmoMagazinesId)
                             {
-                                string key = def.DisplayNameText;
-                                Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                                Sizes existingSize;
-                                if(NameAndSize.TryGetValue(key, out existingSize))
+                                if(magId == magDef.Id)
                                 {
-                                    if(existingSize != Sizes.Both && existingSize != currentSize)
-                                        NameAndSize[key] = Sizes.Both;
+                                    NameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
+                                    break;
                                 }
-                                else
-                                {
-                                    NameAndSize[key] = currentSize;
-                                }
-                                break;
                             }
                         }
+                        continue;
                     }
-                    continue;
+                }
+                {
+                    var weaponBlockDef = def as MyWeaponBlockDefinition;
+                    if(weaponBlockDef != null)
+                    {
+                        MyWeaponDefinition wpDef;
+                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out wpDef))
+                            continue;
+
+                        if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                        {
+                            foreach(var magId in wpDef.AmmoMagazinesId)
+                            {
+                                if(magId == magDef.Id)
+                                {
+                                    string key = def.DisplayNameText;
+                                    Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                                    Sizes existingSize;
+                                    if(NameAndSize.TryGetValue(key, out existingSize))
+                                    {
+                                        if(existingSize != Sizes.Both && existingSize != currentSize)
+                                            NameAndSize[key] = Sizes.Both;
+                                    }
+                                    else
+                                    {
+                                        NameAndSize[key] = currentSize;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        continue;
+                    }
                 }
             }
 
