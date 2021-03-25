@@ -130,6 +130,7 @@ namespace Digi.BuildInfo.Systems
         private IMyControllableEntity prevControlled;
         private MyCasterComponent handToolCasterComp;
         private bool closedSomeUI = false;
+        private int recheckOBAtTick = 0;
 
         public EquipmentMonitor(BuildInfoMod main) : base(main)
         {
@@ -370,11 +371,14 @@ namespace Digi.BuildInfo.Systems
                 return;
             }
 
-            bool check = controllerChanged || closedSomeUI; // check tools if controller was just changed or UI closed (because you can change tools in G menu)
+            int tick = Main.Tick;
+            bool check = recheckOBAtTick == tick || controllerChanged || closedSomeUI; // check tools if controller was just changed or UI closed (because you can change tools in G menu)
             closedSomeUI = false;
 
             if(!check && Features.ToolbarInfo.ToolbarMonitor.EnableGamepadSupport && Main.Tick % 60 == 0)
                 check = true;
+
+            bool isInput = false;
 
             #region Check if any toolbar slot or next/prev was pressed
             if(!check && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible)
@@ -394,7 +398,10 @@ namespace Digi.BuildInfo.Systems
                     || MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_PREV_ITEM))
                     {
                         if(!MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore toolbar layer changes
+                        {
                             check = true;
+                            isInput = true;
+                        }
                     }
 
                     if(!check)
@@ -407,6 +414,7 @@ namespace Digi.BuildInfo.Systems
                             if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
                             {
                                 check = true;
+                                isInput = true;
                                 break;
                             }
                         }
@@ -425,6 +433,7 @@ namespace Digi.BuildInfo.Systems
                         || MyAPIGateway.Input.IsNewJoystickButtonReleased(MyJoystickButtonsEnum.JDUp))
                         {
                             check = true;
+                            isInput = true;
                         }
                     }
 
@@ -435,6 +444,7 @@ namespace Digi.BuildInfo.Systems
                         && MyAPIGateway.Input.IsJoystickButtonPressed(MyJoystickButtonsEnum.J09))
                         {
                             check = true;
+                            isInput = true;
                         }
                     }
                 }
@@ -447,6 +457,12 @@ namespace Digi.BuildInfo.Systems
             // TODO: find a better way to get selected tool type
             ShipControllerOB = shipController.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_ShipController;
             ShipControllerOBChanged?.Invoke(ShipControllerOB);
+
+            // HACK: recheck a few ticks after an input press
+            if(!isInput && !MyAPIGateway.Multiplayer.IsServer)
+            {
+                recheckOBAtTick = tick + 10;
+            }
 
             var selectedToolId = ShipControllerOB.SelectedGunId;
             if(selectedToolId.HasValue)
