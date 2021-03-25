@@ -201,7 +201,7 @@
     <Compile Include="Features\ReloadTracker\Weapon.cs" />
     <Compile Include="Features\ShipToolInventoryBar.cs" />
     <Compile Include="Features\InterModAPI.cs" />
-    <Compile Include="Features\StaticGridMassCache.cs" />
+    <Compile Include="Features\GridMassCompute.cs" />
     <Compile Include="Features\TerminalInfo\TerminalInfo.cs" />
     <Compile Include="Features\TextAPIMenu\IItem.cs" />
     <Compile Include="Features\TextAPIMenu\ItemBase.cs" />
