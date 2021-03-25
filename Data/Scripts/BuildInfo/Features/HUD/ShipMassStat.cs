@@ -11,7 +11,7 @@ namespace Digi.BuildInfo.Features.HUD
 {
     public class ShipMassStat : IMyHudStat
     {
-        public const string NumberFormat = "###,###,###,###,###,###,###";
+        public const string NumberFormat = "###,###,###,###,###,###,##0";
 
         public MyStringHash Id { get; private set; }
         public float MinValue => 0f;
@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         private long PrevGridId;
         private HashSet<IMyCubeGrid> Grids = new HashSet<IMyCubeGrid>();
-        private string StringValueCache = "";
+        private string StringValueCache = "...";
 
         public ShipMassStat()
         {

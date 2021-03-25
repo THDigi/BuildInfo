@@ -76,7 +76,7 @@ namespace Digi.BuildInfo.Features.HUD
         public string UnitSymbol { get; protected set; } = "";
         public int ValueWidth { get; protected set; } = 3;
         public int UpdateTicks { get; protected set; } = 10;
-        public string ValueStringCache { get; private set; } = "";
+        public string ValueStringCache { get; private set; } = "...";
 
         private bool? PrevSetting = null;
 

@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features.HUD
             }
         }
 
-        string StringValueCache = "";
+        string StringValueCache = "...";
         int Containers = 0;
         bool WasInShip = false;
         bool UsingGroup;
