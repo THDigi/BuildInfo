@@ -3086,7 +3086,11 @@ namespace Digi.BuildInfo.Features
             MyWeaponDefinition wpDef;
             if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponDef.WeaponDefinitionId, out wpDef))
             {
-                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ").Append(weaponDef.WeaponDefinitionId.ToString());
+                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ");
+                if(weaponDef.WeaponDefinitionId.TypeId != typeof(MyObjectBuilder_WeaponDefinition))
+                    GetLine().Append(weaponDef.WeaponDefinitionId.ToString());
+                else
+                    GetLine().Append(weaponDef.WeaponDefinitionId.SubtypeName);
                 return;
             }
 
