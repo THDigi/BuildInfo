@@ -423,7 +423,7 @@ namespace Digi.BuildInfo.Utilities
             if(kg >= 1000000)
                 return s.Number(kg / 1000000f).Append(" kt");
 
-            if(kg >= 1000)
+            if(kg >= 10000)
                 return s.Number(kg / 1000f).Append(" t");
 
             if(kg >= 1)
