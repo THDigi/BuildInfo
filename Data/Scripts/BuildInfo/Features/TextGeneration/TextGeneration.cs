@@ -1054,22 +1054,14 @@ namespace Digi.BuildInfo.Features
 
                     if(grid.Physics != null)
                     {
-                        float physMass = grid.Physics.Mass;
-
-                        // HACK: manually compute mass for static grids
-                        if(grid.IsStatic && physMass == 0)
+                        if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
                         {
-                            if(grid.EntityId != prevSelectedGrid || --gridMassComputeCooldown <= 0)
-                            {
-                                prevSelectedGrid = grid.EntityId;
-                                gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
-                                gridMassCache = BuildInfoMod.Instance.StaticGridMassCache.GetStaticGridMass(grid);
-                            }
-
-                            physMass = gridMassCache;
+                            prevSelectedGrid = grid.EntityId;
+                            gridMassComputeCooldown = (60 * 3) / 10; // divide by 10 because this method executes very 10 ticks
+                            gridMassCache = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
                         }
 
-                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").MassFormat(physMass);
+                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").MassFormat(gridMassCache);
                     }
                 }
             }
@@ -1337,14 +1329,13 @@ namespace Digi.BuildInfo.Features
             if(!projected && Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
-
                 if(controller != null)
                 {
                     var impulse = Hardcoded.ShipGrinderImpulseForce(controller.CubeGrid, aimedBlock);
-
                     if(impulse > 0.00001f)
                     {
-                        var speed = impulse / aimedBlock.CubeGrid.Physics.Mass;
+                        float gridMass = Main.GridMassCompute.GetGridMass(aimedBlock.CubeGrid);
+                        float speed = impulse / gridMass;
 
                         if(speed >= 0.5f)
                             AddLine(FontsHandler.RedSh).Color(COLOR_BAD);

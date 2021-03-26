@@ -13,7 +13,7 @@ using VRage.ModAPI;
 
 namespace Digi.BuildInfo.Features
 {
-    public class StaticGridMassCache : ModComponent
+    public class GridMassCompute : ModComponent
     {
         public const int MassDataExpireTicks = (Constants.TICKS_PER_SECOND * 60 * 5);
         public const int MassDataCheckTicks = (Constants.TICKS_PER_SECOND * 60);
@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features
         readonly Dictionary<IMyCubeGrid, MassData> Grids = new Dictionary<IMyCubeGrid, MassData>();
         readonly HashSet<IMyCubeGrid> KeysToRemove = new HashSet<IMyCubeGrid>();
 
-        public StaticGridMassCache(BuildInfoMod main) : base(main)
+        public GridMassCompute(BuildInfoMod main) : base(main)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
@@ -60,17 +60,18 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public float GetStaticGridMass(IMyCubeGrid grid)
+        public float GetGridMass(IMyCubeGrid grid)
         {
-            if(!grid.IsStatic)
-                throw new Exception("Not static!");
+            var internalGrid = (MyCubeGrid)grid;
+            float mass = internalGrid.Mass;
+            if(mass > 0)
+                return mass;
 
             MassData data;
             if(!Grids.TryGetValue(grid, out data))
             {
                 data = DataPool.Get();
                 data.Init(grid);
-                grid.OnIsStaticChanged += StaticChanged;
                 grid.OnMarkForClose += GridMarkedForClose;
 
                 Grids[grid] = data;
@@ -86,7 +87,6 @@ namespace Digi.BuildInfo.Features
                 if(grid == null)
                     return;
 
-                grid.OnIsStaticChanged -= StaticChanged;
                 grid.OnMarkForClose -= GridMarkedForClose;
 
                 var data = Grids.GetValueOrDefault(grid, null);
@@ -102,12 +102,6 @@ namespace Digi.BuildInfo.Features
             {
                 Log.Error(e);
             }
-        }
-
-        void StaticChanged(IMyCubeGrid grid, bool isStatic)
-        {
-            if(!isStatic)
-                RemoveEntry(grid);
         }
 
         void GridMarkedForClose(IMyEntity ent)

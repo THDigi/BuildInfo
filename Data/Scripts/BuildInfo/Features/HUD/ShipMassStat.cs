@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Features.HUD
         public float MaxValue => 1f;
         public string GetValueString() => StringValueCache ?? ""; // must never be null
 
-        private float _currentValue;
+        private float _currentValue = -1;
         public float CurrentValue
         {
             get { return _currentValue; }
@@ -74,31 +74,32 @@ namespace Digi.BuildInfo.Features.HUD
                         return;
                     }
 
-                    float mass = 0;
+                    // HACK: physics mass can be 0 if ship is landing gear'd to another ship and you're a MP client, and who knows what other cases.
+                    // this gets the mass of non-static grids and works for MP clients, but it's affected by inventory multiplier so it's not real mass.
+                    float baseMass;
+                    float physMass;
+                    float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
 
+                    // remove the ship inventory multiplier from the number.
+                    float invMultiplier = MyAPIGateway.Session.InventoryMultiplier;
+                    if(invMultiplier != 1f)
+                        mass = ((mass - baseMass) / invMultiplier) + baseMass;
+
+                    // then add static grids' masses
                     Grids.Clear();
                     MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
 
                     foreach(IMyCubeGrid g in Grids)
                     {
-                        if(g.Physics == null || !g.Physics.Enabled)
-                            continue;
-
-                        float physMass = g.Physics.Mass;
-
-                        if(g.IsStatic && physMass == 0)
+                        if(g.IsStatic && g.Physics != null && g.Physics.Enabled)
                         {
-                            mass += Main.StaticGridMassCache.GetStaticGridMass(g);
-                        }
-                        else
-                        {
-                            mass += physMass;
+                            mass += Main.GridMassCompute.GetGridMass(g);
                         }
                     }
 
                     Grids.Clear();
 
-                    // must be kept as kg because of the "<value> Kg" in the HUD definition.
+                    // must be kept as kg because of the "<value> Kg" format in the HUD definition.
                     CurrentValue = mass;
                 }
             }
