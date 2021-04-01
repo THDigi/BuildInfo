@@ -1,4 +1,4 @@
-// v1.194.211
+// 01_197_181
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -146,7 +146,7 @@ namespace Sandbox.Game.GameSystems
 		{
 			get
 			{
-				return this.m_grid;
+				return base.Grid;
 			}
 		}
 
@@ -204,7 +204,7 @@ namespace Sandbox.Game.GameSystems
 
 		private void ScheduleUpdate()
 		{
-			if (this.m_grid == null)
+			if (base.Grid == null)
 			{
 				return;
 			}
@@ -735,7 +735,7 @@ namespace Sandbox.Game.GameSystems
 		private void StartGenerateAirtightData()
 		{
 			this.m_isProcessingData = true;
-			if (this.m_grid != null)
+			if (base.Grid != null)
 			{
 				base.DeSchedule();
 			}
@@ -1016,22 +1016,23 @@ namespace Sandbox.Game.GameSystems
 				matrixD.Translation = vector3D;
 				matrixD *= *grid.PositionComp.WorldMatrixNormalizedInv;
 			}
-			Vector3D translation = vector3D;
+			Vector3D value2 = vector3D;
 			MySlimBlock cubeBlock = grid.GetCubeBlock(from);
 			if (cubeBlock != null)
 			{
-				translation = 0.5 * (cubeBlock.CubeGrid.GridIntegerToWorld(cubeBlock.Min) + cubeBlock.CubeGrid.GridIntegerToWorld(cubeBlock.Max));
+				value2 = 0.5 * (cubeBlock.CubeGrid.GridIntegerToWorld(cubeBlock.Min) + cubeBlock.CubeGrid.GridIntegerToWorld(cubeBlock.Max));
+				Vector3 value3 = cubeBlock.BlockDefinition.DepressurizationEffectOffset ?? Vector3.Zero;
 				if (vector3I.IsAxisAligned())
 				{
-					matrixD.Translation = 0.5f * (cubeBlock.Min + cubeBlock.Max) * ((grid.GridSizeEnum == MyCubeSize.Small) ? 0.5f : 2.5f);
+					matrixD.Translation = 0.5f * (cubeBlock.Min + cubeBlock.Max) * ((grid.GridSizeEnum == MyCubeSize.Small) ? 0.5f : 2.5f) + value3;
 				}
 				else
 				{
-					matrixD.Translation = translation;
+					matrixD.Translation = value2 + value3;
 				}
 			}
 			MyParticleEffect myParticleEffect;
-			if (MyParticlesManager.TryCreateParticleEffect("OxyLeakLarge", ref matrixD, ref translation, grid.Render.GetRenderObjectID(), out myParticleEffect))
+			if (MyParticlesManager.TryCreateParticleEffect("OxyLeakLarge", ref matrixD, ref value2, grid.Render.GetRenderObjectID(), out myParticleEffect))
 			{
 				MyEntity3DSoundEmitter myEntity3DSoundEmitter = MyAudioComponent.TryGetSoundEmitter();
 				if (myEntity3DSoundEmitter != null)
@@ -1388,12 +1389,15 @@ namespace Sandbox.Game.GameSystems
 			{
 				return null;
 			}
-			MyOxygenBlock myOxygenBlock = this.m_cubeRoom[vector3I.X, vector3I.Y, vector3I.Z];
-			if (myOxygenBlock == null)
+			if (this.m_cubeRoom != null)
 			{
-				return null;
+				MyOxygenBlock myOxygenBlock = this.m_cubeRoom[vector3I.X, vector3I.Y, vector3I.Z];
+				if (myOxygenBlock != null)
+				{
+					return myOxygenBlock.Room;
+				}
 			}
-			return myOxygenBlock.Room;
+			return null;
 		}
 
 		public MyOxygenBlock GetOxygenBlock(Vector3D worldPosition)
