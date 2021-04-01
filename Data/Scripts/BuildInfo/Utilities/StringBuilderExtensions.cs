@@ -546,18 +546,24 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
+            if(volume == 0)
+            {
+                s.Append("0 L");
+                return s;
+            }
+
             if(Settings.PlaceInfo.IsSet(PlaceInfoFlags.InventoryVolumeMultiplied))
             {
                 var mul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
 
-                MyValueFormatter.AppendVolumeInBestUnit(volume * mul, s);
+                s.VolumeFormat(volume * 1000 * mul);
 
                 if(Math.Abs(mul - 1) > 0.001f)
                     s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetFormatting();
             }
             else
             {
-                MyValueFormatter.AppendVolumeInBestUnit(volume, s);
+                s.VolumeFormat(volume * 1000);
             }
 
             if(Settings.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
@@ -565,18 +571,23 @@ namespace Digi.BuildInfo.Utilities
                 if(types == null && items == null)
                     types = Constants.DEFAULT_ALLOWED_TYPES;
 
-                var physicalItems = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
                 var minMass = float.MaxValue;
                 var maxMass = 0f;
 
-                foreach(var item in physicalItems)
+                foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
                 {
-                    if(!item.Public || item.Mass <= 0 || item.Volume <= 0)
+                    var physDef = def as MyPhysicalItemDefinition;
+                    if(physDef == null || !physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
                         continue; // skip hidden and physically impossible items
 
-                    if((types != null && isWhitelist == types.Contains(item.Id.TypeId)) || (items != null && isWhitelist == items.Contains(item.Id)))
+                    if((types != null && isWhitelist == types.Contains(physDef.Id.TypeId)) || (items != null && isWhitelist == items.Contains(physDef.Id)))
                     {
-                        var fillMass = item.Mass * (volume / item.Volume);
+                        float fillMass = physDef.Mass;
+                        if(physDef.HasIntegralAmounts)
+                            fillMass *= (int)Math.Floor(volume / physDef.Volume);
+                        else
+                            fillMass *= (volume / physDef.Volume);
+
                         minMass = Math.Min(fillMass, minMass);
                         maxMass = Math.Max(fillMass, maxMass);
                     }
