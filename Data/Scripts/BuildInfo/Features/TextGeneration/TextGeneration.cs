@@ -2585,25 +2585,25 @@ namespace Digi.BuildInfo.Features
 
             if(production.BlueprintClasses != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
+                AddLine();
+
+                if(refinery != null)
+                    GetLine().Append("Refines: ");
+                else if(gasTank != null)
+                    GetLine().Append("Refills: ");
+                else if(assembler != null)
+                    GetLine().Append("Builds: ");
+                else if(oxygenGenerator != null)
+                    GetLine().Append("Generates: ");
+                else
+                    GetLine().Append("Blueprints: ");
+
                 if(production.BlueprintClasses.Count == 0)
                 {
-                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Has no blueprint classes.");
+                    GetLine().Color(COLOR_WARNING).Append("N/A");
                 }
                 else
                 {
-                    AddLine();
-
-                    if(refinery != null)
-                        GetLine().Append("Refines: ");
-                    else if(gasTank != null)
-                        GetLine().Append("Refills: ");
-                    else if(assembler != null)
-                        GetLine().Append("Builds: ");
-                    else if(oxygenGenerator != null)
-                        GetLine().Append("Generates: ");
-                    else
-                        GetLine().Append("Blueprints: ");
-
                     foreach(var bp in production.BlueprintClasses)
                     {
                         var name = bp.Id.SubtypeName; // bp.DisplayNameText; // some are really badly named, like BasicIngots -> Ingots, ugh.
