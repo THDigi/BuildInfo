@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(tick == 30)
+            if(tick >= 30)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
                 DelayedRegister();
