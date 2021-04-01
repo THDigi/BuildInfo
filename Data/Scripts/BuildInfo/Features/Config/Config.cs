@@ -199,7 +199,8 @@ namespace Digi.BuildInfo.Features.Config
 
             Killswitch = new BoolSetting(Handler, KillswitchName, false,
                 "Prevents the most of the mod scripts from loading.",
-                "Requires world reload/rejoin to work.");
+                "Requires world reload/rejoin to work." +
+                "NOTE: If you're testing an issue, please rejoin/reload before you try this killswitch, to ensure that rejoin/reload doesn't fix your issue before blaming my mod, thanks :P");
 
             TextShow = new BoolSetting(Handler, "Text: Show", true,
                 "Toggles if both text info boxes are shown");
