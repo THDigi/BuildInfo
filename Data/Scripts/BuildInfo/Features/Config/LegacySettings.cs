@@ -21,12 +21,12 @@ namespace Digi.BuildInfo.Features.Config
             newConfigExists = MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FileName, typeof(Config));
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             LoadAndDelete();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 

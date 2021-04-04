@@ -71,14 +71,14 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             RegisterFormats();
 
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= TerminalCustomControlGetter;
         }
@@ -192,7 +192,7 @@ namespace Digi.BuildInfo.Features
             formatLookup.Add(blockType, call);
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(powerSourcesCooldown > 0)
                 powerSourcesCooldown--;

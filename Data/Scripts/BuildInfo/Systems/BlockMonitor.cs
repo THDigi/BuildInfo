@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Systems
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             CanAddTypes = false;
 
@@ -47,7 +47,7 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.Entities.OnEntityAdd -= EntitySpawned;
         }

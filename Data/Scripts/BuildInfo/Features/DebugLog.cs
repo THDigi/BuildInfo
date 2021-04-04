@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             if(Log.WorkshopId == 0) // only local mod
             {
@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;
@@ -105,7 +105,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(LogList == null || LogList.Count == 0)
                 return;

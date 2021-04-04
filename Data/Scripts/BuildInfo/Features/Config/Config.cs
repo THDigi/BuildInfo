@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features.Config
             Handler = new ConfigHandler(FileName, ConfigVersion, ConfigSizeByteEst / 2);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Handler.SettingsLoaded += SettingsLoaded;
 
@@ -112,7 +112,7 @@ namespace Digi.BuildInfo.Features.Config
             Save();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;

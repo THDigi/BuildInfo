@@ -107,12 +107,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.ShipControllerOBChanged += ToolbarOBChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;
@@ -300,7 +300,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         }
 
         // Handling toolbar page and action trigger detection
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(!paused && DebugLogging)
                 Log.Info($"---------------------------------------- INDEX RESET ------------------------------------------");

@@ -137,12 +137,12 @@ namespace Digi.BuildInfo.Systems
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved += GUIControlRemoved;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved -= GUIControlRemoved;
         }
@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.Systems
             closedSomeUI = true;
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             var controlled = MyAPIGateway.Session.ControlledObject;
             var shipController = controlled as IMyShipController;

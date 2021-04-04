@@ -14,11 +14,11 @@ namespace Digi.BuildInfo.Features
             MyAPIGateway.Utilities.RegisterMessageHandler(MOD_API_ID, ModMessageReceived);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.Utilities.UnregisterMessageHandler(MOD_API_ID, ModMessageReceived);
         }

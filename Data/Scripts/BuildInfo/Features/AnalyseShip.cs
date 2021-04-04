@@ -89,14 +89,14 @@ namespace Digi.BuildInfo.Features
             WindowClosedAction = new Action<ResultEnum>(WindowClosed);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             CreateProjectorButton();
 
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomTerminal;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= CustomTerminal;
         }

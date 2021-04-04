@@ -13,12 +13,12 @@ namespace Digi.BuildInfo.Systems
         /// <summary>
         /// If TextAPI is detected and user didn't opt out.
         /// </summary>
-        public bool IsEnabled => WasDetected && Use;
+        public bool IsEnabled { get; private set; }
 
         /// <summary>
         /// If TextAPI was detected being installed and running.
         /// </summary>
-        public bool WasDetected { get; private set; } = false;
+        public bool WasDetected { get; private set; }
 
         /// <summary>
         /// False if user chose to not allow TextAPI.
@@ -29,6 +29,7 @@ namespace Digi.BuildInfo.Systems
             set
             {
                 _use = value;
+                IsEnabled = WasDetected && value;
                 UseChanged?.Invoke(value);
             }
         }
@@ -45,12 +46,12 @@ namespace Digi.BuildInfo.Systems
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             api = new HudAPIv2(TextAPIDetected);
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             api?.Close();
             api = null;
@@ -67,6 +68,7 @@ namespace Digi.BuildInfo.Systems
                 }
 
                 WasDetected = true;
+                IsEnabled = Use;
                 Detected?.Invoke();
             }
             catch(Exception e)

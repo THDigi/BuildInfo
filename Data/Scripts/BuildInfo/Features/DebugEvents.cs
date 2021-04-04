@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.Features
             //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             if(Main.IsPlayer)
             {
@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features
             //DumpActions();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             //MyAPIGateway.Gui.GuiControlCreated -= GuiControlCreated;
             //MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
@@ -88,7 +88,7 @@ namespace Digi.BuildInfo.Features
         }
 
         //List<MyCubeGrid.DebugUpdateRecord> debugData = new List<MyCubeGrid.DebugUpdateRecord>();
-        //protected override void UpdateAfterSim(int tick)
+        //public override void UpdateAfterSim(int tick)
         //{
         //    var block = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
         //    if(block == null)
@@ -301,7 +301,7 @@ namespace Digi.BuildInfo.Features
         //private HudAPIv2.HUDMessage debugScreenInfo;
         //private HudAPIv2.HUDMessage debugAllCharacters;
 
-        //protected override void UpdateDraw()
+        //public override void UpdateDraw()
         //{
         //    if(!TextAPI.WasDetected)
         //        return;
@@ -375,7 +375,7 @@ namespace Digi.BuildInfo.Features
 
         //private HudAPIv2.HUDMessage debugHudMsg;
 
-        //protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        //public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         //{
         //    MyAPIGateway.Utilities.ShowMessage("DEBUG", $"HUD={MyAPIGateway.Session.Config.HudState}; MinimalHUD={MyAPIGateway.Session.Config.MinimalHud}");
 
@@ -399,7 +399,7 @@ namespace Digi.BuildInfo.Features
         //HudAPIv2.SpaceMessage msg;
         //HudAPIv2.SpaceMessage shadow;
 
-        //protected override void UpdateDraw()
+        //public override void UpdateDraw()
         //{
         //    if(TextAPI.WasDetected)
         //    {

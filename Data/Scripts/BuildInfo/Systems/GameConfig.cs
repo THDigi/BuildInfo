@@ -31,19 +31,19 @@ namespace Digi.BuildInfo.Systems
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
 
             UpdateConfigValues();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             // required in simulation update because it gets the previous value if used in HandleInput()
             if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))

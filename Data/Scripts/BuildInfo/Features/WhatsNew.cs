@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             int modVersion = Main.Config.ModVersion.Value;
             if(modVersion > 0 && modVersion < Constants.MOD_VERSION)
@@ -19,11 +19,11 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick % Constants.TICKS_PER_SECOND != 0)
                 return;

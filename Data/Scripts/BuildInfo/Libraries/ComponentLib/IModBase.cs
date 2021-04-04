@@ -17,6 +17,7 @@
         void UpdateAfterSim();
         void UpdateDraw();
         void WorldSave();
+        void UpdateStopped();
 
         void ComponentAdd(IComponent component);
         void ComponentScheduleRefresh(IComponent component);

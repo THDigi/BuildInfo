@@ -43,14 +43,11 @@ namespace Digi.ComponentLib
 }
 
 
-4. (OPTIONAL) Create an intermediary component class so that you can define fields for features for quicker access.
+4. (OPTIONAL) Create an intermediary component class for easier segmentation.
 Example:
 
 public abstract class ModComponent : ComponentBase<YourMainClass>
 {
-    protected SomeFeature SomeFeature => Main.SomeFeature;
-    protected SomeOtherFeature SomeOtherFeature => Main.SomeOtherFeature;
-
     public ModComponent(YourMainClass main) : base(main)
     {
     }

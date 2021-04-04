@@ -30,12 +30,12 @@ namespace Digi.BuildInfo.Utilities
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             FillItemDefs();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Utilities
         #region Per-grid gravity checking
         Dictionary<long, float> GravityLengthAtGridCache = new Dictionary<long, float>();
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick % 60 * 3 == 0)
                 GravityLengthAtGridCache.Clear();

@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
             Main.GameConfig.HudStateChanged += HudStateChanged;
@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.Config.BlockInfoAdditions.Value);
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;
@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             if(HudState == HudState.OFF)
                 return;

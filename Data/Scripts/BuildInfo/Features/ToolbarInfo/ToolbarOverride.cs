@@ -40,11 +40,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.BlockMonitor.BlockAdded += BlockAdded;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.BlockMonitor.BlockAdded -= BlockAdded;
 
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             QueuedTypes.Enqueue(new QueuedActionGet(Main.Tick + 60, block.GetType()));
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick % Constants.TICKS_PER_SECOND == 0)
             {

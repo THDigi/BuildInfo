@@ -24,11 +24,11 @@ namespace Digi.BuildInfo.Features
             //ParseFonts();
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
@@ -218,7 +218,7 @@ namespace Digi.BuildInfo.Features
             BlockMonitor.MonitorType(typeof(MyObjectBuilder_TextPanel), LCDSpawnedCallback);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             BlockMonitor.RemoveMonitor(typeof(MyObjectBuilder_TextPanel), LCDSpawnedCallback);
             LCDSpawnedCallback = null;
@@ -232,7 +232,7 @@ namespace Digi.BuildInfo.Features
             ComputeCharacterSizes();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             GetTextSizeInPixels = null;
         }

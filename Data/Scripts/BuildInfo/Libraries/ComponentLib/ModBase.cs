@@ -23,28 +23,25 @@ namespace Digi.ComponentLib
         /// <summary>
         /// Can be with or without render, but never MP client.
         /// </summary>
-        public bool IsServer = false;
-        bool IModBase.IsServer => IsServer;
+        public bool IsServer { get; private set; }
 
         /// <summary>
         /// Has renderer, can also be server.
         /// </summary>
-        public bool IsPlayer = false;
-        bool IModBase.IsPlayer => IsPlayer;
+        public bool IsPlayer { get; private set; }
 
         /// <summary>
         /// Has no renderer.
         /// </summary>
-        public bool IsDedicatedServer = false;
-        bool IModBase.IsDedicatedServer => IsDedicatedServer;
+        public bool IsDedicatedServer { get; private set; }
 
         /// <summary>
         /// Wether simulation is paused.
         /// </summary>
-        public bool IsPaused => Session.Paused;
+        public bool IsPaused { get; private set; }
 
-        public bool SessionHasBeforeSim => (Session.UpdateOrder & MyUpdateOrder.BeforeSimulation) != 0;
-        public bool SessionHasAfterSim => (Session.UpdateOrder & MyUpdateOrder.AfterSimulation) != 0;
+        public bool SessionHasBeforeSim { get; private set; }
+        public bool SessionHasAfterSim { get; private set; }
 
         /// <summary>
         /// Simulation tick from server start.
@@ -73,9 +70,9 @@ namespace Digi.ComponentLib
         private readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
         private readonly List<IComponent> ComponentUpdateDraw = new List<IComponent>();
 
-        private Action RunCriticalOnInput;
-        private Action RunCriticalOnBeforeSim;
-        private Action RunCriticalOnAfterSim;
+        private bool RunCriticalOnInput;
+        private bool RunCriticalOnBeforeSim;
+        private bool RunCriticalOnAfterSim;
 
         protected ModBase(string modName, BuildInfo_GameSession session)
         {
@@ -94,28 +91,19 @@ namespace Digi.ComponentLib
             if((Session.UpdateOrder & MyUpdateOrder.Simulation) != 0)
                 throw new Exception("MyUpdateOrder.Simulation not supported by ComponentLib!");
 
+            SessionHasBeforeSim = (Session.UpdateOrder & MyUpdateOrder.BeforeSimulation) != 0;
+            SessionHasAfterSim = (Session.UpdateOrder & MyUpdateOrder.AfterSimulation) != 0;
+
             if(!SessionHasBeforeSim && !SessionHasAfterSim)
                 throw new Exception($"Neither BeforeSim nor AfterSim are set in session, this will break Tick and ALL component updating on DS side!");
 
-            RunCriticalOnInput = null;
-            RunCriticalOnBeforeSim = null;
-            RunCriticalOnAfterSim = null;
+            // DS doesn't call HandleInput() so the critical updates have to go in the next registered sim update
+            RunCriticalOnInput = IsPlayer;
+            RunCriticalOnBeforeSim = !RunCriticalOnInput && SessionHasBeforeSim;
+            RunCriticalOnAfterSim = !RunCriticalOnInput && !RunCriticalOnBeforeSim && SessionHasAfterSim;
 
-            if(!IsDedicatedServer)
-            {
-                RunCriticalOnInput = RunCriticalUpdate;
-            }
-            else // DS doesn't call HandleInput() so the critical updates have to go in the next registered sim update
-            {
-                if(SessionHasBeforeSim)
-                {
-                    RunCriticalOnBeforeSim = RunCriticalUpdate;
-                }
-                else if(SessionHasAfterSim)
-                {
-                    RunCriticalOnAfterSim = RunCriticalUpdate;
-                }
-            }
+            if(!RunCriticalOnInput && !RunCriticalOnBeforeSim && !RunCriticalOnAfterSim)
+                throw new Exception("No critical run executing!");
 
             for(int i = 0; i < Components.Count; ++i)
             {
@@ -178,14 +166,30 @@ namespace Digi.ComponentLib
                 if(IsDedicatedServer)
                     return; // just making sure
 
-                RunCriticalOnInput?.Invoke();
+                if(RunCriticalOnInput)
+                {
+                    unchecked
+                    {
+                        ++Tick;
+                    }
+
+                    if(ComponentRefreshFlags.Count > 0)
+                    {
+                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        {
+                            ComponentRefreshFlags[i].RefreshFlags();
+                        }
+
+                        ComponentRefreshFlags.Clear();
+                    }
+                }
 
                 int comps = ComponentUpdateInput.Count;
                 if(comps > 0)
                 {
                     bool inMenu = MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible;
                     bool anyKeyOrMouse = MyAPIGateway.Input.IsAnyKeyPress() || MyAPIGateway.Input.IsAnyMousePressed();
-                    bool paused = Session.Paused;
+                    bool paused = IsPaused;
 
                     for(int i = 0; i < comps; ++i)
                     {
@@ -211,7 +215,25 @@ namespace Digi.ComponentLib
         {
             try
             {
-                RunCriticalOnBeforeSim?.Invoke();
+                IsPaused = false;
+
+                if(RunCriticalOnBeforeSim)
+                {
+                    unchecked
+                    {
+                        ++Tick;
+                    }
+
+                    if(ComponentRefreshFlags.Count > 0)
+                    {
+                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        {
+                            ComponentRefreshFlags[i].RefreshFlags();
+                        }
+
+                        ComponentRefreshFlags.Clear();
+                    }
+                }
 
                 for(int i = 0; i < ComponentUpdateBeforeSim.Count; ++i)
                 {
@@ -236,7 +258,25 @@ namespace Digi.ComponentLib
         {
             try
             {
-                RunCriticalOnAfterSim?.Invoke();
+                IsPaused = false;
+
+                if(RunCriticalOnAfterSim)
+                {
+                    unchecked
+                    {
+                        ++Tick;
+                    }
+
+                    if(ComponentRefreshFlags.Count > 0)
+                    {
+                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        {
+                            ComponentRefreshFlags[i].RefreshFlags();
+                        }
+
+                        ComponentRefreshFlags.Clear();
+                    }
+                }
 
                 for(int i = 0; i < ComponentUpdateAfterSim.Count; ++i)
                 {
@@ -283,6 +323,11 @@ namespace Digi.ComponentLib
             }
         }
 
+        void IModBase.UpdateStopped()
+        {
+            IsPaused = true;
+        }
+
         void IModBase.WorldSave()
         {
             try
@@ -325,24 +370,6 @@ namespace Digi.ComponentLib
             else if(!component.CurrentUpdateMethods.IsSet(flag) && newFlags.IsSet(flag))
             {
                 list.Add(component);
-            }
-        }
-
-        void RunCriticalUpdate()
-        {
-            unchecked
-            {
-                ++Tick;
-            }
-
-            if(ComponentRefreshFlags.Count > 0)
-            {
-                foreach(var comp in ComponentRefreshFlags)
-                {
-                    comp.RefreshFlags();
-                }
-
-                ComponentRefreshFlags.Clear();
             }
         }
     }

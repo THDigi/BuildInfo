@@ -12,7 +12,7 @@
         /// </summary>
         public UpdateFlags UpdateMethods
         {
-            get { return (_newFlags != UpdateFlags.INVALID ? _newFlags : _flags); }
+            get { return (_newFlags != UpdateFlags.INVALID ? _newFlags : CurrentUpdateMethods); }
             set
             {
                 if(value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM) && !Main.SessionHasBeforeSim)
@@ -28,9 +28,10 @@
                 }
             }
         }
-        private UpdateFlags _flags = UpdateFlags.NONE;
+
+        public UpdateFlags CurrentUpdateMethods { get; private set; } = UpdateFlags.NONE;
+
         private UpdateFlags _newFlags = UpdateFlags.INVALID;
-        UpdateFlags IComponent.CurrentUpdateMethods => _flags;
 
         /// <summary>
         /// Same as <see cref="UpdateMethods"/> but simpler for toggling.
@@ -58,18 +59,18 @@
         /// <summary>
         /// Called in BeforeStart().
         /// </summary>
-        protected abstract void RegisterComponent();
+        public abstract void RegisterComponent();
 
         /// <summary>
         /// Called in UnloadData().
         /// </summary>
-        protected abstract void UnregisterComponent();
+        public abstract void UnregisterComponent();
 
         /// <summary>
         /// Called in HandleInput(), even when game is paused.
         /// Do not call base!
         /// </summary>
-        protected virtual void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public virtual void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             Log.Error($"UpdateInput() is enabled but not overwritten for {GetType().Name} component!");
         }
@@ -78,7 +79,7 @@
         /// Called in UpdateBeforeSimulation(), respects pause.
         /// Do not call base!
         /// </summary>
-        protected virtual void UpdateBeforeSim(int tick)
+        public virtual void UpdateBeforeSim(int tick)
         {
             Log.Error($"UpdateBeforeSim() is enabled but not overwritten for {GetType().Name} component!");
         }
@@ -87,7 +88,7 @@
         /// Called in UpdateAfterSimulation(), respects pause.
         /// Do not call base!
         /// </summary>
-        protected virtual void UpdateAfterSim(int tick)
+        public virtual void UpdateAfterSim(int tick)
         {
             Log.Error($"UpdateAfterSim() is enabled but not overwritten for {GetType().Name} component!");
         }
@@ -96,21 +97,15 @@
         /// Called in Draw(), even when game is paused.
         /// Do not call base!
         /// </summary>
-        protected virtual void UpdateDraw()
+        public virtual void UpdateDraw()
         {
             Log.Error($"UpdateDraw() is enabled but not overwritten for {GetType().Name} component!");
         }
 
-        void IComponent.RegisterComponent() => RegisterComponent();
-        void IComponent.UnregisterComponent() => UnregisterComponent();
-        void IComponent.UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused) => UpdateInput(anyKeyOrMouse, inMenu, paused);
-        void IComponent.UpdateBeforeSim(int tick) => UpdateBeforeSim(tick);
-        void IComponent.UpdateAfterSim(int tick) => UpdateAfterSim(tick);
-        void IComponent.UpdateDraw() => UpdateDraw();
         void IComponent.RefreshFlags()
         {
             Main.ComponentSetNewFlags(this, _newFlags);
-            _flags = _newFlags;
+            CurrentUpdateMethods = _newFlags;
             _newFlags = UpdateFlags.INVALID;
         }
     }

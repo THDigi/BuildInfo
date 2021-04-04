@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             InitLookups();
 
@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.Features
             ReCheckSide();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.TextAPI.Detected -= TextAPI_APIDetected;
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
@@ -204,7 +204,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(textShown && textObject != null && MyAPIGateway.Gui.IsCursorVisible)
                 HideText();

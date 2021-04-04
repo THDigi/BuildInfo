@@ -33,14 +33,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
 
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;

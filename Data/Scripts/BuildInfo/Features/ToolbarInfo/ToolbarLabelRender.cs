@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_INPUT;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.TextAPI.Detected += TextAPIDetected;
 
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;
@@ -294,7 +294,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         //HudAPIv2.HUDMessage DebugMousePos;
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(ClickOffset.HasValue && MyAPIGateway.Input.IsNewLeftMouseReleased())
             {
@@ -384,7 +384,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(Backgrounds == null)
                 return;

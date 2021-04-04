@@ -68,18 +68,18 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.TextAPI.Detected += TextAPI_Detected;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.TextAPI.Detected -= TextAPI_Detected;
             Main.Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(!MyAPIGateway.Gui.ChatEntryVisible)
             {

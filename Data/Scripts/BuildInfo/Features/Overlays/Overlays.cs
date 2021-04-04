@@ -129,7 +129,7 @@ namespace Digi.BuildInfo.Features.Overlays
             Labels = new LabelData[count];
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             InitLookups();
 
@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Features.Overlays
             Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
@@ -248,7 +248,7 @@ namespace Digi.BuildInfo.Features.Overlays
             drawLookup.Add(blockType, call);
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             if(DrawOverlay == 0 || (Main.LockOverlay.LockedOnBlock == null && Main.EquipmentMonitor.BlockDef == null) || (Main.GameConfig.HudState == HudState.OFF && !Main.Config.OverlaysAlwaysVisible.Value))
                 return;

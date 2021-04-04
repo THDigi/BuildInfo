@@ -12,7 +12,6 @@ namespace Digi.ComponentLib
     public partial class BuildInfo_GameSession : MySessionComponentBase
     {
         IModBase main;
-        public bool Paused;
 
         public override void LoadData()
         {
@@ -64,13 +63,11 @@ namespace Digi.ComponentLib
 
         public override void UpdateBeforeSimulation()
         {
-            Paused = false;
             main?.UpdateBeforeSim();
         }
 
         public override void UpdateAfterSimulation()
         {
-            Paused = false;
             main?.UpdateAfterSim();
         }
 
@@ -87,7 +84,7 @@ namespace Digi.ComponentLib
 
         public override void UpdatingStopped()
         {
-            Paused = true;
+            main?.UpdateStopped();
         }
     }
 }

@@ -113,7 +113,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 sb.Append("OFF\n");
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             new StatusOverride.GenericFallback(this);
             new StatusOverride.ProgrammableBlocks(this);
@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;
@@ -211,7 +211,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             FullRefresh = true; // make the next update refresh all slots at once
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
             {

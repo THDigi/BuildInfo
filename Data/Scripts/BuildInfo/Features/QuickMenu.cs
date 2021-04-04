@@ -26,12 +26,12 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
@@ -55,7 +55,7 @@ namespace Digi.BuildInfo.Features
             NeedsUpdate = true;
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(inMenu)
                 return;

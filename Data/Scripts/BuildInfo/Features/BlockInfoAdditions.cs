@@ -67,12 +67,12 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
@@ -144,7 +144,7 @@ namespace Digi.BuildInfo.Features
             MyCubeBuilder.DrawSemiTransparentBox(aimedBlock.Min, aimedBlock.Max, grid, Color.White, onlyWireframe: true, lineMaterial: SELECT_GIZMO_RED);
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             if(Main.GameConfig.HudState == HudState.OFF || Main.EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;

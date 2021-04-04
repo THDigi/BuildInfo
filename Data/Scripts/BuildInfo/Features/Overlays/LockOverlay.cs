@@ -21,15 +21,15 @@ namespace Digi.BuildInfo.Features.Overlays
             UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(paused || inMenu)
                 return;
@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             if(LockedOnBlock == null)
                 return;

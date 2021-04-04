@@ -101,16 +101,16 @@ namespace Digi.BuildInfo
             ComputeResourceGroups();
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             // HACK: because it can be null in MP: https://support.keenswh.com/spaceengineers/pc/topic/01-190-101modapi-myapigateway-session-player-is-null-for-first-3-ticks-for-mp-clients
             var localPlayer = MyAPIGateway.Session?.Player;

@@ -27,15 +27,15 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(PickedBlockDef == null && Main.EquipmentMonitor.AimedBlock != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
             {
@@ -124,7 +124,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(PickedBlockDef != null && tick % 5 == 0)
             {

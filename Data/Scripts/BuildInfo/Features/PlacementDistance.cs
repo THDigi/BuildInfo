@@ -48,13 +48,13 @@ namespace Digi.BuildInfo.Features
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
@@ -74,7 +74,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(inMenu || paused || !Main.EquipmentMonitor.IsCubeBuilder || Main.EquipmentMonitor.BlockDef == null)
                 return;

@@ -67,18 +67,18 @@ namespace Digi.BuildInfo.Features.LeakInfo
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
             ClearStatus();
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(selectedGrid != null && selectedGrid.Closed)
             {
@@ -307,7 +307,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         }
 
         #region Drawing
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             if(Status != ThreadStatus.DRAW)
                 return;

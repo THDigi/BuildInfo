@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Systems
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             API = new WcApi();
             API.Load(Replied, getWeaponDefinitions: false);
@@ -31,7 +31,7 @@ namespace Digi.BuildInfo.Systems
             API.GetAllCoreWeapons(BlocksWithWeapons);
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(API != null)
             {

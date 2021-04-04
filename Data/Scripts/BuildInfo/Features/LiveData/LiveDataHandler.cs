@@ -38,12 +38,12 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }

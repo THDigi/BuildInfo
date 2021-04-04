@@ -48,11 +48,11 @@ namespace Digi.BuildInfo.Features
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick >= 30)
             {
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features
             Main.Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             if(!Main.ComponentsRegistered)
                 return;

@@ -33,12 +33,12 @@ namespace Digi.BuildInfo.Features
             return (jumpsAt - Main.Tick) / (float)Constants.TICKS_PER_SECOND;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             MyVisualScriptLogicProvider.GridJumped += JumpCountdownStart;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyVisualScriptLogicProvider.GridJumped -= JumpCountdownStart;
         }
@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features
             CleanAtTick = jumpsAtTick; // override clean at tick so it can only trigger once all jumpdrives are done
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(CleanAtTick > 0 && CleanAtTick <= tick)
             {

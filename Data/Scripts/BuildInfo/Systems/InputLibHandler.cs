@@ -15,16 +15,16 @@ namespace Digi.BuildInfo.Systems
             InputLib.AddCustomInput(new MenuCustomInput());
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             InputLib.Dispose();
         }
 
-        protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(inMenu || paused)
                 return;

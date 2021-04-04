@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             CommandHelp = new CommandHelp();
             CommandModLink = new CommandModLink();
@@ -46,7 +46,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             MyAPIGateway.Utilities.MessageEntered -= MessageEntered;
         }

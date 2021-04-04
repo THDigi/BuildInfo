@@ -42,7 +42,7 @@ namespace Digi.BuildInfo.Features
             UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
@@ -50,7 +50,7 @@ namespace Digi.BuildInfo.Features
             Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
@@ -136,7 +136,7 @@ namespace Digi.BuildInfo.Features
             return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             Shown = false;
 

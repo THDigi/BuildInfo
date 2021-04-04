@@ -19,15 +19,15 @@ namespace Digi.BuildInfo.Utilities
             UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
         }
 
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             ResetDrawCaches();
         }

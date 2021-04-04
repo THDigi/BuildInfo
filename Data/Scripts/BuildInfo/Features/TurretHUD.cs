@@ -35,13 +35,13 @@ namespace Digi.BuildInfo.Features
         {
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
             Main.Config.Handler.SettingsLoaded += SettingsLoaded;
             SettingsLoaded();
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             Main.Config.Handler.SettingsLoaded -= SettingsLoaded;
         }
@@ -60,7 +60,7 @@ namespace Digi.BuildInfo.Features
         }
 
         // draw ship relative direction indicator
-        protected override void UpdateDraw()
+        public override void UpdateDraw()
         {
             var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
 
@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features
             MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             if(tick % SKIP_TICKS != 0)
                 return;

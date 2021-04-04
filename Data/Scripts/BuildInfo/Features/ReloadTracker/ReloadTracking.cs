@@ -29,11 +29,11 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
         }
 
-        protected override void RegisterComponent()
+        public override void RegisterComponent()
         {
         }
 
-        protected override void UnregisterComponent()
+        public override void UnregisterComponent()
         {
             weapons.Clear();
             weaponLookup.Clear();
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             weaponLookup.Add(gunBlock.EntityId, weapon);
         }
 
-        protected override void UpdateAfterSim(int tick)
+        public override void UpdateAfterSim(int tick)
         {
             for(int i = (weapons.Count - 1); i >= 0; --i)
             {

@@ -19,11 +19,6 @@ namespace Digi.BuildInfo.Utilities
 {
     public static class StringBuilderExtensions
     {
-        private static Config Settings => BuildInfoMod.Instance.Config;
-        private static Constants Constants => BuildInfoMod.Instance.Constants;
-        private static TextGeneration TextGeneration => BuildInfoMod.Instance.TextGeneration;
-        private static bool TextAPIEnabled => BuildInfoMod.Instance.TextAPI.IsEnabled;
-
         // copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
@@ -177,7 +172,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder LabelHardcoded(this StringBuilder s, string label)
         {
-            return s.LabelHardcoded(label, TextGeneration.COLOR_NORMAL);
+            return s.LabelHardcoded(label, BuildInfoMod.Instance.TextGeneration.COLOR_NORMAL);
         }
 
         public static StringBuilder Hardcoded(this StringBuilder s)
@@ -192,12 +187,12 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder MoreInfoInHelp(this StringBuilder s, int num)
         {
-            return s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" ([").Append(num).Append("] @ /bi)");
+            return s.Color(BuildInfoMod.Instance.TextGeneration.COLOR_UNIMPORTANT).Append(" ([").Append(num).Append("] @ /bi)");
         }
 
         public static StringBuilder Color(this StringBuilder s, Color color)
         {
-            if(TextAPIEnabled)
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
 
             return s;
@@ -205,7 +200,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder ResetFormatting(this StringBuilder s)
         {
-            if(TextAPIEnabled)
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
                 return s.Append("<reset>");
             else
                 return s;
@@ -551,29 +546,31 @@ namespace Digi.BuildInfo.Utilities
                 return s;
             }
 
-            if(Settings.PlaceInfo.IsSet(PlaceInfoFlags.InventoryVolumeMultiplied))
+            var bi = BuildInfoMod.Instance;
+
+            if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryVolumeMultiplied))
             {
                 var mul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
 
                 s.VolumeFormat(volume * 1000 * mul);
 
                 if(Math.Abs(mul - 1) > 0.001f)
-                    s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetFormatting();
+                    s.Color(bi.TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetFormatting();
             }
             else
             {
                 s.VolumeFormat(volume * 1000);
             }
 
-            if(Settings.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
+            if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
                 if(types == null && items == null)
-                    types = Constants.DEFAULT_ALLOWED_TYPES;
+                    types = bi.Constants.DEFAULT_ALLOWED_TYPES;
 
                 var minMass = float.MaxValue;
                 var maxMass = 0f;
 
-                foreach(var physDef in BuildInfoMod.Instance.Caches.ItemDefs)
+                foreach(var physDef in bi.Caches.ItemDefs)
                 {
                     if(!physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
                         continue; // skip hidden and physically impossible items
@@ -722,12 +719,13 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder ModFormat(this StringBuilder s, MyModContext context)
         {
-            s.Color(TextGeneration.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
+            var tg = BuildInfoMod.Instance.TextGeneration;
+            s.Color(tg.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
 
             var id = context.GetWorkshopID();
 
             if(id > 0)
-                s.Color(TextGeneration.COLOR_UNIMPORTANT).Append(" (id: ").Append(id).Append(")");
+                s.Color(tg.COLOR_UNIMPORTANT).Append(" (id: ").Append(id).Append(")");
 
             return s;
         }
