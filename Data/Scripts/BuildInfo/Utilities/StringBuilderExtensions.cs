@@ -574,10 +574,9 @@ namespace Digi.BuildInfo.Utilities
                 var minMass = float.MaxValue;
                 var maxMass = 0f;
 
-                foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+                foreach(var physDef in BuildInfoMod.Instance.Caches.ItemDefs)
                 {
-                    var physDef = def as MyPhysicalItemDefinition;
-                    if(physDef == null || !physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
+                    if(!physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
                         continue; // skip hidden and physically impossible items
 
                     if((types != null && isWhitelist == types.Contains(physDef.Id.TypeId)) || (items != null && isWhitelist == items.Contains(physDef.Id)))

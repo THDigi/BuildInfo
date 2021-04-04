@@ -185,7 +185,6 @@ namespace Digi.BuildInfo
                         continue;
 
                     var blockDef = def as MyCubeBlockDefinition;
-
                     if(blockDef == null)
                         continue;
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Digi.ComponentLib;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -18,6 +19,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
         public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
+        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(16);
 
         private readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
         private readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -30,10 +32,25 @@ namespace Digi.BuildInfo.Utilities
 
         protected override void RegisterComponent()
         {
+            FillItemDefs();
         }
 
         protected override void UnregisterComponent()
         {
+        }
+
+        void FillItemDefs()
+        {
+            ItemDefs.Clear();
+
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var physDef = def as MyPhysicalItemDefinition;
+                if(physDef == null)
+                    continue;
+
+                ItemDefs.Add(physDef);
+            }
         }
 
         public static HashSet<MyObjectBuilderType> GetObTypeSet()

@@ -103,12 +103,8 @@ namespace Digi.BuildInfo.Features
                 PreTooltipGeneration();
             }
 
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            foreach(var physDef in Main.Caches.ItemDefs)
             {
-                var physDef = def as MyPhysicalItemDefinition;
-                if(physDef == null)
-                    continue;
-
                 if(generate)
                 {
                     string tooltip = null;
