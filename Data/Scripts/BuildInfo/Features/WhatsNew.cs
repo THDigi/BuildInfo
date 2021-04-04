@@ -1,7 +1,6 @@
 ﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features
 {

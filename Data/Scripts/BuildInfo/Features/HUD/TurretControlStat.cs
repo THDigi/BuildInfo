@@ -11,8 +11,8 @@ namespace Digi.BuildInfo.Features.HUD
     {
         public MyStringHash Id { get; private set; }
         public float CurrentValue { get; private set; }
-        public float MinValue => 0f;
-        public float MaxValue => 1f;
+        public float MinValue { get; } = 0f;
+        public float MaxValue { get; } = 1f;
         public string GetValueString() => CurrentValue >= 0.5f ? "1" : "0";
 
         public TurretControlStat()

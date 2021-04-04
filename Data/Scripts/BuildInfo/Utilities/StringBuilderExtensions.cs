@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
-using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;

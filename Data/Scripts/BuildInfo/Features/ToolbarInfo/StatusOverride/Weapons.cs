@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Game.Entities;
-using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -30,7 +27,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
-            var weaponInfo = Main.ReloadTracking.GetWeaponInfo(item.Block);
+            var weaponInfo = BuildInfoMod.Instance.ReloadTracking.GetWeaponInfo(item.Block);
             if(weaponInfo == null)
                 return false; // likely weaponcore or other unsupported weapon
 
@@ -87,9 +84,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int leastAmmo = int.MaxValue;
             int mostAmmo = 0;
 
+            var reloadTracking = BuildInfoMod.Instance.ReloadTracking;
+
             foreach(IMyUserControllableGun gun in groupData.Blocks)
             {
-                var weaponInfo = Main.ReloadTracking.GetWeaponInfo(gun);
+                var weaponInfo = reloadTracking.GetWeaponInfo(gun);
                 if(weaponInfo == null)
                     continue; // likely weaponcore or other unsupported weapon
 

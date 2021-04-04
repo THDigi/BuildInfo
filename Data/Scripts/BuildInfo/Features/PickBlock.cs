@@ -1,5 +1,4 @@
-﻿using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utilities;
+﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;

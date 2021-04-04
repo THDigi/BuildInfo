@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(jumpAction)
             {
-                float countdown = Main.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
+                float countdown = BuildInfoMod.Instance.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
                 if(countdown > 0)
                 {
                     sb.Append("Jumping\n");

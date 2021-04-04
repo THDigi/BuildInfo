@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features.HUD
             }
         }
 
-        public float MinValue { get; protected set; }
+        public float MinValue { get; protected set; } = 0f;
 
         private float _maxValue = -1;
         public float MaxValue

@@ -18,8 +18,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
     public class AirVent : MyGameLogicComponent
     {
-        private LeakInfo LeakInfo => BuildInfoMod.Instance.LeakInfo;
-
         private IMyAirVent block;
         private bool init = false;
         private byte skip = 0;
@@ -39,6 +37,8 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             try
             {
+                var leakInfo = BuildInfoMod.Instance.LeakInfo;
+
                 if(!init)
                 {
                     if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null) // ignore DS side and ghost grids
@@ -47,14 +47,14 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         return;
                     }
 
-                    if(LeakInfo == null) // wait until leak info component is assigned
+                    if(leakInfo == null) // wait until leak info component is assigned
                         return;
 
                     init = true;
 
                     block.AppendingCustomInfo += CustomInfo;
 
-                    if(LeakInfo.TerminalControl == null)
+                    if(leakInfo.TerminalControl == null)
                     {
                         // separator
                         MyAPIGateway.TerminalControls.AddControl<IMyAirVent>(MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, IMyAirVent>(string.Empty));
@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         c.Setter = Terminal_Setter;
                         c.Getter = Terminal_Getter;
                         MyAPIGateway.TerminalControls.AddControl<IMyAirVent>(c);
-                        LeakInfo.TerminalControl = c;
+                        leakInfo.TerminalControl = c;
                     }
                 }
 
@@ -96,9 +96,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     skip = 0;
 
                     // if room is sealed and the leak info is running then clear it
-                    if(LeakInfo.UsedFromVent == block && LeakInfo.Status != ThreadStatus.IDLE && block.CanPressurize)
+                    if(leakInfo.UsedFromVent == block && leakInfo.Status != ThreadStatus.IDLE && block.CanPressurize)
                     {
-                        LeakInfo.ClearStatus();
+                        leakInfo.ClearStatus();
                     }
                 }
             }

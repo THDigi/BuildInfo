@@ -109,7 +109,6 @@ namespace Digi.BuildInfo.Features
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private float TextAPIScale => Main.Config.TextAPIScale.Value;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
@@ -406,7 +405,7 @@ namespace Digi.BuildInfo.Features
 
             if(textObject == null)
             {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
             }
 
             bgObject.Visible = true;
@@ -514,7 +513,7 @@ namespace Digi.BuildInfo.Features
                     color.A = (byte)(opacity * 255);
                 }
 
-                float edge = BG_EDGE * TextAPIScale;
+                float edge = BG_EDGE * Main.Config.TextAPIScale.Value;
 
                 bgObject.BillBoardColor = color;
                 bgObject.Origin = textPos;
@@ -3667,7 +3666,7 @@ namespace Digi.BuildInfo.Features
 
             if(textObject != null)
             {
-                textObject.Scale = TextAPIScale;
+                textObject.Scale = Main.Config.TextAPIScale.Value;
 
                 if(Main.Config.TextAlwaysVisible.Value)
                 {

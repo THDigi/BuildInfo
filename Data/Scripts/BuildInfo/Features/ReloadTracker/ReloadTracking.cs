@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         private readonly List<Weapon> weapons = new List<Weapon>();
         private readonly Dictionary<long, Weapon> weaponLookup = new Dictionary<long, Weapon>();
-        private readonly MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>(activator: () => new Weapon(), clear: (i) => i.Clear());
+        private readonly MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>();
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
@@ -63,6 +63,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             var weapon = weaponPool.Get();
             if(!weapon.Init(gunBlock))
             {
+                weapon.Clear();
                 weaponPool.Return(weapon);
                 return;
             }
@@ -80,6 +81,8 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 {
                     weapons.RemoveAtFast(i);
                     weaponLookup.Remove(weapon.Block.EntityId);
+
+                    weapon.Clear();
                     weaponPool.Return(weapon);
                     continue;
                 }

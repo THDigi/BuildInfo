@@ -2,7 +2,6 @@
 using Digi.BuildInfo.Utilities;
 using Digi.Input;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Input;
 using VRageMath;
 using static Digi.Input.InputLib;

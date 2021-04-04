@@ -14,8 +14,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         private readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
 
-        private static BuildInfoMod Main => BuildInfoMod.Instance;
-
         public ActionWrapper(IMyTerminalAction action)
         {
             Action = action;
@@ -76,30 +74,32 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return;
                 }
 
-                if(ToolbarMonitor.DebugLogging)
-                    Log.Info($"Writer :: action={Action.Id}; block={block.CustomName}; wrapperSlotIndex={Main.ToolbarMonitor.WrapperSlotIndex.ToString()}");
+                var toolbarMonitor = BuildInfoMod.Instance.ToolbarMonitor;
 
-                int max = Main.ToolbarMonitor.SequencedItems.Count;
-                int num = Main.ToolbarMonitor.WrapperSlotIndex;
+                if(ToolbarMonitor.DebugLogging)
+                    Log.Info($"Writer :: action={Action.Id}; block={block.CustomName}; wrapperSlotIndex={toolbarMonitor.WrapperSlotIndex.ToString()}");
+
+                int max = toolbarMonitor.SequencedItems.Count;
+                int num = toolbarMonitor.WrapperSlotIndex;
                 if(num >= max)
                     return;
 
                 // HACK: find next matching slot, it could not match if a mod adds actions via event which won't have this status override class
                 // other issues are PBs or timer blocks calling actions and causing the writer to get triggered, desynchronizing the order.
-                var toolbarItem = Main.ToolbarMonitor.SequencedItems[num];
+                var toolbarItem = toolbarMonitor.SequencedItems[num];
                 while(toolbarItem.ActionId != Action.Id || toolbarItem.BlockEntId != block.EntityId)
                 {
                     num++;
                     if(num >= max)
                         return;
 
-                    toolbarItem = Main.ToolbarMonitor.SequencedItems[num];
+                    toolbarItem = toolbarMonitor.SequencedItems[num];
                 }
 
                 // writers get called in sequence that they are in the toolbar so this should pair them exactly
-                Main.ToolbarMonitor.WrapperSlotIndex = num + 1;
+                toolbarMonitor.WrapperSlotIndex = num + 1;
 
-                if(Main.ToolbarMonitor.ToolbarPage != (toolbarItem.Index / ToolbarMonitor.SlotsPerPage))
+                if(toolbarMonitor.ToolbarPage != (toolbarItem.Index / ToolbarMonitor.SlotsPerPage))
                     return;
 
                 // update some properties that are easily accessible in this context.

@@ -1,5 +1,4 @@
 ﻿using System;
-using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;

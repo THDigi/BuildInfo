@@ -1,13 +1,10 @@
 ﻿using Sandbox.Definitions;
-using VRage.Game;
 using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
     public abstract class BData_Base
     {
-        private static LiveDataHandler Handler => BuildInfoMod.Instance.LiveDataHandler;
-
         public BData_Base()
         {
         }
@@ -18,7 +15,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(IsValid(block, def))
             {
-                Handler.BlockData.Add(def.Id, this);
+                BuildInfoMod.Instance.LiveDataHandler.BlockData.Add(def.Id, this);
                 return true;
             }
 
@@ -32,26 +29,27 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public static T TryGetDataCached<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
-            var data = Handler.BlockDataCache as T;
+            var handler = BuildInfoMod.Instance.LiveDataHandler;
+            var data = handler.BlockDataCache as T;
 
             if(data == null)
                 data = TryGetData<T>(def);
 
             if(data == null)
-                Handler.BlockDataCacheValid = false;
+                handler.BlockDataCacheValid = false;
 
-            Handler.BlockDataCache = data;
+            handler.BlockDataCache = data;
             return data;
         }
 
         private static T TryGetData<T>(MyCubeBlockDefinition def) where T : BData_Base, new()
         {
+            var handler = BuildInfoMod.Instance.LiveDataHandler;
             BData_Base data;
-
-            if(Handler.BlockData.TryGetValue(def.Id, out data))
+            if(handler.BlockData.TryGetValue(def.Id, out data))
                 return (T)data;
 
-            if(Handler.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
+            if(handler.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
             {
                 new TempBlockSpawn(def, callback: SpawnComplete<T>);
             }
@@ -61,15 +59,17 @@ namespace Digi.BuildInfo.Features.LiveData
 
         private static void SpawnComplete<T>(IMySlimBlock block) where T : BData_Base, new()
         {
+            var handler = BuildInfoMod.Instance.LiveDataHandler;
             var defId = block.BlockDefinition.Id;
-            Handler.BlockSpawnInProgress.Remove(defId);
+            handler.BlockSpawnInProgress.Remove(defId);
         }
 
         public static bool TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()
         {
+            var handler = BuildInfoMod.Instance.LiveDataHandler;
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            if(Handler.BlockData.ContainsKey(def.Id))
+            if(handler.BlockData.ContainsKey(def.Id))
                 return true;
 
             if(block.Model.AssetName != def.Model)

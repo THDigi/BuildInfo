@@ -534,9 +534,6 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        private IMySlimBlock GetOverlayBlock() => (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
-        private float GetOverlayCellSize(IMySlimBlock block) => (block == null ? Main.EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
-
         #region Block-specific overlays
         private void DrawOverlay_Doors(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
@@ -549,8 +546,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
             }
 
-            IMySlimBlock block = GetOverlayBlock();
-            float cellSize = GetOverlayCellSize(block);
+            IMySlimBlock block = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
+            float cellSize = (block == null ? Main.EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
 
             //if(block != null)
             //{
@@ -712,7 +709,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             MyAmmoDefinition ammo = null;
 
-            IMySlimBlock block = GetOverlayBlock();
+            IMySlimBlock block = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
 
             if(block != null)
             {
@@ -746,7 +743,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var labelDir = coneMatrix.Up;
                 var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
 
-                LabelTextBuilder().Append("Accuracy cone - ").Append(height).Append(" m");
+                label.Clear().Append("Accuracy cone - ").Append(height).Append(" m");
                 DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, color, lineHeight: lineHeight);
 
                 //var lineStart = circleMatrix.Translation + coneMatrix.Down * accuracyAt100m;
@@ -890,7 +887,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var labelDir = drawMatrix.Down;
                 var sphereEdge = drawMatrix.Translation + (labelDir * radius);
 
-                LabelTextBuilder().Append(isWelder ? "Welding radius" : "Grinding radius");
+                label.Clear().Append(isWelder ? "Welding radius" : "Grinding radius");
                 DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, color, lineHeight: lineHeight);
             }
         }
@@ -982,7 +979,6 @@ namespace Digi.BuildInfo.Features.Overlays
 
         #region Draw helpers
         private StringBuilder label = new StringBuilder(128);
-        private StringBuilder LabelTextBuilder() => label.Clear();
 
         private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.3f, float lineThick = 0.005f, OverlayLabelsFlags settingFlag = OverlayLabelsFlags.Other)
         {

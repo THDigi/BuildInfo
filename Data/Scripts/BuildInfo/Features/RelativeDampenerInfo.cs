@@ -3,7 +3,6 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using InternalControllableEntity = Sandbox.Game.Entities.IMyControllableEntity;

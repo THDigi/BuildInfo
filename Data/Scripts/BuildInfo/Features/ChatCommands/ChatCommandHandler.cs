@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
-using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {

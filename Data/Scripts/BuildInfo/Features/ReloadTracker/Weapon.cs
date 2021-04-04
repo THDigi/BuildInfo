@@ -19,8 +19,8 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         private IMyGunObject<MyGunBase> gun;
         private MyWeaponDefinition weaponDef;
 
-        public int ReloadUntilTick;
-        public bool Reloading => ReloadUntilTick > 0;
+        public int ReloadUntilTick { get; private set; }
+        public bool Reloading { get; private set; }
 
         public int Ammo
         {
@@ -122,6 +122,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             gun = null;
             weaponDef = null;
             ReloadUntilTick = 0;
+            Reloading = false;
             projectilesUtilReload = 0;
             projectileShotsInBurst = 0;
             missilesUntilReload = 0;
@@ -134,7 +135,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 return false;
 
             if(ReloadUntilTick != 0 && ReloadUntilTick < tick)
+            {
                 ReloadUntilTick = 0;
+                Reloading = false;
+            }
 
             if(gun.GunBase.LastShootTime.Ticks > lastShotTime)
             {
@@ -160,7 +164,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 }
 
                 if(reloading)
+                {
                     ReloadUntilTick = tick + (int)((float)Constants.TICKS_PER_SECOND * (weaponDef.ReloadTime / 1000f));
+                    Reloading = true;
+                }
             }
 
             return true;
