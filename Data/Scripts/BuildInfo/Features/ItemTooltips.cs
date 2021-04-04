@@ -68,8 +68,8 @@ namespace Digi.BuildInfo.Features
 
             SetupItems(generate: true);
 
-            Config.InternalInfo.ValueAssigned += ConfigValueChanged;
-            Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
+            Main.Config.InternalInfo.ValueAssigned += ConfigValueChanged;
+            Main.Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
         }
 
         protected override void UnregisterComponent()
@@ -86,8 +86,8 @@ namespace Digi.BuildInfo.Features
 
             OriginalItemData.Clear();
 
-            Config.InternalInfo.ValueAssigned -= ConfigValueChanged;
-            Config.ItemTooltipAdditions.ValueAssigned -= ConfigValueChanged;
+            Main.Config.InternalInfo.ValueAssigned -= ConfigValueChanged;
+            Main.Config.ItemTooltipAdditions.ValueAssigned -= ConfigValueChanged;
         }
 
         void ConfigValueChanged(bool oldValue, bool newValue, SettingBase<bool> setting)
@@ -129,7 +129,7 @@ namespace Digi.BuildInfo.Features
             if(!Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
                 return;
 
-            if(Config.ItemTooltipAdditions.Value)
+            if(Main.Config.ItemTooltipAdditions.Value)
             {
                 if(physDef.IconSymbol.HasValue)
                 {
@@ -195,7 +195,7 @@ namespace Digi.BuildInfo.Features
                     itemTooltipSB.Replace(tooltip, "");
                 }
 
-                if(Config.ItemTooltipAdditions.Value)
+                if(Main.Config.ItemTooltipAdditions.Value)
                 {
                     itemTooltipSB.Append(tooltip);
                 }
@@ -209,7 +209,7 @@ namespace Digi.BuildInfo.Features
                 RemoveLineStartsWith(itemTooltipSB, IdLabel);
             }
 
-            if(Config.InternalInfo.Value)
+            if(Main.Config.InternalInfo.Value)
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = physDef.Id.TypeId.ToString();

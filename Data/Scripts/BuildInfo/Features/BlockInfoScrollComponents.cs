@@ -43,13 +43,13 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
-            GameConfig.HudStateChanged += HudStateChanged;
-            EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
+            Main.GameConfig.HudStateChanged += HudStateChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
 
             HudState = Main.GameConfig.HudState;
 
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Config.BlockInfoAdditions.Value);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.Config.BlockInfoAdditions.Value);
         }
 
         protected override void UnregisterComponent()
@@ -57,9 +57,9 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditionsChanged;
-            GameConfig.HudStateChanged -= HudStateChanged;
-            EquipmentMonitor.BlockChanged -= EquipmentBlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditionsChanged;
+            Main.GameConfig.HudStateChanged -= HudStateChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentBlockChanged;
         }
 
         void BlockInfoAdditionsChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Features
             ShowDownHint = false;
             ShowUpHint = false;
 
-            if(Config.BlockInfoAdditions.Value)
+            if(Main.Config.BlockInfoAdditions.Value)
             {
                 MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features
             ShowUpHint = false;
             ShowScrollHint = true;
 
-            if(Config.BlockInfoAdditions.Value)
+            if(Main.Config.BlockInfoAdditions.Value)
             {
                 MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
@@ -114,10 +114,10 @@ namespace Digi.BuildInfo.Features
             if(HudState == HudState.OFF)
                 return;
 
-            if(!Config.BlockInfoAdditions.Value)
+            if(!Main.Config.BlockInfoAdditions.Value)
                 return;
 
-            if(EquipmentMonitor.BlockDef == null)
+            if(Main.EquipmentMonitor.BlockDef == null)
                 return;
 
             MaxVisible = MaxVisibleHudHints;
@@ -146,7 +146,7 @@ namespace Digi.BuildInfo.Features
 
                 Refresh = true;
 
-                var slimBlock = EquipmentMonitor.AimedBlock;
+                var slimBlock = Main.EquipmentMonitor.AimedBlock;
                 if(slimBlock != null)
                 {
                     // auto-scroll to higher if block is built
@@ -188,9 +188,9 @@ namespace Digi.BuildInfo.Features
 
                 // auto-scroll while welding/grinding the block
                 // also nice side effect of this not triggering unless components change
-                if(inChar && EquipmentMonitor.AimedBlock != null && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION))
+                if(inChar && Main.EquipmentMonitor.AimedBlock != null && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION))
                 {
-                    Index = MathHelper.FloorToInt(Math.Max(0, EquipmentMonitor.AimedBlock.BuildLevelRatio * CycleComponents.Count - 6));
+                    Index = MathHelper.FloorToInt(Math.Max(0, Main.EquipmentMonitor.AimedBlock.BuildLevelRatio * CycleComponents.Count - 6));
                 }
 
                 int scrollShow = MaxVisible;

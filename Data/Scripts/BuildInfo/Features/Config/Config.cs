@@ -381,7 +381,7 @@ namespace Digi.BuildInfo.Features.Config
                 "For accessing the quick menu.");
 
             CycleOverlaysBind = new InputCombinationSetting(Handler, "Bind: Cycle Overlays", Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, "ctrl " + MENU_BIND_INPUT_NAME),
-                $"For cycling through block overlays ({string.Join(", ", Overlays.NAMES)}).");
+                $"For cycling through block overlays ({string.Join(", ", Main.Overlays.NAMES)}).");
 
             ToggleTransparencyBind = new InputCombinationSetting(Handler, "Bind: Toggle Transparency", Combination.Create(TOGGLE_TRANSPARENCY_INPUT_NAME, "shift " + MENU_BIND_INPUT_NAME),
                 "For toggling block transparency when equipped.");

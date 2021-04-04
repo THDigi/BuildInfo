@@ -35,7 +35,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
 
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomControlGetter;
         }
@@ -45,7 +45,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
-            EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
 
             MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
         }

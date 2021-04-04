@@ -69,12 +69,12 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         protected override void UnregisterComponent()
         {
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features
                 {
                     var comp = def.Components[i];
 
-                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Constants.COMPUTER_COMPONENT_ID)
+                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Main.Constants.COMPUTER_COMPONENT_ID)
                     {
                         ComputerComponentIndex = i;
                     }
@@ -126,8 +126,8 @@ namespace Digi.BuildInfo.Features
 
         private void DrawProjectedSelection()
         {
-            IMySlimBlock aimedBlock = EquipmentMonitor.AimedBlock;
-            IMyProjector projector = EquipmentMonitor.AimedProjectedBy;
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            IMyProjector projector = Main.EquipmentMonitor.AimedProjectedBy;
 
             if(aimedBlock == null || projector == null)
                 return;
@@ -146,7 +146,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateDraw()
         {
-            if(GameConfig.HudState == HudState.OFF || EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
+            if(Main.GameConfig.HudState == HudState.OFF || Main.EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
             DrawProjectedSelection();
@@ -199,12 +199,12 @@ namespace Digi.BuildInfo.Features
 #endif
 
             #region Lines on top of block info
-            if(Config.BlockInfoAdditions.Value)
+            if(Main.Config.BlockInfoAdditions.Value)
             {
-                var blockDef = EquipmentMonitor.BlockDef;
+                var blockDef = Main.EquipmentMonitor.BlockDef;
                 var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-                Vector2 posCompList = DrawUtils.GetHudComponentListStart();
+                Vector2 posCompList = Main.DrawUtils.GetHudComponentListStart();
                 int totalComps = blockDef.Components.Length;
 
                 int scrollIndexOffset = Main.BlockInfoScrollComponents.IndexOffset;
@@ -231,12 +231,12 @@ namespace Digi.BuildInfo.Features
                 int critIndex = blockDef.CriticalGroup + scrollIndexOffset;
                 if(critIndex >= 0 && critIndex < totalComps)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * DrawUtils.ScaleFOV);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
 
                     var hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - critIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
-                    var worldPos = DrawUtils.HUDtoWorld(hud);
+                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -247,12 +247,12 @@ namespace Digi.BuildInfo.Features
                 int compIndex = ComputerComponentIndex + scrollIndexOffset;
                 if(compIndex >= 0 && compIndex < totalComps)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * DrawUtils.ScaleFOV);
+                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
 
                     var hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - compIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
-                    var worldPos = DrawUtils.HUDtoWorld(hud);
+                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
 
@@ -283,16 +283,16 @@ namespace Digi.BuildInfo.Features
                     var hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - index - 1);
 
-                    var worldPos = DrawUtils.HUDtoWorld(hud);
+                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
-                    if(TextAPIEnabled)
+                    if(Main.TextAPI.IsEnabled)
                     {
                         const double LeftOffset = 0.0183;
                         const string LabelPrefix = "<color=255,255,0>Grinds to: ";
                         const int NameMaxChars = 21;
-                        double textScale = 0.0012 * DrawUtils.ScaleFOV;
+                        double textScale = 0.0012 * Main.DrawUtils.ScaleFOV;
 
-                        worldPos += camMatrix.Left * (LeftOffset * DrawUtils.ScaleFOV);
+                        worldPos += camMatrix.Left * (LeftOffset * Main.DrawUtils.ScaleFOV);
 
                         if(info.Text == null)
                         {
@@ -315,7 +315,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * DrawUtils.ScaleFOV);
+                        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * Main.DrawUtils.ScaleFOV);
 
                         worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 

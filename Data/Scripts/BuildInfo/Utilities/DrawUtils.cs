@@ -111,12 +111,12 @@ namespace Digi.BuildInfo.Utilities
 
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
-            var size = Constants.BLOCKINFO_SIZE;
+            var size = Main.Constants.BLOCKINFO_SIZE;
             size.Y *= Ymultiplier;
             size.Y += Constants.BLOCKINFO_TEXT_PADDING;
             size *= ScaleFOV;
 
-            if(Math.Abs(GameConfig.AspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
+            if(Math.Abs(Main.GameConfig.AspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
             {
                 size.X *= Constants.ASPECT_RATIO_54_FIX;
             }
@@ -131,11 +131,11 @@ namespace Digi.BuildInfo.Utilities
             if(MyAPIGateway.Session.ControlledObject is IMyShipController)
                 posHUD.Y = 0.498f;
 
-            if(GameConfig.HudState == HudState.BASIC)
+            if(Main.GameConfig.HudState == HudState.BASIC)
                 posHUD.Y = 0.558f;
 
             // FIXME: vanilla UI is all over the place with this, needs tweaking
-            if(GameConfig.AspectRatio > 5) // triple monitor
+            if(Main.GameConfig.AspectRatio > 5) // triple monitor
                 posHUD.X += 0.75f;
 
             return posHUD;

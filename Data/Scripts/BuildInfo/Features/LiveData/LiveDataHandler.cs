@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Digi.BuildInfo.Systems;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using VRage.Game;
@@ -41,12 +40,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         protected override void UnregisterComponent()
         {
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
@@ -57,7 +56,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
         private void AddType<T>(MyObjectBuilderType blockType) where T : BData_Base, new()
         {
-            BlockMonitor.MonitorType(blockType, BlockAdded<T>);
+            Main.BlockMonitor.MonitorType(blockType, BlockAdded<T>);
         }
 
         private void BlockAdded<T>(IMySlimBlock slimBlock) where T : BData_Base, new()
@@ -67,12 +66,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
             var success = BData_Base.TrySetData<T>(slimBlock.FatBlock);
 
-            if(success && TextGeneration != null)
+            if(success && Main.TextGeneration != null)
             {
                 // reset caches and force block text recalc
-                TextGeneration.CachedBuildInfoTextAPI.Remove(slimBlock.BlockDefinition.Id);
-                TextGeneration.CachedBuildInfoNotification.Remove(slimBlock.BlockDefinition.Id);
-                TextGeneration.LastDefId = default(MyDefinitionId);
+                Main.TextGeneration.CachedBuildInfoTextAPI.Remove(slimBlock.BlockDefinition.Id);
+                Main.TextGeneration.CachedBuildInfoNotification.Remove(slimBlock.BlockDefinition.Id);
+                Main.TextGeneration.LastDefId = default(MyDefinitionId);
             }
         }
     }

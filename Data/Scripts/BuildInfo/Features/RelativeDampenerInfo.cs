@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateAfterSim(int tick)
         {
-            if(!Config.RelativeDampenerInfo.Value)
+            if(!Main.Config.RelativeDampenerInfo.Value)
                 return;
 
             var controlled = MyAPIGateway.Session?.ControlledObject as InternalControllableEntity;

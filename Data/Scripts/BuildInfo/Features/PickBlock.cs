@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(PickedBlockDef == null && EquipmentMonitor.AimedBlock != null && Config.BlockPickerBind.Value.IsJustPressed())
+            if(PickedBlockDef == null && Main.EquipmentMonitor.AimedBlock != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
             {
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
@@ -46,7 +46,7 @@ namespace Digi.BuildInfo.Features
                     return;
                 }
 
-                PickedBlockDef = EquipmentMonitor.BlockDef;
+                PickedBlockDef = Main.EquipmentMonitor.BlockDef;
             }
 
             // waiting for a slot input...

@@ -316,8 +316,8 @@ namespace Digi.BuildInfo.Features.LeakInfo
             var camPos = camMatrix.Translation;
             var camFw = camMatrix.Forward;
             var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
-            var particleColorWorld = Config.LeakParticleColorWorld.Value * alpha;
-            var particleColorOverlay = Config.LeakParticleColorOverlay.Value * alpha;
+            var particleColorWorld = Main.Config.LeakParticleColorWorld.Value * alpha;
+            var particleColorOverlay = Main.Config.LeakParticleColorOverlay.Value * alpha;
 
             // start dot
             var startPointWorld = selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start);

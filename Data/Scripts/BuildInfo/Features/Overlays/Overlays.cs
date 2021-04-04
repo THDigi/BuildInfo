@@ -133,18 +133,18 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             InitLookups();
 
-            GameConfig.HudStateChanged += GameConfig_HudStateChanged;
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
         protected override void UnregisterComponent()
         {
-            GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
         }
 
         private void GameConfig_HudStateChanged(HudState prevState, HudState newState)
@@ -160,7 +160,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            if(LockOverlay.LockedOnBlock != null)
+            if(Main.LockOverlay.LockedOnBlock != null)
                 return;
 
             SelectedOverlayCall = null;
@@ -173,7 +173,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
-            if(shipController != null && EquipmentMonitor.IsBuildTool && DrawOverlay > 0)
+            if(shipController != null && Main.EquipmentMonitor.IsBuildTool && DrawOverlay > 0)
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
                 const float REACH_DISTANCE = Hardcoded.ShipTool_ReachDistance;
@@ -250,14 +250,14 @@ namespace Digi.BuildInfo.Features.Overlays
 
         protected override void UpdateDraw()
         {
-            if(DrawOverlay == 0 || (LockOverlay.LockedOnBlock == null && EquipmentMonitor.BlockDef == null) || (GameConfig.HudState == HudState.OFF && !Config.OverlaysAlwaysVisible.Value))
+            if(DrawOverlay == 0 || (Main.LockOverlay.LockedOnBlock == null && Main.EquipmentMonitor.BlockDef == null) || (Main.GameConfig.HudState == HudState.OFF && !Main.Config.OverlaysAlwaysVisible.Value))
                 return;
 
-            var def = EquipmentMonitor.BlockDef;
-            var aimedBlock = EquipmentMonitor.AimedBlock;
-            var cellSize = EquipmentMonitor.BlockGridSize;
+            var def = Main.EquipmentMonitor.BlockDef;
+            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            var cellSize = Main.EquipmentMonitor.BlockGridSize;
 
-            if(LockOverlay.LockedOnBlock != null && !LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
+            if(Main.LockOverlay.LockedOnBlock != null && !Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
                 return;
 
             try
@@ -265,7 +265,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 #region DrawMatrix and other needed data
                 var drawMatrix = MatrixD.Identity;
 
-                if(LockOverlay.LockedOnBlock == null && EquipmentMonitor.IsCubeBuilder)
+                if(Main.LockOverlay.LockedOnBlock == null && Main.EquipmentMonitor.IsCubeBuilder)
                 {
                     if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
@@ -327,7 +327,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 //    }
                 //}
 
-                if(Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
+                if(Main.Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
                 {
                     const float OffsetLineThickness = 0.005f;
                     const float OffsetPointThickness = 0.05f;
@@ -349,7 +349,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
 
                 #region Draw mount points
-                if(TextAPIEnabled)
+                if(Main.TextAPI.IsEnabled)
                 {
                     DrawMountPointAxisText(def, cellSize, ref drawMatrix);
                 }
@@ -365,7 +365,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 BlockFunctionalForPressure = true;
 
                 // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
-                if(EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
+                if(Main.EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                 {
                     var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
@@ -534,8 +534,8 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        private IMySlimBlock GetOverlayBlock() => (LockOverlay.LockedOnBlock ?? EquipmentMonitor.AimedBlock);
-        private float GetOverlayCellSize(IMySlimBlock block) => (block == null ? EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
+        private IMySlimBlock GetOverlayBlock() => (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
+        private float GetOverlayCellSize(IMySlimBlock block) => (block == null ? Main.EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
 
         #region Block-specific overlays
         private void DrawOverlay_Doors(MyCubeBlockDefinition def, MatrixD drawMatrix)
@@ -691,7 +691,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Weapons(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 DrawOverlay_WeaponCoreWeapon(def, drawMatrix);
                 return;
@@ -757,7 +757,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 // TODO: weaponcore overlays? - not really viable...
 
@@ -992,7 +992,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
-            if(Config.OverlayLabels.IsSet(settingFlag) || (Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()))
+            if(Main.Config.OverlayLabels.IsSet(settingFlag) || (Main.Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()))
             {
                 var textWorldPos = start + direction * lineHeight;
                 AnyLabelShown = true;
@@ -1077,7 +1077,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private bool CanDrawLabel(OverlayLabelsFlags labelsSetting = OverlayLabelsFlags.Other)
         {
-            return TextAPIEnabled && (Config.OverlayLabels.IsSet(labelsSetting) || (Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()));
+            return Main.TextAPI.IsEnabled && (Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()));
         }
     }
 }

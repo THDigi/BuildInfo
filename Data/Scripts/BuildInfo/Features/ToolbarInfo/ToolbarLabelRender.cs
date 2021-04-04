@@ -88,17 +88,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         protected override void RegisterComponent()
         {
-            TextAPI.Detected += TextAPIDetected;
+            Main.TextAPI.Detected += TextAPIDetected;
 
-            Config.ToolbarLabelsShowTitle.ValueAssigned += ConfigBoolChanged;
-            Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
-            Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
-            Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
-            Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
-            Config.ToolbarStyleMode.ValueAssigned += ConfigIntChanged;
-            Config.ToolbarItemNameMode.ValueAssigned += ConfigIntChanged;
-            Config.ToolbarLabels.ValueAssigned += ConfigIntChanged;
-            GameConfig.OptionsMenuClosed += UpdateFromConfig;
+            Main.Config.ToolbarLabelsShowTitle.ValueAssigned += ConfigBoolChanged;
+            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
+            Main.Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
+            Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
+            Main.Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
+            Main.Config.ToolbarStyleMode.ValueAssigned += ConfigIntChanged;
+            Main.Config.ToolbarItemNameMode.ValueAssigned += ConfigIntChanged;
+            Main.Config.ToolbarLabels.ValueAssigned += ConfigIntChanged;
+            Main.GameConfig.OptionsMenuClosed += UpdateFromConfig;
 
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
 
@@ -112,17 +112,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
-            TextAPI.Detected -= TextAPIDetected;
+            Main.TextAPI.Detected -= TextAPIDetected;
 
-            Config.ToolbarLabelsShowTitle.ValueAssigned -= ConfigBoolChanged;
-            Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
-            Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
-            Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
-            Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
-            Config.ToolbarStyleMode.ValueAssigned -= ConfigIntChanged;
-            Config.ToolbarItemNameMode.ValueAssigned -= ConfigIntChanged;
-            Config.ToolbarLabels.ValueAssigned -= ConfigIntChanged;
-            GameConfig.OptionsMenuClosed -= UpdateFromConfig;
+            Main.Config.ToolbarLabelsShowTitle.ValueAssigned -= ConfigBoolChanged;
+            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
+            Main.Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
+            Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
+            Main.Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
+            Main.Config.ToolbarStyleMode.ValueAssigned -= ConfigIntChanged;
+            Main.Config.ToolbarItemNameMode.ValueAssigned -= ConfigIntChanged;
+            Main.Config.ToolbarLabels.ValueAssigned -= ConfigIntChanged;
+            Main.GameConfig.OptionsMenuClosed -= UpdateFromConfig;
 
             Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
 
@@ -153,12 +153,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateFromConfig()
         {
-            LabelsMode = (ToolbarLabelsMode)Config.ToolbarLabels.Value;
-            NamesMode = (ToolbarNameMode)Config.ToolbarItemNameMode.Value;
-            StyleMode = (ToolbarStyle)Config.ToolbarStyleMode.Value;
-            PosInGUI = Config.ToolbarLabelsInMenuPosition.Value;
-            PosOnHUD = Config.ToolbarLabelsPosition.Value;
-            Scale = (float)(TextScaleMultiplier * Config.ToolbarLabelsScale.Value);
+            LabelsMode = (ToolbarLabelsMode)Main.Config.ToolbarLabels.Value;
+            NamesMode = (ToolbarNameMode)Main.Config.ToolbarItemNameMode.Value;
+            StyleMode = (ToolbarStyle)Main.Config.ToolbarStyleMode.Value;
+            PosInGUI = Main.Config.ToolbarLabelsInMenuPosition.Value;
+            PosOnHUD = Main.Config.ToolbarLabelsPosition.Value;
+            Scale = (float)(TextScaleMultiplier * Main.Config.ToolbarLabelsScale.Value);
 
             WasInToolbarConfig = null; // force origin refresh
 
@@ -168,7 +168,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 ShadowsLine2.Scale = Scale;
                 Labels.Scale = Scale;
                 LabelsLine2.Scale = Scale;
-                UpdateBgOpacity(GameConfig.HudBackgroundOpacity);
+                UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
             }
 
             WereVisible = null;
@@ -185,7 +185,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             else
             {
                 if(Main.ShipToolInventoryBar.Shown)
-                    bottomLeftPos = PosOnHUD + Config.ToolbarLabelsOffsetForInvBar.Value;
+                    bottomLeftPos = PosOnHUD + Main.Config.ToolbarLabelsOffsetForInvBar.Value;
                 else
                     bottomLeftPos = PosOnHUD;
             }
@@ -299,7 +299,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(ClickOffset.HasValue && MyAPIGateway.Input.IsNewLeftMouseReleased())
             {
                 ClickOffset = null;
-                Config.Save();
+                Main.Config.Save();
             }
 
             // TODO: move to TextAPI module?
@@ -350,15 +350,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     if(!SelectedBox)
                     {
                         SelectedBox = true;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : Math.Min(1f, GameConfig.HudBackgroundOpacity * 1.2f), BackgroundColorSelected);
+                        UpdateBgOpacity(InToolbarConfig ? 1f : Math.Min(1f, Main.GameConfig.HudBackgroundOpacity * 1.2f), BackgroundColorSelected);
                     }
 
                     if(MyAPIGateway.Input.IsNewLeftMousePressed())
                     {
                         if(InToolbarConfig)
-                            ClickOffset = Config.ToolbarLabelsInMenuPosition.Value - mouseOnScreen;
+                            ClickOffset = Main.Config.ToolbarLabelsInMenuPosition.Value - mouseOnScreen;
                         else
-                            ClickOffset = Config.ToolbarLabelsPosition.Value - mouseOnScreen;
+                            ClickOffset = Main.Config.ToolbarLabelsPosition.Value - mouseOnScreen;
                     }
 
                     if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
@@ -368,9 +368,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
                         if(InToolbarConfig)
-                            Config.ToolbarLabelsInMenuPosition.Value = newPos;
+                            Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
                         else
-                            Config.ToolbarLabelsPosition.Value = newPos;
+                            Main.Config.ToolbarLabelsPosition.Value = newPos;
                     }
                 }
                 else
@@ -378,7 +378,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     if(SelectedBox)
                     {
                         SelectedBox = false;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : GameConfig.HudBackgroundOpacity);
+                        UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
                     }
                 }
             }
@@ -389,7 +389,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(Backgrounds == null)
                 return;
 
-            MustBeVisible = (TextAPIEnabled && LabelsMode != ToolbarLabelsMode.Off && MyAPIGateway.SpectatorTools.GetMode() == MyCameraMode.None);
+            MustBeVisible = (Main.TextAPI.IsEnabled && LabelsMode != ToolbarLabelsMode.Off && MyAPIGateway.SpectatorTools.GetMode() == MyCameraMode.None);
 
             if(MustBeVisible)
             {
@@ -434,16 +434,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     ShowUntilTick = 0;
 
                     if(BeenFaded)
-                        UpdateBgOpacity(GameConfig.HudBackgroundOpacity);
+                        UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
                 }
 
                 // show and fade out when entering cockpit
-                if(modeForFadeOut && ShowUntilTick > tick && (LabelsMode != ToolbarLabelsMode.HudHints || GameConfig.HudState != HudState.HINTS))
+                if(modeForFadeOut && ShowUntilTick > tick && (LabelsMode != ToolbarLabelsMode.HudHints || Main.GameConfig.HudState != HudState.HINTS))
                 {
                     MustBeVisible = true;
 
                     float fadeSection = ((float)ShowForTicks * 0.5f);
-                    float opacity = GameConfig.HudBackgroundOpacity;
+                    float opacity = Main.GameConfig.HudBackgroundOpacity;
                     if(ShowUntilTick <= tick + fadeSection)
                         opacity = MathHelper.Lerp(0, opacity, (ShowUntilTick - tick) / fadeSection);
 
@@ -457,7 +457,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     // reset colors after fade
                     if(BeenFaded)
                     {
-                        UpdateBgOpacity(GameConfig.HudBackgroundOpacity);
+                        UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
                         BeenFaded = false;
                     }
 
@@ -478,7 +478,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 WasInToolbarConfig = InToolbarConfig;
 
                 UpdatePosition();
-                UpdateBgOpacity(InToolbarConfig ? 1f : GameConfig.HudBackgroundOpacity);
+                UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
 
                 // refresh instantly to update names
                 if(MustBeVisible && NamesMode == ToolbarNameMode.InMenuOnly)
@@ -558,7 +558,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 sb2 = LabelsLine2.Message.Clear();
             }
 
-            if(Config.ToolbarLabelsShowTitle.Value)
+            if(Main.Config.ToolbarLabelsShowTitle.Value)
             {
                 sb.Append("<color=255,240,220>Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i><color=gray>(BuildInfo Mod)<reset>\n");
             }
@@ -574,7 +574,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     sb.Color(Color.Gray);
 
                 if(gamepadHUD)
-                    sb.Append(Constants.DPAD_CHARS[i]).Append("  ");
+                    sb.Append(Main.Constants.DPAD_CHARS[i]).Append("  ");
                 else
                     sb.Append(i + 1).Append(". ");
 
@@ -699,7 +699,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             float cornerHeight = (float)(CornerSize * Scale);
-            float cornerWidth = (float)(cornerHeight / GameConfig.AspectRatio);
+            float cornerWidth = (float)(cornerHeight / Main.GameConfig.AspectRatio);
 
             float edge = (float)(BackgroundPadding * Scale);
             float bgWidth = (float)Math.Abs(TextSize.X) + edge;

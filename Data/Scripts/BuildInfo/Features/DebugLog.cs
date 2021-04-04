@@ -45,7 +45,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Log.WorkshopId == 0) // only local mod
             {
-                TextAPI.Detected += TextAPIDetected;
+                Main.TextAPI.Detected += TextAPIDetected;
             }
         }
 
@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            TextAPI.Detected -= TextAPIDetected;
+            Main.TextAPI.Detected -= TextAPIDetected;
         }
 
         public static void ClearHUD(object caller)

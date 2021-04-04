@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features
             {
                 //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
                 //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-                EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+                Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
             }
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features
             {
                 //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
                 //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-                EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+                Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
@@ -264,9 +264,9 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
-            if(TextAPI.WasDetected)
+            if(Main.TextAPI.WasDetected)
             {
-                if(Config.Debug.Value)
+                if(Main.Config.Debug.Value)
                 {
                     if(debugEquipmentMsg == null)
                         debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
@@ -274,8 +274,8 @@ namespace Digi.BuildInfo.Features
                     debugEquipmentMsg.Visible = true;
                     debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
                         $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
-                        $"tool=<color=yellow>{(EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : EquipmentMonitor.ToolDefId.ToString())}\n" +
-                        $"<color=white>block=<color=yellow>{EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
+                        $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
+                        $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
                 }
                 else if(debugEquipmentMsg != null && debugEquipmentMsg.Visible)
                 {

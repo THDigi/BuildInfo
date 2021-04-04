@@ -433,7 +433,7 @@ namespace Digi.BuildInfo.Features
 
             if(newBlock != null)
             {
-                if(!Config.TerminalDetailInfoAdditions.Value)
+                if(!Main.Config.TerminalDetailInfoAdditions.Value)
                     return;
 
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
@@ -452,7 +452,7 @@ namespace Digi.BuildInfo.Features
 
         void UpdateDetailInfo(bool force = false)
         {
-            if(!Config.TerminalDetailInfoAdditions.Value)
+            if(!Main.Config.TerminalDetailInfoAdditions.Value)
                 return;
 
             if(!force && refreshWaitForTick > Main.Tick)
@@ -472,7 +472,7 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                if(!Config.TerminalDetailInfoAdditions.Value)
+                if(!Main.Config.TerminalDetailInfoAdditions.Value)
                     return;
 
                 if(currentFormatCall == null)
@@ -573,7 +573,7 @@ namespace Digi.BuildInfo.Features
             //      Current Input: <n> W
 
             // Conveyor sorters can be used as a base block for WeaponCore.
-            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -636,7 +636,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -1154,7 +1154,7 @@ namespace Digi.BuildInfo.Features
             info.DetailInfo_InputPower(Sink);
 
             var rotorStator = block as IMyMotorStator;
-            if(rotorStator != null && Config.InternalInfo.Value)
+            if(rotorStator != null && Main.Config.InternalInfo.Value)
             {
                 info.Append("API Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians").NewLine();
             }
@@ -1168,7 +1168,7 @@ namespace Digi.BuildInfo.Features
 
             info.DetailInfo_InputPower(Sink);
 
-            if(Config.InternalInfo.Value)
+            if(Main.Config.InternalInfo.Value)
             {
                 var piston = (IMyPistonBase)block;
                 info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).NewLine();

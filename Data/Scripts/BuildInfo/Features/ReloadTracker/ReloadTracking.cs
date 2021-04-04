@@ -21,12 +21,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
             var action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeMissileTurret), action);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallGatlingGun), action);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncher), action);
-            BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeMissileTurret), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallGatlingGun), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncher), action);
+            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
         }
 
         protected override void RegisterComponent()
@@ -50,7 +50,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
 
-            if(WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition.Id))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition.Id))
                 return; // no tracking of weaponcore blocks
 
             var gunBlock = block.FatBlock as IMyUserControllableGun;

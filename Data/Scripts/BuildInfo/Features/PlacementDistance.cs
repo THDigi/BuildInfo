@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features
         {
             // HACK hardcoded: from Data/Game/SessionComponents.sbc
 
-            var def = EquipmentMonitor.BlockDef;
+            var def = Main.EquipmentMonitor.BlockDef;
             if(def == null)
                 return 20f;
 
@@ -51,25 +51,25 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         protected override void UnregisterComponent()
         {
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, EquipmentMonitor.IsCubeBuilder);
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, Main.EquipmentMonitor.IsCubeBuilder);
         }
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             // reset survival distance if this feature is disabled
-            if(def != null && EquipmentMonitor.IsCubeBuilder && !Config.AdjustBuildDistanceSurvival.Value && !MyAPIGateway.Session.CreativeMode && !Utils.CreativeToolsEnabled)
+            if(def != null && Main.EquipmentMonitor.IsCubeBuilder && !Main.Config.AdjustBuildDistanceSurvival.Value && !MyAPIGateway.Session.CreativeMode && !Utils.CreativeToolsEnabled)
             {
                 MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance();
             }
@@ -77,7 +77,7 @@ namespace Digi.BuildInfo.Features
 
         protected override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(inMenu || paused || !EquipmentMonitor.IsCubeBuilder || EquipmentMonitor.BlockDef == null)
+            if(inMenu || paused || !Main.EquipmentMonitor.IsCubeBuilder || Main.EquipmentMonitor.BlockDef == null)
                 return;
 
             float maxRange = 0f;
@@ -88,28 +88,28 @@ namespace Digi.BuildInfo.Features
                 if(!inShip)
                     return;
 
-                if(!Config.AdjustBuildDistanceShipCreative.Value)
+                if(!Main.Config.AdjustBuildDistanceShipCreative.Value)
                     return;
 
                 maxRange = VANILLA_CREATIVE_MAXDIST;
             }
             else if(Utils.CreativeToolsEnabled)
             {
-                if(!Config.AdjustBuildDistanceShipCreative.Value)
+                if(!Main.Config.AdjustBuildDistanceShipCreative.Value)
                     return;
 
                 maxRange = VANILLA_CREATIVE_MAXDIST;
             }
             else
             {
-                if(!Config.AdjustBuildDistanceSurvival.Value)
+                if(!Main.Config.AdjustBuildDistanceSurvival.Value)
                     return;
 
-                float blockSizeMeters = Math.Max(EquipmentMonitor.BlockDef.Size.AbsMax() * EquipmentMonitor.BlockGridSize, PLACE_MIN_SIZE);
+                float blockSizeMeters = Math.Max(Main.EquipmentMonitor.BlockDef.Size.AbsMax() * Main.EquipmentMonitor.BlockGridSize, PLACE_MIN_SIZE);
 
                 // add some extra distance only if the block isn't huge
                 float add = PLACE_DIST_ADD;
-                float tooLarge = 3 * EquipmentMonitor.BlockGridSize;
+                float tooLarge = 3 * Main.EquipmentMonitor.BlockGridSize;
                 if(blockSizeMeters > tooLarge)
                     add = Math.Max(add - (blockSizeMeters - tooLarge), 0);
 
@@ -128,7 +128,7 @@ namespace Digi.BuildInfo.Features
 
             MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, PLACE_MINRANGE, maxRange);
 
-            if(Config.Debug.Value)
+            if(Main.Config.Debug.Value)
                 MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance.ToString("0.##")}; max={maxRange.ToString("0.##")})", 17);
         }
 

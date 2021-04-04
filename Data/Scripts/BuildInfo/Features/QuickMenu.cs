@@ -29,17 +29,17 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
         }
 
         protected override void UnregisterComponent()
         {
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            if(Shown && !EquipmentMonitor.IsCubeBuilder && !EquipmentMonitor.IsBuildTool)
+            if(Shown && !Main.EquipmentMonitor.IsCubeBuilder && !Main.EquipmentMonitor.IsBuildTool)
             {
                 CloseMenu();
             }
@@ -101,22 +101,22 @@ namespace Digi.BuildInfo.Features
                         CloseMenu();
                         break;
                     case 1:
-                        if(EquipmentMonitor.AimedBlock != null)
+                        if(Main.EquipmentMonitor.AimedBlock != null)
                         {
                             CloseMenu();
-                            Main.PickBlock.PickedBlockDef = EquipmentMonitor.BlockDef;
+                            Main.PickBlock.PickedBlockDef = Main.EquipmentMonitor.BlockDef;
                         }
                         else
                             MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, FontsHandler.RedSh);
                         break;
                     case 2:
-                        if(EquipmentMonitor.BlockDef == null)
+                        if(Main.EquipmentMonitor.BlockDef == null)
                         {
                             MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, FontsHandler.RedSh);
                         }
-                        else if(EquipmentMonitor.BlockDef.Context.IsBaseGame)
+                        else if(Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                         {
-                            MyAPIGateway.Utilities.ShowNotification($"{EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else
                         {
@@ -136,13 +136,13 @@ namespace Digi.BuildInfo.Features
                         ToggleTextInfo();
                         break;
                     case 6:
-                        Overlays.CycleOverlayMode(showNotification: false);
+                        Main.Overlays.CycleOverlayMode(showNotification: false);
                         break;
                     case 7:
                         SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
                         break;
                     case 8:
-                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo, showNotification: TextAPIEnabled);
+                        SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo, showNotification: Main.TextAPI.IsEnabled);
                         break;
                     case 9:
                         ToggleTextAPI();
@@ -157,12 +157,12 @@ namespace Digi.BuildInfo.Features
 
         private void UpdateHotkeys()
         {
-            bool toolEquipped = (EquipmentMonitor.IsBuildTool || EquipmentMonitor.IsCubeBuilder);
+            bool toolEquipped = (Main.EquipmentMonitor.IsBuildTool || Main.EquipmentMonitor.IsCubeBuilder);
             var context = InputLib.GetCurrentInputContext();
 
-            if(toolEquipped && Config.ToggleTransparencyBind.Value.IsPressed(context))
+            if(toolEquipped && Main.Config.ToggleTransparencyBind.Value.IsPressed(context))
             {
-                if(Config.ToggleTransparencyBind.Value.IsJustPressed(context))
+                if(Main.Config.ToggleTransparencyBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
                     SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency);
@@ -171,20 +171,20 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if((toolEquipped || LockOverlay.LockedOnBlock != null) && Config.CycleOverlaysBind.Value.IsPressed(context))
+            if((toolEquipped || Main.LockOverlay.LockedOnBlock != null) && Main.Config.CycleOverlaysBind.Value.IsPressed(context))
             {
-                if(Config.CycleOverlaysBind.Value.IsJustPressed(context))
+                if(Main.Config.CycleOverlaysBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
-                    Overlays.CycleOverlayMode();
+                    Main.Overlays.CycleOverlayMode();
                 }
 
                 return;
             }
 
-            if(toolEquipped && Config.FreezePlacementBind.Value.IsPressed(context))
+            if(toolEquipped && Main.Config.FreezePlacementBind.Value.IsPressed(context))
             {
-                if(Config.FreezePlacementBind.Value.IsJustPressed(context))
+                if(Main.Config.FreezePlacementBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
                     SetFreezePlacement(!MyAPIGateway.CubeBuilder.FreezeGizmo);
@@ -193,9 +193,9 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            if(toolEquipped && Config.MenuBind.Value.IsPressed(context))
+            if(toolEquipped && Main.Config.MenuBind.Value.IsPressed(context))
             {
-                if(Config.MenuBind.Value.IsJustPressed(context))
+                if(Main.Config.MenuBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
 
@@ -211,12 +211,12 @@ namespace Digi.BuildInfo.Features
 
         public void ToggleTextAPI()
         {
-            if(TextAPI.WasDetected)
+            if(Main.TextAPI.WasDetected)
             {
-                TextAPI.Use = !TextAPI.Use;
+                Main.TextAPI.Use = !Main.TextAPI.Use;
 
-                TextGeneration.cache = null;
-                TextGeneration.HideText();
+                Main.TextGeneration.cache = null;
+                Main.TextGeneration.HideText();
             }
             else
             {
@@ -227,14 +227,14 @@ namespace Digi.BuildInfo.Features
 
         public void ToggleTextInfo()
         {
-            Config.TextShow.Value = !Config.TextShow.Value;
-            Config.Save();
+            Main.Config.TextShow.Value = !Main.Config.TextShow.Value;
+            Main.Config.Save();
 
             if(buildInfoNotification == null)
                 buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
 
             buildInfoNotification.Hide(); // required since SE v1.194
-            buildInfoNotification.Text = (Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
+            buildInfoNotification.Text = (Main.Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
             buildInfoNotification.Show();
         }
 
@@ -245,7 +245,7 @@ namespace Digi.BuildInfo.Features
 
             freezeGizmoNotification.Hide(); // required since SE v1.194
 
-            if(!EquipmentMonitor.IsCubeBuilder)
+            if(!Main.EquipmentMonitor.IsCubeBuilder)
             {
                 freezeGizmoNotification.Text = "Equip a block and aim at a grid.";
                 freezeGizmoNotification.Font = FontsHandler.RedSh;
@@ -263,7 +263,7 @@ namespace Digi.BuildInfo.Features
                 freezeGizmoNotification.Font = FontsHandler.WhiteSh;
 
                 if(value) // store the frozen position to check distance for auto-unfreeze
-                    MyCubeBuilder.Static.GetAddPosition(out TextGeneration.lastGizmoPosition);
+                    MyCubeBuilder.Static.GetAddPosition(out Main.TextGeneration.lastGizmoPosition);
             }
 
             if(showNotification)

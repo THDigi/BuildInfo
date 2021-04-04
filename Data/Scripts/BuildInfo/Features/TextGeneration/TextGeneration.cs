@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
         private HudAPIv2.HUDMessage textObject = null;
         private HudAPIv2.BillBoardHUDMessage bgObject = null;
-        private float TextAPIScale => Config.TextAPIScale.Value;
+        private float TextAPIScale => Main.Config.TextAPIScale.Value;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
@@ -144,28 +144,28 @@ namespace Digi.BuildInfo.Features
         {
             InitLookups();
 
-            TextAPI.Detected += TextAPI_APIDetected;
-            GameConfig.HudStateChanged += GameConfig_HudStateChanged;
-            GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
-            EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            Main.TextAPI.Detected += TextAPI_APIDetected;
+            Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
 
             ReCheckSide();
         }
 
         protected override void UnregisterComponent()
         {
-            TextAPI.Detected -= TextAPI_APIDetected;
-            GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
-            GameConfig.OptionsMenuClosed -= GameConfig_OptionsMenuClosed;
-            EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            Main.TextAPI.Detected -= TextAPI_APIDetected;
+            Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.GameConfig.OptionsMenuClosed -= GameConfig_OptionsMenuClosed;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
         private void TextAPI_APIDetected()
         {
             // FIXME: doesn't re-show the menu if in it while this happens...
-            TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
+            Main.TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
         }
 
         private void GameConfig_HudStateChanged(HudState prevState, HudState state)
@@ -177,9 +177,9 @@ namespace Digi.BuildInfo.Features
         {
             ReCheckSide();
 
-            if(Math.Abs(prevAspectRatio - GameConfig.AspectRatio) > 0.0001)
+            if(Math.Abs(prevAspectRatio - Main.GameConfig.AspectRatio) > 0.0001)
             {
-                prevAspectRatio = GameConfig.AspectRatio;
+                prevAspectRatio = Main.GameConfig.AspectRatio;
                 CachedBuildInfoTextAPI.Clear();
             }
         }
@@ -196,7 +196,7 @@ namespace Digi.BuildInfo.Features
 
         private void ReCheckSide()
         {
-            bool shouldUseLeftSide = (GameConfig.HudState == HudState.HINTS);
+            bool shouldUseLeftSide = (Main.GameConfig.HudState == HudState.HINTS);
 
             if(useLeftSide != shouldUseLeftSide)
             {
@@ -225,23 +225,23 @@ namespace Digi.BuildInfo.Features
 
         private void Update(int tick)
         {
-            var prevToolDefId = EquipmentMonitor.ToolDefId;
+            var prevToolDefId = Main.EquipmentMonitor.ToolDefId;
 
-            if(EquipmentMonitor.AimedBlock != null && tick % 10 == 0) // make the aimed info refresh every 10 ticks
+            if(Main.EquipmentMonitor.AimedBlock != null && tick % 10 == 0) // make the aimed info refresh every 10 ticks
                 aimInfoNeedsUpdate = true;
 
-            if(EquipmentMonitor.ToolDefId != prevToolDefId)
+            if(Main.EquipmentMonitor.ToolDefId != prevToolDefId)
                 LastDefId = default(MyDefinitionId);
 
             // turn off frozen block preview if camera is too far away from it
             if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
             {
-                QuickMenu.SetFreezePlacement(false);
+                Main.QuickMenu.SetFreezePlacement(false);
             }
 
-            var def = EquipmentMonitor.BlockDef;
+            var def = Main.EquipmentMonitor.BlockDef;
 
-            if(def != null || QuickMenu.Shown)
+            if(def != null || Main.QuickMenu.Shown)
             {
                 if(UpdateWithDef(def))
                     return;
@@ -249,11 +249,11 @@ namespace Digi.BuildInfo.Features
 
             if(textShown)
             {
-                QuickMenu.CloseMenu();
+                Main.QuickMenu.CloseMenu();
 
                 if(MyAPIGateway.CubeBuilder.FreezeGizmo)
                 {
-                    QuickMenu.SetFreezePlacement(false);
+                    Main.QuickMenu.SetFreezePlacement(false);
                 }
 
                 HideText();
@@ -262,12 +262,12 @@ namespace Digi.BuildInfo.Features
 
         private bool UpdateWithDef(MyCubeBlockDefinition def)
         {
-            if(QuickMenu.Shown)
+            if(Main.QuickMenu.Shown)
             {
-                if(QuickMenu.NeedsUpdate)
+                if(Main.QuickMenu.NeedsUpdate)
                 {
                     LastDefId = DEFID_MENU;
-                    QuickMenu.NeedsUpdate = false;
+                    Main.QuickMenu.NeedsUpdate = false;
                     textShown = false;
 
                     GenerateMenuText();
@@ -277,20 +277,20 @@ namespace Digi.BuildInfo.Features
             else
             {
                 bool changedBlock = (def.Id != LastDefId);
-                bool hasBlockDef = (EquipmentMonitor.BlockDef != null);
-                bool hasAimedBlock = (EquipmentMonitor.AimedBlock != null);
+                bool hasBlockDef = (Main.EquipmentMonitor.BlockDef != null);
+                bool hasAimedBlock = (Main.EquipmentMonitor.AimedBlock != null);
 
-                if(hasBlockDef && Config.PlaceInfo.Value == 0)
+                if(hasBlockDef && Main.Config.PlaceInfo.Value == 0)
                     return false;
 
-                if(hasAimedBlock && Config.AimInfo.Value == 0)
+                if(hasAimedBlock && Main.Config.AimInfo.Value == 0)
                     return false;
 
                 if(changedBlock || (aimInfoNeedsUpdate && hasAimedBlock))
                 {
                     LastDefId = def.Id;
 
-                    if(Config.TextShow.Value)
+                    if(Main.Config.TextShow.Value)
                     {
                         if(hasAimedBlock)
                         {
@@ -307,7 +307,7 @@ namespace Digi.BuildInfo.Features
                         }
                         else if(hasBlockDef)
                         {
-                            if(TextAPIEnabled ? CachedBuildInfoTextAPI.TryGetValue(def.Id, out cache) : CachedBuildInfoNotification.TryGetValue(def.Id, out cache))
+                            if(Main.TextAPI.IsEnabled ? CachedBuildInfoTextAPI.TryGetValue(def.Id, out cache) : CachedBuildInfoNotification.TryGetValue(def.Id, out cache))
                             {
                                 textShown = false; // make the textAPI update
                             }
@@ -349,7 +349,7 @@ namespace Digi.BuildInfo.Features
         #region Text handling
         public void PostProcessText(MyDefinitionId id, bool useCache)
         {
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 textAPIlines.TrimEndWhitespace();
 
@@ -401,12 +401,12 @@ namespace Digi.BuildInfo.Features
         {
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
             }
 
             if(textObject == null)
             {
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: TextAPIScale, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
             }
 
             bgObject.Visible = true;
@@ -437,7 +437,7 @@ namespace Digi.BuildInfo.Features
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
                 textSize = textObject.GetTextLength();
 
-            if(QuickMenu.Shown) // in the menu
+            if(Main.QuickMenu.Shown) // in the menu
             {
                 textOffset = new Vector2D(-textSize.X, textSize.Y / -2);
             }
@@ -469,24 +469,24 @@ namespace Digi.BuildInfo.Features
                 bgObject.Visible = false;
             }
 #endif
-            else if(Config.TextAPICustomStyling.Value) // custom alignment and position
+            else if(Main.Config.TextAPICustomStyling.Value) // custom alignment and position
             {
-                textPos = Config.TextAPIScreenPosition.Value;
+                textPos = Main.Config.TextAPIScreenPosition.Value;
 
-                if(Config.TextAPIAlign.IsSet(TextAlignFlags.Right))
+                if(Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right))
                     textOffset.X = -textSize.X;
 
-                if(Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom))
+                if(Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom))
                     textOffset.Y = -textSize.Y;
             }
             else if(!useLeftSide) // right side autocomputed
             {
-                textPos = (GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
+                textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_RIGHT_WIDE : TEXT_HUDPOS_RIGHT);
                 textOffset = new Vector2D(-textSize.X, -textSize.Y); // bottom-right pivot
             }
             else // left side autocomputed
             {
-                textPos = (GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
+                textPos = (Main.GameConfig.AspectRatio > 5 ? TEXT_HUDPOS_WIDE : TEXT_HUDPOS);
                 textOffset = new Vector2D(0, 0); // top-left pivot
             }
 
@@ -498,18 +498,18 @@ namespace Digi.BuildInfo.Features
 #endif
             {
                 Color color = BG_COLOR;
-                if(QuickMenu.Shown)
+                if(Main.QuickMenu.Shown)
                 {
                     color *= MENU_BG_OPACITY;
                 }
-                else if(Config.TextAPIBackgroundOpacity.Value >= 0)
+                else if(Main.Config.TextAPIBackgroundOpacity.Value >= 0)
                 {
-                    color *= Config.TextAPIBackgroundOpacity.Value;
+                    color *= Main.Config.TextAPIBackgroundOpacity.Value;
                 }
                 else
                 {
                     // HACK: matching vanilla HUD transparency better
-                    float opacity = GameConfig.HudBackgroundOpacity;
+                    float opacity = Main.GameConfig.HudBackgroundOpacity;
                     color *= opacity * (opacity * 1.075f);
                     color.A = (byte)(opacity * 255);
                 }
@@ -529,18 +529,18 @@ namespace Digi.BuildInfo.Features
 
         public void UpdateVisualText()
         {
-            var aimedBlock = EquipmentMonitor.AimedBlock;
+            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow.Value && !QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
                 {
                     HideText();
                     return;
                 }
 
                 // force reset, usually needed to fix notification to textAPI transition when heartbeat returns true
-                if(textObject == null || (cache == null && !(QuickMenu.Shown || aimedBlock != null)))
+                if(textObject == null || (cache == null && !(Main.QuickMenu.Shown || aimedBlock != null)))
                 {
                     LastDefId = default(MyDefinitionId);
                     return;
@@ -549,7 +549,7 @@ namespace Digi.BuildInfo.Features
                 // show last generated block info message only for cubebuilder
                 if(!textShown && textObject != null)
                 {
-                    if(QuickMenu.Shown || aimedBlock != null)
+                    if(Main.QuickMenu.Shown || aimedBlock != null)
                     {
                         UpdateTextAPIvisuals(textAPIlines);
                     }
@@ -563,14 +563,14 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Config.TextShow.Value && !QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
                 {
                     return;
                 }
 
                 List<IMyHudNotification> hudLines = null;
 
-                if(QuickMenu.Shown || aimedBlock != null)
+                if(Main.QuickMenu.Shown || aimedBlock != null)
                 {
                     hudLines = hudNotifLines;
 
@@ -623,13 +623,13 @@ namespace Digi.BuildInfo.Features
                     hud.Hide();
                 }
 
-                if(QuickMenu.Shown)
+                if(Main.QuickMenu.Shown)
                 {
                     // HACK this must match the data from the menu
                     const int itemsStartAt = 1;
                     const int itemsEndAt = QuickMenu.MENU_TOTAL_ITEMS;
 
-                    var selected = itemsStartAt + QuickMenu.SelectedItem;
+                    var selected = itemsStartAt + Main.QuickMenu.SelectedItem;
 
                     for(int l = 0; l < lines; ++l)
                     {
@@ -729,13 +729,13 @@ namespace Digi.BuildInfo.Features
 
                 // HUD notifications don't need hiding, they expire in one frame.
 
-                Overlays.HideLabels();
+                Main.Overlays.HideLabels();
             }
         }
 
         private void ResetLines()
         {
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 textAPIlines.Clear();
             }
@@ -759,7 +759,7 @@ namespace Digi.BuildInfo.Features
 
             ++line;
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 return textAPIlines;
             }
@@ -782,7 +782,7 @@ namespace Digi.BuildInfo.Features
 
             addLineCalled = false;
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 textAPIlines.ResetFormatting().Append('\n');
             }
@@ -798,16 +798,16 @@ namespace Digi.BuildInfo.Features
 
         private StringBuilder GetLine()
         {
-            return (TextAPIEnabled ? textAPIlines : notificationLines[line].str);
+            return (Main.TextAPI.IsEnabled ? textAPIlines : notificationLines[line].str);
         }
 
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay
-            if(Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
-                Config.CycleOverlaysBind.Value.GetBinds(GetLine());
+                Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
                 GetLine().Append(" to cycle)");
             }
         }
@@ -829,9 +829,9 @@ namespace Digi.BuildInfo.Features
         #region Menu generation
         private StringBuilder AddMenuItemLine(int item, bool enabled = true)
         {
-            AddLine(font: (QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
+            AddLine(font: (Main.QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
 
-            if(QuickMenu.SelectedItem == item)
+            if(Main.QuickMenu.SelectedItem == item)
                 GetLine().Color(COLOR_GOOD).Append("  > ");
             else
                 GetLine().Color(enabled ? COLOR_NORMAL : COLOR_UNIMPORTANT).Append(' ', 6);
@@ -852,9 +852,9 @@ namespace Digi.BuildInfo.Features
             AddMenuItemLine(i++).Append("Close menu");
 
             GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-            if(Config.MenuBind.Value.IsAssigned())
+            if(Main.Config.MenuBind.Value.IsAssigned())
             {
-                Config.MenuBind.Value.GetBinds(GetLine());
+                Main.Config.MenuBind.Value.GetBinds(GetLine());
             }
             else
             {
@@ -862,7 +862,7 @@ namespace Digi.BuildInfo.Features
             }
             GetLine().Append(")");
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 AddLine();
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:");
@@ -870,9 +870,9 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Add aimed block to toolbar");
             GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-            if(Config.BlockPickerBind.Value.IsAssigned())
+            if(Main.Config.BlockPickerBind.Value.IsAssigned())
             {
-                Config.BlockPickerBind.Value.GetBinds(GetLine());
+                Main.Config.BlockPickerBind.Value.GetBinds(GetLine());
             }
             else
             {
@@ -886,47 +886,47 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Open this mod's workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandWorkshop.MainAlias).Append(')');
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 AddLine();
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:");
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Config.TextShow.Value ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.Value ? "ON" : "OFF");
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Overlays.NAMES[Overlays.DrawOverlay]);
-            if(Config.CycleOverlaysBind.Value.IsAssigned())
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.NAMES[Main.Overlays.DrawOverlay]);
+            if(Main.Config.CycleOverlaysBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Config.CycleOverlaysBind.Value.GetBinds(GetLine());
+                Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
                 GetLine().Append(")").ResetFormatting();
             }
 
             AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
-            if(Config.ToggleTransparencyBind.Value.IsAssigned())
+            if(Main.Config.ToggleTransparencyBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Config.ToggleTransparencyBind.Value.GetBinds(GetLine());
+                Main.Config.ToggleTransparencyBind.Value.GetBinds(GetLine());
                 GetLine().Append(")").ResetFormatting();
             }
 
             AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
-            if(Config.FreezePlacementBind.Value.IsAssigned())
+            if(Main.Config.FreezePlacementBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Config.FreezePlacementBind.Value.GetBinds(GetLine());
+                Main.Config.FreezePlacementBind.Value.GetBinds(GetLine());
                 GetLine().Append(")").ResetFormatting();
             }
 
-            AddMenuItemLine(i++, TextAPI.WasDetected).Append("Use TextAPI: ");
-            if(TextAPI.WasDetected)
-                GetLine().Append(TextAPI.Use ? "ON" : "OFF");
+            AddMenuItemLine(i++, Main.TextAPI.WasDetected).Append("Use TextAPI: ");
+            if(Main.TextAPI.WasDetected)
+                GetLine().Append(Main.TextAPI.Use ? "ON" : "OFF");
             else
                 GetLine().Append("OFF (Mod not detected)");
 
             AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).Append(')');
 
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
                 AddLine();
 
             AddLine(FontsHandler.SkyBlueSh).Color(COLOR_INFO).Append("Navigation: Up/down = ").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_POSITIVE.GetAssignedInputName()).Append("/").Append(MyControlsSpace.CUBE_ROTATE_HORISONTAL_NEGATIVE.GetAssignedInputName()).Append(", change = ").Append(MyControlsSpace.CUBE_ROTATE_VERTICAL_POSITIVE.GetAssignedInputName()).ResetFormatting().Append(' ', 10);
@@ -942,17 +942,17 @@ namespace Digi.BuildInfo.Features
 
             var localPlayer = MyAPIGateway.Session?.Player;
 
-            if(Config.AimInfo.Value == 0 || localPlayer == null)
+            if(Main.Config.AimInfo.Value == 0 || localPlayer == null)
                 return;
 
-            var aimedBlock = EquipmentMonitor.AimedBlock;
+            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
             if(aimedBlock == null)
             {
                 Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MESSAGE);
                 return;
             }
 
-            var projectedBy = EquipmentMonitor.AimedProjectedBy;
+            var projectedBy = Main.EquipmentMonitor.AimedProjectedBy;
             bool projected = (projectedBy != null);
             var integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
             var grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
@@ -961,7 +961,7 @@ namespace Digi.BuildInfo.Features
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
             #region Block name
-            if(Config.AimInfo.IsSet(AimInfoFlags.TerminalName))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.TerminalName))
             {
                 if(terminalBlock != null)
                 {
@@ -975,7 +975,7 @@ namespace Digi.BuildInfo.Features
             #endregion Block name
 
             #region Internal info
-            if(Config.InternalInfo.Value)
+            if(Main.Config.InternalInfo.Value)
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = def.Id.TypeId.ToString();
@@ -985,7 +985,7 @@ namespace Digi.BuildInfo.Features
             #endregion Internal info
 
             #region Projector info and status
-            if(projected && Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            if(projected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
 
@@ -1023,7 +1023,7 @@ namespace Digi.BuildInfo.Features
             #endregion Projector info and status
 
             #region Mass, grid mass
-            if(Config.AimInfo.IsSet(AimInfoFlags.Mass))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
                 var mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
                 var massColor = Color.GreenYellow;
@@ -1068,7 +1068,7 @@ namespace Digi.BuildInfo.Features
             #endregion Mass, grid mass
 
             #region Integrity
-            if(Config.AimInfo.IsSet(AimInfoFlags.Integrity))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.Integrity))
             {
                 if(projected)
                 {
@@ -1090,7 +1090,7 @@ namespace Digi.BuildInfo.Features
             #endregion Integrity
 
             #region Optional: intake damage multiplier
-            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
+            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
                 float dmgMul = aimedBlock.DamageRatio * def.GeneralDamageMultiplier;
@@ -1113,7 +1113,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: intake damage multiplier
 
             #region Optional: ownership
-            if(Config.AimInfo.IsSet(AimInfoFlags.Ownership))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.Ownership))
             {
                 if(!projected && hasComputer)
                 {
@@ -1218,13 +1218,13 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: ownership
 
             #region Time to complete/grind
-            if(Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
             {
                 float toolMul = 1;
 
-                if(EquipmentMonitor.HandTool != null)
+                if(Main.EquipmentMonitor.HandTool != null)
                 {
-                    var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(EquipmentMonitor.HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+                    var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(Main.EquipmentMonitor.HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
                     toolMul = (toolDef == null ? 1 : toolDef.SpeedMultiplier);
                 }
                 else // assuming ship tool
@@ -1242,7 +1242,7 @@ namespace Digi.BuildInfo.Features
                 var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
                 var grindTime = ((buildTime / (1f / grindRatio)) / grindMul);
 
-                if(!EquipmentMonitor.IsAnyGrinder)
+                if(!Main.EquipmentMonitor.IsAnyGrinder)
                 {
                     float time = buildTime * (1 - integrityRatio);
                     if(time > 0)
@@ -1287,7 +1287,7 @@ namespace Digi.BuildInfo.Features
             #endregion Time to complete/grind
 
             #region Optional: item changes on grind
-            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && EquipmentMonitor.IsAnyGrinder && !TextAPIEnabled)
+            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
             {
                 foreach(var comp in def.Components)
                 {
@@ -1300,7 +1300,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: item changes on grind
 
             #region Optional: grid moving
-            if(Config.AimInfo.IsSet(AimInfoFlags.GridMoving) && grid.Physics != null)
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.GridMoving) && grid.Physics != null)
             {
                 bool hasLinearVel = !Vector3.IsZero(grid.Physics.LinearVelocity, 0.01f);
                 bool hasAngularVel = !Vector3.IsZero(grid.Physics.AngularVelocity, 0.01f);
@@ -1326,7 +1326,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: grid moving
 
             #region Optional: ship grinder apply force
-            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
                 if(controller != null)
@@ -1349,7 +1349,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: ship grinder apply force
 
             #region Optional: grinder makes grid split
-            if(!projected && Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && EquipmentMonitor.IsAnyGrinder)
+            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
             {
                 if(willSplitGrid == GridSplitType.Recalculate)
                     willSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
@@ -1363,9 +1363,9 @@ namespace Digi.BuildInfo.Features
 
             #region Optional: added by mod
             var context = def.Context;
-            if(Config.AimInfo.IsSet(AimInfoFlags.AddedByMod) && !context.IsBaseGame)
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.AddedByMod) && !context.IsBaseGame)
             {
-                if(TextAPIEnabled)
+                if(Main.TextAPI.IsEnabled)
                 {
                     AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
@@ -1382,14 +1382,14 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: added by mod
 
             #region Optional: requires DLC
-            if(Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
             {
                 DLCFormat(def);
             }
             #endregion Optional: requires DLC
 
             #region Overlay hints
-            if(Config.AimInfo.IsSet(AimInfoFlags.OverlayHint))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.OverlayHint))
             {
                 AddOverlaysHint(def);
             }
@@ -1404,11 +1404,11 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            if(Config.PlaceInfo.Value == 0)
+            if(Main.Config.PlaceInfo.Value == 0)
                 return;
 
             #region Block name line only for textAPI
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.BlockName) && TextAPIEnabled)
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.BlockName) && Main.TextAPI.IsEnabled)
             {
                 AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
@@ -1440,7 +1440,7 @@ namespace Digi.BuildInfo.Features
             #endregion Block name line only for textAPI
 
             #region Internal info
-            if(Config.InternalInfo.Value)
+            if(Main.Config.InternalInfo.Value)
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = def.Id.TypeId.ToString();
@@ -1456,7 +1456,7 @@ namespace Digi.BuildInfo.Features
             AppendBasics(def, part: false);
 
             #region Optional - different item gain on grinding
-            if(!TextAPIEnabled && Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
+            if(!Main.TextAPI.IsEnabled && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
             {
                 foreach(var comp in def.Components)
                 {
@@ -1490,7 +1490,7 @@ namespace Digi.BuildInfo.Features
             //}
 
             #region Optional - creative-only stuff
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Mirroring) && (MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste)) // HACK Session.EnableCopyPaste used as spacemaster check
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Mirroring) && (MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste)) // HACK Session.EnableCopyPaste used as spacemaster check
             {
                 if(def.MirroringBlock != null)
                 {
@@ -1516,21 +1516,21 @@ namespace Digi.BuildInfo.Features
             #endregion Per-block info
 
             #region Added by mod
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
             }
             #endregion Added by mod
 
             #region requires DLC
-            if(Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
             {
                 DLCFormat(def);
             }
             #endregion Optional: requires DLC
 
             #region Overlay hints
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.OverlayHint))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.OverlayHint))
             {
                 AddOverlaysHint(def);
             }
@@ -1555,13 +1555,13 @@ namespace Digi.BuildInfo.Features
             if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
                 grindRatio *= Hardcoded.Door_Closed_DisassembleRatioMultiplier;
 
-            string padding = (part ? (TextAPIEnabled ? "        | " : "       | ") : "");
+            string padding = (part ? (Main.TextAPI.IsEnabled ? "        | " : "       | ") : "");
 
             if(part)
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText);
 
             #region Mass/size/build time/deconstruct time/no models
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
             {
                 AddLine();
 
@@ -1582,7 +1582,7 @@ namespace Digi.BuildInfo.Features
             #endregion Mass/size/build time/deconstruct time/no models
 
             #region Integrity, deformable, damage intake
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
                 AddLine();
 
@@ -1602,7 +1602,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(!def.IsStandAlone || !def.HasPhysics)
                     AddLine();
@@ -1623,7 +1623,7 @@ namespace Digi.BuildInfo.Features
             #endregion Integrity, deformable, damage intake
 
             #region Airtightness
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
             {
                 AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh)));
 
@@ -1643,7 +1643,7 @@ namespace Digi.BuildInfo.Features
                     {
                         for(int i = 0; i < 6; ++i)
                         {
-                            var normal = (Vector3I)Overlays.DIRECTIONS[i];
+                            var normal = (Vector3I)Main.Overlays.DIRECTIONS[i];
 
                             if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
                             {
@@ -1833,13 +1833,13 @@ namespace Digi.BuildInfo.Features
         #region Conveyors
         private void Format_Conveyors(MyCubeBlockDefinition def)
         {
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
 
                 GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerLine).Append(" per line").MoreInfoInHelp(3);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     AddLine().Append("    ").ResourcePriority(Hardcoded.Conveyors_PowerGroup, hardcoded: true);
             }
         }
@@ -1850,7 +1850,7 @@ namespace Digi.BuildInfo.Features
 
             InventoryStats(def, hardcodedVolume: Hardcoded.ShipConnector_InventoryVolume(def));
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 var data = BData_Base.TryGetDataCached<BData_Connector>(def);
 
@@ -1882,7 +1882,7 @@ namespace Digi.BuildInfo.Features
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
-            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 Format_WeaponCore(def);
                 return;
@@ -1902,7 +1902,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(piston.RequiredPowerInput, piston.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity);
                 AddLine().Label("Max Force, Safe").ForceFormat(piston.UnsafeImpulseThreshold).Separator().Label("Unsafe").ForceFormat(piston.MaxImpulse);
@@ -1917,15 +1917,15 @@ namespace Digi.BuildInfo.Features
             var suspension = def as MyMotorSuspensionDefinition;
             if(suspension != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
                     AddLine().Label("Power - Idle").PowerFormat(suspension.RequiredIdlePowerInput).Separator().Label("Running").PowerFormat(suspension.RequiredPowerInput);
 
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(suspension.ResourceSinkGroup);
                 }
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Label("Max torque").TorqueFormat(suspension.PropulsionForce).Separator().Label("Axle Friction").TorqueFormat(suspension.AxleFriction);
                     AddLine().Label("Steering - Max angle").AngleFormat(suspension.MaxSteer).Separator().Label("Speed base").RotationSpeed(suspension.SteeringSpeed * 60);
@@ -1936,7 +1936,7 @@ namespace Digi.BuildInfo.Features
             {
                 PowerRequired(motor.RequiredPowerInput, motor.ResourceSinkGroup);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(4);
 
@@ -1957,7 +1957,7 @@ namespace Digi.BuildInfo.Features
 
         private void Suffix_Mechanical(MyCubeBlockDefinition def, string topPart)
         {
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
             {
                 var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
                 if(group == null)
@@ -1976,7 +1976,7 @@ namespace Digi.BuildInfo.Features
             // HACK hardcoded; MergeBlock doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Pull strength").Append(merge.Strength.ToString("###,###,##0.#######"));
             }
@@ -1989,7 +1989,7 @@ namespace Digi.BuildInfo.Features
             // HACK: hardcoded; LG doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max differential velocity for locking").SpeedFormat(lg.MaxLockSeparatingVelocity);
             }
@@ -2002,7 +2002,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ShipDrill_Power, shipDrill.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume;
                 if(Utils.GetInventoryVolumeFromComponent(def, out volume))
@@ -2011,7 +2011,7 @@ namespace Digi.BuildInfo.Features
                     AddLine().LabelHardcoded("Inventory").InventoryFormat(Hardcoded.ShipDrill_InventoryVolume(def), Hardcoded.ShipDrill_InventoryConstraint);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + shipDrill.CutOutRadius;
                 float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (shipDrill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
@@ -2029,7 +2029,7 @@ namespace Digi.BuildInfo.Features
 
             InventoryStats(def, hardcodedVolume: Hardcoded.ShipTool_InventoryVolume(def));
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(isWelder)
                 {
@@ -2067,7 +2067,7 @@ namespace Digi.BuildInfo.Features
                 PowerRequired(cryo.IdlePowerConsumption, cryo.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Append("Abilities: ");
 
@@ -2099,7 +2099,7 @@ namespace Digi.BuildInfo.Features
                 if(cockpit.HasInventory)
                     InventoryStats(def, hardcodedVolume: Hardcoded.Cockpit_InventoryVolume);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine((cockpit.IsPressurized ? FontsHandler.GreenSh : FontsHandler.RedSh))
                        .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
@@ -2136,7 +2136,7 @@ namespace Digi.BuildInfo.Features
 
             if(!thrust.FuelConverter.FuelId.IsNull())
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
                     MyGasProperties fuelDef;
                     if(MyDefinitionManager.Static.TryGetDefinition(thrust.FuelConverter.FuelId, out fuelDef))
@@ -2148,7 +2148,7 @@ namespace Digi.BuildInfo.Features
 
                         AddLine().Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId);
 
-                        if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                        if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                             GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
 
                         AddLine().Label("Consumption, Max").VolumeFormat(maxFuelUsage).Append("/s").Separator().Label("Idle").VolumeFormat(minFuelUsage).Append("/s");
@@ -2161,18 +2161,18 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
                     AddLine().Label("Requires").Append("Electricity");
 
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
 
                     AddLine().Label("Consumption, Max").PowerFormat(thrust.MaxPowerConsumption).Separator().Label("Idle").PowerFormat(thrust.MinPowerConsumption);
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
                 float consumptionMultiplier = 1f + (thrust.ConsumptionFactorPerG / Hardcoded.GAME_EARTH_GRAVITY);
@@ -2190,7 +2190,7 @@ namespace Digi.BuildInfo.Features
                     GetLine().Label("Consumption multiplier").Append("x").RoundedNumber(consumptionMultiplier, 2).Append(" per g (natural gravity)");
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Force").ForceFormat(thrust.ForceMagnitude);
 
@@ -2253,7 +2253,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
                 if(data != null)
@@ -2273,7 +2273,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(gyro.RequiredPowerInput, gyro.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude);
             }
@@ -2291,7 +2291,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(light.RequiredPowerInput, light.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
                 AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2);
@@ -2305,7 +2305,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.OreDetector_PowerReq, oreDetector.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange);
             }
@@ -2327,7 +2327,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.Door_PowerReq, door.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float moveTime = Hardcoded.Door_MoveSpeed(door.OpeningSpeed, door.MaxOpen);
                 AddLine().Label("Move time").TimeFormat(moveTime).Separator().Label("Distance").DistanceFormat(door.MaxOpen);
@@ -2340,15 +2340,15 @@ namespace Digi.BuildInfo.Features
 
             // MyAirtightHangarDoorDefinition and MyAirtightSlideDoorDefinition are empty
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power").PowerFormat(airTightDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(airTightDoor.PowerConsumptionIdle);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(airTightDoor.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float moveTime = Hardcoded.Door_MoveSpeed(airTightDoor.OpeningSpeed);
                 AddLine().Label("Move time").TimeFormat(moveTime);
@@ -2359,15 +2359,15 @@ namespace Digi.BuildInfo.Features
         {
             var advDoor = (MyAdvancedDoorDefinition)def; // does not extend MyDoorDefinition
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power - Moving").PowerFormat(advDoor.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(advDoor.PowerConsumptionIdle);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(advDoor.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float openTime, closeTime;
                 Hardcoded.AdvDoor_MoveSpeed(advDoor, out openTime, out closeTime);
@@ -2381,26 +2381,26 @@ namespace Digi.BuildInfo.Features
         {
             var parachute = (MyParachuteDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power - Deploy").PowerFormat(parachute.PowerConsumptionMoving).Separator().Label("Idle").PowerFormat(parachute.PowerConsumptionIdle);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(parachute.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo) || Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo) || Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
             {
                 const float TARGET_DESCEND_VELOCITY = 10;
                 float maxMass, disreefAtmosphere;
                 Hardcoded.Parachute_GetLoadEstimate(parachute, TARGET_DESCEND_VELOCITY, out maxMass, out disreefAtmosphere);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
                     AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId);
                 }
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Label("Required atmosphere - Minimum").Number(parachute.MinimumAtmosphereLevel).Separator().Label("Fully open").Number(disreefAtmosphere);
                     AddLine().Label("Drag coefficient").Append(parachute.DragCoefficient.ToString("0.0####"));
@@ -2415,7 +2415,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.MedicalRoom_PowerReq, medicalRoom.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(medicalRoom.RespawnAllowed)
                 {
@@ -2447,7 +2447,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 if(medicalRoom.HealingAllowed)
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.MedRoomHeal * 60), 2).Append("hp/s");
@@ -2460,7 +2460,7 @@ namespace Digi.BuildInfo.Features
                     AddLine(FontsHandler.RedSh).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(medicalRoom.SuitChangeAllowed)
                 {
@@ -2492,18 +2492,18 @@ namespace Digi.BuildInfo.Features
         {
             var production = (MyProductionBlockDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Append("Power: ").PowerFormat(production.OperationalPowerConsumption).Separator().Append("Idle: ").PowerFormat(production.StandbyPowerConsumption);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(production.ResourceSinkGroup);
             }
 
             var assembler = def as MyAssemblerDefinition;
             if(assembler != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
@@ -2515,7 +2515,7 @@ namespace Digi.BuildInfo.Features
             var survivalKit = def as MySurvivalKitDefinition; // this extends MyAssemblerDefinition
             if(survivalKit != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
@@ -2527,7 +2527,7 @@ namespace Digi.BuildInfo.Features
             var refinery = def as MyRefineryDefinition;
             if(refinery != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
@@ -2538,7 +2538,7 @@ namespace Digi.BuildInfo.Features
             var gasTank = def as MyGasTankDefinition;
             if(gasTank != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity);
                 }
@@ -2547,7 +2547,7 @@ namespace Digi.BuildInfo.Features
             var oxygenGenerator = def as MyOxygenGeneratorDefinition;
             if(oxygenGenerator != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s");
 
@@ -2569,7 +2569,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
 
@@ -2583,7 +2583,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(production.BlueprintClasses != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(production.BlueprintClasses != null && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine();
 
@@ -2637,15 +2637,15 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(oxygenFarm.OperationalPowerConsumption, oxygenFarm.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Produces").RoundedNumber(oxygenFarm.MaxGasOutput, 2).Append(" ").Append(oxygenFarm.ProducedGas.SubtypeName).Append(" l/s");
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(oxygenFarm.ResourceSourceGroup, isSource: true);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine(oxygenFarm.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided");
             }
@@ -2655,23 +2655,23 @@ namespace Digi.BuildInfo.Features
         {
             var vent = (MyAirVentDefinition)def; // does not extend MyProductionBlockDefinition
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power - Idle").PowerFormat(vent.StandbyPowerConsumption).Separator().Label("Operational").PowerFormat(vent.OperationalPowerConsumption);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(vent.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Output - Rate").VolumeFormat(vent.VentilationCapacityPerSecond).Append("/s");
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(vent.ResourceSourceGroup, isSource: true);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
             {
                 if(!MyAPIGateway.Session.SessionSettings.EnableOxygenPressurization)
                     AddLine().Color(Color.Red).Append("Airtightness is disabled in this world");
@@ -2684,7 +2684,7 @@ namespace Digi.BuildInfo.Features
         {
             var upgradeModule = (MyUpgradeModuleDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                 {
@@ -2706,23 +2706,23 @@ namespace Digi.BuildInfo.Features
         {
             var powerProducer = (MyPowerProducerDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Append("Power output: ").PowerFormat(powerProducer.MaxPowerOutput);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup, isSource: true);
             }
 
             var h2Engine = def as MyHydrogenEngineDefinition;
             if(h2Engine != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
                     AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId);
                     AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
 
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(h2Engine.ResourceSinkGroup);
 
                     AddLine().Label("Fuel capacity").VolumeFormat(h2Engine.FuelCapacity);
@@ -2734,7 +2734,7 @@ namespace Digi.BuildInfo.Features
             var reactor = def as MyReactorDefinition;
             if(reactor != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
                     if(reactor.FuelInfos != null && reactor.FuelInfos.Length > 0)
                     {
@@ -2763,20 +2763,20 @@ namespace Digi.BuildInfo.Features
             var battery = def as MyBatteryBlockDefinition;
             if(battery != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
                     AddLine(battery.AdaptibleInput ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
 
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup);
                 }
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
                 {
                     AddLine().Append("Power capacity: ").PowerStorageFormat(battery.MaxStoredPower).Separator().Append("Pre-charged: ").PowerStorageFormat(battery.MaxStoredPower * battery.InitialStoredPowerRatio).Append(" (").ProportionToPercent(battery.InitialStoredPowerRatio).Append(')');
                 }
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     float dischargeTime = (battery.MaxStoredPower * 60 * 60) / battery.MaxPowerOutput;
                     float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * Hardcoded.BatteryRechargeMultiplier);
@@ -2790,7 +2790,7 @@ namespace Digi.BuildInfo.Features
             var solarPanel = def as MySolarPanelDefinition;
             if(solarPanel != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine(solarPanel.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided");
                 }
@@ -2801,7 +2801,7 @@ namespace Digi.BuildInfo.Features
             var windTurbine = def as MyWindTurbineDefinition;
             if(windTurbine != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize);
                     AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2);
@@ -2820,7 +2820,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius), radioAntenna.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius);
             }
@@ -2830,16 +2830,16 @@ namespace Digi.BuildInfo.Features
         {
             var laserAntenna = (MyLaserAntennaDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km").MoreInfoInHelp(1);
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(laserAntenna.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine(laserAntenna.RequireLineOfSight ? FontsHandler.YellowSh : FontsHandler.GreenSh)
                     .Color(laserAntenna.MaxRange < 0 ? COLOR_GOOD : COLOR_NORMAL).Append("Range: ");
@@ -2864,7 +2864,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.Beacon_PowerReq(beacon), beacon.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius);
             }
@@ -2877,7 +2877,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.Timer_PowerReq, timer.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Timer range").TimeFormat(timer.MinDelay / 1000f).Append(" to ").TimeFormat(timer.MaxDelay / 1000f);
             }
@@ -2891,7 +2891,7 @@ namespace Digi.BuildInfo.Features
 
             Screens(def, pb.ScreenAreas);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
             {
                 if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
                 {
@@ -2919,7 +2919,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.SoundBlock_PowerReq, sound.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Range").DistanceRangeFormat(sound.MinRange, sound.MaxRange);
                 AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod);
@@ -2936,7 +2936,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.Sensor_PowerReq(maxField), sensor.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max area").Size3DFormat(maxField);
             }
@@ -2946,15 +2946,15 @@ namespace Digi.BuildInfo.Features
         {
             var camera = (MyCameraBlockDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power - Normal use").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast charging").PowerFormat(camera.RequiredChargingInput);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(camera.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov);
                 AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
@@ -2976,7 +2976,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ButtonPanel_PowerReq, button.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Button count").Append(button.ButtonCount);
             }
@@ -2992,7 +2992,7 @@ namespace Digi.BuildInfo.Features
             {
                 PowerRequired(flatGravGen.RequiredPowerInput, flatGravGen.ResourceSinkGroup);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
                     AddLine().Label("Field size").Size3DFormat(flatGravGen.MinFieldSize).Append(" to ").Size3DFormat(flatGravGen.MaxFieldSize);
                 }
@@ -3004,14 +3004,14 @@ namespace Digi.BuildInfo.Features
                 {
                     PowerRequired(Hardcoded.SphericalGravGen_PowerReq(sphereGravGen, sphereGravGen.MaxRadius, sphereGravGen.MaxGravityAcceleration), sphereGravGen.ResourceSinkGroup, powerHardcoded: true);
 
-                    if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                     {
                         AddLine().Label("Radius").DistanceFormat(sphereGravGen.MinRadius).Append(" to ").DistanceFormat(sphereGravGen.MaxRadius);
                     }
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Acceleration").ForceFormat(gravGen.MinGravityAcceleration).Append(" to ").ForceFormat(gravGen.MaxGravityAcceleration);
             }
@@ -3023,7 +3023,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(artificialMass.RequiredPowerInput, artificialMass.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass);
             }
@@ -3036,7 +3036,7 @@ namespace Digi.BuildInfo.Features
             // HACK: hardcoded; SpaceBall doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
                 AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass);
             }
@@ -3048,12 +3048,12 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(jumpDrive.RequiredPowerInput, jumpDrive.ResourceSinkGroup);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 AddLine().Label("Power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * Hardcoded.JumpDriveRechargeMultiplier);
                 AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.JumpDriveRechargeMultiplier);
@@ -3066,7 +3066,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
-            if(WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 Format_WeaponCore(def);
                 return;
@@ -3090,14 +3090,14 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId);
             }
 
             if(turret != null)
             {
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
@@ -3120,13 +3120,13 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 // accuracy cone diameter = tan(angle) * baseRadius * 2
                 AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wpDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wpDef.ReloadTime / 1000);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
             {
                 ammoProjectiles.Clear();
                 ammoMissiles.Clear();
@@ -3277,7 +3277,7 @@ namespace Digi.BuildInfo.Features
                 ammoMissiles.Clear();
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings) && !MyAPIGateway.Session.SessionSettings.WeaponsEnabled)
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings) && !MyAPIGateway.Session.SessionSettings.WeaponsEnabled)
             {
                 AddLine().Color(COLOR_BAD).Append("Weapons are disabled in this world");
             }
@@ -3348,7 +3348,7 @@ namespace Digi.BuildInfo.Features
             // HACK: hardcoded; Warhead doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
             {
                 AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius);
                 AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##"));
@@ -3359,15 +3359,15 @@ namespace Digi.BuildInfo.Features
         {
             var safeZone = (MySafeZoneBlockDefinition)def;
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 AddLine().Label("Power usage - Min").PowerFormat(safeZone.MinSafeZonePowerDrainkW / 1000f).Separator().Label("Max").PowerFormat(safeZone.MaxSafeZonePowerDrainkW / 1000f);
 
-                if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(safeZone.ResourceSinkGroup);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Radius").DistanceRangeFormat(safeZone.MinSafeZoneRadius, safeZone.MaxSafeZoneRadius).Separator().Label("Default").DistanceFormat(safeZone.DefaultSafeZoneRadius);
                 AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
@@ -3379,7 +3379,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Upkeep").Append(safeZone.SafeZoneUpkeep).Append("x ").Append(itemName).Separator().Label("for").TimeFormat(safeZone.SafeZoneUpkeepTimeM * 60f);
             }
 
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 var invComp = Utils.GetInventoryFromComponent(def); // SafeZone type has no inventory data in its definition, only components can add inventory to it.
                 if(invComp != null)
@@ -3455,7 +3455,7 @@ namespace Digi.BuildInfo.Features
 
                 if(multiDLC && i > 0)
                 {
-                    if(TextAPIEnabled)
+                    if(Main.TextAPI.IsEnabled)
                         AddLine().Append("               | ");
                     else
                         GetLine().Append(", ");
@@ -3484,7 +3484,7 @@ namespace Digi.BuildInfo.Features
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 var groupNameHash = (groupName != null ? MyStringHash.GetOrCompute(groupName) : MyStringHash.NullOrEmpty);
                 PowerRequired(mw, groupNameHash, powerHardcoded, groupHardcoded);
@@ -3493,7 +3493,7 @@ namespace Digi.BuildInfo.Features
 
         private void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 var color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
 
@@ -3507,7 +3507,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().PowerFormat(mw);
 
-                if(groupName != MyStringHash.NullOrEmpty && Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(groupName != MyStringHash.NullOrEmpty && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
                     GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }
@@ -3516,7 +3516,7 @@ namespace Digi.BuildInfo.Features
 
         private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true)
         {
-            if(Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume = alternateVolume;
                 var invComp = Utils.GetInventoryFromComponent(def);
@@ -3536,7 +3536,7 @@ namespace Digi.BuildInfo.Features
 
         private void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit)
         {
-            if(invLimit != null && Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
+            if(invLimit != null && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
                 AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "Inventory items allowed" : "Inventory items NOT allowed");
 
@@ -3572,7 +3572,7 @@ namespace Digi.BuildInfo.Features
 
         private void Screen(MyCubeBlockDefinition def, MyTextPanelDefinition lcd)
         {
-            if(!Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(!Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;
 
             var res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
@@ -3582,7 +3582,7 @@ namespace Digi.BuildInfo.Features
 
         private void Screens<T>(MyCubeBlockDefinition def, List<T> surfaces)
         {
-            if(surfaces == null || surfaces.Count == 0 || !Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(surfaces == null || surfaces.Count == 0 || !Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;
 
             AddLine().Label("Screens").Append(surfaces.Count);
@@ -3669,7 +3669,7 @@ namespace Digi.BuildInfo.Features
             {
                 textObject.Scale = TextAPIScale;
 
-                if(Config.TextAlwaysVisible.Value)
+                if(Main.Config.TextAlwaysVisible.Value)
                 {
                     textObject.Options &= ~HudAPIv2.Options.HideHud;
                     bgObject.Options &= ~HudAPIv2.Options.HideHud;
@@ -3683,7 +3683,7 @@ namespace Digi.BuildInfo.Features
 
             if(redraw)
             {
-                if(EquipmentMonitor.BlockDef != null || QuickMenu.Shown)
+                if(Main.EquipmentMonitor.BlockDef != null || Main.QuickMenu.Shown)
                     UpdateTextAPIvisuals(textAPIlines);
                 else
                     UpdateTextAPIvisuals(write ?? textAPIlines);

@@ -121,7 +121,7 @@ namespace Digi.BuildInfo.Features.Config
                 if(configVersion < 1) // only read cfg version 1 or higher
                     return;
 
-                Config.Handler.ConfigVersion.Value = Math.Min(configVersion, 2); // can't be higher than 2
+                Main.Config.Handler.ConfigVersion.Value = Math.Min(configVersion, 2); // can't be higher than 2
 
                 foreach(var line in lines)
                 {
@@ -138,50 +138,50 @@ namespace Digi.BuildInfo.Features.Config
 
                     if(key.Equals("MenuBind", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.MenuBind, val, line);
+                        LoadSetting(Main.Config.MenuBind, val, line);
                         continue;
                     }
 
                     if(key.Equals("CycleOverlaysBind", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.CycleOverlaysBind, val, line);
+                        LoadSetting(Main.Config.CycleOverlaysBind, val, line);
                         continue;
                     }
 
                     if(key.Equals("ToggleTransparencyBind", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.ToggleTransparencyBind, val, line);
+                        LoadSetting(Main.Config.ToggleTransparencyBind, val, line);
                         continue;
                     }
 
                     if(key.Equals("FreezePlacementBind", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.FreezePlacementBind, val, line);
+                        LoadSetting(Main.Config.FreezePlacementBind, val, line);
                         continue;
                     }
 
                     if(key.Equals("BlockPickerBind", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.BlockPickerBind, val, line);
+                        LoadSetting(Main.Config.BlockPickerBind, val, line);
                         continue;
                     }
 
                     if(key.Equals("ShowTextInfo", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.TextShow, val, line);
+                        LoadSetting(Main.Config.TextShow, val, line);
                         continue;
                     }
 
                     if(key.Equals("AlwaysVisible", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.TextAlwaysVisible, val, line);
+                        LoadSetting(Main.Config.TextAlwaysVisible, val, line);
                         continue;
                     }
 
                     if(key.Equals("UseCustomStyling", COMPARE_TYPE)
                     || key.Equals("UseScreenPos", COMPARE_TYPE)) // backwards compatibility
                     {
-                        LoadSetting(Config.TextAPICustomStyling, val, line);
+                        LoadSetting(Main.Config.TextAPICustomStyling, val, line);
                         continue;
                     }
 
@@ -190,7 +190,7 @@ namespace Digi.BuildInfo.Features.Config
                         if(val.Equals("-0.9825, 0.8"))
                             Log.Info($"{key} is default, ignoring because new default is different.");
                         else
-                            LoadSetting(Config.TextAPIScreenPosition, val, line);
+                            LoadSetting(Main.Config.TextAPIScreenPosition, val, line);
                         continue;
                     }
 
@@ -199,19 +199,19 @@ namespace Digi.BuildInfo.Features.Config
                         if(val.Equals("left, top", COMPARE_TYPE))
                             Log.Info($"{key} is default, ignoring because new default is different.");
                         else
-                            LoadSetting(Config.TextAPIAlign, val, line);
+                            LoadSetting(Main.Config.TextAPIAlign, val, line);
                         continue;
                     }
 
                     if(key.Equals("Scale", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.TextAPIScale, val, line);
+                        LoadSetting(Main.Config.TextAPIScale, val, line);
                         continue;
                     }
 
                     if(key.Equals("BackgroundOpacity", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.TextAPIBackgroundOpacity, val, line);
+                        LoadSetting(Main.Config.TextAPIBackgroundOpacity, val, line);
                         continue;
                     }
 
@@ -231,33 +231,33 @@ namespace Digi.BuildInfo.Features.Config
                     if(colorWorld || key.Equals("LeakParticleColorOverlay", COMPARE_TYPE))
                     {
                         if(colorWorld)
-                            LoadSetting(Config.LeakParticleColorWorld, val, line);
+                            LoadSetting(Main.Config.LeakParticleColorWorld, val, line);
                         else
-                            LoadSetting(Config.LeakParticleColorOverlay, val, line);
+                            LoadSetting(Main.Config.LeakParticleColorOverlay, val, line);
                         continue;
                     }
 
                     if(key.Equals("AdjustBuildDistance", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.AdjustBuildDistanceSurvival, val, line);
+                        LoadSetting(Main.Config.AdjustBuildDistanceSurvival, val, line);
                         continue;
                     }
 
                     if(key.Equals("Debug", COMPARE_TYPE))
                     {
-                        LoadSetting(Config.Debug, val, line);
+                        LoadSetting(Main.Config.Debug, val, line);
                         continue;
                     }
                 }
 
-                Config.OverlayLabels.Value = (int)OverlayLabelsFlags.None;
+                Main.Config.OverlayLabels.Value = (int)OverlayLabelsFlags.None;
 
                 if(allLabels && axisLabels)
-                    Config.OverlayLabels.Value = (int)OverlayLabelsFlags.All;
+                    Main.Config.OverlayLabels.Value = (int)OverlayLabelsFlags.All;
                 else if(allLabels && !axisLabels)
-                    Config.OverlayLabels.Value |= (int)OverlayLabelsFlags.Other;
+                    Main.Config.OverlayLabels.Value |= (int)OverlayLabelsFlags.Other;
 
-                Config.Save();
+                Main.Config.Save();
             }
             catch(Exception e)
             {

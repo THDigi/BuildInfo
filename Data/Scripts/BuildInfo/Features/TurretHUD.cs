@@ -38,18 +38,18 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            Config.Handler.SettingsLoaded += SettingsLoaded;
+            Main.Config.Handler.SettingsLoaded += SettingsLoaded;
             SettingsLoaded();
         }
 
         protected override void UnregisterComponent()
         {
-            Config.Handler.SettingsLoaded -= SettingsLoaded;
+            Main.Config.Handler.SettingsLoaded -= SettingsLoaded;
         }
 
         private void SettingsLoaded()
         {
-            if(Config.TurretHUD.Value)
+            if(Main.Config.TurretHUD.Value)
             {
                 UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
             }
@@ -78,9 +78,9 @@ namespace Digi.BuildInfo.Features
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-            var pos = DrawUtils.TextAPIHUDtoWorld(new Vector2D(0, -0.5));
+            var pos = Main.DrawUtils.TextAPIHUDtoWorld(new Vector2D(0, -0.5));
 
-            var scaleFOV = DrawUtils.ScaleFOV;
+            var scaleFOV = Main.DrawUtils.ScaleFOV;
             var length = 0.01f * scaleFOV;
             var thick = 0.0002f * scaleFOV;
 
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(prevTurret != turret)
                 {
-                    weaponCoreBlock = WeaponCoreAPIHandler.IsBlockWeapon(turret.BlockDefinition);
+                    weaponCoreBlock = Main.WeaponCoreAPIHandler.IsBlockWeapon(turret.BlockDefinition);
 
                     if(weaponCoreBlock)
                         weaponTracker = null;
@@ -216,7 +216,7 @@ namespace Digi.BuildInfo.Features
 
         private void DrawHUD()
         {
-            if(TextAPIEnabled)
+            if(Main.TextAPI.IsEnabled)
             {
                 if(hudMsg == null)
                 {

@@ -35,7 +35,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(paused || inMenu)
                 return;
 
-            if(Config.LockOverlayBind.Value.IsJustPressed())
+            if(Main.Config.LockOverlayBind.Value.IsJustPressed())
             {
                 LockOverlayToAimedBlock();
             }
@@ -47,24 +47,24 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
 
             // alternate update for when overlays doesn't update this
-            if(Overlays.DrawOverlay > 0)
+            if(Main.Overlays.DrawOverlay > 0)
                 return;
 
-            var def = EquipmentMonitor.BlockDef;
-            var aimedBlock = EquipmentMonitor.AimedBlock;
-            var cellSize = EquipmentMonitor.BlockGridSize;
-            LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize);
+            var def = Main.EquipmentMonitor.BlockDef;
+            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            var cellSize = Main.EquipmentMonitor.BlockGridSize;
+            Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize);
         }
 
         public void LockOverlayToAimedBlock()
         {
-            if(LockedOnBlock == null && EquipmentMonitor.AimedBlock == null)
+            if(LockedOnBlock == null && Main.EquipmentMonitor.AimedBlock == null)
             {
                 SetNotification("Aim at a block with welder/grinder first.", 2000, FontsHandler.RedSh);
                 return;
             }
 
-            SetLockOnBlock(EquipmentMonitor.AimedBlock);
+            SetLockOnBlock(Main.EquipmentMonitor.AimedBlock);
         }
 
         public bool UpdateLockedOnBlock(ref IMySlimBlock aimedBlock, ref MyCubeBlockDefinition def, ref float cellSize)
@@ -102,18 +102,18 @@ namespace Digi.BuildInfo.Features.Overlays
             def = LockedOnBlockDef;
             cellSize = LockedOnBlock.CubeGrid.GridSize;
 
-            if(Overlays.DrawOverlay == 0)
-                SetNotification($"Overlays off. [{Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
+            if(Main.Overlays.DrawOverlay == 0)
+                SetNotification($"Overlays off. [{Main.Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Main.Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
             else
-                SetNotification($"{LockedOnBlockDef.DisplayNameText}. [{Config.LockOverlayBind.Value.GetBinds()}] to change/unlock.", 100);
+                SetNotification($"{LockedOnBlockDef.DisplayNameText}. [{Main.Config.LockOverlayBind.Value.GetBinds()}] to change/unlock.", 100);
 
             return true;
         }
 
         void SetLockOnBlock(IMySlimBlock block, string message = null)
         {
-            Overlays.HideLabels();
-            Overlays.SetOverlayCallFor(null);
+            Main.Overlays.HideLabels();
+            Main.Overlays.SetOverlayCallFor(null);
             LockedOnBlockDef = null;
 
             // unhook previous
@@ -135,7 +135,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 LockedOnBlockDef = (MyCubeBlockDefinition)LockedOnBlock.BlockDefinition;
 
-                Overlays.SetOverlayCallFor(LockedOnBlockDef.Id);
+                Main.Overlays.SetOverlayCallFor(LockedOnBlockDef.Id);
             }
             else
             {

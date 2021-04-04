@@ -42,11 +42,11 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         void RefreshAll()
         {
-            groupTextInfo.SetInteractable(Config.TextShow.Value);
-            groupCustomStyling.SetInteractable(Config.TextShow.Value && Config.TextAPICustomStyling.Value);
-            groupToolbarLabels.SetInteractable(Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
-            groupShipToolInvBar.SetInteractable(Config.ShipToolInvBarShow.Value);
-            groupOverlayLabelsAlt.SetInteractable(Config.OverlayLabels.Value != int.MaxValue);
+            groupTextInfo.SetInteractable(Main.Config.TextShow.Value);
+            groupCustomStyling.SetInteractable(Main.Config.TextShow.Value && Main.Config.TextAPICustomStyling.Value);
+            groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
+            groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
+            groupOverlayLabelsAlt.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
 
             groupBinds.Update();
 
@@ -71,13 +71,13 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         protected override void RegisterComponent()
         {
-            TextAPI.Detected += TextAPI_Detected;
+            Main.TextAPI.Detected += TextAPI_Detected;
         }
 
         protected override void UnregisterComponent()
         {
-            TextAPI.Detected -= TextAPI_Detected;
-            Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
+            Main.TextAPI.Detected -= TextAPI_Detected;
+            Main.Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
         }
 
         protected override void UpdateAfterSim(int tick)
@@ -113,8 +113,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Category_Misc = AddCategory("Misc", Category_Mod);
 
             ItemAdd_TextShow(Category_Textbox);
-            SimpleToggle(Category_Textbox, "Show when HUD is off", Config.TextAlwaysVisible, groupTextInfo);
-            SimpleSlider(Category_Textbox, "Text Scale", Config.TextAPIScale, groupTextInfo);
+            SimpleToggle(Category_Textbox, "Show when HUD is off", Main.Config.TextAlwaysVisible, groupTextInfo);
+            SimpleSlider(Category_Textbox, "Text Scale", Main.Config.TextAPIScale, groupTextInfo);
             ItemAdd_BackgroundOpacity(Category_Textbox);
             ItemAdd_CustomStyling(Category_Textbox);
             ItemAdd_ScreenPosition(Category_Textbox);
@@ -127,52 +127,52 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             Category_AimInfo = AddCategory("Aim Info", Category_Textbox, group: groupTextInfo);
             ItemAdd_AimInfoToggles(Category_AimInfo);
 
-            SimpleToggle(Category_Overlays, "Show when HUD is off", Config.OverlaysAlwaysVisible);
+            SimpleToggle(Category_Overlays, "Show when HUD is off", Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
-            SimpleToggle(Category_Overlays, "Labels shown with ALT", Config.OverlaysLabelsAlt, groupOverlayLabelsAlt);
+            SimpleToggle(Category_Overlays, "Labels shown with ALT", Main.Config.OverlaysLabelsAlt, groupOverlayLabelsAlt);
 
-            SimpleToggle(Category_HUD, "Block Info Additions", Config.BlockInfoAdditions);
-            SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
-            SimpleScreenPosition(Category_HUD, "Ship Tool Inventory Bar Position", Config.ShipToolInvBarPosition, groupShipToolInvBar);
-            SimpleDualSlider(Category_HUD, "Ship Tool Inventory Bar Scale", Config.ShipToolInvBarScale, groupShipToolInvBar);
-            SimpleToggle(Category_HUD, "Backpack Bar Override", Config.BackpackBarOverride);
-            SimpleToggle(Category_HUD, "Turret HUD", Config.TurretHUD);
-            SimpleToggle(Category_HUD, "HUD Stat Overrides", Config.HudStatOverrides);
-            SimpleToggle(Category_HUD, "Relative Dampener Info", Config.RelativeDampenerInfo);
-            SimpleToggle(Category_HUD, "Item Tooltip Additions", Config.ItemTooltipAdditions);
+            SimpleToggle(Category_HUD, "Block Info Additions", Main.Config.BlockInfoAdditions);
+            SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
+            SimpleScreenPosition(Category_HUD, "Ship Tool Inventory Bar Position", Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
+            SimpleDualSlider(Category_HUD, "Ship Tool Inventory Bar Scale", Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
+            SimpleToggle(Category_HUD, "Backpack Bar Override", Main.Config.BackpackBarOverride);
+            SimpleToggle(Category_HUD, "Turret HUD", Main.Config.TurretHUD);
+            SimpleToggle(Category_HUD, "HUD Stat Overrides", Main.Config.HudStatOverrides);
+            SimpleToggle(Category_HUD, "Relative Dampener Info", Main.Config.RelativeDampenerInfo);
+            SimpleToggle(Category_HUD, "Item Tooltip Additions", Main.Config.ItemTooltipAdditions);
 
-            SimpleEnumCycle(Category_Toolbar, "Labels Mode", typeof(ToolbarLabelsMode), Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, "Toolbar Item Names Mode", typeof(ToolbarNameMode), Config.ToolbarItemNameMode, groupToolbarLabels);
-            SimpleToggle(Category_Toolbar, "Labels Show Title", Config.ToolbarLabelsShowTitle, groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, "Label Box Style", typeof(ToolbarStyle), Config.ToolbarStyleMode, groupToolbarLabels);
-            SimpleScreenPosition(Category_Toolbar, "Labels Box HUD Position", Config.ToolbarLabelsPosition, groupToolbarLabels);
-            SimpleScreenPosition(Category_Toolbar, "Labels Box In-Menu Position", Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
-            SimpleSlider(Category_Toolbar, "Labels Box Scale", Config.ToolbarLabelsScale, groupToolbarLabels);
-            SimpleDualSlider(Category_Toolbar, "Labels Box ShipToolInvBar Offset", Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
-            SimpleToggle(Category_Toolbar, "Override Action Status", Config.ToolbarActionStatus);
+            SimpleEnumCycle(Category_Toolbar, "Labels Mode", typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, "Toolbar Item Names Mode", typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
+            SimpleToggle(Category_Toolbar, "Labels Show Title", Main.Config.ToolbarLabelsShowTitle, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, "Label Box Style", typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
+            SimpleScreenPosition(Category_Toolbar, "Labels Box HUD Position", Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
+            SimpleScreenPosition(Category_Toolbar, "Labels Box In-Menu Position", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
+            SimpleSlider(Category_Toolbar, "Labels Box Scale", Main.Config.ToolbarLabelsScale, groupToolbarLabels);
+            SimpleDualSlider(Category_Toolbar, "Labels Box ShipToolInvBar Offset", Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
+            SimpleToggle(Category_Toolbar, "Override Action Status", Main.Config.ToolbarActionStatus);
 
-            SimpleToggle(Category_Terminal, "Detail Info Additions", Config.TerminalDetailInfoAdditions);
+            SimpleToggle(Category_Terminal, "Detail Info Additions", Main.Config.TerminalDetailInfoAdditions);
 
-            SimpleColor(Category_LeakInfo, "Particle Color World", Config.LeakParticleColorWorld);
-            SimpleColor(Category_LeakInfo, "Particle Color Overlay", Config.LeakParticleColorOverlay);
+            SimpleColor(Category_LeakInfo, "Particle Color World", Main.Config.LeakParticleColorWorld);
+            SimpleColor(Category_LeakInfo, "Particle Color Overlay", Main.Config.LeakParticleColorOverlay);
 
-            SimpleBind(Category_Binds, "Menu Bind", Features.Config.Config.MENU_BIND_INPUT_NAME, Config.MenuBind, groupBinds, groupBinds);
-            SimpleBind(Category_Binds, "Cycle Overlays Bind", Features.Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Config.CycleOverlaysBind, groupBinds, groupBinds);
-            SimpleBind(Category_Binds, "Freeze Placement Bind", Features.Config.Config.FREEZE_PLACEMENT_INPUT_NAME, Config.FreezePlacementBind, groupBinds, groupBinds);
-            SimpleBind(Category_Binds, "Toggle Transparency Bind", Features.Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Config.ToggleTransparencyBind, groupBinds, groupBinds);
-            SimpleBind(Category_Binds, "Block Picker Bind", Features.Config.Config.BLOCK_PICKER_INPUT_NAME, Config.BlockPickerBind, groupBinds, groupBinds);
-            SimpleBind(Category_Binds, "Lock Overlay Bind", Features.Config.Config.LOCK_OVERLAY_INPUT_NAME, Config.LockOverlayBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Menu Bind", Features.Config.Config.MENU_BIND_INPUT_NAME, Main.Config.MenuBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Cycle Overlays Bind", Features.Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Main.Config.CycleOverlaysBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Freeze Placement Bind", Features.Config.Config.FREEZE_PLACEMENT_INPUT_NAME, Main.Config.FreezePlacementBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Toggle Transparency Bind", Features.Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Main.Config.ToggleTransparencyBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Block Picker Bind", Features.Config.Config.BLOCK_PICKER_INPUT_NAME, Main.Config.BlockPickerBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Lock Overlay Bind", Features.Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
 
-            SimpleToggle(Category_Misc, "Placement Distance in Survival", Config.AdjustBuildDistanceSurvival);
-            SimpleToggle(Category_Misc, "Placement Distance in Ship Creative", Config.AdjustBuildDistanceShipCreative);
-            SimpleToggle(Category_Misc, "Internal Info", Config.InternalInfo);
+            SimpleToggle(Category_Misc, "Placement Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
+            SimpleToggle(Category_Misc, "Placement Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
+            SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Are you sure?");
             new ItemButton(Category_ConfirmReset, "I am sure!", () =>
             {
-                Config.Handler.ResetToDefaults();
-                Config.Handler.SaveToFile();
-                Config.Reload();
+                Main.Config.Handler.ResetToDefaults();
+                Main.Config.Handler.SaveToFile();
+                Main.Config.Reload();
                 MyAPIGateway.Utilities.ShowNotification("Config reset to defaults and saved.", 3000, FontsHandler.RedSh);
                 RefreshAll();
             });
@@ -183,7 +183,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             // set initial interactable states
             RefreshAll();
 
-            Config.Handler.SettingsLoaded += Handler_SettingsLoaded;
+            Main.Config.Handler.SettingsLoaded += Handler_SettingsLoaded;
         }
 
         void Handler_SettingsLoaded()
@@ -194,39 +194,39 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_TextShow(MenuCategoryBase category)
         {
             var item = new ItemToggle(category, "Show",
-                getter: () => Config.TextShow.Value,
+                getter: () => Main.Config.TextShow.Value,
                 setter: (v) =>
                 {
-                    Config.TextShow.Value = v;
+                    Main.Config.TextShow.Value = v;
                     ApplySettings(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0));
                     groupTextInfo.SetInteractable(v);
-                    groupCustomStyling.SetInteractable(v ? Config.TextAPICustomStyling.Value : false);
+                    groupCustomStyling.SetInteractable(v ? Main.Config.TextAPICustomStyling.Value : false);
                 },
-                defaultValue: Config.TextShow.DefaultValue);
+                defaultValue: Main.Config.TextShow.DefaultValue);
 
             groupAll.Add(item);
         }
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
         {
-            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Config.TextAPIBackgroundOpacity.Max, defaultValue: Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
-                getter: () => Config.TextAPIBackgroundOpacity.Value,
+            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Main.Config.TextAPIBackgroundOpacity.Max, defaultValue: Main.Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
+                getter: () => Main.Config.TextAPIBackgroundOpacity.Value,
                 setter: (val) =>
                 {
                     if(val < 0)
                         val = -0.1f;
 
-                    Config.TextAPIBackgroundOpacity.Value = val;
+                    Main.Config.TextAPIBackgroundOpacity.Value = val;
                     ApplySettings(redraw: false);
                 },
                 sliding: (val) =>
                 {
-                    Config.TextAPIBackgroundOpacity.Value = val;
+                    Main.Config.TextAPIBackgroundOpacity.Value = val;
                     ApplySettings(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (orig) =>
                 {
-                    Config.TextAPIBackgroundOpacity.Value = orig;
+                    Main.Config.TextAPIBackgroundOpacity.Value = orig;
                     ApplySettings(save: false);
                 },
                 format: (v) => (v < 0 ? "HUD" : (v * 100).ToString() + "%"));
@@ -238,14 +238,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_CustomStyling(MenuCategoryBase category)
         {
             var item = new ItemToggle(category, "Custom Styling",
-                getter: () => Config.TextAPICustomStyling.Value,
+                getter: () => Main.Config.TextAPICustomStyling.Value,
                 setter: (v) =>
                 {
-                    Config.TextAPICustomStyling.Value = v;
+                    Main.Config.TextAPICustomStyling.Value = v;
                     groupCustomStyling.SetInteractable(v);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
-                defaultValue: Config.TextAPICustomStyling.DefaultValue);
+                defaultValue: Main.Config.TextAPICustomStyling.DefaultValue);
 
             groupTextInfo.Add(item);
             groupAll.Add(item);
@@ -253,26 +253,26 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_ScreenPosition(MenuCategoryBase category)
         {
-            var item = new ItemBoxMove(category, "Screen Position", min: Config.TextAPIScreenPosition.Min, max: Config.TextAPIScreenPosition.Max, defaultValue: Config.TextAPIScreenPosition.DefaultValue, rounding: 3,
-                getter: () => Config.TextAPIScreenPosition.Value,
+            var item = new ItemBoxMove(category, "Screen Position", min: Main.Config.TextAPIScreenPosition.Min, max: Main.Config.TextAPIScreenPosition.Max, defaultValue: Main.Config.TextAPIScreenPosition.DefaultValue, rounding: 3,
+                getter: () => Main.Config.TextAPIScreenPosition.Value,
                 setter: (pos) =>
                 {
-                    Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.Value = pos;
                     ApplySettings(redraw: false);
                 },
                 selected: (pos) =>
                 {
-                    Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.Value = pos;
                     ApplySettings(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 moving: (pos) =>
                 {
-                    Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.Value = pos;
                     ApplySettings(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (origPos) =>
                 {
-                    Config.TextAPIScreenPosition.Value = origPos;
+                    Main.Config.TextAPIScreenPosition.Value = origPos;
                     ApplySettings(save: false, redraw: false);
                 });
 
@@ -283,15 +283,15 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_HorizontalAlign(MenuCategoryBase category)
         {
             var item = new ItemToggle(category, "Horizontal Anchor",
-                getter: () => Config.TextAPIAlign.IsSet(TextAlignFlags.Right),
+                getter: () => Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right),
                 setter: (v) =>
                 {
-                    var set = !Config.TextAPIAlign.IsSet(TextAlignFlags.Right);
-                    Config.TextAPIAlign.Set(TextAlignFlags.Right, set);
-                    Config.TextAPIAlign.Set(TextAlignFlags.Left, !set);
+                    var set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right);
+                    Main.Config.TextAPIAlign.Set(TextAlignFlags.Right, set);
+                    Main.Config.TextAPIAlign.Set(TextAlignFlags.Left, !set);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
-                defaultValue: (Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Right) != 0,
+                defaultValue: (Main.Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Right) != 0,
                 onText: "Right",
                 offText: "Left");
 
@@ -304,15 +304,15 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ItemAdd_VerticalAlign(MenuCategoryBase category)
         {
             var item = new ItemToggle(category, "Vertical Anchor",
-                getter: () => Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom),
+                getter: () => Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom),
                 setter: (v) =>
                 {
-                    var set = !Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom);
-                    Config.TextAPIAlign.Set(TextAlignFlags.Bottom, set);
-                    Config.TextAPIAlign.Set(TextAlignFlags.Top, !set);
+                    var set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom);
+                    Main.Config.TextAPIAlign.Set(TextAlignFlags.Bottom, set);
+                    Main.Config.TextAPIAlign.Set(TextAlignFlags.Top, !set);
                     ApplySettings(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
-                defaultValue: (Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Bottom) != 0,
+                defaultValue: (Main.Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Bottom) != 0,
                 onText: "Bottom",
                 offText: "Top");
 
@@ -324,7 +324,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_PlaceInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Config.PlaceInfo,
+            var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Main.Config.PlaceInfo,
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
 
@@ -334,7 +334,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_AimInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Config.AimInfo,
+            var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Main.Config.AimInfo,
                 onValueSet: (flag, set) => ApplySettings(redraw: false)
             );
 
@@ -344,10 +344,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void ItemAdd_OverlayLabelToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Config.OverlayLabels,
+            var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Main.Config.OverlayLabels,
                 onValueSet: (flag, set) =>
                 {
-                    groupOverlayLabelsAlt.SetInteractable(Config.OverlayLabels.Value != int.MaxValue);
+                    groupOverlayLabelsAlt.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
                     ApplySettings(redraw: false);
                 }
             );
@@ -402,7 +402,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (val) =>
                 {
                     setting.Value = new Vector2D(val, setting.Value.Y);
-                    Config.Save();
+                    Main.Config.Save();
                 },
                 sliding: (val) =>
                 {
@@ -418,7 +418,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (val) =>
                 {
                     setting.Value = new Vector2D(setting.Value.X, val);
-                    Config.Save();
+                    Main.Config.Save();
                 },
                 sliding: (val) =>
                 {
@@ -482,7 +482,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 setter: (pos) =>
                 {
                     setting.Value = pos;
-                    Config.Save();
+                    Main.Config.Save();
                 },
                 selected: (pos) =>
                 {
@@ -509,7 +509,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 {
                     setting.Value = v;
                     setGroupInteractable?.SetInteractable(v != offValue);
-                    Config.Save();
+                    Main.Config.Save();
                 },
                 enumType: enumType,
                 defaultValue: setting.DefaultValue);
@@ -521,7 +521,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
         private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, int drawTicks = 0)
         {
             if(save)
-                Config.Save();
+                Main.Config.Save();
 
             tmp.Clear();
             tmp.Append(TEXT_START);
@@ -530,14 +530,14 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             {
                 tmp.NewLine();
                 tmp.NewLine().Append("<color=0,255,0>Click and drag anywhere to move!");
-                tmp.NewLine().Append("<color=255,255,0>Current position: ").Append(Config.TextAPIScreenPosition.Value.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.Value.Y.ToString("0.000"));
-                tmp.NewLine().Append("<color=100,100,55>Default: ").Append(Config.TextAPIScreenPosition.DefaultValue.X.ToString("0.000")).Append(", ").Append(Config.TextAPIScreenPosition.DefaultValue.Y.ToString("0.000"));
+                tmp.NewLine().Append("<color=255,255,0>Current position: ").Append(Main.Config.TextAPIScreenPosition.Value.X.ToString("0.000")).Append(", ").Append(Main.Config.TextAPIScreenPosition.Value.Y.ToString("0.000"));
+                tmp.NewLine().Append("<color=100,100,55>Default: ").Append(Main.Config.TextAPIScreenPosition.DefaultValue.X.ToString("0.000")).Append(", ").Append(Main.Config.TextAPIScreenPosition.DefaultValue.Y.ToString("0.000"));
                 tmp.NewLine();
             }
 
             tmp.Append(TEXT_END);
 
-            TextGeneration.Refresh(redraw: redraw, write: tmp, forceDrawTicks: drawTicks);
+            Main.TextGeneration.Refresh(redraw: redraw, write: tmp, forceDrawTicks: drawTicks);
         }
         #endregion Helper methods
     }

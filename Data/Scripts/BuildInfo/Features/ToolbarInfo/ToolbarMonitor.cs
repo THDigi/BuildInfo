@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         protected override void RegisterComponent()
         {
-            EquipmentMonitor.ShipControllerOBChanged += ToolbarOBChanged;
+            Main.EquipmentMonitor.ShipControllerOBChanged += ToolbarOBChanged;
         }
 
         protected override void UnregisterComponent()
@@ -117,7 +117,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
-            EquipmentMonitor.ShipControllerOBChanged -= ToolbarOBChanged;
+            Main.EquipmentMonitor.ShipControllerOBChanged -= ToolbarOBChanged;
         }
 
         void ToolbarOBChanged(MyObjectBuilder_ShipController ob)
@@ -368,7 +368,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed && MyAPIGateway.Input.IsAnyNewMouseOrJoystickPressed())
             {
                 // selecting slot
-                var dpad = Constants.DPAD_NAMES;
+                var dpad = Main.Constants.DPAD_NAMES;
 
                 for(int i = 0; i < dpad.Length; ++i)
                 {

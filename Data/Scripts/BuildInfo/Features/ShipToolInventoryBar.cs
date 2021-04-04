@@ -44,18 +44,18 @@ namespace Digi.BuildInfo.Features
 
         protected override void RegisterComponent()
         {
-            Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
-            GameConfig.HudStateChanged += GameConfig_HudStateChanged;
-            EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
+            Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
         }
 
         protected override void UnregisterComponent()
         {
-            Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
-            GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
-            EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
+            Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
         }
 
         void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -76,10 +76,10 @@ namespace Digi.BuildInfo.Features
 
         void UpdateShow()
         {
-            ShouldShow = (GameConfig.HudState != HudState.OFF
-                      && Config.ShipToolInvBarShow.Value
+            ShouldShow = (Main.GameConfig.HudState != HudState.OFF
+                      && Main.Config.ShipToolInvBarShow.Value
                       //&& !MyAPIGateway.Input.IsJoystickLastUsed // not even working properly with gamepad, apart from not looking properly
-                      && (EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
+                      && (Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
         }
 
         void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
@@ -100,11 +100,11 @@ namespace Digi.BuildInfo.Features
 
             FilledRatio = 0;
 
-            if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
+            if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
             {
                 FilledRatio = GetFilledRatio<IMyShipDrill>(shipController.CubeGrid, Blocks);
             }
-            else if(EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            else if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 FilledRatio = GetFilledRatio<IMyShipGrinder>(shipController.CubeGrid, Blocks);
             }
@@ -146,16 +146,16 @@ namespace Digi.BuildInfo.Features
             Shown = true;
 
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var worldPos = DrawUtils.TextAPIHUDtoWorld(Config.ShipToolInvBarPosition.Value);
+            var worldPos = Main.DrawUtils.TextAPIHUDtoWorld(Main.Config.ShipToolInvBarPosition.Value);
 
-            Vector2D size = DefaultSize * Config.ShipToolInvBarScale.Value;
-            float w = (float)(size.X * DrawUtils.ScaleFOV);
-            float h = (float)(size.Y * DrawUtils.ScaleFOV);
+            Vector2D size = DefaultSize * Main.Config.ShipToolInvBarScale.Value;
+            float w = (float)(size.X * Main.DrawUtils.ScaleFOV);
+            float h = (float)(size.Y * Main.DrawUtils.ScaleFOV);
 
             MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             MyStringId iconMaterial;
-            if(EquipmentMonitor.IsAnyGrinder)
+            if(Main.EquipmentMonitor.IsAnyGrinder)
                 iconMaterial = GrinderIconMaterial;
             else
                 iconMaterial = DrillIconMaterial;
@@ -184,7 +184,7 @@ namespace Digi.BuildInfo.Features
                 var barFill = min + ((max - min) * FilledRatio);
                 var uv = new Vector2(-(1 - barFill), 0);
 
-                worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * DrawUtils.ScaleFOV);
+                worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * Main.DrawUtils.ScaleFOV);
 
                 MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, camMatrix.Left, camMatrix.Up, w, h, uv, blendType: BlendType);
             }
