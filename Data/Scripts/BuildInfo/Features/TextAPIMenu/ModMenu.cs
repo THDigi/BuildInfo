@@ -39,7 +39,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
 
-        void RefreshAll()
+        public void RefreshAll()
         {
             groupTextInfo.SetInteractable(Main.Config.TextShow.Value);
             groupCustomStyling.SetInteractable(Main.Config.TextShow.Value && Main.Config.TextAPICustomStyling.Value);
@@ -476,7 +476,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
         private void SimpleScreenPosition(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null)
         {
-            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 6,
                 getter: () => setting.Value,
                 setter: (pos) =>
                 {

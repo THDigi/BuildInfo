@@ -300,6 +300,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ClickOffset = null;
                 Main.Config.Save();
+                Main.ModMenu.RefreshAll();
             }
 
             // TODO: move to TextAPI module?
@@ -315,6 +316,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(MustBeVisible && (InToolbarConfig || InTextAPIMenu))
             {
+                const int Rounding = 6;
                 var screenSize = MyAPIGateway.Input.GetMouseAreaSize();
                 var mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
                 var mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
@@ -360,18 +362,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         else
                             ClickOffset = Main.Config.ToolbarLabelsPosition.Value - mouseOnScreen;
                     }
-
-                    if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
-                    {
-                        var newPos = mouseOnScreen + ClickOffset.Value;
-                        newPos = new Vector2D(Math.Round(newPos.X, 3), Math.Round(newPos.Y, 3));
-                        newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
-
-                        if(InToolbarConfig)
-                            Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
-                        else
-                            Main.Config.ToolbarLabelsPosition.Value = newPos;
-                    }
                 }
                 else
                 {
@@ -380,6 +370,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         SelectedBox = false;
                         UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
                     }
+                }
+
+                if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
+                {
+                    var newPos = mouseOnScreen + ClickOffset.Value;
+                    newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
+                    newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
+
+                    if(InToolbarConfig)
+                        Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
+                    else
+                        Main.Config.ToolbarLabelsPosition.Value = newPos;
                 }
             }
         }
