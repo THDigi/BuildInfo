@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -63,12 +64,10 @@ namespace Digi.BuildInfo.Features
         public override void UpdateDraw()
         {
             var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
-
             if(turret == null)
                 return;
 
             var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
-
             if(cockpit == null)
                 return;
 
@@ -114,6 +113,14 @@ namespace Digi.BuildInfo.Features
                         weaponTracker = Main.ReloadTracking.GetWeaponInfo(turret);
 
                     prevTurret = turret;
+
+                    // TODO: add or not?
+                    // NOTE: if add, must draw a crosshair... and must set these on all turrets beforehand to avoid the flashing
+                    //var def = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
+                    //string overlay = def.OverlayTexture;
+                    //def.OverlayTexture = null;
+                    //turret.OnAssumeControl(null);
+                    //def.OverlayTexture = overlay;
                 }
 
                 if(weaponCoreBlock)

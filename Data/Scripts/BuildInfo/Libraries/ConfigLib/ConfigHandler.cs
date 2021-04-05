@@ -176,8 +176,9 @@ namespace Digi.ConfigLib
                     setting.SaveSetting(sb);
 
                     sb.AppendLine();
-                    sb.AppendLine();
                 }
+
+                sb.AppendLine();
 
                 for(int i = 0; i < FooterComments.Count; i++)
                 {

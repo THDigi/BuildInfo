@@ -100,7 +100,10 @@ namespace Digi.ConfigLib
         {
             foreach(var line in commentLines)
             {
-                output.Append(ConfigHandler.COMMENT_PREFIX).Append(line).AppendLine();
+                if(string.IsNullOrEmpty(line))
+                    output.AppendLine();
+                else
+                    output.Append(ConfigHandler.COMMENT_PREFIX).Append(line).AppendLine();
             }
 
             AppendDefaultValue(output);

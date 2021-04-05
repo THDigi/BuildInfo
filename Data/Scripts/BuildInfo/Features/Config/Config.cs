@@ -202,70 +202,76 @@ namespace Digi.BuildInfo.Features.Config
                 "Requires world reload/rejoin to work.",
                 "NOTE: If you're testing an issue, please rejoin/reload before you try this killswitch, to ensure that rejoin/reload doesn't fix your issue before blaming my mod, thanks :P");
 
+            const string SubHeaderFormat = "—————— {0} ————————————————————————————————————————————————————————————";
+
             #region TextBox
+            // TODO turn it into a mode so that it can be shown only in HUD hints or only when holding alt.
             TextShow = new BoolSetting(Handler, "TextBox: Show", true,
-                "Toggle the block info text box.");
+                string.Format(SubHeaderFormat, "Text Box"),
+                "These settings affect the mod's text box that has the equipped/aimed block information.",
+                "",
+                "Toggle if the text box is shown or not.");
             TextShow.AddCompatibilityNames("Text: Show");
 
             TextAlwaysVisible = new BoolSetting(Handler, "TextBox: Always Visible", false,
-                "Setting to true causes the text info box to be visible regardless of HUD state");
+                "If true, text box is shown even when HUD is hidden.");
             TextAlwaysVisible.AddCompatibilityNames("Text: Always Visible");
 
             PlaceInfo = new FlagsSetting<PlaceInfoFlags>(Handler, "TextBox: Block-Place Info Filtering", PlaceInfoFlags.All,
-                "Choose what information is shown in the text box when placing a block.",
-                "Disabling all of them will effectively hide the box.");
+                "Choose what information is shown in the text box when placing a block. Disabling all of them will effectively hide the box.");
             PlaceInfo.AddCompatibilityNames("Text: Block-Place Info Filtering");
 
             AimInfo = new FlagsSetting<AimInfoFlags>(Handler, "TextBox: Block-Aim Info Filtering", AimInfoFlags.All,
-                "Choose what information is shown in the text box when aiming at a block with a tool.",
-                "Disabling all of them will effectively hide the box.");
+                "Choose what information is shown in the text box when aiming at a block with a tool. Disabling all of them will effectively hide the box.");
             AimInfo.AddCompatibilityNames("Text: Block-Aim Info Filtering");
 
             TextAPIScale = new FloatSetting(Handler, "TextBox: Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
             {
-                "The overall text box scale."
+                "The overall scale of the box."
             });
             TextAPIScale.AddCompatibilityNames("TextAPI: Scale");
 
             TextAPIBackgroundOpacity = new BackgroundOpacitySetting(Handler, "TextBox: Background Opacity", -1,
-                "Background opacity of the text box that shows block info.",
-                "Set to '-1' or 'HUD' to use game HUD's background opacity.");
+                "Set background opacity where 1.0 is fully opaque and 0.0 is fully transparent, or set to HUD to use game HUD opacity.");
             TextAPIBackgroundOpacity.AddCompatibilityNames("TextAPI: Background Opacity");
 
             TextAPICustomStyling = new BoolSetting(Handler, "TextBox: Custom Styling", false,
-                "Enables the use of ScrenPos and Alignment settings which allows you to place the text info box anywhere you want.",
+                "Enables the use of Scren Position and Alignment settings below, which allows you to place the text info box anywhere you want.",
                 "If false, the text info box will be placed according to rotation hints (the cube and key hints top right).",
                 "(If false) With rotation hints off, text info will be set top-left, otherwise top-right.");
             TextAPICustomStyling.AddCompatibilityNames("TextAPI: Custom Styling");
 
             TextAPIScreenPosition = new Vector2DSetting(Handler, "TextBox: Screen Position", defaultValue: new Vector2D(0.9692, 0.26), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
-                "Screen position in X and Y coordinates where 0,0 is the screen center.",
-                "Positive values are right and up, while negative ones are opposite of that.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center. Positive values are right and up, while negative ones are opposite of that.",
                 $"NOTE: Requires {TextAPICustomStyling.Name} = true"
             });
             TextAPIScreenPosition.AddCompatibilityNames("TextAPI: Screen Position");
 
             TextAPIAlign = new TextAlignSetting(Handler, "TextBox: Anchor", TextAlignFlags.Bottom | TextAlignFlags.Right,
-                "Determine the pivot point of the text info box. Stretches in opposite direction of that.",
+                "Determine the pivot point of the text box. Stretches in opposite directions.",
                 $"NOTE: Requires {TextAPICustomStyling.Name} = true");
             TextAPIAlign.AddCompatibilityNames("TextAPI: Anchor", "TextAPI: Alignment");
             #endregion
 
             #region HUD
             BlockInfoAdditions = new BoolSetting(Handler, "HUD: Block Info Additions", true,
-                "Shows red line for functional and blue line for ownership on components list in block info panel.",
-                "Also shows components that grind into something else (e.g. battery's power cells) if textAPI is allowed, otherwise it highlights the component yellow.");
+                "",
+                string.Format(SubHeaderFormat, "HUD & GUI"),
+                "",
+                "Adds various things to the vanilla block info UI:",
+                "- red and blue lines in the component list to better match where the critical/ownership lines are.",
+                "- shows what the component grinds to if it's different than the component itself (e.g. Battery's Power Cells), or just highlights it yellow if TextAPI is turned off.",
+                "- allows scrolling of the components list if the list is too tall to fit in the current HUD mode.");
             BlockInfoAdditions.AddCompatibilityNames("HUD: Block Info Stages");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
-                "Shows an inventory bar when a ship tool is selected.");
+                "Shows an inventory bar when a ship grinder or ship drill is selected.");
 
             ShipToolInvBarPosition = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Position", defaultValue: new Vector2D(0f, -0.68f), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The screen position (center pivot) of the ship tool inventory bar.",
-                "Screen position in X and Y coordinates where 0,0 is the screen center.",
-                "Positive values are right and up, while negative ones are opposite of that.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center. Positive values are right and up, while negative ones are opposite of that.",
             });
 
             ShipToolInvBarScale = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Scale", defaultValue: new Vector2D(1, 1), min: new Vector2D(0.1, 0.1), max: new Vector2D(3, 3), commentLines: new string[]
@@ -297,9 +303,16 @@ namespace Digi.BuildInfo.Features.Config
             ItemTooltipAdditions.AddCompatibilityNames("Item Tooltip Additions");
             #endregion
 
+            TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
+                "Adds some extra info bottom-right in terminal of certain blocks.",
+                "Does not (and cannot) replace any vanilla info.");
+
             #region Toolbar
             ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.HudHints, new string[]
             {
+                "",
+                string.Format(SubHeaderFormat, "Toolbar & Toolbar labels box"),
+                "",
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the toolbar action stuff.",
                 $"Also, upon entering a cockpit labels are shown for {(ToolbarInfo.ToolbarLabelRender.ShowForTicks / Constants.TICKS_PER_SECOND).ToString()} seconds for HudHints&AltKey modes."
@@ -363,12 +376,11 @@ namespace Digi.BuildInfo.Features.Config
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
             #endregion
 
-            TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
-                "Adds some extra info bottom-right in terminal of certain blocks.",
-                "Does not (and cannot) replace any vanilla info.");
-
             #region Overlays
             OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Always Visible", false,
+                "",
+                string.Format(SubHeaderFormat, "Block Overlays"),
+                "",
                 "Setting to true causes the block overlays to be visible regardless of HUD state");
 
             OverlayLabels = new FlagsSetting<OverlayLabelsFlags>(Handler, "Overlay: Labels", OverlayLabelsFlags.All,
@@ -380,21 +392,20 @@ namespace Digi.BuildInfo.Features.Config
             #endregion
 
             LeakParticleColorWorld = new ColorSetting(Handler, "LeakInfo: Particle Color World", new Color(0, 120, 255), false,
+                "",
+                string.Format(SubHeaderFormat, "Air Leak Detector"),
+                "",
                 "Color of airleak indicator particles in world, only visible if nothing is in the way.");
 
             LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(255, 255, 0), false,
                 "Color of airleak indicator particles that are seen through walls.",
                 "NOTE: This color is overlayed on top of the world ones when those are visible too, making the colors mix, so pick wisely!");
 
-            AdjustBuildDistanceSurvival = new BoolSetting(Handler, "Adjust Build Distance Survival", true,
-                "Enable ctrl+scroll to change block placement distance in survival (for both character and ship)");
-
-            AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
-                "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
-                "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
-
             #region Binds
             MenuBind = new InputCombinationSetting(Handler, "Bind: Menu", Combination.Create(MENU_BIND_INPUT_NAME, "plus"),
+                "",
+                string.Format(SubHeaderFormat, "Key/button binds"),
+                "",
                 "For accessing the quick menu.");
 
             CycleOverlaysBind = new InputCombinationSetting(Handler, "Bind: Cycle Overlays", Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, "ctrl " + MENU_BIND_INPUT_NAME),
@@ -415,6 +426,16 @@ namespace Digi.BuildInfo.Features.Config
                 "When aiming at a block with a tool it locks overlays to that block so you can move around.",
                 "You still have to cycle overlays (see above) in order to see them.");
             #endregion
+
+            AdjustBuildDistanceSurvival = new BoolSetting(Handler, "Adjust Build Distance Survival", true,
+                "",
+                string.Format(SubHeaderFormat, "Misc"),
+                "",
+                "Enable ctrl+scroll to change block placement distance in survival (for both character and ship)");
+
+            AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
+                "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
+                "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
 
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",
