@@ -66,10 +66,8 @@ namespace Digi.BuildInfo
         public DebugEvents DebugEvents;
         public DebugLog DebugLog;
 
-        public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session)
+        public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session, MyUpdateOrder.AfterSimulation)
         {
-            session.SetUpdateOrder(MyUpdateOrder.AfterSimulation);
-
             // Utils
             Caches = new Caches(this);
             Constants = new Constants(this);

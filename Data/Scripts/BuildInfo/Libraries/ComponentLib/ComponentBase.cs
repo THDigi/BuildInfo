@@ -1,4 +1,6 @@
-﻿namespace Digi.ComponentLib
+﻿using System;
+
+namespace Digi.ComponentLib
 {
     public abstract class ComponentBase<TModBase> : IComponent where TModBase : IModBase
     {
@@ -16,10 +18,10 @@
             set
             {
                 if(value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM) && !Main.SessionHasBeforeSim)
-                    Log.Error("Component can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
+                    throw new CrashGameException($"Component '{GetType().FullName}' can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
 
                 if(value.IsSet(UpdateFlags.UPDATE_AFTER_SIM) && !Main.SessionHasAfterSim)
-                    Log.Error("Component can't work with UPDATE_AFTER_SIM because session is not set to call it.");
+                    throw new CrashGameException($"Component '{GetType().FullName}' can't work with UPDATE_AFTER_SIM because session is not set to call it.");
 
                 if(_newFlags != value)
                 {

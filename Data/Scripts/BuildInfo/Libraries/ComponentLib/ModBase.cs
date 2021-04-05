@@ -5,6 +5,11 @@ using VRage.Game.Components;
 
 namespace Digi.ComponentLib
 {
+    public class CrashGameException : Exception
+    {
+        public CrashGameException(string message) : base(message) { }
+    }
+
     public abstract class ModBase<TModMain> : IModBase
         where TModMain : class, IModBase
     {
@@ -70,11 +75,11 @@ namespace Digi.ComponentLib
         private readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
         private readonly List<IComponent> ComponentUpdateDraw = new List<IComponent>();
 
-        private bool RunCriticalOnInput;
-        private bool RunCriticalOnBeforeSim;
-        private bool RunCriticalOnAfterSim;
+        private readonly bool RunCriticalOnInput;
+        private readonly bool RunCriticalOnBeforeSim;
+        private readonly bool RunCriticalOnAfterSim;
 
-        protected ModBase(string modName, BuildInfo_GameSession session)
+        protected ModBase(string modName, BuildInfo_GameSession session, MyUpdateOrder sessionUpdates)
         {
             Log.ModName = modName;
             Log.AutoClose = false;
@@ -84,18 +89,17 @@ namespace Digi.ComponentLib
 
             Session = session;
             Instance = (TModMain)(IModBase)this;
-        }
 
-        void IModBase.WorldStart()
-        {
-            if((Session.UpdateOrder & MyUpdateOrder.Simulation) != 0)
-                throw new Exception("MyUpdateOrder.Simulation not supported by ComponentLib!");
+            Session.SetUpdateOrder(sessionUpdates);
 
             SessionHasBeforeSim = (Session.UpdateOrder & MyUpdateOrder.BeforeSimulation) != 0;
             SessionHasAfterSim = (Session.UpdateOrder & MyUpdateOrder.AfterSimulation) != 0;
 
+            if((Session.UpdateOrder & MyUpdateOrder.Simulation) != 0)
+                throw new CrashGameException("MyUpdateOrder.Simulation not supported by ComponentLib!");
+
             if(!SessionHasBeforeSim && !SessionHasAfterSim)
-                throw new Exception($"Neither BeforeSim nor AfterSim are set in session, this will break Tick and ALL component updating on DS side!");
+                throw new CrashGameException($"Neither BeforeSim nor AfterSim are set in session, this will break Tick and ALL component updating on DS side!");
 
             // DS doesn't call HandleInput() so the critical updates have to go in the next registered sim update
             RunCriticalOnInput = IsPlayer;
@@ -103,8 +107,11 @@ namespace Digi.ComponentLib
             RunCriticalOnAfterSim = !RunCriticalOnInput && !RunCriticalOnBeforeSim && SessionHasAfterSim;
 
             if(!RunCriticalOnInput && !RunCriticalOnBeforeSim && !RunCriticalOnAfterSim)
-                throw new Exception("No critical run executing!");
+                throw new CrashGameException("No critical run executing!");
+        }
 
+        void IModBase.WorldStart()
+        {
             for(int i = 0; i < Components.Count; ++i)
             {
                 try
@@ -113,6 +120,9 @@ namespace Digi.ComponentLib
                 }
                 catch(Exception e)
                 {
+                    if(e is CrashGameException)
+                        throw e;
+
                     Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
                     Log.Error(e);
                 }
@@ -138,6 +148,9 @@ namespace Digi.ComponentLib
                         }
                         catch(Exception e)
                         {
+                            if(e is CrashGameException)
+                                throw e;
+
                             Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
                             Log.Error(e);
                         }
@@ -199,6 +212,9 @@ namespace Digi.ComponentLib
                         }
                         catch(Exception e)
                         {
+                            if(e is CrashGameException)
+                                throw e;
+
                             Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
                             Log.Error(e);
                         }
@@ -207,6 +223,9 @@ namespace Digi.ComponentLib
             }
             catch(Exception e)
             {
+                if(e is CrashGameException)
+                    throw e;
+
                 Log.Error(e);
             }
         }
@@ -243,6 +262,9 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
+                        if(e is CrashGameException)
+                            throw e;
+
                         Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
@@ -250,6 +272,9 @@ namespace Digi.ComponentLib
             }
             catch(Exception e)
             {
+                if(e is CrashGameException)
+                    throw e;
+
                 Log.Error(e);
             }
         }
@@ -286,6 +311,9 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
+                        if(e is CrashGameException)
+                            throw e;
+
                         Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
@@ -293,6 +321,9 @@ namespace Digi.ComponentLib
             }
             catch(Exception e)
             {
+                if(e is CrashGameException)
+                    throw e;
+
                 Log.Error(e);
             }
         }
@@ -312,6 +343,9 @@ namespace Digi.ComponentLib
                     }
                     catch(Exception e)
                     {
+                        if(e is CrashGameException)
+                            throw e;
+
                         Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.Draw(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
@@ -319,6 +353,9 @@ namespace Digi.ComponentLib
             }
             catch(Exception e)
             {
+                if(e is CrashGameException)
+                    throw e;
+
                 Log.Error(e);
             }
         }
@@ -336,6 +373,9 @@ namespace Digi.ComponentLib
             }
             catch(Exception e)
             {
+                if(e is CrashGameException)
+                    throw e;
+
                 Log.Error(e);
             }
         }
