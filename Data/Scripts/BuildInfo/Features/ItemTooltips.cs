@@ -13,8 +13,8 @@ namespace Digi.BuildInfo.Features
 {
     public class ItemTooltips : ModComponent
     {
-        const string ReqLargeConveyorSymbol = "*";
-        const string ReqLargeConveyorSymbolAdd = "\n*";
+        const string ReqLargeConveyorSymbol = "Ф";
+        const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbol;
         const int ListLimit = 6;
 
         public readonly HashSet<MyDefinitionId> IgnoreModItems = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -260,7 +260,7 @@ namespace Digi.BuildInfo.Features
 
             if(Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
             {
-                s.Append("\n* Item can not pass through small conveyors.");
+                s.Append('\n').Append(ReqLargeConveyorSymbol).Append(" Item can not pass through small conveyors.");
             }
         }
 
