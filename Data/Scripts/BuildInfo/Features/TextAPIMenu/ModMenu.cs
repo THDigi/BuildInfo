@@ -102,9 +102,9 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             });
 
-            Category_Textbox = AddCategory("Text box", Category_Mod);
-            Category_Overlays = AddCategory("Overlays", Category_Mod);
-            Category_HUD = AddCategory("HUD", Category_Mod);
+            Category_Textbox = AddCategory("Text Box", Category_Mod);
+            Category_Overlays = AddCategory("Block Overlays", Category_Mod);
+            Category_HUD = AddCategory("HUD & GUI", Category_Mod);
             Category_Toolbar = AddCategory("Toolbar", Category_Mod);
             Category_Terminal = AddCategory("Terminal", Category_Mod);
             Category_LeakInfo = AddCategory("Air Leak Info", Category_Mod);
@@ -148,7 +148,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleScreenPosition(Category_Toolbar, "Labels Box In-Menu Position", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, "Labels Box Scale", Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, "Labels Box ShipToolInvBar Offset", Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
-            SimpleToggle(Category_Toolbar, "Override Action Status", Main.Config.ToolbarActionStatus);
+            SimpleToggle(Category_Toolbar, "Improve Action Status", Main.Config.ToolbarActionStatus);
 
             SimpleToggle(Category_Terminal, "Detail Info Additions", Main.Config.TerminalDetailInfoAdditions);
 
@@ -162,8 +162,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleBind(Category_Binds, "Block Picker Bind", Features.Config.Config.BLOCK_PICKER_INPUT_NAME, Main.Config.BlockPickerBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Lock Overlay Bind", Features.Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
 
-            SimpleToggle(Category_Misc, "Placement Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
-            SimpleToggle(Category_Misc, "Placement Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
+            SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
+            SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Are you sure?");
