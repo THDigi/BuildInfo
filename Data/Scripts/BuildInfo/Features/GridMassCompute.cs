@@ -121,6 +121,13 @@ namespace Digi.BuildInfo.Features
 
         public void Init(IMyCubeGrid grid)
         {
+            if(Grid == grid)
+                return;
+
+            if(Grid != null)
+                Reset();
+
+            BlockBaseMass = 0;
             InventoryTotalMass = -1;
             Grid = grid;
             Grid.OnBlockAdded += BlockAdded;
@@ -133,16 +140,29 @@ namespace Digi.BuildInfo.Features
             {
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
                 var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
-                if(!def.HasPhysics)
-                    continue;
 
-                if(slimBlock.FatBlock != null)
+                var fatBlock = slimBlock.FatBlock;
+                if(fatBlock != null)
                 {
-                    mass += slimBlock.FatBlock.Mass;
+                    if(fatBlock.InventoryCount > 0)
+                    {
+                        for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
+                        {
+                            var inv = (MyInventory)fatBlock.GetInventory(i);
+                            if(inv != null)
+                                inv.InventoryContentChanged += InventoryContentChanged;
+                        }
+
+                        BlocksWithInventory.Add(fatBlock);
+                    }
+
+                    if(def.HasPhysics)
+                        mass += fatBlock.Mass;
                 }
                 else
                 {
-                    mass += slimBlock.Mass;
+                    if(def.HasPhysics)
+                        mass += slimBlock.Mass;
                 }
             }
 
@@ -165,15 +185,15 @@ namespace Digi.BuildInfo.Features
                     {
                         var inv = (MyInventory)fatBlock.GetInventory(i);
                         if(inv != null)
-                        {
                             inv.InventoryContentChanged -= InventoryContentChanged;
-                        }
                     }
                 }
             }
 
             BlocksWithInventory.Clear();
             Grid = null;
+            BlockBaseMass = 0;
+            InventoryTotalMass = -1;
         }
 
         public float GetMass()
@@ -192,9 +212,7 @@ namespace Digi.BuildInfo.Features
                     {
                         var inv = block.GetInventory(i);
                         if(inv != null)
-                        {
                             InventoryTotalMass += (float)inv.CurrentMass * cargoMassMultiplier;
-                        }
                     }
                 }
             }
@@ -223,7 +241,6 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                // HACK: game doesn't use mass from blocks with HasPhysics=false
                 var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
                 var fatBlock = slimBlock.FatBlock;
@@ -231,12 +248,17 @@ namespace Digi.BuildInfo.Features
                 {
                     if(fatBlock.InventoryCount > 0)
                     {
+                        float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
+
                         for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
                         {
                             var inv = (MyInventory)fatBlock.GetInventory(i);
                             if(inv != null)
                             {
                                 inv.InventoryContentChanged += InventoryContentChanged;
+
+                                if(InventoryTotalMass > 0)
+                                    InventoryTotalMass += (float)inv.CurrentMass * cargoMassMultiplier;
                             }
                         }
 
@@ -267,6 +289,23 @@ namespace Digi.BuildInfo.Features
                 var fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
                 {
+                    if(fatBlock.InventoryCount > 0)
+                    {
+                        float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
+
+                        for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
+                        {
+                            var inv = (MyInventory)fatBlock.GetInventory(i);
+                            if(inv != null)
+                            {
+                                inv.InventoryContentChanged -= InventoryContentChanged;
+
+                                if(InventoryTotalMass > 0)
+                                    InventoryTotalMass -= (float)inv.CurrentMass * cargoMassMultiplier;
+                            }
+                        }
+                    }
+
                     BlocksWithInventory.Remove(fatBlock);
 
                     if(def.HasPhysics)

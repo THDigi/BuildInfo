@@ -1033,18 +1033,21 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    if(aimedBlock.FatBlock != null)
+                    // include inventory mass
+                    var aimedFatblock = aimedBlock.FatBlock;
+                    if(aimedFatblock != null && aimedFatblock.InventoryCount > 0)
                     {
-                        var inv = aimedBlock.FatBlock.GetInventory();
-
-                        if(inv != null)
+                        for(int i = (aimedFatblock.InventoryCount - 1); i >= 0; i--)
                         {
-                            var invMass = (float)inv.CurrentMass;
+                            var inv = aimedFatblock.GetInventory(i);
+                            if(inv == null)
+                                continue;
 
+                            var invMass = (float)inv.CurrentMass;
                             if(invMass > 0)
                             {
                                 mass += invMass;
-                                massColor = COLOR_WARNING;
+                                massColor = new Color(255, 200, 0);
                             }
                         }
                     }

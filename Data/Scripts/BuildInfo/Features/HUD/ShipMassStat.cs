@@ -81,19 +81,33 @@ namespace Digi.BuildInfo.Features.HUD
                     float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
 
                     // remove the ship inventory multiplier from the number.
-                    float invMultiplier = MyAPIGateway.Session.InventoryMultiplier;
+                    float invMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
                     if(invMultiplier != 1f)
                         mass = ((mass - baseMass) / invMultiplier) + baseMass;
 
-                    // then add static grids' masses
+                    // then add static grids' masses + remove pilot inv mass
                     Grids.Clear();
                     MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
 
-                    foreach(IMyCubeGrid g in Grids)
+                    foreach(MyCubeGrid g in Grids)
                     {
-                        if(g.IsStatic && g.Physics != null && g.Physics.Enabled)
+                        if(g.Physics == null || !g.Physics.Enabled)
+                            continue;
+
+                        // reminder that GetCurrentMass() ignores static grids
+                        if(g.IsStatic)
                         {
                             mass += Main.GridMassCompute.GetGridMass(g);
+                        }
+                        else
+                        {
+                            // remove pilot's inventory mass
+                            foreach(var block in g.OccupiedBlocks)
+                            {
+                                var inv = block.Pilot?.GetInventory(0);
+                                if(inv != null)
+                                    mass -= (float)inv.CurrentMass;
+                            }
                         }
                     }
 
