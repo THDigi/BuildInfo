@@ -27,6 +27,9 @@ namespace Digi.ComponentLib
 
         void LoadMod()
         {
+            if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
+                return; // this mod does nothing server side (with no render), no reason to allocate any more memory.
+
             if(IsKilled)
             {
                 PlacementDistance.ResetDefaults();
@@ -38,9 +41,6 @@ namespace Digi.ComponentLib
                 return;
             }
 
-            if(MyAPIGateway.Utilities.IsDedicated)
-                return; // this mod does nothing server side (with no render), no reason to allocate any more memory.
-
             main = new BuildInfo.BuildInfoMod(this);
         }
 
@@ -48,6 +48,16 @@ namespace Digi.ComponentLib
         {
             if(MyAPIGateway.Utilities == null)
                 MyAPIGateway.Utilities = MyAPIUtilities.Static; // HACK: avoid this being null xD
+
+            if(MyAPIGateway.Utilities == null)
+            {
+                Log.Error("MyAPIGateway.Utilities is null, can't check for DS or config to read killswitch. Assumed killswitch is on.");
+                return true;
+            }
+
+            // leverage this feature to turn off things DS-side
+            if(MyAPIGateway.Utilities.IsDedicated)
+                return true;
 
             // manually check config for killswitch to avoid loading any components if it's true
             // REMINDER: don't use ANY instanced fields here
