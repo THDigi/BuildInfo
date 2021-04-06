@@ -37,8 +37,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             try
             {
-                var leakInfo = BuildInfoMod.Instance.LeakInfo;
-
                 if(!init)
                 {
                     if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null) // ignore DS side and ghost grids
@@ -47,6 +45,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         return;
                     }
 
+                    var leakInfo = BuildInfoMod.Instance?.LeakInfo;
                     if(leakInfo == null) // wait until leak info component is assigned
                         return;
 
@@ -96,6 +95,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     skip = 0;
 
                     // if room is sealed and the leak info is running then clear it
+                    var leakInfo = BuildInfoMod.Instance.LeakInfo;
                     if(leakInfo.UsedFromVent == block && leakInfo.Status != ThreadStatus.IDLE && block.CanPressurize)
                     {
                         leakInfo.ClearStatus();
