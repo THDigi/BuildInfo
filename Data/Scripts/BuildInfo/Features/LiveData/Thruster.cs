@@ -68,9 +68,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     float length = 2f * ((thrustMaxLength * radius * 0.5f) * thrustDef.FlameDamageLengthScale) - radius; // from MyThrust.GetDamageCapsuleLine()
 
-                    if(thrustDef.SlowdownFactor > 1) // if dampeners are stronger than normal thrust then the flame will be longer.
-                        length *= thrustDef.SlowdownFactor;
-
                     var endPosition = startPosition + direction * length;
 
                     float capsuleRadius = radius * thrustDef.FlameDamageLengthScale; // from MyThrust.ThrustDamageShapeCast()
