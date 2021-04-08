@@ -701,7 +701,6 @@ namespace Digi.BuildInfo.Features.Overlays
             const int wireDivideRatio = 36;
             const float lineHeight = 0.5f;
             var color = Color.Red;
-            var colorFace = color * 0.5f;
             var weaponBlockDef = def as MyWeaponBlockDefinition;
             MyWeaponDefinition weaponDef;
             if(weaponBlockDef == null || !MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef))
@@ -724,19 +723,27 @@ namespace Digi.BuildInfo.Features.Overlays
                 ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
             }
 
-            float height = ammo.MaxTrajectory;
-            float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
-            float accuracyAtMaxRange = tanShotAngle * height;
             MatrixD coneMatrix = data.muzzleLocalMatrix * drawMatrix;
+            float height = ammo.MaxTrajectory;
 
             MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, coneMatrix.Translation, 0.025f, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
-            Utils.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref colorFace, MySimpleObjectRasterizer.Solid, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
-            //const int circleWireDivideRatio = 20;
-            //var accuracyAt100m = tanShotAngle * (100 * 2);
-            //var color100m = Color.Green.ToVector4();
-            //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
-            //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
+            if(weaponDef.DeviateShotAngle > 0)
+            {
+                float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
+                float accuracyAtMaxRange = tanShotAngle * height;
+                Utils.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref color, MySimpleObjectRasterizer.Solid, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
+                //const int circleWireDivideRatio = 20;
+                //var accuracyAt100m = tanShotAngle * (100 * 2);
+                //var color100m = Color.Green.ToVector4();
+                //var circleMatrix = MatrixD.CreateWorld(coneMatrix.Translation + coneMatrix.Forward * 3 + coneMatrix.Left * 3, coneMatrix.Down, coneMatrix.Forward);
+                //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, accuracyAt100m, accuracyAt100m, 0.1f, ref color100m, true, circleWireDivideRatio, 0.05f, MATERIAL_SQUARE);
+            }
+            else
+            {
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, coneMatrix.Translation, coneMatrix.Forward, height, 0.01f, blendType: OVERLAY_BLEND_TYPE);
+            }
 
             if(CanDrawLabel())
             {
