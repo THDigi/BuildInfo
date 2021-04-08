@@ -8,7 +8,7 @@
     </Id>
 
     <!-- Needed to allow vast placement distances, these are capped by script but cannot be increased by script so that's why this SBC is here. -->
-    <DefaultBlockBuildingDistance>20</DefaultBlockBuildingDistance>
+    <DefaultBlockBuildingDistance>8</DefaultBlockBuildingDistance>
     <MaxBlockBuildingDistance>100</MaxBlockBuildingDistance>
     <MinBlockBuildingDistance>1</MinBlockBuildingDistance>
     <BuildingDistLargeSurvivalCharacter>50</BuildingDistLargeSurvivalCharacter>
