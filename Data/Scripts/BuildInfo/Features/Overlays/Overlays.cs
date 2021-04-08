@@ -909,16 +909,16 @@ namespace Digi.BuildInfo.Features.Overlays
             foreach(var flame in data.Flames)
             {
                 var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
-                capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.Length * 0.5)); // capsule's position is in the center
+                capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
 
-                float radius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
-                Utils.DrawTransparentCapsule(ref capsuleMatrix, radius, flame.Length, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+                float paddedRadius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
+                Utils.DrawTransparentCapsule(ref capsuleMatrix, paddedRadius, flame.CapsuleLength, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
                 if(drawLabel)
                 {
                     drawLabel = false; // label only on the first flame
                     var labelDir = drawMatrix.Down;
-                    var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * radius;
+                    var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
                     DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage", lineHeight: lineHeight);
                 }
             }

@@ -9,10 +9,10 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Thrust : BData_Base
     {
-        public float HighestRadius;
-        public float HighestLength;
-        public float TotalBlockDamage;
-        public float TotalOtherDamage;
+        public float LongestFlamePastEdge;
+        public float LongestFlame;
+        public float DamagePerTickToBlocks;
+        public float DamagePerTickToOther;
         public List<FlameInfo> Flames = new List<FlameInfo>();
 
         public struct FlameInfo
@@ -20,19 +20,19 @@ namespace Digi.BuildInfo.Features.LiveData
             public readonly Vector3 LocalFrom;
             public readonly Vector3 LocalTo;
             public readonly Vector3 Direction;
-            public readonly float Radius;
+            public readonly float DummyRadius;
             public readonly float CapsuleRadius;
-            public readonly float Length;
+            public readonly float CapsuleLength;
 
-            public FlameInfo(Vector3 localFrom, Vector3 localTo, float radius, float capsuleRadius)
+            public FlameInfo(Vector3 localFrom, Vector3 localTo, float dummyRadius, float capsuleRadius)
             {
                 LocalFrom = localFrom;
                 LocalTo = localTo;
-                Radius = radius;
+                DummyRadius = dummyRadius;
                 CapsuleRadius = capsuleRadius;
 
                 Direction = (LocalTo - LocalFrom);
-                Length = Direction.Normalize();
+                CapsuleLength = Direction.Normalize();
             }
         }
 
@@ -51,10 +51,10 @@ namespace Digi.BuildInfo.Features.LiveData
             var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             Flames.Clear();
-            HighestLength = 0;
-            HighestRadius = 0;
-            TotalBlockDamage = 0;
-            TotalOtherDamage = 0;
+            LongestFlame = 0;
+            LongestFlamePastEdge = 0;
+            DamagePerTickToBlocks = 0;
+            DamagePerTickToOther = 0;
 
             thrust.Model.GetDummies(dummies);
 
@@ -62,34 +62,40 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 if(dummy.Name.StartsWith("thruster_flame", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var startPosition = dummy.Matrix.Translation;
-                    var direction = Vector3.Normalize(dummy.Matrix.Forward);
-                    var radius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f; // from MyThrust.LoadDummies()
+                    Vector3 startPosition = dummy.Matrix.Translation;
+                    Vector3 direction = Vector3.Normalize(dummy.Matrix.Forward);
+                    float dummyRadius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f; // from MyThrust.LoadDummies()
 
-                    float length = 2f * ((thrustMaxLength * radius * 0.5f) * thrustDef.FlameDamageLengthScale) - radius; // from MyThrust.GetDamageCapsuleLine()
+                    DamagePerTickToBlocks += thrustDef.FlameDamage; // from MyThrust.DamageGrid()
+                    DamagePerTickToOther += dummyRadius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()
 
-                    var endPosition = startPosition + direction * length;
+                    float flameLength = 2f * ((thrustMaxLength * dummyRadius * 0.5f) * thrustDef.FlameDamageLengthScale) - dummyRadius; // from MyThrust.GetDamageCapsuleLine()
+                    Vector3 endPosition = startPosition + direction * flameLength;
 
-                    float capsuleRadius = radius * thrustDef.FlameDamageLengthScale; // from MyThrust.ThrustDamageShapeCast()
-                    Flames.Add(new FlameInfo(startPosition, endPosition, radius, capsuleRadius));
+                    LongestFlame = Math.Max(LongestFlame, flameLength);
 
-                    #region calculating damage line from block bounding box
-                    float RAY_OFFSET = 1000;
-                    var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    var half = def.Size * (0.5f * gridSize);
-                    var bb = new BoundingBox(-half, half);
-                    var ray = new Ray(startPosition + direction * RAY_OFFSET, -direction);
-                    var hitDist = bb.Intersects(ray);
+                    float capsuleRadius = dummyRadius * thrustDef.FlameDamageLengthScale; // from MyThrust.ThrustDamageShapeCast()
+                    Flames.Add(new FlameInfo(startPosition, endPosition, dummyRadius, capsuleRadius));
 
+                    // compute how far the flame goes outside of block's boundingbox
+                    Vector3 capsuleEdgeStart = startPosition - direction * capsuleRadius;
+                    float capsuleEdgesLength = flameLength + capsuleRadius * 2;
+
+                    Vector3 blockHalfSize = def.Size * (0.5f * MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
+                    var blockBB = new BoundingBox(-blockHalfSize, blockHalfSize);
+
+                    const float RayStartDistance = 1000; // arbitrary large value
+                    var ray = new Ray(capsuleEdgeStart + direction * RayStartDistance, -direction);
+                    float? hitDist = blockBB.Intersects(ray);
+
+                    float pastEdge = 0;
                     if(hitDist.HasValue)
-                        length += (hitDist.Value - RAY_OFFSET);
-                    #endregion calculating damage line from block bounding box
+                    {
+                        float penetrating = (RayStartDistance - hitDist.Value);
+                        pastEdge = capsuleEdgesLength - penetrating; // if it penetrates more than the flame length then it's be negative
+                    }
 
-                    HighestLength = Math.Max(HighestLength, length);
-                    HighestRadius = Math.Max(HighestRadius, radius);
-
-                    TotalBlockDamage += Constants.TICKS_PER_SECOND * thrustDef.FlameDamage; // from MyThrust.DamageGrid()
-                    TotalOtherDamage += Constants.TICKS_PER_SECOND * radius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()
+                    LongestFlamePastEdge = Math.Max(LongestFlamePastEdge, pastEdge);
                 }
             }
 

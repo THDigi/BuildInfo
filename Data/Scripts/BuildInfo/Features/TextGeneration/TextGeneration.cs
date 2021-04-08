@@ -2260,8 +2260,12 @@ namespace Digi.BuildInfo.Features
                 var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
                 if(data != null)
                 {
-                    AddLine().Label("Flames").Append(data.Flames.Count).Separator().Label("Max distance").DistanceFormat(data.HighestLength, 2);
-                    AddLine().Label("Damage to ships").Number(data.TotalBlockDamage).Append("/s").Separator().Label("to other").Number(data.TotalOtherDamage).Append("/s");
+                    AddLine().Label("Flames").Append(data.Flames.Count)
+                        .Separator().Label("Longest").DistanceFormat(data.LongestFlame, 2)
+                        .Append(" (").DistanceFormat(data.LongestFlamePastEdge).Append(" past cube edge)");
+
+                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TICKS_PER_SECOND).Append("/s")
+                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TICKS_PER_SECOND).Append("/s");
                 }
 
                 if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)
