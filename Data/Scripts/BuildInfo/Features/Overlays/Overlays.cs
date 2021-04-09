@@ -522,16 +522,16 @@ namespace Digi.BuildInfo.Features.Overlays
 
             AnyLabelShown = false;
 
-            for(int i = 0; i < Labels.Length; ++i)
-            {
-                var label = Labels[i];
-
-                if(label != null && label.Text != null)
-                {
-                    label.Text.Visible = false;
-                    label.Shadow.Visible = false;
-                }
-            }
+            //for(int i = 0; i < Labels.Length; ++i)
+            //{
+            //    var label = Labels[i];
+            //
+            //    if(label != null && label.Text != null)
+            //    {
+            //        label.Text.Visible = false;
+            //        label.Shadow.Visible = false;
+            //    }
+            //}
         }
 
         #region Block-specific overlays
@@ -1014,6 +1014,10 @@ namespace Digi.BuildInfo.Features.Overlays
                     labelData.Shadow = new HudAPIv2.SpaceMessage(shadowSB, textWorldPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
                     labelData.Text = new HudAPIv2.SpaceMessage(msgSB, textWorldPos, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
 
+                    // not necessary for text.Draw() to work
+                    labelData.Shadow.Visible = false;
+                    labelData.Text.Visible = false;
+
                     if(message != null)
                     {
                         shadowSB.Color(LABEL_SHADOW_COLOR).Append(message);
@@ -1037,15 +1041,15 @@ namespace Digi.BuildInfo.Features.Overlays
                 var textPos = textWorldPos + cm.Right * LABEL_OFFSET.X + cm.Up * LABEL_OFFSET.Y;
                 var shadowPos = textPos + cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y + cm.Forward * 0.0001;
 
-                shadow.Visible = true;
                 shadow.WorldPosition = shadowPos;
                 shadow.Left = cm.Left;
                 shadow.Up = cm.Up;
+                shadow.Draw(); // this removes the need of having the text visible, also draws text more accurately to my position
 
-                text.Visible = true;
                 text.WorldPosition = textPos;
                 text.Left = cm.Left;
                 text.Up = cm.Up;
+                text.Draw();
 
                 var underlineLength = labelData.UnderlineLength;
                 MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, textWorldPos + offset, cm.Right, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
