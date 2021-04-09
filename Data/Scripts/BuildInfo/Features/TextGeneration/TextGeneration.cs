@@ -2810,7 +2810,14 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Clearence - Ground").DistanceFormat(windTurbine.OptimalGroundClearance).Separator().Label("Sides").DistanceFormat(windTurbine.RaycasterSize);
+                    float groundMin = windTurbine.OptimalGroundClearance * windTurbine.MinRaycasterClearance;
+                    float groundMax = windTurbine.OptimalGroundClearance;
+
+                    float sideMin = windTurbine.RaycasterSize * windTurbine.MinRaycasterClearance;
+                    float sideMax = windTurbine.RaycasterSize;
+
+                    AddLine().Label("Clearence - Ground").DistanceRangeFormat(groundMin, groundMax).Separator().Label("Sides").DistanceRangeFormat(sideMin, sideMax);
+
                     AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2);
                     // TODO: wind speed unit?
                 }

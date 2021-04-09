@@ -1264,17 +1264,25 @@ namespace Digi.BuildInfo.Features
             //      Wind Clearance: <Text>
 
             var turbineDef = (MyWindTurbineDefinition)block.SlimBlock.BlockDefinition;
-            info.Append("Max Possible Output: ").PowerFormat(turbineDef.MaxPowerOutput).NewLine();
+
+            float optimalOutput = turbineDef.MaxPowerOutput; // * ((turbineDef.RaycasterSize - 1) * turbineDef.RaycastersToFullEfficiency);
+
+            info.Append("Optimal Output: ").PowerFormat(optimalOutput).NewLine();
 
             var grid = block.CubeGrid;
-            var position = (grid.Physics == null ? grid.Physics.CenterOfMassWorld : grid.GetPosition());
+            Vector3D position = grid.Physics?.CenterOfMassWorld ?? grid.PositionComp.GetPosition();
             var planet = MyGamePruningStructure.GetClosestPlanet(position);
 
             info.Append("Current wind speed: ");
             if(planet != null && planet.PositionComp.WorldAABB.Contains(position) != ContainmentType.Disjoint)
-                info.Append(planet.GetWindSpeed(position).ToString("0.##"));
+            {
+                float windSpeed = planet.GetWindSpeed(position) * MyAPIGateway.Session.WeatherEffects.GetWindMultiplier(position);
+                info.Append(windSpeed.ToString("0.##"));
+            }
             else
+            {
                 info.Append("N/A");
+            }
             info.NewLine();
         }
 
