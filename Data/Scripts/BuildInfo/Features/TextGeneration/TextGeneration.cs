@@ -562,10 +562,11 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
+                if(Main.IsPaused)
+                    return; // HACK: avoid notification glitching out if showing them continuously when game is paused
+
                 if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
-                {
                     return;
-                }
 
                 List<IMyHudNotification> hudLines = null;
 

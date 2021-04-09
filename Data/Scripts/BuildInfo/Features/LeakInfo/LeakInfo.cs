@@ -296,6 +296,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
         /// </summary>
         private void NotifyHUD(string message, int time = 3000, string font = FontsHandler.WhiteSh)
         {
+            if(time < 1000 && Main.IsPaused)
+                return; // HACK: avoid notification glitching out if showing them continuously when game is paused
+
             if(notify == null)
                 notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
 

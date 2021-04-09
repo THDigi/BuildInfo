@@ -243,6 +243,9 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
+                if(Main.IsPaused)
+                    return; // HACK: avoid notification glitching out if showing them continuously when game is paused
+
                 if(notify == null)
                     notify = notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue);
 
