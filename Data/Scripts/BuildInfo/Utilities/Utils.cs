@@ -241,11 +241,6 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
-        public static void DrawTransparentCone(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
-        {
-            DrawTransparentCone(worldMatrix.Translation, worldMatrix.Forward * height, worldMatrix.Forward, worldMatrix.Up * radius, color, rasterization, wireDivideRatio, material, lineThickness, customViewProjection, blendType);
-        }
-
         // Added wireframe and blend type as well as optimized.
         public static void DrawTransparentCone(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
@@ -303,7 +298,7 @@ namespace Digi.BuildInfo.Utilities
             double halfHeight = height * 0.5;
             MyQuadD quad;
 
-#region Sphere halves
+            #region Sphere halves
             MatrixD sphereMatrix = MatrixD.CreateRotationX(-MathHelperD.PiOver2);
             sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
             sphereMatrix *= worldMatrix;
@@ -343,9 +338,9 @@ namespace Digi.BuildInfo.Utilities
                     MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
                 }
             }
-#endregion
+            #endregion
 
-#region Cylinder
+            #region Cylinder
             double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
             double angle = 0f;
 
@@ -388,7 +383,7 @@ namespace Digi.BuildInfo.Utilities
                     MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
                 }
             }
-#endregion
+            #endregion
         }
 
         /// <summary>

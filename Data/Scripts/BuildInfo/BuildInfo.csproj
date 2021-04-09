@@ -189,6 +189,7 @@
     <Compile Include="Features\LiveData\ShipTool.cs" />
     <Compile Include="Features\LiveData\TempBlockSpawn.cs" />
     <Compile Include="Features\LiveData\Thruster.cs" />
+    <Compile Include="Features\LiveData\WeaponTurret.cs" />
     <Compile Include="Features\LiveData\Weapon.cs" />
     <Compile Include="Features\MergeFailDetector.cs" />
     <Compile Include="Features\Overlays\LockOverlay.cs" />

@@ -101,7 +101,8 @@ namespace Digi.BuildInfo.Features.Overlays
             DRILL_CARVE,
             SHIP_TOOL,
             ACCURACY_MAX,
-            //ACCURACY_100M,
+            TURRET_PITCH,
+            TURRET_YAW,
             DOOR_AIRTIGHT,
             THRUST_DAMAGE,
             MAGNET,
@@ -758,10 +759,176 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 label.Clear().Append("Accuracy cone - ").Append(height).Append(" m");
                 DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, accColor, lineHeight: lineHeight);
+            }
 
-                //var lineStart = circleMatrix.Translation + coneMatrix.Down * accuracyAt100m;
-                //var labelStart = lineStart + coneMatrix.Down * 0.3f;
-                //DrawLineLabelAlternate(TextAPIMsgIds.ACCURACY_100M, lineStart, labelStart, "At 100m (zoomed)", color100m, underlineLength: 1.5f);
+            var turretDef = def as MyLargeTurretBaseDefinition;
+            var turretData = data as BData_WeaponTurret;
+            bool isTurret = (turretDef != null && turretData != null);
+            if(isTurret)
+            {
+                float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize); // TODO: cache
+
+                const int LineEveryDegrees = 15;
+                const float lineThick = 0.03f;
+                float cylinderWidth = 0.3f * cellSize;
+                float radius = (def.Size.AbsMax() * cellSize) / 2; // arbitrary division
+
+                int minPitch = turretDef.MinElevationDegrees; // this one is actually not capped in game for whatever reason
+                int maxPitch = Math.Min(turretDef.MaxElevationDegrees, 90); // can't pitch up more than 90deg
+
+                int minYaw = turretDef.MinAzimuthDegrees;
+                int maxYaw = turretDef.MaxAzimuthDegrees;
+
+                {
+                    var colorPitch = (Color.Red * 0.25f).ToVector4();
+                    var colorPitchLine = Color.Red.ToVector4();
+
+                    MatrixD pitchMatrix;
+                    if(weaponBlock != null)
+                    {
+                        pitchMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
+                        pitchMatrix.Translation = drawMatrix.Translation;
+                    }
+                    else
+                    {
+                        pitchMatrix = drawMatrix;
+                    }
+
+                    // only yaw rotation
+                    var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
+                    Vector3D rotationPivot = Vector3D.Transform(turretData.PitchLocalPos, m);
+
+                    // only yaw rotation but for cylinder
+                    pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
+
+                    Vector3D firstOuterRimVec, lastOuterRimVec;
+                    DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                        ref pitchMatrix, radius, minPitch, maxPitch, LineEveryDegrees,
+                        colorPitch, colorPitchLine, OVERLAY_SQUARE_MATERIAL, OVERLAY_LASER_MATERIAL, lineThick, OVERLAY_BLEND_TYPE);
+
+                    if(canDrawLabel)
+                    {
+                        const float lineHeight = 0.5f;
+                        var labelDir = pitchMatrix.Up;
+                        var labelLineStart = lastOuterRimVec;
+
+                        DrawLineLabel(TextAPIMsgIds.TURRET_PITCH, labelLineStart, labelDir, colorPitchLine, "Pitch limit", lineHeight: lineHeight);
+                    }
+                }
+
+                {
+                    var colorYaw = (Color.Lime * 0.25f).ToVector4();
+                    var colorYawLine = Color.Lime.ToVector4();
+
+                    Vector3D rotationPivot = Vector3D.Transform(turretData.YawLocalPos, drawMatrix);
+
+                    var yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
+
+                    Vector3D firstOuterRimVec, lastOuterRimVec;
+                    DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                        ref yawMatrix, radius, minYaw, maxYaw, LineEveryDegrees,
+                        colorYaw, colorYawLine, OVERLAY_SQUARE_MATERIAL, OVERLAY_LASER_MATERIAL, lineThick, OVERLAY_BLEND_TYPE);
+
+                    if(canDrawLabel)
+                    {
+                        const float lineHeight = 0.5f;
+                        var labelDir = yawMatrix.Down;
+                        var labelLineStart = firstOuterRimVec;
+
+                        DrawLineLabel(TextAPIMsgIds.TURRET_YAW, labelLineStart, labelDir, colorYawLine, "Yaw limit", lineHeight: lineHeight);
+                    }
+                }
+            }
+        }
+
+        static void DrawTurretAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
+           ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
+           Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
+           BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            const int wireDivRatio = (360 / 5); // quality
+
+            Vector3D center = worldMatrix.Translation;
+            Vector3D normal = worldMatrix.Forward;
+            firstOuterRimVec = center + normal * radius; // fallback
+            lastOuterRimVec = firstOuterRimVec;
+
+            Vector4 triangleColor = (faceMaterial.HasValue ? faceColor.ToLinearRGB() : faceColor); // HACK keeping color consistent with other billboards
+
+            // from MyLargeTurretBase
+
+            //static float NormalizeAngle(int angle)
+            //{
+            //    int n = angle % 360;
+            //    if(n == 0 && angle != 0)
+            //        return 360f;
+            //    return n;
+            //}
+            // inlined of above
+            int startN = startAngle % 360;
+            startAngle = ((startN == 0 && startAngle != 0) ? 360 : startN);
+
+            int endN = endAngle % 360;
+            endAngle = ((endN == 0 && endAngle != 0) ? 360 : endN);
+
+            double startRad = MathHelperD.ToRadians(startAngle);
+            double endRad = MathHelperD.ToRadians(endAngle);
+            if(startRad > endRad)
+                startRad -= MathHelperD.TwoPi;
+
+            Vector3D current = Vector3D.Zero;
+            Vector3D previous = Vector3D.Zero;
+            double angleRad = startRad;
+
+            double stepRad = MathHelperD.TwoPi / wireDivRatio;
+            bool first = true;
+
+            while(true)
+            {
+                bool exit = false;
+                if(angleRad > endRad)
+                {
+                    angleRad = endRad;
+                    exit = true;
+                }
+
+                double x = radius * Math.Cos(angleRad);
+                double z = radius * Math.Sin(angleRad);
+                current.X = worldMatrix.M41 + x * worldMatrix.M11 + z * worldMatrix.M31; // inlined Transform() without scale
+                current.Y = worldMatrix.M42 + x * worldMatrix.M12 + z * worldMatrix.M32;
+                current.Z = worldMatrix.M43 + x * worldMatrix.M13 + z * worldMatrix.M33;
+
+                if(first || exit)
+                {
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, lineColor, center, (current - center), 1f, lineThickness, blendType);
+                }
+
+                if(!first)
+                {
+                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normal, normal, normal, Vector2.Zero, Vector2.Zero, Vector2.Zero, faceMaterial.Value, 0, center, triangleColor, blendType);
+                }
+
+                if(exit)
+                {
+                    lastOuterRimVec = current;
+                    break;
+                }
+
+                if(first)
+                {
+                    firstOuterRimVec = current;
+
+                    angleRad = -MathHelperD.TwoPi;
+                    while(angleRad < startRad)
+                        angleRad += stepRad;
+                }
+                else
+                {
+                    angleRad += stepRad;
+                }
+
+                first = false;
+                previous = current;
             }
         }
 

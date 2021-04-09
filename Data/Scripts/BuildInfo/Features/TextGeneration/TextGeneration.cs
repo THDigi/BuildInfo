@@ -3116,10 +3116,10 @@ namespace Digi.BuildInfo.Features
                     AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
-                    if(turret.MinElevationDegrees <= -180 && turret.MaxElevationDegrees >= 180)
-                        GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(360);
-                    else
-                        GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(turret.MinElevationDegrees).Append(" to ").AngleFormatDeg(turret.MaxElevationDegrees);
+                    float minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
+                    float maxPitch = Math.Min(turret.MaxElevationDegrees, 90); // turret can't rotate past 90deg up
+
+                    GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
 
                     GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul).Separator();
 
@@ -3129,8 +3129,6 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
 
                     GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
-
-                    // TODO: visualize angle limits?
                 }
             }
 
