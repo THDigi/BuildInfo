@@ -698,9 +698,6 @@ namespace Digi.BuildInfo.Features.Overlays
             if(data == null)
                 return;
 
-            const int wireDivideRatio = 36;
-            const float lineHeight = 0.5f;
-            var color = Color.Red;
             var weaponBlockDef = def as MyWeaponBlockDefinition;
             MyWeaponDefinition weaponDef;
             if(weaponBlockDef == null || !MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef))
@@ -708,14 +705,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
             MyAmmoDefinition ammo = null;
 
-            IMySlimBlock block = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
+            IMySlimBlock slimBlock = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
+            var weaponBlock = slimBlock?.FatBlock as IMyGunObject<MyGunBase>;
 
-            if(block != null)
-            {
-                var weaponBlock = block.FatBlock as IMyGunObject<MyGunBase>;
-                if(weaponBlock != null)
-                    ammo = weaponBlock.GunBase.CurrentAmmoDefinition;
-            }
+            if(weaponBlock != null)
+                ammo = weaponBlock.GunBase.CurrentAmmoDefinition;
 
             if(ammo == null)
             {
@@ -723,16 +717,26 @@ namespace Digi.BuildInfo.Features.Overlays
                 ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
             }
 
-            MatrixD coneMatrix = data.muzzleLocalMatrix * drawMatrix;
             float height = ammo.MaxTrajectory;
 
-            MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, coneMatrix.Translation, 0.025f, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
+            MatrixD accMatrix;
+            if(weaponBlock != null)
+                accMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
+            else
+                accMatrix = data.muzzleLocalMatrix * drawMatrix;
+
+            const float PointRadius = 0.025f;
+            const float AccLineThick = 0.01f;
+            const int ConeWireDivideRatio = 36;
+            var accColor = new Color(255, 155, 0);
+
+            MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, accColor, accMatrix.Translation, PointRadius, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
 
             if(weaponDef.DeviateShotAngle > 0)
             {
                 float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
                 float accuracyAtMaxRange = tanShotAngle * height;
-                Utils.DrawTransparentCone(ref coneMatrix, accuracyAtMaxRange, height, ref color, MySimpleObjectRasterizer.Solid, wireDivideRatio, lineThickness: 0.01f, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+                Utils.DrawTransparentCone(ref accMatrix, accuracyAtMaxRange, height, ref accColor, MySimpleObjectRasterizer.Solid, ConeWireDivideRatio, lineThickness: AccLineThick, material: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
                 //const int circleWireDivideRatio = 20;
                 //var accuracyAt100m = tanShotAngle * (100 * 2);
@@ -742,16 +746,18 @@ namespace Digi.BuildInfo.Features.Overlays
             }
             else
             {
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, coneMatrix.Translation, coneMatrix.Forward, height, 0.01f, blendType: OVERLAY_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, accColor, accMatrix.Translation, accMatrix.Forward, height, AccLineThick, blendType: OVERLAY_BLEND_TYPE);
             }
 
-            if(CanDrawLabel())
+            bool canDrawLabel = CanDrawLabel();
+            if(canDrawLabel)
             {
-                var labelDir = coneMatrix.Up;
-                var labelLineStart = coneMatrix.Translation + coneMatrix.Forward * 3;
+                const float lineHeight = 0.5f;
+                var labelDir = accMatrix.Up;
+                var labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
 
                 label.Clear().Append("Accuracy cone - ").Append(height).Append(" m");
-                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, color, lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, accColor, lineHeight: lineHeight);
 
                 //var lineStart = circleMatrix.Translation + coneMatrix.Down * accuracyAt100m;
                 //var labelStart = lineStart + coneMatrix.Down * 0.3f;

@@ -247,8 +247,13 @@ namespace Digi.BuildInfo.Utilities
         }
 
         // Added wireframe and blend type as well as optimized.
-        public static void DrawTransparentCone(Vector3D apexPosition, Vector3 directionVector, Vector3D axisNormalized, Vector3D baseVector, Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        public static void DrawTransparentCone(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
+            Vector3D apexPosition = worldMatrix.Translation;
+            Vector3D directionVector = worldMatrix.Forward * height;
+            Vector3D axisNormalized = worldMatrix.Forward;
+            Vector3D baseVector = worldMatrix.Up * radius;
+
             bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
             bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
 
@@ -298,7 +303,7 @@ namespace Digi.BuildInfo.Utilities
             double halfHeight = height * 0.5;
             MyQuadD quad;
 
-            #region Sphere halves
+#region Sphere halves
             MatrixD sphereMatrix = MatrixD.CreateRotationX(-MathHelperD.PiOver2);
             sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
             sphereMatrix *= worldMatrix;
@@ -338,9 +343,9 @@ namespace Digi.BuildInfo.Utilities
                     MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
                 }
             }
-            #endregion
+#endregion
 
-            #region Cylinder
+#region Cylinder
             double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
             double angle = 0f;
 
@@ -383,7 +388,7 @@ namespace Digi.BuildInfo.Utilities
                     MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
                 }
             }
-            #endregion
+#endregion
         }
 
         /// <summary>
