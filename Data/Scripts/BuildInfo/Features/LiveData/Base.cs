@@ -47,9 +47,10 @@ namespace Digi.BuildInfo.Features.LiveData
             var handler = BuildInfoMod.Instance.LiveDataHandler;
             BData_Base data;
             if(handler.BlockData.TryGetValue(def.Id, out data))
-                return (T)data;
+                return data as T;
 
-            if(handler.BlockSpawnInProgress.Add(def.Id)) // spawn block if it's not already in progress of being spawned
+            // spawn only once per block type+subtype, to avoid spamming if it's not valid.
+            if(handler.BlockIdsSpawned.Add(def.Id)) // returns true if it was added, false if it exists
             {
                 new TempBlockSpawn(def, callback: SpawnComplete<T>);
             }
@@ -61,7 +62,6 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             var handler = BuildInfoMod.Instance.LiveDataHandler;
             var defId = block.BlockDefinition.Id;
-            handler.BlockSpawnInProgress.Remove(defId);
         }
 
         public static bool TrySetData<T>(IMyCubeBlock block) where T : BData_Base, new()

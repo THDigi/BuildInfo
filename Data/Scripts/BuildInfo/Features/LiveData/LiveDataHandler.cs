@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public BData_Base BlockDataCache;
         public bool BlockDataCacheValid = true;
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
-        public readonly HashSet<MyDefinitionId> BlockSpawnInProgress = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+        public readonly HashSet<MyDefinitionId> BlockIdsSpawned = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         public LiveDataHandler(BuildInfoMod main) : base(main)
         {
