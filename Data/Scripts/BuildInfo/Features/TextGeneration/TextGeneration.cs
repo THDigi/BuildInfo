@@ -2867,10 +2867,27 @@ namespace Digi.BuildInfo.Features
 
                 GetLine().ResetFormatting().Separator().Color(laserAntenna.RequireLineOfSight ? COLOR_WARNING : COLOR_GOOD).Append("Line-of-sight: ").Append(laserAntenna.RequireLineOfSight ? "Required" : "Not required");
 
-                AddLine().Label("Rotation Pitch").AngleFormatDeg(laserAntenna.MinElevationDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxElevationDegrees).Separator().Label("Yaw").AngleFormatDeg(laserAntenna.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(laserAntenna.MaxAzimuthDegrees);
-                AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * Hardcoded.LaserAntenna_RotationSpeedMul);
+                int minPitch = Math.Max(laserAntenna.MinElevationDegrees, -90);
+                int maxPitch = Math.Min(laserAntenna.MaxElevationDegrees, 90);
 
-                // TODO: visualize angle limits?
+                int minYaw = laserAntenna.MinAzimuthDegrees;
+                int maxYaw = laserAntenna.MaxAzimuthDegrees;
+
+                AddLine().Append("Rotation - ");
+
+                if(minPitch == -90 && maxPitch >= 90)
+                    GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                else
+                    GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+
+                GetLine().Separator();
+
+                if(minYaw <= -180 && maxYaw >= 180)
+                    GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
+                else
+                    GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
+
+                AddLine().Label("Rotation Speed").RotationSpeed(laserAntenna.RotationRate * Hardcoded.LaserAntenna_RotationSpeedMul);
             }
         }
 
@@ -3119,17 +3136,23 @@ namespace Digi.BuildInfo.Features
                     AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
-                    float minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
-                    float maxPitch = Math.Min(turret.MaxElevationDegrees, 90); // turret can't rotate past 90deg up
+                    int minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
+                    int maxPitch = Math.Min(turret.MaxElevationDegrees, 90); // turret can't rotate past 90deg up
 
-                    GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                    int minYaw = turret.MinAzimuthDegrees;
+                    int maxYaw = turret.MaxAzimuthDegrees;
+
+                    if(minPitch == -90 && maxPitch >= 90)
+                        GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+                    else
+                        GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
 
                     GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul).Separator();
 
-                    if(turret.MinAzimuthDegrees <= -180 && turret.MaxAzimuthDegrees >= 180)
+                    if(minYaw <= -180 && maxYaw >= 180)
                         GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
                     else
-                        GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(turret.MinAzimuthDegrees).Append(" to ").AngleFormatDeg(turret.MaxAzimuthDegrees);
+                        GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
 
                     GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
                 }

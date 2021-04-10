@@ -36,6 +36,8 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_WeaponTurret>(typeof(MyObjectBuilder_LargeGatlingTurret));
             AddType<BData_WeaponTurret>(typeof(MyObjectBuilder_LargeMissileTurret));
             AddType<BData_WeaponTurret>(typeof(MyObjectBuilder_InteriorTurret));
+
+            AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
         }
 
         public override void RegisterComponent()

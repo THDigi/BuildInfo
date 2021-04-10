@@ -237,6 +237,8 @@ namespace Digi.BuildInfo.Features.Overlays
             Add(typeof(MyObjectBuilder_LargeMissileTurret), DrawOverlay_Weapons);
             Add(typeof(MyObjectBuilder_InteriorTurret), DrawOverlay_Weapons);
 
+            Add(typeof(MyObjectBuilder_LaserAntenna), DrawOverlay_LaserAntenna);
+
             Add(typeof(MyObjectBuilder_Door), DrawOverlay_Doors);
             Add(typeof(MyObjectBuilder_AdvancedDoor), DrawOverlay_Doors);
             Add(typeof(MyObjectBuilder_AirtightDoorGeneric), DrawOverlay_Doors);
@@ -780,7 +782,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 const int LineEveryDegrees = 15;
                 const float lineThick = 0.03f;
-                float radius = (def.Size.AbsMax() * cellSize) / 2; // arbitrary division
+                float radius = (def.Size.AbsMin() + 1) * cellSize;
 
                 int minPitch = turretDef.MinElevationDegrees; // this one is actually not capped in game for whatever reason
                 int maxPitch = Math.Min(turretDef.MaxElevationDegrees, 90); // can't pitch up more than 90deg
@@ -789,7 +791,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 int maxYaw = turretDef.MaxAzimuthDegrees;
 
                 {
-                    var colorPitch = (Color.Red * 0.25f).ToVector4();
+                    var colorPitch = (Color.Red * 0.3f).ToVector4();
                     var colorPitchLine = Color.Red.ToVector4();
 
                     MatrixD pitchMatrix;
@@ -817,7 +819,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, pitchMatrix.Up, colorPitchLine, "Pitch limit");
+                        var labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
+                        DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, labelDir, colorPitchLine, "Pitch limit");
                     }
                 }
 
@@ -836,102 +839,12 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, yawMatrix.Down, colorYawLine, "Yaw limit");
+                        var labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
+                        DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, labelDir, colorYawLine, "Yaw limit");
                     }
                 }
             }
             #endregion Turret pitch/yaw limits
-        }
-
-        static void DrawTurretAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
-           ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
-           Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
-           BlendTypeEnum blendType = BlendTypeEnum.Standard)
-        {
-            const int wireDivRatio = (360 / 5); // quality
-
-            Vector3D center = worldMatrix.Translation;
-            Vector3D normal = worldMatrix.Forward;
-            firstOuterRimVec = center + normal * radius; // fallback
-            lastOuterRimVec = firstOuterRimVec;
-
-            Vector4 triangleColor = (faceMaterial.HasValue ? faceColor.ToLinearRGB() : faceColor); // HACK keeping color consistent with other billboards
-
-            // from MyLargeTurretBase
-
-            //static float NormalizeAngle(int angle)
-            //{
-            //    int n = angle % 360;
-            //    if(n == 0 && angle != 0)
-            //        return 360f;
-            //    return n;
-            //}
-            // inlined of above
-            int startN = startAngle % 360;
-            startAngle = ((startN == 0 && startAngle != 0) ? 360 : startN);
-
-            int endN = endAngle % 360;
-            endAngle = ((endN == 0 && endAngle != 0) ? 360 : endN);
-
-            double startRad = MathHelperD.ToRadians(startAngle);
-            double endRad = MathHelperD.ToRadians(endAngle);
-            if(startRad > endRad)
-                startRad -= MathHelperD.TwoPi;
-
-            Vector3D current = Vector3D.Zero;
-            Vector3D previous = Vector3D.Zero;
-            double angleRad = startRad;
-
-            double stepRad = MathHelperD.TwoPi / wireDivRatio;
-            bool first = true;
-
-            while(true)
-            {
-                bool exit = false;
-                if(angleRad > endRad)
-                {
-                    angleRad = endRad;
-                    exit = true;
-                }
-
-                double x = radius * Math.Cos(angleRad);
-                double z = radius * Math.Sin(angleRad);
-                current.X = worldMatrix.M41 + x * worldMatrix.M11 + z * worldMatrix.M31; // inlined Transform() without scale
-                current.Y = worldMatrix.M42 + x * worldMatrix.M12 + z * worldMatrix.M32;
-                current.Z = worldMatrix.M43 + x * worldMatrix.M13 + z * worldMatrix.M33;
-
-                if(first || exit)
-                {
-                    MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, lineColor, center, (current - center), 1f, lineThickness, blendType);
-                }
-
-                if(!first)
-                {
-                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normal, normal, normal, Vector2.Zero, Vector2.Zero, Vector2.Zero, faceMaterial.Value, 0, center, triangleColor, blendType);
-                }
-
-                if(exit)
-                {
-                    lastOuterRimVec = current;
-                    break;
-                }
-
-                if(first)
-                {
-                    firstOuterRimVec = current;
-
-                    angleRad = -MathHelperD.TwoPi;
-                    while(angleRad < startRad)
-                        angleRad += stepRad;
-                }
-                else
-                {
-                    angleRad += stepRad;
-                }
-
-                first = false;
-                previous = current;
-            }
         }
 
         private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, WcApiDef.WeaponDefinition wcDef, MatrixD drawMatrix)
@@ -1246,6 +1159,113 @@ namespace Digi.BuildInfo.Features.Overlays
             }
             #endregion Ground clearence line
         }
+
+        private void DrawOverlay_LaserAntenna(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            var antennaDef = def as MyLaserAntennaDefinition;
+            if(antennaDef == null)
+                return;
+
+            var data = BData_Base.TryGetDataCached<BData_LaserAntenna>(def);
+            if(data == null)
+                return;
+
+            bool canDrawLabel = CanDrawLabel();
+            IMySlimBlock slimBlock = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
+
+            float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize); // TODO: cache
+
+            const float LaserThick = 0.02f;
+            const float LaserLength = 15f;
+
+            const int LineEveryDegrees = 15;
+            const float LineThick = 0.03f;
+            float radius = (def.Size.AbsMin() + 1) * cellSize;
+
+            int minPitch = Math.Max(antennaDef.MinElevationDegrees, -90);
+            int maxPitch = Math.Min(antennaDef.MaxElevationDegrees, 90);
+
+            int minYaw = antennaDef.MinAzimuthDegrees;
+            int maxYaw = antennaDef.MaxAzimuthDegrees;
+
+            {
+                var colorPitch = (Color.Red * 0.3f).ToVector4();
+                var colorPitchLine = Color.Red.ToVector4();
+
+                MatrixD pitchMatrix = drawMatrix;
+                if(slimBlock?.FatBlock != null)
+                {
+                    var internalBlock = (MyCubeBlock)slimBlock.FatBlock;
+
+                    // TODO: find a way to get a useful matrix out of the pitch part...
+                    // from MyLaserAntenna.OnModelChange()
+                    //var subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
+                    //var subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
+
+                    //if(subpartPitch != null)
+                    //{
+                    //    pitchMatrix = subpartPitch.WorldMatrix;
+                    //    pitchMatrix.Translation = drawMatrix.Translation;
+                    //}
+
+                    // HACK: altenrate way of getting part rotation.
+                    var antenna = (IMyLaserAntenna)internalBlock;
+                    if(antenna.Other != null)
+                    {
+                        var dir = (antenna.Other.WorldMatrix.Translation - drawMatrix.Translation);
+                        pitchMatrix = MatrixD.CreateWorld(drawMatrix.Translation, dir, drawMatrix.Up);
+                    }
+                }
+
+                // only yaw rotation
+                var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
+                Vector3D rotationPivot = Vector3D.Transform(data.PitchLocalPos, m);
+
+                // laser visualization
+                Color laserColor = new Color(255, 155, 0);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, laserColor, rotationPivot, pitchMatrix.Forward, LaserLength, LaserThick, OVERLAY_BLEND_TYPE);
+
+                if(canDrawLabel)
+                {
+                    var labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
+                    DrawLineLabel(TextAPIMsgIds.Laser, labelPos, pitchMatrix.Up, laserColor, "Laser");
+                }
+
+                // only yaw rotation but for cylinder
+                pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
+
+                Vector3D firstOuterRimVec, lastOuterRimVec;
+                DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                    ref pitchMatrix, radius, minPitch, maxPitch, LineEveryDegrees,
+                    colorPitch, colorPitchLine, OVERLAY_SQUARE_MATERIAL, OVERLAY_LASER_MATERIAL, LineThick, OVERLAY_BLEND_TYPE);
+
+                if(canDrawLabel)
+                {
+                    var labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
+                    DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, labelDir, colorPitchLine, "Pitch limit");
+                }
+            }
+
+            {
+                var colorYaw = (Color.Lime * 0.25f).ToVector4();
+                var colorYawLine = Color.Lime.ToVector4();
+
+                Vector3D rotationPivot = Vector3D.Transform(data.YawLocalPos, drawMatrix);
+
+                var yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
+
+                Vector3D firstOuterRimVec, lastOuterRimVec;
+                DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                    ref yawMatrix, radius, minYaw, maxYaw, LineEveryDegrees,
+                    colorYaw, colorYawLine, OVERLAY_SQUARE_MATERIAL, OVERLAY_LASER_MATERIAL, LineThick, OVERLAY_BLEND_TYPE);
+
+                if(canDrawLabel)
+                {
+                    var labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
+                    DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, labelDir, colorYawLine, "Yaw limit");
+                }
+            }
+        }
         #endregion Block-specific overlays
 
         #region Draw helpers
@@ -1343,6 +1363,101 @@ namespace Digi.BuildInfo.Features.Overlays
             var dir = Vector3D.TransformNormal(direction * 0.5f, matrix);
             var text = AxisLabels[(int)id];
             DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f, settingFlag: OverlayLabelsFlags.Axis);
+        }
+
+        private void DrawTurretAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
+          ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
+          Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
+          BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            const int wireDivRatio = (360 / 5); // quality
+
+            Vector3D center = worldMatrix.Translation;
+            Vector3D normal = worldMatrix.Forward;
+            firstOuterRimVec = center + normal * radius; // fallback
+            lastOuterRimVec = firstOuterRimVec;
+
+            Vector4 triangleColor = (faceMaterial.HasValue ? faceColor.ToLinearRGB() : faceColor); // HACK keeping color consistent with other billboards
+
+            // from MyLargeTurretBase
+
+            //static float NormalizeAngle(int angle)
+            //{
+            //    int n = angle % 360;
+            //    if(n == 0 && angle != 0)
+            //        return 360f;
+            //    return n;
+            //}
+            // inlined of above
+            int startN = startAngle % 360;
+            startAngle = ((startN == 0 && startAngle != 0) ? 360 : startN);
+
+            int endN = endAngle % 360;
+            endAngle = ((endN == 0 && endAngle != 0) ? 360 : endN);
+
+            double startRad = MathHelperD.ToRadians(startAngle);
+            double endRad = MathHelperD.ToRadians(endAngle);
+            if(startRad > endRad)
+                startRad -= MathHelperD.TwoPi;
+
+            Vector3D current = Vector3D.Zero;
+            Vector3D previous = Vector3D.Zero;
+            double angleRad = startRad;
+
+            double stepRad = MathHelperD.TwoPi / wireDivRatio;
+            bool first = true;
+
+            Vector2 uv0 = new Vector2(0, 0.5f);
+            Vector2 uv1 = new Vector2(1, 0);
+            Vector2 uv2 = new Vector2(1, 1);
+
+            while(true)
+            {
+                bool exit = false;
+                if(angleRad > endRad)
+                {
+                    angleRad = endRad;
+                    exit = true;
+                }
+
+                double x = radius * Math.Cos(angleRad);
+                double z = radius * Math.Sin(angleRad);
+                current.X = worldMatrix.M41 + x * worldMatrix.M11 + z * worldMatrix.M31; // inlined Transform() without scale
+                current.Y = worldMatrix.M42 + x * worldMatrix.M12 + z * worldMatrix.M32;
+                current.Z = worldMatrix.M43 + x * worldMatrix.M13 + z * worldMatrix.M33;
+
+                if((first || exit) && lineMaterial.HasValue)
+                {
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, lineColor, center, (current - center), 1f, lineThickness, blendType);
+                }
+
+                if(!first && faceMaterial.HasValue)
+                {
+                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normal, normal, normal, uv0, uv1, uv2, faceMaterial.Value, 0, center, triangleColor, blendType);
+                }
+
+                if(exit)
+                {
+                    lastOuterRimVec = current;
+                    break;
+                }
+
+                if(first)
+                {
+                    firstOuterRimVec = current;
+
+                    angleRad = -MathHelperD.TwoPi;
+                    while(angleRad < startRad)
+                        angleRad += stepRad;
+                }
+                else
+                {
+                    angleRad += stepRad;
+                }
+
+                first = false;
+                previous = current;
+            }
         }
         #endregion Draw helpers
 
