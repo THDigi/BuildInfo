@@ -1,4 +1,5 @@
 ﻿using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.LiveData
@@ -72,8 +73,12 @@ namespace Digi.BuildInfo.Features.LiveData
             if(handler.BlockData.ContainsKey(def.Id))
                 return true;
 
-            if(block.Model.AssetName != def.Model)
+            var internalBlock = (MyCubeBlock)block;
+            if(!internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
                 return false;
+
+            //if(block.Model.AssetName != def.Model)
+            //    return false;
 
             var data = new T();
             return data.CheckAndAdd(block);

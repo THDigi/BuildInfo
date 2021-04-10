@@ -24,6 +24,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using WeaponCore.Api;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
@@ -803,7 +804,7 @@ namespace Digi.BuildInfo.Features
 
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
-            // TODO: remove last condition when adding overlay
+            // TODO: remove last condition when adding overlay to WC
             if(Main.Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
@@ -1885,9 +1886,10 @@ namespace Digi.BuildInfo.Features
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            WcApiDef.WeaponDefinition wcDef;
+            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
             {
-                Format_WeaponCore(def);
+                Format_WeaponCore(def, wcDef);
                 return;
             }
 
@@ -3080,9 +3082,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            WcApiDef.WeaponDefinition wcDef;
+            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
             {
-                Format_WeaponCore(def);
+                Format_WeaponCore(def, wcDef);
                 return;
             }
 
@@ -3295,7 +3298,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_WeaponCore(MyCubeBlockDefinition blockDef)
+        private void Format_WeaponCore(MyCubeBlockDefinition blockDef, WcApiDef.WeaponDefinition wcDef)
         {
             // NOTE: this includes conveyor sorter too
 

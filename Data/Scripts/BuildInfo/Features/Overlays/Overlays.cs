@@ -19,6 +19,7 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using WeaponCore.Api;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
@@ -223,7 +224,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Add(typeof(MyObjectBuilder_Drill), DrawOverlay_Drill);
 
-            Add(typeof(MyObjectBuilder_ConveyorSorter), DrawOverlay_WeaponCoreWeapon);
+            Add(typeof(MyObjectBuilder_ConveyorSorter), DrawOverlay_ConveyorSorter); // also used by WeaponCore
+
             Add(typeof(MyObjectBuilder_SmallGatlingGun), DrawOverlay_Weapons);
             Add(typeof(MyObjectBuilder_SmallMissileLauncher), DrawOverlay_Weapons);
             Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), DrawOverlay_Weapons);
@@ -689,9 +691,10 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Weapons(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            WcApiDef.WeaponDefinition wcDef;
+            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
             {
-                DrawOverlay_WeaponCoreWeapon(def, drawMatrix);
+                DrawOverlay_WeaponCoreWeapon(def, wcDef, drawMatrix);
                 return;
             }
 
@@ -770,7 +773,6 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 const int LineEveryDegrees = 15;
                 const float lineThick = 0.03f;
-                float cylinderWidth = 0.3f * cellSize;
                 float radius = (def.Size.AbsMax() * cellSize) / 2; // arbitrary division
 
                 int minPitch = turretDef.MinElevationDegrees; // this one is actually not capped in game for whatever reason
@@ -932,49 +934,18 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
-        private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, WcApiDef.WeaponDefinition wcDef, MatrixD drawMatrix)
         {
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            // TODO implement
+        }
+
+        private void DrawOverlay_ConveyorSorter(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            WcApiDef.WeaponDefinition wcDef;
+            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
             {
-                // TODO: weaponcore overlays? - not really viable...
-
-#if false
-                IMySlimBlock block = GetOverlayBlock();
-                IMyTerminalBlock terminalBlock = block?.FatBlock as IMyTerminalBlock;
-
-                if(terminalBlock == null)
-                    return;
-
-                foreach(var wcDef in WeaponCoreAPI.WeaponDefinitions)
-                {
-                    bool forThisWeapon = false;
-
-                    foreach(var mp in wcDef.Assignments.MountPoints)
-                    {
-                        if(mp.SubtypeId == def.Id.SubtypeName)
-                        {
-                            forThisWeapon = true;
-                            break;
-                        }
-                    }
-
-                    if(!forThisWeapon)
-                        continue;
-
-                    var ammoName = WeaponCoreAPI.GetActiveAmmo(terminalBlock, 0);
-
-                    foreach(var ammo in wcDef.Ammos)
-                    {
-                        if(ammo.Trajectory.GravityMultiplier > 0 || ammo.Trajectory.AccelPerSec > 0 || ammo.Trajectory.Guidance != WeaponCore.Api.WcApiDef.WeaponDefinition.AmmoDef.TrajectoryDef.GuidanceType.None)
-                            continue;
-
-                        if(ammo.AmmoRound != ammoName)
-                            continue;
-
-                        WeaponCoreAPI.GetMaxWeaponRange(
-                    }
-                }
-#endif
+                DrawOverlay_WeaponCoreWeapon(def, wcDef, drawMatrix);
+                return;
             }
         }
 
