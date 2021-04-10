@@ -895,7 +895,7 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.Value ? "ON" : "OFF");
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.NAMES[Main.Overlays.DrawOverlay]);
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayNames[Main.Overlays.DrawOverlay]);
             if(Main.Config.CycleOverlaysBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");

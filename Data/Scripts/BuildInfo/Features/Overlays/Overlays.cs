@@ -75,14 +75,14 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private BoundingBoxD unitBB = new BoundingBoxD(Vector3D.One / -2d, Vector3D.One / 2d);
 
-        public readonly string[] NAMES = new string[]
+        public readonly string[] OverlayNames = new string[]
         {
             "OFF",
             "Airtightness",
             "Mounting",
         };
 
-        private readonly string[] AXIS_LABELS = new string[]
+        private readonly string[] AxisLabels = new string[]
         {
             "Forward",
             "Right",
@@ -91,27 +91,27 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private enum TextAPIMsgIds
         {
-            AXIS_Z, // NOTE these 3 must remain the first 3, because AXIS_LABELS uses their integer values as indexes
-            AXIS_X,
-            AXIS_Y,
-            //MOUNT,
-            //MOUNT_ROTATE,
-            //MOUNT_DISABLED,
-            MODEL_OFFSET,
-            DRILL_SENSOR,
-            DRILL_MINE,
-            DRILL_CARVE,
-            SHIP_TOOL,
-            ACCURACY_MAX,
-            TURRET_PITCH,
-            TURRET_YAW,
-            DOOR_AIRTIGHT,
-            THRUST_DAMAGE,
-            MAGNET,
-            COLLECTOR,
-            TURBINE_CLEARENCE_TERRAIN,
-            TURBINE_CLEARENCE_MIN,
-            TURBINE_CLEARENCE_MAX,
+            AxisZ, // NOTE these 3 must remain the first 3, because AXIS_LABELS uses their integer values as indexes
+            AxisX,
+            AxisY,
+            // its label is not constnt so id can be shared, use with the label sb
+            DynamicLabel,
+
+            // the rest have static messages that are assigned on creation
+            ModelOffset,
+            SensorRadius,
+            MineRadius,
+            CarveRadius,
+            PitchLimit,
+            YawLimit,
+            AirtightWhenClosed,
+            ThrustDamage,
+            MagnetizedArea,
+            CollectionArea,
+            TerrainClearence,
+            SideClearence,
+            OptimalClearence,
+            Laser,
         }
 
         public readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
@@ -196,7 +196,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public void CycleOverlayMode(bool showNotification = true)
         {
-            if(++DrawOverlay >= NAMES.Length)
+            if(++DrawOverlay >= OverlayNames.Length)
                 DrawOverlay = 0;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, DrawOverlay > 0);
@@ -208,7 +208,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     OverlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, FontsHandler.WhiteSh);
 
                 OverlayNotification.Hide(); // required since SE v1.194
-                OverlayNotification.Text = "Overlays: " + NAMES[DrawOverlay];
+                OverlayNotification.Text = "Overlays: " + OverlayNames[DrawOverlay];
                 OverlayNotification.Show();
             }
         }
@@ -351,7 +351,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, dir, 1f, OffsetLineThickness, LABEL_SHADOW_BLEND_TYPE);
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, dir, 1f, OffsetLineThickness, blendType: OVERLAY_BLEND_TYPE);
 
-                    DrawLineLabel(TextAPIMsgIds.MODEL_OFFSET, drawMatrix.Translation + dir, dir, color, "Center", 0);
+                    DrawLineLabel(TextAPIMsgIds.ModelOffset, drawMatrix.Translation + dir, dir, color, "Center", 0);
 
                     MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, LABEL_SHADOW_COLOR, start + dir + offset, OffsetPointThickness, 0, blendType: OVERLAY_BLEND_TYPE);
                     MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, start + dir, OffsetPointThickness, 0, blendType: OVERLAY_BLEND_TYPE);
@@ -621,7 +621,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         drawLabel = false;
 
                         var labelPos = pos + dirLeft * width + dirUp * height;
-                        DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
+                        DrawLineLabel(TextAPIMsgIds.AirtightWhenClosed, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
                         if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
                             break;
@@ -679,7 +679,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             float height = cubeSize.GetDim(((dirIndex + 2) % 6) / 2);
 
                             var labelPos = pos + dirLeft * width + dirUp * height;
-                            DrawLineLabel(TextAPIMsgIds.DOOR_AIRTIGHT, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
+                            DrawLineLabel(TextAPIMsgIds.AirtightWhenClosed, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
                             if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
                                 break;
@@ -713,6 +713,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(weaponBlockDef == null || !MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef))
                 return;
 
+            #region Accuracy cone
             MyAmmoDefinition ammo = null;
 
             IMySlimBlock slimBlock = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
@@ -765,9 +766,11 @@ namespace Digi.BuildInfo.Features.Overlays
                 var labelDir = accMatrix.Up;
                 var labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
                 label.Clear().Append("Accuracy cone - ").Append(height).Append(" m");
-                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, accColor);
+                DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelLineStart, labelDir, accColor);
             }
+            #endregion Accuracy cone
 
+            #region Turret pitch/yaw limits
             var turretDef = def as MyLargeTurretBaseDefinition;
             var turretData = data as BData_WeaponTurret;
             bool isTurret = (turretDef != null && turretData != null);
@@ -814,7 +817,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        DrawLineLabel(TextAPIMsgIds.TURRET_PITCH, lastOuterRimVec, pitchMatrix.Up, colorPitchLine, "Pitch limit");
+                        DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, pitchMatrix.Up, colorPitchLine, "Pitch limit");
                     }
                 }
 
@@ -833,10 +836,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        DrawLineLabel(TextAPIMsgIds.TURRET_YAW, firstOuterRimVec, yawMatrix.Down, colorYawLine, "Yaw limit");
+                        DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, yawMatrix.Down, colorYawLine, "Yaw limit");
                     }
                 }
             }
+            #endregion Turret pitch/yaw limits
         }
 
         static void DrawTurretAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
@@ -970,7 +974,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = mineMatrix.Up;
                 var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMineText, message: "Mining radius");
+                DrawLineLabel(TextAPIMsgIds.MineRadius, sphereEdge, labelDir, colorMineText, message: "Mining radius");
             }
             #endregion
 
@@ -983,7 +987,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = carveMatrix.Up;
                 var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_CARVE, sphereEdge, labelDir, colorCarveText, message: "Carving radius");
+                DrawLineLabel(TextAPIMsgIds.CarveRadius, sphereEdge, labelDir, colorCarveText, message: "Carving radius");
             }
             #endregion
 
@@ -1001,7 +1005,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Left;
                 var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_SENSOR, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius");
+                DrawLineLabel(TextAPIMsgIds.SensorRadius, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius");
             }
             #endregion
         }
@@ -1032,7 +1036,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var sphereEdge = drawMatrix.Translation + (labelDir * radius);
 
                 label.Clear().Append(isWelder ? "Welding radius" : "Grinding radius");
-                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, color);
+                DrawLineLabel(TextAPIMsgIds.DynamicLabel, sphereEdge, labelDir, color);
             }
         }
 
@@ -1062,7 +1066,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     drawLabel = false; // label only on the first flame
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
-                    DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage");
+                    DrawLineLabel(TextAPIMsgIds.ThrustDamage, labelLineStart, labelDir, color, message: "Thrust damage");
                 }
             }
         }
@@ -1091,7 +1095,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     drawLabel = false; // only label the first one
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnetized Area");
+                    DrawLineLabel(TextAPIMsgIds.MagnetizedArea, labelLineStart, labelDir, color, message: "Magnetized Area");
                 }
             }
         }
@@ -1115,7 +1119,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Down;
                 var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area");
+                DrawLineLabel(TextAPIMsgIds.CollectionArea, labelLineStart, labelDir, color, message: "Collection Area");
             }
         }
 
@@ -1203,11 +1207,11 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Up;
                 var labelLineStart = center + drawMatrix.Left * minRadius;
-                DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_MIN, labelLineStart, labelDir, new Color(255, 155, 0), message: "Side Clearence", lineHeight: 0.5f);
+                DrawLineLabel(TextAPIMsgIds.SideClearence, labelLineStart, labelDir, new Color(255, 155, 0), message: "Side Clearence", lineHeight: 0.5f);
 
                 //labelDir = drawMatrix.Up;
                 //labelLineStart = center + drawMatrix.Left * maxRadius;
-                //DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_MAX, labelLineStart, labelDir, maxColor, message: "Optimal Clearence");
+                //DrawLineLabel(TextAPIMsgIds.OptimalClearence, labelLineStart, labelDir, maxColor, message: "Optimal Clearence");
             }
 
             #region Ground clearence line
@@ -1238,7 +1242,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Left;
                 var labelLineStart = Vector3D.Lerp(lineStart, end, 0.5f);
-                DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_TERRAIN, labelLineStart, labelDir, new Color(255, 155, 0), message: (gravityNearby ? "Terrain Clearence" : "Terrain Clearence (points towards gravity)"), lineHeight: 0.5f);
+                DrawLineLabel(TextAPIMsgIds.TerrainClearence, labelLineStart, labelDir, new Color(255, 155, 0), message: "Terrain Clearence");
             }
             #endregion Ground clearence line
         }
@@ -1329,15 +1333,15 @@ namespace Digi.BuildInfo.Features.Overlays
             matrix.Translation = (def.Center - (def.Size * 0.5f));
             matrix = matrix * drawMatrix;
 
-            DrawAxis(TextAPIMsgIds.AXIS_Z, ref Vector3.Forward, Color.Blue, ref drawMatrix, ref matrix);
-            DrawAxis(TextAPIMsgIds.AXIS_X, ref Vector3.Right, Color.Red, ref drawMatrix, ref matrix);
-            DrawAxis(TextAPIMsgIds.AXIS_Y, ref Vector3.Up, Color.Lime, ref drawMatrix, ref matrix);
+            DrawAxis(TextAPIMsgIds.AxisZ, ref Vector3.Forward, Color.Blue, ref drawMatrix, ref matrix);
+            DrawAxis(TextAPIMsgIds.AxisX, ref Vector3.Right, Color.Red, ref drawMatrix, ref matrix);
+            DrawAxis(TextAPIMsgIds.AxisY, ref Vector3.Up, Color.Lime, ref drawMatrix, ref matrix);
         }
 
         private void DrawAxis(TextAPIMsgIds id, ref Vector3 direction, Color color, ref MatrixD drawMatrix, ref MatrixD matrix)
         {
             var dir = Vector3D.TransformNormal(direction * 0.5f, matrix);
-            var text = AXIS_LABELS[(int)id];
+            var text = AxisLabels[(int)id];
             DrawLineLabel(id, drawMatrix.Translation, dir, color, message: text, lineHeight: 1.5f, settingFlag: OverlayLabelsFlags.Axis);
         }
         #endregion Draw helpers
