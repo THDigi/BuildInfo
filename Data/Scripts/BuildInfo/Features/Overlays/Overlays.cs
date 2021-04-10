@@ -756,12 +756,10 @@ namespace Digi.BuildInfo.Features.Overlays
             bool canDrawLabel = CanDrawLabel();
             if(canDrawLabel)
             {
-                const float lineHeight = 0.5f;
                 var labelDir = accMatrix.Up;
                 var labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
-
                 label.Clear().Append("Accuracy cone - ").Append(height).Append(" m");
-                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, accColor, lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.ACCURACY_MAX, labelLineStart, labelDir, accColor);
             }
 
             var turretDef = def as MyLargeTurretBaseDefinition;
@@ -810,11 +808,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        const float lineHeight = 0.5f;
-                        var labelDir = pitchMatrix.Up;
-                        var labelLineStart = lastOuterRimVec;
-
-                        DrawLineLabel(TextAPIMsgIds.TURRET_PITCH, labelLineStart, labelDir, colorPitchLine, "Pitch limit", lineHeight: lineHeight);
+                        DrawLineLabel(TextAPIMsgIds.TURRET_PITCH, lastOuterRimVec, pitchMatrix.Up, colorPitchLine, "Pitch limit");
                     }
                 }
 
@@ -833,11 +827,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        const float lineHeight = 0.5f;
-                        var labelDir = yawMatrix.Down;
-                        var labelLineStart = firstOuterRimVec;
-
-                        DrawLineLabel(TextAPIMsgIds.TURRET_YAW, labelLineStart, labelDir, colorYawLine, "Yaw limit", lineHeight: lineHeight);
+                        DrawLineLabel(TextAPIMsgIds.TURRET_YAW, firstOuterRimVec, yawMatrix.Down, colorYawLine, "Yaw limit");
                     }
                 }
             }
@@ -953,7 +943,6 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             var drill = (MyShipDrillDefinition)def;
 
-            const float lineHeight = 0.3f;
             const int wireDivRatio = 20;
             var colorSensorText = Color.Gray;
             var colorSensorFace = colorSensorText * 0.75f;
@@ -975,7 +964,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = mineMatrix.Up;
                 var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMineText, message: "Mining radius", lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.DRILL_MINE, sphereEdge, labelDir, colorMineText, message: "Mining radius");
             }
             #endregion
 
@@ -988,7 +977,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = carveMatrix.Up;
                 var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
-                DrawLineLabel(TextAPIMsgIds.DRILL_CARVE, sphereEdge, labelDir, colorCarveText, message: "Carving radius", lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.DRILL_CARVE, sphereEdge, labelDir, colorCarveText, message: "Carving radius");
             }
             #endregion
 
@@ -1006,8 +995,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Left;
                 var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
-
-                DrawLineLabel(TextAPIMsgIds.DRILL_SENSOR, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius", lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.DRILL_SENSOR, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius");
             }
             #endregion
         }
@@ -1018,7 +1006,6 @@ namespace Digi.BuildInfo.Features.Overlays
             if(data == null)
                 return;
 
-            const float lineHeight = 0.3f;
             const int wireDivRatio = 20;
             var color = Color.Lime;
             var colorFace = color * 0.75f;
@@ -1039,7 +1026,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var sphereEdge = drawMatrix.Translation + (labelDir * radius);
 
                 label.Clear().Append(isWelder ? "Welding radius" : "Grinding radius");
-                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, color, lineHeight: lineHeight);
+                DrawLineLabel(TextAPIMsgIds.SHIP_TOOL, sphereEdge, labelDir, color);
             }
         }
 
@@ -1050,7 +1037,6 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
 
             const int wireDivideRatio = 20;
-            const float lineHeight = 0.3f;
             const float lineThickness = 0.02f;
             var color = Color.Red;
             var colorFace = color * 0.5f;
@@ -1070,7 +1056,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     drawLabel = false; // label only on the first flame
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
-                    DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage", lineHeight: lineHeight);
+                    DrawLineLabel(TextAPIMsgIds.THRUST_DAMAGE, labelLineStart, labelDir, color, message: "Thrust damage");
                 }
             }
         }
@@ -1099,7 +1085,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     drawLabel = false; // only label the first one
                     var labelDir = drawMatrix.Down;
                     var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnetized Area", lineHeight: 0.5f);
+                    DrawLineLabel(TextAPIMsgIds.MAGNET, labelLineStart, labelDir, color, message: "Magnetized Area");
                 }
             }
         }
@@ -1123,7 +1109,7 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 var labelDir = drawMatrix.Down;
                 var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
-                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area", lineHeight: 0.5f);
+                DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area");
             }
         }
         #endregion Block-specific overlays
@@ -1131,7 +1117,7 @@ namespace Digi.BuildInfo.Features.Overlays
         #region Draw helpers
         private StringBuilder label = new StringBuilder(128);
 
-        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.3f, float lineThick = 0.005f, OverlayLabelsFlags settingFlag = OverlayLabelsFlags.Other)
+        private void DrawLineLabel(TextAPIMsgIds id, Vector3D start, Vector3D direction, Color color, string message = null, float lineHeight = 0.5f, float lineThick = 0.005f, OverlayLabelsFlags settingFlag = OverlayLabelsFlags.Other)
         {
             var cm = MyAPIGateway.Session.Camera.WorldMatrix;
             var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
