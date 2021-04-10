@@ -55,6 +55,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public readonly MyStringId OVERLAY_SQUARE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Square");
         public readonly MyStringId OVERLAY_LASER_MATERIAL = MyStringId.GetOrCompute("BuildInfo_Laser");
         public readonly MyStringId OVERLAY_DOT_MATERIAL = MyStringId.GetOrCompute("WhiteDot");
+        public readonly MyStringId OVERLAY_GRADIENT_MATERIAL = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
 
         private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.SDR;
         private const double MOUNTPOINT_THICKNESS = 0.05;
@@ -108,6 +109,9 @@ namespace Digi.BuildInfo.Features.Overlays
             THRUST_DAMAGE,
             MAGNET,
             COLLECTOR,
+            TURBINE_CLEARENCE_TERRAIN,
+            TURBINE_CLEARENCE_MIN,
+            TURBINE_CLEARENCE_MAX,
         }
 
         public readonly Vector3[] DIRECTIONS = new Vector3[] // NOTE: order is important, corresponds to +X, -X, +Y, -Y, +Z, -Z
@@ -244,6 +248,8 @@ namespace Digi.BuildInfo.Features.Overlays
             Add(typeof(MyObjectBuilder_LandingGear), DrawOverlay_LandingGear);
 
             Add(typeof(MyObjectBuilder_Collector), DrawOverlay_Collector);
+
+            Add(typeof(MyObjectBuilder_WindTurbine), DrawOverlay_WindTurbine);
         }
 
         private void Add(MyObjectBuilderType blockType, OverlayCall call)
@@ -1111,6 +1117,130 @@ namespace Digi.BuildInfo.Features.Overlays
                 var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
                 DrawLineLabel(TextAPIMsgIds.COLLECTOR, labelLineStart, labelDir, color, message: "Collection Area");
             }
+        }
+
+        private void DrawOverlay_WindTurbine(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            var turbineDef = (MyWindTurbineDefinition)def;
+            bool drawLabel = CanDrawLabel();
+
+            const float lineThick = 0.05f;
+            const float groundLineThick = 0.1f;
+            const float groundBottomLineThick = 0.05f;
+            Color minColor = Color.Red;
+            Color maxColor = Color.YellowGreen;
+            Vector4 minLineColorVec = minColor.ToVector4();
+            Vector4 maxLineColorVec = maxColor.ToVector4();
+            Vector4 minColorVec = (minColor * 0.4f).ToVector4();
+            Vector4 maxColorVec = (maxColor * 0.4f).ToVector4();
+            Vector4 triangleColor = minColorVec.ToLinearRGB(); // HACK required to match the colors of bother billboards
+            MyQuadD quad;
+
+            #region Side clearence circle
+            float maxRadius = turbineDef.RaycasterSize;
+            float minRadius = maxRadius * turbineDef.MinRaycasterClearance;
+
+            float minRadiusRatio = turbineDef.MinRaycasterClearance;
+            float maxRadiusRatio = 1f - minRadiusRatio;
+
+            Vector3D up = drawMatrix.Up;
+            Vector3D center = drawMatrix.Translation;
+
+            Vector3D current = Vector3D.Zero;
+            Vector3D previous = Vector3D.Zero;
+            Vector3D previousInner = Vector3D.Zero;
+
+            const int wireDivideRatio = 360 / 5;
+            const float stepDeg = 360f / wireDivideRatio;
+
+            for(int i = 0; i <= wireDivideRatio; i++)
+            {
+                double angleRad = MathHelperD.ToRadians(stepDeg * i);
+
+                current.X = maxRadius * Math.Cos(angleRad);
+                current.Y = 0;
+                current.Z = maxRadius * Math.Sin(angleRad);
+                current = Vector3D.Transform(current, drawMatrix);
+
+                Vector3D dirToOut = (current - center);
+                Vector3D inner = center + dirToOut * minRadiusRatio;
+
+                if(i > 0)
+                {
+                    // inner circle slice
+                    MyTransparentGeometry.AddTriangleBillboard(center, inner, previousInner, up, up, up, Vector2.Zero, Vector2.Zero, Vector2.Zero, OVERLAY_SQUARE_MATERIAL, 0, center, triangleColor, OVERLAY_BLEND_TYPE);
+
+                    // outer circle gradient slices
+                    quad = new MyQuadD()
+                    {
+                        Point0 = previousInner,
+                        Point1 = previous,
+                        Point2 = current,
+                        Point3 = inner,
+                    };
+                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, minColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
+
+                    quad = new MyQuadD()
+                    {
+                        Point0 = previous,
+                        Point1 = previousInner,
+                        Point2 = inner,
+                        Point3 = current,
+                    };
+                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, maxColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
+
+                    // inner+outer circle rims
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, minLineColorVec, previousInner, (inner - previousInner), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, maxLineColorVec, previous, (current - previous), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                }
+
+                previous = current;
+                previousInner = inner;
+            }
+            #endregion Side clearence circle
+
+            if(drawLabel)
+            {
+                var labelDir = drawMatrix.Up;
+                var labelLineStart = center + drawMatrix.Left * minRadius;
+                DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_MIN, labelLineStart, labelDir, new Color(255, 155, 0), message: "Side Clearence", lineHeight: 0.5f);
+
+                //labelDir = drawMatrix.Up;
+                //labelLineStart = center + drawMatrix.Left * maxRadius;
+                //DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_MAX, labelLineStart, labelDir, maxColor, message: "Optimal Clearence");
+            }
+
+            #region Ground clearence line
+            Vector3D lineStart = drawMatrix.Translation;
+            float artificialMultiplier;
+            Vector3 gravityAccel = MyAPIGateway.Physics.CalculateNaturalGravityAt(lineStart, out artificialMultiplier);
+            bool gravityNearby = (gravityAccel.LengthSquared() > 0);
+            Vector3D end;
+
+            if(gravityNearby)
+                end = lineStart + Vector3.Normalize(gravityAccel) * turbineDef.OptimalGroundClearance;
+            else
+                end = lineStart + drawMatrix.Down * turbineDef.OptimalGroundClearance;
+
+            Vector3D minClearence = Vector3D.Lerp(lineStart, end, turbineDef.MinRaycasterClearance);
+
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, minColor, lineStart, (minClearence - lineStart), 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+
+            Vector3D lineDir = (end - minClearence);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, minColor, minClearence, lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, maxColor, end, -lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+
+            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3D right = Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward)); // this determines line width, it's normalized so 1m, doubled because of below math
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, maxColor, end - right, right, 2f, groundBottomLineThick, OVERLAY_BLEND_TYPE);
+
+            if(drawLabel)
+            {
+                var labelDir = drawMatrix.Left;
+                var labelLineStart = Vector3D.Lerp(lineStart, end, 0.5f);
+                DrawLineLabel(TextAPIMsgIds.TURBINE_CLEARENCE_TERRAIN, labelLineStart, labelDir, new Color(255, 155, 0), message: (gravityNearby ? "Terrain Clearence" : "Terrain Clearence (points towards gravity)"), lineHeight: 0.5f);
+            }
+            #endregion Ground clearence line
         }
         #endregion Block-specific overlays
 
