@@ -14,7 +14,8 @@ namespace Digi.BuildInfo.Features
     public class ItemTooltips : ModComponent
     {
         const string ReqLargeConveyorSymbol = "Ф";
-        const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbol;
+        const string ReqLargeConveyorSymbolSet = "            " + ReqLargeConveyorSymbol;
+        const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbolSet;
         const int ListLimit = 6;
 
         public readonly HashSet<MyDefinitionId> IgnoreModItems = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -136,12 +137,12 @@ namespace Digi.BuildInfo.Features
                     var symbolString = physDef.IconSymbol.Value.String;
 
                     // only add if it's not there already
-                    if(symbolString.IndexOf(ReqLargeConveyorSymbol) == -1)
+                    if(symbolString.IndexOf(ReqLargeConveyorSymbolAdd) == -1)
                         physDef.IconSymbol = MyStringId.GetOrCompute(symbolString + ReqLargeConveyorSymbolAdd);
                 }
                 else
                 {
-                    physDef.IconSymbol = MyStringId.GetOrCompute(ReqLargeConveyorSymbol);
+                    physDef.IconSymbol = MyStringId.GetOrCompute(ReqLargeConveyorSymbolSet);
                 }
             }
             else
@@ -149,7 +150,7 @@ namespace Digi.BuildInfo.Features
                 if(physDef.IconSymbol.HasValue)
                 {
                     var symbolString = physDef.IconSymbol.Value.String;
-                    if(symbolString == ReqLargeConveyorSymbol)
+                    if(symbolString == ReqLargeConveyorSymbolSet)
                     {
                         // remove symbol if item didn't have one.
                         physDef.IconSymbol = null;
