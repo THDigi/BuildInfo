@@ -51,8 +51,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             var def = Main.EquipmentMonitor.BlockDef;
             var aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            var cellSize = Main.EquipmentMonitor.BlockGridSize;
-            Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize);
+            Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def);
         }
 
         public void LockOverlayToAimedBlock()
@@ -66,7 +65,7 @@ namespace Digi.BuildInfo.Features.Overlays
             SetLockOnBlock(Main.EquipmentMonitor.AimedBlock);
         }
 
-        public bool UpdateLockedOnBlock(ref IMySlimBlock aimedBlock, ref MyCubeBlockDefinition def, ref float cellSize)
+        public bool UpdateLockedOnBlock(ref IMySlimBlock aimedBlock, ref MyCubeBlockDefinition def)
         {
             if(LockedOnBlock.IsFullyDismounted || LockedOnBlock.IsDestroyed || (LockedOnBlock != null && LockedOnBlock.FatBlock == null))
             {
@@ -99,7 +98,6 @@ namespace Digi.BuildInfo.Features.Overlays
 
             aimedBlock = LockedOnBlock;
             def = LockedOnBlockDef;
-            cellSize = LockedOnBlock.CubeGrid.GridSize;
 
             if(Main.Overlays.DrawOverlay == 0)
                 SetNotification($"Overlays off. [{Main.Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Main.Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);

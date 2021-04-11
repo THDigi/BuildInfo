@@ -31,6 +31,9 @@ namespace Digi.BuildInfo.Features.Overlays
         private OverlayCall SelectedOverlayCall;
         private IMyHudNotification OverlayNotification;
 
+        private float CellSize;
+        private float CellSizeHalf;
+
         private bool AnyLabelShown;
         private readonly LabelData[] Labels;
 
@@ -266,10 +269,13 @@ namespace Digi.BuildInfo.Features.Overlays
 
             var def = Main.EquipmentMonitor.BlockDef;
             var aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            var cellSize = Main.EquipmentMonitor.BlockGridSize;
 
-            if(Main.LockOverlay.LockedOnBlock != null && !Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def, ref cellSize))
+            // re-assigns def & aimedBlock if overlay is locked-on to something different than the aimed block
+            if(Main.LockOverlay.LockedOnBlock != null && !Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def))
                 return;
+
+            CellSize = (aimedBlock != null ? aimedBlock.CubeGrid.GridSize : Main.EquipmentMonitor.BlockGridSize);
+            CellSizeHalf = CellSize / 2;
 
             try
             {
@@ -329,7 +335,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 //        wm.Translation = center;
 
                 //        var nd = (MyCubeBlockDefinition)n.BlockDefinition;
-                //        var halfExtents = nd.Size * (cellSize * 0.5);
+                //        var halfExtents = nd.Size * CellSizeHalf;
                 //        var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
 
                 //        var color = Color.Lime;
@@ -362,14 +368,14 @@ namespace Digi.BuildInfo.Features.Overlays
                 #region Draw mount points
                 if(Main.TextAPI.IsEnabled)
                 {
-                    DrawMountPointAxisText(def, cellSize, ref drawMatrix);
+                    DrawMountPointAxisText(def, CellSize, ref drawMatrix);
                 }
                 else
                 {
                     // re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
                     var mp = def.MountPoints;
                     def.MountPoints = BLANK_MOUNTPOINTS;
-                    MyCubeBuilder.DrawMountPoints(cellSize, def, ref drawMatrix);
+                    MyCubeBuilder.DrawMountPoints(CellSize, def, ref drawMatrix);
                     def.MountPoints = mp;
                 }
 
@@ -387,7 +393,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 // draw custom mount point styling
                 {
                     var center = def.Center;
-                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * cellSize) * drawMatrix;
+                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
                     bool drawLabel = CanDrawLabel();
 
@@ -399,15 +405,15 @@ namespace Digi.BuildInfo.Features.Overlays
                         {
                             if(def.IsAirTight.Value)
                             {
-                                var halfExtents = def.Size * (cellSize * 0.5);
+                                var halfExtents = def.Size * CellSizeHalf;
                                 var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
                                 MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
                             }
                         }
                         else if(mountPoints != null)
                         {
-                            var half = Vector3D.One * -(0.5f * cellSize);
-                            var corner = (Vector3D)def.Size * -(0.5f * cellSize);
+                            var half = Vector3D.One * -CellSizeHalf;
+                            var corner = (Vector3D)def.Size * -CellSizeHalf;
                             var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
                             foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
@@ -417,20 +423,20 @@ namespace Digi.BuildInfo.Features.Overlays
                                     if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways) // pos+normal not always airtight
                                         continue;
 
-                                    var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
+                                    var pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
                                     var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
                                     var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
                                     var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
                                     var m = MatrixD.Identity;
-                                    m.Translation = pos + dirForward * (cellSize * 0.5f);
+                                    m.Translation = pos + dirForward * CellSizeHalf;
                                     m.Forward = dirForward;
                                     m.Backward = -dirForward;
                                     m.Left = Vector3D.Cross(dirForward, dirUp);
                                     m.Right = -m.Left;
                                     m.Up = dirUp;
                                     m.Down = -dirUp;
-                                    var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
+                                    var scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
                                     MatrixD.Rescale(ref m, ref scale);
 
                                     MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
@@ -450,7 +456,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             var startLocal = mountPoint.Start - center;
                             var endLocal = mountPoint.End - center;
 
-                            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * cellSize, Vector3.Max(startLocal, endLocal) * cellSize);
+                            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * CellSize, Vector3.Max(startLocal, endLocal) * CellSize);
                             var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
 
                             var normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
@@ -558,7 +564,6 @@ namespace Digi.BuildInfo.Features.Overlays
             }
 
             IMySlimBlock block = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
-            float cellSize = (block == null ? Main.EquipmentMonitor.BlockGridSize : block.CubeGrid.GridSize);
 
             //if(block != null)
             //{
@@ -570,7 +575,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //    doorAirtightBlink = !doorAirtightBlink;
             //}
 
-            var cubeSize = def.Size * (cellSize * 0.5f);
+            var cubeSize = def.Size * CellSizeHalf;
             bool drawLabel = CanDrawLabel();
 
             //if(!drawLabel && !DoorAirtightBlink)
@@ -636,8 +641,8 @@ namespace Digi.BuildInfo.Features.Overlays
             var mountPoints = def.GetBuildProgressModelMountPoints(1f);
             if(mountPoints != null)
             {
-                var half = Vector3D.One * -(0.5f * cellSize);
-                var corner = (Vector3D)def.Size * -(0.5f * cellSize);
+                var half = Vector3D.One * -CellSizeHalf;
+                var corner = (Vector3D)def.Size * -CellSizeHalf;
                 var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
                 foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
@@ -648,7 +653,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed)
                             continue;
 
-                        var pos = Vector3D.Transform((Vector3D)(kv.Key * cellSize), transformMatrix);
+                        var pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
                         var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
                         var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
                         var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
@@ -656,14 +661,14 @@ namespace Digi.BuildInfo.Features.Overlays
                         if(DoorAirtightBlink)
                         {
                             var m = MatrixD.Identity;
-                            m.Translation = pos + dirForward * (cellSize * 0.5f);
+                            m.Translation = pos + dirForward * CellSizeHalf;
                             m.Forward = dirForward;
                             m.Backward = -dirForward;
                             m.Left = Vector3D.Cross(dirForward, dirUp);
                             m.Right = -m.Left;
                             m.Up = dirUp;
                             m.Down = -dirUp;
-                            var scale = new Vector3D(cellSize, cellSize, MOUNTPOINT_THICKNESS);
+                            var scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
                             MatrixD.Rescale(ref m, ref scale);
 
                             if(fullyClosed)
@@ -778,11 +783,9 @@ namespace Digi.BuildInfo.Features.Overlays
             bool isTurret = (turretDef != null && turretData != null);
             if(isTurret)
             {
-                float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize); // TODO: cache
-
                 const int LineEveryDegrees = 15;
                 const float lineThick = 0.03f;
-                float radius = (def.Size.AbsMin() + 1) * cellSize;
+                float radius = (def.Size * CellSizeHalf).AbsMin() + 1f;
 
                 int minPitch = turretDef.MinElevationDegrees; // this one is actually not capped in game for whatever reason
                 int maxPitch = Math.Min(turretDef.MaxElevationDegrees, 90); // can't pitch up more than 90deg
@@ -1173,14 +1176,12 @@ namespace Digi.BuildInfo.Features.Overlays
             bool canDrawLabel = CanDrawLabel();
             IMySlimBlock slimBlock = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
 
-            float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize); // TODO: cache
-
             const float LaserThick = 0.02f;
             const float LaserLength = 15f;
 
             const int LineEveryDegrees = 15;
             const float LineThick = 0.03f;
-            float radius = (def.Size.AbsMin() + 1) * cellSize;
+            float radius = (def.Size * CellSizeHalf).AbsMin() + 1f;
 
             int minPitch = Math.Max(antennaDef.MinElevationDegrees, -90);
             int maxPitch = Math.Min(antennaDef.MaxElevationDegrees, 90);
