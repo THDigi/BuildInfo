@@ -120,6 +120,8 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 if(LockedOnBlock.FatBlock != null)
                     LockedOnBlock.FatBlock.OnMarkForClose -= LockedOnBlock_MarkedForClose;
+
+                Main.Overlays.SetOverlayCallFor(null);
             }
 
             LockedOnBlock = block;
