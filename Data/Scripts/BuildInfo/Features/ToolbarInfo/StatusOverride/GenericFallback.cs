@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool UseConveyor(StringBuilder sb, ToolbarItem item)
         {
-            bool useConveyor = item.Block.GetValueBool("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
+            bool useConveyor = item.Block.GetValue<bool>("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
             sb.Append(useConveyor ? "Share" : "Isolate");
             return true;
         }

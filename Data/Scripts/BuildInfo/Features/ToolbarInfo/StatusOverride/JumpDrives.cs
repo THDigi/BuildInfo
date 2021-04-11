@@ -5,6 +5,7 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRageMath;
 using MyJumpDriveStatus = Sandbox.ModAPI.Ingame.MyJumpDriveStatus;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -13,28 +14,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public JumpDrives(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_TimerBlock);
+            var type = typeof(MyObjectBuilder_JumpDrive);
 
-            processor.AddStatus(type, Recharge, "Jump", "Recharge", "Recharge_On", "Recharge_Off");
+            processor.AddStatus(type, Jump, "Jump");
+            processor.AddStatus(type, Recharge, "Recharge", "Recharge_On", "Recharge_Off");
             processor.AddStatus(type, JumpDistance, "IncreaseJumpDistance", "DecreaseJumpDistance");
 
             processor.AddGroupStatus(type, GroupRecharge, "Recharge", "Recharge_On", "Recharge_Off");
         }
 
-        bool Recharge(StringBuilder sb, ToolbarItem item)
+        bool Jump(StringBuilder sb, ToolbarItem item)
         {
             var jd = (IMyJumpDrive)item.Block;
-            bool jumpAction = (item.ActionId == "Jump");
 
-            if(jumpAction)
+            float countdown = BuildInfoMod.Instance.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
+            if(countdown > 0)
             {
-                float countdown = BuildInfoMod.Instance.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
-                if(countdown > 0)
-                {
-                    sb.Append("Jumping\n");
-                    sb.TimeFormat(countdown);
-                    return true;
-                }
+                sb.Append("Jumping\n");
+                sb.TimeFormat(countdown);
+                return true;
             }
 
             Processor.AppendSingleStats(sb, item.Block);
@@ -43,17 +41,72 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 case MyJumpDriveStatus.Charging:
                 {
-                    var recharge = jd.GetValueBool("Recharge");
-                    sb.Append(recharge ? "Charge" : "Stop");
+                    bool recharge = jd.GetValue<bool>("Recharge");
+                    if(recharge)
+                        AppendPercentage(sb, jd);
+                    else
+                        sb.Append("Stop");
                     break;
                 }
-                case MyJumpDriveStatus.Ready: sb.Append("Ready"); break;
+                case MyJumpDriveStatus.Ready:
+                {
+                    do
+                    {
+                        // checks from MyGridJumpDriveSystem.RequestJump(string, Vector3D, long)
+                        float artificialMultiplier;
+                        Vector3 naturalGravity = MyAPIGateway.Physics.CalculateNaturalGravityAt(jd.CubeGrid.WorldMatrix.Translation, out artificialMultiplier);
+
+                        if(!Vector3.IsZero(naturalGravity))
+                        {
+                            sb.Append("Grav!");
+                            break;
+                        }
+
+                        // TODO: enable when we can get destination
+                        //Vector3 naturalGravityAtDestination = MyAPIGateway.Physics.CalculateNaturalGravityAt(destinationVector, out artificialMultiplier);
+                        //if(!Vector3.IsZero(naturalGravity))
+                        //{
+                        //    sb.Append("Grav!");
+                        //    break;
+                        //}
+                        //if(MySession.Static.Settings.WorldSizeKm > 0 && destination.Length() > (double)(MySession.Static.Settings.WorldSizeKm * 500))
+                        //{
+                        //    sb.Append("TooFar!");
+                        //    break;
+                        //}
+
+                        // TODO: enable when there's a way to access all that stuff
+                        //if(!IsJumpValid(userId, out MyJumpFailReason reason))
+                        //{
+                        //    sb.Append("Grav!");
+                        //    break;
+                        //}
+
+                        sb.Append("Ready");
+                    }
+                    while(false);
+                    break;
+                }
                 case MyJumpDriveStatus.Jumping: sb.Append("Jump..."); break;
                 default: return false;
             }
 
-            sb.Append('\n');
+            return true;
+        }
 
+        bool Recharge(StringBuilder sb, ToolbarItem item)
+        {
+            var jd = (IMyJumpDrive)item.Block;
+
+            bool recharge = jd.GetValue<bool>("Recharge");
+            sb.Append("Chrg:").Append(recharge ? "On" : "Off").Append('\n');
+
+            AppendPercentage(sb, jd);
+            return true;
+        }
+
+        void AppendPercentage(StringBuilder sb, IMyJumpDrive jd)
+        {
             int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
             sb.Append(filledPercent).Append("% ");
 
@@ -71,10 +124,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 else
                     sb.Append("     ");
             }
-
-            return true;
         }
 
+        StringBuilder tempSb = new StringBuilder(32);
         bool JumpDistance(StringBuilder sb, ToolbarItem item)
         {
             var jd = (IMyJumpDrive)item.Block;
@@ -83,32 +135,42 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 // HACK: JumpDistance slider is disabled if a GPS target is selected.
                 var prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
-                if(prop != null && !prop.Enabled.Invoke(jd))
+                if(prop?.Enabled != null && !prop.Enabled.Invoke(jd))
                 {
                     sb.Append("GPS!\n");
                 }
             }
 
+            bool addedDistance = false;
+
             if(item.ActionWrapper.OriginalWriter != null)
             {
-                int startIndex = sb.Length;
-
                 // vanilla writer but with some alterations as it's easier than re-doing the entire math for jump distance.
-                item.ActionWrapper.OriginalWriter.Invoke(jd, sb);
+                tempSb.Clear();
+                item.ActionWrapper.OriginalWriter.Invoke(jd, tempSb);
 
-                for(int i = startIndex; i < sb.Length; i++)
+                for(int i = 0; i < tempSb.Length; i++)
                 {
-                    char c = sb[i];
-                    if(c == '%' && sb.Length > (i + 2))
+                    char c = tempSb[i];
+                    if(c == '(')
                     {
-                        sb[i + 2] = '\n'; // replace starting paranthesis with newline
-                        sb.Length -= 1; // remove ending paranthesis
-                        return true;
+                        tempSb[i] = '\n'; // replace starting paranthesis with newline
+                        tempSb.Length -= 1; // remove ending paranthesis
+
+                        sb.AppendStringBuilder(tempSb);
+                        addedDistance = true;
+                        break;
                     }
                 }
             }
 
-            return false;
+            if(!addedDistance)
+            {
+                float ratio = jd.GetValue<float>("JumpDistance");
+                sb.Append((int)(ratio * 100)).Append("%");
+            }
+
+            return true;
         }
 
         bool GroupRecharge(StringBuilder sb, ToolbarItem item, GroupData groupData)
