@@ -148,8 +148,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "ThrowOut": action.Icon = @"Textures\GUI\Icons\HUD 2017\MoveCloser.png"; break;
 
                         case "Detonate": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detonate.png"); break;
-                        case "Safety": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleConnectors.png"; break;
-                        case "StartCountdown": action.Icon = @"Textures\GUI\Icons\HUD 2017\Notification_badge.png"; break;
+                        case "Safety": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
+                        case "StartCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\StartWarhead.png"); break;
                         case "StopCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.png"); break;
 
                         case "PlaySound": action.Icon = @"Textures\GUI\Icons\HUD 2017\GridBroadcastingOn.png"; break;
@@ -168,7 +168,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "EnableIdleMovement_On": action.Icon = @"Textures\GUI\Icons\HUD 2017\RotationPlane.png"; break;
                         case "EnableIdleMovement_Off": action.Icon = @"Textures\GUI\Icons\HUD 2017\RotationPlane.png"; break;
 
-                        case "Start": action.Icon = @"Textures\GUI\Icons\Actions\Start.dds"; break;
+                        case "Run":
+                        case "RunWithDefaultArgument":
+                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Start.png"); break;
+
+                        case "Start": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Start.png"); break;
                         case "Stop": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.png"); break;
                         case "TriggerNow": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.png"); break;
 
