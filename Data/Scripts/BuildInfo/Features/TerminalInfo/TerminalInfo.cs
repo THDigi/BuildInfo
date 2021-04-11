@@ -433,9 +433,6 @@ namespace Digi.BuildInfo.Features
 
             if(newBlock != null)
             {
-                if(!Main.Config.TerminalDetailInfoAdditions.Value)
-                    return;
-
                 if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
                     return; // ignore blocks that don't need stats
 
@@ -472,9 +469,6 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                if(!Main.Config.TerminalDetailInfoAdditions.Value)
-                    return;
-
                 if(currentFormatCall == null)
                     return;
 
@@ -487,10 +481,13 @@ namespace Digi.BuildInfo.Features
                 var otherModInfo = (info.Length > 0 ? info.ToString() : null);
 
                 info.Clear();
-                currentFormatCall.Invoke(block, info);
+
+                if(Main.Config.TerminalDetailInfoAdditions.Value)
+                {
+                    currentFormatCall.Invoke(block, info);
+                }
 
                 bool hasExtraInfo = (info.Length > 0);
-
                 if(hasExtraInfo)
                     info.TrimEndWhitespace();
 
