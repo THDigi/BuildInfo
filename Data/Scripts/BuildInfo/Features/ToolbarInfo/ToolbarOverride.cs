@@ -38,6 +38,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CollectActionFunc = new Func<ITerminalAction, bool>(CollectAction);
 
             Main.BlockMonitor.BlockAdded += BlockAdded;
+            MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
         }
 
         public override void RegisterComponent()
