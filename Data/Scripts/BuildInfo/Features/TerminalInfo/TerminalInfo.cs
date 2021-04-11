@@ -11,6 +11,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
@@ -185,6 +186,8 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
 
             Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
+
+            //Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
         }
 
         private void Add(MyObjectBuilderType blockType, CustomInfoCall call)
@@ -1551,6 +1554,116 @@ namespace Digi.BuildInfo.Features
                 info.Append("Scripter role is required to use in-game scripts.\n");
             }
         }
+
+        // TODO: finish jumpdrive terminal info when jump destination can be retrieved
+#if false
+        void Format_JumpDrive(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.197.181:
+            //      Type: <BlockDefName>
+            //      Max Required Input: <Power>
+            //      Max Stored Power: <Power>
+            //      Current Input: <Power>
+            //      Stored Power: <Power>
+            //      Fully recharged in: <Time>
+            //      Max jump distance: <Distance>
+            //      [Current jump: <Percent>] (if GPS selected)
+
+            var jumpDrive = block as MyJumpDrive;
+            if(jumpDrive == null)
+                return;
+
+            var player = MyAPIGateway.Session?.Player;
+            if(player == null)
+                return;
+
+            float powerCost = 0f;
+            double distance = GetSelectedJumpDistance(jumpDrive);
+
+            // from MyGridJumpDriveSystem.DepleteJumpDrives()
+            double mass = jumpDrive.CubeGrid.GetCurrentMass();
+
+            // DEBUG TODO: optimize
+            foreach(var b in jumpDrive.CubeGrid.GetFatBlocks())
+            {
+                var jd = b as MyJumpDrive;
+                if(jd == null || !jd.CanJumpAndHasAccess(player.IdentityId))
+                    continue;
+
+                double massRatio = Math.Min(jd.BlockDefinition.MaxJumpMass / mass, 1.0);
+                double jumpDistance = jd.BlockDefinition.MaxJumpDistance * massRatio;
+
+                if(jumpDistance < distance)
+                {
+                    distance -= jumpDistance;
+                    if(b == block)
+                    {
+                        powerCost = jd.BlockDefinition.RequiredPowerInput;
+                        break; // don't care about the rest of the blocks
+                    }
+                }
+                else
+                {
+                    if(b == block)
+                    {
+                        double ratio = distance / jumpDistance;
+                        powerCost = jd.BlockDefinition.RequiredPowerInput * (float)ratio;
+                    }
+                    break; // this is where game stops it
+                }
+            }
+
+            info.Append("Jump Drain: ").PowerStorageFormat(powerCost);
+        }
+
+        double GetSelectedJumpDistance(MyJumpDrive jumpDrive)
+        {
+            var tb = (IMyTerminalBlock)jumpDrive;
+            var prop = (IMyTerminalControl)tb.GetProperty("JumpDistance");
+            bool hasJumpTarget = prop.Enabled.Invoke(jumpDrive);
+
+            if(hasJumpTarget)
+            {
+                // DEBUG TODO ...
+                return 5000;
+            }
+            else
+            {
+                return ComputeMaxDistance(jumpDrive);
+            }
+        }
+
+        double ComputeMaxDistance(MyJumpDrive jumpDrive)
+        {
+            double maxJumpDistance = GetMaxJumpDistance(jumpDrive, jumpDrive.OwnerId);
+            if(maxJumpDistance < 5000.0)
+                return 5000.0;
+
+            float jumpDistanceRatio = jumpDrive.GetValue<float>("JumpDistance");
+            return 5001.0 + (maxJumpDistance - 5000.0) * jumpDistanceRatio;
+        }
+
+        double GetMaxJumpDistance(MyJumpDrive jumpDrive, long userId)
+        {
+            double absoluteMaxDistance = 0.0;
+            double maxDistance = 0.0;
+            double mass = jumpDrive.CubeGrid.GetCurrentMass();
+
+            // DEBUG TODO: optimize
+            foreach(var b in jumpDrive.CubeGrid.GetFatBlocks())
+            {
+                var jd = b as MyJumpDrive;
+                if(jd == null || !jd.CanJumpAndHasAccess(userId))
+                    continue;
+
+                absoluteMaxDistance += jd.BlockDefinition.MaxJumpDistance;
+                maxDistance += jd.BlockDefinition.MaxJumpDistance * (jd.BlockDefinition.MaxJumpMass / mass);
+            }
+
+            return Math.Min(absoluteMaxDistance, maxDistance);
+        }
+#endif
+
         #endregion Text formatting per block type
     }
 }

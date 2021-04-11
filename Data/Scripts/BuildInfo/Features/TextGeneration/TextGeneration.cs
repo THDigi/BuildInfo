@@ -3327,6 +3327,29 @@ namespace Digi.BuildInfo.Features
 
             AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
 
+            //var ammos = wcDef.Ammos;
+            //if(ammos != null && ammos.Length > 0)
+            //{
+            //    if(ammos.Length == 1)
+            //    {
+            //        AddLine().Label("Ammo type").Append(ammos[0].AmmoMagazine);
+            //    }
+            //    else
+            //    {
+            //        AddLine().Label("Ammo types");
+
+            //        foreach(var ammo in wcDef.Ammos)
+            //        {
+            //            AddLine().Color(COLOR_PART).Append("         | ").ResetFormatting().Append(ammo.AmmoMagazine);
+            //        }
+            //    }
+            //}
+
+
+            // not actually implemented on WC-side xD
+            //float maxPower = Main.WeaponCoreAPIHandler.API.GetMaxPower(blockDef.Id);
+            //AddLine().Label("Max Power").PowerFormat(maxPower);
+
             // bad:
             // - text is cached so it needs to clear cache on hud mode cycling to refresh this
             // - text is long, needs word wrapping

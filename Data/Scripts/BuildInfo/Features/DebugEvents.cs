@@ -5,6 +5,7 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Engine.Physics;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -14,9 +15,11 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.Utils;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
+using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 
 namespace Digi.BuildInfo.Features
 {
@@ -264,6 +267,83 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
+            //if(character != null && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            //{
+            //    var blendType = BlendType.PostPP;
+            //    var thick = 0.01f;
+            //    var cm = character.WorldMatrix;
+            //    var observerPos = cm.Translation;
+            //    var closePos = observerPos + cm.Forward * 5;
+            //    var targetPos = Vector3D.Zero;
+
+            //    var a = closePos - observerPos;
+            //    var b = targetPos - observerPos;
+
+            //    //Vector3D toPoint = somePoint - lineOrigin; // line from origin to this point
+            //    //Vector3D projection = Vector3D.Dot(toPoint, lineDirection) / lineDirection.LengthSquared() * lineDirection;
+            //    //Vector3D rejection = toPoint - projection;
+
+            //    //Vector3D projectTargetOnLCD = dirToLCD * Vector3D.Dot(dirToTarget, dirToLCD);
+            //    Vector3D projection = b * Vector3D.Dot(a, b) / b.LengthSquared();
+            //    //MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, observerPos, projection, 1f, 0.1f, blendType);
+
+            //    Vector3D reject;
+
+            //    if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            //    {
+            //        a.Normalize();
+            //        b.Normalize();
+            //    }
+
+            //    reject = Vector3D.Reject(a, b);
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(255, 155, 0) * 0.75f, observerPos, reject, 1f, 0.05f, blendType);
+
+            //    reject = a - (b * (a.Dot(b) / b.LengthSquared()));
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(0, 255, 0) * 0.75f, observerPos, reject, 1f, 0.1f, blendType);
+
+
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.White, observerPos, a, 1f, thick, blendType);
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, observerPos, b, 1f, thick, blendType);
+            //}
+            
+            //if(character != null)
+            //{
+            //    var charView = MyAPIGateway.Session.Camera.WorldMatrix;
+            //    var from = charView.Translation;
+            //    var to = from + charView.Forward * 10;
+
+            //    IHitInfo hit;
+            //    if(MyAPIGateway.Physics.CastRay(from, to, out hit, CollisionLayers.CollisionLayerWithoutCharacter))
+            //    {
+            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Red, hit.Position, 0.01f, 0, blendType: BlendType.PostPP);
+            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, hit.Position, 0.01f, 0, blendType: BlendType.AdditiveTop);
+
+            //        var grid = hit.HitEntity as IMyCubeGrid;
+            //        if(grid != null)
+            //        {
+            //            var internalGrid = (MyCubeGrid)grid;
+
+            //            Vector3I gridPos;
+            //            grid.FixTargetCube(out gridPos, Vector3D.Transform(hit.Position, grid.WorldMatrixInvScaled) * internalGrid.GridSizeR);
+
+            //            var block = grid.GetCubeBlock(gridPos);
+            //            if(block != null && block.FatBlock != null)
+            //            {
+            //                var dir = hit.Position - block.FatBlock.GetPosition();
+            //                double distX = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Right);
+            //                double distY = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Up);
+            //                double distZ = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Forward);
+
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Red, hit.Position, block.FatBlock.WorldMatrix.Left * (float)distX, 1f, 0.0005f, BlendType.Standard);
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, hit.Position, block.FatBlock.WorldMatrix.Down * (float)distY, 1f, 0.0005f, BlendType.Standard);
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, hit.Position, block.FatBlock.WorldMatrix.Forward, 1f, 0.0005f, BlendType.Standard);
+
+            //                MyAPIGateway.Utilities.ShowNotification($"distX={distX:0.#####}; distY={distY:0.#####}; distZ={distZ:0.#####}", 16, MyFontEnum.Debug);
+            //            }
+            //        }
+            //    }
+            //}
+
             if(Main.TextAPI.WasDetected)
             {
                 if(Main.Config.Debug.Value)
