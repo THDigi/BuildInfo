@@ -117,6 +117,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
                 else
                 {
+                    if(action.Id.StartsWith("Increase"))
+                    {
+                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Add.png");
+                        return false;
+                    }
+
+                    if(action.Id.StartsWith("Decrease"))
+                    {
+                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.png");
+                        return false;
+                    }
+
                     // TODO: make this feature optional
                     // HACK: replace some icons with more descriptive/unique ones
                     switch(action.Id)
@@ -126,9 +138,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "ShowOnHUD_Off": action.Icon = @"Textures\GUI\Icons\Actions\SmallShipSwitchOff.dds"; break;
 
                         // NOTE: matches connector and landing gear
-                        case "SwitchLock": Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
-                        case "Unlock": Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
-                        case "Lock": Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
+                        case "SwitchLock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
+                        case "Unlock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
+                        case "Lock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
                         case "Autolock": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleConnectors.png"; break;
 
                         case "Trading": action.Icon = @"Textures\GUI\Icons\HUD 2017\MultiBlockBuilding.png"; break;
@@ -186,7 +198,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                         case "helpOthers": action.Icon = @"Textures\GUI\Icons\HUD 2017\PlayerList.png"; break;
 
-                        case "Jump": action.Icon = @"Textures\GUI\Icons\HUD 2017\MoveFurther.png"; break;
+                        case "Jump": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Jump.png"); break;
 
                         // NOTE: matches jumpdrive and battery
                         case "Recharge": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOn.png"); break;
