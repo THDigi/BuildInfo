@@ -305,7 +305,7 @@ namespace Digi.BuildInfo.Features
             //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.White, observerPos, a, 1f, thick, blendType);
             //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, observerPos, b, 1f, thick, blendType);
             //}
-            
+
             //if(character != null)
             //{
             //    var charView = MyAPIGateway.Session.Camera.WorldMatrix;
@@ -344,23 +344,20 @@ namespace Digi.BuildInfo.Features
             //    }
             //}
 
-            if(Main.TextAPI.WasDetected)
+            if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
             {
-                if(Main.Config.Debug.Value)
+                if(debugEquipmentMsg == null)
                 {
-                    if(debugEquipmentMsg == null)
-                        debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
-
-                    debugEquipmentMsg.Visible = true;
-                    debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
-                        $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
-                        $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
-                        $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
-                }
-                else if(debugEquipmentMsg != null && debugEquipmentMsg.Visible)
-                {
+                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
                     debugEquipmentMsg.Visible = false;
                 }
+
+                debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
+                    $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
+                    $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
+                    $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
+
+                debugEquipmentMsg.Draw();
             }
         }
 

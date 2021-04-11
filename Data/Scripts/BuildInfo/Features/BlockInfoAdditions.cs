@@ -55,8 +55,8 @@ namespace Digi.BuildInfo.Features
 
             public void Clear()
             {
-                if(Text != null)
-                    Text.Visible = false;
+                //if(Text != null)
+                //    Text.Visible = false;
 
                 Replaced = null;
             }
@@ -274,8 +274,8 @@ namespace Digi.BuildInfo.Features
                     || info.Index == (maxVisible - 1) && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
                     || info.Index == (totalComps - maxVisible) && Main.BlockInfoScrollComponents.ShowDownHint) // hide for bottom hint component
                     {
-                        if(info.Text != null)
-                            info.Text.Visible = false;
+                        //if(info.Text != null)
+                        //    info.Text.Visible = false;
 
                         continue;
                     }
@@ -297,6 +297,7 @@ namespace Digi.BuildInfo.Features
                         if(info.Text == null)
                         {
                             info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), worldPos, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text.Visible = false; // not required when using manual .Draw()
                         }
                         else
                         {
@@ -310,7 +311,7 @@ namespace Digi.BuildInfo.Features
                         sb.Append(LabelPrefix);
                         sb.AppendMaxLength(info.Replaced.DisplayNameText, NameMaxChars);
 
-                        info.Text.Visible = true;
+                        //info.Text.Visible = true;
                         info.Text.Draw();
                     }
                     else
