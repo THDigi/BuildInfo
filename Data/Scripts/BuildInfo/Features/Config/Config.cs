@@ -43,6 +43,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting RelativeDampenerInfo;
 
         public BoolSetting ItemTooltipAdditions;
+        public BoolSetting ItemSymbolAdditions;
 
         public BoolSetting HudStatOverrides;
 
@@ -296,16 +297,21 @@ namespace Digi.BuildInfo.Features.Config
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
-
-            ItemTooltipAdditions = new BoolSetting(Handler, "HUD: Item Tooltip Additions", true,
-                "Adds magazine capacity, what blocks craft the item, where the item can be used, mod that added the item and whether it requires large conveyor.",
-                "Includes the '*' from the icon when large conveyor is required.");
-            ItemTooltipAdditions.AddCompatibilityNames("Item Tooltip Additions");
             #endregion
 
+            #region Terminal
             TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
                 "Adds some extra info bottom-right in terminal of certain blocks.",
                 "Does not (and cannot) replace any vanilla info.");
+
+            ItemTooltipAdditions = new BoolSetting(Handler, "Terminal: Item Tooltip Additions", true,
+                "Adds magazine capacity, what blocks craft the item, where the item can be used, mod that added the item and whether it requires large conveyor.",
+                "Does not affect 'Internal Info' setting's ability to add item id to tooltip.");
+            ItemTooltipAdditions.AddCompatibilityNames("Item Tooltip Additions", "HUD: Item Tooltip Additions");
+
+            ItemSymbolAdditions = new BoolSetting(Handler, "Terminal: Item Symbol Additions", true,
+                $"Currently adds the '{ItemTooltips.ReqLargeConveyorSymbol}' on top-right of item icons, only for items that require large conveyors (includes modded items too).");
+            #endregion
 
             #region Toolbar
             ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.HudHints, new string[]
@@ -391,6 +397,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Turning off labels above and having this setting on allows you to see labels when holding Alt key.");
             #endregion
 
+            #region Air Leak
             LeakParticleColorWorld = new ColorSetting(Handler, "LeakInfo: Particle Color World", new Color(0, 120, 255), false,
                 "",
                 string.Format(SubHeaderFormat, "Air Leak Detector"),
@@ -400,6 +407,7 @@ namespace Digi.BuildInfo.Features.Config
             LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(255, 255, 0), false,
                 "Color of airleak indicator particles that are seen through walls.",
                 "NOTE: This color is overlayed on top of the world ones when those are visible too, making the colors mix, so pick wisely!");
+            #endregion
 
             #region Binds
             MenuBind = new InputCombinationSetting(Handler, "Bind: Menu", Combination.Create(MENU_BIND_INPUT_NAME, "plus"),
@@ -427,6 +435,7 @@ namespace Digi.BuildInfo.Features.Config
                 "You still have to cycle overlays (see above) in order to see them.");
             #endregion
 
+            #region Misc
             AdjustBuildDistanceSurvival = new BoolSetting(Handler, "Adjust Build Distance Survival", true,
                 "",
                 string.Format(SubHeaderFormat, "Misc"),
@@ -448,6 +457,7 @@ namespace Digi.BuildInfo.Features.Config
             Debug = new BoolSetting(Handler, "Debug", false,
                 "For debugging purposes only, not for normal use!",
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
+            #endregion
 
             ModVersion = new IntegerSetting(Handler, "Mod Version", 0, 0, int.MaxValue,
                 "Latest version loaded for notifying you of notable changes.",

@@ -13,7 +13,7 @@ namespace Digi.BuildInfo.Features
 {
     public class ItemTooltips : ModComponent
     {
-        const string ReqLargeConveyorSymbol = "Ф";
+        public const string ReqLargeConveyorSymbol = "Ф";
         const string ReqLargeConveyorSymbolSet = "            " + ReqLargeConveyorSymbol;
         const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbolSet;
         const int ListLimit = 6;
@@ -71,6 +71,7 @@ namespace Digi.BuildInfo.Features
 
             Main.Config.InternalInfo.ValueAssigned += ConfigValueChanged;
             Main.Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
+            Main.Config.ItemSymbolAdditions.ValueAssigned += ConfigValueChanged;
         }
 
         public override void UnregisterComponent()
@@ -89,6 +90,7 @@ namespace Digi.BuildInfo.Features
 
             Main.Config.InternalInfo.ValueAssigned -= ConfigValueChanged;
             Main.Config.ItemTooltipAdditions.ValueAssigned -= ConfigValueChanged;
+            Main.Config.ItemSymbolAdditions.ValueAssigned -= ConfigValueChanged;
         }
 
         void ConfigValueChanged(bool oldValue, bool newValue, SettingBase<bool> setting)
@@ -130,7 +132,7 @@ namespace Digi.BuildInfo.Features
             if(!Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
                 return;
 
-            if(Main.Config.ItemTooltipAdditions.Value)
+            if(Main.Config.ItemSymbolAdditions.Value)
             {
                 if(physDef.IconSymbol.HasValue)
                 {

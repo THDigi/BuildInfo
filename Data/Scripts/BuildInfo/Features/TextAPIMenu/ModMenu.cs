@@ -104,10 +104,10 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
 
             Category_Textbox = AddCategory("Text Box", Category_Mod);
             Category_Overlays = AddCategory("Block Overlays", Category_Mod);
-            Category_HUD = AddCategory("HUD & GUI", Category_Mod);
+            Category_HUD = AddCategory("HUD/GUI", Category_Mod);
             Category_Toolbar = AddCategory("Toolbar", Category_Mod);
-            Category_Terminal = AddCategory("Terminal", Category_Mod);
-            Category_LeakInfo = AddCategory("Air Leak Info", Category_Mod);
+            Category_Terminal = AddCategory("Terminal/Inventory", Category_Mod);
+            Category_LeakInfo = AddCategory("Air Leak Scanner", Category_Mod);
             Category_Binds = AddCategory("Binds", Category_Mod);
             Category_Misc = AddCategory("Misc", Category_Mod);
 
@@ -138,7 +138,6 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Turret HUD", Main.Config.TurretHUD);
             SimpleToggle(Category_HUD, "HUD Stat Overrides", Main.Config.HudStatOverrides);
             SimpleToggle(Category_HUD, "Relative Dampener Info", Main.Config.RelativeDampenerInfo);
-            SimpleToggle(Category_HUD, "Item Tooltip Additions", Main.Config.ItemTooltipAdditions);
 
             SimpleEnumCycle(Category_Toolbar, "Labels Mode", typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
             SimpleEnumCycle(Category_Toolbar, "Toolbar Item Names Mode", typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
@@ -151,6 +150,8 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_Toolbar, "Improve Action Status", Main.Config.ToolbarActionStatus);
 
             SimpleToggle(Category_Terminal, "Detail Info Additions", Main.Config.TerminalDetailInfoAdditions);
+            SimpleToggle(Category_Terminal, "Item Tooltip Additions", Main.Config.ItemTooltipAdditions);
+            SimpleToggle(Category_Terminal, "Item Symbol Additions", Main.Config.ItemSymbolAdditions);
 
             SimpleColor(Category_LeakInfo, "Particle Color World", Main.Config.LeakParticleColorWorld);
             SimpleColor(Category_LeakInfo, "Particle Color Overlay", Main.Config.LeakParticleColorOverlay);
