@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             //var gun = (IMyGunObject<MyGunBase>)item.Block;
             //int ammo = gun.GunBase.GetTotalAmmunitionAmount();
 
-            int ammo = weaponInfo.Ammo;
+            int ammo = weaponInfo.ShotsUntilReload;
 
             //if(ammo == 0)
             //{
@@ -101,8 +101,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(weaponInfo.Reloading)
                     reloading++;
 
-                leastAmmo = Math.Min(leastAmmo, weaponInfo.Ammo);
-                mostAmmo = Math.Max(mostAmmo, weaponInfo.Ammo);
+                leastAmmo = Math.Min(leastAmmo, weaponInfo.ShotsUntilReload);
+                mostAmmo = Math.Max(mostAmmo, weaponInfo.ShotsUntilReload);
                 total++;
 
                 //int ammo = gun.GunBase.GetTotalAmmunitionAmount();

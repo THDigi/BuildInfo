@@ -656,23 +656,24 @@ namespace Digi.BuildInfo.Features
             info.DetailInfo_Inventory(Inv, maxVolume);
 
             var gun = (IMyGunObject<MyGunBase>)block;
+            int loaded = gun.GunBase.CurrentAmmo;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
-            int totalAmmo = gun.GunBase.GetTotalAmmunitionAmount();
+
+            info.Append("Ammo: ").Append(loaded).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
 
             var weaponTracker = Main.ReloadTracking.GetWeaponInfo(block);
             if(weaponTracker != null)
             {
-                info.Append("Ammo: ");
+                info.Append("Shots until reload: ");
 
                 if(weaponTracker.Reloading)
                     info.Append("Reloading");
                 else
-                    info.Append(weaponTracker.Ammo);
+                    info.Append(weaponTracker.ShotsUntilReload);
 
-                info.Append(" / ").Append(weaponTracker.AmmoMax).NewLine();
+                info.Append(" / ").Append(weaponTracker.InternalMagazineCapacity).NewLine();
             }
 
-            info.Append("Reserve: ").Append(gun.GunBase.CurrentAmmo).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
             info.Append("Type: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
         }
 

@@ -582,7 +582,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(item.Name == null)
                 {
-                    sb.Append("—").ResetFormatting().NewLine();
+                    sb.Append("—").NewCleanLine();
                     continue;
                 }
 

@@ -785,7 +785,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.TextAPI.IsEnabled)
             {
-                textAPIlines.ResetFormatting().Append('\n');
+                textAPIlines.NewCleanLine();
             }
             else
             {

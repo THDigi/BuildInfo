@@ -153,37 +153,61 @@ namespace Digi.BuildInfo.Features
 
             sb.Clear();
 
+            if(magDef.Capacity > 1)
+            {
+                if(loadedMag == 0 && mags > 0)
+                {
+                    sb.Append("Loaded rounds: ").Append(loadedMag).Append(" <color=gray>(Shoot to load)").NewCleanLine();
+                }
+                else
+                {
+                    sb.Append("Loaded rounds: ").Append(loadedMag).NewCleanLine();
+                }
+            }
+
             if(weaponTracker != null)
             {
-                sb.Append("Ammo: ");
-                var ammo = weaponTracker.Ammo;
-                var ammoMax = weaponTracker.AmmoMax;
+                sb.Append("Shots until reload: ");
+                var shotsLeft = weaponTracker.ShotsUntilReload;
+                var internalMag = weaponTracker.InternalMagazineCapacity;
 
                 if(weaponTracker.Reloading)
                     sb.Color(Color.Red);
-                else if(ammo <= (ammoMax / 4))
+                else if(shotsLeft <= (internalMag / 10))
+                    sb.Color(new Color(255, 155, 0));
+                else if(shotsLeft <= (internalMag / 4))
                     sb.Color(Color.Yellow);
 
                 if(weaponTracker.Reloading)
                     sb.Append("Reloading");
                 else
-                    sb.Append(ammo);
+                    sb.Append(shotsLeft);
 
-                sb.ResetFormatting().Append(" / ").Append(ammoMax).NewLine();
+                sb.ResetFormatting().Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(internalMag).NewCleanLine();
             }
+
+            sb.Append("Inventory: ");
+
+            int maxMags = 0;
+            if(inv != null && magDef != null)
+                maxMags = (int)Math.Floor((float)inv.MaxVolume / magDef.Volume);
+
+            if(mags <= 0)
+                sb.Color(Color.Red);
+            else if(maxMags > 0 && mags <= (maxMags / 10))
+                sb.Color(new Color(255, 155, 0));
+            else if(maxMags > 0 && mags <= (maxMags / 4))
+                sb.Color(Color.Yellow);
+
+            sb.Append(mags).ResetFormatting();
+
+            if(maxMags > 0)
+                sb.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(maxMags);
+
+            sb.Append(" mags").NewCleanLine();
 
             if(magDef != null)
-            {
-                sb.Append("Type: ").Append(magDef.DisplayNameText).NewLine();
-
-                if(magDef.Capacity > 1)
-                    sb.Append("Magazine: ").Append(loadedMag).NewLine();
-            }
-
-            sb.Append("Inventory: ").Append(mags);
-            if(inv != null && magDef != null)
-                sb.Append(" / ").Append(Math.Floor((float)inv.MaxVolume / magDef.Volume));
-            sb.Append(" mags").NewLine();
+                sb.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(magDef.DisplayNameText).NewCleanLine();
 
             // TODO: toggleable between showing vanilla HUD and showing this?
 

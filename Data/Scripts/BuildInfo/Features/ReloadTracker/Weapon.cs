@@ -7,9 +7,6 @@ using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ReloadTracker
 {
-    // DEBUG FIXME: can't tell when weapon is out of ammo
-    // and feeding just 1 magazine says it'll have more than it actually does.
-
     /// <summary>
     /// Re-usable turret ammo tracking for determining when reload is about to happen.
     /// </summary>
@@ -22,7 +19,11 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         public int ReloadUntilTick { get; private set; }
         public bool Reloading { get; private set; }
 
-        public int Ammo
+        /// <summary>
+        /// How many rounds currently until gun has to reload.
+        /// <para>NOTE: Does not indicate how much ammo is loaded in the gun!</para>
+        /// </summary>
+        public int ShotsUntilReload
         {
             get
             {
@@ -36,7 +37,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             }
         }
 
-        public int AmmoMax
+        /// <summary>
+        /// How many rounds max the gun can shoot until reload.
+        /// </summary>
+        public int InternalMagazineCapacity
         {
             get
             {

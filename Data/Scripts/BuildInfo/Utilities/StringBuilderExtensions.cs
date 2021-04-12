@@ -160,6 +160,14 @@ namespace Digi.BuildInfo.Utilities
             return s.Append('\n');
         }
 
+        public static StringBuilder NewCleanLine(this StringBuilder s)
+        {
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                return s.Append("<reset>\n");
+            else
+                return s.Append('\n');
+        }
+
         public static StringBuilder Label(this StringBuilder s, string label)
         {
             return s.Append(label).Append(": ");
