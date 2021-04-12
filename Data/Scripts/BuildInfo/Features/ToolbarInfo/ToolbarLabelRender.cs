@@ -677,10 +677,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             sb.Length -= 1;
 
-            UpdateShadow(sb, Shadows.Message);
+            TextAPI.CopyWithoutColor(sb, Shadows.Message);
 
             if(splitMode)
-                UpdateShadow(sb2, ShadowsLine2.Message);
+                TextAPI.CopyWithoutColor(sb2, ShadowsLine2.Message);
 
             float separator = 0f;
 
@@ -743,49 +743,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Background.Width = bgWidth;
             Background.Height = bgHeight - cornerHeight - (cornerHeight * topRightCornerScale);
             Background.Offset = textOffset + (TextSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
-        }
-
-        void UpdateShadow(StringBuilder text, StringBuilder shadow)
-        {
-            shadow.Clear();
-            shadow.EnsureCapacity(text.Length);
-
-            // append to shadow without color tags
-            for(int i = 0; i < text.Length; ++i)
-            {
-                char c = text[i];
-
-                // skip <color=...>
-                if(c == '<' && i + 6 <= text.Length)
-                {
-                    if(text[i + 1] == 'c'
-                    && text[i + 2] == 'o'
-                    && text[i + 3] == 'l'
-                    && text[i + 4] == 'o'
-                    && text[i + 5] == 'r'
-                    && text[i + 6] == '=')
-                    {
-                        // seek ahead for end char
-                        int endChar = -1;
-                        for(int s = i + 6; s < text.Length; s++)
-                        {
-                            if(text[s] == '>')
-                            {
-                                endChar = s;
-                                break;
-                            }
-                        }
-
-                        if(endChar != -1)
-                        {
-                            i = endChar;
-                            continue;
-                        }
-                    }
-                }
-
-                shadow.Append(c);
-            }
         }
     }
 }

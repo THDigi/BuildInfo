@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Text;
 using Digi.BuildInfo.Features.ReloadTracker;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
-using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -18,6 +18,9 @@ namespace Digi.BuildInfo.Features
 {
     public class TurretHUD : ModComponent
     {
+        private readonly Vector2D HudPosition = new Vector2D(0.4, 0);
+        private const double TextScale = 1.2;
+        private readonly Vector2D ShadowOffset = new Vector2D(0.002, -0.002);
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private IMyLargeTurretBase prevTurret;
@@ -27,7 +30,9 @@ namespace Digi.BuildInfo.Features
         private bool visible = false;
         private IMyHudNotification notify;
         private HudAPIv2.HUDMessage hudMsg;
+        private HudAPIv2.HUDMessage shadowMsg;
         private StringBuilder sb;
+        private StringBuilder shadowSb;
 
         private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
         private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
@@ -149,7 +154,7 @@ namespace Digi.BuildInfo.Features
             int mags = gun.GetAmmunitionAmount(); // total mags in inventory (not including the one partially fired that's in the gun)
 
             if(sb == null)
-                sb = new StringBuilder(160);
+                return;
 
             sb.Clear();
 
@@ -242,6 +247,8 @@ namespace Digi.BuildInfo.Features
             //        sb.NewLine();
             //    }
             //}
+
+            TextAPI.CopyWithoutColor(sb, shadowSb);
         }
 
         private void DrawHUD()
@@ -250,19 +257,29 @@ namespace Digi.BuildInfo.Features
             {
                 if(hudMsg == null)
                 {
-                    hudMsg = new HudAPIv2.HUDMessage(sb, new Vector2D(0.4, 0), HideHud: true, Scale: 1.2, Shadowing: true, ShadowColor: Color.Black, Blend: BlendTypeEnum.PostPP);
+                    sb = new StringBuilder(256);
+                    shadowSb = new StringBuilder(256);
+
+                    shadowMsg = new HudAPIv2.HUDMessage(shadowSb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
+                    shadowMsg.InitialColor = Color.Black;
+
+                    // needs to be created after to be rendered over
+                    hudMsg = new HudAPIv2.HUDMessage(sb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
 
                     if(notify != null)
                         notify.Hide();
                 }
 
                 var textLen = hudMsg.GetTextLength();
-                hudMsg.Offset = new Vector2D(0, -(textLen.Y / 2));
+                var offset = new Vector2D(0, -(textLen.Y / 2));
+                hudMsg.Offset = offset;
+                shadowMsg.Offset = offset + ShadowOffset;
 
                 if(!visible)
                 {
                     visible = true;
                     hudMsg.Visible = true;
+                    shadowMsg.Visible = true;
                 }
             }
             else
@@ -294,7 +311,10 @@ namespace Digi.BuildInfo.Features
             weaponTracker = null;
 
             if(hudMsg != null)
+            {
                 hudMsg.Visible = false;
+                shadowMsg.Visible = false;
+            }
 
             if(notify != null)
                 notify.Hide();

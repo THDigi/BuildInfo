@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Draygo.API;
 
 namespace Digi.BuildInfo.Systems
@@ -74,6 +75,49 @@ namespace Digi.BuildInfo.Systems
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        public static void CopyWithoutColor(StringBuilder text, StringBuilder shadow)
+        {
+            shadow.Clear();
+            shadow.EnsureCapacity(text.Length);
+
+            // append to shadow without color tags
+            for(int i = 0; i < text.Length; ++i)
+            {
+                char c = text[i];
+
+                // skip <color=...>
+                if(c == '<' && i + 6 <= text.Length)
+                {
+                    if(text[i + 1] == 'c'
+                    && text[i + 2] == 'o'
+                    && text[i + 3] == 'l'
+                    && text[i + 4] == 'o'
+                    && text[i + 5] == 'r'
+                    && text[i + 6] == '=')
+                    {
+                        // seek ahead for end char
+                        int endChar = -1;
+                        for(int s = i + 6; s < text.Length; s++)
+                        {
+                            if(text[s] == '>')
+                            {
+                                endChar = s;
+                                break;
+                            }
+                        }
+
+                        if(endChar != -1)
+                        {
+                            i = endChar;
+                            continue;
+                        }
+                    }
+                }
+
+                shadow.Append(c);
             }
         }
     }
