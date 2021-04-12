@@ -1672,7 +1672,7 @@ namespace Digi.BuildInfo.Features
                     if(airTight == AirTightMode.SEALED)
                         GetLine().Color(COLOR_GOOD).Label("Air-tight").Append("Sealed");
                     else if(airTight == AirTightMode.NOT_SEALED)
-                        GetLine().Color(COLOR_BAD).Label("Air-tight").Append("Not sealed").Append(isDoor ? ", even if closed" : "");
+                        GetLine().Color(isDoor ? COLOR_BAD : COLOR_WARNING).Label("Air-tight").Append("Not sealed").Append(isDoor ? ", even if closed" : "");
                     else
                         GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
                 }
@@ -2697,7 +2697,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                 {
-                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Upgrades: N/A");
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Upgrades: N/A");
                 }
                 else
                 {
@@ -3133,7 +3133,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_BAD).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
                     int minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
