@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "ShowOnHUD_Off": action.Icon = @"Textures\GUI\Icons\Actions\SmallShipSwitchOff.dds"; break;
 
                         // NOTE: matches connector and landing gear
-                        case "SwitchLock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
+                        case "SwitchLock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleAttach.png"); break;
                         case "Unlock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
                         case "Lock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
                         case "Autolock": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleConnectors.png"; break;
