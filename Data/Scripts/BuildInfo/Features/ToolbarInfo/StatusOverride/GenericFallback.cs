@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupOnOff(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupOnOff(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyFunctionalBlock>())
                 return false;
@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupUseConveyor(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupUseConveyor(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyTerminalBlock>())
                 return false;

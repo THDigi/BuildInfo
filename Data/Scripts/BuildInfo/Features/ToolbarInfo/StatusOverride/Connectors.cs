@@ -33,7 +33,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupLockState(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupLockState(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyShipConnector>())
                 return false;

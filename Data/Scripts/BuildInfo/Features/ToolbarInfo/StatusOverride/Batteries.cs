@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupCharge(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupCharge(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyBatteryBlock>())
                 return false;

@@ -770,23 +770,16 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxDigits = 2)
         {
-            if(value < 0)
-                throw new Exception("negative values not supported");
+            if(value < 0) throw new Exception("negative values not supported");
+            if(maxDigits <= 0) throw new Exception("max digits can't be 0 or lower");
+            if(maxDigits > 6) throw new Exception("max digits supported up to 6");
 
-            if(maxDigits <= 0)
-                throw new Exception("max digits can't be <= 0");
-
-            if(maxDigits > 3)
-                throw new Exception("max digits supported up to 3");
-
-            if(maxDigits == 1 && value > 9)
-                return s.Append("9+");
-
-            if(maxDigits == 2 && value > 99)
-                return s.Append("99+");
-
-            if(maxDigits == 3 && value > 999)
-                return s.Append("999+");
+            if(maxDigits == 1 && value > 9) return s.Append("9+");
+            if(maxDigits == 2 && value > 99) return s.Append("99+");
+            if(maxDigits == 3 && value > 999) return s.Append("999+");
+            if(maxDigits == 4 && value > 9999) return s.Append("9999+");
+            if(maxDigits == 5 && value > 99999) return s.Append("99999+");
+            if(maxDigits == 6 && value > 999999) return s.Append("999999+");
 
             return s.Append(value);
         }

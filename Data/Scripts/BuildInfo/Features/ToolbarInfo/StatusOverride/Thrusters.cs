@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupOverride(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupOverride(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyThrust>())
                 return false;

@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        //bool GroupRefill(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        //bool GroupRefill(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         //{
         //    if(!groupData.GetGroupBlocks<IMyGasGenerator>())
         //        return false;

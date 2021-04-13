@@ -173,7 +173,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupRecharge(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupRecharge(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyJumpDrive>())
                 return false;

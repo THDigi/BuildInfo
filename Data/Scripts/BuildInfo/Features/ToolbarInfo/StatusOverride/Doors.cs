@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupOpen(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupOpen(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyDoor>())
                 return false;

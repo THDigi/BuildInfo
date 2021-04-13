@@ -112,7 +112,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupRun(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupRun(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {

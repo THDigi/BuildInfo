@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupDeploy(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupDeploy(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyParachute>())
                 return false;
@@ -135,7 +135,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupAutoDeploy(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupAutoDeploy(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyParachute>())
                 return false;

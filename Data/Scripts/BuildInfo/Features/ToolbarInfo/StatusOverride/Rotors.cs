@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupAttached(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupAttached(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyMotorBase>())
                 return false;
@@ -100,7 +100,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupReverse(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupReverse(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyMotorStator>())
                 return false;

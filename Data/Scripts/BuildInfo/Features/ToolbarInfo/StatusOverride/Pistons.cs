@@ -46,7 +46,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupAttached(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupAttached(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyPistonBase>())
                 return false;
@@ -78,7 +78,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupReverse(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupReverse(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyPistonBase>())
                 return false;

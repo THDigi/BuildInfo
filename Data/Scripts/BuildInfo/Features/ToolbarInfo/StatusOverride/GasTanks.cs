@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        //bool StatusGroup(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        //bool StatusGroup(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         //{
         //    if(!groupData.GetGroupBlocks<IMyGasTank>())
         //        return false;

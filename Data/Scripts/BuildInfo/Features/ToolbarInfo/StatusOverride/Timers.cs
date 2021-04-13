@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupStartStop(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupStartStop(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyTimerBlock>())
                 return false;
@@ -123,7 +123,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupSilent(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupSilent(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyTimerBlock>())
                 return false;

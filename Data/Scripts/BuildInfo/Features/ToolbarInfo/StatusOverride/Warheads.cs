@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        bool GroupSafety(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupSafety(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyWarhead>())
                 return false;
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
-            bool isTrigger = (item.ActionId == "Detonate");
+            bool isTrigger = (groupToolbarItem.ActionId == "Detonate");
 
             if(armed == total)
             {
