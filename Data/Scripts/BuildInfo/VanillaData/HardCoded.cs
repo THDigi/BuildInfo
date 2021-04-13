@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -169,6 +171,13 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MySoundBlock
         public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK;
+
+        // from tracking ShotsInBurst
+        public static readonly HashSet<MyObjectBuilderType> NoReloadTypes = new HashSet<MyObjectBuilderType>()
+        {
+            typeof(MyObjectBuilder_InteriorTurret),
+            typeof(MyObjectBuilder_SmallGatlingGun),
+        };
 
         // from MyLargeTurretBase
         public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET;

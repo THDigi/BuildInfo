@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -24,6 +26,8 @@ namespace Digi.BuildInfo.Features
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private IMyLargeTurretBase prevTurret;
+        private MyWeaponBlockDefinition weaponBlockDef;
+        private MyWeaponDefinition weaponDef;
         private Weapon weaponTracker;
         private bool weaponCoreBlock;
 
@@ -110,12 +114,17 @@ namespace Digi.BuildInfo.Features
             {
                 if(prevTurret != turret)
                 {
-                    weaponCoreBlock = Main.WeaponCoreAPIHandler.IsBlockWeapon(turret.BlockDefinition);
+                    weaponTracker = null;
+                    weaponBlockDef = null;
+                    weaponDef = null;
+                    weaponCoreBlock = Main.WeaponCoreAPIHandler.Weapons.ContainsKey(turret.BlockDefinition);
 
-                    if(weaponCoreBlock)
-                        weaponTracker = null;
-                    else
-                        weaponTracker = Main.ReloadTracking.GetWeaponInfo(turret);
+                    if(!weaponCoreBlock)
+                    {
+                        weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(turret.EntityId, null);
+                        weaponBlockDef = turret.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+                        weaponDef = (weaponBlockDef != null ? MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId) : null);
+                    }
 
                     prevTurret = turret;
 
@@ -145,29 +154,36 @@ namespace Digi.BuildInfo.Features
 
         private void GenerateText(IMyLargeTurretBase turret)
         {
-            var gun = (IMyGunObject<MyGunBase>)turret;
-            var magDef = gun.GunBase?.CurrentAmmoMagazineDefinition;
-
-            var inv = turret.GetInventory();
-
-            int loadedMag = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
-            int mags = gun.GetAmmunitionAmount(); // total mags in inventory (not including the one partially fired that's in the gun)
-
             if(sb == null)
-                return;
+            {
+                sb = new StringBuilder(256);
+                shadowSb = new StringBuilder(256);
+            }
 
             sb.Clear();
 
+            if(weaponDef == null)
+                return;
+
+            var gun = turret as IMyGunObject<MyGunBase>;
+            var magDef = gun?.GunBase?.CurrentAmmoMagazineDefinition;
+            if(gun?.GunBase == null || magDef == null || !gun.GunBase.HasAmmoMagazines)
+                return;
+
+            var inv = turret.GetInventory();
+            int loadedAmmo = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
+            int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
+
             if(magDef.Capacity > 1)
             {
-                if(loadedMag == 0 && mags > 0)
+                // assume one mag is loaded for simplicty sake
+                if(loadedAmmo == 0 && mags > 0)
                 {
-                    sb.Append("Loaded rounds: ").Append(loadedMag).Append(" <color=gray>(Shoot to load)").NewCleanLine();
+                    loadedAmmo = magDef.Capacity;
+                    mags -= 1;
                 }
-                else
-                {
-                    sb.Append("Loaded rounds: ").Append(loadedMag).NewCleanLine();
-                }
+
+                sb.Append("Loaded rounds: ").Append(loadedAmmo).NewCleanLine();
             }
 
             if(weaponTracker != null)
@@ -176,14 +192,14 @@ namespace Digi.BuildInfo.Features
                 var shotsLeft = weaponTracker.ShotsUntilReload;
                 var internalMag = weaponTracker.InternalMagazineCapacity;
 
-                if(weaponTracker.Reloading)
+                if(weaponTracker.ReloadUntilTick > 0)
                     sb.Color(Color.Red);
                 else if(shotsLeft <= (internalMag / 10))
                     sb.Color(new Color(255, 155, 0));
                 else if(shotsLeft <= (internalMag / 4))
                     sb.Color(Color.Yellow);
 
-                if(weaponTracker.Reloading)
+                if(weaponTracker.ReloadUntilTick > 0)
                     sb.Append("Reloading");
                 else
                     sb.Append(shotsLeft);
@@ -194,7 +210,7 @@ namespace Digi.BuildInfo.Features
             sb.Append("Inventory: ");
 
             int maxMags = 0;
-            if(inv != null && magDef != null)
+            if(inv != null)
                 maxMags = (int)Math.Floor((float)inv.MaxVolume / magDef.Volume);
 
             if(mags <= 0)
@@ -209,10 +225,20 @@ namespace Digi.BuildInfo.Features
             if(maxMags > 0)
                 sb.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(maxMags);
 
-            sb.Append(" mags").NewCleanLine();
+            sb.Append(magDef.Capacity == 1 ? " rounds" : " mags").NewCleanLine();
 
-            if(magDef != null)
-                sb.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(magDef.DisplayNameText).NewCleanLine();
+            sb.Append("\n > ").Append(magDef.DisplayNameText).NewCleanLine();
+
+            foreach(var otherMagId in weaponDef.AmmoMagazinesId)
+            {
+                if(otherMagId == magDef.Id)
+                    continue;
+
+                var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                if(otherMagDef != null)
+                    sb.Append("   ").Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(otherMagDef.DisplayNameText).NewCleanLine();
+            }
+
 
             // TODO: toggleable between showing vanilla HUD and showing this?
 
@@ -255,23 +281,22 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.TextAPI.IsEnabled)
             {
+                if(sb == null)
+                    return;
+
                 if(hudMsg == null)
                 {
-                    sb = new StringBuilder(256);
-                    shadowSb = new StringBuilder(256);
-
                     shadowMsg = new HudAPIv2.HUDMessage(shadowSb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
                     shadowMsg.InitialColor = Color.Black;
 
                     // needs to be created after to be rendered over
                     hudMsg = new HudAPIv2.HUDMessage(sb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
 
-                    if(notify != null)
-                        notify.Hide();
+                    notify?.Hide();
                 }
 
                 var textLen = hudMsg.GetTextLength();
-                var offset = new Vector2D(0, -(textLen.Y / 2));
+                var offset = new Vector2D(0, textLen.Y / -2); // align left-middle
                 hudMsg.Offset = offset;
                 shadowMsg.Offset = offset + ShadowOffset;
 
@@ -288,7 +313,7 @@ namespace Digi.BuildInfo.Features
                     return; // HACK: avoid notification glitching out if showing them continuously when game is paused
 
                 if(notify == null)
-                    notify = notify = MyAPIGateway.Utilities.CreateNotification("", int.MaxValue);
+                    notify = MyAPIGateway.Utilities.CreateNotification("", 1000);
 
                 notify.Hide(); // required since SE v1.194
                 notify.Text = sb.ToString();
@@ -306,6 +331,10 @@ namespace Digi.BuildInfo.Features
             if(!visible)
                 return;
 
+            weaponTracker = null;
+            weaponBlockDef = null;
+            weaponDef = null;
+
             visible = false;
             prevTurret = null;
             weaponTracker = null;
@@ -317,7 +346,9 @@ namespace Digi.BuildInfo.Features
             }
 
             if(notify != null)
+            {
                 notify.Hide();
+            }
         }
     }
 }

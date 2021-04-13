@@ -43,11 +43,6 @@ namespace Digi.BuildInfo.Systems
             IsRunning = false;
         }
 
-        public bool IsBlockWeapon(MyDefinitionId id)
-        {
-            return IsRunning && Weapons.ContainsKey(id);
-        }
-
         void ParseDefinitions()
         {
             var weaponSubtypes = new Dictionary<string, List<MyObjectBuilderType>>();

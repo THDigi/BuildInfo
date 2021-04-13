@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -27,116 +32,146 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
-            var weaponInfo = BuildInfoMod.Instance.ReloadTracking.GetWeaponInfo(item.Block);
-            if(weaponInfo == null)
-                return false; // likely weaponcore or other unsupported weapon
+            if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+                return false;
 
-            //var gun = (IMyGunObject<MyGunBase>)item.Block;
-            //int ammo = gun.GunBase.GetTotalAmmunitionAmount();
-
-            int ammo = weaponInfo.ShotsUntilReload;
-
-            //if(ammo == 0)
-            //{
-            //    ammo = gun.GunBase.CurrentAmmo;
-            //}
-
-            //var gunUser = item.Block as IMyGunBaseUser;
-            //if(ammo == 0 && gunUser != null && gunUser.AmmoInventory != null && gun.GunBase.HasAmmoMagazines)
-            //{
-            //    ammo = gun.GunBase.CurrentAmmo + (int)gunUser.AmmoInventory.GetItemAmount(gun.GunBase.CurrentAmmoMagazineId) * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
-            //}
-
-            Processor.AppendSingleStats(sb, item.Block);
-
-            if(weaponInfo.Reloading)
+            if(!Processor.AppendSingleStats(sb, item.Block))
             {
-                sb.Append("Reload");
+                if(item.ActionId != "ShootOnce")
+                {
+                    bool shoot = item.Block.GetValue<bool>("Shoot");
+                    sb.Append(shoot ? "Fire" : "No fire").Append('\n');
+                }
+            }
+
+            var gun = (IMyGunObject<MyGunBase>)item.Block;
+            int ammo = gun.GunBase.GetTotalAmmunitionAmount();
+            if(ammo <= gun.GunBase.CurrentAmmo)
+                ammo = gun.GunBase.CurrentAmmo + gun.GunBase.GetInventoryAmmoMagazinesCount() * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
+
+            if(ammo == 0)
+            {
+                sb.Append("NoAmmo"); // just about fits
+                return true;
+            }
+
+            var weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
+            if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
+            {
+                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                sb.Append("Rld:").TimeFormat(seconds);
             }
             else
             {
-                sb.Append(ammo);
+                sb.NumberCapped(ammo, 5);
             }
-
-            //else if(item.ActionId != "ShootOnce")
-            //{
-            //    bool shoot = item.Block.GetValueBool("Shoot");
-            //    sb.Append(shoot ? "Shoot" : "Ready");
-            //}
-
-            //sb.Append("\n");
-            //const int maxDigits = 9;
-            //int digits = (int)Math.Floor(Math.Log10(ammo) + 1);
-            //sb.Append(' ', Math.Max(maxDigits - digits, 0) * 2);
 
             return true;
         }
 
-        bool GroupShoot(StringBuilder sb, ToolbarItem item, GroupData groupData)
+        bool GroupShoot(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyUserControllableGun>())
                 return false;
+
+            bool isShootOnce = (groupToolbarItem.ActionId == "ShootOnce");
 
             int broken = 0;
             int off = 0;
             int total = 0;
             int reloading = 0;
+            int noAmmo = 0;
+            int firing = 0;
+
+            float minReloadTimeLeft = float.MaxValue;
+
             int leastAmmo = int.MaxValue;
             int mostAmmo = 0;
 
-            var reloadTracking = BuildInfoMod.Instance.ReloadTracking;
+            var weaponLookup = BuildInfoMod.Instance.ReloadTracking.WeaponLookup;
 
-            foreach(IMyUserControllableGun gun in groupData.Blocks)
+            foreach(IMyUserControllableGun gunBlock in groupData.Blocks)
             {
-                var weaponInfo = reloadTracking.GetWeaponInfo(gun);
-                if(weaponInfo == null)
-                    continue; // likely weaponcore or other unsupported weapon
+                if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
+                    continue;
 
-                if(!gun.IsFunctional)
+                if(!gunBlock.IsFunctional)
+                {
                     broken++;
+                    continue; // these should not contribute stats
+                }
 
-                if(!gun.Enabled)
+                if(!gunBlock.Enabled)
+                {
                     off++;
+                    continue; // these should not contribute stats
+                }
 
-                if(weaponInfo.Reloading)
-                    reloading++;
+                if(!isShootOnce && gunBlock.GetValue<bool>("Shoot"))
+                    firing++;
 
-                leastAmmo = Math.Min(leastAmmo, weaponInfo.ShotsUntilReload);
-                mostAmmo = Math.Max(mostAmmo, weaponInfo.ShotsUntilReload);
+                var gun = (IMyGunObject<MyGunBase>)gunBlock;
+                int ammo = gun.GunBase.GetTotalAmmunitionAmount();
+                if(ammo <= gun.GunBase.CurrentAmmo) // can be 0 when was not shot or be only loaded ammo, neither are great
+                    ammo = gun.GunBase.CurrentAmmo + gun.GunBase.GetInventoryAmmoMagazinesCount() * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
+
+                if(ammo == 0)
+                {
+                    noAmmo++;
+                    //leastAmmo = 0;
+                }
+                else
+                {
+                    var weaponInfo = weaponLookup.GetValueOrDefault(gunBlock.EntityId, null);
+                    if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
+                    {
+                        reloading++;
+
+                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                        minReloadTimeLeft = Math.Min(minReloadTimeLeft, seconds);
+                    }
+                    else
+                    {
+                        leastAmmo = Math.Min(leastAmmo, ammo);
+                        mostAmmo = Math.Max(mostAmmo, ammo);
+                    }
+                }
+
                 total++;
-
-                //int ammo = gun.GunBase.GetTotalAmmunitionAmount();
-                //leastAmmo = Math.Min(leastAmmo, ammo);
-                //mostAmmo = Math.Max(mostAmmo, ammo);
             }
-
-            //sb.Append("H: ").Append(mostAmmo);
-            //sb.Append("\nL: ").Append(leastAmmo);
 
             if(total == 0)
                 return false; // no supported weapons
 
-            Processor.AppendGroupStats(sb, broken, off);
+            if(!Processor.AppendGroupStats(sb, broken, off) && !isShootOnce)
+            {
+                if(firing == total)
+                    sb.Append("All fire");
+                else
+                    sb.NumberCapped(firing, 2).Append(" fire");
+
+                sb.Append('\n');
+            }
+
+            if(noAmmo == total)
+            {
+                sb.Append("NoAmmo"); // just about fits
+                return true;
+            }
 
             if(reloading == total)
             {
-                sb.Append("All reload");
+                sb.Append("Rld:").TimeFormat(minReloadTimeLeft);
+                return true;
             }
-            else
-            {
-                if(reloading > 0)
-                    sb.Append("R: ").Append(reloading).Append('\n');
 
-                if(mostAmmo == leastAmmo)
-                {
-                    sb.Append("A: ").Append(mostAmmo);
-                }
-                else
-                {
-                    sb.Append("L: ").Append(leastAmmo);
-                    sb.Append("\nH: ").Append(mostAmmo);
-                }
-            }
+            if(reloading > 0)
+                sb.Append("Rld:").TimeFormat(minReloadTimeLeft).Append('\n');
+
+            if(mostAmmo > leastAmmo)
+                sb.Append(Math.Min(leastAmmo, 99999)).Append('+');
+            else
+                sb.NumberCapped(mostAmmo, 5);
 
             return true;
         }

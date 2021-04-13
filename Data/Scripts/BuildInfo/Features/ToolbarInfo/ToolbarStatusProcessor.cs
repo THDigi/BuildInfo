@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const char LeftAlignChar = ' ';
         public const int LeftAlignCount = 16;
 
-        public const string CustomStatusTag = "C";
+        public const string CustomStatusTag = "c";
         public const int CustomTagPrefixSpaces = 8;
 
         public bool AnimFlip { get; private set; }
@@ -102,15 +102,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             return false;
         }
 
-        public void AppendGroupStats(StringBuilder sb, int broken, int off)
+        public bool AppendGroupStats(StringBuilder sb, int broken, int off)
         {
             if(!AnimFlip)
-                return;
+                return false;
 
             if(broken > 0)
+            {
                 sb.Append("BROKEN\n");
+                return true;
+            }
             else if(off > 0)
+            {
                 sb.Append("OFF\n");
+                return true;
+            }
+
+            return false;
         }
 
         public override void RegisterComponent()
@@ -333,9 +341,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align text to left
 
                             if(emptyLines > 0)
+                            {
                                 sb.Append(' ', CustomTagPrefixSpaces).Append(CustomStatusTag).Append('\n', TotalLines - lines);
+                            }
                             else if(Log.WorkshopId == 0) // only for local mod
-                                Log.Error($"Status for {item.ActionId} has too many lines!", Log.PRINT_MESSAGE);
+                            {
+                                Log.Error($"{(item.GroupName == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
+                            }
 
                             sb.AppendStringBuilder(StatusSB);
                         }

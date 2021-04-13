@@ -573,7 +573,7 @@ namespace Digi.BuildInfo.Features
             //      Current Input: <n> W
 
             // Conveyor sorters can be used as a base block for WeaponCore.
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -636,7 +636,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition))
+            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -644,29 +644,39 @@ namespace Digi.BuildInfo.Features
 
             info.DetailInfo_InputPower(Sink);
 
-            if(Inv == null)
+            var weaponBlockDef = block?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
+            if(weaponBlockDef == null || Inv == null)
                 return;
 
-            var weaponDef = (MyWeaponBlockDefinition)block.SlimBlock.BlockDefinition;
-
             float maxVolume;
-            if(!Utils.GetInventoryVolumeFromComponent(weaponDef, out maxVolume))
-                maxVolume = weaponDef.InventoryMaxVolume;
+            if(!Utils.GetInventoryVolumeFromComponent(weaponBlockDef, out maxVolume))
+                maxVolume = weaponBlockDef.InventoryMaxVolume;
 
             info.DetailInfo_Inventory(Inv, maxVolume);
 
-            var gun = (IMyGunObject<MyGunBase>)block;
-            int loaded = gun.GunBase.CurrentAmmo;
+            var gun = block as IMyGunObject<MyGunBase>;
+            if(gun?.GunBase?.CurrentAmmoMagazineDefinition == null || !gun.GunBase.HasAmmoMagazines)
+                return;
+
+            int loadedAmmo = gun.GunBase.CurrentAmmo;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
+            var magDef = gun.GunBase.CurrentAmmoMagazineDefinition;
 
-            info.Append("Ammo: ").Append(loaded).Append(" loaded + ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.Capacity * mags).Append(" in mags").NewLine();
+            // assume one mag is loaded for simplicty sake
+            if(loadedAmmo == 0 && mags > 0)
+            {
+                loadedAmmo = magDef.Capacity;
+                mags -= 1;
+            }
 
-            var weaponTracker = Main.ReloadTracking.GetWeaponInfo(block);
+            info.Append("Ammo: ").Append(loadedAmmo).Append(" loaded + ").Append(mags * magDef.Capacity).Append(" in mags").NewLine();
+
+            var weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(block.EntityId, null);
             if(weaponTracker != null)
             {
                 info.Append("Shots until reload: ");
 
-                if(weaponTracker.Reloading)
+                if(weaponTracker.ReloadUntilTick > 0)
                     info.Append("Reloading");
                 else
                     info.Append(weaponTracker.ShotsUntilReload);
@@ -674,7 +684,29 @@ namespace Digi.BuildInfo.Features
                 info.Append(" / ").Append(weaponTracker.InternalMagazineCapacity).NewLine();
             }
 
-            info.Append("Type: ").Append(gun.GunBase.CurrentAmmoMagazineDefinition.DisplayNameText).NewLine();
+            const int MaxMagNameLength = 26;
+
+            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
+
+            if(weaponDef == null || weaponDef.AmmoMagazinesId.Length == 1)
+            {
+                info.Append("Type: ").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).NewLine();
+            }
+            else
+            {
+                info.Append("Types:\n");
+                info.Append(">").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).NewLine();
+
+                foreach(var otherMagId in weaponDef.AmmoMagazinesId)
+                {
+                    if(otherMagId == magDef.Id)
+                        continue;
+
+                    var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                    if(otherMagDef != null)
+                        info.Append("  ").AppendMaxLength(otherMagDef.DisplayNameText, MaxMagNameLength).NewLine();
+                }
+            }
         }
 
         void Format_WeaponCore(IMyTerminalBlock block, StringBuilder info)

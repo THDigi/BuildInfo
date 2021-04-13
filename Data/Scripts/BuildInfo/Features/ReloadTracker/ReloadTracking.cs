@@ -12,8 +12,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        private readonly List<Weapon> weapons = new List<Weapon>();
-        private readonly Dictionary<long, Weapon> weaponLookup = new Dictionary<long, Weapon>();
+        public readonly Dictionary<long, Weapon> WeaponLookup = new Dictionary<long, Weapon>();
+
+        private readonly List<Weapon> weaponForUpdate = new List<Weapon>();
         private readonly MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>();
 
         public ReloadTracking(BuildInfoMod main) : base(main)
@@ -23,10 +24,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             var action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeMissileTurret), action);
-            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
-            Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallGatlingGun), action);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncher), action);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
+
+            // HACK: these block types don't support reloading
+            // Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_InteriorTurret), action);
+            // Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallGatlingGun), action);
         }
 
         public override void RegisterComponent()
@@ -35,14 +38,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         public override void UnregisterComponent()
         {
-            weapons.Clear();
-            weaponLookup.Clear();
+            weaponForUpdate.Clear();
+            WeaponLookup.Clear();
             weaponPool.Clean();
-        }
-
-        public Weapon GetWeaponInfo(IMyCubeBlock block)
-        {
-            return weaponLookup.GetValueOrDefault(block.EntityId, null);
         }
 
         private void WeaponBlockAdded(IMySlimBlock block)
@@ -50,17 +48,17 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
 
-            if(Main.WeaponCoreAPIHandler.IsBlockWeapon(block.BlockDefinition.Id))
-                return; // no tracking of weaponcore blocks
-
             var gunBlock = block.FatBlock as IMyUserControllableGun;
             if(gunBlock == null)
-                return;
+                return; // ignore weirdness
 
-            if(weaponLookup.ContainsKey(gunBlock.EntityId))
+            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition.Id))
+                return; // no tracking of weaponcore blocks
+
+            if(WeaponLookup.ContainsKey(gunBlock.EntityId))
                 return; // ignore grid merge/split if gun is already tracked
 
-            var weapon = weaponPool.Get();
+            Weapon weapon = weaponPool.Get();
             if(!weapon.Init(gunBlock))
             {
                 weapon.Clear();
@@ -68,19 +66,19 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 return;
             }
 
-            weapons.Add(weapon);
-            weaponLookup.Add(gunBlock.EntityId, weapon);
+            weaponForUpdate.Add(weapon);
+            WeaponLookup.Add(gunBlock.EntityId, weapon);
         }
 
         public override void UpdateAfterSim(int tick)
         {
-            for(int i = (weapons.Count - 1); i >= 0; --i)
+            for(int i = (weaponForUpdate.Count - 1); i >= 0; --i)
             {
-                var weapon = weapons[i];
+                Weapon weapon = weaponForUpdate[i];
                 if(!weapon.Update(tick))
                 {
-                    weapons.RemoveAtFast(i);
-                    weaponLookup.Remove(weapon.Block.EntityId);
+                    weaponForUpdate.RemoveAtFast(i);
+                    WeaponLookup.Remove(weapon.Block.EntityId);
 
                     weapon.Clear();
                     weaponPool.Return(weapon);

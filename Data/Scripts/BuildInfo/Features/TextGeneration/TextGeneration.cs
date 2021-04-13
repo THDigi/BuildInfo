@@ -805,7 +805,7 @@ namespace Digi.BuildInfo.Features
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
-            if(Main.Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.IsBlockWeapon(def.Id))
+            if(Main.Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
@@ -3127,6 +3127,12 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId);
+
+                // HACK: hardcoded conveyor support
+                if(def.Id.TypeId == typeof(MyObjectBuilder_InteriorTurret))
+                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label("Cannot be connected with conveyors!");
+                else if(def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
+                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label("UseConveyors is default off!");
             }
 
             if(turret != null)
@@ -3233,7 +3239,8 @@ namespace Digi.BuildInfo.Features
 
                     AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
-                    if(projectilesData.ShotsInBurst == 0)
+
+                    if(projectilesData.ShotsInBurst == 0 || Hardcoded.NoReloadTypes.Contains(def.Id.TypeId))
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(projectilesData.ShotsInBurst);
@@ -3276,7 +3283,8 @@ namespace Digi.BuildInfo.Features
 
                     AddLine().Label("Missiles - Fire rate").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
                         .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
-                    if(missileData.ShotsInBurst == 0)
+
+                    if(missileData.ShotsInBurst == 0 || Hardcoded.NoReloadTypes.Contains(def.Id.TypeId))
                         GetLine().Append("No reloading");
                     else
                         GetLine().Append(missileData.ShotsInBurst);
