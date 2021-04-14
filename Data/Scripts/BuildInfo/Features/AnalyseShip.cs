@@ -13,45 +13,12 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 
+using ModId = System.ValueTuple<ulong, string, string>;
+
 namespace Digi.BuildInfo.Features
 {
     public class AnalyseShip : ModComponent
     {
-        struct ModId
-        {
-            public class ModInfoComparer : IEqualityComparer<ModId>
-            {
-                public bool Equals(ModId x, ModId y)
-                {
-                    return x.ModName == y.ModName;
-                }
-
-                public int GetHashCode(ModId obj)
-                {
-                    return obj.GetHashCode();
-                }
-            }
-
-            public static readonly ModInfoComparer Comparer = new ModInfoComparer();
-
-            public readonly string ModName;
-            public readonly ulong WorkshopId;
-
-            private readonly int hashCode;
-
-            public ModId(MyModContext mod)
-            {
-                ModName = mod.ModName;
-                WorkshopId = mod.GetWorkshopID();
-                hashCode = ModName.GetHashCode();
-            }
-
-            public override int GetHashCode()
-            {
-                return hashCode;
-            }
-        }
-
         class Objects
         {
             public int Blocks;
@@ -61,8 +28,8 @@ namespace Digi.BuildInfo.Features
         // per ship data
         private readonly StringBuilder sb = new StringBuilder(512);
         private readonly Dictionary<string, Objects> dlcs = new Dictionary<string, Objects>();
-        private readonly Dictionary<ModId, Objects> mods = new Dictionary<ModId, Objects>(ModId.Comparer);
-        private readonly Dictionary<ModId, Objects> modsChangingVanilla = new Dictionary<ModId, Objects>(ModId.Comparer);
+        private readonly Dictionary<ModId, Objects> mods = new Dictionary<ModId, Objects>();
+        private readonly Dictionary<ModId, Objects> modsChangingVanilla = new Dictionary<ModId, Objects>();
 
         private readonly Dictionary<MyStringHash, string> armorSkinDLC = new Dictionary<MyStringHash, string>(MyStringHash.Comparer);
         private readonly Dictionary<MyStringHash, ModId> armorSkinMods = new Dictionary<MyStringHash, ModId>(MyStringHash.Comparer);
@@ -140,7 +107,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(!assetDef.Context.IsBaseGame)
                     {
-                        armorSkinMods.Add(assetDef.Id.SubtypeId, new ModId(assetDef.Context));
+                        armorSkinMods.Add(assetDef.Id.SubtypeId, new ModId(assetDef.Context.GetWorkshopID(), assetDef.Context.ModServiceName, assetDef.Context.ModName));
                     }
                 }
             }
@@ -203,7 +170,7 @@ namespace Digi.BuildInfo.Features
                         string dlc;
                         if(armorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
                         {
-                            var objects = GetOrAddObjects(dlcs, dlc);
+                            var objects = dlcs.GetOrAdd(dlc);
                             objects.SkinnedBlocks++;
                         }
                         else
@@ -211,7 +178,7 @@ namespace Digi.BuildInfo.Features
                             ModId modId;
                             if(armorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
                             {
-                                var objects = GetOrAddObjects(mods, modId);
+                                var objects = mods.GetOrAdd(modId);
                                 objects.SkinnedBlocks++;
                             }
                         }
@@ -221,42 +188,31 @@ namespace Digi.BuildInfo.Features
                     {
                         foreach(var dlc in def.DLCs)
                         {
-                            var objects = GetOrAddObjects(dlcs, dlc);
+                            var objects = dlcs.GetOrAdd(dlc);
                             objects.Blocks++;
                         }
                     }
 
                     if(!def.Context.IsBaseGame)
                     {
-                        var modId = new ModId(def.Context);
+                        var modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
 
                         if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
                         {
                             if(!mods.ContainsKey(modId))
                             {
-                                var objects = GetOrAddObjects(modsChangingVanilla, modId);
+                                var objects = modsChangingVanilla.GetOrAdd(modId);
                                 objects.Blocks++;
                             }
                         }
                         else
                         {
-                            var objects = GetOrAddObjects(mods, modId);
+                            var objects = mods.GetOrAdd(modId);
                             objects.Blocks++;
                         }
                     }
                 }
             }
-        }
-
-        Objects GetOrAddObjects<TKey>(Dictionary<TKey, Objects> dictionary, TKey key)
-        {
-            Objects objects;
-            if(!dictionary.TryGetValue(key, out objects))
-            {
-                objects = new Objects();
-                dictionary.Add(key, objects);
-            }
-            return objects;
         }
 
         void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
@@ -304,9 +260,9 @@ namespace Digi.BuildInfo.Features
                     var objects = kv.Value;
 
                     sb.Append("- ");
-                    if(modId.WorkshopId != 0)
-                        sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
-                    sb.Append(modId.ModName).NewLine();
+                    if(modId.Item1 != 0)
+                        sb.Append("(").Append(modId.Item1.ToString()).Append(") ");
+                    sb.Append(modId.Item3).NewLine();
 
                     sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
                         .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
@@ -329,9 +285,9 @@ namespace Digi.BuildInfo.Features
                     var objects = kv.Value;
 
                     sb.Append("- ");
-                    if(modId.WorkshopId != 0)
-                        sb.Append("(").Append(modId.WorkshopId.ToString()).Append(") ");
-                    sb.Append(modId.ModName).NewLine();
+                    if(modId.Item1 != 0)
+                        sb.Append("(").Append(modId.Item1.ToString()).Append(") ");
+                    sb.Append(modId.Item3).NewLine();
 
                     sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? "." : "s.").NewLine();
 
