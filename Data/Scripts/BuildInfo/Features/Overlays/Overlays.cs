@@ -1198,23 +1198,15 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     var internalBlock = (MyCubeBlock)slimBlock.FatBlock;
 
-                    // TODO: find a way to get a useful matrix out of the pitch part...
                     // from MyLaserAntenna.OnModelChange()
-                    //var subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
-                    //var subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
+                    var subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
+                    var subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
 
-                    //if(subpartPitch != null)
-                    //{
-                    //    pitchMatrix = subpartPitch.WorldMatrix;
-                    //    pitchMatrix.Translation = drawMatrix.Translation;
-                    //}
-
-                    // HACK: altenrate way of getting part rotation.
-                    var antenna = (IMyLaserAntenna)internalBlock;
-                    if(antenna.Other != null)
+                    if(subpartPitch != null)
                     {
-                        var dir = (antenna.Other.WorldMatrix.Translation - drawMatrix.Translation);
-                        pitchMatrix = MatrixD.CreateWorld(drawMatrix.Translation, dir, drawMatrix.Up);
+                        // NOTE: grid matrix because subpart is parented to grid, see MyLaserAntenna.SetParent()
+                        pitchMatrix = subpartPitch.PositionComp.LocalMatrixRef * internalBlock.CubeGrid.WorldMatrix;
+                        pitchMatrix.Translation = drawMatrix.Translation;
                     }
                 }
 
