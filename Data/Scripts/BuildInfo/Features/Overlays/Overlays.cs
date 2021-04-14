@@ -741,7 +741,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(weaponBlock != null)
                 accMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
             else
-                accMatrix = data.muzzleLocalMatrix * drawMatrix;
+                accMatrix = data.FirstMuzzleLocalMatrix * drawMatrix;
 
             const float PointRadius = 0.025f;
             const float AccLineThick = 0.01f;
@@ -777,10 +777,33 @@ namespace Digi.BuildInfo.Features.Overlays
             }
             #endregion Accuracy cone
 
+            #region Barrel(s) display
+            var barrelColor = new Color(155, 100, 55);
+            var muzzle = (slimBlock?.FatBlock != null ? BData_Weapon.GetAimSubpart(slimBlock.FatBlock) : null);
+            var muzzleMatrix = drawMatrix;
+            if(muzzle != null)
+                muzzleMatrix = muzzle.WorldMatrix;
+
+            foreach(var m in data.MissileMuzzles)
+            {
+                var wm = m * muzzleMatrix;
+
+                MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, barrelColor, wm.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, 10f, 0.03f, OVERLAY_BLEND_TYPE);
+            }
+
+            foreach(var m in data.ProjectileMuzzles)
+            {
+                var wm = m * muzzleMatrix;
+
+                MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, barrelColor, wm.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, 10f, 0.03f, OVERLAY_BLEND_TYPE);
+            }
+            #endregion
+
             #region Turret pitch/yaw limits
             var turretDef = def as MyLargeTurretBaseDefinition;
-            var turretData = data as BData_WeaponTurret;
-            bool isTurret = (turretDef != null && turretData != null);
+            bool isTurret = (turretDef != null && data.Turret != null);
             if(isTurret)
             {
                 const int LineEveryDegrees = 15;
@@ -810,7 +833,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     // only yaw rotation
                     var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
-                    Vector3D rotationPivot = Vector3D.Transform(turretData.PitchLocalPos, m);
+                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
 
                     // only yaw rotation but for cylinder
                     pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
@@ -831,7 +854,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     var colorYaw = (Color.Lime * 0.25f).ToVector4();
                     var colorYawLine = Color.Lime.ToVector4();
 
-                    Vector3D rotationPivot = Vector3D.Transform(turretData.YawLocalPos, drawMatrix);
+                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
 
                     var yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
 
@@ -1212,7 +1235,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 // only yaw rotation
                 var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
-                Vector3D rotationPivot = Vector3D.Transform(data.PitchLocalPos, m);
+                Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
 
                 // laser visualization
                 Color laserColor = new Color(255, 155, 0);
@@ -1243,7 +1266,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 var colorYaw = (Color.Lime * 0.25f).ToVector4();
                 var colorYawLine = Color.Lime.ToVector4();
 
-                Vector3D rotationPivot = Vector3D.Transform(data.YawLocalPos, drawMatrix);
+                Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
 
                 var yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
 
