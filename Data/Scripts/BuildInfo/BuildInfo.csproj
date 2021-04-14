@@ -286,6 +286,7 @@
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\StringBuilderExtensions.cs" />
     <Compile Include="Utilities\Utils.cs" />
+    <Compile Include="VanillaData\VanillaDefinitions.cs" />
     <Compile Include="VanillaData\Hardcoded.cs" />
     <Compile Include="VanillaData\Pressurization.cs" />
   </ItemGroup>

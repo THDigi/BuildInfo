@@ -9,6 +9,7 @@ using Digi.BuildInfo.Features.TextAPIMenu;
 using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using VRage.Game.Components;
 
@@ -22,6 +23,7 @@ namespace Digi.BuildInfo
         public Caches Caches;
         public Constants Constants;
         public DrawUtils DrawUtils;
+        public VanillaDefinitions VanillaDefinitions;
 
         // Systems
         public TextAPI TextAPI;
@@ -72,6 +74,7 @@ namespace Digi.BuildInfo
             Caches = new Caches(this);
             Constants = new Constants(this);
             DrawUtils = new DrawUtils(this);
+            VanillaDefinitions = new VanillaDefinitions(this);
 
             // Systems
             TextAPI = new TextAPI(this);
