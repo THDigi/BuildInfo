@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     /// <summary>
     /// Re-usable turret ammo tracking for determining when reload is about to happen.
     /// </summary>
-    public class Weapon
+    public class TrackedWeapon
     {
         public IMyUserControllableGun Block { get; private set; }
         public IMyGunObject<MyGunBase> Gun { get; private set; }
@@ -46,7 +46,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         private long lastShotTime;
 
-        public Weapon()
+        public TrackedWeapon()
         {
         }
 

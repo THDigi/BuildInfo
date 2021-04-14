@@ -200,7 +200,7 @@
     <Compile Include="Features\QuickMenu.cs" />
     <Compile Include="Features\RelativeDampenerInfo.cs" />
     <Compile Include="Features\ReloadTracker\ReloadTracking.cs" />
-    <Compile Include="Features\ReloadTracker\Weapon.cs" />
+    <Compile Include="Features\ReloadTracker\TrackedWeapon.cs" />
     <Compile Include="Features\ShipToolInventoryBar.cs" />
     <Compile Include="Features\InterModAPI.cs" />
     <Compile Include="Features\GridMassCompute.cs" />

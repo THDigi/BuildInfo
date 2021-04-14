@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features
         private IMyLargeTurretBase prevTurret;
         private MyWeaponBlockDefinition weaponBlockDef;
         private MyWeaponDefinition weaponDef;
-        private Weapon weaponTracker;
+        private TrackedWeapon weaponTracker;
         private bool weaponCoreBlock;
 
         private bool visible = false;

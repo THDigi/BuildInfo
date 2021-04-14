@@ -12,10 +12,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
     {
         const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
-        public readonly Dictionary<long, Weapon> WeaponLookup = new Dictionary<long, Weapon>();
+        public readonly Dictionary<long, TrackedWeapon> WeaponLookup = new Dictionary<long, TrackedWeapon>();
 
-        private readonly List<Weapon> weaponForUpdate = new List<Weapon>();
-        private readonly MyConcurrentPool<Weapon> weaponPool = new MyConcurrentPool<Weapon>();
+        private readonly List<TrackedWeapon> weaponForUpdate = new List<TrackedWeapon>();
+        private readonly MyConcurrentPool<TrackedWeapon> weaponPool = new MyConcurrentPool<TrackedWeapon>();
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(WeaponLookup.ContainsKey(gunBlock.EntityId))
                 return; // ignore grid merge/split if gun is already tracked
 
-            Weapon weapon = weaponPool.Get();
+            TrackedWeapon weapon = weaponPool.Get();
             if(!weapon.Init(gunBlock))
             {
                 weapon.Clear();
@@ -74,7 +74,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             for(int i = (weaponForUpdate.Count - 1); i >= 0; --i)
             {
-                Weapon weapon = weaponForUpdate[i];
+                TrackedWeapon weapon = weaponForUpdate[i];
                 if(!weapon.Update(tick))
                 {
                     weaponForUpdate.RemoveAtFast(i);
