@@ -20,9 +20,14 @@ namespace Digi.BuildInfo.Features
 {
     public class TurretHUD : ModComponent
     {
-        private readonly Vector2D HudPosition = new Vector2D(0.4, 0);
-        private const double TextScale = 1.2;
+        private readonly Vector2D AmmoTextPosition = new Vector2D(0.4, 0.01);
+        private const double AmmoTextScale = 1.2;
+
+        private readonly Vector2D HudTextPosition = new Vector2D(0.4, -0.01);
+        private const double HudTextScale = 0.8;
+
         private readonly Vector2D ShadowOffset = new Vector2D(0.002, -0.002);
+
         private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
 
         private IMyLargeTurretBase prevTurret;
@@ -33,10 +38,17 @@ namespace Digi.BuildInfo.Features
 
         private bool visible = false;
         private IMyHudNotification notify;
-        private HudAPIv2.HUDMessage hudMsg;
-        private HudAPIv2.HUDMessage shadowMsg;
-        private StringBuilder sb;
-        private StringBuilder shadowSb;
+        private StringBuilder notifySB;
+
+        private HudAPIv2.HUDMessage ammoText;
+        private HudAPIv2.HUDMessage ammoShadow;
+        private StringBuilder ammoSB;
+        private StringBuilder ammoShadowSB;
+
+        private HudAPIv2.HUDMessage hudText;
+        private HudAPIv2.HUDMessage hudShadow;
+        private StringBuilder hudSB;
+        private StringBuilder hudShadowSB;
 
         private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
         private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
@@ -124,6 +136,13 @@ namespace Digi.BuildInfo.Features
                         weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(turret.EntityId, null);
                         weaponBlockDef = turret.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
                         weaponDef = (weaponBlockDef != null ? MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId) : null);
+
+                        if(weaponDef == null || !weaponDef.HasAmmoMagazines())
+                        {
+                            weaponTracker = null;
+                            weaponBlockDef = null;
+                            weaponDef = null;
+                        }
                     }
 
                     prevTurret = turret;
@@ -154,14 +173,6 @@ namespace Digi.BuildInfo.Features
 
         private void GenerateText(IMyLargeTurretBase turret)
         {
-            if(sb == null)
-            {
-                sb = new StringBuilder(256);
-                shadowSb = new StringBuilder(256);
-            }
-
-            sb.Clear();
-
             if(weaponDef == null)
                 return;
 
@@ -170,141 +181,272 @@ namespace Digi.BuildInfo.Features
             if(gun?.GunBase == null || magDef == null || !gun.GunBase.HasAmmoMagazines)
                 return;
 
-            var inv = turret.GetInventory();
             int loadedAmmo = gun.GunBase.CurrentAmmo; // rounds left in currently loaded magazine, has no relation to reloading!
-            int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
+            int magsInInv = gun.GunBase.GetInventoryAmmoMagazinesCount();
+            int totalAmmo = loadedAmmo + (magsInInv * magDef.Capacity);
 
-            if(magDef.Capacity > 1)
+            // assume one mag is loaded for simplicty sake
+            if(magDef.Capacity > 1 && loadedAmmo == 0 && magsInInv > 0)
             {
-                // assume one mag is loaded for simplicty sake
-                if(loadedAmmo == 0 && mags > 0)
-                {
-                    loadedAmmo = magDef.Capacity;
-                    mags -= 1;
-                }
-
-                sb.Append("Loaded rounds: ").Append(loadedAmmo).NewCleanLine();
+                loadedAmmo = magDef.Capacity;
+                magsInInv -= 1;
             }
-
-            if(weaponTracker != null)
-            {
-                sb.Append("Shots until reload: ");
-                var shotsLeft = weaponTracker.ShotsUntilReload;
-                var internalMag = weaponTracker.InternalMagazineCapacity;
-
-                if(weaponTracker.ReloadUntilTick > 0)
-                    sb.Color(Color.Red);
-                else if(shotsLeft <= (internalMag / 10))
-                    sb.Color(new Color(255, 155, 0));
-                else if(shotsLeft <= (internalMag / 4))
-                    sb.Color(Color.Yellow);
-
-                if(weaponTracker.ReloadUntilTick > 0)
-                    sb.Append("Reloading");
-                else
-                    sb.Append(shotsLeft);
-
-                sb.ResetFormatting().Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(internalMag).NewCleanLine();
-            }
-
-            sb.Append("Inventory: ");
 
             int maxMags = 0;
+            var inv = turret.GetInventory();
             if(inv != null)
-                maxMags = (int)Math.Floor((float)inv.MaxVolume / magDef.Volume);
-
-            if(mags <= 0)
-                sb.Color(Color.Red);
-            else if(maxMags > 0 && mags <= (maxMags / 10))
-                sb.Color(new Color(255, 155, 0));
-            else if(maxMags > 0 && mags <= (maxMags / 4))
-                sb.Color(Color.Yellow);
-
-            sb.Append(mags).ResetFormatting();
-
-            if(maxMags > 0)
-                sb.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(maxMags);
-
-            sb.Append(magDef.Capacity == 1 ? " rounds" : " mags").NewCleanLine();
-
-            sb.Append("\n > ").Append(magDef.DisplayNameText).NewCleanLine();
-
-            foreach(var otherMagId in weaponDef.AmmoMagazinesId)
             {
-                if(otherMagId == magDef.Id)
-                    continue;
-
-                var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
-                if(otherMagDef != null)
-                    sb.Append("   ").Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(otherMagDef.DisplayNameText).NewCleanLine();
+                double invCap = (double)inv.MaxVolume + 0.0001f; // HACK: ensure items that fit perfectly get detected
+                maxMags = (int)Math.Floor(invCap / magDef.Volume);
             }
 
+            if(Main.TextAPI.IsEnabled)
+            {
+                #region Simple ammo indicator
+                if(ammoSB == null)
+                {
+                    ammoSB = new StringBuilder(256);
+                    ammoShadowSB = new StringBuilder(256);
+                }
 
-            // TODO: toggleable between showing vanilla HUD and showing this?
+                ammoSB.Clear();
 
-            //var grid = turret.CubeGrid;
+                if(totalAmmo == 0)
+                {
+                    ammoSB.Color(Color.Red).Append("No ammo!");
+                }
+                else if(weaponTracker != null) // supports reloading
+                {
+                    int shotsLeft = weaponTracker.ShotsUntilReload;
+                    int current = Math.Min(shotsLeft, totalAmmo);
+                    int internalMagSize = weaponTracker.InternalMagazineCapacity;
 
-            //if(!grid.IsStatic)
-            //{
-            //    sb.NewLine();
+                    if(weaponTracker.ReloadUntilTick > 0)
+                    {
+                        ammoSB.Color(Color.Red).Append("Reloading");
+                    }
+                    else
+                    {
+                        if(current <= 0)
+                            ammoSB.Color(Color.Red);
+                        else if(current <= (internalMagSize / 10))
+                            ammoSB.Color(new Color(255, 155, 0));
+                        else if(current <= (internalMagSize / 4))
+                            ammoSB.Color(Color.Yellow);
 
-            //    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
+                        ammoSB.Number(current).Append(" rounds");
+                    }
 
-            //    var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+                    totalAmmo -= current; // intended to affect the other texts
 
-            //    if(cockpit != null && cockpit.IsSameConstructAs(turret))
-            //    {
-            //        var internalCockpit = (MyCockpit)cockpit;
+                    //ammoSB.Color(Color.Gray).Append(" / ").Number(totalAmmo);
+                }
+                else
+                {
+                    // limit the max rounds only in the coloring context, as interior turret can fit thousands of magazines...
+                    int maxRounds = Math.Min(maxMags, (300 / magDef.Capacity)) * magDef.Capacity;
 
-            //        sb.Append("Dampeners: ");
+                    if(totalAmmo <= 0)
+                        ammoSB.Color(Color.Red);
+                    else if(totalAmmo > 0 && totalAmmo <= (maxRounds / 10))
+                        ammoSB.Color(new Color(255, 155, 0));
+                    else if(totalAmmo > 0 && totalAmmo <= (maxRounds / 4))
+                        ammoSB.Color(Color.Yellow);
 
-            //        if(internalCockpit.RelativeDampeningEntity != null)
-            //        {
-            //            sb.Color(Color.Lime).Append("Relative");
-            //        }
-            //        else
-            //        {
-            //            if(!cockpit.DampenersOverride)
-            //                sb.Color(Color.Red);
+                    ammoSB.Number(totalAmmo);
+                }
 
-            //            sb.Append(cockpit.DampenersOverride ? "On" : "Off");
-            //        }
+                TextAPI.CopyWithoutColor(ammoSB, ammoShadowSB);
+                #endregion
 
-            //        sb.NewLine();
-            //    }
-            //}
+                #region Other text
+                if(hudSB == null)
+                {
+                    hudSB = new StringBuilder(256);
+                    hudShadowSB = new StringBuilder(256);
+                }
 
-            TextAPI.CopyWithoutColor(sb, shadowSb);
+                hudSB.Clear();
+
+                // only show inventory if weapon can be reloaded, otherwise total ammo is shown above
+                if(weaponTracker != null)
+                    hudSB.Append("Inventory: ").Number(totalAmmo).Append(" rounds").NewCleanLine();
+
+#if false
+                if(magDef.Capacity > 1)
+                {
+                    hudSB.Append("Loaded rounds: ").Append(loadedAmmo).NewCleanLine();
+                }
+
+                if(weaponTracker != null)
+                {
+                    hudSB.Append("Shots until reload: ");
+                    int shotsLeft = weaponTracker.ShotsUntilReload;
+                    int internalMag = weaponTracker.InternalMagazineCapacity;
+
+                    //if(weaponTracker.ReloadUntilTick > 0)
+                    //    hudSB.Color(Color.Red);
+                    //else if(shotsLeft <= (internalMag / 10))
+                    //    hudSB.Color(new Color(255, 155, 0));
+                    //else if(shotsLeft <= (internalMag / 4))
+                    //    hudSB.Color(Color.Yellow);
+
+                    if(weaponTracker.ReloadUntilTick > 0)
+                        hudSB.Append("Reloading");
+                    else
+                        hudSB.Append(shotsLeft);
+
+                    hudSB.ResetFormatting().Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(internalMag).NewCleanLine();
+                }
+
+                hudSB.Append("Inventory: ");
+
+                //if(mags <= 0)
+                //    hudSB.Color(Color.Red);
+                //else if(maxMags > 0 && mags <= (maxMags / 10))
+                //    hudSB.Color(new Color(255, 155, 0));
+                //else if(maxMags > 0 && mags <= (maxMags / 4))
+                //    hudSB.Color(Color.Yellow);
+
+                hudSB.Append(magsInInv).ResetFormatting();
+
+                if(maxMags > 0)
+                    hudSB.Color(Main.TextGeneration.COLOR_UNIMPORTANT).Append(" / ").Append(maxMags);
+
+                hudSB.Append(magDef.Capacity == 1 ? " rounds" : " mags").NewCleanLine();
+#endif
+
+
+                hudSB.Append('\n');
+
+                bool hasMultipleMags = (weaponDef.AmmoMagazinesId.Length > 1);
+                if(hasMultipleMags)
+                    hudSB.Append("> ");
+
+                hudSB.Append(magDef.DisplayNameText).NewLine();
+
+                if(hasMultipleMags)
+                    hudSB.Color(Main.TextGeneration.COLOR_UNIMPORTANT);
+
+                foreach(var otherMagId in weaponDef.AmmoMagazinesId)
+                {
+                    if(otherMagId == magDef.Id)
+                        continue;
+
+                    var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                    if(otherMagDef != null)
+                        hudSB.Append("   ").Append(otherMagDef.DisplayNameText).NewLine();
+                }
+
+                //hudSB.ResetFormatting();
+
+#if false // TODO: toggleable between showing vanilla HUD and showing this?
+                //var grid = turret.CubeGrid;
+
+                //if(!grid.IsStatic)
+                //{
+                //    sb.NewLine();
+
+                //    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
+
+                //    var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+
+                //    if(cockpit != null && cockpit.IsSameConstructAs(turret))
+                //    {
+                //        var internalCockpit = (MyCockpit)cockpit;
+
+                //        sb.Append("Dampeners: ");
+
+                //        if(internalCockpit.RelativeDampeningEntity != null)
+                //        {
+                //            sb.Color(Color.Lime).Append("Relative");
+                //        }
+                //        else
+                //        {
+                //            if(!cockpit.DampenersOverride)
+                //                sb.Color(Color.Red);
+
+                //            sb.Append(cockpit.DampenersOverride ? "On" : "Off");
+                //        }
+
+                //        sb.NewLine();
+                //    }
+                //}
+#endif
+
+                TextAPI.CopyWithoutColor(hudSB, hudShadowSB);
+                #endregion
+            }
+            else
+            {
+                if(notifySB == null)
+                    notifySB = new StringBuilder(64);
+
+                notifySB.Clear().Append("Ammo: ");
+
+                if(weaponTracker != null)
+                {
+                    int shotsLeft = weaponTracker.ShotsUntilReload;
+                    int current = Math.Min(shotsLeft, totalAmmo);
+
+                    if(weaponTracker.ReloadUntilTick > 0)
+                        notifySB.Append("Reloading");
+                    else
+                        notifySB.Number(current);
+
+                    notifySB.Append(" / ").Number(totalAmmo - current);
+                }
+                else
+                {
+                    notifySB.Number(totalAmmo);
+                }
+            }
         }
 
         private void DrawHUD()
         {
             if(Main.TextAPI.IsEnabled)
             {
-                if(sb == null)
+                if(hudSB == null)
                     return;
 
-                if(hudMsg == null)
+                if(hudText == null)
                 {
-                    shadowMsg = new HudAPIv2.HUDMessage(shadowSb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
-                    shadowMsg.InitialColor = Color.Black;
+                    ammoShadow = new HudAPIv2.HUDMessage(ammoShadowSB, AmmoTextPosition, HideHud: true, Scale: AmmoTextScale, Blend: BlendTypeEnum.PostPP);
+                    ammoShadow.InitialColor = Color.Black;
+                    ammoShadow.Offset = ShadowOffset;
 
-                    // needs to be created after to be rendered over
-                    hudMsg = new HudAPIv2.HUDMessage(sb, HudPosition, HideHud: true, Scale: TextScale, Blend: BlendTypeEnum.PostPP);
+                    ammoText = new HudAPIv2.HUDMessage(ammoSB, AmmoTextPosition, HideHud: true, Scale: AmmoTextScale, Blend: BlendTypeEnum.PostPP);
+
+                    hudShadow = new HudAPIv2.HUDMessage(hudShadowSB, HudTextPosition, HideHud: true, Scale: HudTextScale, Blend: BlendTypeEnum.PostPP);
+                    hudShadow.InitialColor = Color.Black;
+                    hudShadow.Offset = ShadowOffset;
+
+                    hudText = new HudAPIv2.HUDMessage(hudSB, HudTextPosition, HideHud: true, Scale: HudTextScale, Blend: BlendTypeEnum.PostPP);
 
                     notify?.Hide();
                 }
 
-                var textLen = hudMsg.GetTextLength();
-                var offset = new Vector2D(0, textLen.Y / -2); // align left-middle
-                hudMsg.Offset = offset;
-                shadowMsg.Offset = offset + ShadowOffset;
+                Vector2D ammoTextLen = ammoText.GetTextLength();
+                Vector2D ammoTextOffset = new Vector2D(0, -ammoTextLen.Y); // pivot left-bottom
+                ammoText.Offset = ammoTextOffset;
+                ammoShadow.Offset = ammoTextOffset + ShadowOffset;
+
+                // no more pivot as the ammo is moved above this text
+                //Vector2D hudTextLen = hudText.GetTextLength();
+                //Vector2D hudTextOffset = new Vector2D(0, hudTextLen.Y / -2); // pivot left-center
+                //hudText.Offset = hudTextOffset;
+                //hudShadow.Offset = hudTextOffset + ShadowOffset;
 
                 if(!visible)
                 {
                     visible = true;
-                    hudMsg.Visible = true;
-                    shadowMsg.Visible = true;
+
+                    ammoText.Visible = true;
+                    ammoShadow.Visible = true;
+
+                    hudText.Visible = true;
+                    hudShadow.Visible = true;
                 }
             }
             else
@@ -316,13 +458,10 @@ namespace Digi.BuildInfo.Features
                     notify = MyAPIGateway.Utilities.CreateNotification("", 1000);
 
                 notify.Hide(); // required since SE v1.194
-                notify.Text = sb.ToString();
+                notify.Text = notifySB.ToString();
+                notify.Show();
 
-                if(!visible)
-                {
-                    visible = true;
-                    notify.Show();
-                }
+                visible = true;
             }
         }
 
@@ -339,10 +478,13 @@ namespace Digi.BuildInfo.Features
             prevTurret = null;
             weaponTracker = null;
 
-            if(hudMsg != null)
+            if(hudText != null)
             {
-                hudMsg.Visible = false;
-                shadowMsg.Visible = false;
+                ammoText.Visible = false;
+                ammoShadow.Visible = false;
+
+                hudText.Visible = false;
+                hudShadow.Visible = false;
             }
 
             if(notify != null)
