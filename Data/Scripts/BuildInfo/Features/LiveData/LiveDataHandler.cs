@@ -50,6 +50,12 @@ namespace Digi.BuildInfo.Features.LiveData
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
+        public void InvalidateCache()
+        {
+            BlockDataCache = null;
+            BlockDataCacheValid = true;
+        }
+
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             BlockDataCache = null;

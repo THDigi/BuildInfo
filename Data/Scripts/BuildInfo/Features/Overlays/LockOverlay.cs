@@ -120,6 +120,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     LockedOnBlock.FatBlock.OnMarkForClose -= LockedOnBlock_MarkedForClose;
 
                 Main.Overlays.SetOverlayCallFor(null);
+                Main.LiveDataHandler.InvalidateCache();
             }
 
             LockedOnBlock = block;
