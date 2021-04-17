@@ -72,8 +72,6 @@ namespace Digi.BuildInfo.Features.LiveData
                     float flameLength = 2f * ((thrustMaxLength * dummyRadius * 0.5f) * thrustDef.FlameDamageLengthScale) - dummyRadius; // from MyThrust.GetDamageCapsuleLine()
                     Vector3 endPosition = startPosition + direction * flameLength;
 
-                    LongestFlame = Math.Max(LongestFlame, flameLength);
-
                     float capsuleRadius = dummyRadius * thrustDef.FlameDamageLengthScale; // from MyThrust.ThrustDamageShapeCast()
                     Flames.Add(new FlameInfo(startPosition, endPosition, dummyRadius, capsuleRadius));
 
@@ -95,6 +93,7 @@ namespace Digi.BuildInfo.Features.LiveData
                         pastEdge = capsuleEdgesLength - penetrating; // if it penetrates more than the flame length then it's be negative
                     }
 
+                    LongestFlame = Math.Max(LongestFlame, capsuleEdgesLength);
                     LongestFlamePastEdge = Math.Max(LongestFlamePastEdge, pastEdge);
                 }
             }
