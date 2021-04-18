@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
@@ -12,10 +15,14 @@ namespace Digi.BuildInfo.Features.LiveData
     /// </summary>
     public class LiveDataHandler : ModComponent
     {
-        public BData_Base BlockDataCache;
-        public bool BlockDataCacheValid = true;
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
-        public readonly HashSet<MyDefinitionId> BlockIdsSpawned = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+        public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
+
+        BData_Base DataCache;
+        MyDefinitionId DataCacheForId;
+
+        readonly HashSet<MyDefinitionId> BlockIdsSpawned = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+        readonly Dictionary<MyObjectBuilderType, Func<BData_Base>> BDataInstancer = new Dictionary<MyObjectBuilderType, Func<BData_Base>>();
 
         public LiveDataHandler(BuildInfoMod main) : base(main)
         {
@@ -38,6 +45,10 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
 
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
+
+            // every other block type is going to use BData_Base
+
+            Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
 
         public override void RegisterComponent()
@@ -47,32 +58,80 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public override void UnregisterComponent()
         {
+            Main.BlockMonitor.BlockAdded -= BlockMonitor_BlockAdded;
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+        }
+
+        public T Get<T>(MyCubeBlockDefinition def) where T : BData_Base
+        {
+            T data = null;
+
+            if(DataCache != null && def.Id == DataCacheForId)
+            {
+                data = DataCache as T;
+                if(data != null)
+                    return data;
+            }
+            
+            BData_Base baseData;
+            if(BlockData.TryGetValue(def.Id, out baseData))
+            {
+                data = baseData as T;
+            }
+            else
+            {
+                // spawn only once per block type+subtype, to avoid spamming if it's not valid.
+                if(BlockIdsSpawned.Add(def.Id)) // returns true if it was added, false if it exists
+                    TempBlockSpawn.Spawn(def);
+
+                data = null; // will work next time
+            }
+
+            DataCacheForId = def.Id;
+            DataCache = data;
+            return data;
         }
 
         public void InvalidateCache()
         {
-            BlockDataCache = null;
-            BlockDataCacheValid = true;
+            DataCache = null;
+            DataCacheForId = default(MyDefinitionId);
         }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
-            BlockDataCache = null;
-            BlockDataCacheValid = true;
+            DataCache = null;
+            DataCacheForId = default(MyDefinitionId);
         }
 
-        private void AddType<T>(MyObjectBuilderType blockType) where T : BData_Base, new()
+        void AddType<T>(MyObjectBuilderType blockType) where T : BData_Base, new()
         {
-            Main.BlockMonitor.MonitorType(blockType, BlockAdded<T>);
+            BDataInstancer.Add(blockType, Instance<T>);
         }
 
-        private void BlockAdded<T>(IMySlimBlock slimBlock) where T : BData_Base, new()
-        {
-            if(slimBlock.FatBlock == null)
-                return;
+        static T Instance<T>() where T : BData_Base, new() => new T();
 
-            var success = BData_Base.TrySetData<T>(slimBlock.FatBlock);
+        void BlockMonitor_BlockAdded(IMySlimBlock slimBlock)
+        {
+            var block = slimBlock?.FatBlock;
+            if(block == null)
+                return; // ignore deformable armor
+
+            // separate process as it needs different kind of caching, and must happen before.
+            CheckConveyorSupport(block);
+
+            var defId = slimBlock.BlockDefinition.Id;
+            if(BlockData.ContainsKey(defId))
+                return; // already got data for this block type+subtype, ignore
+
+            bool success = false;
+            var internalBlock = (MyCubeBlock)block;
+            if(internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
+            {
+                // instance special type if available, otherwise the base one.
+                var data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
+                success = data.CheckAndAdd(block);
+            }
 
             if(success && Main.TextGeneration != null)
             {
@@ -81,6 +140,52 @@ namespace Digi.BuildInfo.Features.LiveData
                 Main.TextGeneration.CachedBuildInfoNotification.Remove(slimBlock.BlockDefinition.Id);
                 Main.TextGeneration.LastDefId = default(MyDefinitionId);
             }
+        }
+
+        Type ConveyorEndpointInterface;
+        Type ConveyorSegmentInterface;
+
+        void CheckConveyorSupport(IMyCubeBlock block)
+        {
+            if(ConveyorSupportTypes.ContainsKey(block.BlockDefinition.TypeId))
+                return;
+
+            var interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
+            bool supportsConveyors = false;
+
+            if(ConveyorEndpointInterface == null || ConveyorSegmentInterface == null)
+            {
+                for(int i = (interfaces.Length - 1); i >= 0; i--)
+                {
+                    var iface = interfaces[i];
+                    if(iface.Name == "IMyConveyorEndpointBlock")
+                    {
+                        ConveyorEndpointInterface = iface;
+                        supportsConveyors = true;
+                        break;
+                    }
+                    else if(iface.Name == "IMyConveyorSegmentBlock")
+                    {
+                        ConveyorSegmentInterface = iface;
+                        supportsConveyors = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for(int i = (interfaces.Length - 1); i >= 0; i--)
+                {
+                    var iface = interfaces[i];
+                    if(iface == ConveyorEndpointInterface || iface == ConveyorSegmentInterface)
+                    {
+                        supportsConveyors = true;
+                        break;
+                    }
+                }
+            }
+
+            ConveyorSupportTypes.Add(block.BlockDefinition.TypeId, supportsConveyors);
         }
     }
 }

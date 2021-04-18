@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         void SetLockOnBlock(IMySlimBlock block, string message = null)
         {
-            Main.Overlays.HideLabels();
+            //Main.Overlays.HideLabels();
             Main.Overlays.SetOverlayCallFor(null);
             LockedOnBlockDef = null;
 

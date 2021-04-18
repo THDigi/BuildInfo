@@ -106,6 +106,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ActionWrappers.Add(action, new ActionWrapper(action));
 
+                // TODO: add a way to revert icons... and maybe an option to remove them entirely?
+
                 if(string.IsNullOrEmpty(action.Icon))
                 {
                     // HACK: giving an icon for some iconless actions

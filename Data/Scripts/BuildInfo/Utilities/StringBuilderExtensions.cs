@@ -786,11 +786,11 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
         {
-            var modifier = Math.Round(upgrade.Modifier, 3);
+            var modifier = (float)Math.Round(upgrade.Modifier, 3);
 
             switch(upgrade.ModifierType)
             {
-                case MyUpgradeModifierType.Additive: s.Append('+').Append(modifier); break;
+                case MyUpgradeModifierType.Additive: s.Append('+').ProportionToPercent(modifier); break;
                 case MyUpgradeModifierType.Multiplicative: s.Append('x').Append(modifier); break;
                 default: s.Append(modifier).Append(' ').Append(upgrade.ModifierType.ToString()); break;
             }

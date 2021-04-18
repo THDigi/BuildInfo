@@ -27,6 +27,9 @@ using VRageMath;
 using WeaponCore.Api;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
+// FIXME: internal info not vanishing on older cached blocks text when resetting config
+// FIXME: box size gets cached from overlay lock on or something
+
 namespace Digi.BuildInfo.Features
 {
     public enum GridSplitType
@@ -730,7 +733,7 @@ namespace Digi.BuildInfo.Features
 
                 // HUD notifications don't need hiding, they expire in one frame.
 
-                Main.Overlays.HideLabels();
+                //Main.Overlays.HideLabels();
             }
         }
 
@@ -1493,6 +1496,7 @@ namespace Digi.BuildInfo.Features
             //    GetLine().ResetColor();
             //}
 
+            // TODO: cache needs clearing for this to get added/removed as creative tools are on/off
             #region Optional - creative-only stuff
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Mirroring) && (MyAPIGateway.Session.CreativeMode || MyAPIGateway.Session.EnableCopyPaste)) // HACK Session.EnableCopyPaste used as spacemaster check
             {
@@ -1506,6 +1510,84 @@ namespace Digi.BuildInfo.Features
                 }
             }
             #endregion Optional - creative-only stuff
+
+            BData_Base data = null;
+
+            #region Conveyor/interactibles count
+            // TODO: move to its own flag?
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                data = data ?? Main.LiveDataHandler.Get<BData_Base>(def);
+                if(data != null)
+                {
+                    int conveyors = (data.ConveyorPorts?.Count ?? 0);
+                    int interactiveConveyors = (data.InteractableConveyorPorts?.Count ?? 0);
+
+                    bool showConveyorPorts = data.SupportsConveyors && (conveyors > 0 || interactiveConveyors > 0);
+                    if(showConveyorPorts)
+                    {
+                        AddLine().Label("Conveyor ports").Append(conveyors + interactiveConveyors);
+
+                        if(interactiveConveyors > 0)
+                            GetLine().Append(" (").Append(interactiveConveyors).Append(" interactive)");
+
+                        // HACK: weird conveyor support mention
+                        if(def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
+                    }
+
+                    // TODO: mention that it has terminal access but does not have a terminal itself?
+                    int terminalAccess = interactiveConveyors + (data.Interactive?.Count ?? 0);
+                    if(terminalAccess > 0)
+                    {
+                        if(showConveyorPorts)
+                            GetLine().Separator().Color(COLOR_GOOD).Append("Allows terminal access");
+                        else
+                            AddLine().Color(COLOR_GOOD).Append("Allows terminal access");
+                    }
+                    else
+                    {
+                        if(showConveyorPorts)
+                            GetLine().Separator().Color(COLOR_WARNING).Append("No direct terminal access");
+                        else
+                            AddLine().Color(COLOR_WARNING).Append("No direct terminal access");
+                    }
+                }
+            }
+            #endregion Conveyor/interactibles count
+
+            #region Optional upgrades
+            // TODO: move to its own flag?
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo) && !(def is MyUpgradeModuleDefinition))
+            {
+                data = data ?? Main.LiveDataHandler.Get<BData_Base>(def);
+                if(data != null)
+                {
+                    int upgrades = (data.Upgrades?.Count ?? 0);
+                    int upgradePorts = (data.UpgradePorts?.Count ?? 0);
+
+                    if(upgrades > 0 && upgradePorts > 0)
+                    {
+                        AddLine().Label("Upgrade ports").Color(COLOR_GOOD).Append(upgradePorts);
+                        AddLine().Label(upgrades > 1 ? "Optional upgrades" : "Optional upgrade");
+                        const int SpacePadding = 32;
+
+                        for(int i = 0; i < data.Upgrades.Count; i++)
+                        {
+                            if(i > 0)
+                            {
+                                if(i % 2 == 0)
+                                    AddLine().Color(COLOR_PART).Append(' ', SpacePadding).Append("| ");
+                                else
+                                    GetLine().Separator();
+                            }
+
+                            GetLine().Color(COLOR_GOOD).Append(data.Upgrades[i]).ResetFormatting();
+                        }
+                    }
+                }
+            }
+            #endregion Optional upgrades
 
             #region Per-block info
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
@@ -1562,7 +1644,7 @@ namespace Digi.BuildInfo.Features
             string padding = (part ? (Main.TextAPI.IsEnabled ? "        | " : "       | ") : "");
 
             if(part)
-                AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Append("Part: ").Append(def.DisplayNameText);
+                AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Label("Part").Append(def.DisplayNameText);
 
             #region Mass/size/build time/deconstruct time/no models
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
@@ -1856,8 +1938,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                var data = BData_Base.TryGetDataCached<BData_Connector>(def);
-
+                var data = Main.LiveDataHandler.Get<BData_Connector>(def);
                 if(data != null)
                 {
                     if(data.CanConnect)
@@ -2260,7 +2341,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                var data = BData_Base.TryGetDataCached<BData_Thrust>(def);
+                var data = Main.LiveDataHandler.Get<BData_Thrust>(def);
                 if(data != null)
                 {
                     AddLine().Label("Flames").Append(data.Flames.Count)
@@ -2695,17 +2776,30 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
+                var data = Main.LiveDataHandler.Get<BData_Base>(def);
+                if(data != null)
                 {
-                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Upgrades: N/A");
-                }
-                else
-                {
-                    AddLine().Append("Upgrades per slot:");
-
-                    foreach(var upgrade in upgradeModule.Upgrades)
+                    if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
                     {
-                        AddLine().Append("    - ").AppendUpgrade(upgrade);
+                        AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Upgrades: (Unknown)");
+                    }
+                    else
+                    {
+                        int ports = (data.UpgradePorts?.Count ?? 0);
+
+                        if(ports == 0)
+                            AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Label("Upgrade ports").Append(0).ResetFormatting();
+                        else
+                            AddLine().Label("Upgrade ports").Append(ports);
+
+                        bool multiple = upgradeModule.Upgrades.Length > 1;
+
+                        AddLine().Label(multiple ? "Effects per port" : "Effect per port").AppendUpgrade(upgradeModule.Upgrades[0]);
+
+                        for(int i = 1; i < upgradeModule.Upgrades.Length; i++)
+                        {
+                            AddLine().Color(COLOR_PART).Append("                          | ").ResetFormatting().AppendUpgrade(upgradeModule.Upgrades[i]);
+                        }
                     }
                 }
             }
@@ -3127,12 +3221,6 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId);
-
-                // HACK: hardcoded conveyor support
-                if(def.Id.TypeId == typeof(MyObjectBuilder_InteriorTurret))
-                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label("Cannot be connected with conveyors!");
-                else if(def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
-                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label("UseConveyors is default off!");
             }
 
             if(turret != null)

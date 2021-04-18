@@ -604,8 +604,7 @@ namespace Digi.BuildInfo.Features
                 info.DetailInfo_Inventory(Inv, Hardcoded.ShipConnector_InventoryVolume(def));
             }
 
-            var data = BData_Base.TryGetDataCached<BData_Connector>(def);
-
+            var data = Main.LiveDataHandler.Get<BData_Connector>(def);
             if(data != null && data.CanConnect)
             {
                 var connector = (IMyShipConnector)block;

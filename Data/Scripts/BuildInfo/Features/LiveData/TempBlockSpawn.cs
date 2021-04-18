@@ -13,13 +13,18 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
-    public class TempBlockSpawn
+    public struct TempBlockSpawn
     {
-        public readonly bool DeleteGrid;
-        public readonly MyCubeBlockDefinition BlockDef;
-        private readonly Action<IMySlimBlock> Callback;
+        public static void Spawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
+        {
+            new TempBlockSpawn(def, deleteGridOnSpawn, callback);
+        }
 
-        public TempBlockSpawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
+        readonly bool DeleteGrid;
+        readonly MyCubeBlockDefinition BlockDef;
+        readonly Action<IMySlimBlock> Callback;
+
+        TempBlockSpawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
         {
             BlockDef = def;
             DeleteGrid = deleteGridOnSpawn;
@@ -28,9 +33,9 @@ namespace Digi.BuildInfo.Features.LiveData
             var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             var spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
-            var blockObj = GetBlockObjectBuilder(def.Id);
+            var blockOB = CreateBlockOB(def.Id);
 
-            var gridObj = new MyObjectBuilder_CubeGrid()
+            var gridOB = new MyObjectBuilder_CubeGrid()
             {
                 CreatePhysics = false,
                 GridSizeEnum = def.CubeSize,
@@ -43,18 +48,18 @@ namespace Digi.BuildInfo.Features.LiveData
                 Name = "BuildInfo_TemporaryGrid",
             };
 
-            gridObj.CubeBlocks.Add(blockObj);
+            gridOB.CubeBlocks.Add(blockOB);
 
-            MyAPIGateway.Entities.RemapObjectBuilder(gridObj);
+            MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
 
-            var grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridObj, true, SpawnCompleted);
+            var grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
             grid.IsPreview = true;
             grid.Save = false;
             grid.Flags = EntityFlags.None;
             grid.Render.Visible = false;
         }
 
-        private MyObjectBuilder_CubeBlock GetBlockObjectBuilder(MyDefinitionId defId)
+        MyObjectBuilder_CubeBlock CreateBlockOB(MyDefinitionId defId)
         {
             var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(defId);
 
@@ -86,7 +91,7 @@ namespace Digi.BuildInfo.Features.LiveData
             return blockObj;
         }
 
-        private void SpawnCompleted(IMyEntity ent)
+        void SpawnCompleted(IMyEntity ent)
         {
             var grid = ent as IMyCubeGrid;
 
