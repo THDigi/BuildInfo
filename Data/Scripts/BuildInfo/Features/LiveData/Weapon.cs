@@ -18,13 +18,25 @@ namespace Digi.BuildInfo.Features.LiveData
         public Vector3 PitchLocalPos;
     }
 
+    public struct MuzzleData
+    {
+        public readonly Matrix MatrixForSubpart;
+        public readonly Matrix MatrixForBlock;
+        public readonly bool Missile;
+
+        public MuzzleData(Matrix matrixForSubpart, Matrix matrixForBlock, bool missile = false)
+        {
+            MatrixForSubpart = matrixForSubpart;
+            MatrixForBlock = matrixForBlock;
+            Missile = missile;
+        }
+    }
+
     public class BData_Weapon : BData_Base
     {
         public Matrix FirstMuzzleLocalMatrix;
-
+        public List<MuzzleData> Muzzles;
         public TurretData Turret;
-        public List<Matrix> ProjectileMuzzles = new List<Matrix>();
-        public List<Matrix> MissileMuzzles = new List<Matrix>();
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -72,67 +84,81 @@ namespace Digi.BuildInfo.Features.LiveData
             if(muzzleEntity == null)
                 muzzleEntity = block;
 
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
-            dummies.Clear();
-            muzzleEntity.Model.GetDummies(dummies);
+            var muzzleDummies = BuildInfoMod.Instance.Caches.Dummies;
+            muzzleDummies.Clear();
+            muzzleEntity.Model.GetDummies(muzzleDummies);
 
             // from MyGunBase.LoadDummies()
-            foreach(var dummy in dummies.Values)
+            foreach(var dummy in muzzleDummies.Values)
             {
-                if(dummy.Name.ContainsIgnoreCase("muzzle_projectile"))
-                    weapon.ProjectileMuzzles.Add(dummy.Matrix);
-                else if(dummy.Name.ContainsIgnoreCase("muzzle_missile"))
-                    weapon.MissileMuzzles.Add(dummy.Matrix);
+                var isMissile = dummy.Name.ContainsIgnoreCase("muzzle_missile");
+                if(isMissile || dummy.Name.ContainsIgnoreCase("muzzle_projectile"))
+                {
+                    var matrixForBlock = (dummy.Matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    var matrixForSubpart = dummy.Matrix;
+
+                    if(weapon.Muzzles == null)
+                        weapon.Muzzles = new List<MuzzleData>();
+
+                    weapon.Muzzles.Add(new MuzzleData(matrixForSubpart, matrixForBlock, isMissile));
+                }
             }
 
-            // it doesn't seem to actually be used
-            //if(weapon.Turret != null)
-            //{
-            //    // from MyLargeBarrelBase.Init(MyEntity, MyLargeTurretBase)
-            //    var cameraDummy = dummies.GetValueOrDefault("camera", null);
-            //    if(cameraDummy != null)
-            //        weapon.Turret.CameraLocalMatrix = cameraDummy.Matrix;
-            //}
+            weapon.Muzzles?.TrimExcess();
 
-            bool hasDummies = (weapon.ProjectileMuzzles.Count > 0 || weapon.MissileMuzzles.Count > 0);
+            bool hasDummies = (weapon.Muzzles.Count > 0);
             if(!hasDummies)
             {
                 if(block is IMyLargeGatlingTurret)
                 {
                     // from MyLargeGatlingBarrel.Init()
-                    weapon.ProjectileMuzzles.Add(Matrix.CreateTranslation(Vector3.Forward * 2));
+                    var matrix = Matrix.CreateTranslation(Vector3.Forward * 2);
+                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
                 }
                 else if(block is IMyLargeMissileTurret)
                 {
                     // from MyLargeMissileBarrel.Init()
-                    weapon.ProjectileMuzzles.Add(Matrix.CreateTranslation(Vector3.Forward * 3));
+                    var matrix = Matrix.CreateTranslation(Vector3.Forward * 3);
+                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
                 }
                 else if(block is IMyLargeInteriorTurret)
                 {
                     // from MyLargeInteriorBarrel.Init()
-                    weapon.ProjectileMuzzles.Add(Matrix.CreateTranslation(Vector3.Forward * -0.8f));
+                    var matrix = Matrix.CreateTranslation(Vector3.Forward * -0.8f);
+                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
                 }
                 else if(block is IMySmallGatlingGun)
                 {
                     // from MySmallGatlingGun.GetBarrelAndMuzzle()
-                    var muzzleDummy = dummies.GetValueOrDefault("Muzzle", null);
+                    var muzzleDummy = muzzleDummies.GetValueOrDefault("Muzzle", null);
+                    Matrix matrix;
                     if(muzzleDummy != null)
-                        weapon.ProjectileMuzzles.Add(muzzleDummy.Matrix);
+                        matrix = muzzleDummy.Matrix;
                     else
-                        weapon.ProjectileMuzzles.Add(Matrix.CreateTranslation(new Vector3(0f, 0f, -1f)));
+                        matrix = Matrix.CreateTranslation(new Vector3(0f, 0f, -1f));
+
+                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
                 }
                 else if(block is IMySmallMissileLauncher)
                 {
                     // from MySmallMissileLauncher.LoadDummies()
-                    foreach(var dummy in dummies.Values)
+                    foreach(var dummy in muzzleDummies.Values)
                     {
                         if(dummy.Name.ContainsIgnoreCase("barrel"))
-                            weapon.MissileMuzzles.Add(dummy.Matrix);
+                        {
+                            var matrix = dummy.Matrix;
+                            var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                            weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                        }
                     }
                 }
             }
 
-            dummies.Clear();
+            muzzleDummies.Clear();
             return true;
         }
 

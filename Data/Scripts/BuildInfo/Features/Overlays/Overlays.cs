@@ -838,26 +838,24 @@ namespace Digi.BuildInfo.Features.Overlays
             #endregion Accuracy cone
 
             #region Barrel(s) display
-            var barrelColor = new Color(155, 100, 55);
-            var muzzle = (slimBlock?.FatBlock != null ? BData_Weapon.GetAimSubpart(slimBlock.FatBlock) : null);
-            var muzzleMatrix = drawMatrix;
-            if(muzzle != null)
-                muzzleMatrix = muzzle.WorldMatrix;
-
-            foreach(var m in data.MissileMuzzles)
+            if(data.Muzzles != null)
             {
-                var wm = m * muzzleMatrix;
+                var barrelColor = new Color(155, 100, 55);
 
-                MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, barrelColor, wm.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, 10f, 0.03f, OVERLAY_BLEND_TYPE);
-            }
+                var muzzle = (slimBlock?.FatBlock != null ? BData_Weapon.GetAimSubpart(slimBlock.FatBlock) : null);
 
-            foreach(var m in data.ProjectileMuzzles)
-            {
-                var wm = m * muzzleMatrix;
+                bool haveSubpart = (muzzle != null);
+                var muzzleMatrix = drawMatrix;
+                if(haveSubpart)
+                    muzzleMatrix = muzzle.WorldMatrix;
 
-                MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, barrelColor, wm.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, 10f, 0.03f, OVERLAY_BLEND_TYPE);
+                foreach(var md in data.Muzzles)
+                {
+                    MatrixD wm = (haveSubpart ? md.MatrixForSubpart : md.MatrixForBlock) * muzzleMatrix;
+
+                    MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, barrelColor, wm.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, 10f, 0.03f, OVERLAY_BLEND_TYPE);
+                }
             }
             #endregion
 
