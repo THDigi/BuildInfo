@@ -61,7 +61,11 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            if(IsValid(block, def))
+            // NOTE: both have to execute!
+            bool common = ComputeCommonData(block, def);
+            bool extra = IsValid(block, def);
+
+            if(common || extra)
             {
                 BuildInfoMod.Instance.LiveDataHandler.BlockData.Add(def.Id, this);
                 return true;
@@ -90,7 +94,9 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
-        protected virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
+        protected virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def) => false;
+
+        bool ComputeCommonData(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             bool hasStuff = false;
 

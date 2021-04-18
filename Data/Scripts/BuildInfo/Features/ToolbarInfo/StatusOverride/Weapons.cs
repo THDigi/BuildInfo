@@ -155,6 +155,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(noAmmo == total)
             {
+                // TODO: what if the weapon has multiple magazines and it's only out of this type but has other types in inv?
                 sb.Append("NoAmmo"); // just about fits
                 return true;
             }

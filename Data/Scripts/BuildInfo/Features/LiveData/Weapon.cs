@@ -28,10 +28,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            bool baseValid = base.IsValid(block, def);
-
             if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
-                return baseValid; // ignore weaponcore blocks
+                return false; // ignore weaponcore blocks
 
             var gun = (IMyGunObject<MyGunBase>)block;
             FirstMuzzleLocalMatrix = gun.GunBase.GetMuzzleLocalMatrix();
