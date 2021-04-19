@@ -1373,7 +1373,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     if((info.Flags & ConveyorFlags.Small) != 0)
                         DrawPort("       Small\nConveyor port", matrix, color);
                     else
-                        DrawPort("       Large\nConveyor port", matrix, color);
+                        DrawPort("       Large\nConveyor port", matrix, color, largeShip: true);
                 }
             }
 
@@ -1388,7 +1388,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     if((info.Flags & ConveyorFlags.Small) != 0)
                         DrawPort("        Interactive\nSmall conveyor port", matrix, color);
                     else
-                        DrawPort("        Interactive\nLarge conveyor port", matrix, color);
+                        DrawPort("        Interactive\nLarge conveyor port", matrix, color, largeShip: true);
                 }
             }
 
@@ -1420,11 +1420,12 @@ namespace Digi.BuildInfo.Features.Overlays
             //        foreach(var kv in data.Dummies)
             //        {
             //            var matrix = kv.Item2 * drawMatrix;
-            //            DrawPort(kv.Item1, matrix, Color.Red, textScale);
+            //            DrawPort(kv.Item1, matrix, Color.Red);
             //        }
             //    }
             //}
 
+            // NOTE: not using classic labels (one per color type) because some ports are small, others large...
             if(AimedPorts.Count > 0)
             {
                 float scale = (float)(textScale * DepthRatio);
@@ -1456,7 +1457,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         readonly List<PortInfo> AimedPorts = new List<PortInfo>();
 
-        private void DrawPort(string message, MatrixD portMatrix, Color color)
+        private void DrawPort(string message, MatrixD portMatrix, Color color, bool largeShip = false)
         {
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             float lineWidth = 0.01f;
@@ -1464,25 +1465,34 @@ namespace Digi.BuildInfo.Features.Overlays
             var closeRenderMatrix = portMatrix;
 
             // see through walls
-            //if(!MyAPIGateway.CubeBuilder.UseTransparency || EquipmentMonitor.AimedBlock != null || LockOverlay.LockedOnBlock != null)
-            {
-                //var posOverlay = camMatrix.Translation + ((closeRenderMatrix.Translation - camMatrix.Translation) * DepthRatio);
-                //
-                //MatrixD.Rescale(ref closeRenderMatrix, DepthRatio);
-                //closeRenderMatrix.Translation = posOverlay;
-                //
-                //lineWidth = (float)(lineWidth * DepthRatio);
-
-                float scale = ConvertToAlwaysOnTop(ref closeRenderMatrix);
-                lineWidth *= scale;
-            }
+            float scale = ConvertToAlwaysOnTop(ref closeRenderMatrix);
+            lineWidth *= scale;
 
             var bb = new BoundingBoxD(-Vector3D.Half, Vector3D.Half);
             Color colorFace = color * 0.1f;
             Color colorLine = color;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorFace, MySimpleObjectRasterizer.Solid, 1, lineWidth, OVERLAY_SQUARE_MATERIAL, null, blendType: OVERLAY_BLEND_TYPE);
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
+            // TODO: some kind of large conveyor indicator?
+            //if(largeShip)
+            //{
+            //    var middleMatrix = closeRenderMatrix;
+            //    var originalScale = middleMatrix.Scale;
+            //    var scaleVec = Vector3D.One;
+            //
+            //    if(originalScale.Z < originalScale.X && originalScale.Z < originalScale.Y)
+            //        scaleVec.Y = 0.05; // Z is thin, pick either Y or X
+            //    else if(originalScale.X < originalScale.Y && originalScale.X < originalScale.Z)
+            //        scaleVec.Z = 0.05; // X is thin, pick either Y or Z
+            //    else if(originalScale.Y < originalScale.X && originalScale.Y < originalScale.Z)
+            //        scaleVec.X = 0.05; // Y is thin, pick either X or Z
+            //
+            //    MatrixD.Rescale(ref middleMatrix, ref scaleVec);
+            //    MySimpleObjectDraw.DrawTransparentBox(ref middleMatrix, ref bb, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            //}
 
             if(Main.TextAPI.IsEnabled)
             {
@@ -1553,12 +1563,12 @@ namespace Digi.BuildInfo.Features.Overlays
             var textWorldPos = start + direction * lineHeight;
 
             // has issue on always-on-top labels
-            if(!alwaysOnTop)
-            {
-                var sphere = new BoundingSphereD(textWorldPos, 0.01f);
-                if(!MyAPIGateway.Session.Camera.IsInFrustum(ref sphere))
-                    return;
-            }
+            //if(!alwaysOnTop)
+            //{
+            //    var sphere = new BoundingSphereD(textWorldPos, 0.01f);
+            //    if(!MyAPIGateway.Session.Camera.IsInFrustum(ref sphere))
+            //        return;
+            //}
 
             Vector3D textDir = cm.Right;
             if(autoAlign && textDir.Dot(direction) <= -0.8f)
