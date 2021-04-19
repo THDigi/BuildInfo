@@ -893,6 +893,14 @@ namespace Digi.BuildInfo.Features.Overlays
                     var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
                     Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
 
+                    // camera position indicator
+                    {
+                        var colorCamera = new Color(55, 155, 255);
+                        var colorCameraVec = colorCamera.ToVector4();
+                        var viewMatrix = data.Turret.CameraMatrix * pitchMatrix;
+                        MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, colorCameraVec, viewMatrix.Translation, viewMatrix.Forward, 3, 0.01f, OVERLAY_BLEND_TYPE);
+                    }
+
                     // only yaw rotation but for cylinder
                     pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
 

@@ -16,6 +16,7 @@ namespace Digi.BuildInfo.Features.LiveData
     {
         public Vector3 YawLocalPos;
         public Vector3 PitchLocalPos;
+        public Matrix CameraMatrix;
     }
 
     public struct MuzzleData
@@ -52,15 +53,15 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 if(block is IMyLargeGatlingTurret)
                 {
-                    valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel");
+                    valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
                 }
                 else if(block is IMyLargeMissileTurret)
                 {
-                    valid = GetTurretData(block, out Turret, "MissileTurretBase1", "MissileTurretBarrels");
+                    valid = GetTurretData(block, out Turret, "MissileTurretBase1", "MissileTurretBarrels", null, 0.5f, 1f);
                 }
                 else if(block is IMyLargeInteriorTurret)
                 {
-                    valid = GetTurretData(block, out Turret, "InteriorTurretBase1", "InteriorTurretBase2");
+                    valid = GetTurretData(block, out Turret, "InteriorTurretBase1", "InteriorTurretBase2", null, 0.2f, 0.45f);
                 }
                 else
                 {
@@ -162,7 +163,7 @@ namespace Digi.BuildInfo.Features.LiveData
             return true;
         }
 
-        public static bool GetTurretData(IMyCubeBlock block, out TurretData turret, string yawName, string pitchName, string barrelName = null)
+        public static bool GetTurretData(IMyCubeBlock block, out TurretData turret, string yawName, string pitchName, string barrelName = null, float camForwardOffset = 0f, float camUpOffset = 0f)
         {
             turret = new TurretData();
 
@@ -187,6 +188,22 @@ namespace Digi.BuildInfo.Features.LiveData
             if(subpartYaw.TryGetSubpart(pitchName, out subpartPitch))
             {
                 turret.PitchLocalPos = Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+
+                // from MyLargeTurretBase.GetCameraDummy()
+                var pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
+                pitchDummies.Clear();
+                ((IMyEntity)subpartPitch).Model.GetDummies(pitchDummies);
+                IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault("camera", null);
+
+                // from MyLargeTurretBase.GetViewMatrix() (without the invert)
+                if(cameraDummy != null)
+                {
+                    turret.CameraMatrix = Matrix.Normalize(cameraDummy.Matrix);
+                }
+                else
+                {
+                    turret.CameraMatrix = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
+                }
             }
             else
             {
