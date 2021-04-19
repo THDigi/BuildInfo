@@ -95,8 +95,12 @@ namespace Digi.BuildInfo.Features.LiveData
                 var isMissile = dummy.Name.ContainsIgnoreCase("muzzle_missile");
                 if(isMissile || dummy.Name.ContainsIgnoreCase("muzzle_projectile"))
                 {
-                    var matrixForBlock = (dummy.Matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
                     var matrixForSubpart = dummy.Matrix;
+                    var matrixForBlock = (matrixForSubpart * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+
+                    // HACK: I dunno, it just worksTM
+                    if(block is IMyLargeInteriorTurret)
+                        matrixForBlock = matrixForSubpart;
 
                     if(weapon.Muzzles == null)
                         weapon.Muzzles = new List<MuzzleData>();
