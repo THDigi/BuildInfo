@@ -411,6 +411,8 @@ namespace Digi.ComponentLib
             {
                 list.Add(component);
             }
+
+            list.Sort((a, b) => a.UpdateOrder.CompareTo(b.UpdateOrder));
         }
     }
 }

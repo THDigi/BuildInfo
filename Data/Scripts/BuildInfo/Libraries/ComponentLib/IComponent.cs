@@ -6,6 +6,7 @@
     public interface IComponent
     {
         UpdateFlags UpdateMethods { get; set; }
+        int UpdateOrder { get; set; }
         UpdateFlags CurrentUpdateMethods { get; }
         void RegisterComponent();
         void UnregisterComponent();

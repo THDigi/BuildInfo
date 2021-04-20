@@ -31,6 +31,8 @@ namespace Digi.ComponentLib
             }
         }
 
+        public int UpdateOrder { get; set; }
+
         public UpdateFlags CurrentUpdateMethods { get; private set; } = UpdateFlags.NONE;
 
         private UpdateFlags _newFlags = UpdateFlags.INVALID;
