@@ -200,7 +200,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public void CycleOverlayMode(bool showNotification = true)
         {
-            int mode = 0;
+            int mode = DrawOverlay;
             if(++mode >= OverlayNames.Length)
                 mode = 0;
 
