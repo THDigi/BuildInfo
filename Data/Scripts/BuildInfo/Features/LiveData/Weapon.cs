@@ -16,7 +16,8 @@ namespace Digi.BuildInfo.Features.LiveData
     {
         public Vector3 YawLocalPos;
         public Vector3 PitchLocalPos;
-        public Matrix CameraMatrix;
+        public Matrix CameraForSubpart;
+        public Matrix CameraForBlock;
     }
 
     public struct MuzzleData
@@ -91,72 +92,119 @@ namespace Digi.BuildInfo.Features.LiveData
 
             weapon.Muzzles = new List<MuzzleData>();
 
+            var gun = (IMyGunObject<MyGunBase>)block;
+            bool hasProjectileAmmo = gun.GunBase.HasProjectileAmmoDefined;
+            bool hasMissileAmmo = gun.GunBase.HasMissileAmmoDefined;
+
+            bool hasProjectileBarrel = false;
+            bool hasMissileBarrel = false;
+
             // from MyGunBase.LoadDummies()
             foreach(var dummy in muzzleDummies.Values)
             {
-                var isMissile = dummy.Name.ContainsIgnoreCase("muzzle_missile");
-                if(isMissile || dummy.Name.ContainsIgnoreCase("muzzle_projectile"))
+                var isMissile = hasMissileAmmo && dummy.Name.ContainsIgnoreCase("muzzle_missile");
+                if(isMissile || (hasProjectileAmmo && dummy.Name.ContainsIgnoreCase("muzzle_projectile")))
                 {
                     var matrixForSubpart = Matrix.Normalize(dummy.Matrix);
-                    var matrixForBlock = (matrixForSubpart * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                    var matrixForBlock = (matrixForSubpart * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled; // to world then to block local
 
                     // HACK: I dunno, it just worksTM
                     if(block is IMyLargeInteriorTurret)
                         matrixForBlock = matrixForSubpart;
 
                     weapon.Muzzles.Add(new MuzzleData(matrixForSubpart, matrixForBlock, isMissile));
+
+                    if(isMissile)
+                        hasMissileBarrel = true;
+                    else
+                        hasProjectileBarrel = true;
                 }
             }
 
-            bool hasDummies = (weapon.Muzzles.Count > 0);
-            if(!hasDummies)
+            if(weapon.Muzzles.Count == 0)
             {
                 if(block is IMyLargeGatlingTurret)
                 {
-                    // from MyLargeGatlingBarrel.Init()
-                    var matrix = Matrix.CreateTranslation(Vector3.Forward * 2);
-                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
-                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                    if(hasProjectileAmmo) // only add if the weapon can use it
+                    {
+                        // from MyLargeGatlingBarrel.Init()
+                        var matrix = Matrix.CreateTranslation(Vector3.Forward * 2);
+                        var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                        weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                        hasProjectileBarrel = true;
+                    }
                 }
                 else if(block is IMyLargeMissileTurret)
                 {
-                    // from MyLargeMissileBarrel.Init()
-                    var matrix = Matrix.CreateTranslation(Vector3.Forward * 3);
-                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
-                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                    if(hasMissileAmmo)
+                    {
+                        // from MyLargeMissileBarrel.Init()
+                        var matrix = Matrix.CreateTranslation(Vector3.Forward * 3);
+                        var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                        weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                        hasMissileBarrel = true;
+                    }
                 }
                 else if(block is IMyLargeInteriorTurret)
                 {
-                    // from MyLargeInteriorBarrel.Init()
-                    var matrix = Matrix.CreateTranslation(Vector3.Forward * -0.8f);
-                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
-                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                    if(hasProjectileAmmo)
+                    {
+                        // from MyLargeInteriorBarrel.Init()
+                        var matrix = Matrix.CreateTranslation(Vector3.Forward * -0.8f);
+                        var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                        weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                        hasProjectileBarrel = true;
+                    }
                 }
                 else if(block is IMySmallGatlingGun)
                 {
-                    // from MySmallGatlingGun.GetBarrelAndMuzzle()
-                    var muzzleDummy = muzzleDummies.GetValueOrDefault("Muzzle", null);
-                    Matrix matrix;
-                    if(muzzleDummy != null)
-                        matrix = Matrix.Normalize(muzzleDummy.Matrix);
-                    else
-                        matrix = Matrix.CreateTranslation(new Vector3(0f, 0f, -1f));
+                    if(hasProjectileAmmo)
+                    {
+                        // from MySmallGatlingGun.GetBarrelAndMuzzle()
+                        var muzzleDummy = muzzleDummies.GetValueOrDefault("Muzzle", null);
+                        Matrix matrix;
+                        if(muzzleDummy != null)
+                            matrix = Matrix.Normalize(muzzleDummy.Matrix);
+                        else
+                            matrix = Matrix.CreateTranslation(new Vector3(0f, 0f, -1f));
 
-                    var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
-                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                        var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                        weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
+                        hasProjectileBarrel = true;
+                    }
                 }
                 else if(block is IMySmallMissileLauncher)
                 {
-                    // from MySmallMissileLauncher.LoadDummies()
-                    foreach(var dummy in muzzleDummies.Values)
+                    if(hasMissileAmmo)
                     {
-                        if(dummy.Name.ContainsIgnoreCase("barrel"))
+                        // from MySmallMissileLauncher.LoadDummies()
+                        foreach(var dummy in muzzleDummies.Values)
                         {
-                            var matrix = Matrix.Normalize(dummy.Matrix);
-                            var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
-                            weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                            if(dummy.Name.ContainsIgnoreCase("barrel"))
+                            {
+                                var matrix = Matrix.Normalize(dummy.Matrix);
+                                var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+                                weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                                hasMissileBarrel = true;
+                            }
                         }
                     }
+                }
+            }
+
+            if(!hasProjectileBarrel || !hasMissileBarrel)
+            {
+                var matrix = Matrix.Identity;
+                var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
+
+                if(hasMissileAmmo && !hasMissileBarrel)
+                {
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
+                }
+
+                if(hasProjectileAmmo && !hasProjectileBarrel)
+                {
+                    weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock));
                 }
             }
 
@@ -200,6 +248,8 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 turret.PitchLocalPos = Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
 
+                // FIXME: camera dummy is ignored on engineer turret block?!
+
                 // from MyLargeTurretBase.GetCameraDummy()
                 var pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
                 pitchDummies.Clear();
@@ -208,13 +258,11 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 // from MyLargeTurretBase.GetViewMatrix() (without the invert)
                 if(cameraDummy != null)
-                {
-                    turret.CameraMatrix = Matrix.Normalize(cameraDummy.Matrix);
-                }
+                    turret.CameraForSubpart = Matrix.Normalize(cameraDummy.Matrix);
                 else
-                {
-                    turret.CameraMatrix = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
-                }
+                    turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
+
+                turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
             }
             else
             {
@@ -234,36 +282,27 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public static IMyEntity GetAimSubpart(IMyCubeBlock block)
         {
-            if(block is IMyLargeTurretBase)
-            {
-                if(block is IMyLargeGatlingTurret)
-                    return GetSubpart(block, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel");
-                else if(block is IMyLargeMissileTurret)
-                    return GetSubpart(block, "MissileTurretBase1", "MissileTurretBarrels");
-                else if(block is IMyLargeInteriorTurret)
-                    return GetSubpart(block, "InteriorTurretBase1", "InteriorTurretBase2");
-                else
-                {
-                    Log.Info($"WARNING: New kind of turret: {block.BlockDefinition.ToString()}");
-                    return block;
-                }
-            }
-            else
-            {
-                if(block is IMySmallGatlingGun)
-                    return GetSubpart(block, barrelName: "Barrel");
-                else
-                    return block;
-            }
+            if(block is IMyLargeGatlingTurret)
+                return GetSubpart(block, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel");
+            else if(block is IMyLargeMissileTurret)
+                return GetSubpart(block, "MissileTurretBase1", "MissileTurretBarrels");
+            else if(block is IMyLargeInteriorTurret)
+                return GetSubpart(block, "InteriorTurretBase1", "InteriorTurretBase2");
+            else if(block is IMySmallGatlingGun)
+                return GetSubpart(block, barrelName: "Barrel");
+            else if(block is IMySmallMissileLauncher)
+                return block;
+
+            Log.Info($"WARNING: New unrecognized type of weapon block: {block.BlockDefinition.ToString()}");
+            return block;
         }
 
-        private static IMyEntity GetSubpart(IMyCubeBlock block, string yawName = null, string pitchName = null, string barrelName = null)
+        static IMyEntity GetSubpart(IMyCubeBlock block, string yawName = null, string pitchName = null, string barrelName = null)
         {
-            bool isTurret = yawName != null && pitchName != null;
-
-            MyEntitySubpart subpartPitch = null;
             MyEntitySubpart subpartYaw = null;
+            MyEntitySubpart subpartPitch = null;
 
+            bool isTurret = (yawName != null && pitchName != null);
             if(isTurret)
             {
                 if(!block.TryGetSubpart(yawName, out subpartYaw))
