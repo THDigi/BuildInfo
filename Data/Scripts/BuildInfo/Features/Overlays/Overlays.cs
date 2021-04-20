@@ -29,7 +29,8 @@ namespace Digi.BuildInfo.Features.Overlays
 {
     public class Overlays : ModComponent
     {
-        public int DrawOverlay = 0;
+        public int DrawOverlay { get; private set; }
+
         private OverlayCall SelectedOverlayCall;
         private IMyHudNotification OverlayNotification;
 
@@ -52,7 +53,7 @@ namespace Digi.BuildInfo.Features.Overlays
         }
 
         public delegate void OverlayCall(MyCubeBlockDefinition def, MatrixD drawMatrix);
-        public readonly Dictionary<MyObjectBuilderType, OverlayCall> drawLookup
+        public readonly Dictionary<MyObjectBuilderType, OverlayCall> DrawLookup
                   = new Dictionary<MyObjectBuilderType, OverlayCall>(MyObjectBuilderType.Comparer);
 
         #region Constants
@@ -174,7 +175,7 @@ namespace Digi.BuildInfo.Features.Overlays
             SelectedOverlayCall = null;
 
             if(def != null)
-                SelectedOverlayCall = drawLookup.GetValueOrDefault(def.Id.TypeId, null);
+                SelectedOverlayCall = DrawLookup.GetValueOrDefault(def.Id.TypeId, null);
 
             //HideLabels();
         }
@@ -198,8 +199,16 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public void CycleOverlayMode(bool showNotification = true)
         {
-            if(++DrawOverlay >= OverlayNames.Length)
-                DrawOverlay = 0;
+            int mode = 0;
+            if(++mode >= OverlayNames.Length)
+                mode = 0;
+
+            SetOverlayMode(mode, showNotification);
+        }
+
+        public void SetOverlayMode(int mode, bool showNotification = true)
+        {
+            DrawOverlay = mode;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, DrawOverlay > 0);
             //HideLabels();
@@ -218,7 +227,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public void SetOverlayCallFor(MyDefinitionId? defId)
         {
             if(defId.HasValue)
-                SelectedOverlayCall = drawLookup.GetValueOrDefault(defId.Value.TypeId, null);
+                SelectedOverlayCall = DrawLookup.GetValueOrDefault(defId.Value.TypeId, null);
             else
                 SelectedOverlayCall = null;
         }
@@ -260,7 +269,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void Add(MyObjectBuilderType blockType, OverlayCall call)
         {
-            drawLookup.Add(blockType, call);
+            DrawLookup.Add(blockType, call);
         }
 
         public override void UpdateDraw()
@@ -313,6 +322,14 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
                 else // using welder/grinder or lockedOnBlock.
                 {
+                    if(aimedBlock == null)
+                    {
+                        SetOverlayMode(0);
+                        throw new Exception($"Unexpected case: aimedBlock=false, LockedOnBlock={(Main.LockOverlay.LockedOnBlock != null).ToString()}, " +
+                                            $"IsCubeBuilder={Main.EquipmentMonitor.IsCubeBuilder.ToString()}, Tool={Main.EquipmentMonitor.ToolDefId.ToString()}, " +
+                                            $"CubeBuilderActive={MyCubeBuilder.Static.IsActivated.ToString()}");
+                    }
+
                     Matrix m;
                     Vector3D center;
                     aimedBlock.Orientation.GetMatrix(out m);

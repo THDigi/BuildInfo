@@ -821,7 +821,7 @@ namespace Digi.BuildInfo.Features
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
-            if(Main.Overlays.drawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(Main.Overlays.DrawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
