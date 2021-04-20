@@ -45,7 +45,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 return false; // ignore weaponcore blocks
 
             var gun = (IMyGunObject<MyGunBase>)block;
-            FirstMuzzleLocalMatrix = gun.GunBase.GetMuzzleLocalMatrix();
+            FirstMuzzleLocalMatrix = Matrix.Normalize(gun.GunBase.GetMuzzleLocalMatrix());
 
             bool valid = true;
 
@@ -89,27 +89,24 @@ namespace Digi.BuildInfo.Features.LiveData
             muzzleDummies.Clear();
             muzzleEntity.Model.GetDummies(muzzleDummies);
 
+            weapon.Muzzles = new List<MuzzleData>();
+
             // from MyGunBase.LoadDummies()
             foreach(var dummy in muzzleDummies.Values)
             {
                 var isMissile = dummy.Name.ContainsIgnoreCase("muzzle_missile");
                 if(isMissile || dummy.Name.ContainsIgnoreCase("muzzle_projectile"))
                 {
-                    var matrixForSubpart = dummy.Matrix;
+                    var matrixForSubpart = Matrix.Normalize(dummy.Matrix);
                     var matrixForBlock = (matrixForSubpart * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
 
                     // HACK: I dunno, it just worksTM
                     if(block is IMyLargeInteriorTurret)
                         matrixForBlock = matrixForSubpart;
 
-                    if(weapon.Muzzles == null)
-                        weapon.Muzzles = new List<MuzzleData>();
-
                     weapon.Muzzles.Add(new MuzzleData(matrixForSubpart, matrixForBlock, isMissile));
                 }
             }
-
-            weapon.Muzzles?.TrimExcess();
 
             bool hasDummies = (weapon.Muzzles.Count > 0);
             if(!hasDummies)
@@ -141,7 +138,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     var muzzleDummy = muzzleDummies.GetValueOrDefault("Muzzle", null);
                     Matrix matrix;
                     if(muzzleDummy != null)
-                        matrix = muzzleDummy.Matrix;
+                        matrix = Matrix.Normalize(muzzleDummy.Matrix);
                     else
                         matrix = Matrix.CreateTranslation(new Vector3(0f, 0f, -1f));
 
@@ -155,7 +152,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     {
                         if(dummy.Name.ContainsIgnoreCase("barrel"))
                         {
-                            var matrix = dummy.Matrix;
+                            var matrix = Matrix.Normalize(dummy.Matrix);
                             var matrixForBlock = (matrix * muzzleEntity.WorldMatrix) * block.WorldMatrixInvScaled;
                             weapon.Muzzles.Add(new MuzzleData(matrix, matrixForBlock, missile: true));
                         }
@@ -164,7 +161,17 @@ namespace Digi.BuildInfo.Features.LiveData
             }
 
             muzzleDummies.Clear();
-            return true;
+
+            if(weapon.Muzzles.Count == 0)
+            {
+                weapon.Muzzles = null;
+                return false;
+            }
+            else
+            {
+                weapon.Muzzles.TrimExcess();
+                return true;
+            }
         }
 
         public static bool GetTurretData(IMyCubeBlock block, out TurretData turret, string yawName, string pitchName, string barrelName = null, float camForwardOffset = 0f, float camUpOffset = 0f)
@@ -236,7 +243,10 @@ namespace Digi.BuildInfo.Features.LiveData
                 else if(block is IMyLargeInteriorTurret)
                     return GetSubpart(block, "InteriorTurretBase1", "InteriorTurretBase2");
                 else
+                {
                     Log.Info($"WARNING: New kind of turret: {block.BlockDefinition.ToString()}");
+                    return block;
+                }
             }
             else
             {
@@ -245,8 +255,6 @@ namespace Digi.BuildInfo.Features.LiveData
                 else
                     return block;
             }
-
-            return null;
         }
 
         private static IMyEntity GetSubpart(IMyCubeBlock block, string yawName = null, string pitchName = null, string barrelName = null)
