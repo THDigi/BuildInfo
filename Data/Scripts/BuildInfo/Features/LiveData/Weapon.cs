@@ -36,7 +36,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public class BData_Weapon : BData_Base
     {
-        public Matrix FirstMuzzleLocalMatrix;
         public List<MuzzleData> Muzzles;
         public TurretData Turret;
 
@@ -44,9 +43,6 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
                 return false; // ignore weaponcore blocks
-
-            var gun = (IMyGunObject<MyGunBase>)block;
-            FirstMuzzleLocalMatrix = Matrix.Normalize(gun.GunBase.GetMuzzleLocalMatrix());
 
             bool valid = true;
 

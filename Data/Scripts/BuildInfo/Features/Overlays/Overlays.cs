@@ -808,6 +808,7 @@ namespace Digi.BuildInfo.Features.Overlays
             bool hasMuzzles = (data.Muzzles != null && data.Muzzles.Count > 0);
 
             #region Accuracy cone
+            if(hasMuzzles)
             {
                 MyAmmoDefinition ammoDef = weaponBlock?.GunBase?.CurrentAmmoDefinition;
                 if(ammoDef == null)
@@ -832,16 +833,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Green, barrelMatrix.Translation, barrelMatrix.Up, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
                 //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Blue, barrelMatrix.Translation, barrelMatrix.Forward, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
 
-                MatrixD accMatrix;
-                if(hasMuzzles)
-                {
-                    var md = data.Muzzles[0];
-                    accMatrix = (muzzleEntity != null ? md.MatrixForSubpart : md.MatrixForBlock) * barrelMatrix;
-                }
-                else
-                {
-                    accMatrix = data.FirstMuzzleLocalMatrix * barrelMatrix;
-                }
+                var md = data.Muzzles[0];
+                MatrixD accMatrix = (muzzleEntity != null ? md.MatrixForSubpart : md.MatrixForBlock) * barrelMatrix;
 
                 const float AccLineThick = 0.01f;
                 const int ConeWireDivideRatio = 36;
@@ -886,33 +879,29 @@ namespace Digi.BuildInfo.Features.Overlays
             }
             #endregion Accuracy cone
 
-            #region Barrel(s) display
+            #region Barrels
             if(hasMuzzles)
             {
-                var barrelColor = Vector4.One; // white
-                var flashColor = new Vector4(10, 10, 10, 1); // just like hand rifle
+                Vector4 barrelColor = Vector4.One; // white
+                Vector4 flashColor = new Vector4(10, 10, 10, 1); // just like hand rifle
 
                 if(muzzleEntity == null && weaponBlock != null)
                     muzzleEntity = BData_Weapon.GetAimSubpart(slimBlock.FatBlock);
 
                 bool haveSubpart = (muzzleEntity != null);
-                var muzzleMatrix = drawMatrix;
-                if(haveSubpart)
-                    muzzleMatrix = muzzleEntity.WorldMatrix;
 
                 foreach(var md in data.Muzzles)
                 {
-                    MatrixD wm = (haveSubpart ? md.MatrixForSubpart : md.MatrixForBlock) * muzzleMatrix;
+                    MatrixD wm = (haveSubpart ? md.MatrixForSubpart * muzzleEntity.WorldMatrix : md.MatrixForBlock * drawMatrix);
 
                     MyTransparentGeometry.AddPointBillboard(OVERLAY_MUZZLEFLASH_MATERIAL, flashColor, wm.Translation, 0.15f, 0, blendType: BlendTypeEnum.AdditiveBottom);
 
                     float size = (md.Missile ? 0.06f : 0.025f);
                     float len = (md.Missile ? 2f : 5f);
-
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, len, size, OVERLAY_BLEND_TYPE);
                 }
             }
-            #endregion
+            #endregion Barrels
 
             #region Turret pitch/yaw limits
             var turretDef = def as MyLargeTurretBaseDefinition;
