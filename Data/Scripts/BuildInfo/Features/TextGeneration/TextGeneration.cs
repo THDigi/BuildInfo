@@ -3368,13 +3368,22 @@ namespace Digi.BuildInfo.Features
                             .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetFormatting().Append(", ");
 
+                        // from MyProjectile.Start()
                         if(ammo.SpeedVar > 0)
                             GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
                         else
                             GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_TRAVEL).DistanceRangeFormat(ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Min, ammo.MaxTrajectory * Hardcoded.Projectile_RangeMultiplier_Max).ResetFormatting().Append(")");
+                        float range = wpDef.RangeMultiplier * ammo.MaxTrajectory;
+
+                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL);
+
+                        if(wpDef.UseRandomizedRange)
+                            GetLine().DistanceRangeFormat(range * Hardcoded.Projectile_RangeMultiplier_Min, range * Hardcoded.Projectile_RangeMultiplier_Max);
+                        else
+                            GetLine().DistanceFormat(range);
+
+                        GetLine().ResetFormatting().Append(")");
                     }
                 }
 
@@ -3406,7 +3415,8 @@ namespace Digi.BuildInfo.Features
                             .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
 
-                        // SpeedVar is not used for missiles
+                        // HACK: ammo.SpeedVar is not used for missiles
+                        // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
 
                         GetLine().Color(COLOR_STAT_SPEED);
 
