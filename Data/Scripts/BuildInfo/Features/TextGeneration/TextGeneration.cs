@@ -226,6 +226,19 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        public override void UpdateDraw()
+        {
+            if(textShown && textObject != null)
+            {
+                bgObject.Draw();
+                textObject.Draw();
+            }
+            else
+            {
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+            }
+        }
+
         private void Update(int tick)
         {
             var prevToolDefId = Main.EquipmentMonitor.ToolDefId;
@@ -405,15 +418,13 @@ namespace Digi.BuildInfo.Features
             if(bgObject == null)
             {
                 bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
-            }
-
-            if(textObject == null)
-            {
+                bgObject.Visible = false;
                 textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
+                textObject.Visible = false;
             }
 
-            bgObject.Visible = true;
-            textObject.Visible = true;
+            //bgObject.Visible = true;
+            //textObject.Visible = true;
 
             #region Update text and count lines
             var msg = textObject.Message;
@@ -527,6 +538,7 @@ namespace Digi.BuildInfo.Features
             }
 
             textShown = true;
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
             return textSize;
         }
 
@@ -611,6 +623,7 @@ namespace Digi.BuildInfo.Features
                     if(!textShown)
                     {
                         textShown = true;
+                        SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
                         cache.ResetExpiry();
                     }
 
@@ -724,11 +737,11 @@ namespace Digi.BuildInfo.Features
                     LastDefId = default(MyDefinitionId);
 
                     // text API hide
-                    if(textObject != null)
-                        textObject.Visible = false;
-
-                    if(bgObject != null)
-                        bgObject.Visible = false;
+                    //if(textObject != null)
+                    //{
+                    //    textObject.Visible = false;
+                    //    bgObject.Visible = false;
+                    //}
                 }
 
                 // HUD notifications don't need hiding, they expire in one frame.

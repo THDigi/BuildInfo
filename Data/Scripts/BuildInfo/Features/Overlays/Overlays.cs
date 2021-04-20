@@ -131,6 +131,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public Overlays(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.NONE;
+            UpdateOrder = -500; // for Draw() mainly, to always render first (and therefore, under)
 
             int count = Enum.GetValues(typeof(TextAPIMsgIds)).Length;
             Labels = new LabelData[count];
