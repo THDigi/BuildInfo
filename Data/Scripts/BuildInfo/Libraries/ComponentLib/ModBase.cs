@@ -181,9 +181,12 @@ namespace Digi.ComponentLib
 
                 if(RunCriticalOnInput)
                 {
-                    unchecked
+                    if(!IsPaused)
                     {
-                        ++Tick;
+                        unchecked
+                        {
+                            ++Tick;
+                        }
                     }
 
                     if(ComponentRefreshFlags.Count > 0)
