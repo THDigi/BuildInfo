@@ -11,7 +11,6 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
@@ -1186,9 +1185,29 @@ namespace Digi.BuildInfo.Features
             info.DetailInfo_InputPower(Sink);
 
             var rotorStator = block as IMyMotorStator;
-            if(rotorStator != null && Main.Config.InternalInfo.Value)
+            if(rotorStator != null)
             {
-                info.Append("API Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians").NewLine();
+                float mass;
+                float pickedTorque = rotorStator.Torque;
+                float realTorque = Hardcoded.RotorTorqueLimit(rotorStator, out mass);
+
+                if(realTorque != pickedTorque)
+                {
+                    info.NewLine().Append("Capped Torque [4]: ").TorqueFormat(realTorque).NewLine();
+                }
+
+                if(mass > 0)
+                {
+                    if(realTorque == pickedTorque)
+                        info.NewLine();
+
+                    info.Append("Attached Mass: ").MassFormat(mass).NewLine();
+                }
+
+                if(Main.Config.InternalInfo.Value)
+                {
+                    info.NewLine().Append("API Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians").NewLine();
+                }
             }
         }
 

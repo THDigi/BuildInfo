@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n [4] Explaining hidden rotor torque limit:" +
             "\n  Torque is limited by the rotor top's mass squared (mass*mass)." +
             "\n  This causes issues for chained structures that have lightweight inner parts and heavy at the ends." +
-            "\n  To work around it you must add more mass, simple as that." +
+            "\n  To work around it you must add more mass on the rotor's top, flip the rotor so your bigger ship/station is the top grid." +
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
