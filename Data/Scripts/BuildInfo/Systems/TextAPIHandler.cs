@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Draygo.API;
+using VRageMath;
 
 namespace Digi.BuildInfo.Systems
 {
@@ -76,6 +77,22 @@ namespace Digi.BuildInfo.Systems
             {
                 Log.Error(e);
             }
+        }
+
+        HudAPIv2.HUDMessage measuringMsg;
+        public Vector2D GetStringSize(StringBuilder text)
+        {
+            if(!WasDetected)
+                throw new Exception("Requested GetStringSize() before textAPI was available!");
+
+            if(measuringMsg == null)
+            {
+                measuringMsg = new HudAPIv2.HUDMessage();
+                measuringMsg.Visible = false;
+            }
+
+            measuringMsg.Message = text;
+            return measuringMsg.GetTextLength();
         }
 
         public static void CopyWithoutColor(StringBuilder text, StringBuilder shadow)

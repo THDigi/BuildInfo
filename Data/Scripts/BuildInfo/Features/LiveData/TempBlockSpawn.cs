@@ -1,6 +1,5 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -50,7 +49,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             gridOB.CubeBlocks.Add(blockOB);
 
-            MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
+            // not really required for a single grid.
+            //MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
 
             var grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
             grid.IsPreview = true;
@@ -66,6 +66,7 @@ namespace Digi.BuildInfo.Features.LiveData
             blockObj.EntityId = 0;
             blockObj.Min = Vector3I.Zero;
 
+#if false
             // NOTE these types do not check if their fields are null in their Remap() method.
             var timer = blockObj as MyObjectBuilder_TimerBlock;
             if(timer != null)
@@ -87,6 +88,15 @@ namespace Digi.BuildInfo.Features.LiveData
                 sensor.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
+
+            // prohibited...
+            //var targetDummy = blockObj as MyObjectBuilder_TargetDummyBlock;
+            //if(targetDummy != null)
+            //{
+            //    targetDummy.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
+            //    return blockObj;
+            //}
+#endif
 
             return blockObj;
         }

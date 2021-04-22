@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 if(data != null)
                     return data;
             }
-            
+
             BData_Base baseData;
             if(BlockData.TryGetValue(def.Id, out baseData))
             {

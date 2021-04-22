@@ -20,6 +20,10 @@ using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
+using VRage.ObjectBuilders;
+using Digi.BuildInfo.Features.LiveData;
+using Sandbox.Definitions;
+using Sandbox.ModAPI.Interfaces;
 
 namespace Digi.BuildInfo.Features
 {
@@ -70,6 +74,7 @@ namespace Digi.BuildInfo.Features
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
             //DumpActions();
+            //DumpTerminalProperties();
         }
 
         public override void UnregisterComponent()
@@ -132,6 +137,55 @@ namespace Digi.BuildInfo.Features
         //    if(Config.Debug)
         //        MyAPIGateway.Utilities.ShowNotification($"Equipment.BlockChanged :: {def?.Id.ToString() ?? "Unequipped"}, {(def == null ? "" : (block != null ? "Aimed" : "Held"))}", 1000);
         //}
+
+#if false
+        void DumpTerminalProperties()
+        {
+            var dict = new Dictionary<MyObjectBuilderType, MyCubeBlockDefinition>();
+            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                var blockDef = def as MyCubeBlockDefinition;
+                if(blockDef == null)
+                    continue;
+
+                dict[def.Id.TypeId] = blockDef;
+            }
+
+            foreach(var def in dict.Values)
+            {
+                TempBlockSpawn.Spawn(def, callback: BlockSpawned);
+            }
+        }
+
+        void BlockSpawned(IMySlimBlock slim)
+        {
+            var tb = slim.FatBlock as IMyTerminalBlock;
+            if(tb == null)
+                return;
+
+            var properties = new List<ITerminalProperty>();
+            tb.GetProperties(properties);
+
+            Log.Info("");
+            Log.Info($"Properties of {tb.GetType().Name}");
+
+            foreach(var p in properties)
+            {
+                switch(p.Id)
+                {
+                    case "OnOff":
+                    case "ShowInTerminal":
+                    case "ShowInInventory":
+                    case "ShowInToolbarConfig":
+                    case "ShowOnHUD":
+                    case "Name":
+                        continue;
+                }
+
+                Log.Info($"    id={p.Id,-24} type={p.TypeName}");
+            }
+        }
+#endif
 
 #if false
         void DumpActions()
