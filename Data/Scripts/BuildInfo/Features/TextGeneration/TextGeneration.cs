@@ -84,7 +84,9 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_INFO = new Color(69, 177, 227);
         public readonly Color COLOR_INTERNAL = new Color(125, 125, 255);
         public readonly Color COLOR_DLC = Color.DeepSkyBlue;
+        public readonly Color COLOR_LIST = Color.White;
 
+        public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
         public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
         public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 155, 0);
@@ -1584,13 +1586,14 @@ namespace Digi.BuildInfo.Features
                         AddLine().Label("Upgrade ports").Color(COLOR_GOOD).Append(upgradePorts);
                         AddLine().Label(upgrades > 1 ? "Optional upgrades" : "Optional upgrade");
                         const int SpacePadding = 32;
+                        const int NumPerRow = 2;
 
                         for(int i = 0; i < data.Upgrades.Count; i++)
                         {
                             if(i > 0)
                             {
-                                if(i % 2 == 0)
-                                    AddLine().Color(COLOR_PART).Append(' ', SpacePadding).Append("| ");
+                                if(i % NumPerRow == 0)
+                                    AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ");
                                 else
                                     GetLine().Separator();
                             }
@@ -2690,16 +2693,30 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine();
 
+                int SpacePadding = 11;
+
                 if(refinery != null)
-                    GetLine().Append("Refines: ");
+                {
+                    GetLine().Label("Refines");
+                }
                 else if(gasTank != null)
-                    GetLine().Append("Refills: ");
+                {
+                    GetLine().Label("Refills");
+                }
                 else if(assembler != null)
-                    GetLine().Append("Builds: ");
+                {
+                    GetLine().Label("Builds");
+                }
                 else if(oxygenGenerator != null)
-                    GetLine().Append("Generates: ");
+                {
+                    GetLine().Label("Generates");
+                    SpacePadding = 17;
+                }
                 else
-                    GetLine().Append("Blueprints: ");
+                {
+                    GetLine().Label("Blueprints");
+                    SpacePadding = 17;
+                }
 
                 if(production.BlueprintClasses.Count == 0)
                 {
@@ -2707,29 +2724,41 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    foreach(var bp in production.BlueprintClasses)
+                    const int NumPerRow = 3;
+
+                    for(int i = 0; i < production.BlueprintClasses.Count; i++)
                     {
-                        var name = bp.Id.SubtypeName; // bp.DisplayNameText; // some are really badly named, like BasicIngots -> Ingots, ugh.
-                        var newLineIndex = name.IndexOf('\n');
+                        var bp = production.BlueprintClasses[i];
 
-                        if(newLineIndex != -1) // name contains a new line, ignore everything after that
+                        if(i > 0)
                         {
-                            for(int i = 0; i < newLineIndex; ++i)
-                            {
-                                GetLine().Append(name[i]);
-                            }
-
-                            GetLine().TrimEndWhitespace();
-                        }
-                        else
-                        {
-                            GetLine().Append(name);
+                            if(i % NumPerRow == 0)
+                                AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ").ResetFormatting();
+                            else
+                                GetLine().Separator();
                         }
 
-                        GetLine().Append(", ");
+                        // not using DisplayNameText because some are really badly named, like BasicIngots -> Ingots; also can contain newlines.
+                        //string name = bp.DisplayNameText;
+                        //int newLineIndex = name.IndexOf('\n');
+                        //
+                        //if(newLineIndex != -1) // name contains a new line, ignore everything after that
+                        //{
+                        //    for(int ci = 0; ci < newLineIndex; ++ci)
+                        //    {
+                        //        GetLine().Append(name[ci]);
+                        //    }
+                        //
+                        //    GetLine().TrimEndWhitespace();
+                        //}
+                        //else
+                        //{
+                        //    GetLine().Append(name);
+                        //}
+
+                        string name = bp.Id.SubtypeName;
+                        GetLine().Append(name);
                     }
-
-                    GetLine().Length -= 2;
                 }
             }
         }
@@ -2811,7 +2840,7 @@ namespace Digi.BuildInfo.Features
 
                         for(int i = 1; i < upgradeModule.Upgrades.Length; i++)
                         {
-                            AddLine().Color(COLOR_PART).Append("                          | ").ResetFormatting().AppendUpgrade(upgradeModule.Upgrades[i]);
+                            AddLine().Color(COLOR_LIST).Append("                          | ").ResetFormatting().AppendUpgrade(upgradeModule.Upgrades[i]);
                         }
                     }
                 }
@@ -3332,21 +3361,27 @@ namespace Digi.BuildInfo.Features
                     ammoMissiles.Clear();
                 }
 
+                const int MaxMagNameLength = 20;
+                bool blockTypeCanReload = Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
+
                 if(ammoProjectiles.Count > 0)
                 {
                     // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
 
                     var projectilesData = wpDef.WeaponAmmoDatas[0];
 
-                    AddLine().Label("Projectiles - Fire rate").Append(Math.Round(projectilesData.RateOfFire / 60f, 3)).Append(" rounds/s")
-                        .Separator().Color(projectilesData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    bool hasReload = (blockTypeCanReload && projectilesData.ShotsInBurst > 0);
+                    double rps = Math.Round(projectilesData.RateOfFire / 60f, 2);
 
-                    if(projectilesData.ShotsInBurst == 0 || Hardcoded.NoReloadTypes.Contains(def.Id.TypeId))
-                        GetLine().Append("No reloading");
-                    else
+                    AddLine().Label("Projectiles - Fire rate").Append(rps).Append(rps == 1 ? " round/s" : " rounds/s")
+                        .Separator().Color(hasReload ? COLOR_WARNING : COLOR_GOOD).Append("Magazine: ");
+
+                    if(hasReload)
                         GetLine().Append(projectilesData.ShotsInBurst);
+                    else
+                        GetLine().Append("No reloading");
 
-                    AddLine().Append("Projectiles - ").Color(COLOR_PART).Append("Type").ResetFormatting().Append(" (")
+                    AddLine().Append("Projectiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
                         .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetFormatting().Append(", ")
@@ -3359,7 +3394,7 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetFormatting().Append(" (");
+                        AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (");
 
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
@@ -3391,15 +3426,18 @@ namespace Digi.BuildInfo.Features
                 {
                     var missileData = wpDef.WeaponAmmoDatas[1];
 
-                    AddLine().Label("Missiles - Fire rate").Append(Math.Round(missileData.RateOfFire / 60f, 3)).Append(" rounds/s")
-                        .Separator().Color(missileData.ShotsInBurst == 0 ? COLOR_GOOD : COLOR_WARNING).Append("Magazine: ");
+                    bool hasReload = (blockTypeCanReload && missileData.ShotsInBurst > 0);
+                    double rps = Math.Round(missileData.RateOfFire / 60f, 2);
 
-                    if(missileData.ShotsInBurst == 0 || Hardcoded.NoReloadTypes.Contains(def.Id.TypeId))
-                        GetLine().Append("No reloading");
-                    else
+                    AddLine().Label("Missiles - Fire rate").Append(rps).Append(rps == 1 ? " round/s" : " rounds/s")
+                        .Separator().Color(hasReload ? COLOR_WARNING : COLOR_GOOD).Append("Magazine: ");
+
+                    if(hasReload)
                         GetLine().Append(missileData.ShotsInBurst);
+                    else
+                        GetLine().Append("No reloading");
 
-                    AddLine().Append("Missiles - ").Color(COLOR_PART).Append("Type").ResetFormatting().Append(" (")
+                    AddLine().Append("Missiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
                         .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
@@ -3411,7 +3449,7 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("      - ").Color(COLOR_PART).Append(mag.Id.SubtypeName).ResetFormatting().Append(" (")
+                        AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
                             .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
 
