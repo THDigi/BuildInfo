@@ -64,6 +64,7 @@ namespace Digi.BuildInfo
         public ToolbarStatusProcessor ToolbarStatusProcessor;
         public ToolbarLabelRender ToolbarLabelRender;
         public GridMassCompute GridMassCompute;
+        public PBMonitor PBMonitor;
         public InterModAPI InterModAPI;
         public DebugEvents DebugEvents;
         public DebugLog DebugLog;
@@ -115,6 +116,7 @@ namespace Digi.BuildInfo
             ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
             ToolbarLabelRender = new ToolbarLabelRender(this);
             GridMassCompute = new GridMassCompute(this);
+            PBMonitor = new PBMonitor(this);
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);

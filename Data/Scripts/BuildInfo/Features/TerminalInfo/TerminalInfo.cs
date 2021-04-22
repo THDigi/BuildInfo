@@ -1590,19 +1590,34 @@ namespace Digi.BuildInfo.Features
 
         void Format_ProgrammableBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
+            // Vanilla info in 1.189.041 (and probably forever):
             //     (nothing)
-
-            if(block.DetailedInfo.Length != 0)
-                return; // only print something if PB it self doesnt print anything.
 
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
                 info.Append("In-game Scripts are disabled in world settings!\n");
+                return;
             }
-            else if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+
+            string echoText = block.DetailedInfo;
+            if(!string.IsNullOrEmpty(echoText))
+                return; // only print something if PB itself doesn't
+
+            if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
             {
                 info.Append("Scripter role is required to use in-game scripts.\n");
+            }
+
+            if(!block.GetPlayerRelationToOwner().IsFriendly())
+                return;
+
+            PBData pbd;
+            if(Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
+            {
+                float sec = (float)Math.Round((Main.Tick - pbd.SavedAtTick) / 60f);
+                info.Append("(BuildInfo: text from ").TimeFormat(sec).Append(" ago)").NewLine();
+                info.NewLine();
+                info.Append(pbd.EchoText).NewLine();
             }
         }
 

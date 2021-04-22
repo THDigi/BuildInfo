@@ -47,7 +47,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
+                if(string.IsNullOrEmpty(pb.ProgramData))
+                {
+                    sb.Append("ERROR:\nEmpty");
+                    return true;
+                }
+
                 string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
+
+                if(string.IsNullOrEmpty(detailInfo))
+                {
+                    // grab last known echo text
+                    PBData pbd;
+                    if(BuildInfoMod.Instance.PBMonitor.PBData.TryGetValue(pb.EntityId, out pbd))
+                    {
+                        detailInfo = pbd.EchoText;
+                    }
+                }
 
                 if(!string.IsNullOrEmpty(detailInfo))
                 {
