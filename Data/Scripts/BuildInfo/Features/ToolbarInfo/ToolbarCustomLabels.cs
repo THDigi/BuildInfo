@@ -116,8 +116,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!MyIni.HasSection(customData, IniSection))
                 return; // required because ini.TryParse() requires the section if specified
 
+            // HACK: no longer using TryParse(customdata, section, out...) because it fails if `---` is in the section.
             MyIniParseResult result;
-            if(!IniParser.TryParse(customData, IniSection, out result))
+            if(!IniParser.TryParse(customData, out result))
             {
                 labelData.ParseErrors.Add($"Line #{result.LineNo.ToString()}: {result.Error}");
                 RefreshDetailInfo(block);
