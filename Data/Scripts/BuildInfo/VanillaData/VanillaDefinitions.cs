@@ -35,6 +35,7 @@ namespace Digi.BuildInfo.VanillaData
         void CheckVanillaHardcoded()
         {
             bool notify = (Log.WorkshopId == 0); // notify on HUD only if it's the local mod
+            bool needsRegen = false;
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -45,13 +46,21 @@ namespace Digi.BuildInfo.VanillaData
                 if(blockDef.Context.IsBaseGame && !Definitions.Contains(blockDef.Id))
                 {
                     // FIXME: needs to be visible ingame, but is not...
-                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", notify ? Log.PRINT_MESSAGE : null);
+                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", (notify ? Log.PRINT_MESSAGE : null));
+                    needsRegen = true;
                 }
+            }
+
+            if(Log.WorkshopId == 0 && needsRegen)
+            {
+                ExtractVanillaBlocks();
             }
         }
 
         void ExtractVanillaBlocks()
         {
+            const string FileName = "VanillaDefinitions.txt";
+
             StringBuilder sb = new StringBuilder();
 
             sb.Append("// Auto-generated vanilla definitions from SE v").Append(MyAPIGateway.Session.Version.ToString()).NewLine();
@@ -59,26 +68,23 @@ namespace Digi.BuildInfo.VanillaData
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 var blockDef = def as MyCubeBlockDefinition;
-
                 if(blockDef != null && blockDef.Context.IsBaseGame)
                 {
                     sb.Append(nameof(Definitions)).Append(".Add(new MyDefinitionId(typeof(").Append(blockDef.Id.TypeId.ToString()).Append("), \"").Append(blockDef.Id.SubtypeName).Append("\"));").AppendLine();
                 }
             }
 
-            const string FILE_NAME = "VanillaDefinitions.txt";
-
-            using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FILE_NAME, typeof(VanillaDefinitions)))
+            using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(VanillaDefinitions)))
             {
                 writer.Write(sb.ToString());
             }
 
-            Log.Info($"Exported vanilla blocks to Storage/{FILE_NAME}", Log.PRINT_MESSAGE, 10000);
+            Log.Info($"Exported vanilla blocks to Storage/{FileName}", Log.PRINT_MESSAGE, 10000);
         }
 
         void DefineVanillaBlocks()
         {
-            // Auto-generated vanilla definitions from SE v1.197.72
+            // Auto-generated vanilla definitions from SE v1.198.24
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRailStraight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere1), "DebugSphereLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere2), "DebugSphereLarge"));
@@ -195,6 +201,7 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Projector), "SmallProjector"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "SmallBlockSensor"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "LargeBlockSensor"));
+            Definitions.Add(MyDefinitionId.Parse("MyObjectBuilder_TargetDummyBlock/TargetDummy")); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "SmallBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "LargeBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "ButtonPanelLarge"));
@@ -320,6 +327,8 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SpaceBall), "SpaceBallLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SpaceBall), "SpaceBallSmall"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Passage), ""));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Passage2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Passage2Wall"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeStairs"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRamp"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeSteelCatwalk"));
@@ -610,6 +619,20 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MergeBlock), "SmallShipMergeBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Parachute), "LgParachute"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Parachute), "SmParachute"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "LargeBlockWeaponRack"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "SmallBlockWeaponRack"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "FireCover"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "FireCoverCorner"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "HalfWindow"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "HalfWindowInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "HalfWindowCorner"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "HalfWindowCornerInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Embrasure"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFi"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiWall"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiIntersection"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiGate"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_InteriorLight), "PassageSciFiLight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "LargeWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "SmallWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Decoy), "LargeDecoy"));
