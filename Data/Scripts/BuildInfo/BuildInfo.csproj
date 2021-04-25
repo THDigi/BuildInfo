@@ -175,7 +175,7 @@
     <Compile Include="Features\HUD\TurretControlStat.cs" />
     <Compile Include="Features\HUD\ShipMassStat.cs" />
     <Compile Include="Features\HUD\UnitFormatStatBase.cs" />
-    <Compile Include="Features\ItemTooltips.cs" />
+    <Compile Include="Features\Tooltips\ItemTooltips.cs" />
     <Compile Include="Features\PBMonitor.cs" />
     <Compile Include="Features\JumpDriveMonitor.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />

@@ -9,7 +9,7 @@ using Sandbox.Definitions;
 using VRage.Game;
 using VRage.Utils;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.Tooltips
 {
     public class ItemTooltips : ModComponent
     {

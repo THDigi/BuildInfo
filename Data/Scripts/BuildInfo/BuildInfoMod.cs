@@ -7,6 +7,7 @@ using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.TextAPIMenu;
 using Digi.BuildInfo.Features.ToolbarInfo;
+using Digi.BuildInfo.Features.Tooltips;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
