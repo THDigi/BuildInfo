@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
-using Digi.ComponentLib;
-using Digi.ConfigLib;
 using Sandbox.Definitions;
 using VRage.Game;
 using VRage.Utils;
@@ -16,62 +13,33 @@ namespace Digi.BuildInfo.Features.Tooltips
         public const string ReqLargeConveyorSymbol = "Ф";
         const string ReqLargeConveyorSymbolSet = "            " + ReqLargeConveyorSymbol;
         const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbolSet;
+
         const int ListLimit = 6;
 
-        public readonly HashSet<MyDefinitionId> IgnoreModItems = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
-
-        readonly Dictionary<string, string> StatDisplayNames = new Dictionary<string, string>()
-        {
-            ["BatteryCharge"] = "Battery",
-        };
-
         readonly List<OriginalData> OriginalItemData = new List<OriginalData>(16);
-        readonly Dictionary<MyDefinitionId, string> Tooltips = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
-        readonly StringBuilder TempSB = new StringBuilder(1024);
 
         enum Sizes { Small, Large, Both, HandWeapon }
 
-        HashSet<MyBlueprintDefinitionBase> BpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
-        HashSet<MyBlueprintDefinitionBase> BpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
-        Dictionary<string, Sizes> NameAndSize = new Dictionary<string, Sizes>();
-        HashSet<MyDefinitionId> HasBP = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+        HashSet<MyBlueprintDefinitionBase> TmpBpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
+        HashSet<MyBlueprintDefinitionBase> TmpBpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
+        Dictionary<string, Sizes> TmpNameAndSize = new Dictionary<string, Sizes>();
 
-        void DisposeTempCollections()
+        void DisposeTempObjects()
         {
-            BpsThatResult = null;
-            BpsThatReq = null;
-            NameAndSize = null;
-            HasBP = null;
+            TmpBpsThatResult = null;
+            TmpBpsThatReq = null;
+            TmpNameAndSize = null;
         }
+
+        StringBuilder SB = new StringBuilder(1024);
 
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+            Main.TooltipHandler.Setup += Setup;
         }
 
         public override void RegisterComponent()
         {
-        }
-
-        public override void UpdateAfterSim(int tick)
-        {
-            if(tick >= 30)
-            {
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
-                DelayedRegister();
-            }
-        }
-
-        void DelayedRegister()
-        {
-            if(OriginalItemData.Count > 0)
-                throw new Exception("OriginalItemData already has data before init?!");
-
-            SetupItems(generate: true);
-
-            Main.Config.InternalInfo.ValueAssigned += ConfigValueChanged;
-            Main.Config.ItemTooltipAdditions.ValueAssigned += ConfigValueChanged;
-            Main.Config.ItemSymbolAdditions.ValueAssigned += ConfigValueChanged;
         }
 
         public override void UnregisterComponent()
@@ -88,24 +56,11 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             OriginalItemData.Clear();
 
-            Main.Config.InternalInfo.ValueAssigned -= ConfigValueChanged;
-            Main.Config.ItemTooltipAdditions.ValueAssigned -= ConfigValueChanged;
-            Main.Config.ItemSymbolAdditions.ValueAssigned -= ConfigValueChanged;
+            Main.TooltipHandler.Setup -= Setup;
         }
 
-        void ConfigValueChanged(bool oldValue, bool newValue, SettingBase<bool> setting)
+        void Setup(bool generate)
         {
-            if(oldValue != newValue)
-                SetupItems();
-        }
-
-        void SetupItems(bool generate = false)
-        {
-            if(generate)
-            {
-                PreTooltipGeneration();
-            }
-
             foreach(var physDef in Main.Caches.ItemDefs)
             {
                 if(generate)
@@ -123,7 +78,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(generate)
             {
-                DisposeTempCollections();
+                DisposeTempObjects();
             }
         }
 
@@ -174,18 +129,18 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(generate)
             {
                 // generate tooltips and cache them alone
-                TempSB.Clear();
-                GenerateTooltip(TempSB, physDef);
-                if(TempSB.Length > 0)
+                SB.Clear();
+                GenerateTooltip(SB, physDef);
+                if(SB.Length > 0)
                 {
-                    tooltip = TempSB.ToString();
-                    Tooltips[physDef.Id] = tooltip;
+                    tooltip = SB.ToString();
+                    Main.TooltipHandler.Tooltips[physDef.Id] = tooltip;
                 }
             }
             else
             {
                 // retrieve cached tooltip string
-                tooltip = Tooltips.GetValueOrDefault(physDef.Id, null);
+                tooltip = Main.TooltipHandler.Tooltips.GetValueOrDefault(physDef.Id, null);
             }
 
             var itemTooltipSB = physDef.ExtraInventoryTooltipLine;
@@ -209,7 +164,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(itemTooltipSB.Length > 0)
             {
-                RemoveLineStartsWith(itemTooltipSB, IdLabel);
+                itemTooltipSB.RemoveLineStartsWith(IdLabel);
             }
 
             if(Main.Config.InternalInfo.Value)
@@ -221,32 +176,12 @@ namespace Digi.BuildInfo.Features.Tooltips
             #endregion
         }
 
-        void PreTooltipGeneration()
-        {
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
-            {
-                var prodDef = def as MyProductionBlockDefinition;
-                if(prodDef == null)
-                    continue;
-
-                foreach(var bpClass in prodDef.BlueprintClasses)
-                {
-                    foreach(var bp in bpClass)
-                    {
-                        foreach(var result in bp.Results)
-                        {
-                            HasBP.Add(result.Id);
-                        }
-                    }
-                }
-            }
-        }
-
         void GenerateTooltip(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
-            if(!IgnoreModItems.Contains(physDef.Id))
+            if(!Main.TooltipHandler.IgnoreModItems.Contains(physDef.Id))
             {
                 TooltipConsumable(s, physDef);
+                TooltipFuel(s, physDef);
                 TooltipWeapon(s, physDef);
                 TooltipAmmo(s, physDef);
                 TooltipCrafting(s, physDef);
@@ -274,17 +209,67 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 s.Append("\nConsumption: ");
 
+                var statNames = Main.TooltipHandler.TmpStatDisplayNames;
+
                 if(consumable.Stats.Count == 1)
                 {
                     var stat = consumable.Stats[0];
-                    s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(StatDisplayNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                    s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                 }
                 else
                 {
                     foreach(var stat in consumable.Stats)
                     {
-                        s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(StatDisplayNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                        s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                     }
+                }
+            }
+        }
+
+        void TooltipFuel(StringBuilder s, MyPhysicalItemDefinition physDef)
+        {
+            var blocks = Main.TooltipHandler.TmpBlockFuel.GetValueOrDefault(physDef.Id, null);
+            if(blocks == null || blocks.Count == 0)
+                return;
+
+            TmpNameAndSize.Clear();
+
+            foreach(var blockDef in blocks)
+            {
+                string key = blockDef.DisplayNameText;
+                Sizes currentSize = (blockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                Sizes existingSize;
+                if(TmpNameAndSize.TryGetValue(key, out existingSize))
+                {
+                    if(existingSize != Sizes.Both && existingSize != currentSize)
+                        TmpNameAndSize[key] = Sizes.Both;
+                }
+                else
+                {
+                    TmpNameAndSize[key] = currentSize;
+                }
+            }
+
+            s.Append("\nConsumed by: ");
+
+            int limit = 0;
+            foreach(var kv in TmpNameAndSize)
+            {
+                if(++limit > ListLimit)
+                {
+                    limit--;
+                    s.Append("\n  ...and ").Append(TmpNameAndSize.Count - limit).Append(" more");
+                    break;
+                }
+
+                s.Append("\n  ").Append(kv.Key);
+
+                switch(kv.Value)
+                {
+                    case Sizes.Small: s.Append(" (Small Grid)"); break;
+                    case Sizes.Large: s.Append(" (Large Grid)"); break;
+                    case Sizes.Both: s.Append(" (Small + Large Grid)"); break;
+                    case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
                 }
             }
         }
@@ -318,7 +303,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     else
                         s.Append(magDef.DisplayNameText);
 
-                    if(!HasBP.Contains(magId))
+                    if(!Main.TooltipHandler.TmpHasBP.Contains(magId))
                         s.Append(" (Not Craftable)");
                 }
             }
@@ -333,7 +318,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(magDef.Capacity > 1)
                 s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
 
-            NameAndSize.Clear();
+            TmpNameAndSize.Clear();
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -351,7 +336,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                             {
                                 if(magId == magDef.Id)
                                 {
-                                    NameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
+                                    TmpNameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
                                     break;
                                 }
                             }
@@ -376,14 +361,14 @@ namespace Digi.BuildInfo.Features.Tooltips
                                     string key = def.DisplayNameText;
                                     Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
                                     Sizes existingSize;
-                                    if(NameAndSize.TryGetValue(key, out existingSize))
+                                    if(TmpNameAndSize.TryGetValue(key, out existingSize))
                                     {
                                         if(existingSize != Sizes.Both && existingSize != currentSize)
-                                            NameAndSize[key] = Sizes.Both;
+                                            TmpNameAndSize[key] = Sizes.Both;
                                     }
                                     else
                                     {
-                                        NameAndSize[key] = currentSize;
+                                        TmpNameAndSize[key] = currentSize;
                                     }
                                     break;
                                 }
@@ -394,18 +379,18 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
-            if(NameAndSize.Count == 0)
+            if(TmpNameAndSize.Count == 0)
                 return;
 
             s.Append("\nUsed by:");
 
             int limit = 0;
-            foreach(var kv in NameAndSize)
+            foreach(var kv in TmpNameAndSize)
             {
                 if(++limit > ListLimit)
                 {
                     limit--;
-                    s.Append("\n  ...and ").Append(NameAndSize.Count - limit).Append(" more");
+                    s.Append("\n  ...and ").Append(TmpNameAndSize.Count - limit).Append(" more");
                     break;
                 }
 
@@ -413,9 +398,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 switch(kv.Value)
                 {
-                    case Sizes.Small: s.Append(" (Small Block)"); break;
-                    case Sizes.Large: s.Append(" (Large Block)"); break;
-                    case Sizes.Both: s.Append(" (Small + Large Block)"); break;
+                    case Sizes.Small: s.Append(" (Small Grid)"); break;
+                    case Sizes.Large: s.Append(" (Large Grid)"); break;
+                    case Sizes.Both: s.Append(" (Small + Large Grid)"); break;
                     case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
                 }
             }
@@ -423,8 +408,8 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
-            BpsThatResult.Clear();
-            BpsThatReq.Clear();
+            TmpBpsThatResult.Clear();
+            TmpBpsThatReq.Clear();
 
             int usedForBlocks = 0;
             int usedForAssembly = 0;
@@ -437,7 +422,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     if(result.Id == physDef.Id)
                     {
-                        BpsThatResult.Add(bp);
+                        TmpBpsThatResult.Add(bp);
                         isResult = true;
                         break;
                     }
@@ -450,22 +435,22 @@ namespace Digi.BuildInfo.Features.Tooltips
                         // bps that require same item as they result should be ignored.
                         if(isResult)
                         {
-                            BpsThatResult.Remove(bp);
+                            TmpBpsThatResult.Remove(bp);
                             break;
                         }
 
-                        BpsThatReq.Add(bp);
+                        TmpBpsThatReq.Add(bp);
                         break;
                     }
                 }
             }
 
-            if(BpsThatResult.Count > 0)
+            if(TmpBpsThatResult.Count > 0)
             {
-                NameAndSize.Clear();
-                ComputeBps(BpsThatResult, NameAndSize, ref usedForBlocks);
-                if(NameAndSize.Count > 0)
-                    AppendCraftList(s, "\nCrafted by:", NameAndSize);
+                TmpNameAndSize.Clear();
+                ComputeBps(TmpBpsThatResult, TmpNameAndSize, ref usedForBlocks);
+                if(TmpNameAndSize.Count > 0)
+                    AppendCraftList(s, "\nCrafted by:", TmpNameAndSize);
             }
             else
             {
@@ -474,12 +459,12 @@ namespace Digi.BuildInfo.Features.Tooltips
                 s.Append("\nNot Craftable.");
             }
 
-            if(BpsThatReq.Count > 0)
+            if(TmpBpsThatReq.Count > 0)
             {
-                NameAndSize.Clear();
-                ComputeBps(BpsThatReq, NameAndSize, ref usedForAssembly);
-                if(NameAndSize.Count > 0)
-                    AppendCraftList(s, "\nUsed in:", NameAndSize);
+                TmpNameAndSize.Clear();
+                ComputeBps(TmpBpsThatReq, TmpNameAndSize, ref usedForAssembly);
+                if(TmpNameAndSize.Count > 0)
+                    AppendCraftList(s, "\nUsed in:", TmpNameAndSize);
             }
 
             // TODO: show blocks/items used for crafting if they're less than a few
@@ -565,26 +550,6 @@ namespace Digi.BuildInfo.Features.Tooltips
                     case Sizes.Large: s.Append(" (Large)"); break;
                 }
             }
-        }
-
-        static bool RemoveLineStartsWith(StringBuilder sb, string prefix)
-        {
-            int prefixIndex = sb.IndexOf(prefix);
-            if(prefixIndex == -1)
-                return false;
-
-            int endIndex = -1;
-            if(prefixIndex + prefix.Length < sb.Length)
-            {
-                endIndex = sb.IndexOf('\n', prefixIndex + prefix.Length);
-                // newlines are at the start of the line for prefixes so don't add the trailing newline too
-            }
-
-            if(endIndex == -1)
-                endIndex = sb.Length;
-
-            sb.Remove(prefixIndex, endIndex - prefixIndex);
-            return true;
         }
 
         struct OriginalData

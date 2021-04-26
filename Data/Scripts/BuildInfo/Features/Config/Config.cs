@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.HUD;
+using Digi.BuildInfo.Features.Tooltips;
 using Digi.ConfigLib;
 using Digi.Input;
 using Sandbox.Game;

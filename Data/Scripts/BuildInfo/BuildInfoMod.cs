@@ -58,7 +58,9 @@ namespace Digi.BuildInfo
         public ShipToolInventoryBar ShipToolInventoryBar;
         public BlockInfoScrollComponents BlockInfoScrollComponents;
         public WhatsNew WhatsNew;
+        public TooltipHandler TooltipHandler;
         public ItemTooltips ItemTooltips;
+        public BlueprintTooltips BlueprintTooltips;
         public ToolbarOverride ToolbarOverride;
         public ToolbarMonitor ToolbarMonitor;
         public ToolbarCustomLabels ToolbarCustomLabels;
@@ -110,7 +112,9 @@ namespace Digi.BuildInfo
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             BlockInfoScrollComponents = new BlockInfoScrollComponents(this);
             WhatsNew = new WhatsNew(this);
+            TooltipHandler = new TooltipHandler(this);
             ItemTooltips = new ItemTooltips(this);
+            BlueprintTooltips = new BlueprintTooltips(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);
             ToolbarCustomLabels = new ToolbarCustomLabels(this);

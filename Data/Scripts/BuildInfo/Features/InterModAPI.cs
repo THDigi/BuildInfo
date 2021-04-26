@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Features
 
                     if(target.Equals("NoItemTooltip", Compare))
                     {
-                        Main.ItemTooltips.IgnoreModItems.Add(defId);
+                        Main.TooltipHandler.IgnoreModItems.Add(defId);
 
                         if(Main.Config.InternalInfo.Value)
                             Log.Info($"Mod '{data.Item1}' asked BuildInfo to not show extra ItemTooltip for {defId.ToString()}");

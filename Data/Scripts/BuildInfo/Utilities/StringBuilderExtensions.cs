@@ -118,6 +118,26 @@ namespace Digi.BuildInfo.Utilities
             return -1;
         }
 
+        public static bool RemoveLineStartsWith(this StringBuilder sb, string prefix)
+        {
+            int prefixIndex = sb.IndexOf(prefix);
+            if(prefixIndex == -1)
+                return false;
+
+            int endIndex = -1;
+            if(prefixIndex + prefix.Length < sb.Length)
+            {
+                endIndex = sb.IndexOf('\n', prefixIndex + prefix.Length);
+                // newlines are at the start of the line for prefixes so don't add the trailing newline too
+            }
+
+            if(endIndex == -1)
+                endIndex = sb.Length;
+
+            sb.Remove(prefixIndex, endIndex - prefixIndex);
+            return true;
+        }
+
         public static StringBuilder AppendRGBA(this StringBuilder sb, Color color)
         {
             return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
