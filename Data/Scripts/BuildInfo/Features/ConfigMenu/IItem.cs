@@ -1,4 +1,4 @@
-﻿namespace Digi.BuildInfo.Features.TextAPIMenu
+﻿namespace Digi.BuildInfo.Features.ConfigMenu
 {
     public interface IItem
     {

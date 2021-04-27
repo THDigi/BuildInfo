@@ -2,7 +2,7 @@
 using Digi.ConfigLib;
 using static Draygo.API.HudAPIv2;
 
-namespace Digi.BuildInfo.Features.TextAPIMenu
+namespace Digi.BuildInfo.Features.ConfigMenu
 {
     public class ItemFlags<T> : ItemBase<MenuItemBase> where T : struct
     {

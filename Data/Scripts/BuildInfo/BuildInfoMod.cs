@@ -5,7 +5,7 @@ using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
-using Digi.BuildInfo.Features.TextAPIMenu;
+using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Features.Tooltips;
 using Digi.BuildInfo.Systems;
@@ -38,8 +38,8 @@ namespace Digi.BuildInfo
         public Config Config;
         public LegacyConfig LegacyConfig;
         public FontsHandler FontsHandler;
+        public ConfigMenuHandler ConfigMenuHandler;
         public JumpDriveMonitor JumpDriveMonitor;
-        public ModMenu ModMenu;
         public LeakInfo LeakInfo;
         public Overlays Overlays;
         public LockOverlay LockOverlay;
@@ -92,8 +92,8 @@ namespace Digi.BuildInfo
             Config = new Config(this);
             LegacyConfig = new LegacyConfig(this);
             FontsHandler = new FontsHandler(this);
+            ConfigMenuHandler = new ConfigMenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
-            ModMenu = new ModMenu(this);
             LeakInfo = new LeakInfo(this);
             Overlays = new Overlays(this);
             LockOverlay = new LockOverlay(this);

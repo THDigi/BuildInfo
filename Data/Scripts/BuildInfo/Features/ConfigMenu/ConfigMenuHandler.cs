@@ -9,12 +9,12 @@ using VRageMath;
 using static Draygo.API.HudAPIv2;
 using static Draygo.API.HudAPIv2.MenuRootCategory;
 
-namespace Digi.BuildInfo.Features.TextAPIMenu
+namespace Digi.BuildInfo.Features.ConfigMenu
 {
     /// <summary>
     /// The mod menu invoked by TextAPI
     /// </summary>
-    public class ModMenu : ModComponent
+    public class ConfigMenuHandler : ModComponent
     {
         private MenuRootCategory Category_Mod;
         private MenuCategoryBase Category_Textbox;
@@ -64,7 +64,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
                                         "\nClass aptent taciti sociosqu ad litora torquent" +
                                         "\n  per conubia nostra, per inceptos himenaeos.";
 
-        public ModMenu(BuildInfoMod main) : base(main)
+        public ConfigMenuHandler(BuildInfoMod main) : base(main)
         {
         }
 

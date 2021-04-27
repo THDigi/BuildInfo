@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Digi.BuildInfo.Features.TextAPIMenu
+namespace Digi.BuildInfo.Features.ConfigMenu
 {
     public class ItemGroup
     {

@@ -1,6 +1,6 @@
 ﻿using static Draygo.API.HudAPIv2;
 
-namespace Digi.BuildInfo.Features.TextAPIMenu
+namespace Digi.BuildInfo.Features.ConfigMenu
 {
     public abstract class ItemBase<T> : IItem
                     where T : MenuItemBase

@@ -301,7 +301,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ClickOffset = null;
                 Main.Config.Save();
-                Main.ModMenu.RefreshAll();
+                Main.ConfigMenuHandler.RefreshAll();
             }
 
             // TODO: move to TextAPI module?
