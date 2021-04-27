@@ -452,7 +452,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(TmpBpsThatResult.Count > 0)
             {
                 TmpNameAndSize.Clear();
-                ComputeBps(TmpBpsThatResult, TmpNameAndSize, ref usedForBlocks);
+                ComputeBps(TmpBpsThatResult, TmpNameAndSize, ref usedForBlocks, areResults: true);
                 if(TmpNameAndSize.Count > 0)
                     AppendCraftList(s, "\nCrafted by:", TmpNameAndSize);
             }
@@ -484,7 +484,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        static void ComputeBps(HashSet<MyBlueprintDefinitionBase> bps, Dictionary<string, Sizes> dict, ref int usedFor)
+        static void ComputeBps(HashSet<MyBlueprintDefinitionBase> bps, Dictionary<string, Sizes> dict, ref int usedFor, bool areResults = false)
         {
             foreach(var bp in bps)
             {
@@ -492,6 +492,10 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     var prodDef = def as MyProductionBlockDefinition;
                     if(prodDef == null)
+                        continue;
+
+                    // ignore result if blueprint is used in gas tanks/generators because they ignore it so it's usually gravel.
+                    if(areResults && (def is MyGasTankDefinition || def is MyOxygenGeneratorDefinition))
                         continue;
 
                     foreach(var bpClass in prodDef.BlueprintClasses)
