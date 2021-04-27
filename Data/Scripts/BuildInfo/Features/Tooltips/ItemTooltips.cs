@@ -186,6 +186,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 TooltipConsumable(s, physDef);
                 TooltipFuel(s, physDef);
+                TooltipBottle(s, physDef);
                 TooltipWeapon(s, physDef);
                 TooltipAmmo(s, physDef);
                 TooltipCrafting(s, physDef);
@@ -278,7 +279,16 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef)
+        public void TooltipBottle(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        {
+            var bottleDef = physDef as MyOxygenContainerDefinition;
+            if(bottleDef == null)
+                return;
+
+            s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").IdTypeSubtypeFormat(bottleDef.StoredGasId);
+        }
+
+        public void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
             var weaponItemDef = physDef as MyWeaponItemDefinition;
             if(weaponItemDef == null)
@@ -313,7 +323,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipAmmo(StringBuilder s, MyPhysicalItemDefinition physDef)
+        public void TooltipAmmo(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
             var magDef = physDef as MyAmmoMagazineDefinition;
             if(magDef == null)

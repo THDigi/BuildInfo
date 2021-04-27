@@ -125,8 +125,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(bpBaseDef.Results != null && bpBaseDef.Results.Length > 0)
                 {
                     TooltipDescription(s, bpBaseDef);
-                    TooltipWeaponBp(s, bpBaseDef);
-                    TooltipAmmoBp(s, bpBaseDef);
+                    TooltipPhysItemResult(s, bpBaseDef);
                 }
             }
 
@@ -191,136 +190,15 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipWeaponBp(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        void TooltipPhysItemResult(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
-            var weaponItemDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyWeaponItemDefinition;
-            if(weaponItemDef == null)
+            var physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
+            if(physDef == null)
                 return;
 
-            MyWeaponDefinition weaponDef;
-            if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out weaponDef))
-                return;
-
-            // TODO some weapon stats? they depend on the ammo tho...
-
-            if(weaponDef.AmmoMagazinesId != null && weaponDef.AmmoMagazinesId.Length > 0)
-            {
-                if(weaponDef.AmmoMagazinesId.Length == 1)
-                    s.Append("\nUses magazine:");
-                else
-                    s.Append("\nUses magazines:");
-
-                foreach(var magId in weaponDef.AmmoMagazinesId)
-                {
-                    s.Append("\n  ");
-
-                    var magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(magId);
-                    if(magDef == null)
-                        s.Append("(NotFound=").Append(magId.ToString()).Append(")");
-                    else
-                        s.Append(magDef.DisplayNameText);
-
-                    if(!Main.TooltipHandler.TmpHasBP.Contains(magId))
-                        s.Append(" (Not Craftable)");
-                }
-            }
-        }
-
-        void TooltipAmmoBp(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
-        {
-            var magDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyAmmoMagazineDefinition;
-            if(magDef == null)
-                return;
-
-            if(magDef.Capacity > 1)
-                s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
-
-            TmpNameAndSize.Clear();
-
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
-            {
-                {
-                    var weaponItemDef = def as MyWeaponItemDefinition;
-                    if(weaponItemDef != null)
-                    {
-                        MyWeaponDefinition wpDef;
-                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out wpDef))
-                            continue;
-
-                        if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
-                        {
-                            foreach(var magId in wpDef.AmmoMagazinesId)
-                            {
-                                if(magId == magDef.Id)
-                                {
-                                    TmpNameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
-                                    break;
-                                }
-                            }
-                        }
-                        continue;
-                    }
-                }
-                {
-                    var weaponBlockDef = def as MyWeaponBlockDefinition;
-                    if(weaponBlockDef != null)
-                    {
-                        MyWeaponDefinition wpDef;
-                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out wpDef))
-                            continue;
-
-                        if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
-                        {
-                            foreach(var magId in wpDef.AmmoMagazinesId)
-                            {
-                                if(magId == magDef.Id)
-                                {
-                                    string key = def.DisplayNameText;
-                                    Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                                    Sizes existingSize;
-                                    if(TmpNameAndSize.TryGetValue(key, out existingSize))
-                                    {
-                                        if(existingSize != Sizes.Both && existingSize != currentSize)
-                                            TmpNameAndSize[key] = Sizes.Both;
-                                    }
-                                    else
-                                    {
-                                        TmpNameAndSize[key] = currentSize;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        continue;
-                    }
-                }
-            }
-
-            if(TmpNameAndSize.Count == 0)
-                return;
-
-            s.Append("\nUsed by:");
-
-            int limit = 0;
-            foreach(var kv in TmpNameAndSize)
-            {
-                if(++limit > ListLimit)
-                {
-                    limit--;
-                    s.Append("\n  ...and ").Append(TmpNameAndSize.Count - limit).Append(" more");
-                    break;
-                }
-
-                s.Append("\n  ").Append(kv.Key);
-
-                switch(kv.Value)
-                {
-                    case Sizes.Small: s.Append(" (Small Grid)"); break;
-                    case Sizes.Large: s.Append(" (Large Grid)"); break;
-                    case Sizes.Both: s.Append(" (Small + Large Grid)"); break;
-                    case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
-                }
-            }
+            Main.ItemTooltips.TooltipBottle(s, physDef, true);
+            Main.ItemTooltips.TooltipWeapon(s, physDef, true);
+            Main.ItemTooltips.TooltipAmmo(s, physDef, true);
         }
     }
 }
