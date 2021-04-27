@@ -31,8 +31,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public const double SplitModeLeftSideMinWidth = 0.32;
 
-        public const int ShowForTicks = (int)(Constants.TICKS_PER_SECOND * 3f);
-
         public int ForceRefreshAtTick;
 
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
@@ -275,10 +273,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 Utils.AssertMainThread();
 
-                var player = MyAPIGateway.Session?.Player;
-                if(player != null && player.IdentityId == playerId)
+                if(Main.Config.ToolbarLabelsEnterCockpitTime.Value > 0)
                 {
-                    ShowUntilTick = Main.Tick + ShowForTicks;
+                    var player = MyAPIGateway.Session?.Player;
+                    if(player != null && player.IdentityId == playerId)
+                    {
+                        ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
+                    }
                 }
             }
             catch(Exception e)
@@ -422,7 +423,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(MustBeVisible)
             {
-                bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.AltKey || LabelsMode == ToolbarLabelsMode.HudHints);
+                bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.ShowOnPress || LabelsMode == ToolbarLabelsMode.HudHints);
 
                 if(modeForFadeOut && Main.ToolbarMonitor.HighestIndexUsed == 0)
                 {
@@ -444,7 +445,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     MustBeVisible = true;
 
-                    float fadeSection = ((float)ShowForTicks * 0.5f);
+                    float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
+                    float fadeSection = (showForTicks * 0.5f);
                     float opacity = Main.GameConfig.HudBackgroundOpacity;
                     if(ShowUntilTick <= tick + fadeSection)
                         opacity = MathHelper.Lerp(0, opacity, (ShowUntilTick - tick) / fadeSection);
@@ -463,12 +465,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         BeenFaded = false;
                     }
 
-                    if(LabelsMode == ToolbarLabelsMode.HudHints && !(Main.GameConfig.HudState == HudState.HINTS || MyAPIGateway.Input.IsAnyAltKeyPressed()))
+                    if(LabelsMode == ToolbarLabelsMode.HudHints && !(Main.GameConfig.HudState == HudState.HINTS || Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE)))
                     {
                         MustBeVisible = false;
                     }
 
-                    if(LabelsMode == ToolbarLabelsMode.AltKey && !MyAPIGateway.Input.IsAnyAltKeyPressed())
+                    if(LabelsMode == ToolbarLabelsMode.ShowOnPress && !Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE))
                     {
                         MustBeVisible = false;
                     }

@@ -51,6 +51,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting TurretHUD;
 
         public IntegerSetting ToolbarLabels;
+        public FloatSetting ToolbarLabelsEnterCockpitTime;
         public IntegerSetting ToolbarItemNameMode;
         public BoolSetting ToolbarLabelsShowTitle;
         public IntegerSetting ToolbarStyleMode;
@@ -84,6 +85,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting FreezePlacementBind;
         public InputCombinationSetting BlockPickerBind;
         public InputCombinationSetting LockOverlayBind;
+        public InputCombinationSetting ShowToolbarInfoBind;
 
         public BoolSetting InternalInfo;
 
@@ -97,6 +99,7 @@ namespace Digi.BuildInfo.Features.Config
         public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
         public const string BLOCK_PICKER_INPUT_NAME = "bi.blockPicker";
         public const string LOCK_OVERLAY_INPUT_NAME = "bi.lockOverlay";
+        public const string SHOW_TOOLBAR_INFO_INPUT_NAME = "bi.showToolbarInfo";
 
         public Config(BuildInfoMod main) : base(main)
         {
@@ -321,12 +324,18 @@ namespace Digi.BuildInfo.Features.Config
                 string.Format(SubHeaderFormat, "Toolbar & Toolbar labels box"),
                 "",
                 "Customize ship toolbar block action's labels.",
-                "Turning this off turns off the rest of the toolbar action stuff.",
-                $"Also, upon entering a cockpit labels are shown for {(ToolbarInfo.ToolbarLabelRender.ShowForTicks / Constants.TICKS_PER_SECOND).ToString()} seconds for HudHints&AltKey modes."
+                "Turning this off turns off the rest of the toolbar action stuff."
             },
             new Dictionary<ToolbarLabelsMode, string>()
             {
-                [ToolbarLabelsMode.HudHints] = "can also be shown with ALT in this mode",
+                [ToolbarLabelsMode.ShowOnPress] = $"input can be configured in 'Bind: Show Toolbar Info'", // can't use field as it's not yet assigned
+                [ToolbarLabelsMode.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.",
+            });
+
+            ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: Enter Cockpit Time", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
+            {
+                "Show toolbar info for this many seconds upon entering a cockpit.",
+                $"Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}."
             });
 
             ToolbarItemNameMode = CreateEnumSetting("Toolbar: Item Name Mode", ToolbarNameMode.AlwaysShow, new string[]
@@ -434,6 +443,10 @@ namespace Digi.BuildInfo.Features.Config
             LockOverlayBind = new InputCombinationSetting(Handler, "Bind: Lock Overlay", Combination.Create(LOCK_OVERLAY_INPUT_NAME, "shift c.cubesizemode"),
                 "When aiming at a block with a tool it locks overlays to that block so you can move around.",
                 "You still have to cycle overlays (see above) in order to see them.");
+
+            ShowToolbarInfoBind = new InputCombinationSetting(Handler, "Bind: Show Toolbar Info", Combination.Create(SHOW_TOOLBAR_INFO_INPUT_NAME, "alt"),
+                $"Shows ToolbarInfo while held when in a cockpit.",
+                "Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}.");
             #endregion
 
             #region Misc

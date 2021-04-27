@@ -140,6 +140,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleToggle(Category_HUD, "Relative Dampener Info", Main.Config.RelativeDampenerInfo);
 
             SimpleEnumCycle(Category_Toolbar, "Labels Mode", typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
+            SimpleSlider(Category_Toolbar, "Labels Enter Cockpit Time", Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels);
             SimpleEnumCycle(Category_Toolbar, "Toolbar Item Names Mode", typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, "Labels Show Title", Main.Config.ToolbarLabelsShowTitle, groupToolbarLabels);
             SimpleEnumCycle(Category_Toolbar, "Label Box Style", typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
@@ -162,6 +163,7 @@ namespace Digi.BuildInfo.Features.TextAPIMenu
             SimpleBind(Category_Binds, "Toggle Transparency Bind", Features.Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Main.Config.ToggleTransparencyBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Block Picker Bind", Features.Config.Config.BLOCK_PICKER_INPUT_NAME, Main.Config.BlockPickerBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Lock Overlay Bind", Features.Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Show Toolbar Info Bind", Features.Config.Config.SHOW_TOOLBAR_INFO_INPUT_NAME, Main.Config.ShowToolbarInfoBind, groupBinds, groupBinds);
 
             SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);

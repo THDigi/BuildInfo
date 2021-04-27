@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.Config
     {
         Off = 0,
         AlwaysOn = 1,
-        AltKey = 2,
+        ShowOnPress = 2,
         HudHints = 3,
     }
 
