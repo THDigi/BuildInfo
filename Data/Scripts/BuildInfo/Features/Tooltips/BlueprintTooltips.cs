@@ -122,10 +122,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(!Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Id))
             {
-                // TODO: append block/item description?
-
                 if(bpBaseDef.Results != null && bpBaseDef.Results.Length > 0)
                 {
+                    TooltipDescription(s, bpBaseDef);
                     TooltipWeaponBp(s, bpBaseDef);
                     TooltipAmmoBp(s, bpBaseDef);
                 }
@@ -138,6 +137,57 @@ namespace Digi.BuildInfo.Features.Tooltips
                 var workshopId = bpBaseDef.Context.GetWorkshopID();
                 if(workshopId > 0)
                     s.Append(" (id: ").Append(workshopId).Append(")");
+            }
+
+            s.TrimEndWhitespace();
+        }
+
+        void TooltipDescription(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        {
+            const int MaxWidth = 70;
+
+            var compositeBp = bpBaseDef as MyCompositeBlueprintDefinition;
+            if(compositeBp != null)
+            {
+                MyDefinitionId id;
+                if(MyDefinitionId.TryParse("MyObjectBuilder_" + bpBaseDef.Id.SubtypeName, out id))
+                {
+                    var def = MyDefinitionManager.Static.GetDefinition(id);
+                    if(def != null)
+                    {
+                        string desc = def.DescriptionText;
+                        if(!string.IsNullOrWhiteSpace(desc))
+                        {
+                            s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
+                        }
+                    }
+                }
+                return;
+            }
+
+            var resultDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id);
+            if(resultDef != null)
+            {
+                bool appendedDescription = false;
+                string desc = resultDef.DescriptionText;
+                if(!string.IsNullOrWhiteSpace(desc))
+                {
+                    s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
+                    appendedDescription = true;
+                }
+
+                var physDef = resultDef as MyPhysicalItemDefinition;
+                if(physDef != null)
+                {
+                    /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
+                    var tooltip = physDef.ExtraInventoryTooltipLine?.ToString();
+                    if(!string.IsNullOrWhiteSpace(tooltip))
+                    {
+                        s.TrimEndWhitespace().Append(appendedDescription ? "\n" : "\n\n").AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append("\n");
+                    }
+                }
+
+                return;
             }
         }
 

@@ -59,8 +59,8 @@ namespace Digi.BuildInfo
         public BlockInfoScrollComponents BlockInfoScrollComponents;
         public WhatsNew WhatsNew;
         public TooltipHandler TooltipHandler;
-        public ItemTooltips ItemTooltips;
         public BlueprintTooltips BlueprintTooltips;
+        public ItemTooltips ItemTooltips;
         public ToolbarOverride ToolbarOverride;
         public ToolbarMonitor ToolbarMonitor;
         public ToolbarCustomLabels ToolbarCustomLabels;
@@ -113,8 +113,8 @@ namespace Digi.BuildInfo
             BlockInfoScrollComponents = new BlockInfoScrollComponents(this);
             WhatsNew = new WhatsNew(this);
             TooltipHandler = new TooltipHandler(this);
-            ItemTooltips = new ItemTooltips(this);
             BlueprintTooltips = new BlueprintTooltips(this);
+            ItemTooltips = new ItemTooltips(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);
             ToolbarCustomLabels = new ToolbarCustomLabels(this);

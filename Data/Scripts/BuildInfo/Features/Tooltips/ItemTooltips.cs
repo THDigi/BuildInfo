@@ -2,6 +2,7 @@
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using VRage.Game;
 using VRage.Utils;
@@ -35,6 +36,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
+            SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_OxygenContainerObject), "OxygenBottle"), "Recharges your life support oxygen automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.");
+            SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_GasContainerObject), "HydrogenBottle"), "Recharges your jetpack hydrogen fuel automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Hydrogen Tanks.");
+
             Main.TooltipHandler.Setup += Setup;
         }
 
@@ -563,6 +567,15 @@ namespace Digi.BuildInfo.Features.Tooltips
                 Def = def;
                 Tooltip = tooltip;
                 Symbol = symbol;
+            }
+        }
+
+        void SetDescription(MyDefinitionId id, string description)
+        {
+            MyDefinitionBase def;
+            if(MyDefinitionManager.Static.TryGetDefinition(id, out def) && string.IsNullOrWhiteSpace(def.DescriptionText))
+            {
+                def.DescriptionString = description;
             }
         }
     }

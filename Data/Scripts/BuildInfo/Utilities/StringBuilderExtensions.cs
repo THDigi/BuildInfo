@@ -22,14 +22,21 @@ namespace Digi.BuildInfo.Utilities
         // copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
-            int num = sb.Length;
+            int idx = sb.Length - 1;
 
-            while(num > 0 && (sb[num - 1] == ' ' || sb[num - 1] == '\r' || sb[num - 1] == '\n'))
+            while(true)
             {
-                num--;
+                if(idx < 0)
+                    break;
+
+                var c = sb[idx];
+                if(c != ' ' && c != '\n' && c != '\r')
+                    break;
+
+                idx--;
             }
 
-            sb.Length = num;
+            sb.Length = idx + 1;
             return sb;
         }
 
@@ -136,6 +143,51 @@ namespace Digi.BuildInfo.Utilities
 
             sb.Remove(prefixIndex, endIndex - prefixIndex);
             return true;
+        }
+
+        public static StringBuilder AppendWordWrapped(this StringBuilder sb, string text, int maxWidthChars)
+        {
+            int width = 0;
+            int lastSpaceIdx = -1;
+
+            for(int charIdx = 0; charIdx < text.Length; charIdx++)
+            {
+                var c = text[charIdx];
+
+                switch(c)
+                {
+                    case '\n':
+                        width = 0;
+                        lastSpaceIdx = -1;
+                        break;
+                    case ' ':
+                        lastSpaceIdx = charIdx;
+                        break;
+                }
+
+                sb.Append(c);
+
+                if(++width > maxWidthChars)
+                {
+                    if(lastSpaceIdx > -1)
+                    {
+                        // go back to last space, replace it with a newline and set loop to go from that point
+                        sb.Length -= (charIdx - lastSpaceIdx);
+                        sb[sb.Length - 1] = '\n';
+                        charIdx = lastSpaceIdx;
+                    }
+                    else
+                    {
+                        // no space on this line, split word
+                        sb.Append("-\n");
+                    }
+
+                    width = 0;
+                    lastSpaceIdx = -1;
+                }
+            }
+
+            return sb;
         }
 
         public static StringBuilder AppendRGBA(this StringBuilder sb, Color color)
