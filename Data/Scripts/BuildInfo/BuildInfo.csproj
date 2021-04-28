@@ -158,6 +158,7 @@
     <Compile Include="Features\ChatCommands\CommandQuickMenu.cs" />
     <Compile Include="Features\ChatCommands\CommandReloadConfig.cs" />
     <Compile Include="Features\ChatCommands\CommandShipMods.cs" />
+    <Compile Include="Features\ChatCommands\CommandMeasureText.cs" />
     <Compile Include="Features\ChatCommands\CommandWorkshop.cs" />
     <Compile Include="Features\Config\BackgroundOpacitySetting.cs" />
     <Compile Include="Features\Config\Config.cs" />
