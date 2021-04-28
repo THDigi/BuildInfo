@@ -772,6 +772,20 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(proportion * 100, digits).Append('%');
         }
 
+        public static StringBuilder MultiplierToPercent(this StringBuilder s, float multiplier)
+        {
+            if(!IsValid(s, multiplier))
+                return s.Append('%');
+
+            float ratio = multiplier - 1;
+            if(ratio < 0)
+                s.Append(Math.Round(ratio * 100));
+            else
+                s.Append('+').Append(Math.Round(ratio * 100));
+
+            return s.Append('%').Append(" (x").RoundedNumber(multiplier, 2).Append(")");
+        }
+
         public static StringBuilder MultiplierFormat(this StringBuilder s, float mul)
         {
             if(Math.Abs(mul - 1f) > 0.001f)

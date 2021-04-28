@@ -196,9 +196,12 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(physDef == null)
                 return;
 
-            Main.ItemTooltips.TooltipBottle(s, physDef, true);
-            Main.ItemTooltips.TooltipWeapon(s, physDef, true);
-            Main.ItemTooltips.TooltipAmmo(s, physDef, true);
+            var it = Main.ItemTooltips;
+            it.TooltipBottle(s, physDef, true);
+            it.TooltipTool(s, physDef, true);
+            it.TooltipWeapon(s, physDef, true);
+            it.TooltipAmmo(s, physDef, true);
+            it.TooltipConsumable(s, physDef, true);
         }
     }
 }

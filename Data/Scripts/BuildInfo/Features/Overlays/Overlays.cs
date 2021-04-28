@@ -1030,7 +1030,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             #region Carving
             var carveMatrix = mineMatrix;
-            float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.ShipDrill_MineVoelNoOreRadiusMul);
+            float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
             Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabel)

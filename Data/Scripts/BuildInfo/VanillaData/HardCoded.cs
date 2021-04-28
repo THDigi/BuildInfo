@@ -63,6 +63,12 @@ namespace Digi.BuildInfo.VanillaData
             return (def.Size * gridSize * 0.8f).Volume;
         }
 
+        // from MyEngineerToolBase
+        public const float EngineerToolBase_DefaultReachDistance = 2f;
+
+        // from MyHandDrill.Init()
+        public const float HandDrill_DefaultRadius = 0.35f;
+
         // from MyShipDrill
         public const float ShipDrill_Power = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
         public static readonly MyObjectBuilderType ShipDrill_InventoryConstraint = typeof(MyObjectBuilder_Ore);
@@ -72,9 +78,11 @@ namespace Digi.BuildInfo.VanillaData
             return (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
         }
         public const float ShipDrill_VoxelVisualAdd = 0.6f; // based on visual tests
-        public const float ShipDrill_MineVoelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels()
-        public const float ShipDrill_MineFloatingObjectRadiusMul = 1.3300000429153442f; // MyDrillBase.DrillFloatingObject
-        public const float ShipDrill_MineCharacterRadiusMul = 0.800000011920929f; // MyDrillBase.DrillCharacter
+
+        // applies to both ship and hand drills
+        public const float Drill_MineVoelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels()
+        public const float Drill_MineFloatingObjectRadiusMul = 1.3300000429153442f; // MyDrillBase.DrillFloatingObject
+        public const float Drill_MineCharacterRadiusMul = 0.800000011920929f; // MyDrillBase.DrillCharacter
 
         // from MyShipToolBase
         public const float ShipTool_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
@@ -290,9 +298,6 @@ namespace Digi.BuildInfo.VanillaData
             int num2 = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(height / width)));
             return new Vector2I(textureSize, textureSize * num2);
         }
-
-        // from MyEngineerToolBase
-        public const float EngineerToolBase_DefaultReachDistance = 2f;
 
         // from MyEntityThrustComponent
         public const double RelativeDampeners_MaxDistance = 100f;

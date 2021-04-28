@@ -187,6 +187,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 TooltipConsumable(s, physDef);
                 TooltipFuel(s, physDef);
                 TooltipBottle(s, physDef);
+                TooltipTool(s, physDef);
                 TooltipWeapon(s, physDef);
                 TooltipAmmo(s, physDef);
                 TooltipCrafting(s, physDef);
@@ -207,7 +208,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipConsumable(StringBuilder s, MyPhysicalItemDefinition physDef)
+        public void TooltipConsumable(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
             var consumable = physDef as MyConsumableItemDefinition;
             if(consumable != null && consumable.Stats.Count > 0)
@@ -286,6 +287,42 @@ namespace Digi.BuildInfo.Features.Tooltips
                 return;
 
             s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").IdTypeSubtypeFormat(bottleDef.StoredGasId);
+        }
+
+        public void TooltipTool(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        {
+            var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(physDef.Id) as MyEngineerToolBaseDefinition;
+            if(toolDef == null)
+                return;
+
+            var drillDef = toolDef as MyHandDrillDefinition;
+            if(drillDef != null)
+            {
+                s.Append("\nDrill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.Drill_MineVoelNoOreRadiusMul, 2).Append(" with secondary)");
+                s.Append("\nDrill speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+                s.Append("\nDrill harvest: ").MultiplierToPercent(drillDef.HarvestRatioMultiplier);
+                return;
+            }
+
+            // HACK: MyWelderDefinition & MyAngleGrinderDefinition are internal
+            string defType = toolDef.GetType().Name;
+
+            if(defType == "MyAngleGrinderDefinition")
+            {
+                s.Append("\nReach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier);
+                s.Append("\nGrind speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+                return;
+            }
+
+            if(defType == "MyWelderDefinition")
+            {
+                s.Append("\nReach: ").DistanceFormat(Hardcoded.EngineerToolBase_DefaultReachDistance * toolDef.DistanceMultiplier);
+                s.Append("\nWeld speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
+                return;
+            }
+
+            s.Append("\nTool distance: ").MultiplierToPercent(toolDef.DistanceMultiplier);
+            s.Append("\nTool speed: ").MultiplierToPercent(toolDef.SpeedMultiplier);
         }
 
         public void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
