@@ -1193,7 +1193,7 @@ namespace Digi.BuildInfo.Features
 
                 if(realTorque != pickedTorque)
                 {
-                    info.NewLine().Append("Capped Torque [4]: ").TorqueFormat(realTorque).NewLine();
+                    info.NewLine().Append("Capped Torque: ").TorqueFormat(realTorque).Append(" ([4] @ /bi)").NewLine();
                 }
 
                 if(mass > 0)
