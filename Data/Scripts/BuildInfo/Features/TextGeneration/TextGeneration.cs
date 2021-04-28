@@ -3732,7 +3732,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true)
+        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true, MyInventoryConstraint constraintFromDef = null)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
@@ -3742,13 +3742,15 @@ namespace Digi.BuildInfo.Features
                 if(invComp != null)
                     volume = invComp.Volume;
 
-                if(volume > 0)
-                    AddLine().Label("Inventory").InventoryFormat(volume);
-                else if(hardcodedVolume > 0)
-                    AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume);
+                var invConstraint = invComp?.InputConstraint ?? constraintFromDef;
 
-                if(invComp != null)
-                    InventoryConstraints(volume, invComp.InputConstraint);
+                if(volume > 0)
+                    AddLine().Label("Inventory").InventoryFormat(volume, invConstraint);
+                else if(hardcodedVolume > 0)
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume, invConstraint);
+
+                if(showConstraints && invConstraint != null)
+                    InventoryConstraints(volume, invConstraint);
             }
         }
 
