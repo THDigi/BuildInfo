@@ -1614,6 +1614,11 @@ namespace Digi.BuildInfo.Features
                 {
                     action.Invoke(def);
                 }
+                // HACK: remove once MyObjectBuilder_TargetDummyBlock is whitelisted
+                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_TargetDummyBlock")
+                {
+                    Format_TargetDummy(def);
+                }
             }
             #endregion Per-block info
 
@@ -1914,6 +1919,9 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_SmallMissileLauncherReload), action);
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
+
+            // HACK: uncomment once MyObjectBuilder_TargetDummyBlock is whitelisted
+            //Add(typeof(MyObjectBuilder_TargetDummyBlock), Format_TargetDummy);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
@@ -3570,6 +3578,51 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius);
                 AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##"));
+            }
+        }
+
+        private void Format_TargetDummy(MyCubeBlockDefinition def)
+        {
+            var dummyDef = (MyTargetDummyBlockDefinition)def;
+
+            // HACK: hardcoded; TargetDummy doesn't require power
+            PowerRequired(0, null, powerHardcoded: true);
+
+            InventoryStats(def, alternateVolume: dummyDef.InventoryMaxVolume, constraintFromDef: dummyDef.InventoryConstraint);
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
+            {
+                if(dummyDef.ConstructionItemAmount == 0)
+                    AddLine().Color(COLOR_GOOD).Label("Regeneration requires item").Append("(nothing)");
+                else
+                    AddLine().Color(COLOR_WARNING).Label("Regeneration requires item").Append(dummyDef.ConstructionItemAmount).Append("x ").IdTypeSubtypeFormat(dummyDef.ConstructionItem);
+            }
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Regeneration time").TimeFormat(dummyDef.MinRegenerationTimeInS).Append(" to ").TimeFormat(dummyDef.MaxRegenerationTimeInS);
+
+                if(dummyDef.SubpartDefinitions != null && dummyDef.SubpartDefinitions.Count > 0)
+                {
+                    const int Spaces = 28;
+                    AddLine().Label("Shootable parts");
+
+                    bool first = true;
+
+                    foreach(var kv in dummyDef.SubpartDefinitions)
+                    {
+                        string name = kv.Key;
+                        float hp = kv.Value.Health;
+                        bool crit = kv.Value.IsCritical;
+
+                        if(!first)
+                            AddLine().Color(COLOR_LIST).Append(' ', Spaces).Append("| ").ResetFormatting();
+
+                        GetLine().Append(name).Append(" - ").RoundedNumber(hp, 2).Append(" hp").Append(crit ? " (critical)" : "");
+
+                        first = false;
+                    }
+                }
             }
         }
 
