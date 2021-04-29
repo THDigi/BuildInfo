@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
@@ -31,8 +33,15 @@ namespace Digi.BuildInfo.Systems
 
         private void Replied()
         {
-            IsRunning = true;
-            ParseDefinitions();
+            try
+            {
+                IsRunning = true;
+                ParseDefinitions();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         public override void UnregisterComponent()
@@ -45,19 +54,21 @@ namespace Digi.BuildInfo.Systems
 
         void ParseDefinitions()
         {
-            var weaponSubtypes = new Dictionary<string, List<MyObjectBuilderType>>();
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
-            {
-                if(def is MyWeaponBlockDefinition || def is MyConveyorSorterDefinition)
-                {
-                    List<MyObjectBuilderType> types;
-                    if(!weaponSubtypes.TryGetValue(def.Id.SubtypeName, out types))
-                    {
-                        types = new List<MyObjectBuilderType>();
-                        weaponSubtypes[def.Id.SubtypeName] = types;
-                    }
+            var weaponSubtypes = new Dictionary<string, List<MyObjectBuilderType>>(32);
 
-                    types.Add(def.Id.TypeId);
+            foreach(var blockDef in Main.Caches.BlockDefs)
+            {
+                if(blockDef is MyWeaponBlockDefinition || blockDef is MyConveyorSorterDefinition)
+                {
+                    weaponSubtypes.GetOrAdd(blockDef.Id.SubtypeName).Add(blockDef.Id.TypeId);
+                }
+            }
+
+            foreach(var physItemDef in Main.Caches.ItemDefs)
+            {
+                if(physItemDef is MyWeaponItemDefinition)
+                {
+                    weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName).Add(physItemDef.Id.TypeId);
                 }
             }
 
@@ -67,7 +78,17 @@ namespace Digi.BuildInfo.Systems
             for(int idx = 0; idx < definitionsAsBytes.Count; idx++)
             {
                 byte[] bytes = definitionsAsBytes[idx];
-                var weaponDef = MyAPIGateway.Utilities.SerializeFromBinary<WcApiDef.WeaponDefinition>(bytes);
+
+                WcApiDef.WeaponDefinition weaponDef;
+                try
+                {
+                    weaponDef = MyAPIGateway.Utilities.SerializeFromBinary<WcApiDef.WeaponDefinition>(bytes);
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error deserializing WeaponCore definition bytes #{idx.ToString()} of {definitionsAsBytes.Count.ToString()}\n{e}");
+                    continue;
+                }
 
                 foreach(var mount in weaponDef.Assignments.MountPoints)
                 {
@@ -92,7 +113,7 @@ namespace Digi.BuildInfo.Systems
                     }
                     else
                     {
-                        Log.Info($"WARNING: Couldn't find any weapon or conveyor sorter block with subtype '{subtype}' for WeaponCore, idx={idx.ToString()}, mod={weaponDef.ModPath}");
+                        Log.Info($"WARNING: Couldn't find any weapon item, weapon block, conveyor sorter with subtype '{subtype}' for WeaponCore, idx={idx.ToString()}, mod={weaponDef.ModPath}");
                     }
                 }
             }
