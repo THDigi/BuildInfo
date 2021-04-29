@@ -425,14 +425,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.ShowOnPress || LabelsMode == ToolbarLabelsMode.HudHints);
 
-                if(modeForFadeOut && Main.ToolbarMonitor.HighestIndexUsed == 0)
+                if(modeForFadeOut && Main.ToolbarMonitor.HighestIndexUsed < 0)
                 {
                     // don't show+fade for empty toolbars
                     ShowUntilTick = 0;
                 }
 
-                // if pressing alt in the right mode it just ignores the cockpit entering fade stuff
-                if(modeForFadeOut && ShowUntilTick > tick && MyAPIGateway.Input.IsAnyAltKeyPressed())
+                // if holding show toolbar bind in the right mode while just entering cockpit, skip the fade-out.
+                if(modeForFadeOut && ShowUntilTick > tick && Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE))
                 {
                     ShowUntilTick = 0;
 
@@ -547,7 +547,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int toolbarPage = (gamepadHUD ? Main.ToolbarMonitor.GamepadToolbarPage : Main.ToolbarMonitor.ToolbarPage);
             int startIndex = (gamepadHUD ? toolbarPage * ToolbarMonitor.SlotsPerPageGamepad : toolbarPage * ToolbarMonitor.SlotsPerPage);
             int maxIndexPage = (startIndex + slotsPerPage - 1);
-            int highestUsedIndex = Main.ToolbarMonitor.HighestIndexUsed;
+            int highestUsedIndex = Math.Max(Main.ToolbarMonitor.HighestIndexUsed, 0);
             int maxUsedIndex = Math.Min(highestUsedIndex, maxIndexPage);
 
             double topLinesWidth = 0;

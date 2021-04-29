@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
 
-            HighestIndexUsed = 0;
+            HighestIndexUsed = -1;
             SequencedItems.Clear();
 
             if(shipController == null)
