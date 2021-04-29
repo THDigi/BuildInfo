@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
-        public BoolSetting OverlaysLabelsAlt;
+        public BoolSetting OverlaysShowLabelsWithBind;
 
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;
@@ -403,8 +403,16 @@ namespace Digi.BuildInfo.Features.Config
                 "Pick what labels can be shown for overlays.",
                 "Not yet fully expanded to include detailed settings, just axes and eveything else for now.");
 
-            OverlaysLabelsAlt = new BoolSetting(Handler, "Overlays: Show Labels with Alt key", true,
-                "Turning off labels above and having this setting on allows you to see labels when holding Alt key.");
+            var lookaroundControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.LOOKAROUND);
+            string lookaroundBind = "(unbound)";
+            if(lookaroundControl.GetKeyboardControl() != MyKeys.None)
+                lookaroundBind = MyAPIGateway.Input.GetKeyName(lookaroundControl.GetKeyboardControl());
+            else if(lookaroundControl.GetSecondKeyboardControl() != MyKeys.None)
+                lookaroundBind = MyAPIGateway.Input.GetKeyName(lookaroundControl.GetSecondKeyboardControl());
+
+            OverlaysShowLabelsWithBind = new BoolSetting(Handler, "Overlays: Show Labels with Look-around key", true,
+                $"Turning off labels above and having this setting on allows you to see labels when holding the look-around bind (last seen bound to: {lookaroundBind}).");
+            OverlaysShowLabelsWithBind.AddCompatibilityNames("Overlays: Show Labels with Alt key");
             #endregion
 
             #region Air Leak

@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupCustomStyling = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
-        private readonly ItemGroup groupOverlayLabelsAlt = new ItemGroup();
+        private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
         private readonly ItemGroup groupBinds = new ItemGroup(); // for updating titles on bindings that use other bindings
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
@@ -45,7 +45,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupCustomStyling.SetInteractable(Main.Config.TextShow.Value && Main.Config.TextAPICustomStyling.Value);
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
-            groupOverlayLabelsAlt.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
+            groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
 
             groupBinds.Update();
 
@@ -128,7 +128,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             SimpleToggle(Category_Overlays, "Show when HUD is off", Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
-            SimpleToggle(Category_Overlays, "Labels shown with ALT", Main.Config.OverlaysLabelsAlt, groupOverlayLabelsAlt);
+            SimpleToggle(Category_Overlays, "Labels shown with Lookaround bind", Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
 
             SimpleToggle(Category_HUD, "Block Info Additions", Main.Config.BlockInfoAdditions);
             SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
@@ -349,7 +349,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Main.Config.OverlayLabels,
                 onValueSet: (flag, set) =>
                 {
-                    groupOverlayLabelsAlt.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
+                    groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
                     ApplySettings(redraw: false);
                 }
             );

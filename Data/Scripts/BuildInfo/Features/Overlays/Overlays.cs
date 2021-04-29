@@ -7,9 +7,12 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using Digi.Input;
+using Digi.Input.Devices;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -1001,7 +1004,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Drill(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var drill = (MyShipDrillDefinition)def;
+            var drill = def as MyShipDrillDefinition;
+            if(drill == null)
+                return;
 
             const int wireDivRatio = 20;
             var colorSensorText = Color.Gray;
@@ -1610,7 +1615,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + shadowOffset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
-            if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()))
+            if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)))
                 return;
 
             var textWorldPos = start + direction * lineHeight;
@@ -1816,7 +1821,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private bool CanDrawLabel(OverlayLabelsFlags labelsSetting = OverlayLabelsFlags.Other)
         {
-            return Main.TextAPI.IsEnabled && (Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysLabelsAlt.Value && MyAPIGateway.Input.IsAnyAltKeyPressed()));
+            return Main.TextAPI.IsEnabled && (Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)));
         }
     }
 }
