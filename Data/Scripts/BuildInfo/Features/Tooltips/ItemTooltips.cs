@@ -4,6 +4,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using VRage;
 using VRage.Game;
 using VRage.Utils;
 
@@ -272,10 +273,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 switch(kv.Value)
                 {
-                    case Sizes.Small: s.Append(" (Small Grid)"); break;
-                    case Sizes.Large: s.Append(" (Large Grid)"); break;
-                    case Sizes.Both: s.Append(" (Small + Large Grid)"); break;
-                    case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
+                    case Sizes.Small: s.Append(" (Small)"); break;
+                    case Sizes.Large: s.Append(" (Large)"); break;
+                    case Sizes.Both: s.Append(" (Small + Large)"); break;
                 }
             }
         }
@@ -371,61 +371,37 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             TmpNameAndSize.Clear();
 
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            List<MyTuple<MyDefinitionBase, MyWeaponDefinition>> weapons;
+            if(Main.TooltipHandler.TmpMagUsedIn.TryGetValue(magDef.Id, out weapons))
             {
+                foreach(var tuple in weapons)
                 {
-                    var weaponItemDef = def as MyWeaponItemDefinition;
-                    if(weaponItemDef != null)
                     {
-                        MyWeaponDefinition wpDef;
-                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out wpDef))
-                            continue;
-
-                        if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                        var wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
+                        if(wpBlockDef != null)
                         {
-                            foreach(var magId in wpDef.AmmoMagazinesId)
+                            string key = wpBlockDef.DisplayNameText;
+                            Sizes currentSize = (wpBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                            Sizes existingSize;
+                            if(TmpNameAndSize.TryGetValue(key, out existingSize))
                             {
-                                if(magId == magDef.Id)
-                                {
-                                    TmpNameAndSize.Add(def.DisplayNameText, Sizes.HandWeapon);
-                                    break;
-                                }
+                                if(existingSize != Sizes.Both && existingSize != currentSize)
+                                    TmpNameAndSize[key] = Sizes.Both;
                             }
+                            else
+                            {
+                                TmpNameAndSize[key] = currentSize;
+                            }
+                            continue;
                         }
-                        continue;
                     }
-                }
-                {
-                    var weaponBlockDef = def as MyWeaponBlockDefinition;
-                    if(weaponBlockDef != null)
                     {
-                        MyWeaponDefinition wpDef;
-                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out wpDef))
-                            continue;
-
-                        if(wpDef != null && wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                        var wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
+                        if(wpPhysItem != null)
                         {
-                            foreach(var magId in wpDef.AmmoMagazinesId)
-                            {
-                                if(magId == magDef.Id)
-                                {
-                                    string key = def.DisplayNameText;
-                                    Sizes currentSize = (weaponBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                                    Sizes existingSize;
-                                    if(TmpNameAndSize.TryGetValue(key, out existingSize))
-                                    {
-                                        if(existingSize != Sizes.Both && existingSize != currentSize)
-                                            TmpNameAndSize[key] = Sizes.Both;
-                                    }
-                                    else
-                                    {
-                                        TmpNameAndSize[key] = currentSize;
-                                    }
-                                    break;
-                                }
-                            }
+                            TmpNameAndSize[wpPhysItem.DisplayNameText] = Sizes.HandWeapon;
+                            continue;
                         }
-                        continue;
                     }
                 }
             }
@@ -449,9 +425,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 switch(kv.Value)
                 {
-                    case Sizes.Small: s.Append(" (Small Grid)"); break;
-                    case Sizes.Large: s.Append(" (Large Grid)"); break;
-                    case Sizes.Both: s.Append(" (Small + Large Grid)"); break;
+                    case Sizes.Small: s.Append(" (Small)"); break;
+                    case Sizes.Large: s.Append(" (Large)"); break;
+                    case Sizes.Both: s.Append(" (Small + Large)"); break;
                     case Sizes.HandWeapon: s.Append(" (Hand-held)"); break;
                 }
             }
@@ -535,34 +511,23 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             foreach(var bp in bps)
             {
-                foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+                List<MyProductionBlockDefinition> prodList;
+                if(BuildInfoMod.Instance.TooltipHandler.TmpBpUsedIn.TryGetValue(bp.Id, out prodList))
                 {
-                    var prodDef = def as MyProductionBlockDefinition;
-                    if(prodDef == null)
-                        continue;
-
-                    // ignore result if blueprint is used in gas tanks/generators because they ignore it so it's usually gravel.
-                    if(areResults && (def is MyGasTankDefinition || def is MyOxygenGeneratorDefinition))
-                        continue;
-
-                    foreach(var bpClass in prodDef.BlueprintClasses)
+                    foreach(var prodDef in prodList)
                     {
-                        if(bpClass.ContainsBlueprint(bp))
-                        {
-                            string name = prodDef.DisplayNameText;
+                        string name = prodDef.DisplayNameText;
 
-                            Sizes currentSize = (prodDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                            Sizes existingSize;
-                            if(dict.TryGetValue(name, out existingSize))
-                            {
-                                if(existingSize != Sizes.Both && existingSize != currentSize)
-                                    dict[name] = Sizes.Both;
-                            }
-                            else
-                            {
-                                dict[name] = currentSize;
-                            }
-                            break;
+                        Sizes currentSize = (prodDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                        Sizes existingSize;
+                        if(dict.TryGetValue(name, out existingSize))
+                        {
+                            if(existingSize != Sizes.Both && existingSize != currentSize)
+                                dict[name] = Sizes.Both;
+                        }
+                        else
+                        {
+                            dict[name] = currentSize;
                         }
                     }
                 }

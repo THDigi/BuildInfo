@@ -1,9 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.Definitions;
+using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
+using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.Tooltips
 {
@@ -16,6 +20,8 @@ namespace Digi.BuildInfo.Features.Tooltips
         public delegate void SetupDel(bool generate);
         public event SetupDel Setup;
 
+        public Dictionary<MyDefinitionId, List<MyProductionBlockDefinition>> TmpBpUsedIn = new Dictionary<MyDefinitionId, List<MyProductionBlockDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, List<MyTuple<MyDefinitionBase, MyWeaponDefinition>>> TmpMagUsedIn = new Dictionary<MyDefinitionId, List<MyTuple<MyDefinitionBase, MyWeaponDefinition>>>(MyDefinitionId.Comparer);
         public HashSet<MyDefinitionId> TmpHasBP = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         public Dictionary<MyDefinitionId, List<MyCubeBlockDefinition>> TmpBlockFuel = new Dictionary<MyDefinitionId, List<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
         public Dictionary<string, string> TmpStatDisplayNames = new Dictionary<string, string>()
@@ -25,6 +31,8 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void DisposeTempObjects()
         {
+            TmpBpUsedIn = null;
+            TmpMagUsedIn = null;
             TmpHasBP = null;
             TmpBlockFuel = null;
             TmpStatDisplayNames = null;
@@ -72,44 +80,91 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void PreTooltipGeneration()
         {
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            bool survival = MyAPIGateway.Session.SurvivalMode;
+
+            foreach(var blockDef in Main.Caches.BlockDefs)
             {
+                if(!blockDef.Public || (!survival && blockDef.AvailableInSurvival))
+                    continue;
+
                 {
-                    var prodDef = def as MyProductionBlockDefinition;
+                    var weaponBlockDef = blockDef as MyWeaponBlockDefinition;
+                    if(weaponBlockDef != null)
+                    {
+                        // TODO: weaponcore?
+
+                        MyWeaponDefinition wpDef;
+                        if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out wpDef))
+                            continue;
+
+                        if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                        {
+                            foreach(var magId in wpDef.AmmoMagazinesId)
+                            {
+                                TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponBlockDef, wpDef));
+                            }
+                        }
+                    }
+                }
+                {
+                    var prodDef = blockDef as MyProductionBlockDefinition;
                     if(prodDef != null)
                     {
+                        bool isGasGenOrTank = blockDef is MyGasTankDefinition || blockDef is MyOxygenGeneratorDefinition;
+
                         foreach(var bpClass in prodDef.BlueprintClasses)
                         {
                             foreach(var bp in bpClass)
                             {
-                                foreach(var result in bp.Results)
+                                TmpBpUsedIn.GetOrAdd(bp.Id).Add(prodDef);
+
+                                if(!isGasGenOrTank) // bp results of gas generators or gas tanks are not used, skip
                                 {
-                                    TmpHasBP.Add(result.Id);
+                                    foreach(var result in bp.Results)
+                                    {
+                                        TmpHasBP.Add(result.Id);
+                                    }
                                 }
                             }
                         }
-                        continue;
                     }
                 }
                 {
-                    var reactorDef = def as MyReactorDefinition; // only one that has FuelInfos it seems
+                    var reactorDef = blockDef as MyReactorDefinition; // only one that has FuelInfos it seems
                     if(reactorDef != null)
                     {
                         foreach(var fuelInfo in reactorDef.FuelInfos)
                         {
-                            var list = TmpBlockFuel.GetOrAdd(fuelInfo.FuelId);
-                            list.Add(reactorDef);
+                            TmpBlockFuel.GetOrAdd(fuelInfo.FuelId).Add(reactorDef);
                         }
-                        continue;
                     }
                 }
                 {
-                    var parachuteDef = def as MyParachuteDefinition;
+                    var parachuteDef = blockDef as MyParachuteDefinition;
                     if(parachuteDef != null)
                     {
-                        var list = TmpBlockFuel.GetOrAdd(parachuteDef.MaterialDefinitionId);
-                        list.Add(parachuteDef);
+                        TmpBlockFuel.GetOrAdd(parachuteDef.MaterialDefinitionId).Add(parachuteDef);
+                    }
+                }
+            }
+
+            foreach(var physItemDef in Main.Caches.ItemDefs)
+            {
+                var weaponItemDef = physItemDef as MyWeaponItemDefinition;
+                if(weaponItemDef != null)
+                {
+                    // TODO: weaponcore?
+
+                    MyWeaponDefinition wpDef;
+                    if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out wpDef))
                         continue;
+
+                    if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
+                    {
+                        foreach(var magId in wpDef.AmmoMagazinesId)
+                        {
+                            TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponItemDef, wpDef));
+                        }
                     }
                 }
             }
@@ -126,6 +181,11 @@ namespace Digi.BuildInfo.Features.Tooltips
         void SetupItems(bool generate = false)
         {
             if(generate)
+                MyLog.Default.WriteLine($"{Log.ModName} starting to generate tooltips...");
+
+            var timer = (generate ? Stopwatch.StartNew() : null);
+
+            if(generate)
             {
                 PreTooltipGeneration();
             }
@@ -135,6 +195,15 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(generate)
             {
                 DisposeTempObjects();
+            }
+
+            if(generate)
+            {
+                timer.Stop();
+
+                string msg = $"Finished generating {Tooltips.Count.ToString()} tooltips in {timer.Elapsed.TotalMilliseconds.ToString("0.##########")} ms";
+                MyLog.Default.WriteLine($"{Log.ModName} {msg}");
+                Log.Info(msg);
             }
         }
     }

@@ -19,7 +19,8 @@ namespace Digi.BuildInfo.Utilities
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
         public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
-        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(16);
+        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
+        public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
 
         private readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
         private readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -28,28 +29,41 @@ namespace Digi.BuildInfo.Utilities
         public Caches(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
+
+            FillDefs();
         }
 
         public override void RegisterComponent()
         {
-            FillItemDefs();
         }
 
         public override void UnregisterComponent()
         {
         }
 
-        void FillItemDefs()
+        void FillDefs()
         {
             ItemDefs.Clear();
+            BlockDefs.Clear();
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
             {
-                var physDef = def as MyPhysicalItemDefinition;
-                if(physDef == null)
-                    continue;
-
-                ItemDefs.Add(physDef);
+                {
+                    var physDef = def as MyPhysicalItemDefinition;
+                    if(physDef != null)
+                    {
+                        ItemDefs.Add(physDef);
+                        continue;
+                    }
+                }
+                {
+                    var blockDef = def as MyCubeBlockDefinition;
+                    if(blockDef != null)
+                    {
+                        BlockDefs.Add(blockDef);
+                        continue;
+                    }
+                }
             }
         }
 
