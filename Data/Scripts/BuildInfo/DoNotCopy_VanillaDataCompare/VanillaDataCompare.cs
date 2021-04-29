@@ -232,14 +232,20 @@ namespace Digi.BuildInfo
 
         private void RemoveConnectedGrids(IMyCubeGrid grid)
         {
-            var grids = Caches.GetGrids(grid, GridLinkTypeEnum.Physical);
-
-            foreach(var g in grids)
+            List<IMyCubeGrid> grids = null;
+            try
             {
-                g.Close();
-            }
+                grids = Caches.GetGrids(grid, GridLinkTypeEnum.Physical);
 
-            grids.Clear();
+                foreach(var g in grids)
+                {
+                    g.Close();
+                }
+            }
+            finally
+            {
+                grids?.Clear();
+            }
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)

@@ -1998,7 +1998,9 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var sorter = (MyConveyorSorterDefinition)def; // does not extend MyPoweredCargoContainerDefinition
+            var sorter = def as MyConveyorSorterDefinition; // does not extend MyPoweredCargoContainerDefinition
+            if(sorter == null)
+                return;
 
             PowerRequired(sorter.PowerInput, sorter.ResourceSinkGroup);
 

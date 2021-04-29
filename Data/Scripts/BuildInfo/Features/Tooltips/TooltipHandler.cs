@@ -181,7 +181,7 @@ namespace Digi.BuildInfo.Features.Tooltips
         void SetupItems(bool generate = false)
         {
             if(generate)
-                MyLog.Default.WriteLine($"{Log.ModName} starting to generate tooltips...");
+                MyLog.Default.WriteLine("BuildInfo mod: Starting to generate tooltips...");
 
             var timer = (generate ? Stopwatch.StartNew() : null);
 
@@ -202,7 +202,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 timer.Stop();
 
                 string msg = $"Finished generating {Tooltips.Count.ToString()} tooltips in {timer.Elapsed.TotalMilliseconds.ToString("0.##########")} ms";
-                MyLog.Default.WriteLine($"{Log.ModName} {msg}");
+                MyLog.Default.WriteLine($"BuildInfo mod: {msg}");
                 Log.Info(msg);
             }
         }

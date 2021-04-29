@@ -115,6 +115,7 @@ namespace Digi.BuildInfo.Features
 
         public bool Analyse(IMyCubeGrid mainGrid)
         {
+            List<IMyCubeGrid> grids = null;
             try
             {
                 if(MyAPIGateway.Session?.Player == null)
@@ -127,7 +128,7 @@ namespace Digi.BuildInfo.Features
                 mods.Clear();
                 modsChangingVanilla.Clear();
 
-                var grids = Caches.GetGrids(mainGrid, GridLinkTypeEnum.Mechanical);
+                grids = Caches.GetGrids(mainGrid, GridLinkTypeEnum.Mechanical);
 
                 foreach(var grid in grids)
                 {
@@ -145,13 +146,13 @@ namespace Digi.BuildInfo.Features
 
                 GetInfoFromGrids(grids);
                 GenerateShipInfo(mainGrid, grids);
-                grids.Clear();
             }
             finally
             {
                 dlcs.Clear();
                 mods.Clear();
                 modsChangingVanilla.Clear();
+                grids?.Clear();
             }
 
             return true;

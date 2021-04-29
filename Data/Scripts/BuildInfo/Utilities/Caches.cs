@@ -84,11 +84,14 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Re-uses an internal list.
         /// WARNING: do not use multiple times at once, it returns the same list!
-        /// You should clear the given list after done using it.
+        /// You should clear the given list after done using it, otherwise this'll throw errors when called again.
         /// </summary>
         public static List<IMyCubeGrid> GetGrids(IMyCubeGrid mainGrid, GridLinkTypeEnum type)
         {
             var grids = BuildInfoMod.Instance.Caches.Grids;
+            if(grids.Count > 0)
+                Log.Error("WARNING: Potential stacking of Caches.GetGrids()");
+
             grids.Clear();
             MyAPIGateway.GridGroups.GetGroup(mainGrid, type, grids);
             return grids;
