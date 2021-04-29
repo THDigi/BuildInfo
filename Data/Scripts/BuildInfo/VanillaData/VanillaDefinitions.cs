@@ -34,7 +34,9 @@ namespace Digi.BuildInfo.VanillaData
 
         void CheckVanillaHardcoded()
         {
-            bool notify = (Log.WorkshopId == 0); // notify on HUD only if it's the local mod
+            if(Log.WorkshopId != 0)
+                return; // only run this for local mod
+
             bool needsRegen = false;
 
             foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
@@ -46,12 +48,12 @@ namespace Digi.BuildInfo.VanillaData
                 if(blockDef.Context.IsBaseGame && !Definitions.Contains(blockDef.Id))
                 {
                     // FIXME: needs to be visible ingame, but is not...
-                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", (notify ? Log.PRINT_MESSAGE : null));
+                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", Log.PRINT_MESSAGE);
                     needsRegen = true;
                 }
             }
 
-            if(Log.WorkshopId == 0 && needsRegen)
+            if(needsRegen)
             {
                 ExtractVanillaBlocks();
             }
