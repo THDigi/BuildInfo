@@ -291,6 +291,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public void TooltipTool(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
+            if(!MyDefinitionManager.Static.HandItemExistsFor(physDef.Id)) // HACK: because TryGetHandItemForPhysicalItem() logs on failure, spamming the log. 
+                return;
+
             var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(physDef.Id) as MyEngineerToolBaseDefinition;
             if(toolDef == null)
                 return;
