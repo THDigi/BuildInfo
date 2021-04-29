@@ -444,7 +444,7 @@ namespace Digi.BuildInfo.Features.Config
                 "When aiming at a block with a tool it locks overlays to that block so you can move around.",
                 "You still have to cycle overlays (see above) in order to see them.");
 
-            ShowToolbarInfoBind = new InputCombinationSetting(Handler, "Bind: Show Toolbar Info", Combination.Create(SHOW_TOOLBAR_INFO_INPUT_NAME, "alt"),
+            ShowToolbarInfoBind = new InputCombinationSetting(Handler, "Bind: Show Toolbar Info", Combination.Create(SHOW_TOOLBAR_INFO_INPUT_NAME, "c.lookaround"),
                 $"Shows ToolbarInfo while held when in a cockpit.",
                 "Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}.");
             #endregion
