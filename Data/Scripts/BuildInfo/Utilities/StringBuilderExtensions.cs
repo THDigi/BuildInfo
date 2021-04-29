@@ -582,6 +582,9 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inventoryConstraint)
         {
+            if(inventoryConstraint == null)
+                return s.InventoryFormat(volume);
+
             var types = Caches.GetObTypeSet();
             types.AddSetReader(inventoryConstraint.ConstrainedTypes);
 
