@@ -1500,7 +1500,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
             }
 
-            if(data.UpgradePorts != null)
+            bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
+            if(hasUpgrades && data.UpgradePorts != null)
             {
                 var color = new Color(200, 55, 255);
 
