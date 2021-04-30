@@ -256,6 +256,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Add(typeof(MyObjectBuilder_LaserAntenna), DrawOverlay_LaserAntenna);
 
+            Add(Constants.TargetDummyType, DrawOverlay_TargetDummy);
+
             Add(typeof(MyObjectBuilder_Door), DrawOverlay_Doors);
             Add(typeof(MyObjectBuilder_AdvancedDoor), DrawOverlay_Doors);
             Add(typeof(MyObjectBuilder_AirtightDoorGeneric), DrawOverlay_Doors);
@@ -999,6 +1001,45 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 DrawOverlay_WeaponCoreWeapon(def, wcDef, drawMatrix);
                 return;
+            }
+        }
+
+        private void DrawOverlay_TargetDummy(MyCubeBlockDefinition def, MatrixD drawMatrix)
+        {
+            var dummyDef = def as MyTargetDummyBlockDefinition;
+            if(dummyDef == null)
+                return;
+
+            var data = Main.LiveDataHandler.Get<BData_TargetDummy>(def);
+            if(data == null)
+                return;
+
+            if(data.Subparts.Count > 0)
+            {
+                var colorCrit = new Color(255, 180, 55);
+                var colorLimb = new Color(55, 100, 155);
+
+                bool drawLabel = CanDrawLabel();
+
+                foreach(var kv in data.Subparts)
+                {
+                    string subpartName = kv.Key;
+                    var subpartInfo = kv.Value;
+                    MatrixD matrix = subpartInfo.LocalMatrix * drawMatrix;
+
+                    var color = (subpartInfo.IsCritical ? colorCrit : colorLimb);
+
+                    MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, matrix.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
+
+                    if(drawLabel)
+                    {
+                        var labelDir = (subpartName.ContainsIgnoreCase("head") ? drawMatrix.Up : (subpartName.ContainsIgnoreCase("right") ? drawMatrix.Left : drawMatrix.Right)); // bad xD
+                        var labelPos = matrix.Translation;
+
+                        DynamicLabelSB.Clear().Append(subpartName).Append("\n").Append(subpartInfo.Health).Append(" hp").Append(subpartInfo.IsCritical ? " (critical)" : "");
+                        DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, color, scale: 0.5f, lineHeight: 1f);
+                    }
+                }
             }
         }
 

@@ -44,6 +44,8 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeMissileTurret));
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
 
+            AddType<BData_TargetDummy>(Constants.TargetDummyType);
+
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
             // every other block type is going to use BData_Base
