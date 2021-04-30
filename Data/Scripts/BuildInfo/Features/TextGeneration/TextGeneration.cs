@@ -85,6 +85,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_INTERNAL = new Color(125, 125, 255);
         public readonly Color COLOR_DLC = Color.DeepSkyBlue;
         public readonly Color COLOR_LIST = Color.White;
+        public readonly Color COLOR_CONVEYORPORTS = new Color(255, 200, 0);
 
         public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
@@ -1538,34 +1539,32 @@ namespace Digi.BuildInfo.Features
                     int conveyors = (data.ConveyorPorts?.Count ?? 0);
                     int interactiveConveyors = (data.InteractableConveyorPorts?.Count ?? 0);
 
-                    bool showConveyorPorts = data.SupportsConveyors && (conveyors > 0 || interactiveConveyors > 0);
-                    if(showConveyorPorts)
+                    AddLine();
+
+                    bool hasConveyorPorts = (data.Has & BlockHas.ConveyorSupport) != 0 && (conveyors > 0 || interactiveConveyors > 0);
+                    if(hasConveyorPorts)
                     {
-                        AddLine().Label("Conveyor ports").Append(conveyors + interactiveConveyors);
-
-                        if(interactiveConveyors > 0)
-                            GetLine().Append(" (").Append(interactiveConveyors).Append(" interactive)");
-
-                        // HACK: weird conveyor support mention
-                        if(def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
-                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
+                        GetLine().Color(COLOR_CONVEYORPORTS).Label("Conveyor ports").Append(conveyors + interactiveConveyors).ResetFormatting().Separator(); // separator because next thing shows up regardless
                     }
 
-                    // TODO: mention that it has terminal access but does not have a terminal itself?
+                    //bool hasInventory = (data.Has & BlockHas.Inventory) != 0;
+
+                    if((data.Has & BlockHas.Terminal) != 0)
+                        GetLine().Color(COLOR_GOOD).Append("Terminal").ResetFormatting();
+                    else
+                        GetLine().Append("No terminal");
+
                     int terminalAccess = interactiveConveyors + (data.Interactive?.Count ?? 0);
                     if(terminalAccess > 0)
-                    {
-                        if(showConveyorPorts)
-                            GetLine().Separator().Color(COLOR_GOOD).Append("Allows terminal access");
-                        else
-                            AddLine().Color(COLOR_GOOD).Append("Allows terminal access");
-                    }
+                        GetLine().Separator().Color(COLOR_GOOD).Append("Terminal/inventory access");
                     else
+                        GetLine().Separator().Color(COLOR_WARNING).Append("No terminal/inventory access");
+
+                    // HACK: weird conveyor support mention
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
                     {
-                        if(showConveyorPorts)
-                            GetLine().Separator().Color(COLOR_WARNING).Append("No direct terminal access");
-                        else
-                            AddLine().Color(COLOR_WARNING).Append("No direct terminal access");
+                        if(hasConveyorPorts && def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
                     }
                 }
             }

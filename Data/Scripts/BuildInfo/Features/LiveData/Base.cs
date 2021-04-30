@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
+    [Flags]
     public enum ConveyorFlags : byte
     {
         None = 0,
@@ -42,11 +44,20 @@ namespace Digi.BuildInfo.Features.LiveData
         }
     }
 
+    [Flags]
+    public enum BlockHas : byte
+    {
+        Nothing = 0,
+        ConveyorSupport = (1 << 0),
+        Terminal = (1 << 1),
+        Inventory = (1 << 2),
+    }
+
     public class BData_Base
     {
         //public List<MyTuple<string, Matrix>> Dummies;
 
-        public bool SupportsConveyors = false;
+        public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
         public List<ConveyorInfo> InteractableConveyorPorts;
         public List<InteractionInfo> Interactive;
@@ -227,7 +238,14 @@ namespace Digi.BuildInfo.Features.LiveData
                 //}
             }
 
-            SupportsConveyors = BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false);
+            if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
+                Has |= BlockHas.ConveyorSupport;
+
+            if(block is IMyTerminalBlock)
+                Has |= BlockHas.Terminal;
+
+            if(block.HasInventory)
+                Has |= BlockHas.Inventory;
 
             if(ConveyorPorts != null)
                 ConveyorPorts.TrimExcess();
@@ -242,7 +260,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 Interactive.TrimExcess();
 
             dummies.Clear();
-            return hasStuff;
+
+            //return hasStuff;
+            return true;
         }
     }
 }
