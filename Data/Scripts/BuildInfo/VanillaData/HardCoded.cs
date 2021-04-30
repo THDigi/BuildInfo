@@ -120,12 +120,12 @@ namespace Digi.BuildInfo.VanillaData
         public const float ButtonPanel_PowerReq = 0.0001f;
 
         // from MySensorBlock
+        public static readonly Vector3 Sensor_MinField = new Vector3(0.1f); // MySensorBlock.MIN_RANGE = 0.1f;
         public static Vector3 Sensor_MaxField(float maxRange) => new Vector3(maxRange * 2);
         public static float Sensor_PowerReq(Vector3 maxField)
         {
             // sensor.RequiredPowerInput exists but is always reporting 0 and it seems ignored in the source code (see: MySensorBlock.CalculateRequiredPowerInput())
-            Vector3 minField = Vector3.One;
-            return 0.0003f * (float)Math.Pow((maxField - minField).Volume, 1f / 3f);
+            return 0.0003f * (float)Math.Pow((maxField - Sensor_MinField).Volume, 1d / 3d);
         }
 
         // from MyCockpit

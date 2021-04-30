@@ -3105,13 +3105,14 @@ namespace Digi.BuildInfo.Features
         {
             var sensor = (MySensorBlockDefinition)def;
 
+            var minField = Hardcoded.Sensor_MinField;
             var maxField = Hardcoded.Sensor_MaxField(sensor.MaxRange);
 
             PowerRequired(Hardcoded.Sensor_PowerReq(maxField), sensor.ResourceSinkGroup, powerHardcoded: true);
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max area").Size3DFormat(maxField);
+                AddLine().Label("Field size").Size3DFormat(minField).Append(" m to ").Size3DFormat(maxField).Append(" m");
             }
         }
 
@@ -3167,7 +3168,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    AddLine().Label("Field size").Size3DFormat(flatGravGen.MinFieldSize).Append(" to ").Size3DFormat(flatGravGen.MaxFieldSize);
+                    AddLine().Label("Field size").Size3DFormat(flatGravGen.MinFieldSize).Append(" m to ").Size3DFormat(flatGravGen.MaxFieldSize).Append(" m");
                 }
             }
             else
