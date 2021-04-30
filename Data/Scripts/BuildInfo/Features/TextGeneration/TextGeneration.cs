@@ -1614,11 +1614,6 @@ namespace Digi.BuildInfo.Features
                 {
                     action.Invoke(def);
                 }
-                // HACK: remove once MyObjectBuilder_TargetDummyBlock is whitelisted
-                else if(def.Id.TypeId.ToString() == "MyObjectBuilder_TargetDummyBlock")
-                {
-                    Format_TargetDummy(def);
-                }
             }
             #endregion Per-block info
 
@@ -1920,8 +1915,7 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
-            // HACK: uncomment once MyObjectBuilder_TargetDummyBlock is whitelisted
-            //Add(typeof(MyObjectBuilder_TargetDummyBlock), Format_TargetDummy);
+            Add(Constants.TargetDummyType, Format_TargetDummy);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
