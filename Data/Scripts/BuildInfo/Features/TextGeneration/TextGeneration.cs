@@ -1623,7 +1623,7 @@ namespace Digi.BuildInfo.Features
             #endregion Added by mod
 
             #region requires DLC
-            if(Main.Config.AimInfo.IsSet(AimInfoFlags.RequiresDLC))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.RequiresDLC))
             {
                 DLCFormat(def);
             }
