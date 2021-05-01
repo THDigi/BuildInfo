@@ -51,6 +51,7 @@ namespace Digi.BuildInfo.Features.LiveData
         ConveyorSupport = (1 << 0),
         Terminal = (1 << 1),
         Inventory = (1 << 2),
+        TerminalAndInventoryAccess = (1 << 3),
     }
 
     public class BData_Base
@@ -72,47 +73,23 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
-            // NOTE: both have to execute!
-            bool common = ComputeCommonData(block, def);
-            bool extra = IsValid(block, def);
+            ComputeUpgrades(block);
+            ComputeHas(block);
+            ComputeDummies(block, def);
 
-            if(common || extra)
-            {
-                BuildInfoMod.Instance.LiveDataHandler.BlockData.Add(def.Id, this);
-                return true;
-            }
+            bool isValid = IsValid(block, def);
 
-            return false;
-        }
+            // now always valid because of the base data
 
-        static StringSegment GetNextSection(string text, ref int startIndex)
-        {
-            if(startIndex >= text.Length)
-                return default(StringSegment);
-
-            int sepIndex = text.IndexOf('_', startIndex);
-            if(sepIndex > -1)
-            {
-                var segment = new StringSegment(text, startIndex, sepIndex - startIndex);
-                startIndex = sepIndex + 1;
-                return segment;
-            }
-            else
-            {
-                var segment = new StringSegment(text, startIndex, text.Length - startIndex);
-                startIndex = text.Length;
-                return segment;
-            }
+            BuildInfoMod.Instance.LiveDataHandler.BlockData.Add(def.Id, this);
+            return true;
         }
 
         protected virtual bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def) => false;
 
-        bool ComputeCommonData(IMyCubeBlock block, MyCubeBlockDefinition def)
+        void ComputeUpgrades(IMyCubeBlock block)
         {
-            bool hasStuff = false;
-
             var internalBlock = (MyCubeBlock)block;
-
             if(internalBlock.UpgradeValues.Count > 0)
             {
                 Upgrades = new List<string>(internalBlock.UpgradeValues.Count);
@@ -122,22 +99,44 @@ namespace Digi.BuildInfo.Features.LiveData
                     Upgrades.Add(upgrade);
                 }
             }
+        }
 
+        void ComputeHas(IMyCubeBlock block)
+        {
+            if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
+                Has |= BlockHas.ConveyorSupport;
+
+            if(block is IMyTerminalBlock)
+                Has |= BlockHas.Terminal;
+
+            if(block.HasInventory)
+                Has |= BlockHas.Inventory;
+        }
+
+        void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)
+        {
             var dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
+            if(dummies.Count == 0)
+                return;
+
+            var colorTerminalOnly = new Color(55, 255, 220);
+            var colorInteractiveAndTerminal = new Color(50, 255, 150);
+            var colorInteractiveOnly = new Color(25, 100, 155);
             const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
+
+            Interactive = new List<InteractionInfo>(8);
 
             foreach(var dummy in dummies.Values)
             {
-                var matrix = dummy.Matrix;
-                matrix.Translation += def.ModelOffset;
-
                 string name = dummy.Name;
-
                 if(!name.StartsWith("detector_", CompareType))
                     continue;
+
+                var matrix = dummy.Matrix;
+                matrix.Translation += def.ModelOffset;
 
                 int index = 9; // "detector_".Length
                 StringSegment detectorType = GetNextSection(name, ref index); // detector_<here>_small_in
@@ -171,9 +170,8 @@ namespace Digi.BuildInfo.Features.LiveData
                             InteractableConveyorPorts = new List<ConveyorInfo>();
 
                         InteractableConveyorPorts.Add(new ConveyorInfo(matrix, flags));
+                        Has |= BlockHas.TerminalAndInventoryAccess;
                     }
-
-                    hasStuff = true;
                 }
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
                 {
@@ -181,39 +179,64 @@ namespace Digi.BuildInfo.Features.LiveData
                         UpgradePorts = new List<Matrix>();
 
                     UpgradePorts.Add(matrix);
-                    hasStuff = true;
                 }
                 // from classes that use MyUseObjectAttribute
-                else if(detectorType.EqualsIgnoreCase("terminal")
-                     || detectorType.EqualsIgnoreCase("inventory")
-                     || detectorType.EqualsIgnoreCase("textpanel")
-                     || detectorType.EqualsIgnoreCase("advanceddoor")
-                     || detectorType.EqualsIgnoreCase("door")
-                     || detectorType.EqualsIgnoreCase("block") // medical room heal
-                     || detectorType.EqualsIgnoreCase("jukebox") // excluding jukeboxNext/jukeboxPrevious/jukeboxPause
-                     || detectorType.EqualsIgnoreCase("vendingMachine") // excluding vendingMachineBuy/vendingMachineNext/vendingMachinePrevious
-                     || detectorType.EqualsIgnoreCase("contract")
-                     || detectorType.EqualsIgnoreCase("ATM")
-                     || detectorType.EqualsIgnoreCase("store"))
+                else if(detectorType.EqualsIgnoreCase("terminal"))
                 {
-                    if(Interactive == null)
-                        Interactive = new List<InteractionInfo>();
+                    // HACK: MyUseObjectsComponent.CreateInteractiveObject() hardcodes 'detector_terminal' to be door open/close if it's MyDoor type.
+                    // HACK: Can't use `is IMyDoor` because it's implemented by all doors
+                    if(block.GetType().Name == "MyDoor")
+                        Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
+                    else
+                        Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
 
-                    Interactive.Add(new InteractionInfo(matrix, "Terminal/Inventory\n       Access", new Color(55, 255, 220)));
-                    hasStuff = true;
+                    Has |= BlockHas.TerminalAndInventoryAccess;
                 }
-                // from classes that use MyUseObjectAttribute
+                else if(detectorType.EqualsIgnoreCase("inventory")
+                     || detectorType.EqualsIgnoreCase("vendingMachine") // excluding vendingMachineBuy/vendingMachineNext/vendingMachinePrevious; clicking this one just opens terminal
+                     || detectorType.EqualsIgnoreCase("jukebox")) // excluding jukeboxNext/jukeboxPrevious/jukeboxPause; clicking this one just opens terminal
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
+                }
+                else if(detectorType.EqualsIgnoreCase("textpanel"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Edit LCD\n+Terminal access", colorInteractiveAndTerminal));
+                }
+                else if(detectorType.EqualsIgnoreCase("advanceddoor")
+                     || detectorType.EqualsIgnoreCase("door"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
+                    Has |= BlockHas.TerminalAndInventoryAccess;
+                }
+                else if(detectorType.EqualsIgnoreCase("block")) // medical room/survival kit heal
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Recharge\n+Terminal access", colorInteractiveAndTerminal));
+                    Has |= BlockHas.TerminalAndInventoryAccess;
+                }
+                else if(detectorType.EqualsIgnoreCase("contract"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Open Contracts\n+Terminal access", colorInteractiveAndTerminal));
+                    Has |= BlockHas.TerminalAndInventoryAccess;
+                }
+                else if(detectorType.EqualsIgnoreCase("store"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Open Store\n+Terminal access", colorInteractiveAndTerminal));
+                    Has |= BlockHas.TerminalAndInventoryAccess;
+                }
+                else if(detectorType.EqualsIgnoreCase("ATM"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Open Transactions\n+Terminal access", colorInteractiveAndTerminal));
+                    Has |= BlockHas.TerminalAndInventoryAccess;
+                }
+                // from here only interactive things that can't open terminal
                 else if(detectorType.EqualsIgnoreCase("cockpit")
                      || detectorType.EqualsIgnoreCase("cryopod"))
                 {
-                    if(Interactive == null)
-                        Interactive = new List<InteractionInfo>();
-
-                    Interactive.Add(new InteractionInfo(matrix, "Entrance", new Color(25, 100, 155)));
-                    hasStuff = true;
+                    Interactive.Add(new InteractionInfo(matrix, "Entrance", colorInteractiveOnly));
                 }
                 //else if(detectorType.EqualsIgnoreCase("wardrobe")
                 //     || detectorType.EqualsIgnoreCase("ladder")
+                //     || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
                 //     || detectorType.EqualsIgnoreCase("panel") // button panel
                 //     || detectorType.EqualsIgnoreCase("jukeboxNext")
                 //     || detectorType.EqualsIgnoreCase("jukeboxPrevious")
@@ -222,11 +245,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 //     || detectorType.EqualsIgnoreCase("vendingMachineNext")
                 //     || detectorType.EqualsIgnoreCase("vendingMachinePrevious"))
                 //{
-                //    if(TerminalAccess == null)
-                //        TerminalAccess = new List<InteractionInfo>();
-                //
-                //    TerminalAccess.Add(new InteractionInfo(matrix, "Stuff...", new Color(55, 255, 220)));
-                //    hasStuff = true;
+                //    Interactive.Add(new InteractionInfo(matrix, "Stuff...", colorInteractiveOnly));
                 //}
                 //else
                 //{
@@ -234,18 +253,8 @@ namespace Digi.BuildInfo.Features.LiveData
                 //        Dummies = new List<MyTuple<string, Matrix>>();
                 //
                 //    Dummies.Add(new MyTuple<string, Matrix>(dummy.Name, matrix));
-                //    hasStuff = true;
                 //}
             }
-
-            if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
-                Has |= BlockHas.ConveyorSupport;
-
-            if(block is IMyTerminalBlock)
-                Has |= BlockHas.Terminal;
-
-            if(block.HasInventory)
-                Has |= BlockHas.Inventory;
 
             if(ConveyorPorts != null)
                 ConveyorPorts.TrimExcess();
@@ -257,12 +266,34 @@ namespace Digi.BuildInfo.Features.LiveData
                 UpgradePorts.TrimExcess();
 
             if(Interactive != null)
-                Interactive.TrimExcess();
+            {
+                if(Interactive.Count > 0)
+                    Interactive.TrimExcess();
+                else
+                    Interactive = null;
+            }
 
             dummies.Clear();
+        }
 
-            //return hasStuff;
-            return true;
+        static StringSegment GetNextSection(string text, ref int startIndex)
+        {
+            if(startIndex >= text.Length)
+                return default(StringSegment);
+
+            int sepIndex = text.IndexOf('_', startIndex);
+            if(sepIndex > -1)
+            {
+                var segment = new StringSegment(text, startIndex, sepIndex - startIndex);
+                startIndex = sepIndex + 1;
+                return segment;
+            }
+            else
+            {
+                var segment = new StringSegment(text, startIndex, text.Length - startIndex);
+                startIndex = text.Length;
+                return segment;
+            }
         }
     }
 }

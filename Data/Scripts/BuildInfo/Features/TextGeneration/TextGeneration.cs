@@ -1554,8 +1554,7 @@ namespace Digi.BuildInfo.Features
                     else
                         GetLine().Append("No terminal");
 
-                    int terminalAccess = interactiveConveyors + (data.Interactive?.Count ?? 0);
-                    if(terminalAccess > 0)
+                    if((data.Has & BlockHas.TerminalAndInventoryAccess) != 0)
                         GetLine().Separator().Color(COLOR_GOOD).Append("Terminal/inventory access");
                     else
                         GetLine().Separator().Color(COLOR_WARNING).Append("No terminal/inventory access");
