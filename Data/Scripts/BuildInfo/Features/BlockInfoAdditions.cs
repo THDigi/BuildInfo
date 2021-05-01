@@ -289,7 +289,7 @@ namespace Digi.BuildInfo.Features
                     {
                         const double LeftOffset = 0.0183;
                         const string LabelPrefix = "<color=255,255,0>Grinds to: ";
-                        const int NameMaxChars = 21;
+                        const int NameMaxChars = 24;
                         double textScale = 0.0012 * Main.DrawUtils.ScaleFOV;
 
                         worldPos += camMatrix.Left * (LeftOffset * Main.DrawUtils.ScaleFOV);
