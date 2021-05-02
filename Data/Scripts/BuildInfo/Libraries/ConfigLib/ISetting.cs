@@ -17,5 +17,10 @@ namespace Digi.ConfigLib
         void WriteDefaultValue(StringBuilder output);
 
         void SaveSetting(StringBuilder output);
+
+        /// <summary>
+        /// For internal use!
+        /// </summary>
+        void TriggerValueSetEvent();
     }
 }

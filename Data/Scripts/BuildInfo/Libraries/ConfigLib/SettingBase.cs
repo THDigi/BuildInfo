@@ -34,6 +34,7 @@ namespace Digi.ConfigLib
 
         /// <summary>
         /// Called when Value is assigned regardless if the new value is different.
+        /// Also always gets called in first update, to simplify client code.
         /// </summary>
         public event ValueChangedDel ValueAssigned;
         public delegate void ValueChangedDel(T oldValue, T newValue, SettingBase<T> setting);
@@ -116,6 +117,18 @@ namespace Digi.ConfigLib
                 output.Append(ConfigHandler.COMMENT_PREFIX).Append("Default value: ");
                 WriteDefaultValue(output);
                 output.AppendLine();
+            }
+        }
+
+        public void TriggerValueSetEvent()
+        {
+            try
+            {
+                ValueAssigned?.Invoke(Value, Value, this);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
     }

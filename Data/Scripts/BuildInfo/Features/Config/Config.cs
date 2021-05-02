@@ -4,6 +4,7 @@ using System.Text;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.HUD;
 using Digi.BuildInfo.Features.Tooltips;
+using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Digi.Input;
 using Sandbox.Game;
@@ -115,6 +116,8 @@ namespace Digi.BuildInfo.Features.Config
 
             Load();
             Save();
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         public override void UnregisterComponent()
@@ -123,6 +126,16 @@ namespace Digi.BuildInfo.Features.Config
                 return;
 
             Handler.SettingsLoaded -= SettingsLoaded;
+        }
+
+        public override void UpdateAfterSim(int tick)
+        {
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+            foreach(var setting in Handler.Settings.Values)
+            {
+                setting.TriggerValueSetEvent();
+            }
         }
 
         private void SettingsLoaded()
