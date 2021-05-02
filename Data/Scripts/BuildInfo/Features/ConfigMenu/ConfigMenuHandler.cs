@@ -255,7 +255,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_ScreenPosition(MenuCategoryBase category)
         {
-            var item = new ItemBoxMove(category, "Screen Position", min: Main.Config.TextAPIScreenPosition.Min, max: Main.Config.TextAPIScreenPosition.Max, defaultValue: Main.Config.TextAPIScreenPosition.DefaultValue, rounding: 3,
+            var item = new ItemBoxMove(category, "Screen Position", min: Main.Config.TextAPIScreenPosition.Min, max: Main.Config.TextAPIScreenPosition.Max, defaultValue: Main.Config.TextAPIScreenPosition.DefaultValue, rounding: 4,
                 getter: () => Main.Config.TextAPIScreenPosition.Value,
                 setter: (pos) =>
                 {
@@ -479,7 +479,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleScreenPosition(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null)
         {
-            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 6,
+            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
                 getter: () => setting.Value,
                 setter: (pos) =>
                 {
