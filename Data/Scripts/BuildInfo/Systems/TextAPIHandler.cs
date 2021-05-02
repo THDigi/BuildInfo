@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Text;
+using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.ModAPI;
+using VRage.Input;
 using VRageMath;
 
 namespace Digi.BuildInfo.Systems
@@ -21,6 +24,8 @@ namespace Digi.BuildInfo.Systems
         /// If TextAPI was detected being installed and running.
         /// </summary>
         public bool WasDetected { get; private set; }
+
+        public bool InModMenu { get; private set; }
 
         /// <summary>
         /// False if user chose to not allow TextAPI.
@@ -46,6 +51,7 @@ namespace Digi.BuildInfo.Systems
 
         public TextAPI(BuildInfoMod main) : base(main)
         {
+            UpdateMethods = UpdateFlags.UPDATE_INPUT; // mod menu is openable before detected event is sent
         }
 
         public override void RegisterComponent()
@@ -76,6 +82,19 @@ namespace Digi.BuildInfo.Systems
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        {
+            if(!InModMenu && MyAPIGateway.Gui.ChatEntryVisible && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F2))
+            {
+                InModMenu = true;
+            }
+
+            if(InModMenu && !MyAPIGateway.Gui.ChatEntryVisible)
+            {
+                InModMenu = false;
             }
         }
 

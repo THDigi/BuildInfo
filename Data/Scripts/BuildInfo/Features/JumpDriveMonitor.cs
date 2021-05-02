@@ -12,7 +12,6 @@ namespace Digi.BuildInfo.Features
 
         public JumpDriveMonitor(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         /// <summary>
@@ -47,6 +46,7 @@ namespace Digi.BuildInfo.Features
         {
             int jumpsAtTick = Main.Tick + (int)(Hardcoded.JumpDriveJumpDelay * Constants.TICKS_PER_SECOND);
             JumpStartAt[gridEntityId] = jumpsAtTick;
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
             CleanAtTick = jumpsAtTick; // override clean at tick so it can only trigger once all jumpdrives are done
         }
@@ -57,6 +57,7 @@ namespace Digi.BuildInfo.Features
             {
                 CleanAtTick = -1;
                 JumpStartAt.Clear();
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
             }
         }
     }

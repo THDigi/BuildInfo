@@ -24,7 +24,6 @@ namespace Digi.BuildInfo.Features
 
         public GridMassCompute(BuildInfoMod main) : base(main)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         public override void RegisterComponent()
@@ -75,6 +74,8 @@ namespace Digi.BuildInfo.Features
                 grid.OnMarkForClose += GridMarkedForClose;
 
                 Grids[grid] = data;
+
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
 
             return data.GetMass();
@@ -97,6 +98,9 @@ namespace Digi.BuildInfo.Features
                     data.Reset();
                     DataPool.Return(data);
                 }
+
+                if(Grids.Count == 0)
+                    SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
             }
             catch(Exception e)
             {

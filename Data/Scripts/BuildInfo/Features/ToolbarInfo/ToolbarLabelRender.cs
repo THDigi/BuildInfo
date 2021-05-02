@@ -65,7 +65,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         Vector2D? ClickOffset;
         Vector2D TextSize;
-        bool InTextAPIMenu;
         bool SelectedBox;
 
         HudAPIv2.BillBoardHUDMessage Background;
@@ -81,7 +80,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public ToolbarLabelRender(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_INPUT;
         }
 
         public override void RegisterComponent()
@@ -304,18 +302,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 Main.ConfigMenuHandler.RefreshAll();
             }
 
-            // TODO: move to TextAPI module?
-            if(!InTextAPIMenu && MyAPIGateway.Gui.ChatEntryVisible && MyAPIGateway.Input.IsNewKeyPressed(VRage.Input.MyKeys.F2))
-            {
-                InTextAPIMenu = true;
-            }
-
-            if(InTextAPIMenu && !MyAPIGateway.Gui.ChatEntryVisible)
-            {
-                InTextAPIMenu = false;
-            }
-
-            if(MustBeVisible && (InToolbarConfig || InTextAPIMenu))
+            if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
             {
                 const int Rounding = 6;
                 var screenSize = MyAPIGateway.Input.GetMouseAreaSize();
@@ -526,6 +513,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void EquipmentMonitor_ControlledChanged(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
         {
+            bool update = controlled is IMyShipController;
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, update);
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, update);
+
             UpdateRender();
         }
 

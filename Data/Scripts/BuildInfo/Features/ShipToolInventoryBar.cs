@@ -39,23 +39,25 @@ namespace Digi.BuildInfo.Features
 
         public ShipToolInventoryBar(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
         public override void RegisterComponent()
         {
-            Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
         }
 
         public override void UnregisterComponent()
         {
-            Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
+            if(!Main.ComponentsRegistered)
+                return;
+
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
         }
 
         void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -80,6 +82,8 @@ namespace Digi.BuildInfo.Features
                       && Main.Config.ShipToolInvBarShow.Value
                       //&& !MyAPIGateway.Input.IsJoystickLastUsed // not even working properly with gamepad, apart from not looking properly
                       && (Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldShow);
         }
 
         void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)

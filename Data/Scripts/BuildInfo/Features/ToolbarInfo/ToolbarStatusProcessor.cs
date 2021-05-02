@@ -82,7 +82,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public ToolbarStatusProcessor(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
@@ -140,6 +139,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             new StatusOverride.Thrusters(this);
 
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
+            Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
         }
 
         public override void UnregisterComponent()
@@ -148,6 +148,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return;
 
             Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
+            Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
         }
 
         #region Registering methods
@@ -219,6 +220,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             FullRefresh = true; // make the next update refresh all slots at once
         }
 
+        void EquipmentMonitor_ControlledChanged(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
+        {
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, controlled is IMyShipController);
+        }
+
         public override void UpdateAfterSim(int tick)
         {
             if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
@@ -227,7 +233,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             bool refreshTriggered = (!FullRefresh && tick == Main.ToolbarMonitor.TriggeredAtTick);
-
             if(!refreshTriggered && tick % 2 != 0)
                 return;
 

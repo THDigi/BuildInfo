@@ -25,8 +25,6 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             Main.Config.RelativeDampenerInfo.ValueAssigned += ConfigChanged;
-
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, Main.Config.RelativeDampenerInfo.Value);
         }
 
         public override void UnregisterComponent()

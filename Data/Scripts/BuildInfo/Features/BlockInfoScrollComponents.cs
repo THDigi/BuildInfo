@@ -5,7 +5,6 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Definitions;
 using Sandbox.Game;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -43,13 +42,11 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditionsChanged;
             Main.GameConfig.HudStateChanged += HudStateChanged;
             Main.EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned += SettingValueSet;
 
             HudState = Main.GameConfig.HudState;
-
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.Config.BlockInfoAdditions.Value);
         }
 
         public override void UnregisterComponent()
@@ -57,14 +54,14 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditionsChanged;
             Main.GameConfig.HudStateChanged -= HudStateChanged;
             Main.EquipmentMonitor.BlockChanged -= EquipmentBlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned -= SettingValueSet;
         }
 
-        void BlockInfoAdditionsChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        void SettingValueSet(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, newValue);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
 
             CycleComponents.Clear();
             Index = 0;
@@ -104,6 +101,8 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.BlockInfoAdditions.Value)
             {
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null));
+
                 MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
             }
@@ -238,10 +237,10 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        class CubeBuilderHax : MyCubeBuilder
-        {
-            // HACK: protected static in public non-sealed classes? might as well make'em public.
-            public static void RefreshBlockInfoHud() => MyCubeBuilder.UpdateBlockInfoHud();
-        }
+        //class CubeBuilderHax : MyCubeBuilder
+        //{
+        //    // HACK: protected static in public non-sealed classes? might as well make'em public.
+        //    public static void RefreshBlockInfoHud() => MyCubeBuilder.UpdateBlockInfoHud();
+        //}
     }
 }

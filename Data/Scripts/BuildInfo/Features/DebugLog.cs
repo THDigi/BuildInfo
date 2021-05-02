@@ -88,7 +88,6 @@ namespace Digi.BuildInfo.Features
             Text = new HudAPIv2.HUDMessage(new StringBuilder(128 * MaxMessages), new Vector2D(-0.98, 0.98), Scale: TextScale, Shadowing: true, Blend: BlendType.PostPP);
             Text.Visible = false;
             UpdateText();
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         void UpdateText()
@@ -103,6 +102,8 @@ namespace Digi.BuildInfo.Features
             {
                 sb.Color(new Color(55, 200, 155)).Append(line.Type?.Name).Append(": ").Color(Color.White).Append(line.Message).Append('\n');
             }
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (LogList.Count > 0));
         }
 
         public override void UpdateAfterSim(int tick)

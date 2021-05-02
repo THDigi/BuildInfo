@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features
             int modVersion = Main.Config.ModVersion.Value;
             if(modVersion > 0 && modVersion < Constants.MOD_VERSION)
             {
-                UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
         }
 
@@ -31,10 +31,10 @@ namespace Digi.BuildInfo.Features
             var character = MyAPIGateway.Session?.Player?.Character;
             if(character != null) // wait until first spawn
             {
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
                 Main.Config.ModVersion.Value = Constants.MOD_VERSION;
                 Main.Config.Save();
-
-                UpdateMethods = UpdateFlags.NONE;
                 Utils.ShowColoredChatMessage(Log.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
             }
         }

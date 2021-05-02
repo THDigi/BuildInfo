@@ -59,26 +59,36 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.Config.Handler.SettingsLoaded += SettingsLoaded;
-            SettingsLoaded();
+            Main.EquipmentMonitor.ControlledChanged += ComputeUpdateRequirements;
+            Main.Config.TurretHUD.ValueAssigned += SettingChanged;
         }
 
         public override void UnregisterComponent()
         {
-            Main.Config.Handler.SettingsLoaded -= SettingsLoaded;
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.EquipmentMonitor.ControlledChanged -= ComputeUpdateRequirements;
+            Main.Config.TurretHUD.ValueAssigned -= SettingChanged;
         }
 
-        private void SettingsLoaded()
+        void SettingChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
-            if(Main.Config.TurretHUD.Value)
-            {
-                UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
-            }
-            else
-            {
-                UpdateMethods = UpdateFlags.NONE;
+            ComputeUpdateRequirements(MyAPIGateway.Session.ControlledObject);
+        }
+
+        void ComputeUpdateRequirements(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
+        {
+            IMyLargeTurretBase turret = (Main.Config.TurretHUD.Value ? controlled as IMyLargeTurretBase : null);
+            bool updateSim = (turret != null);
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, updateSim);
+
+            if(!updateSim)
                 HideHUD();
-            }
+
+            IMyCockpit cockpit = (updateSim ? MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit : null);
+            bool updateDraw = (cockpit != null && cockpit.IsSameConstructAs(turret));
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, updateDraw);
         }
 
         // draw ship relative direction indicator
@@ -171,7 +181,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void GenerateText(IMyLargeTurretBase turret)
+        void GenerateText(IMyLargeTurretBase turret)
         {
             if(weaponDef == null)
                 return;
@@ -403,7 +413,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void DrawHUD()
+        void DrawHUD()
         {
             if(Main.TextAPI.IsEnabled)
             {
@@ -465,7 +475,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void HideHUD()
+        void HideHUD()
         {
             if(!visible)
                 return;

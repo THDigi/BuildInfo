@@ -173,6 +173,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (DrawOverlay > 0 && def != null));
+
             if(Main.LockOverlay.LockedOnBlock != null)
                 return;
 

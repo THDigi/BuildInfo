@@ -68,7 +68,6 @@ namespace Digi.BuildInfo.Features
 
         public TerminalInfo(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         public override void RegisterComponent()
@@ -232,176 +231,7 @@ namespace Digi.BuildInfo.Features
                 //    block.ChangeOwner(ownerId, shareMode);
                 //}
             }
-
-            // EXPERIMENT: clickable UI element for manual refresh of detail info panel - attempt #2
-#if false
-            if(MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
-            {
-                var mouseArea = MyAPIGateway.Input.GetMouseAreaSize();
-                var mousePos = MyAPIGateway.Input.GetMousePosition();
-                var mouseHudPos = mousePos / mouseArea;
-
-                var hudPosStart = new Vector2(0.62f, 0.57f);
-                var hudPosEnd = new Vector2(0.84f, 0.91f);
-                var hudPos = hudPosStart + ((hudPosEnd - hudPosStart) * 0.5f);
-                var hudSize = new Vector2(0.02f, 0.02f);
-
-                // DEBUG TODO - it's bad on aspect ratios and resolutions
-                //if(mouseHudPos.X >= hudPosStart.X && mouseHudPos.X <= hudPosEnd.X
-                //&& mouseHudPos.Y >= hudPosStart.Y && mouseHudPos.Y <= hudPosEnd.Y)
-
-                if(TextAPIEnabled)
-                {
-                    if(buttonLabel == null)
-                    {
-                        const string Label = "Refresh Detailed Info";
-                        buttonLabel = new Draygo.API.HudAPIv2.HUDMessage(new StringBuilder(Label.Length).Append(Label), new Vector2D(0.25, -0.99), Blend: BlendTypeEnum.PostPP);
-                        buttonLabel.Scale = 1.2f;
-                        var textSize = buttonLabel.GetTextLength();
-                        buttonLabel.Offset = new Vector2D(textSize.X, -textSize.Y);
-
-                        buttonBg = new Draygo.API.HudAPIv2.BillBoardHUDMessage(VRage.Utils.MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.Cyan * 0.25f);
-                        buttonBg.Origin = buttonLabel.Origin - (buttonLabel.Offset / 2);
-                        //buttonBg.Offset = buttonLabel.Offset;
-                        buttonBg.Width = (float)Math.Abs(textSize.X);
-                        buttonBg.Height = (float)Math.Abs(textSize.Y);
-                    }
-
-                    if(debugText == null)
-                        debugText = new Draygo.API.HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(0.75, -0.9));
-
-                    debugText.Message.Clear().Append($"mouseArea={mouseArea.X:0.00},{mouseArea.Y:0.00}\nmousePos={mousePos.X:0.00},{mousePos.Y:0.00}\nmouseHudPos={mouseHudPos.X:0.00},{mouseHudPos.Y:0.00}");
-
-                    if(hudBox == null)
-                    {
-                        hudBox = new Draygo.API.HudAPIv2.BillBoardHUDMessage(VRage.Utils.MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.White);
-                        hudBox.Origin = new Vector2D(-1, 1);
-                        hudBox.Width = 0.6f;
-                        hudBox.Height = 0.6f;
-                        hudBox.Offset = new Vector2D(-0.5, 0.5);
-                        //hudBox.Options = Draygo.API.HudAPIv2.Options.Fixed;
-                    }
-                }
-                else
-                    return;
-
-                if(mouseHudPos.X > 0.6f && mouseHudPos.Y > 0.6f)
-                {
-                    hudBox.Visible = true;
-
-                    if(MyAPIGateway.Input.IsLeftMousePressed())
-                    {
-                        buttonLabel.Offset = new Vector2D(-buttonLabel.Offset.X, buttonLabel.Offset.Y);
-
-                        hudBox.BillBoardColor = Color.Cyan * 0.3f;
-                    }
-                    else
-                    {
-                        hudBox.BillBoardColor = Color.Lime * 0.25f;
-                    }
-
-                    if(MyAPIGateway.Input.IsNewLeftMouseReleased())
-                    {
-                        viewedInTerminal.RefreshCustomInfo();
-
-                        var block = (MyCubeBlock)viewedInTerminal;
-                        if(block.IDModule != null)
-                        {
-                            var ownerId = block.IDModule.Owner;
-                            var shareMode = block.IDModule.ShareMode;
-                            block.ChangeOwner(ownerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
-                            block.ChangeOwner(ownerId, shareMode);
-                        }
-                        else
-                        {
-                            viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                            viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                        }
-                    }
-                }
-                else
-                {
-                    hudBox.Visible = false;
-                    hudBox.BillBoardColor = Color.White * 0.25f;
-                }
-            }
-#endif
         }
-
-#if false // for the above if
-        private Draygo.API.HudAPIv2.HUDMessage buttonLabel = null;
-        private Draygo.API.HudAPIv2.BillBoardHUDMessage buttonBg = null;
-        private Draygo.API.HudAPIv2.HUDMessage debugText = null;
-        private Draygo.API.HudAPIv2.BillBoardHUDMessage hudBox = null;
-#endif
-
-        // EXPERIMENT: clickable UI element for manual refresh of detail info panel
-#if false
-        private Draygo.API.HudAPIv2.HUDMessage debugText = null;
-        int clickCooldown = 0;
-
-        public override Draw___()
-        {
-            if(clickCooldown > 0)
-                clickCooldown--;
-
-            if(viewedInTerminal == null || MyAPIGateway.Gui.GetCurrentScreen != MyTerminalPageEnum.ControlPanel)
-                return;
-
-            var cam = MyAPIGateway.Session.Camera;
-            var camMatrix = cam.WorldMatrix;
-
-            var hudPosStart = new Vector2(0.62f, 0.57f);
-            var hudPosEnd = new Vector2(0.84f, 0.91f);
-            var hudPos = hudPosStart + ((hudPosEnd - hudPosStart) * 0.5f);
-            var hudSize = new Vector2(0.02f, 0.02f);
-
-            var worldPos = mod.HudToWorld(hudPos, textAPIcoords: false);
-            var worldSize = hudSize * mod.ScaleFOV;
-
-            var mouseArea = MyAPIGateway.Input.GetMouseAreaSize();
-            var mousePos = MyAPIGateway.Input.GetMousePosition();
-            var mouseHudPos = mousePos / mouseArea;
-
-            // DEBUG draw
-            if(mod.TextAPIEnabled)
-            {
-                if(debugText == null)
-                    debugText = new Draygo.API.HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(0.75, -0.9));
-
-                debugText.Message.Clear().Append($"mouseArea={mouseArea.X:0.00},{mouseArea.Y:0.00}\nmousePos={mousePos.X:0.00},{mousePos.Y:0.00}\nmouseHudPos={mouseHudPos.X:0.00},{mouseHudPos.Y:0.00}");
-            }
-
-            var color = Color.Red;
-
-            // DEBUG TODO - it's bad on aspect ratios and resolutions
-            if(mouseHudPos.X >= hudPosStart.X && mouseHudPos.X <= hudPosEnd.X
-            && mouseHudPos.Y >= hudPosStart.Y && mouseHudPos.Y <= hudPosEnd.Y)
-            {
-                if(MyAPIGateway.Input.IsLeftMousePressed())
-                {
-                    color = Color.Lime;
-
-                    if(clickCooldown == 0)
-                    {
-                        clickCooldown = 10;
-
-                        viewedInTerminal.RefreshCustomInfo();
-
-                        // HACK
-                        viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                        viewedInTerminal.ShowInToolbarConfig = !viewedInTerminal.ShowInToolbarConfig;
-                    }
-                }
-                else
-                {
-                    color = Color.Yellow;
-                }
-            }
-
-            MyTransparentGeometry.AddBillboardOriented(mod.MATERIAL_VANILLA_SQUARE, color * 0.3f, worldPos, camMatrix.Left, camMatrix.Up, worldSize.X, worldSize.Y, Vector2.Zero, blendType: BlendTypeEnum.SDR);
-        }
-#endif
 
         // Gets called when local client clicks on a block in the terminal.
         // Used to know the currently viewed block in the terminal.
@@ -447,6 +277,8 @@ namespace Digi.BuildInfo.Features
 
                 UpdateDetailInfo(force: true);
             }
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (viewedInTerminal != null));
         }
 
         void UpdateDetailInfo(bool force = false)
