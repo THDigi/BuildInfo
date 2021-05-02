@@ -3,72 +3,107 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features
 {
     public class PickBlock : ModComponent
     {
-        /// <summary>
-        /// Setting this will cause the mod to ask for a slot input as to where to place the block, if not null.
-        /// </summary>
-        public MyCubeBlockDefinition PickedBlockDef
-        {
-            get { return _blockDef; }
-            set
-            {
-                _blockDef = value;
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (value != null));
-            }
-        }
-        private MyCubeBlockDefinition _blockDef;
+        public MyCubeBlockDefinition PickedBlockDef { get; private set; }
+
+        IMyHudNotification Notify;
 
         public PickBlock(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
         public override void RegisterComponent()
         {
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         public override void UnregisterComponent()
         {
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+        }
+
+        public void AskToPick(MyCubeBlockDefinition def)
+        {
+            PickedBlockDef = def;
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (def != null || Main.EquipmentMonitor.AimedBlock != null));
+
+            if(def != null)
+            {
+                ShowText($"Press [Slot number] to place [{PickedBlockDef.DisplayNameText}]. Slot0/Unequip to cancel.", 16 * 20, FontsHandler.WhiteSh);
+            }
+        }
+
+        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        {
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (slimBlock != null || PickedBlockDef != null));
+        }
+
+        void ShowText(string text, int notifyMs, string font)
+        {
+            if(Notify == null)
+                Notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
+
+            Notify.Hide();
+            Notify.Text = text;
+            Notify.AliveTime = notifyMs;
+            Notify.Font = font;
+            Notify.Show();
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(PickedBlockDef == null && Main.EquipmentMonitor.AimedBlock != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
+            if(PickedBlockDef == null)
             {
-                if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
+                if(Main.EquipmentMonitor.AimedBlock != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
-                    return;
+                    if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
+                    {
+                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
+                        return;
+                    }
+
+                    AskToPick(Main.EquipmentMonitor.BlockDef);
+                }
+            }
+            else
+            {
+                // refresh showing the slot message
+                if(!paused && Notify != null && Main.Tick % 10 == 0)
+                {
+                    Notify.Hide();
+                    Notify.Show();
                 }
 
-                PickedBlockDef = Main.EquipmentMonitor.BlockDef;
-            }
+                // waiting for a slot input...
+                if(MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
+                    return;
 
-            // waiting for a slot input...
-            if(PickedBlockDef != null && !MyAPIGateway.Input.IsAnyCtrlKeyPressed()) // ignore ctrl to allow toolbar page changing
-            {
                 if(MyAPIGateway.Session?.Player == null)
                 {
-                    PickedBlockDef = null;
+                    AskToPick(null);
                     Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
                     return;
                 }
 
                 if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                 {
-                    PickedBlockDef = null;
+                    AskToPick(null);
                     Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
                     return;
                 }
 
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.SLOT0))
                 {
-                    PickedBlockDef = null;
-                    MyAPIGateway.Utilities.ShowNotification("Block picking cancelled.", 2000);
+                    AskToPick(null);
+                    ShowText("Block picking cancelled.", 2000, FontsHandler.WhiteSh);
                     return;
                 }
 
@@ -117,18 +152,10 @@ namespace Digi.BuildInfo.Features
                 {
                     MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot - 1, PickedBlockDef.Id, MyAPIGateway.Session.Player.IdentityId);
 
-                    MyAPIGateway.Utilities.ShowNotification($"{PickedBlockDef.DisplayNameText} placed in slot {slot.ToString()}.", 2000, FontsHandler.GreenSh);
+                    ShowText($"[{PickedBlockDef.DisplayNameText}] placed in slot [{slot.ToString()}].", 3000, FontsHandler.GreenSh);
 
-                    PickedBlockDef = null;
+                    AskToPick(null);
                 }
-            }
-        }
-
-        public override void UpdateAfterSim(int tick)
-        {
-            if(PickedBlockDef != null && tick % 5 == 0)
-            {
-                MyAPIGateway.Utilities.ShowNotification($"Press [Slot number] for [{PickedBlockDef.DisplayNameText}] or Slot0/Unequip to cancel.", 16 * 5, FontsHandler.SkyBlueSh);
             }
         }
     }

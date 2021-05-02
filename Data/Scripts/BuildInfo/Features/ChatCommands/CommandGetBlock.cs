@@ -47,7 +47,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
 
                 // if no argument is defined, ask for a number
-                Main.PickBlock.PickedBlockDef = Main.EquipmentMonitor.BlockDef;
+                Main.PickBlock.AskToPick(Main.EquipmentMonitor.BlockDef);
             }
             else
             {
