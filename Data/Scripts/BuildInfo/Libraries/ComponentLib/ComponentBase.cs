@@ -17,10 +17,10 @@ namespace Digi.ComponentLib
             get { return (_newFlags != UpdateFlags.INVALID ? _newFlags : CurrentUpdateMethods); }
             set
             {
-                if(value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM) && !Main.SessionHasBeforeSim)
+                if(!Main.SessionHasBeforeSim && value.IsSet(UpdateFlags.UPDATE_BEFORE_SIM))
                     throw new CrashGameException($"Component '{GetType().FullName}' can't work with UPDATE_BEFORE_SIM because session is not set to call it.");
 
-                if(value.IsSet(UpdateFlags.UPDATE_AFTER_SIM) && !Main.SessionHasAfterSim)
+                if(!Main.SessionHasAfterSim && value.IsSet(UpdateFlags.UPDATE_AFTER_SIM))
                     throw new CrashGameException($"Component '{GetType().FullName}' can't work with UPDATE_AFTER_SIM because session is not set to call it.");
 
                 if(_newFlags != value)

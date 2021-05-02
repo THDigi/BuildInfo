@@ -38,10 +38,7 @@ namespace Digi.BuildInfo.Systems
 
             MyAPIGateway.Entities.OnEntityAdd += EntitySpawned;
 
-            var ents = new HashSet<IMyEntity>();
-            MyAPIGateway.Entities.GetEntities(ents);
-
-            foreach(var ent in ents)
+            foreach(var ent in MyEntities.GetEntities())
             {
                 EntitySpawned(ent);
             }

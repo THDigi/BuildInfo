@@ -69,7 +69,7 @@ namespace Digi.ComponentLib
         public event Action OnWorldSave;
 
         private readonly List<IComponent> Components = new List<IComponent>();
-        private readonly List<IComponent> ComponentRefreshFlags = new List<IComponent>();
+        private readonly HashSet<IComponent> ComponentRefreshFlags = new HashSet<IComponent>();
         private readonly List<IComponent> ComponentUpdateInput = new List<IComponent>();
         private readonly List<IComponent> ComponentUpdateBeforeSim = new List<IComponent>();
         private readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
@@ -176,7 +176,7 @@ namespace Digi.ComponentLib
         {
             try
             {
-                if(IsDedicatedServer)
+                if(IsDedicatedServer || !ComponentsRegistered)
                     return; // just making sure
 
                 if(RunCriticalOnInput)
@@ -191,9 +191,9 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        foreach(var comp in ComponentRefreshFlags)
                         {
-                            ComponentRefreshFlags[i].RefreshFlags();
+                            comp.RefreshFlags();
                         }
 
                         ComponentRefreshFlags.Clear();
@@ -248,9 +248,9 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        foreach(var comp in ComponentRefreshFlags)
                         {
-                            ComponentRefreshFlags[i].RefreshFlags();
+                            comp.RefreshFlags();
                         }
 
                         ComponentRefreshFlags.Clear();
@@ -297,9 +297,9 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        for(int i = 0; i < ComponentRefreshFlags.Count; i++)
+                        foreach(var comp in ComponentRefreshFlags)
                         {
-                            ComponentRefreshFlags[i].RefreshFlags();
+                            comp.RefreshFlags();
                         }
 
                         ComponentRefreshFlags.Clear();
@@ -349,7 +349,7 @@ namespace Digi.ComponentLib
                         if(e is CrashGameException)
                             throw e;
 
-                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.Draw(): {e.Message}", Log.PRINT_MESSAGE);
+                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
                         Log.Error(e);
                     }
                 }
@@ -390,10 +390,7 @@ namespace Digi.ComponentLib
 
         void IModBase.ComponentScheduleRefresh(IComponent component)
         {
-            if(!ComponentRefreshFlags.Contains(component))
-            {
-                ComponentRefreshFlags.Add(component);
-            }
+            ComponentRefreshFlags.Add(component);
         }
 
         void IModBase.ComponentSetNewFlags(IComponent component, UpdateFlags newFlags)

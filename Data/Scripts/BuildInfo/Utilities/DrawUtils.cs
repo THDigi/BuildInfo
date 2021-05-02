@@ -29,7 +29,8 @@ namespace Digi.BuildInfo.Utilities
 
         public override void UpdateDraw()
         {
-            ResetDrawCaches();
+            _viewProjInvCompute = true;
+            _scaleFovCompute = true;
         }
 
         /// <summary>
@@ -139,12 +140,6 @@ namespace Digi.BuildInfo.Utilities
                 posHUD.X += 0.75f;
 
             return posHUD;
-        }
-
-        private void ResetDrawCaches()
-        {
-            _viewProjInvCompute = true;
-            _scaleFovCompute = true;
         }
     }
 }
