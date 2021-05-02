@@ -23,13 +23,11 @@ namespace Digi.BuildInfo.Features
     {
         public Dictionary<long, PBData> PBData = new Dictionary<long, PBData>();
 
-        readonly HashSet<IMyProgrammableBlock> PBs = new HashSet<IMyProgrammableBlock>();
-        readonly HashSet<long> UpdatedThisTick = new HashSet<long>();
+        readonly HashSet<long> EventHookedPBs = new HashSet<long>();
+        readonly HashSet<IMyProgrammableBlock> MonitorPBs = new HashSet<IMyProgrammableBlock>();
 
         public PBMonitor(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
-
             // catch already placed blocks too
             Main.BlockMonitor.BlockAdded += GlobalBlockAdded;
         }
@@ -48,10 +46,35 @@ namespace Digi.BuildInfo.Features
             // Reminder: this can get called multiple times for same block, like for grid merging/splitting.
 
             var pb = slim?.FatBlock as IMyProgrammableBlock;
-            if(pb != null && PBs.Add(pb)) // set.Add() returns true if it was added, false if it existed already
+            if(pb != null && EventHookedPBs.Add(pb.EntityId))
             {
                 pb.OnMarkForClose += PBMarkedForClose;
-                //pb.PropertiesChanged += PBPropertiesChanged;
+                pb.OwnershipChanged += PBOwnershipChanged;
+
+                if(pb.HasLocalPlayerAccess())
+                {
+                    MonitorPB(pb);
+                }
+            }
+        }
+
+        void PBOwnershipChanged(IMyTerminalBlock tb)
+        {
+            try
+            {
+                var pb = (IMyProgrammableBlock)tb;
+                if(pb.HasLocalPlayerAccess())
+                {
+                    MonitorPB(pb);
+                }
+                else
+                {
+                    UnmonitorPB(pb);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
 
@@ -61,13 +84,53 @@ namespace Digi.BuildInfo.Features
             {
                 var pb = (IMyProgrammableBlock)ent;
                 pb.OnMarkForClose -= PBMarkedForClose;
-                //pb.PropertiesChanged -= PBPropertiesChanged;
-                PBs.Remove(pb);
-                PBData.Remove(pb.EntityId);
+                pb.OwnershipChanged -= PBOwnershipChanged;
+                EventHookedPBs.Remove(pb.EntityId);
+
+                UnmonitorPB(pb);
             }
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+        }
+
+        void MonitorPB(IMyProgrammableBlock pb)
+        {
+            if(MonitorPBs.Add(pb)) // set.Add() returns true if it was added, false if it existed already
+            {
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
+                //pb.PropertiesChanged += PBPropertiesChanged;
+            }
+        }
+
+        void UnmonitorPB(IMyProgrammableBlock pb)
+        {
+            //pb.PropertiesChanged -= PBPropertiesChanged;
+
+            MonitorPBs.Remove(pb);
+            PBData.Remove(pb.EntityId);
+
+            if(MonitorPBs.Count == 0)
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+        }
+
+        public override void UpdateAfterSim(int tick)
+        {
+            foreach(var pb in MonitorPBs)
+            {
+                if(pb.MarkedForClose)
+                    continue; // skip deleted/destroyed/un-streamed PBs, gets removed elsewhere
+
+                if(string.IsNullOrEmpty(pb.ProgramData))
+                    continue; // skip PBs with nothing in them
+
+                string echoText = pb.DetailedInfo; // allocates, so only call once
+                if(!string.IsNullOrEmpty(echoText))
+                {
+                    PBData[pb.EntityId] = new PBData(echoText, tick);
+                }
             }
         }
 
@@ -80,23 +143,5 @@ namespace Digi.BuildInfo.Features
         //        PBData[tb.EntityId] = new PBData(echoText, Main.Tick);
         //    }
         //}
-
-        public override void UpdateAfterSim(int tick)
-        {
-            foreach(var pb in PBs)
-            {
-                if(pb.MarkedForClose)
-                    continue; // skip deleted/destroyed/un-streamed PBs
-
-                if(string.IsNullOrEmpty(pb.ProgramData))
-                    continue; // skip PBs with nothing in them
-
-                string echoText = pb.DetailedInfo; // allocates, so only call once
-                if(!string.IsNullOrEmpty(echoText))
-                {
-                    PBData[pb.EntityId] = new PBData(echoText, tick);
-                }
-            }
-        }
     }
 }
