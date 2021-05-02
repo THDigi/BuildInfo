@@ -20,22 +20,30 @@ namespace Digi.BuildInfo.Features
 
         public RelativeDampenerInfo(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         public override void RegisterComponent()
         {
+            Main.Config.RelativeDampenerInfo.ValueAssigned += ConfigChanged;
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, Main.Config.RelativeDampenerInfo.Value);
         }
 
         public override void UnregisterComponent()
         {
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.Config.RelativeDampenerInfo.ValueAssigned -= ConfigChanged;
+        }
+
+        void ConfigChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, newValue);
         }
 
         public override void UpdateAfterSim(int tick)
         {
-            if(!Main.Config.RelativeDampenerInfo.Value)
-                return;
-
             var controlled = MyAPIGateway.Session?.ControlledObject as InternalControllableEntity;
             var controlledEnt = controlled?.Entity;
 
@@ -75,7 +83,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(!Hardcoded.RelativeDampeners_DistanceCheck(controlledEnt, relativeEnt))
                 {
-                    // HACK preventing this confusing mess: https://support.keenswh.com/spaceengineers/general/topic/1-192-022-relative-dampeners-allow-engaging-at-larger-distances-then-turn-off
+                    // HACK preventing this confusing mess: https://support.keenswh.com/spaceengineers/pc/topic/1-192-022-relative-dampeners-allow-engaging-at-larger-distances-then-turn-off
                     controlled.RelativeDampeningEntity = null;
                     prevRelativeEntId = 0;
 
@@ -92,16 +100,22 @@ namespace Digi.BuildInfo.Features
 
                 int startIndex = sb.Length;
 
-                GetEntName(relativeEnt, sb);
+                AppendEntityName(relativeEnt, sb);
 
+                // escape [ and ] by adding another
                 for(int i = startIndex; i < sb.Length; ++i)
                 {
                     var c = sb[i];
-
                     if(c == '[')
-                        sb[i] = '(';
+                    {
+                        sb.Insert(i, '[');
+                        i++;
+                    }
                     else if(c == ']')
-                        sb[i] = ')';
+                    {
+                        sb.Insert(i, ']');
+                        i++;
+                    }
                 }
 
                 sb.Append(']');
@@ -114,7 +128,7 @@ namespace Digi.BuildInfo.Features
             prevRelativeEntId = relativeEntId;
         }
 
-        static StringBuilder GetEntName(MyEntity ent, StringBuilder sb)
+        static StringBuilder AppendEntityName(MyEntity ent, StringBuilder sb)
         {
             var targetGrid = ent as IMyCubeGrid;
             if(targetGrid != null)
@@ -128,11 +142,15 @@ namespace Digi.BuildInfo.Features
             if(targetFloatingObj != null)
                 return sb.Append("Floating ").Append(targetFloatingObj.ItemDefinition.DisplayNameText);
 
-            var targetAsteroid = ent as IMyVoxelMap;
-            if(targetAsteroid != null)
-                return sb.Append("Asteroid");
+            string display = ent.DisplayNameText;
 
-            return sb.Append(ent.ToString());
+            if(string.IsNullOrEmpty(display))
+                display = ent.DisplayName;
+
+            if(string.IsNullOrEmpty(display))
+                display = ent.ToString();
+
+            return sb.Append(display);
         }
     }
 }
