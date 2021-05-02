@@ -18,6 +18,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Func<ITerminalAction, bool> CollectActionFunc;
         readonly Queue<QueuedActionGet> QueuedTypes = new Queue<QueuedActionGet>();
         HashSet<Type> CheckedTypes = new HashSet<Type>();
+        int RehookForSeconds = 10;
 
         struct QueuedActionGet
         {
@@ -65,15 +66,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return;
 
             QueuedTypes.Enqueue(new QueuedActionGet(Main.Tick + 60, block.GetType()));
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick % Constants.TICKS_PER_SECOND == 0)
+            if(RehookForSeconds > 0 && tick % Constants.TICKS_PER_SECOND == 0)
             {
                 // HACK: must register late as possible
                 MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;
                 MyAPIGateway.TerminalControls.CustomActionGetter += CustomActionGetter;
+                RehookForSeconds--;
             }
 
             while(QueuedTypes.Count > 0 && QueuedTypes.Peek().ReadAtTick <= tick)
@@ -87,6 +90,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 // HACK: can't call it in BlockAdded because it can make some mods' terminal controls vanish...
                 MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectActionFunc);
             }
+
+            if(RehookForSeconds == 0 && QueuedTypes.Count == 0)
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
         }
 
         void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
