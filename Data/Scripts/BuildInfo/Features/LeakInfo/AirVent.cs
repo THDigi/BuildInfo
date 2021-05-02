@@ -139,7 +139,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 if(leakInfo.Status != ThreadStatus.IDLE)
                 {
                     leakInfo.ClearStatus();
-                    leakInfo.ViewedVentControlPanel?.RefreshCustomInfo();
                 }
                 else
                 {
@@ -152,7 +151,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     var startPosition = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(logic.dummyLocalPosition, block.WorldMatrix));
 
                     leakInfo.StartThread(vent, startPosition);
-                    leakInfo.ViewedVentControlPanel?.RefreshCustomInfo();
                 }
             }
             catch(Exception e)
@@ -181,6 +179,11 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 str.Append("Air leak scan status:\n");
 
                 var leakInfo = BuildInfoMod.Instance.LeakInfo;
+                if(leakInfo == null)
+                {
+                    str.Append("Not initialized.");
+                    return;
+                }
 
                 if(!leakInfo.Enabled)
                 {
@@ -209,7 +212,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         break;
                 }
 
-                str.Append("\n\n");
+                str.Append("\n");
             }
             catch(Exception e)
             {

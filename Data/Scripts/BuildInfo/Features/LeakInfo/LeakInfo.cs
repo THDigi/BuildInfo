@@ -8,6 +8,7 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
@@ -18,10 +19,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
         public bool Enabled => MyAPIGateway.Session.SessionSettings.EnableOxygenPressurization && MyAPIGateway.Session.SessionSettings.EnableOxygen;
 
         // used in main thread
-        public ThreadStatus Status = ThreadStatus.IDLE; // the scan/thread status
+        public ThreadStatus Status { get; private set; } // the scan/thread status
         public IMyAirVent UsedFromVent = null; // the vent used to start the air leak scan from
         public IMyTerminalControlOnOffSwitch TerminalControl = null; // the air vent button, used to refresh its state manually when clicking it doesn't actually turn to Find state.
-        public IMyAirVent ViewedVentControlPanel = null; // used to constantly update the detail info panel of the viewed air vent only
+        private IMyAirVent VentInTerminal = null; // used to constantly update the detail info panel of the viewed air vent only
         private Task task; // the background task
         private IMyHudNotification notify = null;
         private int drawTicks = 0; // ticks until the drawn lines expire
@@ -64,7 +65,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public LeakInfo(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM | UpdateFlags.UPDATE_DRAW;
         }
 
         public override void RegisterComponent()
@@ -80,11 +80,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public override void UpdateAfterSim(int tick)
         {
-            if(selectedGrid != null && selectedGrid.Closed)
-            {
-                ClearStatus();
-            }
-
             if(Status == ThreadStatus.DRAW) // if the path to air leak is shown then decrease the countdown timer or clear it directly if the grid suddenly vanishes.
             {
                 if(--drawTicks <= 0)
@@ -92,22 +87,24 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     ClearStatus();
                 }
             }
+        }
 
-            if(Status == ThreadStatus.RUNNING) // notify the player that a background task is running.
-            {
-                NotifyHUD("Computing path...", 100, FontsHandler.SkyBlueSh);
-            }
+        void SetStatus(ThreadStatus status)
+        {
+            bool different = (Status != status);
 
-            if(tick % 30 == 0) // every half a second, update the custom detail info on the currently selected air vent in the terminal.
+            Status = status;
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (status == ThreadStatus.DRAW));
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (status == ThreadStatus.DRAW));
+
+            if(different && VentInTerminal != null)
             {
-                if(ViewedVentControlPanel != null)
-                {
-                    if(ViewedVentControlPanel.Closed || MyAPIGateway.Gui.ActiveGamePlayScreen == null)
-                        ViewedVentControlPanel = null;
-                    // no need to update since TerminalInfoComponent already does for airvent
-                    //else
-                    //    ViewedVentControlPanel.RefreshCustomInfo();
-                }
+                VentInTerminal.RefreshCustomInfo();
+
+                // HACK: force refresh
+                bool orig = VentInTerminal.ShowInToolbarConfig;
+                VentInTerminal.ShowInToolbarConfig = !orig;
+                VentInTerminal.ShowInToolbarConfig = orig;
             }
         }
 
@@ -122,7 +119,11 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 task.Wait();
             }
 
-            Status = ThreadStatus.IDLE;
+            if(selectedGrid != null)
+                selectedGrid.OnMarkForClose -= SelectedGridMarkedForClose;
+
+            SetStatus(ThreadStatus.IDLE);
+
             lines.Clear();
             particles.Clear();
             stopSpawning = false;
@@ -141,11 +142,20 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
             UsedFromVent = block;
             selectedGrid = block.CubeGrid;
+            selectedGrid.OnMarkForClose += SelectedGridMarkedForClose;
             this.startPosition = startPosition;
 
-            Status = ThreadStatus.RUNNING;
             task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
-            ViewedVentControlPanel?.RefreshCustomInfo();
+
+            SetStatus(ThreadStatus.RUNNING);
+
+            NotifyHUD("Computing path...", 1000 * 60 * 60, FontsHandler.SkyBlueSh);
+        }
+
+        void SelectedGridMarkedForClose(IMyEntity ent)
+        {
+            ent.OnMarkForClose -= SelectedGridMarkedForClose;
+            ClearStatus();
         }
 
         #region Pathfinding
@@ -258,37 +268,52 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
             if(cancelTask)
             {
-                cancelTask = false;
-                Status = ThreadStatus.IDLE;
                 ClearStatus();
 
                 NotifyHUD("Cancelled.", 1000, FontsHandler.YellowSh);
             }
             else if(crumb == null)
             {
-                Status = ThreadStatus.IDLE;
-                selectedGrid = null;
+                ClearStatus();
 
                 NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
             }
             else
             {
-                Status = ThreadStatus.DRAW;
                 drawTicks = (int)MathHelper.Clamp((lines.Count * 60 * 2 * selectedGrid.GridSize), 60 * MIN_DRAW_SECONDS, 60 * MAX_DRAW_SECONDS);
+
+                SetStatus(ThreadStatus.DRAW);
 
                 NotifyHUD("Found leak, path rendered.", 2000, FontsHandler.YellowSh);
             }
-
-            ViewedVentControlPanel?.RefreshCustomInfo();
         }
 
         /// <summary>
         /// Gets called when you (local script executer) look at a block in the terminal.
         /// If that happens to be an air vent we need to mark it so we constantly update the custom detail info.
         /// </summary>
-        private void CustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
+        void CustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
-            ViewedVentControlPanel = (block as IMyAirVent);
+            if(block == VentInTerminal)
+                return;
+
+            if(VentInTerminal != null)
+            {
+                VentInTerminal.OnMarkForClose -= ViewedVentMarkedForClose;
+            }
+
+            VentInTerminal = (block as IMyAirVent);
+
+            if(VentInTerminal != null)
+            {
+                VentInTerminal.OnMarkForClose += ViewedVentMarkedForClose;
+            }
+        }
+
+        void ViewedVentMarkedForClose(IMyEntity ent)
+        {
+            VentInTerminal.OnMarkForClose -= ViewedVentMarkedForClose;
+            VentInTerminal = null;
         }
 
         /// <summary>
