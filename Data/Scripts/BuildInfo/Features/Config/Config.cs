@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.Config
         public IntegerSetting ToolbarLabels;
         public FloatSetting ToolbarLabelsEnterCockpitTime;
         public IntegerSetting ToolbarItemNameMode;
-        public BoolSetting ToolbarLabelsShowTitle;
+        public BoolSetting ToolbarLabelsHeader;
         public IntegerSetting ToolbarStyleMode;
         public Vector2DSetting ToolbarLabelsPosition;
         public Vector2DSetting ToolbarLabelsInMenuPosition;
@@ -231,9 +231,9 @@ namespace Digi.BuildInfo.Features.Config
                 "Toggle if the text box is shown or not.");
             TextShow.AddCompatibilityNames("Text: Show");
 
-            TextAlwaysVisible = new BoolSetting(Handler, "TextBox: Always Visible", false,
-                "If true, text box is shown even when HUD is hidden.");
-            TextAlwaysVisible.AddCompatibilityNames("Text: Always Visible");
+            TextAlwaysVisible = new BoolSetting(Handler, "TextBox: Show when HUD is off", false,
+                "If true, text box is shown in all HUD states including hidden HUD.");
+            TextAlwaysVisible.AddCompatibilityNames("Text: Always Visible", "TextBox: Always Visible");
 
             PlaceInfo = new FlagsSetting<PlaceInfoFlags>(Handler, "TextBox: Block-Place Info Filtering", PlaceInfoFlags.All,
                 "Choose what information is shown in the text box when placing a block. Disabling all of them will effectively hide the box.");
@@ -302,9 +302,9 @@ namespace Digi.BuildInfo.Features.Config
                 "When in a seat, it shows the filled ratio of ship's Cargo Containers.",
                 $"If a group named {BackpackBarStat.GroupName} exists, the bar will show filled ratio of all blocks there (regardless of type).");
 
-            TurretHUD = new BoolSetting(Handler, "HUD: Turret Info", true,
+            TurretHUD = new BoolSetting(Handler, "HUD: Show HUD+Ammo in Turret", true,
                 "Shows HUD, ammo and ship orientation while controlling a turret.");
-            TurretHUD.AddCompatibilityNames("HUD: Turret Ammo");
+            TurretHUD.AddCompatibilityNames("HUD: Turret Ammo", "HUD: Turret Info");
 
             HudStatOverrides = new BoolSetting(Handler, "HUD: Stat Overrides", true,
                 "Overrides some HUD values' behavior/format. Currently affecting:",
@@ -345,13 +345,14 @@ namespace Digi.BuildInfo.Features.Config
                 [ToolbarLabelsMode.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.",
             });
 
-            ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: Enter Cockpit Time", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
+            ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: Enter Cockpit show ToolbarLabels time", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
             {
                 "Show toolbar info for this many seconds upon entering a cockpit.",
                 $"Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}."
             });
+            ToolbarLabelsEnterCockpitTime.AddCompatibilityNames("Toolbar: Enter Cockpit Time");
 
-            ToolbarItemNameMode = CreateEnumSetting("Toolbar: Item Name Mode", ToolbarNameMode.AlwaysShow, new string[]
+            ToolbarItemNameMode = CreateEnumSetting("Toolbar: ToolbarLabels Name Mode", ToolbarNameMode.AlwaysShow, new string[]
             {
                 "Pick what blocks should have their custom name printed in the action label.",
                 "Visibility of this is affected by the above setting."
@@ -361,56 +362,64 @@ namespace Digi.BuildInfo.Features.Config
                 [ToolbarNameMode.InMenuOnly] = "only shown when toolbar menu is open",
                 [ToolbarNameMode.GroupsOnly] = "only block group names",
             });
+            ToolbarItemNameMode.AddCompatibilityNames("Toolbar: Item Name Mode");
 
-            ToolbarLabelsShowTitle = new BoolSetting(Handler, "Toolbar: Toolbar Labels Show Title", true,
-                "Toggles if the 'Toolbar Info  (BuildInfo Mod)' title is shown on the box.",
+            ToolbarLabelsHeader = new BoolSetting(Handler, "Toolbar: ToolbarLabels Header+Page", true,
+                "Toggles if the 'Toolbar Info - Page <N>   (BuildInfo Mod)' header is shown on the box.",
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
+            ToolbarLabelsHeader.AddCompatibilityNames("Toolbar: Toolbar Labels Show Title");
 
-            ToolbarStyleMode = CreateEnumSetting("Toolbar: Label Box Style", ToolbarStyle.TwoColumns, new string[]
+            ToolbarStyleMode = CreateEnumSetting("Toolbar: ToolbarLabels Style", ToolbarStyle.TwoColumns, new string[]
             {
                 "Changes the visual layout of the toolbar labels box.",
             });
+            ToolbarStyleMode.AddCompatibilityNames("Toolbar: Label Box Style");
 
-            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The position (bottom-left corner pivot) of the toolbar labels on the HUD.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
                 "It can fit nicely in the bottom-left side of the HUD aswell if you don't use shields, position for that: -0.716, -0.707",
                 "Positive values are right and up, while negative ones are opposite of that.",
             });
+            ToolbarLabelsPosition.AddCompatibilityNames("Toolbar: Labels Box Position");
 
-            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: Labels Box Position In-Menu", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels In-Menu Position", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
                 "Positive values are right and up, while negative ones are opposite of that.",
             });
+            ToolbarLabelsInMenuPosition.AddCompatibilityNames("Toolbar: Labels Box Position In-Menu");
 
-            ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: Labels Box Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: ToolbarLabels Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
             {
                 "The scale of the toolbar labels box."
             });
+            ToolbarLabelsScale.AddCompatibilityNames("Toolbar: Labels Box Scale");
 
-            ToolbarLabelsOffsetForInvBar = new Vector2DSetting(Handler, "Toolbar: Labels Box Offset for InvBar", defaultValue: new Vector2D(0, 0.06), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsOffsetForInvBar = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels Offset for InvBar", defaultValue: new Vector2D(0, 0.06), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "When the 'Ship Tool Inventory Bar' is visible this vector is added to the HUD position defined above." +
                 "Useful when you want to place the labels box in the center over the toolbar.",
             });
+            ToolbarLabelsOffsetForInvBar.AddCompatibilityNames("Toolbar: Labels Box Offset for InvBar");
 
             ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
-                "This is independent of the toolbar labels feature."
+                "This is independent of the ToolbarLabels feature."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
             #endregion
 
             #region Overlays
-            OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Always Visible", false,
+            OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Show when HUD is off", false,
                 "",
                 string.Format(SubHeaderFormat, "Block Overlays"),
                 "",
-                "Setting to true causes the block overlays to be visible regardless of HUD state");
+                "Setting to true causes the block overlays to be visible regardless of HUD state.");
+            OverlaysAlwaysVisible.AddCompatibilityNames("Overlays: Always Visible");
 
             OverlayLabels = new FlagsSetting<OverlayLabelsFlags>(Handler, "Overlay: Labels", OverlayLabelsFlags.All,
                 "Pick what labels can be shown for overlays.",

@@ -112,8 +112,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_Misc = AddCategory("Misc", Category_Mod);
 
             ItemAdd_TextShow(Category_Textbox);
-            SimpleToggle(Category_Textbox, "Show when HUD is off", Main.Config.TextAlwaysVisible, groupTextInfo);
-            SimpleSlider(Category_Textbox, "Text Scale", Main.Config.TextAPIScale, groupTextInfo);
+            SimpleToggle(Category_Textbox, null, Main.Config.TextAlwaysVisible, groupTextInfo);
+            SimpleSlider(Category_Textbox, null, Main.Config.TextAPIScale, groupTextInfo);
             ItemAdd_BackgroundOpacity(Category_Textbox);
             ItemAdd_CustomStyling(Category_Textbox);
             ItemAdd_ScreenPosition(Category_Textbox);
@@ -126,36 +126,36 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_AimInfo = AddCategory("Aim Info", Category_Textbox, group: groupTextInfo);
             ItemAdd_AimInfoToggles(Category_AimInfo);
 
-            SimpleToggle(Category_Overlays, "Show when HUD is off", Main.Config.OverlaysAlwaysVisible);
+            SimpleToggle(Category_Overlays, null, Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
-            SimpleToggle(Category_Overlays, "Labels shown with Lookaround bind", Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
+            SimpleToggle(Category_Overlays, null, Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
 
-            SimpleToggle(Category_HUD, "Block Info Additions", Main.Config.BlockInfoAdditions);
-            SimpleToggle(Category_HUD, "Ship Tool Inventory Bar", Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
-            SimpleScreenPosition(Category_HUD, "Ship Tool Inventory Bar Position", Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
-            SimpleDualSlider(Category_HUD, "Ship Tool Inventory Bar Scale", Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
-            SimpleToggle(Category_HUD, "Backpack Bar Override", Main.Config.BackpackBarOverride);
-            SimpleToggle(Category_HUD, "Turret HUD", Main.Config.TurretHUD);
-            SimpleToggle(Category_HUD, "HUD Stat Overrides", Main.Config.HudStatOverrides);
-            SimpleToggle(Category_HUD, "Relative Dampener Info", Main.Config.RelativeDampenerInfo);
+            SimpleToggle(Category_HUD, null, Main.Config.BlockInfoAdditions);
+            SimpleToggle(Category_HUD, null, Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
+            SimpleScreenPosition(Category_HUD, null, Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
+            SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
+            SimpleToggle(Category_HUD, null, Main.Config.BackpackBarOverride);
+            SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
+            SimpleToggle(Category_HUD, null, Main.Config.HudStatOverrides);
+            SimpleToggle(Category_HUD, null, Main.Config.RelativeDampenerInfo);
 
-            SimpleEnumCycle(Category_Toolbar, "Labels Mode", typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
-            SimpleSlider(Category_Toolbar, "Labels Enter Cockpit Time", Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, "Toolbar Item Names Mode", typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
-            SimpleToggle(Category_Toolbar, "Labels Show Title", Main.Config.ToolbarLabelsShowTitle, groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, "Label Box Style", typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
-            SimpleScreenPosition(Category_Toolbar, "Labels Box HUD Position", Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
-            SimpleScreenPosition(Category_Toolbar, "Labels Box In-Menu Position", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
-            SimpleSlider(Category_Toolbar, "Labels Box Scale", Main.Config.ToolbarLabelsScale, groupToolbarLabels);
-            SimpleDualSlider(Category_Toolbar, "Labels Box ShipToolInvBar Offset", Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
-            SimpleToggle(Category_Toolbar, "Improve Action Status", Main.Config.ToolbarActionStatus);
+            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels);
+            SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarLabelsHeader, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
+            SimpleScreenPosition(Category_Toolbar, null, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
+            SimpleScreenPosition(Category_Toolbar, null, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
+            SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
+            SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
 
-            SimpleToggle(Category_Terminal, "Detail Info Additions", Main.Config.TerminalDetailInfoAdditions);
-            SimpleToggle(Category_Terminal, "Item Tooltip Additions", Main.Config.ItemTooltipAdditions);
-            SimpleToggle(Category_Terminal, "Item Symbol Additions", Main.Config.ItemSymbolAdditions);
+            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions);
+            SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
+            SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);
 
-            SimpleColor(Category_LeakInfo, "Particle Color World", Main.Config.LeakParticleColorWorld);
-            SimpleColor(Category_LeakInfo, "Particle Color Overlay", Main.Config.LeakParticleColorOverlay);
+            SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorWorld);
+            SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorOverlay);
 
             SimpleBind(Category_Binds, "Menu Bind", Features.Config.Config.MENU_BIND_INPUT_NAME, Main.Config.MenuBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Features.Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Main.Config.CycleOverlaysBind, groupBinds, groupBinds);
@@ -370,9 +370,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             new MenuItem($"<color=0,55,0>{(label == null ? new string('=', 10) : $"=== {label} ===")}", category);
         }
 
-        private void SimpleColor(MenuCategoryBase category, string title, ColorSetting setting, bool useAlpha = false, ItemGroup group = null)
+        private void SimpleColor(MenuCategoryBase category, string label, ColorSetting setting, bool useAlpha = false, ItemGroup group = null)
         {
-            var item = new ItemColor(category, title, setting,
+            var item = new ItemColor(category, GetLabelFromSetting(label, setting), setting,
                 apply: () => ApplySettings(redraw: false),
                 preview: () => ApplySettings(save: false, redraw: false),
                 useAlpha: useAlpha);
@@ -381,9 +381,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleToggle(MenuCategoryBase category, string title, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null)
+        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null)
         {
-            var item = new ItemToggle(category, title,
+            var item = new ItemToggle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
                 setter: (v) =>
                 {
@@ -397,9 +397,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleDualSlider(MenuCategoryBase category, string title, Vector2DSetting setting, ItemGroup group = null)
+        private void SimpleDualSlider(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null)
         {
-            var itemForX = new ItemSlider(category, title + " X", min: (float)setting.Min.X, max: (float)setting.Max.X, defaultValue: (float)setting.DefaultValue.X, rounding: 2,
+            var itemForX = new ItemSlider(category, GetLabelFromSetting(label, setting) + " X", min: (float)setting.Min.X, max: (float)setting.Max.X, defaultValue: (float)setting.DefaultValue.X, rounding: 2,
                 getter: () => (float)setting.Value.X,
                 setter: (val) =>
                 {
@@ -415,7 +415,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     setting.Value = new Vector2D(orig, setting.Value.Y);
                 });
 
-            var itemForY = new ItemSlider(category, title + " Y", min: (float)setting.Min.Y, max: (float)setting.Max.Y, defaultValue: (float)setting.DefaultValue.Y, rounding: 2,
+            var itemForY = new ItemSlider(category, GetLabelFromSetting(label, setting) + " Y", min: (float)setting.Min.Y, max: (float)setting.Max.Y, defaultValue: (float)setting.DefaultValue.Y, rounding: 2,
                 getter: () => (float)setting.Value.Y,
                 setter: (val) =>
                 {
@@ -437,9 +437,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(itemForY);
         }
 
-        private void SimpleSlider(MenuCategoryBase category, string title, FloatSetting setting, ItemGroup group = null)
+        private void SimpleSlider(MenuCategoryBase category, string label, FloatSetting setting, ItemGroup group = null)
         {
-            var item = new ItemSlider(category, title, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+            var item = new ItemSlider(category, GetLabelFromSetting(label, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
                 getter: () => setting.Value,
                 setter: (val) =>
                 {
@@ -461,9 +461,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleBind(MenuCategoryBase category, string name, string inputName, InputCombinationSetting setting, ItemGroup group = null, ItemGroup updateGroupOnSet = null)
+        private void SimpleBind(MenuCategoryBase category, string label, string inputName, InputCombinationSetting setting, ItemGroup group = null, ItemGroup updateGroupOnSet = null)
         {
-            var item = new ItemInput(category, name, inputName,
+            var item = new ItemInput(category, GetLabelFromSetting(label, setting), inputName,
                 getter: () => setting.Value,
                 setter: (combination) =>
                 {
@@ -479,7 +479,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleScreenPosition(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null)
         {
-            var item = new ItemBoxMove(category, label, min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
+            var item = new ItemBoxMove(category, GetLabelFromSetting(label, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
                 getter: () => setting.Value,
                 setter: (pos) =>
                 {
@@ -505,7 +505,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleEnumCycle(MenuCategoryBase category, string label, Type enumType, IntegerSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0)
         {
-            var item = new ItemEnumCycle(category, label,
+            var item = new ItemEnumCycle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
                 setter: (v) =>
                 {
@@ -518,6 +518,22 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             group?.Add(item);
             groupAll.Add(item);
+        }
+
+        static string GetLabelFromSetting<T>(string label, SettingBase<T> setting)
+        {
+            if(label == null)
+            {
+                label = setting.Name;
+                int separator = label.IndexOf(':');
+                if(separator != -1)
+                {
+                    separator += 2; // go after the : and include the space too
+                    if(separator < label.Length)
+                        label = label.Substring(separator, label.Length - separator);
+                }
+            }
+            return label;
         }
 
         private void ApplySettings(bool save = true, bool redraw = true, bool moveHint = false, int drawTicks = 0)

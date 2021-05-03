@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             Main.TextAPI.Detected += TextAPIDetected;
 
-            Main.Config.ToolbarLabelsShowTitle.ValueAssigned += ConfigBoolChanged;
+            Main.Config.ToolbarLabelsHeader.ValueAssigned += ConfigBoolChanged;
             Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
             Main.Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
             Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Main.TextAPI.Detected -= TextAPIDetected;
 
-            Main.Config.ToolbarLabelsShowTitle.ValueAssigned -= ConfigBoolChanged;
+            Main.Config.ToolbarLabelsHeader.ValueAssigned -= ConfigBoolChanged;
             Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
             Main.Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
             Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
@@ -553,7 +553,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 sb2 = LabelsLine2.Message.Clear();
             }
 
-            if(Main.Config.ToolbarLabelsShowTitle.Value)
+            if(Main.Config.ToolbarLabelsHeader.Value)
             {
                 sb.Append("<color=255,240,220>Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i><color=gray>(BuildInfo Mod)<reset>\n");
             }
