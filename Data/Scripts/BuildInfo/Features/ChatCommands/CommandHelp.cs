@@ -21,24 +21,18 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Blocks in construction stages are never airtight." +
             "\n" +
             "\n" +
-            "\n" + SegmentPrefix + "Numbered markings in block text info box" + SegmentSuffix +
+            "\n" + SegmentPrefix + "Explaining numbered markings in text info and overlays" + SegmentSuffix +
             "\n" +
             "\n [1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
             "\n  To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
+            "\n" +
             "\n" +
             "\n [2] No standalone means the block can't exist as the only block in the grid." +
             "\n  Blocks with no collisions also have this limitation." +
             "\n  Also no-collision blocks provide no mass to the grid." +
             "\n" +
-            "\n [3] Explaining conveyor power usage:" +
-            "\n  A hub is a conveyor hub or a block with ports (assembler, reactor, etc), but not conveyor tubes, those are one kind of conveyor lines." +
-            "\n  A conveyor line is a connection between 2 hubs with or without conveyor tubes." +
-            "\n  If a hub is on the line then it splits the line in 2 lines." +
-            "\n  For example, 2 refineries that are placed to be connected with one port will form a conveyor line there." +
-            "\n  Knowning all that, each conveyor line requires 0.1 W." + // HACK hardcoded per-line power from MyGridConveyorSystem.CalculateConsumption()
             "\n" +
-            "\n" +
-            "\n [4] Explaining hidden rotor torque limit:" +
+            "\n [3] Hidden rotor torque limit:" +
             "\n  Torque is limited by the rotor top's mass squared (mass*mass)." +
             "\n  This causes issues for chained structures that have lightweight inner parts and heavy at the ends." +
             "\n  To work around it you must add more mass on the rotor's top, flip the rotor so your bigger ship/station is the top grid." +

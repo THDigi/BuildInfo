@@ -1955,7 +1955,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
 
-                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerLine).Append(" per line").MoreInfoInHelp(3);
+                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerGrid).Append(" per grid (regardless of conveyor presence)");
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     AddLine().Append("    ").ResourcePriority(Hardcoded.Conveyors_PowerGroup, hardcoded: true);
@@ -2058,7 +2058,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(4);
+                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(3);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
