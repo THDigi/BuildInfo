@@ -26,16 +26,19 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n [1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
             "\n  To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
             "\n" +
-            "\n" +
             "\n [2] No standalone means the block can't exist as the only block in the grid." +
             "\n  Blocks with no collisions also have this limitation." +
             "\n  Also no-collision blocks provide no mass to the grid." +
-            "\n" +
             "\n" +
             "\n [3] Hidden rotor torque limit:" +
             "\n  Torque is limited by the rotor top's mass squared (mass*mass)." +
             "\n  This causes issues for chained structures that have lightweight inner parts and heavy at the ends." +
             "\n  To work around it you must add more mass on the rotor's top, flip the rotor so your bigger ship/station is the top grid." +
+            "\n" +
+            "\n [4] Unknown ports:" +
+            "\n  These ports are upgrade ports but the block has no upgrades declared in code." +
+            "\n  They can have custom functionality provided by a mod or no functionality at all, can't tell from code." +
+            "\n  They're shown in overlays because their position is still useful if you can identify their purpose." +
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +

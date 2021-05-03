@@ -1502,16 +1502,20 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
             }
 
-            bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
-            if(hasUpgrades && data.UpgradePorts != null)
+            if(data.UpgradePorts != null)
             {
-                var color = new Color(200, 55, 255);
+                bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
+                var upgradePortColor = new Color(200, 55, 255);
+                var unknownPortColor = new Color(0, 0, 200);
 
                 foreach(var localMatrix in data.UpgradePorts)
                 {
                     var matrix = localMatrix * drawMatrix;
 
-                    DrawPort("Upgrade port", matrix, color);
+                    if(hasUpgrades)
+                        DrawPort("Upgrade port", matrix, upgradePortColor);
+                    else
+                        DrawPort(null, matrix, unknownPortColor); // special treatment message
                 }
             }
 
@@ -1549,7 +1553,11 @@ namespace Digi.BuildInfo.Features.Overlays
                     var labelPos = closestRender.Value.Matrix.Translation;
                     var labelDir = closestRender.Value.Matrix.Right;
 
-                    DynamicLabelSB.Clear().Append(closestRender.Value.Message);
+                    if(closestRender.Value.Message == null)
+                        DynamicLabelSB.Clear().Append("Unknown port").MoreInfoInHelp(4);
+                    else
+                        DynamicLabelSB.Clear().Append(closestRender.Value.Message);
+
                     DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: scale, lineHeight: 0, lineThick: 0, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: false);
                 }
 

@@ -1615,6 +1615,10 @@ namespace Digi.BuildInfo.Features
                             GetLine().Color(COLOR_GOOD).Append(data.Upgrades[i]).ResetFormatting();
                         }
                     }
+                    else if(upgradePorts > 0)
+                    {
+                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(4);
+                    }
                 }
             }
             #endregion Optional upgrades
