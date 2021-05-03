@@ -130,14 +130,11 @@ namespace Digi.BuildInfo.Features
                         {
                             case BuildCheckResult.OK: color = Color.Lime; break;
                             case BuildCheckResult.AlreadyBuilt: color = Color.White; break;
-                            case BuildCheckResult.NotConnected: color = Color.Yellow; break;
-
+                            case BuildCheckResult.NotWeldable: color = Color.DarkRed; break;
+                            case BuildCheckResult.NotConnected:
                             case BuildCheckResult.IntersectedWithGrid:
-                            case BuildCheckResult.IntersectedWithSomethingElse:
-                            case BuildCheckResult.NotWeldable: // projector doesn't allow block creation/welding
-                                color = Color.DarkRed;
-                                break;
-                            default: color = new Color(255, 0, 255); break; // unknown state
+                            case BuildCheckResult.IntersectedWithSomethingElse: color = Color.Yellow; break;
+                            default: color = new Color(255, 0, 255); break;
                         }
                     }
                 }
@@ -305,10 +302,10 @@ namespace Digi.BuildInfo.Features
 
             center = camMatrix.Translation + ((center - camMatrix.Translation) * DepthRatio);
 
-            halfExtent = (localBB.Max - localBB.Min) * 0.5 * DepthRatio;
-            left = worldMatrix.Left * halfExtent.X;
-            up = worldMatrix.Up * halfExtent.Y;
-            back = worldMatrix.Backward * halfExtent.Z;
+            //halfExtent *= DepthRatio;
+            left *= DepthRatio;
+            up *= DepthRatio;
+            back *= DepthRatio;
 
             top = center + up;
             bottom = center - up;
