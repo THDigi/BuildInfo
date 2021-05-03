@@ -20,6 +20,7 @@ using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Components;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -1004,44 +1005,6 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Internal info
 
-            #region Projector info and status
-            if(projected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
-            {
-                AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
-
-                // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
-                var canBuild = projectedBy.CanBuild(aimedBlock, checkHavokIntersections: true);
-
-                AddLine().Label("Status");
-
-                switch(canBuild)
-                {
-                    case BuildCheckResult.OK:
-                        GetLine().Color(COLOR_GOOD).Append("Ready to build");
-                        break;
-                    case BuildCheckResult.AlreadyBuilt:
-                        GetLine().Color(COLOR_WARNING).Append("Already built!");
-                        break;
-                    case BuildCheckResult.IntersectedWithGrid:
-                        GetLine().Color(COLOR_BAD).Append("Other block in the way.");
-                        break;
-                    case BuildCheckResult.IntersectedWithSomethingElse:
-                        GetLine().Color(COLOR_WARNING).Append("Something in the way.");
-                        break;
-                    case BuildCheckResult.NotConnected:
-                        GetLine().Color(COLOR_WARNING).Append("Nothing to attach to.");
-                        break;
-                    case BuildCheckResult.NotWeldable:
-                        GetLine().Color(COLOR_BAD).Append("Projector doesn't allow building.");
-                        break;
-                    //case BuildCheckResult.NotFound: // not used by CanBuild()
-                    default:
-                        GetLine().Color(COLOR_BAD).Append("(Unknown)");
-                        break;
-                }
-            }
-            #endregion Projector info and status
-
             #region Mass, grid mass
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
@@ -1090,6 +1053,59 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Mass, grid mass
 
+            #region Projector info and status
+            if(projected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            {
+                // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
+
+                AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
+
+                AddLine().Label("Status");
+
+                switch(Main.EquipmentMonitor.AimedProjectedCanBuild)
+                {
+                    case BuildCheckResult.OK:
+                        GetLine().Color(COLOR_GOOD).Append("Ready to build");
+                        break;
+                    case BuildCheckResult.AlreadyBuilt:
+                        GetLine().Color(COLOR_WARNING).Append("Already built!");
+                        break;
+                    case BuildCheckResult.IntersectedWithGrid:
+                        GetLine().Color(COLOR_BAD).Append("Other block in the way");
+                        break;
+                    case BuildCheckResult.IntersectedWithSomethingElse:
+                        if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZABuildingProjections))
+                            GetLine().Color(COLOR_BAD).Append("Can't build projections in this SafeZone");
+                        else if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZAWelding))
+                            GetLine().Color(COLOR_BAD).Append("Can't weld in this SafeZone");
+                        else
+                            GetLine().Color(COLOR_WARNING).Append("Something in the way");
+                        break;
+                    case BuildCheckResult.NotConnected:
+                        GetLine().Color(COLOR_WARNING).Append("Nothing to attach to");
+                        break;
+                    case BuildCheckResult.NotWeldable:
+                        GetLine().Color(COLOR_BAD).Append("Projector doesn't allow building");
+                        break;
+                    //case BuildCheckResult.NotFound: // not used by CanBuild()
+                    default:
+                        GetLine().Color(COLOR_BAD).Append("(Unknown)");
+                        break;
+                }
+            }
+            #endregion Projector info and status
+
+            #region Different block projected under this one
+            if(!projected && Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            {
+                var projectionUnderAimed = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid?.GetCubeBlock(aimedBlock.Position);
+                if(projectionUnderAimed != null && projectionUnderAimed.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                {
+                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectionUnderAimed.BlockDefinition.DisplayNameText);
+                }
+            }
+            #endregion Different block projected under this one
+
             #region Integrity
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Integrity))
             {
@@ -1097,7 +1113,7 @@ namespace Digi.BuildInfo.Features
                 {
                     var originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
-                    AddLine().ResetFormatting().Append("Original integrity: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
+                    AddLine().ResetFormatting().Append("Integrity in blueprint: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
                         .ProportionToPercent(originalIntegrity).ResetFormatting();
                 }
                 else
