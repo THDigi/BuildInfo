@@ -62,7 +62,7 @@ namespace Digi.BuildInfo.Systems
         /// <summary>
         /// If aimed block is projected this will indicate its can-build status.
         /// </summary>
-        public BuildCheckResult AimedProjectedCanBuild { get; set; }
+        public BuildCheckResult AimedProjectedCanBuild { get; private set; }
 
         /// <summary>
         /// Aimed or equipped block definition, null if nothing is equipped/aimed.
@@ -218,7 +218,7 @@ namespace Digi.BuildInfo.Systems
                 return;
             }
 
-            // these rules (until the end of the method) were extracted from the game code
+            // this execution order (until the end of the method) was extracted from the game code
             if(CanWeld(aimBlock))
             {
                 SetBlock(null, aimBlock);
@@ -306,7 +306,7 @@ namespace Digi.BuildInfo.Systems
             MyCubeGrid grid;
             Vector3I discardVec;
             double discardDouble;
-            if(!MyCubeGrid.GetLineIntersection(ref line, out grid, out discardVec, out discardDouble))
+            if(!MyCubeGrid.GetLineIntersection(ref line, out grid, out discardVec, out discardDouble, (g) => g.Projector != null))
                 return false;
 
             projector = grid?.Projector as IMyProjector;
@@ -573,13 +573,14 @@ namespace Digi.BuildInfo.Systems
             if(def == null)
                 def = block?.BlockDefinition as MyCubeBlockDefinition;
 
+            AimedProjectedCanBuild = projectedCanBuild;
+            NearbyProjector = nearbyProjector;
+
             if(BlockDef == def && AimedBlock == block)
                 return;
 
-            NearbyProjector = nearbyProjector;
             AimedBlock = block;
             AimedProjectedBy = null;
-            AimedProjectedCanBuild = projectedCanBuild;
             if(AimedBlock != null)
             {
                 var internalGrid = (MyCubeGrid)AimedBlock.CubeGrid;
