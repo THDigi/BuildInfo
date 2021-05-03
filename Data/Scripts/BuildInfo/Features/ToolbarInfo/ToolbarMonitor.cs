@@ -67,7 +67,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         /// </summary>
         public int GamepadToolbarPage { get; private set; }
 
-        long CurrentShipControllerId;
         readonly Dictionary<long, int> PagePerCockpit = new Dictionary<long, int>();
         readonly Dictionary<long, int> GamepadPagePerCockpit = new Dictionary<long, int>();
 
@@ -109,6 +108,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void RegisterComponent()
         {
+            Main.EquipmentMonitor.ControlledChanged += ControlledChanged;
             Main.EquipmentMonitor.ShipControllerOBChanged += ToolbarOBChanged;
         }
 
@@ -117,6 +117,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.ComponentsRegistered)
                 return;
 
+            Main.EquipmentMonitor.ControlledChanged -= ControlledChanged;
             Main.EquipmentMonitor.ShipControllerOBChanged -= ToolbarOBChanged;
         }
 
@@ -299,35 +300,39 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 Log.Info($"---------------------------------------- TOOLBAR END ------------------------------------------");
         }
 
+        void ControlledChanged(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
+        {
+            ControlledBlock = controlled as IMyShipController;
+
+            if(ControlledBlock != null)
+            {
+                ToolbarPage = PagePerCockpit.GetValueOrDefault(ControlledBlock.EntityId, 0);
+                GamepadToolbarPage = GamepadPagePerCockpit.GetValueOrDefault(ControlledBlock.EntityId, 0);
+            }
+            else
+            {
+                ToolbarPage = 0;
+                GamepadToolbarPage = 0;
+            }
+
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (ControlledBlock != null));
+        }
+
         // Handling toolbar page and action trigger detection
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(!paused && DebugLogging)
                 Log.Info($"---------------------------------------- INDEX RESET ------------------------------------------");
 
-            ControlledBlock = null;
             WrapperSlotIndex = 0;
 
-            if(MyAPIGateway.Gui.ChatEntryVisible)
-                return;
-
-            var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
-            if(shipController == null)
+            if(MyAPIGateway.Gui.ChatEntryVisible || ControlledBlock == null)
                 return;
 
             var screen = MyAPIGateway.Gui.ActiveGamePlayScreen;
             bool inToolbarConfig = screen == "MyGuiScreenCubeBuilder";
             if(!(screen == null || inToolbarConfig)) // toolbar config menu only for cockpit, not for other blocks like timers' action toolbars
                 return;
-
-            if(CurrentShipControllerId != shipController.EntityId)
-            {
-                ToolbarPage = PagePerCockpit.GetValueOrDefault(shipController.EntityId, 0);
-                GamepadToolbarPage = GamepadPagePerCockpit.GetValueOrDefault(shipController.EntityId, 0);
-                CurrentShipControllerId = shipController.EntityId;
-            }
-
-            ControlledBlock = shipController;
 
             var controlSlots = Main.Constants.CONTROL_SLOTS;
 
@@ -337,7 +342,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
                     {
-                        SetToolbarPage(shipController, i - 1);
+                        SetToolbarPage(ControlledBlock, i - 1);
                     }
                     else
                     {
@@ -348,7 +353,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
             }
 
-            // HACK next/prev toolbar hotkeys don't work in the menu unless you click on the icons list...
+            // HACK next/prev toolbar hotkeys don't work in the menu unless you click on the icons list... but I'm forcing toolbar to cycle regardless.
             // spectator condition is in game code because toolbar up/down is used for going between players.
             // also MUST be after the slot checks to match the vanilla code's behavior.
             //if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
@@ -356,12 +361,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
                 {
-                    AdjustToolbarPage(shipController, 1);
+                    AdjustToolbarPage(ControlledBlock, 1);
                 }
                 // no 'else' because that's how the game handles it, meaning pressing both controls in same tick would do both actions.
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_DOWN))
                 {
-                    AdjustToolbarPage(shipController, -1);
+                    AdjustToolbarPage(ControlledBlock, -1);
                 }
             }
 
@@ -385,7 +390,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 bool buttonB = MyAPIGateway.Input.IsJoystickButtonNewPressed(MyJoystickButtonsEnum.J02);
                 if((buttonA || buttonB) && MyAPIGateway.Input.IsJoystickButtonPressed(MyJoystickButtonsEnum.J09))
                 {
-                    AdjustGamepadToolbarPage(shipController, buttonA ? -1 : 1);
+                    AdjustGamepadToolbarPage(ControlledBlock, buttonA ? -1 : 1);
                 }
             }
         }
@@ -413,9 +418,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             // HACK: ensure the toolbar page is what the code expects, avoids toolbar page desync
             // HACK: needs to be delayed otherwise it jumps more than one page
+            int copyPage = page;
             MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
-                MyVisualScriptLogicProvider.SetToolbarPageLocal(page);
+                MyVisualScriptLogicProvider.SetToolbarPageLocal(copyPage);
             });
         }
 
