@@ -3501,6 +3501,24 @@ namespace Digi.BuildInfo.Features
         {
             // NOTE: this includes conveyor sorter too
 
+            // TODO: show inventory volume without cargo mass estimate?
+            //var sorter = blockDef as MyConveyorSorterDefinition; // does not extend MyPoweredCargoContainerDefinition
+            //if(sorter != null)
+            //{
+            //    InventoryStats(blockDef, alternateVolume: sorter.InventorySize.Volume);
+            //}
+            //else
+            //{
+            //    var weaponDef = blockDef as MyWeaponBlockDefinition;
+            //    if(weaponDef != null)
+            //    {
+            //        if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            //        {
+            //            AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume);
+            //        }
+            //    }
+            //}
+
             AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
 
             //var ammos = wcDef.Ammos;
