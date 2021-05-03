@@ -131,6 +131,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
 
             SimpleToggle(Category_HUD, null, Main.Config.BlockInfoAdditions);
+            SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
+            SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
+            SimpleToggle(Category_HUD, null, Main.Config.OverrideToolSelectionDraw);
             SimpleToggle(Category_HUD, null, Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
             SimpleScreenPosition(Category_HUD, null, Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
             SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);

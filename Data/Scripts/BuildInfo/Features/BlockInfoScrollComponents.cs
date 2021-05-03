@@ -5,6 +5,7 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -44,7 +45,7 @@ namespace Digi.BuildInfo.Features
         {
             Main.GameConfig.HudStateChanged += HudStateChanged;
             Main.EquipmentMonitor.BlockChanged += EquipmentBlockChanged;
-            Main.Config.BlockInfoAdditions.ValueAssigned += SettingValueSet;
+            Main.Config.ScrollableComponentsList.ValueAssigned += SettingValueSet;
 
             HudState = Main.GameConfig.HudState;
         }
@@ -56,25 +57,31 @@ namespace Digi.BuildInfo.Features
 
             Main.GameConfig.HudStateChanged -= HudStateChanged;
             Main.EquipmentMonitor.BlockChanged -= EquipmentBlockChanged;
-            Main.Config.BlockInfoAdditions.ValueAssigned -= SettingValueSet;
+            Main.Config.ScrollableComponentsList.ValueAssigned -= SettingValueSet;
         }
 
         void SettingValueSet(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
 
-            CycleComponents.Clear();
-            Index = 0;
-            IndexOffset = 0;
-            ShowDownHint = false;
-            ShowUpHint = false;
+            if(oldValue != newValue)
+            {
+                CycleComponents.Clear();
+                Index = 0;
+                IndexOffset = 0;
+                ShowDownHint = false;
+                ShowUpHint = false;
 
-            MyHud.BlockInfo.Components.Clear();
-            MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+                MyHud.BlockInfo.Components.Clear();
+                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+            }
         }
 
         void HudStateChanged(HudState prevState, HudState state)
         {
+            if(prevState == state)
+                return;
+
             HudState = state;
 
             CycleComponents.Clear();
@@ -83,7 +90,7 @@ namespace Digi.BuildInfo.Features
             ShowDownHint = false;
             ShowUpHint = false;
 
-            if(Main.Config.BlockInfoAdditions.Value)
+            if(Main.Config.ScrollableComponentsList.Value)
             {
                 MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
@@ -92,6 +99,8 @@ namespace Digi.BuildInfo.Features
 
         void EquipmentBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null && Main.Config.ScrollableComponentsList.Value));
+
             CycleComponents.Clear();
             Index = 0;
             IndexOffset = 0;
@@ -99,13 +108,11 @@ namespace Digi.BuildInfo.Features
             ShowUpHint = false;
             ShowScrollHint = true;
 
-            if(Main.Config.BlockInfoAdditions.Value)
-            {
-                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null));
-
-                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
-                MyHud.BlockInfo.Components.Clear();
-            }
+            //if(Main.Config.ScrollableComponentsList.Value)
+            //{
+            //    MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+            //    MyHud.BlockInfo.Components.Clear();
+            //}
         }
 
         public override void UpdateDraw()
@@ -149,7 +156,10 @@ namespace Digi.BuildInfo.Features
                 if(slimBlock != null)
                 {
                     // auto-scroll to higher if block is built
-                    Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
+                    if(Main.EquipmentMonitor.AimedProjectedBy != null)
+                        Index = 0;
+                    else
+                        Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
                 }
 
                 int maxIndex = CycleComponents.Count - MaxVisible;

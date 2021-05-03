@@ -38,6 +38,30 @@ namespace Digi.BuildInfo.Utilities
             return BuildInfoMod.Instance.Session.ModContext.ModPath + @"\" + relativePath;
         }
 
+        // from MySafeZoneAction
+        public static readonly object SZADamage = 0x1;
+        public static readonly object SZAShooting = 0x2;
+        public static readonly object SZADrilling = 0x4;
+        public static readonly object SZAWelding = 0x8;
+        public static readonly object SZAGrinding = 0x10;
+        public static readonly object SZAVoxelHand = 0x20;
+        public static readonly object SZABuilding = 0x40;
+        public static readonly object SZALandingGearLock = 0x80;
+        public static readonly object SZAConvertToStation = 0x100;
+        public static readonly object SZABuildingProjections = 0x200;
+        public static readonly object SZAAll = 0x3FF;
+        public static readonly object SZAAdminIgnore = 0x37E;
+
+        public static bool CheckSafezoneAction(IMySlimBlock block, object actionId, long sourceEntityId = 0)
+        {
+            ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
+            var grid = (MyCubeGrid)block.CubeGrid;
+            var box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector, block.Max * grid.GridSize + grid.GridSizeHalfVector).TransformFast(grid.PositionComp.WorldMatrixRef);
+            return MySessionComponentSafeZones.IsActionAllowed(box, Utils.CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
+        }
+
+        public static T CastHax<T>(T typeRef, object castObj) => (T)castObj;
+
         /// <summary>
         /// Because <see cref="Vector3D.Reject(Vector3D, Vector3D)"/> is broken.
         /// </summary>

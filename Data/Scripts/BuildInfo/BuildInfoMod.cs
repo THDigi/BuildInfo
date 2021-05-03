@@ -54,6 +54,8 @@ namespace Digi.BuildInfo
         public TurretHUD TurretHUD;
         public PlacementDistance PlacementDistance;
         public BlockInfoAdditions BlockInfoAdditions;
+        public ProjectedBlockInfo ProjectedBlockInfo;
+        public OverrideToolSelectionDraw OverrideToolSelectionDraw;
         public RelativeDampenerInfo RelativeDampenerInfo;
         public ShipToolInventoryBar ShipToolInventoryBar;
         public BlockInfoScrollComponents BlockInfoScrollComponents;
@@ -94,9 +96,11 @@ namespace Digi.BuildInfo
             FontsHandler = new FontsHandler(this);
             ConfigMenuHandler = new ConfigMenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
-            LeakInfo = new LeakInfo(this);
+            ProjectedBlockInfo = new ProjectedBlockInfo(this);
+            OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             Overlays = new Overlays(this);
             LockOverlay = new LockOverlay(this);
+            LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);
@@ -105,12 +109,12 @@ namespace Digi.BuildInfo
             TerminalInfo = new TerminalInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
-            TurretHUD = new TurretHUD(this);
             PlacementDistance = new PlacementDistance(this);
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             BlockInfoScrollComponents = new BlockInfoScrollComponents(this);
+            TurretHUD = new TurretHUD(this);
             WhatsNew = new WhatsNew(this);
             TooltipHandler = new TooltipHandler(this);
             BlueprintTooltips = new BlueprintTooltips(this);

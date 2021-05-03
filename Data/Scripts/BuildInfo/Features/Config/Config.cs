@@ -35,6 +35,9 @@ namespace Digi.BuildInfo.Features.Config
         public FlagsSetting<AimInfoFlags> AimInfo;
 
         public BoolSetting BlockInfoAdditions;
+        public BoolSetting ScrollableComponentsList;
+        public BoolSetting SelectAllProjectedBlocks;
+        public BoolSetting OverrideToolSelectionDraw;
 
         public BoolSetting ShipToolInvBarShow;
         public Vector2DSetting ShipToolInvBarPosition;
@@ -282,6 +285,19 @@ namespace Digi.BuildInfo.Features.Config
                 "- shows what the component grinds to if it's different than the component itself (e.g. Battery's Power Cells), or just highlights it yellow if TextAPI is turned off.",
                 "- allows scrolling of the components list if the list is too tall to fit in the current HUD mode.");
             BlockInfoAdditions.AddCompatibilityNames("HUD: Block Info Stages");
+
+            ScrollableComponentsList = new BoolSetting(Handler, "HUD: Scrollable Block Components List", true,
+                "For blocks that have more components than fit on screen in the current HUD mode.",
+                "Scrolling happens automatically as you weld/grind and can also be done with shift+mousewheel.");
+
+            SelectAllProjectedBlocks = new BoolSetting(Handler, "HUD: Tools Select All Projected Blocks", true,
+                "This feature allows you to select projected blocks that are not buildable yet.",
+                "HUD will show components and text info box will also show what block needs to become weldable.");
+
+            OverrideToolSelectionDraw = new BoolSetting(Handler, "HUD: Override Tool Selection draw", true,
+                "Replaces block selection with a model-shrink-wrapped-box and a bit thicker, for welder and grinder.",
+                "For example, a large-grid camera block would show selection over the camera model itself, instead of the entire grid cell.",
+                "Cube builder/placer is unaffected, you can still see block's boundingbox with that.");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected.");

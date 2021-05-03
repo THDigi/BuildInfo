@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
@@ -54,9 +55,14 @@ namespace Digi.BuildInfo.Systems
         public IMyProjector AimedProjectedBy { get; private set; }
 
         /// <summary>
+        /// If aiming also intersects a projected grid, returns projector hosting it.
+        /// </summary>
+        public IMyProjector NearbyProjector { get; private set; }
+
+        /// <summary>
         /// If aimed block is projected this will indicate its can-build status.
         /// </summary>
-        public BuildCheckResult AimedProjectedCanBuild { get; private set; }
+        public BuildCheckResult AimedProjectedCanBuild { get; set; }
 
         /// <summary>
         /// Aimed or equipped block definition, null if nothing is equipped/aimed.
@@ -206,46 +212,57 @@ namespace Digi.BuildInfo.Systems
 
             var aimBlock = handToolCasterComp?.HitBlock as IMySlimBlock;
 
+            if(!Main.Config.SelectAllProjectedBlocks.Value)
+            {
+                SetBlock(null, aimBlock);
+                return;
+            }
+
+            // these rules (until the end of the method) were extracted from the game code
             if(CanWeld(aimBlock))
             {
                 SetBlock(null, aimBlock);
                 return;
             }
 
-            IMySlimBlock projectedGood;
-            IMySlimBlock projectedClosest;
-            BuildCheckResult projectedGoodCanBuild;
-            BuildCheckResult projectedClosestCanBuild;
-            FindProjectedBlock(character, out projectedGood, out projectedClosest, out projectedGoodCanBuild, out projectedClosestCanBuild);
+            if(Main.Tick % 4 != 0) // 15fps
+                return;
 
-            if(projectedGood != null)
+            IMySlimBlock targetProjectedBlock;
+            BuildCheckResult targetProjectedStatus;
+            IMySlimBlock closestProjectedBlock;
+            BuildCheckResult closestProjectedStatus;
+            IMyProjector projector;
+            FindProjectedBlock(character, out targetProjectedBlock, out targetProjectedStatus, out closestProjectedBlock, out closestProjectedStatus, out projector);
+
+            if(targetProjectedBlock != null)
             {
-                SetBlock(null, projectedGood, projectedGoodCanBuild);
+                SetBlock(null, targetProjectedBlock, targetProjectedStatus, nearbyProjector: projector);
                 return;
             }
 
             if(aimBlock != null)
             {
-                SetBlock(null, aimBlock);
+                SetBlock(null, aimBlock, nearbyProjector: projector);
                 return;
             }
 
-            if(projectedClosest != null)
+            if(closestProjectedBlock != null)
             {
-                SetBlock(null, projectedClosest, projectedClosestCanBuild);
+                SetBlock(null, closestProjectedBlock, closestProjectedStatus, nearbyProjector: projector);
                 return;
             }
 
-            SetBlock(null, null);
+            SetBlock(null, null, nearbyProjector: projector);
         }
 
-        private bool CanWeld(IMySlimBlock block)
+        bool CanWeld(IMySlimBlock block)
         {
             if(block == null)
                 return false;
 
-            //if(!MySessionComponentSafeZones.IsActionAllowed(block.WorldAABB, MySafeZoneAction.Welding, 0L))
-            //    return false;
+            if(!Utils.CheckSafezoneAction(block, Utils.SZAWelding))
+                return false;
 
             if(!block.IsFullIntegrity || block.HasDeformation)
                 return true;
@@ -253,35 +270,21 @@ namespace Digi.BuildInfo.Systems
             return false;
         }
 
-        private readonly List<Vector3I> cells = new List<Vector3I>();
-        private readonly List<IMySlimBlock> blocks = new List<IMySlimBlock>();
-        private void RayCastBlocksAllOrdered(MyCubeGrid grid, Vector3D worldStart, Vector3D worldEnd, List<IMySlimBlock> outBlocks)
-        {
-            outBlocks.Clear();
-            grid.RayCastCells(worldStart, worldEnd, cells, clearOutHitPositions: true);
-
-            for(int i = 0; i < cells.Count; ++i)
-            {
-                var slim = grid.GetCubeBlock(cells[i]) as IMySlimBlock;
-
-                if(slim != null && !blocks.Contains(slim))
-                    outBlocks.Add(slim);
-            }
-        }
-
         // HACK hardcoded from MyWelder.FindProjectedBlock()
-        private bool FindProjectedBlock(IMyCharacter character, out IMySlimBlock goodBlock, out IMySlimBlock closestBlock, out BuildCheckResult goodCanBuild, out BuildCheckResult closestCanBuild)
+        readonly List<Vector3I> cells = new List<Vector3I>();
+        readonly List<IMySlimBlock> blocks = new List<IMySlimBlock>(); // must be list to preserve insert order
+        bool FindProjectedBlock(IMyCharacter character, out IMySlimBlock targetBlock, out BuildCheckResult targetStatus, out IMySlimBlock closestBlock, out BuildCheckResult closestStatus, out IMyProjector projector)
         {
-            goodBlock = null;
+            targetBlock = null;
+            targetStatus = BuildCheckResult.NotFound;
             closestBlock = null;
-            goodCanBuild = BuildCheckResult.NotFound;
-            closestCanBuild = BuildCheckResult.NotFound;
+            closestStatus = BuildCheckResult.NotFound;
+            projector = null;
 
             if(handToolCasterComp == null || HandTool?.PhysicalItemDefinition == null)
                 return false;
 
             var weaponPosition = character?.Components?.Get<MyCharacterWeaponPositionComponent>();
-
             if(weaponPosition == null)
                 return false;
 
@@ -290,8 +293,7 @@ namespace Digi.BuildInfo.Systems
             float reachDistance = Hardcoded.EngineerToolBase_DefaultReachDistance * (handItemDef == null ? 1f : handItemDef.DistanceMultiplier);
 
             // hardcoded from MyEngineerToolBase.UpdateSensorPosition()
-            MatrixD worldMatrix = MatrixD.Identity;
-            worldMatrix.Translation = weaponPosition.LogicalPositionWorld;
+            MatrixD worldMatrix = MatrixD.CreateTranslation(weaponPosition.LogicalPositionWorld);
             worldMatrix.Right = character.WorldMatrix.Right;
             worldMatrix.Forward = weaponPosition.LogicalOrientationWorld;
             worldMatrix.Up = Vector3.Cross(worldMatrix.Right, worldMatrix.Forward);
@@ -304,30 +306,44 @@ namespace Digi.BuildInfo.Systems
             MyCubeGrid grid;
             Vector3I discardVec;
             double discardDouble;
-            if(!MyCubeGrid.GetLineIntersection(ref line, out grid, out discardVec, out discardDouble) || grid?.Projector == null)
+            if(!MyCubeGrid.GetLineIntersection(ref line, out grid, out discardVec, out discardDouble))
                 return false;
 
-            var projector = (IMyProjector)grid.Projector;
+            projector = grid?.Projector as IMyProjector;
+            if(projector == null)
+                return false;
 
-            RayCastBlocksAllOrdered(grid, start, end, blocks);
+            // inlined RayCastBlocksAllOrdered(grid, start, end, blocks);
+            blocks.Clear();
+            grid.RayCastCells(start, end, cells, clearOutHitPositions: true);
 
-            for(int i = 0; i < blocks.Count; ++i)
+            for(int i = 0; i < cells.Count; ++i)
             {
-                var slim = blocks[i];
-                var canBuild = projector.CanBuild(slim, checkHavokIntersections: true);
+                IMySlimBlock slim = grid.GetCubeBlock(cells[i]) as IMySlimBlock;
+                if(slim == null || blocks.Contains(slim))
+                    continue;
 
-                if(i == 0 && !projector.ShowOnlyBuildable)
+                BuildCheckResult canBuild = projector.CanBuild(slim, checkHavokIntersections: true);
+
+                if(closestBlock == null && !projector.ShowOnlyBuildable)
                 {
                     closestBlock = slim;
-                    closestCanBuild = canBuild;
+                    closestStatus = canBuild;
                 }
 
                 if(canBuild == BuildCheckResult.OK)
                 {
-                    goodBlock = slim;
-                    goodCanBuild = canBuild;
+                    targetBlock = slim;
+
+                    // HACK: doesn't check for welding, also must be here because it must target the same thing as vanilla.
+                    if(!Utils.CheckSafezoneAction(slim, Utils.SZAWelding))
+                        canBuild = BuildCheckResult.IntersectedWithSomethingElse;
+
+                    targetStatus = canBuild;
                     break;
                 }
+
+                blocks.Add(slim);
             }
 
             blocks.Clear();
@@ -552,7 +568,7 @@ namespace Digi.BuildInfo.Systems
         /// <summary>
         /// Updates the block if different and invokes the <see cref="BlockChanged"/> event.
         /// </summary>
-        private void SetBlock(MyCubeBlockDefinition def, IMySlimBlock block = null, BuildCheckResult projectedCanBuild = BuildCheckResult.NotFound)
+        private void SetBlock(MyCubeBlockDefinition def, IMySlimBlock block = null, BuildCheckResult projectedCanBuild = BuildCheckResult.NotFound, IMyProjector nearbyProjector = null)
         {
             if(def == null)
                 def = block?.BlockDefinition as MyCubeBlockDefinition;
@@ -560,6 +576,7 @@ namespace Digi.BuildInfo.Systems
             if(BlockDef == def && AimedBlock == block)
                 return;
 
+            NearbyProjector = nearbyProjector;
             AimedBlock = block;
             AimedProjectedBy = null;
             AimedProjectedCanBuild = projectedCanBuild;
@@ -567,6 +584,8 @@ namespace Digi.BuildInfo.Systems
             {
                 var internalGrid = (MyCubeGrid)AimedBlock.CubeGrid;
                 AimedProjectedBy = internalGrid?.Projector;
+                if(AimedProjectedBy != null)
+                    NearbyProjector = AimedProjectedBy;
             }
 
             BlockDef = def;

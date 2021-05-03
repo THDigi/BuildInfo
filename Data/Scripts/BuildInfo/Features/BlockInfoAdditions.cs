@@ -31,15 +31,10 @@ namespace Digi.BuildInfo.Features
         private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
         private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = (Color.Yellow * 0.75f).ToVector4();
 
-        private readonly MyStringId SELECT_GIZMO_RED = MyStringId.GetOrCompute("GizmoDrawLineRed");
-        private const int SELECT_CANBUILD_SKIP_TICKS = 15;
-
         private int ComputerComponentIndex = -1;
 
         private int ComponentReplaceInfoCount = 0;
         private readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(10);
-
-        private BuildCheckResult ProjectedCanBuildCached;
 
         private class ComponentInfo
         {
@@ -64,21 +59,32 @@ namespace Digi.BuildInfo.Features
 
         public BlockInfoAdditions(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
         public override void RegisterComponent()
         {
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditions_ValueAssigned;
         }
 
         public override void UnregisterComponent()
         {
+            if(!Main.ComponentsRegistered)
+                return;
+
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditions_ValueAssigned;
         }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
+        void BlockInfoAdditions_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
+        }
+
+        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
+        {
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null && Main.Config.BlockInfoAdditions.Value));
+
             for(int i = 0; i < ComponentReplaceInfoCount; ++i)
             {
                 ComponentReplaceInfo[i].Clear();
@@ -124,82 +130,16 @@ namespace Digi.BuildInfo.Features
             ComponentReplaceInfoCount++;
         }
 
-        private void DrawProjectedSelection()
-        {
-            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            IMyProjector projector = Main.EquipmentMonitor.AimedProjectedBy;
-
-            if(aimedBlock == null || projector == null)
-                return;
-
-            BuildCheckResult canBuild = ProjectedCanBuildCached;
-
-            if(Main.Tick % SELECT_CANBUILD_SKIP_TICKS == 0)
-                canBuild = ProjectedCanBuildCached = projector.CanBuild(aimedBlock, checkHavokIntersections: true);
-
-            if(canBuild == BuildCheckResult.OK) // buildable blocks already have a selection box
-                return;
-
-            var grid = (MyCubeGrid)aimedBlock.CubeGrid;
-            MyCubeBuilder.DrawSemiTransparentBox(aimedBlock.Min, aimedBlock.Max, grid, Color.White, onlyWireframe: true, lineMaterial: SELECT_GIZMO_RED);
-        }
-
         public override void UpdateDraw()
         {
             if(Main.GameConfig.HudState == HudState.OFF || Main.EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
-            DrawProjectedSelection();
-
             var hudComps = MyHud.BlockInfo?.Components;
             if(hudComps == null || hudComps.Count == 0) // don't show block info additions if the block info isn't visible
                 return;
 
-#if false
-            #region Block info addition background
-            // draw the added top part's background only for aimed block (which requires textAPI)
-            if(selectedBlock != null && !showMenu && textObject != null && useTextAPI)
-            {
-                var hud = posHUD;
-
-                // make the position top-right
-                hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET;
-
-                var worldPos = HudToWorld(hud);
-                var size = GetGameHudBlockInfoSize(lines * Settings.textAPIScale);
-                worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-
-                double cornerSize = Math.Min(0.0015 * ScaleFOV, size.Y); // prevent corner from being larger than the height of the box
-                float cornerW = (float)cornerSize;
-                float cornerH = (float)cornerSize;
-
-                {
-                    var finalW = size.X - cornerW;
-                    var finalH = cornerH;
-                    var finalWorldPos = worldPos + camMatrix.Left * cornerW + camMatrix.Up * (size.Y - cornerH);
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                }
-
-                // HACK NOTE: this custom topright corner material will draw above textAPI if textAPI is loaded after this mod
-                {
-                    var finalW = cornerW;
-                    var finalH = cornerH;
-                    var finalWorldPos = worldPos + camMatrix.Right * (size.X - cornerW) + camMatrix.Up * (size.Y - cornerH);
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_TOPRIGHTCORNER, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                }
-
-                {
-                    var finalW = size.X;
-                    var finalH = size.Y - cornerH;
-                    var finalWorldPos = worldPos + camMatrix.Down * cornerH;
-                    MyTransparentGeometry.AddBillboardOriented(MATERIAL_VANILLA_SQUARE, BLOCKINFO_BG_COLOR, finalWorldPos, camMatrix.Left, camMatrix.Up, finalW, finalH, Vector2.Zero, BLOCKINFO_BLEND_TYPE);
-                }
-            }
-            #endregion Block info addition background
-#endif
-
-            #region Lines on top of block info
-            if(Main.Config.BlockInfoAdditions.Value)
+            //if(Main.Config.BlockInfoAdditions.Value)
             {
                 var blockDef = Main.EquipmentMonitor.BlockDef;
                 var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
@@ -324,7 +264,6 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-            #endregion Lines on top of block info
         }
     }
 }

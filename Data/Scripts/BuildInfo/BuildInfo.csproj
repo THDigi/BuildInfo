@@ -144,6 +144,8 @@
     <Compile Include="Constants.cs" />
     <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
     <Compile Include="Features\AnalyseShip.cs" />
+    <Compile Include="Features\OverrideToolSelectionDraw.cs" />
+    <Compile Include="Features\ProjectedBlockInfo.cs" />
     <Compile Include="Features\BlockInfoScrollComponents.cs" />
     <Compile Include="Features\BlockInfoAdditions.cs" />
     <Compile Include="Features\ChatCommands\Arguments.cs" />
