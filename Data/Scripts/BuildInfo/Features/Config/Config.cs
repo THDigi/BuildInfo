@@ -358,28 +358,29 @@ namespace Digi.BuildInfo.Features.Config
             #endregion
 
             #region Toolbar
-            ToolbarLabels = CreateEnumSetting("Toolbar: Labels Mode", ToolbarLabelsMode.HudHints, new string[]
+            ToolbarLabels = CreateEnumSetting("Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
             {
                 "",
-                string.Format(SubHeaderFormat, "Toolbar & Toolbar labels box"),
+                string.Format(SubHeaderFormat, "Toolbar & ToolbarInfo box"),
                 "",
                 "Customize ship toolbar block action's labels.",
-                "Turning this off turns off the rest of the toolbar action stuff."
+                "Turning this off turns off the rest of the ToolbarInfo stuff (except status override)."
             },
             new Dictionary<ToolbarLabelsMode, string>()
             {
                 [ToolbarLabelsMode.ShowOnPress] = $"input can be configured in 'Bind: Show Toolbar Info'", // can't use field as it's not yet assigned
                 [ToolbarLabelsMode.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.",
             });
+            ToolbarLabels.AddCompatibilityNames("Toolbar: Labels Mode");
 
-            ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: Enter Cockpit show ToolbarLabels time", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
+            ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: ToolbarInfo Show on Cockpit Enter", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
             {
                 "Show toolbar info for this many seconds upon entering a cockpit.",
                 $"Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}."
             });
             ToolbarLabelsEnterCockpitTime.AddCompatibilityNames("Toolbar: Enter Cockpit Time");
 
-            ToolbarItemNameMode = CreateEnumSetting("Toolbar: ToolbarLabels Name Mode", ToolbarNameMode.AlwaysShow, new string[]
+            ToolbarItemNameMode = CreateEnumSetting("Toolbar: ToolbarInfo Name Mode", ToolbarNameMode.AlwaysShow, new string[]
             {
                 "Pick what blocks should have their custom name printed in the action label.",
                 "Visibility of this is affected by the above setting."
@@ -391,18 +392,18 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarItemNameMode.AddCompatibilityNames("Toolbar: Item Name Mode");
 
-            ToolbarLabelsHeader = new BoolSetting(Handler, "Toolbar: ToolbarLabels Header+Page", true,
+            ToolbarLabelsHeader = new BoolSetting(Handler, "Toolbar: ToolbarInfo Header+Page", true,
                 "Toggles if the 'Toolbar Info - Page <N>   (BuildInfo Mod)' header is shown on the box.",
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
             ToolbarLabelsHeader.AddCompatibilityNames("Toolbar: Toolbar Labels Show Title");
 
-            ToolbarStyleMode = CreateEnumSetting("Toolbar: ToolbarLabels Style", ToolbarStyle.TwoColumns, new string[]
+            ToolbarStyleMode = CreateEnumSetting("Toolbar: ToolbarInfo Style", ToolbarStyle.TwoColumns, new string[]
             {
                 "Changes the visual layout of the toolbar labels box.",
             });
             ToolbarStyleMode.AddCompatibilityNames("Toolbar: Label Box Style");
 
-            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarInfo Position", defaultValue: new Vector2D(-0.321, -0.721), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The position (bottom-left corner pivot) of the toolbar labels on the HUD.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
@@ -411,7 +412,7 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsPosition.AddCompatibilityNames("Toolbar: Labels Box Position");
 
-            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels In-Menu Position", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarInfo In-Menu Position", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
                 "Screen position in X and Y coordinates where 0,0 is the screen center.",
@@ -419,13 +420,13 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsInMenuPosition.AddCompatibilityNames("Toolbar: Labels Box Position In-Menu");
 
-            ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: ToolbarLabels Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: ToolbarInfo Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
             {
                 "The scale of the toolbar labels box."
             });
             ToolbarLabelsScale.AddCompatibilityNames("Toolbar: Labels Box Scale");
 
-            ToolbarLabelsOffsetForInvBar = new Vector2DSetting(Handler, "Toolbar: ToolbarLabels Offset for InvBar", defaultValue: new Vector2D(0, 0.06), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            ToolbarLabelsOffsetForInvBar = new Vector2DSetting(Handler, "Toolbar: ToolbarInfo Offset for InvBar", defaultValue: new Vector2D(0, 0.06), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
                 "When the 'Ship Tool Inventory Bar' is visible this vector is added to the HUD position defined above." +
                 "Useful when you want to place the labels box in the center over the toolbar.",
