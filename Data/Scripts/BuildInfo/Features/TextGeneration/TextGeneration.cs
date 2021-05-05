@@ -973,12 +973,12 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var projectedBy = Main.EquipmentMonitor.AimedProjectedBy;
+            IMyProjector projectedBy = Main.EquipmentMonitor.AimedProjectedBy;
             bool projected = (projectedBy != null);
-            var integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
-            var grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
+            float integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
+            IMyCubeGrid grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
 
-            var terminalBlock = aimedBlock.FatBlock as IMyTerminalBlock;
+            IMyTerminalBlock terminalBlock = aimedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
 
             #region Block name
@@ -1259,34 +1259,36 @@ namespace Digi.BuildInfo.Features
             #region Time to complete/grind
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
             {
-                float toolMul = 1;
+                bool isWelder = Main.EquipmentMonitor.IsAnyWelder;
+                float toolPerSec;
 
                 if(Main.EquipmentMonitor.HandTool != null)
                 {
                     var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(Main.EquipmentMonitor.HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
-                    toolMul = (toolDef == null ? 1 : toolDef.SpeedMultiplier);
+                    float toolMul = toolDef?.SpeedMultiplier ?? 1;
+
+                    if(isWelder)
+                        toolPerSec = Hardcoded.HandWelder_GetWeldPerSec(toolMul);
+                    else
+                        toolPerSec = Hardcoded.HandGrinder_GetGrindPerSec(toolMul);
                 }
-                else // assuming ship tool
+                else // not hand tool, assuming ship tool
                 {
-                    toolMul = Hardcoded.ShipWelder_WeldPerSecond;
+                    const int AssumedTargets = 1; // getting how many targets ship welder/grinder affects is a whole other can of worms
+
+                    if(isWelder)
+                        toolPerSec = Hardcoded.ShipWelder_WeldPerSec(AssumedTargets);
+                    else
+                        toolPerSec = Hardcoded.ShipGrinder_GrindPerSec(AssumedTargets);
                 }
 
-                var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                var grindMul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                var grindRatio = def.DisassembleRatio;
-
-                if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
-                    grindRatio *= Hardcoded.Door_Closed_DisassembleRatioMultiplier;
-
-                var buildTime = ((def.MaxIntegrity / def.IntegrityPointsPerSec) / weldMul) / toolMul;
-                var grindTime = ((buildTime / (1f / grindRatio)) / grindMul);
-
-                if(!Main.EquipmentMonitor.IsAnyGrinder)
+                if(isWelder)
                 {
-                    float time = buildTime * (1 - integrityRatio);
-                    if(time > 0)
+                    float buildTime = def.MaxIntegrity / (def.IntegrityPointsPerSec * toolPerSec);
+                    float currentTime = buildTime * (1 - integrityRatio);
+                    if(currentTime > 0)
                     {
-                        AddLine().Append("Complete: ").TimeFormat(time);
+                        AddLine().Append("Completed: ").TimeFormat(currentTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.WelderSpeedMultiplier).ResetFormatting();
 
                         if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
                         {
@@ -1298,10 +1300,25 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    bool hackable = hasComputer && aimedBlock.OwnerId != localPlayer.IdentityId && (integrityRatio >= def.OwnershipIntegrityRatio);
-                    float hackTime = 0f;
+                    float grindRatio = (aimedBlock?.FatBlock != null ? aimedBlock.FatBlock.DisassembleRatio : def.DisassembleRatio);
 
-                    if(hackable)
+                    bool hackable = false;
+                    float hackMultiplier = 1f;
+                    if(Main.EquipmentMonitor.HandTool != null && aimedBlock?.FatBlock != null) // HACK: HackSpeedMultiplier seems to be only used for hand-grinder
+                    {
+                        var relation = aimedBlock.FatBlock.GetPlayerRelationToOwner();
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                        {
+                            hackMultiplier = MyAPIGateway.Session.HackSpeedMultiplier;
+                            hackable = true;
+                        }
+                    }
+
+                    float buildTime = def.MaxIntegrity / (def.IntegrityPointsPerSec * (toolPerSec / grindRatio));
+                    float grindTime = buildTime;
+
+                    float hackTime = 0;
+                    if(hackMultiplier != 1)
                     {
                         var noOwnershipTime = (grindTime * def.OwnershipIntegrityRatio);
                         hackTime = (grindTime * ((1 - def.OwnershipIntegrityRatio) - (1 - integrityRatio))) / MyAPIGateway.Session.HackSpeedMultiplier;
@@ -1314,11 +1331,11 @@ namespace Digi.BuildInfo.Features
 
                     if(grindTime > 0)
                     {
-                        AddLine().Append("Dismantled: ").TimeFormat(grindTime);
+                        AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();
 
                         if(hackable)
                         {
-                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime);
+                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.HackSpeedMultiplier).ResetFormatting();
                         }
                     }
                 }
@@ -2157,17 +2174,29 @@ namespace Digi.BuildInfo.Features
             {
                 if(isWelder)
                 {
-                    float weld = Hardcoded.ShipWelder_WeldPerSecond;
                     var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
-                    AddLine().LabelHardcoded("Weld speed").ProportionToPercent(weld).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul);
+
+                    float peakWeld = Hardcoded.ShipWelder_WeldPerSec(1);
+
+                    int weakestAt = Hardcoded.ShipWelder_DivideByTargets;
+                    float leastWeld = Hardcoded.ShipWelder_WeldPerSec(weakestAt);
+
+                    AddLine().LabelHardcoded("Peak weld speed").ProportionToPercent(peakWeld).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for one block")
+                             .Separator().ProportionToPercent(leastWeld).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
 
                     AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius);
                 }
                 else
                 {
-                    float grind = Hardcoded.ShipGrinder_GrindPerSecond;
                     var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
-                    AddLine().LabelHardcoded("Grind speed").ProportionToPercent(grind * mul).Append(" split accross targets").Color(COLOR_UNIMPORTANT).MultiplierFormat(mul);
+
+                    float peakGrind = Hardcoded.ShipGrinder_GrindPerSec(1);
+
+                    int weakestAt = Hardcoded.ShipGrinder_DivideByTargets;
+                    float leastGrind = Hardcoded.ShipGrinder_GrindPerSec(weakestAt);
+
+                    AddLine().LabelHardcoded("Peak grind speed").ProportionToPercent(peakGrind).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for one block")
+                             .Separator().ProportionToPercent(leastGrind).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
 
                     AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius);
                 }

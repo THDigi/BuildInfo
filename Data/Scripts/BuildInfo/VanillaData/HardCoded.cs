@@ -33,16 +33,17 @@ namespace Digi.BuildInfo.VanillaData
             return physicalItemDefinition.Size.AbsMax() > 0.25f;
         }
 
-        // from MyAssembler
+        // from MyAssembler.CalculateBlueprintProductionTime()
         public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler)
         {
-            float speed = (assemblerDef.AssemblySpeed + assembler.UpgradeValues["Productivity"]) * MyAPIGateway.Session.SessionSettings.AssemblerSpeedMultiplier;
+            float speed = (assemblerDef.AssemblySpeed + assembler.UpgradeValues["Productivity"]) * MyAPIGateway.Session.AssemblerSpeedMultiplier;
             return (bp.BaseProductionTimeInSeconds / speed);
         }
-        // from MyRefinery
+
+        // from MyRefinery.ProcessQueueItems
         public static float Refinery_BpProductionTime(MyBlueprintDefinitionBase bp, MyRefineryDefinition refineryDef, IMyRefinery refinery)
         {
-            float speed = (refineryDef.RefineSpeed + refinery.UpgradeValues["Productivity"]) * MyAPIGateway.Session.SessionSettings.RefinerySpeedMultiplier;
+            float speed = (refineryDef.RefineSpeed + refinery.UpgradeValues["Productivity"]) * MyAPIGateway.Session.RefinerySpeedMultiplier;
             return (bp.BaseProductionTimeInSeconds / speed);
         }
 
@@ -69,20 +70,28 @@ namespace Digi.BuildInfo.VanillaData
         // from MyHandDrill.Init()
         public const float HandDrill_DefaultRadius = 0.35f;
 
+        // from MyWelder.WeldAmount
+        public static float HandWelder_GetWeldPerSec(float speedMultiplier) => MyAPIGateway.Session.WelderSpeedMultiplier * speedMultiplier * HandWelder_WeldAmountPerSecond;
+        private const float HandWelder_WeldAmountPerSecond = 1f;
+
+        // from MyAngleGrinder.GrinderAmount
+        public static float HandGrinder_GetGrindPerSec(float speedMultiplier) => MyAPIGateway.Session.GrinderSpeedMultiplier * speedMultiplier * HandGrinder_GrindAmountPerSecond;
+        private const float HandGrinder_GrindAmountPerSecond = 2f;
+
         // from MyShipDrill
         public const float ShipDrill_Power = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
         public static readonly MyObjectBuilderType ShipDrill_InventoryConstraint = typeof(MyObjectBuilder_Ore);
         public static float ShipDrill_InventoryVolume(MyCubeBlockDefinition def)
         {
             var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-            return (float)(def.Size.X * def.Size.Y * def.Size.Z) * gridSize * gridSize * gridSize * 0.5f;
+            return def.Size.X * def.Size.Y * def.Size.Z * gridSize * gridSize * gridSize * 0.5f;
         }
         public const float ShipDrill_VoxelVisualAdd = 0.6f; // based on visual tests
 
         // applies to both ship and hand drills
         public const float Drill_MineVoelNoOreRadiusMul = 3f; // MyDrillBase.TryDrillVoxels()
-        public const float Drill_MineFloatingObjectRadiusMul = 1.3300000429153442f; // MyDrillBase.DrillFloatingObject
-        public const float Drill_MineCharacterRadiusMul = 0.800000011920929f; // MyDrillBase.DrillCharacter
+        public const float Drill_MineFloatingObjectRadiusMul = 1.33f; // MyDrillBase.DrillFloatingObject()
+        public const float Drill_MineCharacterRadiusMul = 0.8f; // MyDrillBase.DrillCharacter()
 
         // from MyShipToolBase
         public const float ShipTool_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GRINDER;
@@ -94,11 +103,26 @@ namespace Digi.BuildInfo.VanillaData
         }
         public const float ShipTool_ReachDistance = 4.5f; // MyShipToolBase.DEFAULT_REACH_DISTANCE
 
-        // from MyShipWelder
-        public const float ShipWelder_WeldPerSecond = 2f; // MyShipWelder.WELDER_AMOUNT_PER_SECOND; also NOTE: this is used for both weld and grind multiplier for aim info
+        // from MyShipWelder.Activate()
+        public const int ShipWelder_DivideByTargets = 4;
+        public static float ShipWelder_WeldPerSec(int targets)
+        {
+            float time = MyShipGrinderConstants.GRINDER_COOLDOWN_IN_MILISECONDS / 1000f;
+            float coefficient = time / MathHelper.Clamp(targets, 1, 4);
+            return ShipTool_ActivationsPerSecond * coefficient * MyAPIGateway.Session.WelderSpeedMultiplier * 4; // MyShipWelder.WELDER_AMOUNT_PER_SECOND
+        }
 
-        // from MyShipGrinder
-        public const float ShipGrinder_GrindPerSecond = MyShipGrinderConstants.GRINDER_AMOUNT_PER_SECOND;
+        // from MyShipGrinder.Activate()
+        public const int ShipGrinder_DivideByTargets = 4;
+        public static float ShipGrinder_GrindPerSec(int targets)
+        {
+            float time = MyShipGrinderConstants.GRINDER_COOLDOWN_IN_MILISECONDS / 1000f;
+            float coefficient = time / MathHelper.Clamp(targets, 1, 4);
+            return ShipTool_ActivationsPerSecond * coefficient * MyAPIGateway.Session.GrinderSpeedMultiplier * MyShipGrinderConstants.GRINDER_AMOUNT_PER_SECOND;
+        }
+
+        // from testing
+        private const float ShipTool_ActivationsPerSecond = 3;
 
         /// <summary>
         /// Returns maximum possible force applied to targetBlock's grid from sourceGrid's grinder.
@@ -291,12 +315,14 @@ namespace Digi.BuildInfo.VanillaData
 
             if(width > height)
             {
-                int num = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(width / height)));
-                return new Vector2I(textureSize * num, textureSize);
+                int n = MathHelper.Pow2(MathHelper.Log2(width / height));
+                return new Vector2I(textureSize * n, textureSize);
             }
-
-            int num2 = MathHelper.Pow2(MathHelper.Floor((float)MathHelper.Log2(height / width)));
-            return new Vector2I(textureSize, textureSize * num2);
+            else
+            {
+                int n = MathHelper.Pow2(MathHelper.Log2(height / width));
+                return new Vector2I(textureSize, textureSize * n);
+            }
         }
 
         // from MyEntityThrustComponent

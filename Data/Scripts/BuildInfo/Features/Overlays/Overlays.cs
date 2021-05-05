@@ -188,6 +188,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
+            // TODO: move ship cockpit tool aiming line to always be shown? + config option
             if(shipController != null && Main.EquipmentMonitor.IsBuildTool && DrawOverlay > 0)
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;

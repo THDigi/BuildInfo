@@ -17,43 +17,22 @@ using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
 using VRage.Utils;
 using VRageMath;
-using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
-using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
-using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 using VRage.ObjectBuilders;
 using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Definitions;
 using Sandbox.ModAPI.Interfaces;
+using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
+using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
+using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 
 namespace Digi.BuildInfo.Features
 {
-    //[ProtoContract]
-    //public class TestPacket
-    //{
-    //    [ProtoMember(1)]
-    //    public long IdentityId;
-    //
-    //    [ProtoMember(2)]
-    //    public string BlockId;
-    //
-    //    [ProtoMember(3)]
-    //    public int Slot;
-    //
-    //    public TestPacket() { }
-    //}
-
-
-    //var packet = new TestPacket();
-    //packet.IdentityId = MyAPIGateway.Session.Player.IdentityId;
-    //packet.BlockId = PickedBlockDef.Id.ToString();
-    //packet.Slot = (slot - 1);
-    //MyAPIGateway.Multiplayer.SendMessageToServer(1337, MyAPIGateway.Utilities.SerializeToBinary(packet));
-
-
     public class DebugEvents : ModComponent
     {
         public DebugEvents(BuildInfoMod main) : base(main)
         {
+            //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
             //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
 
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
@@ -64,12 +43,15 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.IsPlayer)
             {
+                Main.Config.Debug.ValueAssigned += Debug_ValueAssigned;
+
                 //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
                 //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-                Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
             }
+
+            //MyAPIGateway.Session.DamageSystem.RegisterBeforeDamageHandler(0, BeforeDamage);
 
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
@@ -87,13 +69,165 @@ namespace Digi.BuildInfo.Features
 
             if(Main.IsPlayer)
             {
+                Main.Config.Debug.ValueAssigned -= Debug_ValueAssigned;
+
                 //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
                 //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-                Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
 
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
         }
+
+        void Debug_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+
+            if(newValue)
+                Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+        }
+
+        HudAPIv2.HUDMessage debugEquipmentMsg;
+
+        void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
+        {
+            if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
+            {
+                if(debugEquipmentMsg == null)
+                {
+                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
+                    debugEquipmentMsg.Visible = false;
+                }
+
+                debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
+                    $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
+                    $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
+                    $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
+
+                debugEquipmentMsg.Draw();
+            }
+
+            //if(character != null && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            //{
+            //    var blendType = BlendType.PostPP;
+            //    var thick = 0.01f;
+            //    var cm = character.WorldMatrix;
+            //    var observerPos = cm.Translation;
+            //    var closePos = observerPos + cm.Forward * 5;
+            //    var targetPos = Vector3D.Zero;
+
+            //    var a = closePos - observerPos;
+            //    var b = targetPos - observerPos;
+
+            //    //Vector3D toPoint = somePoint - lineOrigin; // line from origin to this point
+            //    //Vector3D projection = Vector3D.Dot(toPoint, lineDirection) / lineDirection.LengthSquared() * lineDirection;
+            //    //Vector3D rejection = toPoint - projection;
+
+            //    //Vector3D projectTargetOnLCD = dirToLCD * Vector3D.Dot(dirToTarget, dirToLCD);
+            //    Vector3D projection = b * Vector3D.Dot(a, b) / b.LengthSquared();
+            //    //MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, observerPos, projection, 1f, 0.1f, blendType);
+
+            //    Vector3D reject;
+
+            //    if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            //    {
+            //        a.Normalize();
+            //        b.Normalize();
+            //    }
+
+            //    reject = Vector3D.Reject(a, b);
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(255, 155, 0) * 0.75f, observerPos, reject, 1f, 0.05f, blendType);
+
+            //    reject = a - (b * (a.Dot(b) / b.LengthSquared()));
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(0, 255, 0) * 0.75f, observerPos, reject, 1f, 0.1f, blendType);
+
+
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.White, observerPos, a, 1f, thick, blendType);
+            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, observerPos, b, 1f, thick, blendType);
+            //}
+
+            //if(character != null)
+            //{
+            //    var charView = MyAPIGateway.Session.Camera.WorldMatrix;
+            //    var from = charView.Translation;
+            //    var to = from + charView.Forward * 10;
+
+            //    IHitInfo hit;
+            //    if(MyAPIGateway.Physics.CastRay(from, to, out hit, CollisionLayers.CollisionLayerWithoutCharacter))
+            //    {
+            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Red, hit.Position, 0.01f, 0, blendType: BlendType.PostPP);
+            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, hit.Position, 0.01f, 0, blendType: BlendType.AdditiveTop);
+
+            //        var grid = hit.HitEntity as IMyCubeGrid;
+            //        if(grid != null)
+            //        {
+            //            var internalGrid = (MyCubeGrid)grid;
+
+            //            Vector3I gridPos;
+            //            grid.FixTargetCube(out gridPos, Vector3D.Transform(hit.Position, grid.WorldMatrixInvScaled) * internalGrid.GridSizeR);
+
+            //            var block = grid.GetCubeBlock(gridPos);
+            //            if(block != null && block.FatBlock != null)
+            //            {
+            //                var dir = hit.Position - block.FatBlock.GetPosition();
+            //                double distX = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Right);
+            //                double distY = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Up);
+            //                double distZ = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Forward);
+
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Red, hit.Position, block.FatBlock.WorldMatrix.Left * (float)distX, 1f, 0.0005f, BlendType.Standard);
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, hit.Position, block.FatBlock.WorldMatrix.Down * (float)distY, 1f, 0.0005f, BlendType.Standard);
+            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, hit.Position, block.FatBlock.WorldMatrix.Forward, 1f, 0.0005f, BlendType.Standard);
+
+            //                MyAPIGateway.Utilities.ShowNotification($"distX={distX:0.#####}; distY={distY:0.#####}; distZ={distZ:0.#####}", 16, MyFontEnum.Debug);
+            //            }
+            //        }
+            //    }
+            //}
+        }
+
+
+
+
+        //int LastDamageAtTick;
+        //float AccumulatedDamage = 0;
+        //int AccumulatedStartAt = 0;
+
+        //void BeforeDamage(object target, ref MyDamageInformation info)
+        //{
+        //    if(info.Type == MyDamageType.Grind)
+        //    {
+        //        if(LastDamageAtTick > 0)
+        //        {
+        //            double timeDiff = (Main.Tick - LastDamageAtTick) / 60d;
+
+        //            MyAPIGateway.Utilities.ShowNotification($"BeforeDamage timeDiff={timeDiff.ToString("0.#####")}s", 1000, "Debug");
+        //        }
+
+        //        LastDamageAtTick = Main.Tick;
+        //    }
+        //}
+
+
+        //int elapsed;
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.R))
+        //    {
+        //        float seconds = elapsed * (1 / 60f);
+        //        MyAPIGateway.Utilities.ShowNotification($"elapsed: {seconds.ToString("0.00")} s", 16, "Debug");
+
+        //        elapsed++;
+        //    }
+        //    else if(elapsed > 0)
+        //    {
+        //        float seconds = elapsed * (1 / 60f);
+        //        MyAPIGateway.Utilities.ShowNotification($"final time: {seconds.ToString("0.00")} s", 3000, "Debug");
+
+        //        elapsed = 0;
+        //    }
+        //}
+
+
+
 
         //List<MyCubeGrid.DebugUpdateRecord> debugData = new List<MyCubeGrid.DebugUpdateRecord>();
         //public override void UpdateAfterSim(int tick)
@@ -136,6 +270,162 @@ namespace Digi.BuildInfo.Features
         //{
         //    if(Config.Debug)
         //        MyAPIGateway.Utilities.ShowNotification($"Equipment.BlockChanged :: {def?.Id.ToString() ?? "Unequipped"}, {(def == null ? "" : (block != null ? "Aimed" : "Held"))}", 1000);
+        //}
+
+
+
+
+
+
+
+        //List<string> ScreensShown = new List<string>();
+
+        //void GuiControlCreated(object screen)
+        //{
+        //    string name = screen.GetType().FullName;
+        //    ScreensShown.Add(name);
+        //}
+
+        //void GuiControlRemoved(object screen)
+        //{
+        //    string name = screen.GetType().FullName;
+        //    ScreensShown.Remove(name);
+        //}
+
+        //private HudAPIv2.HUDMessage debugScreenInfo;
+        //private HudAPIv2.HUDMessage debugAllCharacters;
+
+        //public override void UpdateDraw()
+        //{
+        //    if(!TextAPI.WasDetected)
+        //        return;
+
+        //    if(!Config.Debug.Value)
+        //    {
+        //        if(debugScreenInfo != null)
+        //            debugScreenInfo.Visible = false;
+
+        //        if(debugAllCharacters != null)
+        //            debugAllCharacters.Visible = false;
+
+        //        return;
+        //    }
+
+        //    {
+        //        if(debugScreenInfo == null)
+        //            debugScreenInfo = new HudAPIv2.HUDMessage(new StringBuilder(256), new Vector2D(-0.98, 0.98), Shadowing: true, Blend: BlendType.PostPP);
+
+        //        var sb = debugScreenInfo.Message.Clear();
+
+        //        sb.Append("ActiveGamePlayScreen=").Append(MyAPIGateway.Gui.ActiveGamePlayScreen);
+        //        sb.Append("\nGetCurrentScreen=").Append(MyAPIGateway.Gui.GetCurrentScreen.ToString());
+        //        sb.Append("\nIsCursorVisible=").Append(MyAPIGateway.Gui.IsCursorVisible);
+        //        sb.Append("\nChatEntryVisible=").Append(MyAPIGateway.Gui.ChatEntryVisible);
+        //        sb.Append("\nInteractedEntity=").Append(MyAPIGateway.Gui.InteractedEntity);
+
+        //        sb.Append("\n\nScreensShown:");
+        //        foreach(var screen in ScreensShown)
+        //        {
+        //            sb.Append("\n - ").Append(screen);
+        //        }
+
+        //        debugScreenInfo.Visible = true;
+        //    }
+
+        //    if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+        //    {
+        //        int charsPerRow = (int)Dev.GetValueScroll("charsPerRow", 16, 1, VRage.Input.MyKeys.D1);
+        //        var chars = Main.FontsHandler.CharSize;
+
+        //        if(debugAllCharacters == null)
+        //        {
+        //            debugAllCharacters = new HudAPIv2.HUDMessage(new StringBuilder(chars.Count * 15), new Vector2D(-0.8, 0.7), Blend: BlendType.PostPP);
+        //        }
+
+        //        var sb = debugAllCharacters.Message.Clear();
+        //        int perRow = 0;
+        //        foreach(var kv in chars)
+        //        {
+        //            sb.Append(kv.Key);
+
+        //            sb.Append(" <color=0,100,0>").AppendFormat("{0:X}", (int)kv.Key).Append("<color=white>   ");
+
+        //            perRow++;
+        //            if(perRow > charsPerRow)
+        //            {
+        //                perRow = 0;
+        //                sb.Append('\n');
+        //            }
+        //        }
+
+        //        debugAllCharacters.Visible = true;
+        //    }
+        //    else
+        //    {
+        //        if(debugAllCharacters != null)
+        //            debugAllCharacters.Visible = false;
+        //    }
+        //}
+
+        //private HudAPIv2.HUDMessage debugHudMsg;
+
+        //public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
+        //{
+        //    MyAPIGateway.Utilities.ShowMessage("DEBUG", $"HUD={MyAPIGateway.Session.Config.HudState}; MinimalHUD={MyAPIGateway.Session.Config.MinimalHud}");
+
+        //    if(!TextAPI.WasDetected)
+        //        return;
+
+        //    if(debugHudMsg == null)
+        //        debugHudMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.9f), Scale: 0.75, HideHud: false);
+
+        //    debugHudMsg.Message.Clear().Append($"" +
+        //        $"HUD State = {MyAPIGateway.Session.Config.HudState}\n" +
+        //        $"MinimalHUD = {MyAPIGateway.Session.Config.MinimalHud}");
+
+        //    if(anyKeyOrMouse && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.L))
+        //    {
+        //        MyVisualScriptLogicProvider.ShowHud(false);
+        //        debugHudMsg.Message.Append("\n<color=red>HIDDEN!!!!!");
+        //    }
+        //}
+
+        //HudAPIv2.SpaceMessage msg;
+        //HudAPIv2.SpaceMessage shadow;
+
+        //public override void UpdateDraw()
+        //{
+        //    if(TextAPI.WasDetected)
+        //    {
+        //        var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+        //        var up = camMatrix.Up;
+        //        var left = camMatrix.Left;
+        //        var pos = camMatrix.Translation + camMatrix.Forward * 0.2;
+
+        //        double textSize = 0.24;
+        //        double shadowOffset = 0.007;
+
+        //        if(msg == null)
+        //        {
+        //            var offset = new Vector2D(0, -0.05);
+        //            msg = new HudAPIv2.SpaceMessage(new StringBuilder("Text"), pos, up, left, textSize, offset, Blend: BlendTypeEnum.SDR);
+
+        //            offset += new Vector2D(shadowOffset, -shadowOffset);
+        //            shadow = new HudAPIv2.SpaceMessage(new StringBuilder("<color=black>Text"), pos, up, left, textSize, offset, Blend: BlendTypeEnum.Standard);
+        //        }
+
+        //        msg.Up = up;
+        //        msg.Left = left;
+        //        msg.WorldPosition = pos;
+        //        msg.Flush();
+
+        //        //pos += up * -shadowOffset + left * -shadowOffset;
+
+        //        shadow.Up = up;
+        //        shadow.Left = left;
+        //        shadow.WorldPosition = pos;
+        //        shadow.Flush();
+        //    }
         //}
 
 #if false
@@ -316,253 +606,27 @@ namespace Digi.BuildInfo.Features
             }
         }
 #endif
-
-        private HudAPIv2.HUDMessage debugEquipmentMsg;
-
-        private void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
-        {
-            //if(character != null && MyAPIGateway.Input.IsAnyShiftKeyPressed())
-            //{
-            //    var blendType = BlendType.PostPP;
-            //    var thick = 0.01f;
-            //    var cm = character.WorldMatrix;
-            //    var observerPos = cm.Translation;
-            //    var closePos = observerPos + cm.Forward * 5;
-            //    var targetPos = Vector3D.Zero;
-
-            //    var a = closePos - observerPos;
-            //    var b = targetPos - observerPos;
-
-            //    //Vector3D toPoint = somePoint - lineOrigin; // line from origin to this point
-            //    //Vector3D projection = Vector3D.Dot(toPoint, lineDirection) / lineDirection.LengthSquared() * lineDirection;
-            //    //Vector3D rejection = toPoint - projection;
-
-            //    //Vector3D projectTargetOnLCD = dirToLCD * Vector3D.Dot(dirToTarget, dirToLCD);
-            //    Vector3D projection = b * Vector3D.Dot(a, b) / b.LengthSquared();
-            //    //MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, observerPos, projection, 1f, 0.1f, blendType);
-
-            //    Vector3D reject;
-
-            //    if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-            //    {
-            //        a.Normalize();
-            //        b.Normalize();
-            //    }
-
-            //    reject = Vector3D.Reject(a, b);
-            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(255, 155, 0) * 0.75f, observerPos, reject, 1f, 0.05f, blendType);
-
-            //    reject = a - (b * (a.Dot(b) / b.LengthSquared()));
-            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), new Color(0, 255, 0) * 0.75f, observerPos, reject, 1f, 0.1f, blendType);
-
-
-            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.White, observerPos, a, 1f, thick, blendType);
-            //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, observerPos, b, 1f, thick, blendType);
-            //}
-
-            //if(character != null)
-            //{
-            //    var charView = MyAPIGateway.Session.Camera.WorldMatrix;
-            //    var from = charView.Translation;
-            //    var to = from + charView.Forward * 10;
-
-            //    IHitInfo hit;
-            //    if(MyAPIGateway.Physics.CastRay(from, to, out hit, CollisionLayers.CollisionLayerWithoutCharacter))
-            //    {
-            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Red, hit.Position, 0.01f, 0, blendType: BlendType.PostPP);
-            //        //MyTransparentGeometry.AddPointBillboard(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, hit.Position, 0.01f, 0, blendType: BlendType.AdditiveTop);
-
-            //        var grid = hit.HitEntity as IMyCubeGrid;
-            //        if(grid != null)
-            //        {
-            //            var internalGrid = (MyCubeGrid)grid;
-
-            //            Vector3I gridPos;
-            //            grid.FixTargetCube(out gridPos, Vector3D.Transform(hit.Position, grid.WorldMatrixInvScaled) * internalGrid.GridSizeR);
-
-            //            var block = grid.GetCubeBlock(gridPos);
-            //            if(block != null && block.FatBlock != null)
-            //            {
-            //                var dir = hit.Position - block.FatBlock.GetPosition();
-            //                double distX = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Right);
-            //                double distY = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Up);
-            //                double distZ = Vector3D.Dot(dir, block.FatBlock.WorldMatrix.Forward);
-
-            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Red, hit.Position, block.FatBlock.WorldMatrix.Left * (float)distX, 1f, 0.0005f, BlendType.Standard);
-            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, hit.Position, block.FatBlock.WorldMatrix.Down * (float)distY, 1f, 0.0005f, BlendType.Standard);
-            //                MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, hit.Position, block.FatBlock.WorldMatrix.Forward, 1f, 0.0005f, BlendType.Standard);
-
-            //                MyAPIGateway.Utilities.ShowNotification($"distX={distX:0.#####}; distY={distY:0.#####}; distZ={distZ:0.#####}", 16, MyFontEnum.Debug);
-            //            }
-            //        }
-            //    }
-            //}
-
-            if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
-            {
-                if(debugEquipmentMsg == null)
-                {
-                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
-                    debugEquipmentMsg.Visible = false;
-                }
-
-                debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
-                    $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
-                    $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
-                    $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
-
-                debugEquipmentMsg.Draw();
-            }
-        }
-
-        //List<string> ScreensShown = new List<string>();
-
-        //void GuiControlCreated(object screen)
-        //{
-        //    string name = screen.GetType().FullName;
-        //    ScreensShown.Add(name);
-        //}
-
-        //void GuiControlRemoved(object screen)
-        //{
-        //    string name = screen.GetType().FullName;
-        //    ScreensShown.Remove(name);
-        //}
-
-        //private HudAPIv2.HUDMessage debugScreenInfo;
-        //private HudAPIv2.HUDMessage debugAllCharacters;
-
-        //public override void UpdateDraw()
-        //{
-        //    if(!TextAPI.WasDetected)
-        //        return;
-
-        //    if(!Config.Debug.Value)
-        //    {
-        //        if(debugScreenInfo != null)
-        //            debugScreenInfo.Visible = false;
-
-        //        if(debugAllCharacters != null)
-        //            debugAllCharacters.Visible = false;
-
-        //        return;
-        //    }
-
-        //    {
-        //        if(debugScreenInfo == null)
-        //            debugScreenInfo = new HudAPIv2.HUDMessage(new StringBuilder(256), new Vector2D(-0.98, 0.98), Shadowing: true, Blend: BlendType.PostPP);
-
-        //        var sb = debugScreenInfo.Message.Clear();
-
-        //        sb.Append("ActiveGamePlayScreen=").Append(MyAPIGateway.Gui.ActiveGamePlayScreen);
-        //        sb.Append("\nGetCurrentScreen=").Append(MyAPIGateway.Gui.GetCurrentScreen.ToString());
-        //        sb.Append("\nIsCursorVisible=").Append(MyAPIGateway.Gui.IsCursorVisible);
-        //        sb.Append("\nChatEntryVisible=").Append(MyAPIGateway.Gui.ChatEntryVisible);
-        //        sb.Append("\nInteractedEntity=").Append(MyAPIGateway.Gui.InteractedEntity);
-
-        //        sb.Append("\n\nScreensShown:");
-        //        foreach(var screen in ScreensShown)
-        //        {
-        //            sb.Append("\n - ").Append(screen);
-        //        }
-
-        //        debugScreenInfo.Visible = true;
-        //    }
-
-        //    if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
-        //    {
-        //        int charsPerRow = (int)Dev.GetValueScroll("charsPerRow", 16, 1, VRage.Input.MyKeys.D1);
-        //        var chars = Main.FontsHandler.CharSize;
-
-        //        if(debugAllCharacters == null)
-        //        {
-        //            debugAllCharacters = new HudAPIv2.HUDMessage(new StringBuilder(chars.Count * 15), new Vector2D(-0.8, 0.7), Blend: BlendType.PostPP);
-        //        }
-
-        //        var sb = debugAllCharacters.Message.Clear();
-        //        int perRow = 0;
-        //        foreach(var kv in chars)
-        //        {
-        //            sb.Append(kv.Key);
-
-        //            sb.Append(" <color=0,100,0>").AppendFormat("{0:X}", (int)kv.Key).Append("<color=white>   ");
-
-        //            perRow++;
-        //            if(perRow > charsPerRow)
-        //            {
-        //                perRow = 0;
-        //                sb.Append('\n');
-        //            }
-        //        }
-
-        //        debugAllCharacters.Visible = true;
-        //    }
-        //    else
-        //    {
-        //        if(debugAllCharacters != null)
-        //            debugAllCharacters.Visible = false;
-        //    }
-        //}
-
-        //private HudAPIv2.HUDMessage debugHudMsg;
-
-        //public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
-        //{
-        //    MyAPIGateway.Utilities.ShowMessage("DEBUG", $"HUD={MyAPIGateway.Session.Config.HudState}; MinimalHUD={MyAPIGateway.Session.Config.MinimalHud}");
-
-        //    if(!TextAPI.WasDetected)
-        //        return;
-
-        //    if(debugHudMsg == null)
-        //        debugHudMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.9f), Scale: 0.75, HideHud: false);
-
-        //    debugHudMsg.Message.Clear().Append($"" +
-        //        $"HUD State = {MyAPIGateway.Session.Config.HudState}\n" +
-        //        $"MinimalHUD = {MyAPIGateway.Session.Config.MinimalHud}");
-
-        //    if(anyKeyOrMouse && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.L))
-        //    {
-        //        MyVisualScriptLogicProvider.ShowHud(false);
-        //        debugHudMsg.Message.Append("\n<color=red>HIDDEN!!!!!");
-        //    }
-        //}
-
-        //HudAPIv2.SpaceMessage msg;
-        //HudAPIv2.SpaceMessage shadow;
-
-        //public override void UpdateDraw()
-        //{
-        //    if(TextAPI.WasDetected)
-        //    {
-        //        var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-        //        var up = camMatrix.Up;
-        //        var left = camMatrix.Left;
-        //        var pos = camMatrix.Translation + camMatrix.Forward * 0.2;
-
-        //        double textSize = 0.24;
-        //        double shadowOffset = 0.007;
-
-        //        if(msg == null)
-        //        {
-        //            var offset = new Vector2D(0, -0.05);
-        //            msg = new HudAPIv2.SpaceMessage(new StringBuilder("Text"), pos, up, left, textSize, offset, Blend: BlendTypeEnum.SDR);
-
-        //            offset += new Vector2D(shadowOffset, -shadowOffset);
-        //            shadow = new HudAPIv2.SpaceMessage(new StringBuilder("<color=black>Text"), pos, up, left, textSize, offset, Blend: BlendTypeEnum.Standard);
-        //        }
-
-        //        msg.Up = up;
-        //        msg.Left = left;
-        //        msg.WorldPosition = pos;
-        //        msg.Flush();
-
-        //        //pos += up * -shadowOffset + left * -shadowOffset;
-
-        //        shadow.Up = up;
-        //        shadow.Left = left;
-        //        shadow.WorldPosition = pos;
-        //        shadow.Flush();
-        //    }
-        //}
     }
+
+    //[ProtoContract]
+    //public class TestPacket
+    //{
+    //    [ProtoMember(1)]
+    //    public long IdentityId;
+    //
+    //    [ProtoMember(2)]
+    //    public string BlockId;
+    //
+    //    [ProtoMember(3)]
+    //    public int Slot;
+    //
+    //    public TestPacket() { }
+    //}
+
+
+    //var packet = new TestPacket();
+    //packet.IdentityId = MyAPIGateway.Session.Player.IdentityId;
+    //packet.BlockId = PickedBlockDef.Id.ToString();
+    //packet.Slot = (slot - 1);
+    //MyAPIGateway.Multiplayer.SendMessageToServer(1337, MyAPIGateway.Utilities.SerializeToBinary(packet));
 }
