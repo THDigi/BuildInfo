@@ -21,7 +21,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 6;
+        public const int ConfigVersion = 7;
+        public const int VersionCompat_ShowToolbarBind = 6;
         public const int VersionCompat_ShipToolInvBar_FixPosition = 5;
         public const int VersionCompat_ToolbarLabels_Redesign = 4;
         public const int VersionCompat_MenuBind = 2;
@@ -207,6 +208,16 @@ namespace Digi.BuildInfo.Features.Config
                 }
 
                 return;
+            }
+
+            if(cfgv == VersionCompat_ShowToolbarBind)
+            {
+                if(ShowToolbarInfoBind.Value?.CombinationString == "alt")
+                {
+                    ShowToolbarInfoBind.ResetToDefault();
+
+                    Log.Info($"NOTE: '{ShowToolbarInfoBind.Name}' is the previous default (alt), resetting to new default ({ShowToolbarInfoBind.Value}).");
+                }
             }
         }
 
