@@ -16,6 +16,7 @@ namespace Digi.BuildInfo.Utilities
 
         public DrawUtils(BuildInfoMod main) : base(main)
         {
+            UpdateOrder = int.MinValue; // must be first to clear caches
             UpdateMethods = UpdateFlags.UPDATE_DRAW;
         }
 
