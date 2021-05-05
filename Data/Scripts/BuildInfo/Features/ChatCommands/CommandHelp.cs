@@ -140,8 +140,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             foreach(var handler in Main.ChatCommandHandler.Commands)
             {
+                int preLen = sb.Length;
                 handler.PrintHelp(sb);
-                sb.NewLine();
+                if(sb.Length > preLen)
+                    sb.NewLine();
             }
 
             sb.NewLine();
