@@ -492,7 +492,7 @@ namespace Digi.BuildInfo.Features.Config
 
             ShowToolbarInfoBind = new InputCombinationSetting(Handler, "Bind: Show Toolbar Info", Combination.Create(SHOW_TOOLBAR_INFO_INPUT_NAME, "c.lookaround"),
                 $"Shows ToolbarInfo while held when in a cockpit.",
-                "Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}.");
+                $"Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}.");
             #endregion
 
             #region Misc
