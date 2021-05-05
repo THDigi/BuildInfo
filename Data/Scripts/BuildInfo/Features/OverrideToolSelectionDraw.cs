@@ -104,10 +104,6 @@ namespace Digi.BuildInfo.Features
             if(def == null)
                 return;
 
-            // TODO: check how this works/looks with ship welder/grinder once that feature is fixed in vanilla game
-            if(Main.EquipmentMonitor.HandTool == null)
-                return;
-
             var grid = (MyCubeGrid)aimedBlock.CubeGrid;
             IMyProjector projector = Main.EquipmentMonitor.AimedProjectedBy;
 
