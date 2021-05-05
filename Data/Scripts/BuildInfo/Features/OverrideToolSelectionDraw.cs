@@ -138,14 +138,14 @@ namespace Digi.BuildInfo.Features
                 {
                     if(Main.EquipmentMonitor.IsAnyGrinder)
                     {
-                        if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, Utils.SZAGrinding))
+                        if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, Utils.SZAGrinding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAGrinding))
                             color = Color.DarkRed;
                         else
                             color = new Color(255, 200, 75);
                     }
                     else
                     {
-                        if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZAWelding))
+                        if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZAWelding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAWelding))
                             color = Color.DarkRed;
                         else if(aimedBlock.IsFullIntegrity && !aimedBlock.HasDeformation)
                             color = Color.White;

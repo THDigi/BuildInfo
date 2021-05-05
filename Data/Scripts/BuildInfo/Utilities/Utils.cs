@@ -8,7 +8,9 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -57,7 +59,13 @@ namespace Digi.BuildInfo.Utilities
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
             var grid = (MyCubeGrid)block.CubeGrid;
             var box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector, block.Max * grid.GridSize + grid.GridSizeHalfVector).TransformFast(grid.PositionComp.WorldMatrixRef);
-            return MySessionComponentSafeZones.IsActionAllowed(box, Utils.CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
+            return MySessionComponentSafeZones.IsActionAllowed(box, CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
+        }
+
+        public static bool CheckSafezoneAction(IMyEntity ent, object actionId, long sourceEntityId = 0)
+        {
+            ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
+            return MySessionComponentSafeZones.IsActionAllowed((MyEntity)ent, CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
         }
 
         public static T CastHax<T>(T typeRef, object castObj) => (T)castObj;
