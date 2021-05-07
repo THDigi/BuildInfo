@@ -889,6 +889,11 @@ namespace Digi.BuildInfo.Utilities
         }
 
         #region Detailed info formats
+        public static StringBuilder DetailInfo_Type(this StringBuilder s, IMyTerminalBlock block)
+        {
+            return s.Append("Type: ").Append(block.DefinitionDisplayNameText).Append('\n');
+        }
+
         public static StringBuilder DetailInfo_Inventory(this StringBuilder s, IMyInventory inv, float definedMaxVolume = 0f, string customName = null)
         {
             if(inv == null)

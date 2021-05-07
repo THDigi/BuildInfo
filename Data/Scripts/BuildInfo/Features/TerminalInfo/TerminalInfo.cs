@@ -352,6 +352,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -360,6 +361,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -368,6 +370,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -376,6 +379,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.194.211:
             //      Time to trigger: 00:00:00
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -384,6 +388,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -394,6 +399,7 @@ namespace Digi.BuildInfo.Features
 
             var cargoDef = (MyCargoContainerDefinition)block.SlimBlock.BlockDefinition;
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_Inventory(Inv, cargoDef.InventorySize.Volume);
         }
 
@@ -421,6 +427,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
 
             var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
@@ -465,6 +472,8 @@ namespace Digi.BuildInfo.Features
         {
             // Vanilla info in 1.189.041:
             //      (nothing)
+
+            info.DetailInfo_Type(block);
 
             if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
@@ -657,6 +666,8 @@ namespace Digi.BuildInfo.Features
         {
             // Vanilla info in 1.189.041:
             //      (nothing)
+
+            info.DetailInfo_Type(block);
 
             var upgradeModule = (IMyUpgradeModule)block;
             var def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
@@ -1361,6 +1372,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
@@ -1369,6 +1381,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.194.211:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
@@ -1378,6 +1391,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.194.211:
             //      (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
@@ -1399,6 +1413,7 @@ namespace Digi.BuildInfo.Features
 
             var parachute = (IMyParachute)block;
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_Inventory(Inv);
             info.Append("Atmosphere density: ").ProportionToPercent(parachute.Atmosphere).NewLine();
         }
@@ -1408,6 +1423,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //     (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
             info.DetailInfo_Inventory(Inv);
         }
@@ -1417,6 +1433,7 @@ namespace Digi.BuildInfo.Features
             // Vanilla info in 1.189.041:
             //     (nothing)
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
         }
 
