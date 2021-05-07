@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             var def = Main.EquipmentMonitor.BlockDef;
             var aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def);
+            UpdateLockedOnBlock(ref aimedBlock, ref def);
         }
 
         public void LockOverlayToAimedBlock()
@@ -67,7 +67,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public bool UpdateLockedOnBlock(ref IMySlimBlock aimedBlock, ref MyCubeBlockDefinition def)
         {
-            if(LockedOnBlock.IsFullyDismounted || LockedOnBlock.IsDestroyed || (LockedOnBlock != null && LockedOnBlock.FatBlock == null))
+            if(LockedOnBlock == null || LockedOnBlock.IsFullyDismounted || LockedOnBlock.IsDestroyed || (LockedOnBlock.FatBlock?.MarkedForClose ?? false))
             {
                 SetLockOnBlock(null, "Block removed, disabled overlay lock.");
                 return false;
