@@ -283,7 +283,7 @@ namespace Digi.BuildInfo.Features
 
         void UpdateDetailInfo(bool force = false)
         {
-            if(!Main.Config.TerminalDetailInfoAdditions.Value)
+            if(!force && !Main.Config.TerminalDetailInfoAdditions.Value)
                 return;
 
             if(!force && refreshWaitForTick > Main.Tick)
