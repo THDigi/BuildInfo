@@ -20,11 +20,12 @@ namespace Digi.BuildInfo.Features
     public class OverrideToolSelectionDraw : ModComponent
     {
         readonly MyStringId SelectionLineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
+        readonly MyStringId SelectionCornerMaterial = MyStringId.GetOrCompute("BuildInfo_LaserDot");
         const BlendType SelectionBlendType = BlendType.PostPP;
 
         bool eventHooked;
 
-        Color? ColorCache = null;
+        Vector4? ColorCache = null;
         BoundingBoxD? LocalBBCache = null;
         readonly Vector3D[] Corners = new Vector3D[8];
 
@@ -110,7 +111,7 @@ namespace Digi.BuildInfo.Features
             if(projector != null && !Main.Config.SelectAllProjectedBlocks.Value)
                 return;
 
-            Color color;
+            Vector4 color;
             #region Compute color
             if(!ColorCache.HasValue || Main.Tick % 30 == 0)
             {
@@ -287,13 +288,33 @@ namespace Digi.BuildInfo.Features
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, left, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, up, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, -back, LineLength, lineWidth, SelectionBlendType);
-            #endregion
+            #endregion Selection lines
+
+            #region Selection corners
+            float cornerRadius = lineWidth;
+            Vector4 colorCorner = color;
+
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop1, cornerRadius, 0, blendType: SelectionBlendType);
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop2, cornerRadius, 0, blendType: SelectionBlendType);
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom1, cornerRadius, 0, blendType: SelectionBlendType);
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom2, cornerRadius, 0, blendType: SelectionBlendType);
+
+            var cornerTop3 = top - left + back;
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop3, cornerRadius, 0, blendType: SelectionBlendType);
+            var cornerTop4 = top + left - back;
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop4, cornerRadius, 0, blendType: SelectionBlendType);
+
+            var cornerBottom3 = bottom - left - back;
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom3, cornerRadius, 0, blendType: SelectionBlendType);
+            var cornerBottom4 = bottom + left + back;
+            MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom4, cornerRadius, 0, blendType: SelectionBlendType);
+            #endregion corners
 
             #region See-through-walls lines
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
             const float DepthRatio = 0.01f;
-            lineWidth *= DepthRatio * 0.5f; // half as thin
+            lineWidth *= DepthRatio * 0.5f; // and half as thin
             color *= 0.5f; // half opacity too
 
             center = camMatrix.Translation + ((center - camMatrix.Translation) * DepthRatio);

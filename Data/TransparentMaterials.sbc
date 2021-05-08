@@ -9,7 +9,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <Texture>Textures\Particles\Square.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -30,9 +29,28 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0.1</SoftParticleDistanceScale>
       <Texture>Textures\Particles\WeaponLaser.dds</Texture>
+      <UseAtlas>false</UseAtlas>
+      <UVOffset>
+        <X>0</X>
+        <Y>0</Y>
+      </UVOffset>
+      <UVSize>
+        <X>1</X>
+        <Y>1</Y>
+      </UVSize>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_LaserDot</SubtypeId>
+      </Id>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0.1</SoftParticleDistanceScale>
+      <Texture>Textures\LaserDot.dds</Texture>
       <UseAtlas>false</UseAtlas>
       <UVOffset>
         <X>0</X>
@@ -51,7 +69,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0.1</SoftParticleDistanceScale>
       <Texture>Textures\TransparentGradient.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -72,7 +89,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <Texture>Textures\ToolInventoryGrinderIcon.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -93,7 +109,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <Texture>Textures\ToolInventoryDrillIcon.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -114,7 +129,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <Texture>Textures\ToolInventoryBar.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -135,7 +149,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <Texture>Textures\UICorner.dds</Texture>
       <UseAtlas>false</UseAtlas>
@@ -156,7 +169,6 @@
       <AlphaMistingEnable>false</AlphaMistingEnable>
       <AlphaSaturation>1</AlphaSaturation>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
-      <IgnoreDepth>true</IgnoreDepth>
       <SoftParticleDistanceScale>1</SoftParticleDistanceScale>
       <Texture>Textures\LeakInfo_Particle.dds</Texture>
       <UseAtlas>false</UseAtlas>
