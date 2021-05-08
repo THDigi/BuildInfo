@@ -164,6 +164,66 @@
     <TransparentMaterial>
       <Id>
         <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_UI_ButtonBg</SubtypeId>
+      </Id>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <Texture>Textures\GUI\Controls\button_default.dds</Texture>
+      <UseAtlas>false</UseAtlas>
+      <UVOffset>
+        <X>0</X>
+        <Y>0</Y>
+      </UVOffset>
+      <UVSize>
+        <X>1</X>
+        <Y>1</Y>
+      </UVSize>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_UI_ButtonBgHover</SubtypeId>
+      </Id>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <Texture>Textures\GUI\Controls\button_default_highlight.dds</Texture>
+      <UseAtlas>false</UseAtlas>
+      <UVOffset>
+        <X>0</X>
+        <Y>0</Y>
+      </UVOffset>
+      <UVSize>
+        <X>1</X>
+        <Y>1</Y>
+      </UVSize>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
+        <SubtypeId>BuildInfo_UI_ButtonBgActivate</SubtypeId>
+      </Id>
+      <AlphaMistingEnable>false</AlphaMistingEnable>
+      <AlphaSaturation>1</AlphaSaturation>
+      <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
+      <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
+      <Texture>Textures\GUI\Controls\button_default_active.dds</Texture>
+      <UseAtlas>false</UseAtlas>
+      <UVOffset>
+        <X>0</X>
+        <Y>0</Y>
+      </UVOffset>
+      <UVSize>
+        <X>1</X>
+        <Y>1</Y>
+      </UVSize>
+    </TransparentMaterial>
+    <TransparentMaterial>
+      <Id>
+        <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_LeakInfo_Particle</SubtypeId>
       </Id>
       <AlphaMistingEnable>false</AlphaMistingEnable>

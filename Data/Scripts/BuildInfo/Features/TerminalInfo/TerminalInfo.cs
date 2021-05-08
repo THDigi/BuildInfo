@@ -21,23 +21,24 @@ using VRageMath;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
-namespace Digi.BuildInfo.Features
+namespace Digi.BuildInfo.Features.Terminal
 {
     public class TerminalInfo : ModComponent
     {
-        #region Constants
-        private const int REFRESH_MIN_TICKS = 30; // minimum amount of ticks between refresh calls
-
-        private readonly string[] tickerText = { "–––", "•––", "–•–", "––•" };
-        #endregion Constants
+        public const int RefreshMinTicks = 15; // minimum amount of ticks between refresh calls
+        private readonly string[] TickerText = { "––––––", "•–––––", "–•––––", "––•–––", "–––•––", "––––•–", "–––––•" };
 
         public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private IMyTerminalBlock viewedInTerminal;
         private int delayCursorCheck = 0;
         private int refreshWaitForTick = 0;
+
         private int ticker;
-        private StringBuilder tmp = new StringBuilder(512);
+        private int tickerUpdateAt;
+
+        private readonly StringBuilder tmp = new StringBuilder(512);
+        private readonly StringBuilder tmpInfo = new StringBuilder(512);
 
         private CustomInfoCall currentFormatCall;
         private delegate void CustomInfoCall(IMyTerminalBlock block, StringBuilder info);
@@ -150,7 +151,6 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_RemoteControl), Format_RemoteControl);
 
-            // not needed, already contains current power usage, sort of
             //Add(typeof(MyObjectBuilder_Gyro), Format_Gyro);
 
             Add(typeof(MyObjectBuilder_Thrust), Format_Thruster);
@@ -203,13 +203,13 @@ namespace Digi.BuildInfo.Features
 
             // check if the block is still valid or if the player exited the menu
             // NOTE: IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
-            if(viewedInTerminal.Closed || ((delayCursorCheck == 0 || --delayCursorCheck == 0) && !MyAPIGateway.Gui.IsCursorVisible))
+            if(viewedInTerminal.MarkedForClose || ((delayCursorCheck == 0 || --delayCursorCheck == 0) && !MyAPIGateway.Gui.IsCursorVisible))
             {
                 ViewedBlockChanged(viewedInTerminal, null);
                 return;
             }
 
-            if(Main.Tick % REFRESH_MIN_TICKS == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
+            if(Main.Tick % RefreshMinTicks == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
             {
                 UpdateDetailInfo();
 
@@ -237,11 +237,8 @@ namespace Digi.BuildInfo.Features
         // Used to know the currently viewed block in the terminal.
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
-            if(block == viewedInTerminal) // clicked same block
-            {
-                viewedInTerminal?.RefreshCustomInfo();
+            if(block == viewedInTerminal)
                 return;
-            }
 
             ViewedBlockChanged(viewedInTerminal, block);
         }
@@ -289,7 +286,7 @@ namespace Digi.BuildInfo.Features
             if(!force && refreshWaitForTick > Main.Tick)
                 return;
 
-            refreshWaitForTick = (Main.Tick + REFRESH_MIN_TICKS);
+            refreshWaitForTick = (Main.Tick + RefreshMinTicks);
             viewedInTerminal.RefreshCustomInfo();
         }
 
@@ -312,31 +309,56 @@ namespace Digi.BuildInfo.Features
                 // Append other mod's info after my own.
                 // This is possible since this event is surely executed last as it's hooked when block is clicked
                 //   and because the same StringBuiler is given to all mods.
-                var otherModInfo = (info.Length > 0 ? info.ToString() : null);
+                string otherModInfo = (info.Length > 0 ? info.ToString() : null);
 
-                info.Clear();
+                info.Clear(); // mods shouldn't do this here, but I'm storing existing data and writing it back!
+
+                bool addedCustomInfo = false;
+                bool header = Main.Config.TerminalDetailInfoHeader.Value;
 
                 if(Main.Config.TerminalDetailInfoAdditions.Value)
                 {
-                    currentFormatCall.Invoke(block, info);
-                }
+                    if(header)
+                    {
+                        tmpInfo.Clear();
+                        currentFormatCall.Invoke(block, tmpInfo);
 
-                bool hasExtraInfo = (info.Length > 0);
-                if(hasExtraInfo)
+                        if(tmpInfo.Length > 0)
+                        {
+                            addedCustomInfo = true;
+
+                            string text = TickerText[ticker];
+
+                            info.Append(text, 0, 3).Append("( BuildInfo | /bi )").Append(text, 3, 3).Append('\n');
+                            info.AppendStringBuilder(tmpInfo);
+                        }
+                    }
+                    else
+                    {
+                        currentFormatCall.Invoke(block, info);
+                        addedCustomInfo = (info.Length > 0);
+                    }
+
                     info.TrimEndWhitespace();
+                }
 
                 if(otherModInfo != null)
                 {
-                    info.NewLine();
+                    if(addedCustomInfo)
+                        info.NewLine();
+
                     info.Append(otherModInfo);
                 }
 
-                if(hasExtraInfo)
+                if(!header && addedCustomInfo)
                 {
-                    info.NewLine().Append(tickerText[ticker]);
+                    info.NewLine().Append(TickerText[ticker]);
+                }
 
-                    if(++ticker >= tickerText.Length)
-                        ticker = 0;
+                if(tickerUpdateAt <= Main.Tick)
+                {
+                    ticker = (ticker + 1) % TickerText.Length;
+                    tickerUpdateAt = Main.Tick + RefreshMinTicks;
                 }
             }
             catch(Exception e)
@@ -564,14 +586,10 @@ namespace Digi.BuildInfo.Features
             //      Power efficiency: <n>%
             //      Used upgrade module slots: <n> / <n>
 
-            info.NewLine();
-
             var productionDef = (MyProductionBlockDefinition)block.SlimBlock.BlockDefinition;
             var volume = (productionDef.InventoryMaxVolume > 0 ? productionDef.InventoryMaxVolume : productionDef.InventorySize.Volume);
             info.DetailInfo_Inventory(Inv, volume, "Inventory In");
             info.DetailInfo_Inventory(Inv2, volume, "Inventory Out");
-
-            info.NewLine();
 
             var production = (IMyProductionBlock)block;
             var assembler = block as IMyAssembler;
@@ -811,7 +829,6 @@ namespace Digi.BuildInfo.Features
 
                 info.Append("\nShip power statistics:\n");
                 info.Append("  Status: ");
-
                 switch(state)
                 {
                     case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
@@ -819,7 +836,6 @@ namespace Digi.BuildInfo.Features
                     case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
                     case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
                 }
-
                 info.NewLine();
 
                 info.Append("  Total required: ").PowerFormat(required).NewLine();
@@ -1093,8 +1109,6 @@ namespace Digi.BuildInfo.Features
 
             if(reactorDef.FuelInfos != null && reactorDef.FuelInfos.Length > 0)
             {
-                info.NewLine();
-
                 var ratio = Source.CurrentOutput / reactorDef.MaxPowerOutput;
 
                 if(reactorDef.FuelInfos.Length == 1)
@@ -1128,8 +1142,6 @@ namespace Digi.BuildInfo.Features
                     tmp.Clear();
                 }
             }
-
-            info.NewLine();
 
             float maxVolume;
             if(!Utils.GetInventoryVolumeFromComponent(reactorDef, out maxVolume))
@@ -1177,7 +1189,6 @@ namespace Digi.BuildInfo.Features
             {
                 info.Append("N/A");
             }
-            info.NewLine();
         }
 
         void Format_SolarPanel(IMyTerminalBlock block, StringBuilder info)
@@ -1191,6 +1202,14 @@ namespace Digi.BuildInfo.Features
             info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).NewLine();
         }
 
+        //void Format_Gyro(IMyTerminalBlock block, StringBuilder info)
+        //{
+        //    // Vanilla info in 1.198.027:
+        //    //      Type: <BlockDefName>
+        //    //      Max Required Input: <n> W
+        //
+        //}
+
         void Format_Thruster(IMyTerminalBlock block, StringBuilder info)
         {
             // Vanilla info in 1.189.041:
@@ -1203,9 +1222,6 @@ namespace Digi.BuildInfo.Features
 
             float currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
             float maxPowerUsage = thrustInternal.MaxPowerConsumption;
-
-            info.NewLine();
-
             float gravityLength = Main.Caches.GetGravityLengthAtGrid(block.CubeGrid);
 
             // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
@@ -1314,7 +1330,6 @@ namespace Digi.BuildInfo.Features
             var antenna = (IMyLaserAntenna)block;
             var def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.NewLine();
             info.Append("Power Usage:\n");
 
             info.Append("  Current: ").PowerFormat(Sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId)).NewLine();

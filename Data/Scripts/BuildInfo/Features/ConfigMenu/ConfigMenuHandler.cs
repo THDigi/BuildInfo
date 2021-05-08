@@ -35,6 +35,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
+        private readonly ItemGroup groupTerminalDetailInfo = new ItemGroup();
         private readonly ItemGroup groupBinds = new ItemGroup(); // for updating titles on bindings that use other bindings
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
@@ -46,6 +47,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
             groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
+            groupTerminalDetailInfo.SetInteractable(Main.Config.TerminalDetailInfoAdditions.Value);
 
             groupBinds.Update();
 
@@ -104,7 +106,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             Category_Textbox = AddCategory("Text Box", Category_Mod);
             Category_Overlays = AddCategory("Block Overlays", Category_Mod);
-            Category_HUD = AddCategory("HUD/GUI", Category_Mod);
+            Category_HUD = AddCategory("HUD", Category_Mod);
             Category_Toolbar = AddCategory("Toolbar", Category_Mod);
             Category_Terminal = AddCategory("Terminal/Inventory", Category_Mod);
             Category_LeakInfo = AddCategory("Air Leak Scanner", Category_Mod);
@@ -153,7 +155,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
 
-            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions);
+            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
+            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
+            SimpleScreenPosition(Category_Terminal, null, Main.Config.TerminalRefreshInfoPosition);
+            SimpleSlider(Category_Terminal, null, Main.Config.TerminalRefreshInfoScale);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);
 

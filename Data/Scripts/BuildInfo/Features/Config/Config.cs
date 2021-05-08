@@ -67,6 +67,9 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ToolbarActionStatus;
 
         public BoolSetting TerminalDetailInfoAdditions;
+        public BoolSetting TerminalDetailInfoHeader;
+        public Vector2DSetting TerminalRefreshInfoPosition;
+        public FloatSetting TerminalRefreshInfoScale;
 
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
@@ -289,7 +292,7 @@ namespace Digi.BuildInfo.Features.Config
             #region HUD
             BlockInfoAdditions = new BoolSetting(Handler, "HUD: Block Info Additions", true,
                 "",
-                string.Format(SubHeaderFormat, "HUD & GUI"),
+                string.Format(SubHeaderFormat, "HUD"),
                 "",
                 "Adds various things to the vanilla block info UI:",
                 "- red and blue lines in the component list to better match where the critical/ownership lines are.",
@@ -345,8 +348,21 @@ namespace Digi.BuildInfo.Features.Config
 
             #region Terminal
             TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
+                "",
+                string.Format(SubHeaderFormat, "Terminal/Inventory GUI"),
+                "",
                 "Adds some extra info bottom-right in terminal of certain blocks.",
                 "Does not (and cannot) replace any vanilla info.");
+
+            TerminalDetailInfoHeader = new BoolSetting(Handler, "Terminal: Detail Info Header", true,
+                "Adds a \"--- (BuildInfo | /bi) ---\" before this mod's detail info additions to more easily identify them.");
+
+            TerminalRefreshInfoPosition = new Vector2DSetting(Handler, "Terminal: Refresh Info Button Position", new Vector2D(0.715, -0.986), -Vector2D.One, Vector2D.One,
+                "HUD position of the Refresh Info button in the terminal.",
+                "Can also be moved in the menu by holding right mouse button on it.");
+
+            TerminalRefreshInfoScale = new FloatSetting(Handler, "Terminal: Refresh Info Button Scale", 1f, 0.01f, 3f,
+                "Scale offset for the Refresh Info button in the terminal.");
 
             ItemTooltipAdditions = new BoolSetting(Handler, "Terminal: Item Tooltip Additions", true,
                 "Adds magazine capacity, what blocks craft the item, where the item can be used, mod that added the item and whether it requires large conveyor.",

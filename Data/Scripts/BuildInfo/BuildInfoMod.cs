@@ -13,6 +13,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using VRage.Game.Components;
+using Digi.BuildInfo.Features.Terminal;
 
 namespace Digi.BuildInfo
 {
@@ -49,6 +50,7 @@ namespace Digi.BuildInfo
         public ChatCommandHandler ChatCommandHandler;
         public ReloadTracking ReloadTracking;
         public TerminalInfo TerminalInfo;
+        public DetailInfoRefresh DetailInfoRefresh;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
         public TurretHUD TurretHUD;
@@ -107,6 +109,7 @@ namespace Digi.BuildInfo
             ChatCommandHandler = new ChatCommandHandler(this);
             ReloadTracking = new ReloadTracking(this);
             TerminalInfo = new TerminalInfo(this);
+            DetailInfoRefresh = new DetailInfoRefresh(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
             PlacementDistance = new PlacementDistance(this);
