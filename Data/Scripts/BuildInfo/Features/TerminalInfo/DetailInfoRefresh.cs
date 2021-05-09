@@ -157,6 +157,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(SelectedBox && MyAPIGateway.Input.IsNewLeftMouseReleased())
             {
+                Cooldown = 0;
                 SelectedBox = false;
                 Background.Material = ButtonBg;
             }
