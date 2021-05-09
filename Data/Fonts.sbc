@@ -35,6 +35,7 @@
         <TypeId>FontDefinition</TypeId>
         <SubtypeId>BI_Green</SubtypeId>
       </Id>
+      <Public>false</Public>
       <ColorMask>
         <X>100</X>
         <Y>240</Y>
@@ -56,6 +57,7 @@
         <TypeId>FontDefinition</TypeId>
         <SubtypeId>BI_SkyBlue</SubtypeId>
       </Id>
+      <Public>false</Public>
       <ColorMask>
         <X>0</X>
         <Y>155</Y>
@@ -77,6 +79,7 @@
         <TypeId>FontDefinition</TypeId>
         <SubtypeId>BI_Yellow</SubtypeId>
       </Id>
+      <Public>false</Public>
       <ColorMask>
         <X>255</X>
         <Y>255</Y>
@@ -98,6 +101,7 @@
         <TypeId>FontDefinition</TypeId>
         <SubtypeId>BI_Gray</SubtypeId>
       </Id>
+      <Public>false</Public>
       <ColorMask>
         <X>125</X>
         <Y>125</Y>
