@@ -395,9 +395,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(MustBeVisible)
             {
-                string screenName = MyAPIGateway.Gui.ActiveGamePlayScreen;
-                bool newInToolbarConfig = (screenName == "MyGuiScreenCubeBuilder"); // from MyGuiScreenCubeBuilder.GetFriendlyName()
-
+                bool newInToolbarConfig = Main.GUIMonitor.InToolbarConfig;
                 if(newInToolbarConfig != InToolbarConfig)
                 {
                     InToolbarConfig = newInToolbarConfig;

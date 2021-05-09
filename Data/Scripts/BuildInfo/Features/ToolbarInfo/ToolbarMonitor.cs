@@ -329,9 +329,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(MyAPIGateway.Gui.ChatEntryVisible || ControlledBlock == null)
                 return;
 
-            var screen = MyAPIGateway.Gui.ActiveGamePlayScreen;
-            bool inToolbarConfig = screen == "MyGuiScreenCubeBuilder";
-            if(!(screen == null || inToolbarConfig)) // toolbar config menu only for cockpit, not for other blocks like timers' action toolbars
+            // if in menu, only read in cockpit toolbar config
+            if(MyAPIGateway.Gui.IsCursorVisible && !Main.GUIMonitor.InToolbarConfig)
                 return;
 
             var controlSlots = Main.Constants.CONTROL_SLOTS;

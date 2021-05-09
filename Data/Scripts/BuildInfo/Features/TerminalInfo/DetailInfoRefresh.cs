@@ -91,7 +91,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 ViewedInTerminal = null;
             }
 
-            if(ViewedInTerminal == null || !Main.TextAPI.IsEnabled || !MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.GetCurrentScreen != MyTerminalPageEnum.ControlPanel)
+            if(ViewedInTerminal == null
+            || !Main.TextAPI.IsEnabled
+            || !MyAPIGateway.Gui.IsCursorVisible
+            || MyAPIGateway.Gui.GetCurrentScreen != MyTerminalPageEnum.ControlPanel
+            || Main.GUIMonitor.InAnyToolbarGUI
+            || MyAPIGateway.Gui.ActiveGamePlayScreen != "MyGuiScreenTerminal")
                 return;
 
             if(Background == null)

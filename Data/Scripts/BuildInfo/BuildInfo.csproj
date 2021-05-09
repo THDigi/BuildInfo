@@ -283,6 +283,7 @@
     <Compile Include="ModComponent.cs" />
     <Compile Include="Systems\BlockMonitor.cs" />
     <Compile Include="Systems\EquipmentMonitor.cs" />
+    <Compile Include="Systems\GUIMonitor.cs" />
     <Compile Include="Systems\GameConfig.cs" />
     <Compile Include="Systems\InputLibHandler.cs" />
     <Compile Include="Systems\TextAPIHandler.cs" />

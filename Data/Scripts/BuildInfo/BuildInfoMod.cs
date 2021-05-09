@@ -30,6 +30,7 @@ namespace Digi.BuildInfo
         // Systems
         public TextAPI TextAPI;
         public GameConfig GameConfig;
+        public GUIMonitor GUIMonitor;
         public BlockMonitor BlockMonitor;
         public InputLibHandler InputLibHandler;
         public EquipmentMonitor EquipmentMonitor;
@@ -88,6 +89,7 @@ namespace Digi.BuildInfo
             TextAPI = new TextAPI(this);
             InputLibHandler = new InputLibHandler(this);
             GameConfig = new GameConfig(this);
+            GUIMonitor = new GUIMonitor(this);
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
