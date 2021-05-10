@@ -1248,52 +1248,35 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Max Required Input: <n> W
 
             var thrust = (IMyThrust)block;
-            var thrustInternal = (MyThrust)block;
-            var def = thrustInternal.BlockDefinition;
+            var thrustInfo = Hardcoded.Thrust_GetUsage(thrust);
+            var def = thrustInfo.Def;
 
-            float currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
-            float maxPowerUsage = thrustInternal.MaxPowerConsumption;
-            float gravityLength = Main.Caches.GetGravityLengthAtGrid(block.CubeGrid);
-
-            // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
-            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
-            //float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY);
-            bool hasDifferentConsumption = (Math.Abs(consumptionMultiplier - 1) > 0.001f);
-
-            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
-            bool hasDifferentConsumptionOnEarth = (Math.Abs(consumptionMultiplier - 1) > 0.001f);
-
-            if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
+            if(thrustInfo.Fuel != MyResourceDistributorComponent.ElectricityId)
             {
-                // HACK formula from MyEntityThrustComponent.PowerAmountToFuel()
-                float eff = (thrustInternal.FuelDefinition.EnergyDensity * thrustInternal.FuelConverterDefinition.Efficiency);
-                float currentFuelUsage = (currentPowerUsage / eff);
-                float maxFuelUsage = (maxPowerUsage / eff);
+                info.Append("Requires: ").Append(thrustInfo.Fuel.SubtypeName).NewLine();
 
-                info.Append("Requires: ").Append(thrustInternal.FuelDefinition.Id.SubtypeName).NewLine();
-
-                info.Append("Current Usage: ").VolumeFormat(currentFuelUsage * consumptionMultiplier).Append("/s");
-                if(hasDifferentConsumption)
-                    info.Append(" (x").RoundedNumber(consumptionMultiplier, 2).Append(")");
+                info.Append("Current Usage: ").VolumeFormat(thrustInfo.CurrentUsage).Append("/s");
+                if(Math.Abs(thrustInfo.CurrentConsumptionMul - 1) > 0.001f)
+                    info.Append(" (x").RoundedNumber(thrustInfo.CurrentConsumptionMul, 2).Append(")");
                 info.NewLine();
 
-                info.Append("Max Usage: ").VolumeFormat(maxFuelUsage * earthConsumptionMultipler).Append("/s");
-                if(hasDifferentConsumptionOnEarth)
-                    info.Append(" (x").RoundedNumber(earthConsumptionMultipler, 2).Append(" @ 1g)");
+                info.Append("Max Usage: ").VolumeFormat(thrustInfo.MaxUsage).Append("/s");
+                if(Math.Abs(thrustInfo.EarthConsumpationMul - 1) > 0.001f)
+                    info.Append(" (x").RoundedNumber(thrustInfo.EarthConsumpationMul, 2).Append(" @ 1g)");
                 info.NewLine();
             }
             else
             {
                 info.Append("Requires: Electricity").NewLine();
 
-                info.Append("Current Usage: ").PowerFormat(currentPowerUsage * consumptionMultiplier);
-                if(hasDifferentConsumption)
-                    info.Append(" (x").RoundedNumber(consumptionMultiplier, 2).Append(")");
+                info.Append("Current Usage: ").PowerFormat(thrustInfo.CurrentUsage);
+                if(Math.Abs(thrustInfo.CurrentConsumptionMul - 1) > 0.001f)
+                    info.Append(" (x").RoundedNumber(thrustInfo.CurrentConsumptionMul, 2).Append(")");
                 info.NewLine();
 
-                info.Append("Max Usage: ").PowerFormat(maxPowerUsage * earthConsumptionMultipler);
-                if(hasDifferentConsumptionOnEarth)
-                    info.Append(" (x").RoundedNumber(earthConsumptionMultipler, 2).Append(" @ 1g)");
+                info.Append("Max Usage: ").PowerFormat(thrustInfo.MaxUsage);
+                if(Math.Abs(thrustInfo.EarthConsumpationMul - 1) > 0.001f)
+                    info.Append(" (x").RoundedNumber(thrustInfo.EarthConsumpationMul, 2).Append(" @ 1g)");
                 info.NewLine();
             }
 

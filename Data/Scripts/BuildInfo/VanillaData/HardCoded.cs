@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
+using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -271,6 +274,60 @@ namespace Digi.BuildInfo.VanillaData
                  && def.MaxPlanetaryInfluence >= 0 && def.MaxPlanetaryInfluence <= 1f
                  && def.EffectivenessAtMinInfluence >= 0 && def.EffectivenessAtMinInfluence <= 1f
                  && def.EffectivenessAtMaxInfluence >= 0 && def.EffectivenessAtMaxInfluence <= 1f);
+        }
+
+        public struct ThrustInfo
+        {
+            public readonly MyThrustDefinition Def;
+            public readonly MyThrust Internal;
+            public readonly MyDefinitionId Fuel;
+            public readonly float CurrentUsage;
+            public readonly float MaxUsage;
+            public readonly float CurrentConsumptionMul;
+            public readonly float EarthConsumpationMul;
+
+            public ThrustInfo(MyThrustDefinition def, MyThrust internalBlock, MyDefinitionId fuel, float currentUsage, float maxUsage, float currentConsumptionMul, float earthConsumpationMul)
+            {
+                Def = def;
+                Internal = internalBlock;
+                Fuel = fuel;
+                CurrentUsage = currentUsage;
+                MaxUsage = maxUsage;
+                CurrentConsumptionMul = currentConsumptionMul;
+                EarthConsumpationMul = earthConsumpationMul;
+            }
+        }
+
+        public static ThrustInfo Thrust_GetUsage(IMyThrust thrust)
+        {
+            var thrustInternal = (MyThrust)thrust;
+            var def = thrustInternal.BlockDefinition;
+
+            float currentPowerUsage = 0;
+            if(thrust.IsWorking)
+                currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
+
+            float maxPowerUsage = thrustInternal.MaxPowerConsumption;
+            float gravityLength = BuildInfoMod.Instance.Caches.GetGravityLengthAtGrid(thrust.CubeGrid);
+
+            // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
+            // remove thge last ' / Hardcoded.GAME_EARTH_GRAVITY' when it's fixed.
+            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
+            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
+
+            if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
+            {
+                // formula from MyEntityThrustComponent.PowerAmountToFuel()
+                float eff = (thrustInternal.FuelConverterDefinition.Efficiency * thrustInternal.FuelDefinition.EnergyDensity);
+                float currentFuelUsage = (thrust.IsWorking ? (currentPowerUsage / eff) : 0);
+                float maxFuelUsage = (maxPowerUsage / eff);
+
+                return new ThrustInfo(def, thrustInternal, thrustInternal.FuelDefinition.Id, currentFuelUsage * consumptionMultiplier, maxFuelUsage * earthConsumptionMultipler, consumptionMultiplier, earthConsumptionMultipler);
+            }
+            else
+            {
+                return new ThrustInfo(def, thrustInternal, MyResourceDistributorComponent.ElectricityId, currentPowerUsage * consumptionMultiplier, maxPowerUsage * earthConsumptionMultipler, consumptionMultiplier, earthConsumptionMultipler);
+            }
         }
 
         // from MyAirVent.VentDummy getter
