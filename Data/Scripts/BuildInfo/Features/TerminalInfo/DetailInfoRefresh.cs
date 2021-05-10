@@ -40,6 +40,7 @@ namespace Digi.BuildInfo.Features.Terminal
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
 
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
+            Main.GameConfig.OptionsMenuClosed += RefreshPositions;
         }
 
         public override void UnregisterComponent()
@@ -50,6 +51,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
 
             Main.Config.Handler.SettingsLoaded -= RefreshPositions;
+            Main.GameConfig.OptionsMenuClosed -= RefreshPositions;
         }
 
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
