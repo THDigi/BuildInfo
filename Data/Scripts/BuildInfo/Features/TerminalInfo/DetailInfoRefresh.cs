@@ -61,6 +61,9 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void RefreshPositions()
         {
+            if(Text == null)
+                return;
+
             Vector2D pos = Main.Config.TerminalRefreshInfoPosition.Value;
             float scale = Main.Config.TerminalRefreshInfoScale.Value * ButtonScaleOffset;
 
