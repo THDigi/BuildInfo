@@ -219,11 +219,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Backgrounds = new List<HudAPIv2.BillBoardHUDMessage>(6);
 
             // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
+            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
             Background.Visible = false;
             Backgrounds.Add(Background);
 
-            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
+            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
             BackgroundTop.Visible = false;
             Backgrounds.Add(BackgroundTop);
 
@@ -232,7 +232,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CornerTopRight.Rotation = MathHelper.Pi;
             Backgrounds.Add(CornerTopRight);
 
-            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
+            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
             BackgroundBottom.Visible = false;
             Backgrounds.Add(BackgroundBottom);
 
