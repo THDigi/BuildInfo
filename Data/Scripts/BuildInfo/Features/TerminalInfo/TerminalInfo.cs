@@ -17,6 +17,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
@@ -28,10 +29,15 @@ namespace Digi.BuildInfo.Features.Terminal
         public const int RefreshMinTicks = 15; // minimum amount of ticks between refresh calls
         private readonly string[] TickerText = { "––––––", "•–––––", "–•––––", "––•–––", "–––•––", "––––•–", "–––––•" };
 
+        //public List<IMyTerminalBlock> SelectedInTerminal = new List<IMyTerminalBlock>();
+        //private List<IMyTerminalBlock> SelectingList = new List<IMyTerminalBlock>();
+        //private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
+        private IMyTerminalBlock LastSelected;
+
         public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private IMyTerminalBlock viewedInTerminal;
-        private int delayCursorCheck = 0;
+        private int cursorCheckAfterTick = 0;
         private int refreshWaitForTick = 0;
 
         private int ticker;
@@ -195,41 +201,50 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public override void UpdateAfterSim(int tick)
         {
-            if(powerSourcesCooldown > 0)
-                powerSourcesCooldown--;
+            if(LastSelected != null)
+            {
+                // commented parts are for detecting multiple selections, a bit buggy... see HACK from below and who knows what other issues it has.
+                //SelectedInTerminal.Clear();
+
+                if(LastSelected != viewedInTerminal)
+                {
+                    ViewedBlockChanged(viewedInTerminal, LastSelected);
+
+                    //if(viewedInTerminal != null)
+                    //{
+                    //    // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
+                    //    var orig = viewedInTerminal.ShowInToolbarConfig;
+                    //    viewedInTerminal.ShowInToolbarConfig = !orig;
+                    //    viewedInTerminal.ShowInToolbarConfig = orig;
+                    //}
+                }
+
+                LastSelected = null;
+
+                //MyUtils.Swap(ref SelectingList, ref SelectedInTerminal); // swap references, faster than adding to the 2nd list and clearing
+
+                //SelectingList.Clear();
+                //SelectingSet.Clear();
+            }
 
             if(viewedInTerminal == null)
                 return;
 
             // check if the block is still valid or if the player exited the menu
             // NOTE: IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
-            if(viewedInTerminal.MarkedForClose || ((delayCursorCheck == 0 || --delayCursorCheck == 0) && !MyAPIGateway.Gui.IsCursorVisible))
+            if(viewedInTerminal.MarkedForClose || (cursorCheckAfterTick <= Main.Tick && !MyAPIGateway.Gui.IsCursorVisible))
             {
+                //SelectedInTerminal.Clear();
                 ViewedBlockChanged(viewedInTerminal, null);
                 return;
             }
 
-            if(Main.Tick % RefreshMinTicks == 0 && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel) // only actively refresh if viewing the block list
+            // only actively refresh if viewing the block list
+            if(Main.Tick % RefreshMinTicks == 0
+            && !Main.GUIMonitor.InAnyToolbarGUI
+            && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {
                 UpdateDetailInfo();
-
-                // TODO: refresh while cursor is bottom right corner (in a box) of screen?
-                // + add textAPI button there or something.
-                // + skip PB!
-
-                // FIXME: RefreshCustomInfo() doesn't update the detail info panel in realtime; bugreport: SE-7777
-                // HACK: force refresh terminal UI by changing ownership share mode; does not work for unownable blocks
-                // NAH: It will screw with other mods that hook ownership change, also with PB
-                //var block = (MyCubeBlock)viewedInTerminal;
-                //
-                //if(block.IDModule != null)
-                //{
-                //    var ownerId = block.IDModule.Owner;
-                //    var shareMode = block.IDModule.ShareMode;
-                //
-                //    block.ChangeOwner(ownerId, (shareMode == MyOwnershipShareModeEnum.None ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None));
-                //    block.ChangeOwner(ownerId, shareMode);
-                //}
             }
         }
 
@@ -237,10 +252,14 @@ namespace Digi.BuildInfo.Features.Terminal
         // Used to know the currently viewed block in the terminal.
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
-            if(block == viewedInTerminal)
-                return;
+            //if(SelectingSet.Add(block))
+            //{
+            //    SelectingList.Add(block);
+            //}
 
-            ViewedBlockChanged(viewedInTerminal, block);
+            LastSelected = block;
+
+            UpdateMethods |= UpdateFlags.UPDATE_AFTER_SIM;
         }
 
         void ViewedBlockChanged(IMyTerminalBlock oldBlock, IMyTerminalBlock newBlock)
@@ -255,7 +274,7 @@ namespace Digi.BuildInfo.Features.Terminal
             currentFormatCall = null;
 
             fullScan = true;
-            powerSourcesCooldown = 0; // remove cooldown to instantly rescan
+            powerSourcesRecheckAfterTick = 0; // remove cooldown to instantly rescan
             powerSources.Clear();
 
             ClearCaches(); // block changed so caches are no longer relevant
@@ -267,7 +286,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 viewedInTerminal = newBlock;
 
-                delayCursorCheck = 10;
+                cursorCheckAfterTick = Main.Tick + 10;
 
                 newBlock.AppendingCustomInfo += CustomInfo;
                 newBlock.PropertiesChanged += PropertiesChanged;
@@ -876,7 +895,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
         }
 
-        private int powerSourcesCooldown = 0;
+        private int powerSourcesRecheckAfterTick = 0;
         private bool fullScan = true;
 
         private int reactors = 0;
@@ -901,10 +920,10 @@ namespace Digi.BuildInfo.Features.Terminal
 
         private void FindPowerSources(IMyCubeGrid grid)
         {
-            if(grid == null || powerSourcesCooldown > 0)
+            if(grid == null || powerSourcesRecheckAfterTick > Main.Tick)
                 return;
 
-            powerSourcesCooldown = 60 * 3;
+            powerSourcesRecheckAfterTick = Constants.TICKS_PER_SECOND * 3;
 
             if(fullScan)
             {
