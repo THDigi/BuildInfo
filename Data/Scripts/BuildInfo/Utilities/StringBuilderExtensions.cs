@@ -931,10 +931,9 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            var current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
-            var max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
-
-            return s.Append("Input Power: ").PowerFormat(current).Append(" / ").PowerFormat(max).Append('\n');
+            float current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
+            float max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+            return s.Append("Input Power: ").PowerFormat(current).Append(" (max: ").PowerFormat(max).Append(")\n");
         }
 
         public static StringBuilder DetailInfo_CurrentPowerUsage(this StringBuilder s, MyResourceSinkComponent sink)
@@ -942,8 +941,7 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            var current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
-
+            float current = sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
             return s.Append("Current Power Usage: ").PowerFormat(current).Append('\n');
         }
 
@@ -952,8 +950,7 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            var max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
-
+            float max = sink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
             return s.Append("Max Power Usage: ").PowerFormat(max).Append('\n');
         }
 
@@ -962,10 +959,9 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            var current = sink.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
-            var max = sink.RequiredInputByType(MyResourceDistributorComponent.HydrogenId);
-
-            return s.Append("Input H2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            float current = sink.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+            float max = sink.RequiredInputByType(MyResourceDistributorComponent.HydrogenId);
+            return s.Append("Input H2: ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
         }
 
         public static StringBuilder DetailInfo_OutputHydrogen(this StringBuilder s, MyResourceSourceComponent source)
@@ -973,10 +969,9 @@ namespace Digi.BuildInfo.Utilities
             if(source == null)
                 return s;
 
-            var current = source.CurrentOutputByType(MyResourceDistributorComponent.HydrogenId);
-            var max = source.MaxOutputByType(MyResourceDistributorComponent.HydrogenId);
-
-            return s.Append("Output H2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            float current = source.CurrentOutputByType(MyResourceDistributorComponent.HydrogenId);
+            float max = source.MaxOutputByType(MyResourceDistributorComponent.HydrogenId);
+            return s.Append("Output H2: ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
         }
 
         public static StringBuilder DetailInfo_InputOxygen(this StringBuilder s, MyResourceSinkComponent sink)
@@ -984,10 +979,9 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            var current = sink.CurrentInputByType(MyResourceDistributorComponent.OxygenId);
-            var max = sink.RequiredInputByType(MyResourceDistributorComponent.OxygenId);
-
-            return s.Append("Input O2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            float current = sink.CurrentInputByType(MyResourceDistributorComponent.OxygenId);
+            float max = sink.RequiredInputByType(MyResourceDistributorComponent.OxygenId);
+            return s.Append("Input O2: ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
         }
 
         public static StringBuilder DetailInfo_OutputOxygen(this StringBuilder s, MyResourceSourceComponent source)
@@ -995,13 +989,12 @@ namespace Digi.BuildInfo.Utilities
             if(source == null)
                 return s;
 
-            var current = source.CurrentOutputByType(MyResourceDistributorComponent.OxygenId);
-            var max = source.MaxOutputByType(MyResourceDistributorComponent.OxygenId);
-
-            return s.Append("Output O2: ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+            float current = source.CurrentOutputByType(MyResourceDistributorComponent.OxygenId);
+            float max = source.MaxOutputByType(MyResourceDistributorComponent.OxygenId);
+            return s.Append("Output O2: ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
         }
 
-        public static StringBuilder DetailInfo_InputGasList(this StringBuilder s, MyResourceSinkComponent sink)
+        public static StringBuilder DetailInfo_InputGasList(this StringBuilder s, MyResourceSinkComponent sink, string linePrefix = "Input ")
         {
             if(sink == null)
                 return s;
@@ -1011,10 +1004,10 @@ namespace Digi.BuildInfo.Utilities
                 if(res == MyResourceDistributorComponent.ElectricityId)
                     continue;
 
-                var current = sink.CurrentInputByType(res);
-                var max = sink.RequiredInputByType(res);
+                float current = sink.CurrentInputByType(res);
+                float max = sink.RequiredInputByType(res);
 
-                s.Append("Input ");
+                s.Append(linePrefix);
 
                 if(res == MyResourceDistributorComponent.HydrogenId)
                     s.Append("H2");
@@ -1023,13 +1016,13 @@ namespace Digi.BuildInfo.Utilities
                 else
                     s.Append(res.SubtypeName);
 
-                s.Append(": ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+                s.Append(": ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
             }
 
             return s;
         }
 
-        public static StringBuilder DetailInfo_OutputGasList(this StringBuilder s, MyResourceSourceComponent source)
+        public static StringBuilder DetailInfo_OutputGasList(this StringBuilder s, MyResourceSourceComponent source, string linePrefix = "Output ")
         {
             if(source == null)
                 return s;
@@ -1042,7 +1035,7 @@ namespace Digi.BuildInfo.Utilities
                 var current = source.CurrentOutputByType(res);
                 var max = source.MaxOutputByType(res);
 
-                s.Append("Output ");
+                s.Append(linePrefix);
 
                 if(res == MyResourceDistributorComponent.HydrogenId)
                     s.Append("H2");
@@ -1051,7 +1044,7 @@ namespace Digi.BuildInfo.Utilities
                 else
                     s.Append(res.SubtypeName);
 
-                s.Append(": ").VolumeFormat(current).Append(" / ").VolumeFormat(max).Append('\n');
+                s.Append(": ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
             }
 
             return s;

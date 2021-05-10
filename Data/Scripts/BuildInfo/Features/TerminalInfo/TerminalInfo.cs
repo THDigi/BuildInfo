@@ -1087,12 +1087,25 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void Format_AirVent(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041:
+            // Vanilla info in 1.198:
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
             //      Room pressure: <status>
 
-            info.DetailInfo_CurrentPowerUsage(Sink);
+            var sink = Sink;
+            info.DetailInfo_CurrentPowerUsage(sink);
+
+            var airVent = (IMyAirVent)block;
+            if(airVent.Depressurize)
+            {
+                info.Append("Depressurizing:\n");
+                info.DetailInfo_OutputGasList(Source, "  ");
+            }
+            else
+            {
+                info.Append("Pressurizing:\n");
+                info.DetailInfo_InputGasList(sink, "  ");
+            }
         }
 
         void Format_Reactor(IMyTerminalBlock block, StringBuilder info)
