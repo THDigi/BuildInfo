@@ -29,9 +29,9 @@ namespace Digi.BuildInfo.Features.Terminal
         public const int RefreshMinTicks = 15; // minimum amount of ticks between refresh calls
         private readonly string[] TickerText = { "––––––", "•–––––", "–•––––", "––•–––", "–––•––", "––––•–", "–––––•" };
 
-        //public List<IMyTerminalBlock> SelectedInTerminal = new List<IMyTerminalBlock>();
-        //private List<IMyTerminalBlock> SelectingList = new List<IMyTerminalBlock>();
-        //private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
+        public List<IMyTerminalBlock> SelectedInTerminal = new List<IMyTerminalBlock>();
+        private List<IMyTerminalBlock> SelectingList = new List<IMyTerminalBlock>();
+        private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
         private IMyTerminalBlock LastSelected;
 
         public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -203,28 +203,27 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             if(LastSelected != null)
             {
-                // commented parts are for detecting multiple selections, a bit buggy... see HACK from below and who knows what other issues it has.
-                //SelectedInTerminal.Clear();
+                SelectedInTerminal.Clear();
 
                 if(LastSelected != viewedInTerminal)
                 {
                     ViewedBlockChanged(viewedInTerminal, LastSelected);
 
-                    //if(viewedInTerminal != null)
-                    //{
-                    //    // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
-                    //    var orig = viewedInTerminal.ShowInToolbarConfig;
-                    //    viewedInTerminal.ShowInToolbarConfig = !orig;
-                    //    viewedInTerminal.ShowInToolbarConfig = orig;
-                    //}
+                    if(viewedInTerminal != null)
+                    {
+                        // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
+                        var orig = viewedInTerminal.ShowInToolbarConfig;
+                        viewedInTerminal.ShowInToolbarConfig = !orig;
+                        viewedInTerminal.ShowInToolbarConfig = orig;
+                    }
                 }
 
                 LastSelected = null;
 
-                //MyUtils.Swap(ref SelectingList, ref SelectedInTerminal); // swap references, faster than adding to the 2nd list and clearing
+                MyUtils.Swap(ref SelectingList, ref SelectedInTerminal); // swap references, faster than adding to the 2nd list and clearing
 
-                //SelectingList.Clear();
-                //SelectingSet.Clear();
+                SelectingList.Clear();
+                SelectingSet.Clear();
             }
 
             if(viewedInTerminal == null)
@@ -234,7 +233,7 @@ namespace Digi.BuildInfo.Features.Terminal
             // NOTE: IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
             if(viewedInTerminal.MarkedForClose || (cursorCheckAfterTick <= Main.Tick && !MyAPIGateway.Gui.IsCursorVisible))
             {
-                //SelectedInTerminal.Clear();
+                SelectedInTerminal.Clear();
                 ViewedBlockChanged(viewedInTerminal, null);
                 return;
             }
@@ -252,10 +251,10 @@ namespace Digi.BuildInfo.Features.Terminal
         // Used to know the currently viewed block in the terminal.
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
-            //if(SelectingSet.Add(block))
-            //{
-            //    SelectingList.Add(block);
-            //}
+            if(SelectingSet.Add(block))
+            {
+                SelectingList.Add(block);
+            }
 
             LastSelected = block;
 
