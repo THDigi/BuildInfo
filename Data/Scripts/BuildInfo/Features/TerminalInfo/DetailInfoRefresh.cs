@@ -104,6 +104,9 @@ namespace Digi.BuildInfo.Features.Terminal
             || MyAPIGateway.Gui.ActiveGamePlayScreen != "MyGuiScreenTerminal")
                 return;
 
+            if(Main.TerminalInfo.SelectedInTerminal.Count > 1)
+                return;
+
             if(Background == null)
             {
                 Background = new HudAPIv2.BillBoardHUDMessage(ButtonBg, Vector2D.Zero, Color.White, HideHud: false, Shadowing: false, Blend: BlendType);
