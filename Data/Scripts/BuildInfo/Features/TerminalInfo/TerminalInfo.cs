@@ -34,6 +34,8 @@ namespace Digi.BuildInfo.Features.Terminal
         private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
         private IMyTerminalBlock LastSelected;
 
+        public event Action SelectedChanged;
+
         public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         private IMyTerminalBlock viewedInTerminal;
@@ -224,6 +226,8 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 SelectingList.Clear();
                 SelectingSet.Clear();
+
+                SelectedChanged?.Invoke();
             }
 
             if(viewedInTerminal == null)
@@ -513,14 +517,13 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            info.DetailInfo_Type(block);
-
             if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
             }
 
+            info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
 
             var weaponBlockDef = block?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
@@ -590,7 +593,6 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void Format_WeaponCore(IMyTerminalBlock block, StringBuilder info)
         {
-            info.DetailInfo_InputPower(Sink);
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)
