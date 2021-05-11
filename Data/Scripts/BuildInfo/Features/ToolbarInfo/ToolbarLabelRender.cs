@@ -50,7 +50,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         ToolbarStyle StyleMode;
         float Scale;
 
-        bool MustBeVisible;
+        public bool MustBeVisible;
         bool? WereVisible;
 
         bool InToolbarConfig;
