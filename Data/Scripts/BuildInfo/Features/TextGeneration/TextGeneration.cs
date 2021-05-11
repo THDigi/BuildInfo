@@ -3130,6 +3130,39 @@ namespace Digi.BuildInfo.Features
             PowerRequired(lcd.RequiredPowerInput, lcd.ResourceSinkGroup);
 
             Screen(def, lcd);
+
+            // TODO: deal with ScreenAreas rotation stuff once the OB is no longer prohibited...
+            //
+            //m_maxRenderDistanceSquared = BlockDefinition.MaxScreenRenderDistance * BlockDefinition.MaxScreenRenderDistance;
+            //MyObjectBuilder_TextPanel myObjectBuilder_TextPanel = (MyObjectBuilder_TextPanel)objectBuilder;
+            //if(BlockDefinition.ScreenAreas != null && BlockDefinition.ScreenAreas.Count == 4)
+            //{
+            //    for(int i = 0; i < BlockDefinition.ScreenAreas.Count; i++)
+            //    {
+            //        MyTextPanelComponent myTextPanelComponent = new MyTextPanelComponent(i, this, BlockDefinition.ScreenAreas[i].Name, BlockDefinition.ScreenAreas[i].DisplayName, BlockDefinition.ScreenAreas[i].TextureResolution, BlockDefinition.ScreenAreas[i].ScreenWidth, BlockDefinition.ScreenAreas[i].ScreenHeight);
+            //        base.SyncType.Append(myTextPanelComponent);
+            //        myTextPanelComponent.Init(myObjectBuilder_TextPanel?.Sprites ?? default(MySerializableSpriteCollection), null, SendAddImagesToSelectionRequest, SendRemoveSelectedImageRequest, ChangeTextRequest, UpdateSpriteCollection);
+            //        m_panelComponents.Add(myTextPanelComponent);
+            //    }
+            //    m_activePanelComponent = m_panelComponents[0];
+            //    base.SyncType.Append(m_panelComponents);
+            //    if(myObjectBuilder_TextPanel.SelectedRotationIndex.HasValue && myObjectBuilder_TextPanel.SelectedRotationIndex.Value > 0 && myObjectBuilder_TextPanel.SelectedRotationIndex.Value < m_panelComponents.Count)
+            //    {
+            //        m_selectedRotationIndex = (m_newSelectedRotationIndex = myObjectBuilder_TextPanel.SelectedRotationIndex.Value);
+            //        m_activePanelComponent = m_panelComponents[m_selectedRotationIndex];
+            //    }
+            //}
+            //else
+            //{
+            //    m_activePanelComponent = new MyTextPanelComponent(0, this, BlockDefinition.PanelMaterialName, BlockDefinition.PanelMaterialName, BlockDefinition.TextureResolution, BlockDefinition.ScreenWidth, BlockDefinition.ScreenHeight);
+            //    base.SyncType.Append(m_activePanelComponent);
+            //    m_activePanelComponent.Init(myObjectBuilder_TextPanel?.Sprites ?? default(MySerializableSpriteCollection), null, SendAddImagesToSelectionRequest, SendRemoveSelectedImageRequest, ChangeTextRequest, UpdateSpriteCollection);
+            //    m_panelComponents.Add(m_activePanelComponent);
+            //}
+            //if(myObjectBuilder_TextPanel != null)
+            //{
+            //    InitTextPanelComponent(m_activePanelComponent, myObjectBuilder_TextPanel);
+            //}
         }
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
@@ -3910,7 +3943,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             var res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
-            AddLine().Label("Screen resolution").Append(res.X).Append("x").Append(res.Y);
+            AddLine().Label("Screen resolution").Append(res.X).Append("x").Append(res.Y).Separator().Label("View distance").DistanceFormat(lcd.MaxScreenRenderDistance);
             AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
         }
 
@@ -3921,7 +3954,7 @@ namespace Digi.BuildInfo.Features
 
             AddLine().Label("Screens").Append(surfaces.Count);
 
-            // TODO: design screens info better
+            // TODO: design screens info better, once the OB is no longer prohibited
             //if(surfaces.Count == 1)
             //{
             //    var surface = surfaces[0];
