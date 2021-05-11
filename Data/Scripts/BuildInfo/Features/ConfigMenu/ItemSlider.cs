@@ -24,7 +24,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Action<float> setter = null,
             Action<float> sliding = null,
             Action<float> cancelled = null,
-            Func<float, string> format = null) : base(category)
+            Func<float, string> format = null,
+            string dialogTitle = null) : base(category)
         {
             Title = title;
             Min = min;
@@ -39,12 +40,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             if(Format == null)
             {
-                var formatString = "N" + rounding.ToString();
+                string formatString = "N" + rounding.ToString();
                 Format = (val) => val.ToString(formatString);
             }
 
             float initialPercent = ValueToPercent(Min, Max, Getter());
-            Item = new MenuSliderInput(string.Empty, category, initialPercent, title, OnSubmit, OnSlide, OnCancel);
+            Item = new MenuSliderInput(string.Empty, category, initialPercent, (dialogTitle != null ? title + "\n" + dialogTitle : title), OnSubmit, OnSlide, OnCancel);
 
             UpdateTitle();
         }
