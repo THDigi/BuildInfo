@@ -792,10 +792,14 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void Format_Seats(IMyTerminalBlock block, StringBuilder info)
         {
-            var cockpit = (IMyCockpit)block;
-
             // Vanilla info in 1.189.041:
             //     [Main ship cockpit: <name>]
+
+            var cockpit = (IMyCockpit)block;
+
+            var def = (MyCockpitDefinition)cockpit.SlimBlock.BlockDefinition;
+            if(Hardcoded.Cockpit_PowerRequired(def, cockpit.IsFunctional) > 0)
+                info.DetailInfo_CurrentPowerUsage(Sink);
 
             if(cockpit.OxygenCapacity > 0)
                 info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(')').NewLine();
@@ -817,10 +821,7 @@ namespace Digi.BuildInfo.Features.Terminal
         #region ShipController extra stuff
         void Suffix_ShipController(IMyTerminalBlock block, StringBuilder info)
         {
-            if(Inv != null)
-            {
-                info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
-            }
+            info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
 
             var blockToolbarData = Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(block.EntityId, null);
             if(blockToolbarData != null && blockToolbarData.ParseErrors.Count > 0)
@@ -836,7 +837,6 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             var def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
-
             if(def.EnableShipControl)
             {
                 var internalController = (MyShipController)block;

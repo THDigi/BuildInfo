@@ -158,6 +158,11 @@ namespace Digi.BuildInfo.VanillaData
         // from MyCockpit
         public const float Cockpit_InventoryVolume = 1f; // Vector3.One.Volume;
 
+        public static float Cockpit_PowerRequired(MyCockpitDefinition def, bool isFunctional = true)
+        {
+            return (isFunctional && def.EnableShipControl ? 0.003f : 0f);
+        }
+
         // from MyOreDetector
         public const float OreDetector_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_ORE_DETECTOR;
 
