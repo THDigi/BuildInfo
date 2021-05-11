@@ -55,28 +55,13 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)} <color=gray>[default:{DefaultValue.X.ToString(format)},{DefaultValue.Y.ToString(format)}]";
         }
 
-        private void OnSubmit(Vector2D pos)
+        void OnSelect()
         {
             try
             {
-                pos = new Vector2D(Math.Round(pos.X, Rounding), Math.Round(pos.Y, Rounding));
-                pos = Vector2D.Clamp(pos, Min, Max);
-                Setter?.Invoke(pos);
-                Item.Origin = pos;
-                UpdateTitle();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
-        private void OnSelect()
-        {
-            try
-            {
+                UpdateValue();
                 Selected?.Invoke(Item.Origin);
-                UpdateTitle();
+                Update();
             }
             catch(Exception e)
             {
@@ -84,14 +69,13 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void OnMove(Vector2D pos)
+        void OnMove(Vector2D pos)
         {
             try
             {
                 pos = new Vector2D(Math.Round(pos.X, Rounding), Math.Round(pos.Y, Rounding));
                 pos = Vector2D.Clamp(pos, Min, Max);
                 Moving?.Invoke(pos);
-                UpdateTitle();
             }
             catch(Exception e)
             {
@@ -99,12 +83,27 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void OnCancel()
+        void OnSubmit(Vector2D pos)
+        {
+            try
+            {
+                pos = new Vector2D(Math.Round(pos.X, Rounding), Math.Round(pos.Y, Rounding));
+                pos = Vector2D.Clamp(pos, Min, Max);
+                Setter?.Invoke(pos);
+                Update();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        void OnCancel()
         {
             try
             {
                 Cancelled?.Invoke(Item.Origin);
-                UpdateTitle();
+                Update();
             }
             catch(Exception e)
             {
