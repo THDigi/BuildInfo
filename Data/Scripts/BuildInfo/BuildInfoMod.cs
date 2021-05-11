@@ -52,6 +52,7 @@ namespace Digi.BuildInfo
         public ReloadTracking ReloadTracking;
         public TerminalInfo TerminalInfo;
         public DetailInfoRefresh DetailInfoRefresh;
+        public MultiDetailInfo MultiDetailInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
         public TurretHUD TurretHUD;
@@ -112,6 +113,7 @@ namespace Digi.BuildInfo
             ReloadTracking = new ReloadTracking(this);
             TerminalInfo = new TerminalInfo(this);
             DetailInfoRefresh = new DetailInfoRefresh(this);
+            MultiDetailInfo = new MultiDetailInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
             PlacementDistance = new PlacementDistance(this);

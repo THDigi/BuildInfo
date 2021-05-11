@@ -177,8 +177,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalRefreshInfoPosition),
                 () => ShowNotify("'Refresh Detail Info' button can always be moved in terminal by holding RMB on it.", 7000));
             SimplePositionReset(Category_Terminal, Main.Config.TerminalRefreshInfoPosition);
-
             SimpleSlider(Category_Terminal, null, Main.Config.TerminalRefreshInfoScale);
+
+            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
+                () => ShowNotify("Multi-select info is always movable with RMB on the vertical line.", 7000));
+            SimplePositionReset(Category_Terminal, Main.Config.TerminalMultiDetailedInfoPosition);
+
             AddSpacer(Category_Terminal);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);

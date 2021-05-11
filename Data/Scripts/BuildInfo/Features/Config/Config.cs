@@ -70,6 +70,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting TerminalDetailInfoHeader;
         public Vector2DSetting TerminalRefreshInfoPosition;
         public FloatSetting TerminalRefreshInfoScale;
+        public Vector2DSetting TerminalMultiDetailedInfoPosition;
 
         public BoolSetting TextAPICustomStyling;
         public Vector2DSetting TextAPIScreenPosition;
@@ -363,6 +364,10 @@ namespace Digi.BuildInfo.Features.Config
 
             TerminalRefreshInfoScale = new FloatSetting(Handler, "Terminal: Refresh Info Button Scale", 1f, 0.01f, 3f,
                 "Scale offset for the Refresh Info button in the terminal.");
+
+            TerminalMultiDetailedInfoPosition = new Vector2DSetting(Handler, "Terminal: Multi-Detailed-Info Position", new Vector2D(0.253, -0.2), -Vector2D.One, Vector2D.One,
+                "This mod shows info on multiple blocks selected in terminal, this setting changes its position on the GUI.",
+                "NOTE: Can also be moved ingame by aiming at the vertical line and dragging with RMB.");
 
             ItemTooltipAdditions = new BoolSetting(Handler, "Terminal: Item Tooltip Additions", true,
                 "Adds magazine capacity, what blocks craft the item, where the item can be used, mod that added the item and whether it requires large conveyor.",
