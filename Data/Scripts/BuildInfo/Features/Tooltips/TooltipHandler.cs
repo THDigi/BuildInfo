@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
@@ -204,6 +205,20 @@ namespace Digi.BuildInfo.Features.Tooltips
                 string msg = $"Finished generating {Tooltips.Count.ToString()} tooltips in {timer.Elapsed.TotalMilliseconds.ToString("0.##########")} ms";
                 MyLog.Default.WriteLine($"BuildInfo mod: {msg}");
                 Log.Info(msg);
+            }
+        }
+
+        public static void AppendModInfo(StringBuilder s, MyDefinitionBase def, int modNameMaxLen = 64)
+        {
+            if(!def.Context.IsBaseGame)
+            {
+                s.Append("\nMod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen);
+
+                var modItem = def.Context.GetModItem();
+                if(modItem.Name != null && modItem.PublishedFileId > 0)
+                {
+                    s.Append("\nModId: ").Append(modItem.PublishedServiceName).Append(':').Append(modItem.PublishedFileId);
+                }
             }
         }
     }

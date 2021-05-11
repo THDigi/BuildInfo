@@ -27,6 +27,17 @@ namespace Digi.BuildInfo.Utilities
             return 0;
         }
 
+        public static MyObjectBuilder_Checkpoint.ModItem GetModItem(this MyModContext modContext)
+        {
+            foreach(var mod in MyAPIGateway.Session.Mods)
+            {
+                if(mod.Name == modContext.ModId)
+                    return mod;
+            }
+
+            return new MyObjectBuilder_Checkpoint.ModItem(null, 0, null, null);
+        }
+
         public static bool ContainsIgnoreCase(this string str, string find)
         {
             return str.IndexOf(find, StringComparison.InvariantCultureIgnoreCase) > -1;

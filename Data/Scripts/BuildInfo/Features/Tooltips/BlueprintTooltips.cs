@@ -129,14 +129,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
-            if(!bpBaseDef.Context.IsBaseGame)
-            {
-                s.Append("\nMod: ").AppendMaxLength(bpBaseDef.Context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
-
-                var workshopId = bpBaseDef.Context.GetWorkshopID();
-                if(workshopId > 0)
-                    s.Append(" (id: ").Append(workshopId).Append(")");
-            }
+            TooltipHandler.AppendModInfo(s, bpBaseDef);
 
             s.TrimEndWhitespace();
         }

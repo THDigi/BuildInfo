@@ -1425,10 +1425,9 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
-                    var id = context.GetWorkshopID();
-
-                    if(id > 0)
-                        AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("Workshop ID: ").Append(id);
+                    var modItem = context.GetModItem();
+                    if(modItem.Name != null && modItem.PublishedFileId > 0)
+                        AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("ID: ").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId);
                 }
                 else
                 {

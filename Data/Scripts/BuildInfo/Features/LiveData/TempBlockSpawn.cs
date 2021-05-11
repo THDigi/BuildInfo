@@ -110,7 +110,8 @@ namespace Digi.BuildInfo.Features.LiveData
                 var block = grid?.GetCubeBlock(Vector3I.Zero);
                 if(block == null)
                 {
-                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"} (mod workshopId={BlockDef.Context.GetWorkshopID().ToString()})");
+                    var mod = BlockDef.Context.GetModItem();
+                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"}; mod={mod.FriendlyName} ({mod.PublishedServiceName}:{mod.PublishedFileId.ToString()})");
                     return;
                 }
 

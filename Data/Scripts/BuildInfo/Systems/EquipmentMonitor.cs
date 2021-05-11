@@ -480,6 +480,8 @@ namespace Digi.BuildInfo.Systems
                 recheckOBAtTick = tick + 10;
             }
 
+            // FIXME: components can't detect selected tool if world starts with a selected tool (it is set, just components aren't aware)
+
             var selectedToolId = ShipControllerOB.SelectedGunId;
             if(selectedToolId.HasValue)
             {

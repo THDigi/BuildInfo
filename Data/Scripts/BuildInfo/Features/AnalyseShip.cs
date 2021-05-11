@@ -262,7 +262,7 @@ namespace Digi.BuildInfo.Features
 
                     sb.Append("- ");
                     if(modId.Item1 != 0)
-                        sb.Append("(").Append(modId.Item1.ToString()).Append(") ");
+                        sb.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
                     sb.Append(modId.Item3).NewLine();
 
                     sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
@@ -287,7 +287,7 @@ namespace Digi.BuildInfo.Features
 
                     sb.Append("- ");
                     if(modId.Item1 != 0)
-                        sb.Append("(").Append(modId.Item1.ToString()).Append(") ");
+                        sb.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
                     sb.Append(modId.Item3).NewLine();
 
                     sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? "." : "s.").NewLine();

@@ -194,14 +194,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 TooltipCrafting(s, physDef);
             }
 
-            if(!physDef.Context.IsBaseGame)
-            {
-                s.Append("\nMod: ").AppendMaxLength(physDef.Context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
-
-                var workshopId = physDef.Context.GetWorkshopID();
-                if(workshopId > 0)
-                    s.Append(" (id: ").Append(workshopId).Append(")");
-            }
+            TooltipHandler.AppendModInfo(s, physDef);
 
             if(Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
             {
@@ -338,7 +331,8 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out weaponDef))
                 return;
 
-            // TODO some weapon stats? they depend on the ammo tho...
+            // TODO: check if it's weaponcore weapon and avoid some potentially misleading stats.
+            // TODO: some weapon stats? they depend on the ammo tho...
 
             if(weaponDef.AmmoMagazinesId != null && weaponDef.AmmoMagazinesId.Length > 0)
             {

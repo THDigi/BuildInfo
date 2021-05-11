@@ -819,10 +819,9 @@ namespace Digi.BuildInfo.Utilities
             var tg = BuildInfoMod.Instance.TextGeneration;
             s.Color(tg.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
 
-            var id = context.GetWorkshopID();
-
-            if(id > 0)
-                s.Color(tg.COLOR_UNIMPORTANT).Append(" (id: ").Append(id).Append(")");
+            var modItem = context.GetModItem();
+            if(modItem.Name != null && modItem.PublishedFileId > 0)
+                s.Color(tg.COLOR_UNIMPORTANT).Append(" (").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId).Append(")");
 
             return s;
         }
