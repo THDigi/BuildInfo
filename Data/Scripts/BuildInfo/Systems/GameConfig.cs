@@ -23,6 +23,7 @@ namespace Digi.BuildInfo.Systems
 
         public HudState HudState;
         public float HudBackgroundOpacity;
+        public float UIBackgroundOpacity;
         public double AspectRatio;
         public bool RotationHints;
 
@@ -71,9 +72,11 @@ namespace Digi.BuildInfo.Systems
         {
             UpdateHudState();
 
-            HudBackgroundOpacity = MyAPIGateway.Session.Config?.HUDBkOpacity ?? 0.6f;
+            var cfg = MyAPIGateway.Session.Config;
 
-            RotationHints = MyAPIGateway.Session.Config?.RotationHints ?? true;
+            HudBackgroundOpacity = cfg?.HUDBkOpacity ?? 0.6f;
+            UIBackgroundOpacity = cfg?.UIBkOpacity ?? 0.8f;
+            RotationHints = cfg?.RotationHints ?? true;
 
             var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
