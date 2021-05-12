@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.Terminal
             const float scale = 1f;
 
             float iconHeight = 0.55f;
-            float iconWidth = (float)(0.0025f / Main.GameConfig.AspectRatio);
+            float iconWidth = (float)(0.0025 / Main.GameConfig.AspectRatio);
 
             Text.Scale = scale * 1.3f;
             Text.Origin = pos;
@@ -221,7 +221,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 IMyTerminalBlock block = selected[blockIdx];
 
                 IMyThrust thrust = block as IMyThrust; // HACK: thrusters have shared sinks and not reliable to get
-                MyGyro gyro = (thrust == null ? block as MyGyro : null); // HACK: gyro has no sink 
+                IMyGyro gyro = (thrust == null ? block as IMyGyro : null); // HACK: gyro has no sink 
 
                 if(thrust != null)
                 {
@@ -242,13 +242,16 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
                 else if(gyro != null)
                 {
-                    MyStringHash key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
-                    ResInfo resInfo = ResInput.GetValueOrDefault(key);
+                    if(gyro.IsFunctional && gyro.Enabled)
+                    {
+                        MyStringHash key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
+                        ResInfo resInfo = ResInput.GetValueOrDefault(key);
 
-                    resInfo.Total += gyro.RequiredPowerInput;
-                    resInfo.Blocks++;
+                        resInfo.Total += ((MyGyro)gyro).RequiredPowerInput;
+                        resInfo.Blocks++;
 
-                    ResInput[key] = resInfo;
+                        ResInput[key] = resInfo;
+                    }
                 }
                 else
                 {
@@ -298,8 +301,6 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
             }
             #endregion Block compute loop
-
-
 
             foreach(var kv in ResInput)
             {
