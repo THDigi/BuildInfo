@@ -356,7 +356,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // spectator condition is in game code because toolbar up/down is used for going between players.
             // also MUST be after the slot checks to match the vanilla code's behavior.
             //if(!inToolbarConfig && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
-            if(MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
+            if(!Main.GUIMonitor.InAnyDialogBox && MySpectator.Static.SpectatorCameraMovement != MySpectatorCameraMovementEnum.ConstantDelta)
             {
                 if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOOLBAR_UP))
                 {

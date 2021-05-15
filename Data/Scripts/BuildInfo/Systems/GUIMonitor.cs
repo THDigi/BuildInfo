@@ -15,6 +15,11 @@ namespace Digi.BuildInfo.Systems
         public bool InToolbarConfig { get; private set; }
 
         readonly bool Debug = false;
+        /// <summary>
+        /// In any of the small dialog boxes like PB's Run, etc.
+        /// </summary>
+        public bool InAnyDialogBox { get; private set; }
+
 
         public GUIMonitor(BuildInfoMod main) : base(main)
         {
@@ -45,6 +50,10 @@ namespace Digi.BuildInfo.Systems
                     InAnyToolbarGUI = true;
                     InToolbarConfig = (MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder");
                 }
+                else if(name.StartsWith("MyGuiScreenDialog")) // MyGuiScreenDialogText, MyGuiScreenDialogAmount, etc
+                {
+                    InAnyDialogBox = true;
+                }
 
                 if(Debug)
                     DebugLog.PrintHUD(this, $"GUI Added: {name}");
@@ -65,6 +74,10 @@ namespace Digi.BuildInfo.Systems
                 {
                     InAnyToolbarGUI = false;
                     InToolbarConfig = false;
+                }
+                else if(name.StartsWith("MyGuiScreenDialog"))
+                {
+                    InAnyDialogBox = false;
                 }
 
                 if(Debug)
