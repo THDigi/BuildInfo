@@ -78,6 +78,8 @@ namespace Digi.BuildInfo
         public DebugEvents DebugEvents;
         public DebugLog DebugLog;
 
+        public static readonly bool IsDevMod = (Log.WorkshopId == 0 && Instance.Session.ModContext.ModId == "BuildInfo.dev");
+
         public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session, MyUpdateOrder.AfterSimulation)
         {
             // Utils

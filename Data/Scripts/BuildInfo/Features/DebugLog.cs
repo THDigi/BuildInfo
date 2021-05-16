@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -24,14 +23,14 @@ namespace Digi.BuildInfo.Features
         struct LogMsg
         {
             public readonly int ExpiresAtTick;
-            public readonly Type Type;
+            public readonly string CallerName;
             public readonly string Message;
 
-            public LogMsg(Type type, string message)
+            public LogMsg(string callerName, string message)
             {
                 // NOTE: not designed for this to be configurable per-message!
                 ExpiresAtTick = BuildInfoMod.Instance.Tick + (Constants.TICKS_PER_SECOND * MessageExpireSeconds);
-                Type = type;
+                CallerName = callerName;
                 Message = message;
             }
         }
@@ -42,7 +41,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            if(Log.WorkshopId == 0) // only local mod
+            if(BuildInfoMod.IsDevMod)
             {
                 Main.TextAPI.Detected += TextAPIDetected;
             }
@@ -58,7 +57,7 @@ namespace Digi.BuildInfo.Features
 
         public static void ClearHUD(object caller)
         {
-            if(Log.WorkshopId != 0)
+            if(!BuildInfoMod.IsDevMod)
                 return;
 
             var debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
@@ -66,9 +65,9 @@ namespace Digi.BuildInfo.Features
             PrintHUD(caller, "(log cleared)");
         }
 
-        public static void PrintHUD(object caller, string message)
+        public static void PrintHUD(object caller, string message, bool log = false)
         {
-            if(Log.WorkshopId != 0)
+            if(!BuildInfoMod.IsDevMod)
                 return;
 
             var debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
@@ -78,9 +77,14 @@ namespace Digi.BuildInfo.Features
             if(debugMsgs.Count > MaxMessages)
                 debugMsgs.Dequeue();
 
-            debugMsgs.Enqueue(new LogMsg(caller?.GetType(), message));
+            string callerName = caller?.GetType()?.Name ?? "[unspecified]";
+
+            debugMsgs.Enqueue(new LogMsg(callerName, message));
 
             BuildInfoMod.Instance.DebugLog.UpdateText();
+
+            if(log)
+                Log.Info($"{callerName}: {message}");
         }
 
         void TextAPIDetected()
@@ -100,7 +104,7 @@ namespace Digi.BuildInfo.Features
 
             foreach(var line in LogList)
             {
-                sb.Color(new Color(55, 200, 155)).Append(line.Type?.Name).Append(": ").Color(Color.White).Append(line.Message).Append('\n');
+                sb.Color(new Color(55, 200, 155)).Append(line.CallerName).Append(": ").Color(Color.White).Append(line.Message).Append('\n');
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (LogList.Count > 0));

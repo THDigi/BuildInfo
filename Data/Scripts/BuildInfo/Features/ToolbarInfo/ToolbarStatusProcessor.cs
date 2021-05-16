@@ -349,7 +349,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             {
                                 sb.Append(' ', CustomTagPrefixSpaces).Append(CustomStatusTag).Append('\n', TotalLines - lines);
                             }
-                            else if(Log.WorkshopId == 0) // only for local mod
+                            else if(BuildInfoMod.IsDevMod)
                             {
                                 Log.Error($"{(item.GroupName == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
                             }

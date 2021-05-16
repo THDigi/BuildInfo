@@ -28,8 +28,7 @@ namespace Digi.BuildInfo
 
         public override void BeforeStart()
         {
-            // ensuring this component doesn't run unless it's local and offline
-            if(MyAPIGateway.Session.OnlineMode != MyOnlineModeEnum.OFFLINE || Log.WorkshopId != 0)
+            if(!BuildInfoMod.IsDevMod)
                 return;
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;

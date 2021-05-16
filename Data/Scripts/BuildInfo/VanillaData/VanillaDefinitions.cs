@@ -34,8 +34,8 @@ namespace Digi.BuildInfo.VanillaData
 
         void CheckVanillaHardcoded()
         {
-            if(Log.WorkshopId != 0)
-                return; // only run this for local mod
+            if(!BuildInfoMod.IsDevMod)
+                return;
 
             bool needsRegen = false;
 

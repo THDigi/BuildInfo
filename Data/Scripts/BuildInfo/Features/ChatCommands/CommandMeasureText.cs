@@ -11,7 +11,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            if(Log.WorkshopId == 0)
+            if(BuildInfoMod.IsDevMod)
             {
                 var sb = new StringBuilder(128);
 
@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void PrintHelp(StringBuilder sb)
         {
-            if(Log.WorkshopId == 0)
+            if(BuildInfoMod.IsDevMod)
             {
                 sb.Append(MainAlias).Append(" <text>").NewLine();
                 sb.Append("  Measures given text with TextAPI.").NewLine();
