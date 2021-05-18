@@ -89,7 +89,7 @@ namespace Digi.BuildInfo.Features
 
         void TextAPIDetected()
         {
-            Text = new HudAPIv2.HUDMessage(new StringBuilder(128 * MaxMessages), new Vector2D(-0.98, 0.98), Scale: TextScale, Shadowing: true, Blend: BlendType.PostPP);
+            Text = new HudAPIv2.HUDMessage(new StringBuilder(128 * MaxMessages), new Vector2D(-0.98, 0.98), Scale: TextScale, HideHud: false, Shadowing: true, Blend: BlendType.PostPP);
             Text.Visible = false;
             UpdateText();
         }
