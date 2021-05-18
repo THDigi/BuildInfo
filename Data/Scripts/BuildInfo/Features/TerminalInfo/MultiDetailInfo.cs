@@ -5,10 +5,13 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -29,6 +32,65 @@ namespace Digi.BuildInfo.Features.Terminal
 
         HudAPIv2.HUDMessage Hint;
 
+        readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
+        {
+            [typeof(MyObjectBuilder_MotorSuspension)] = "Suspension",
+            [typeof(MyObjectBuilder_MotorStator)] = "Rotor Base",
+            [typeof(MyObjectBuilder_MotorAdvancedStator)] = "Adv. Rotor Base",
+            [typeof(MyObjectBuilder_MotorRotor)] = "Rotor Top",
+            [typeof(MyObjectBuilder_MotorAdvancedRotor)] = "Adv. Rotor Top",
+            [typeof(MyObjectBuilder_ExtendedPistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonTop)] = "Piston Top",
+
+            [typeof(MyObjectBuilder_OxygenGenerator)] = "Gas Generator",
+            [typeof(MyObjectBuilder_OxygenTank)] = "Gas Tank",
+            [typeof(MyObjectBuilder_HydrogenEngine)] = "Hydrogen Engine",
+
+            [typeof(MyObjectBuilder_LargeGatlingTurret)] = "Gatling Turret",
+            [typeof(MyObjectBuilder_LargeMissileTurret)] = "Missile Turret",
+            [typeof(MyObjectBuilder_InteriorTurret)] = "Interior Turret",
+            [typeof(MyObjectBuilder_SmallGatlingGun)] = "Gatling Gun",
+            [typeof(MyObjectBuilder_SmallMissileLauncher)] = "Missile Launcher",
+            [typeof(MyObjectBuilder_SmallMissileLauncherReload)] = "Reloadable Missile Launcher",
+
+            [typeof(MyObjectBuilder_ShipConnector)] = "Connector",
+            [typeof(MyObjectBuilder_MergeBlock)] = "Merge",
+            [typeof(MyObjectBuilder_ExhaustBlock)] = "Exhaust",
+            [typeof(MyObjectBuilder_CameraBlock)] = "Camera",
+            [typeof(MyObjectBuilder_BatteryBlock)] = "Battery",
+
+            [typeof(MyObjectBuilder_SensorBlock)] = "Sensor",
+            [typeof(MyObjectBuilder_ReflectorLight)] = "Spotlight",
+            [typeof(MyObjectBuilder_InteriorLight)] = "Interior Light",
+
+            [typeof(MyObjectBuilder_OreDetector)] = "Ore Detector",
+            [typeof(MyObjectBuilder_RadioAntenna)] = "Radio Antenna",
+            [typeof(MyObjectBuilder_LaserAntenna)] = "Laser Antenna",
+            [typeof(MyObjectBuilder_LandingGear)] = "Landing Gear",
+            [typeof(MyObjectBuilder_JumpDrive)] = "Jump Drive",
+            [typeof(MyObjectBuilder_GravityGenerator)] = "Gravity Generator",
+            [typeof(MyObjectBuilder_GravityGeneratorSphere)] = "Spherical Gravity Generator",
+            [typeof(MyObjectBuilder_CryoChamber)] = "Cryo Chamber",
+            [typeof(MyObjectBuilder_ConveyorSorter)] = "Conveyor Sorter",
+            [typeof(MyObjectBuilder_ControlPanel)] = "Control Panel",
+            [typeof(MyObjectBuilder_CargoContainer)] = "Cargo Container",
+            [typeof(MyObjectBuilder_ButtonPanel)] = "Button Panel",
+            [typeof(MyObjectBuilder_AirVent)] = "Air Vent",
+            [typeof(MyObjectBuilder_AirtightSlideDoor)] = "Slide Door",
+            [typeof(MyObjectBuilder_AirtightHangarDoor)] = "Hangar Door",
+            [typeof(MyObjectBuilder_AdvancedDoor)] = "Advanced Door",
+
+            [typeof(MyObjectBuilder_ShipGrinder)] = "Grinder",
+            [typeof(MyObjectBuilder_ShipWelder)] = "Welder",
+
+            [typeof(MyObjectBuilder_TextPanel)] = "LCD",
+            [typeof(MyObjectBuilder_LCDPanelsBlock)] = "Decorative with LCD",
+        };
+
+        delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId);
+        readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>();
+
         public MultiDetailInfo(BuildInfoMod main) : base(main)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
@@ -38,6 +100,8 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
             Main.TerminalInfo.SelectedChanged += TerminalSelectedChanged;
+
+            SetupPerTypeFormatters();
         }
 
         public override void UnregisterComponent()
@@ -101,7 +165,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 var sharedSB = new StringBuilder(512);
 
-                Text = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: true, Blend: BlendType);
+                Text = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
                 Text.Visible = false;
 
                 TextShadow = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
@@ -201,11 +265,8 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             List<IMyTerminalBlock> selected = Main.TerminalInfo.SelectedInTerminal;
             int totalBlocks = selected.Count;
-
-            // NOTE: the same SB is used by both the text and the shadow, therefore it can't use colors.
-            StringBuilder info = Text.Message.Clear();
-
-            info.Append("--- Selected ").Append(totalBlocks).Append(" blocks ---\n");
+            if(totalBlocks <= 0)
+                return;
 
             ResInput.Clear();
             ResOutput.Clear();
@@ -215,10 +276,20 @@ namespace Digi.BuildInfo.Features.Terminal
             float inventoryMass = 0f;
             int inventoryBlocks = 0;
 
+            IMyTerminalBlock firstBlock = selected[0];
+            bool allSameId = true;
+            bool allSameType = true;
+
             #region Block compute loop
             for(int blockIdx = 0; blockIdx < selected.Count; blockIdx++)
             {
                 IMyTerminalBlock block = selected[blockIdx];
+
+                if(allSameType && block.BlockDefinition.TypeId != firstBlock.BlockDefinition.TypeId)
+                    allSameType = false;
+
+                if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
+                    allSameId = false;
 
                 IMyThrust thrust = block as IMyThrust; // HACK: thrusters have shared sinks and not reliable to get
                 IMyGyro gyro = (thrust == null ? block as IMyGyro : null); // HACK: gyro has no sink 
@@ -302,6 +373,31 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             #endregion Block compute loop
 
+            // NOTE: the same SB is used by both the text and the shadow, therefore it can't use colors.
+            StringBuilder info = Text.Message.Clear();
+
+            info.Append("--- ").Append(totalBlocks).Append("x ");
+
+            if(allSameId)
+            {
+                info.AppendMaxLength(firstBlock.DefinitionDisplayNameText, 40);
+            }
+            else if(allSameType)
+            {
+                string friendlyName = TypeToFriendlyName.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null);
+                if(friendlyName != null)
+                    info.Append(friendlyName);
+                else
+                    info.IdTypeFormat(firstBlock.BlockDefinition.TypeId);
+                info.Append(" blocks");
+            }
+            else
+            {
+                info.Append("mixed blocks");
+            }
+
+            info.Append(" ---\n");
+
             foreach(var kv in ResInput)
             {
                 ResInfo resInfo = kv.Value;
@@ -344,6 +440,35 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append(inventoryBlocks).Append("x Inventories: ").VolumeFormat(inventoryCurrentM3 * 1000).Append(" / ").VolumeFormat(inventoryMaxM3 * 1000).Append(" (").MassFormat(inventoryMass).Append(")\n");
             }
+
+            if(allSameType)
+            {
+                info.Append('\n');
+                MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameId);
+            }
         }
+
+        #region Per-type formatters
+        void SetupPerTypeFormatters()
+        {
+            MultiInfoPerType.Add(typeof(MyObjectBuilder_BatteryBlock), Info_Battery);
+        }
+
+        void Info_Battery(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId)
+        {
+            float currentStorage = 0f;
+            float maxStorage = 0f;
+
+            for(int blockIdx = 0; blockIdx < blocks.Count; blockIdx++)
+            {
+                IMyBatteryBlock block = (IMyBatteryBlock)blocks[blockIdx];
+
+                currentStorage += block.CurrentStoredPower;
+                maxStorage += block.MaxStoredPower;
+            }
+
+            info.Append("Stored Power: ").PowerStorageFormat(currentStorage).Append(" (max: ").PowerStorageFormat(maxStorage).Append(")\n");
+        }
+        #endregion
     }
 }

@@ -1,11 +1,12 @@
 ﻿using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
-using Digi.BuildInfo.Features.ConfigMenu;
+using Digi.BuildInfo.Features.Terminal;
 using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Features.Tooltips;
 using Digi.BuildInfo.Systems;
@@ -13,7 +14,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using VRage.Game.Components;
-using Digi.BuildInfo.Features.Terminal;
 
 namespace Digi.BuildInfo
 {
