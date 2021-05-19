@@ -3,13 +3,117 @@
   <GameVersion>1.198.27</GameVersion>
   <Blocks>
     <InfoEntry>
+      <Id>MyObjectBuilder_Projector/LargeProjector</Id>
+      <DetailInfo>Type: Projector
+Max Required Input: 200 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_SensorBlock/SmallBlockSensor</Id>
+      <DetailInfo>Type: Sensor
+Max Required Input: 3.00 kW
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
       <Id>MyObjectBuilder_TimerBlock/TimerBlockLarge</Id>
       <DetailInfo>Time to trigger: 00:00:00</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_TextPanel/SmallTextPanel</Id>
-      <DetailInfo>Type: Text panel
+      <Id>MyObjectBuilder_Beacon/LargeBlockBeacon</Id>
+      <DetailInfo>Type: Beacon
+Current Input: 0 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_RadioAntenna/LargeBlockRadioAntenna</Id>
+      <DetailInfo>Type: Antenna
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_RemoteControl/LargeBlockRemoteControl</Id>
+      <DetailInfo>Type: Remote Control
+Max Required Input: 10.00 kW
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_LaserAntenna/LargeBlockLaserAntenna</Id>
+      <DetailInfo>Type: Laser Antenna
+Current Input: 0 W
+Idle</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Gyro/LargeBlockGyro</Id>
+      <DetailInfo>Type: Gyroscope
+Max Required Input: 10.00 kW</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_SafeZoneBlock/SafeZoneBlock</Id>
+      <DetailInfo>Type: Safe Zone
+Current Input: 0 W
+Safe Zone: Disabled
+Zone Chips:0</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_TextPanel/TransparentLCDLarge</Id>
+      <DetailInfo>Type: Transparent LCD
 Max Required Input: 20 W
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_BatteryBlock/LargeBlockBatteryBlock</Id>
+      <DetailInfo>Type: Battery
+Max Output: 12.00 MW
+Max Required Input: 12.00 MW
+Max Stored Power: 3.00 MWh
+Current Input: 0 W
+Current Output: 1 W
+Stored power: 900.00 kWh
+Fully depleted in: 108 years</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Reactor/SmallBlockSmallGenerator</Id>
+      <DetailInfo>Type: Small Reactor
+Max Output: 500.00 kW
+Current Output: 0 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_HydrogenEngine/LargeHydrogenEngine</Id>
+      <DetailInfo>Type: Hydrogen Engine
+Max Output: 5.00 MW
+Current Output: 0 W
+Filled: 0.0% (0L/100000L)</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_WindTurbine/LargeBlockWindTurbine</Id>
+      <DetailInfo>Type: Wind Turbine
+Max Output: 0 W
+Current Output: 0 W
+Wind Clearance: None</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_SolarPanel/LargeBlockSolarPanel</Id>
+      <DetailInfo>Type: Solar Panel
+Max Output: 12.34 kW
+Current Output: 1 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_GravityGeneratorSphere/</Id>
+      <DetailInfo>Type: Spherical Gravity Generator
+Max Required Input: 1.60 MW
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_GravityGenerator/</Id>
+      <DetailInfo>Type: Gravity Generator
+Max Required Input: 567.13 kW
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_VirtualMass/VirtualMassLarge</Id>
+      <DetailInfo>Type: Artificial Mass
+Current Mass: 0 kg
+Required Input: 600.00 kW
 Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -25,9 +129,101 @@ Max Required Input: 100.00 kW
 Room pressure: Not pressurized</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_Projector/LargeBlockConsole</Id>
-      <DetailInfo>Type: Console Block
-Max Required Input: 200 W</DetailInfo>
+      <Id>MyObjectBuilder_ConveyorSorter/LargeBlockConveyorSorter</Id>
+      <DetailInfo>Type: Conveyor Sorter
+Current Input: 0 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_PistonBase/LargePistonBase</Id>
+      <DetailInfo>Attached
+Current position: 0.0m</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_ExtendedPistonBase/LargePistonBase</Id>
+      <DetailInfo>Attached
+Current position: 0.0m</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Refinery/LargeRefinery</Id>
+      <DetailInfo>Type: Refinery
+Max Required Input: 560.00 kW
+Required Input: 1.00 kW
+
+Productivity: 100%
+Effectiveness: 100%
+Power Efficiency: 100%
+
+Used upgrade module slots: 0 / 8
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_OxygenGenerator/</Id>
+      <DetailInfo>Type: O2/H2 Generator
+Max Required Input: 500.00 kW</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Assembler/LargeAssembler</Id>
+      <DetailInfo>Type: Assembler
+Max Required Input: 560.00 kW
+Required Input: 1.00 kW
+
+Productivity: 100%
+Power Efficiency: 100%
+
+Used upgrade module slots: 0 / 8
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_OxygenFarm/LargeBlockOxygenFarm</Id>
+      <DetailInfo>Type: Oxygen Farm
+Max Required Input: 20.00 kW
+Oxygen Output: 0.00 L/min</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_SurvivalKit/SurvivalKitLarge</Id>
+      <DetailInfo>Type: Survival kit
+Max Required Input: 200.00 kW
+Required Input: 15.00 kW
+
+Productivity: 100%
+Power Efficiency: 100%
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Thrust/SmallBlockSmallThrustSciFi</Id>
+      <DetailInfo>Type: Sci-Fi Ion Thruster
+Max Required Input: 200.00 kW
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Drill/SmallBlockDrill</Id>
+      <DetailInfo>Type: Drill
+Max Required Input: 2.00 kW
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_JumpDrive/LargeJumpDrive</Id>
+      <DetailInfo>Type: Jump Drive
+Max Required Input: 32.00 MW
+Max Stored Power: 3.00 MWh
+Current Input: 0 W
+Stored power: 0 Wh
+Fully recharged in: 0 sec
+Max jump distance:0 km</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_CameraBlock/SmallCameraBlock</Id>
+      <DetailInfo>Type: Camera
+Max Required Input: 30 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_LandingGear/LargeBlockLandingGear</Id>
+      <DetailInfo>Type: Landing Gear
+Lock State: Unlocked</DetailInfo>
     </InfoEntry>
   </Blocks>
 </VanillaDetailInfo>
