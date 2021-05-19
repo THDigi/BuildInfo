@@ -21,6 +21,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
         public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
         public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
+        //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
 
         private readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
         private readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -31,6 +32,7 @@ namespace Digi.BuildInfo.Utilities
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
             FillDefs();
+            //ComputeMountpointProperties();
         }
 
         public override void RegisterComponent()
@@ -66,6 +68,67 @@ namespace Digi.BuildInfo.Utilities
                 }
             }
         }
+
+#if false
+        void ComputeMountpointProperties()
+        {
+            for(int b1idx = 0; b1idx < BlockDefs.Count; b1idx++)
+            {
+                MyCubeBlockDefinition b1 = BlockDefs[b1idx];
+
+                if(b1.MountPoints == null || b1.MountPoints.Length == 0)
+                    continue;
+
+                var b1dict = MountRestrictions.GetOrAdd(b1);
+
+                for(int b2idx = 0; b2idx < BlockDefs.Count; b2idx++)
+                {
+                    MyCubeBlockDefinition b2 = BlockDefs[b2idx];
+                    if(b1 == b2)
+                        continue; // blocks can't exclude from mounting themselves
+
+                    if(b1.CubeSize != b2.CubeSize)
+                        continue;
+
+                    if(b2.MountPoints == null || b2.MountPoints.Length == 0)
+                        continue;
+
+                    for(int b1mIndex = 0; b1mIndex < b1.MountPoints.Length; b1mIndex++)
+                    {
+                        MyCubeBlockDefinition.MountPoint b1m = b1.MountPoints[b1mIndex];
+                        if(!b1m.Enabled || (b1m.ExclusionMask == 0 && b1m.PropertiesMask == 0))
+                            continue;
+
+                        foreach(var b2m in b2.MountPoints)
+                        {
+                            if(!b2m.Enabled || (b2m.ExclusionMask == 0 && b2m.PropertiesMask == 0))
+                                continue;
+
+                            if(!((b1m.ExclusionMask & b2m.PropertiesMask) == 0 && (b1m.PropertiesMask & b2m.ExclusionMask) == 0))
+                            {
+                                string name = b2.DisplayNameText;
+                                var list = b1dict.GetOrAdd(b1mIndex);
+                                if(!list.Contains(name))
+                                    list.Add(name);
+                            }
+                        }
+                    }
+                }
+
+                if(b1dict.Count > 0)
+                {
+                    foreach(var list in b1dict.Values)
+                    {
+                        list.Sort(StringComparer.OrdinalIgnoreCase);
+                    }
+                }
+                else
+                {
+                    MountRestrictions.Remove(b1);
+                }
+            }
+        }
+#endif
 
         public static HashSet<MyObjectBuilderType> GetObTypeSet()
         {

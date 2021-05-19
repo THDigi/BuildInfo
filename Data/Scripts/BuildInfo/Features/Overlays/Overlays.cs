@@ -68,13 +68,17 @@ namespace Digi.BuildInfo.Features.Overlays
         public readonly MyStringId OVERLAY_MUZZLEFLASH_MATERIAL = MyStringId.GetOrCompute("MuzzleFlashMachineGunFront");
 
         private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.SDR;
-        private const double MOUNTPOINT_THICKNESS = 0.05;
-        private const float MOUNTPOINT_ALPHA = 0.65f;
+        private const double MOUNTPOINT_THICKNESS = 0.075;
+        private const float MOUNTPOINT_ALPHA = 0.5f;
         private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_MASKED_COLOR = new Color(255, 55, 0) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_DEFAULT_COLOR = new Color(0, 55, 255) * MOUNTPOINT_ALPHA;
+        private Color MOUNTPOINT_AIMED_COLOR = Color.White;
         private Color AIRTIGHT_COLOR = new Color(0, 155, 255) * MOUNTPOINT_ALPHA;
         private Color AIRTIGHT_TOGGLE_COLOR = new Color(0, 255, 155) * MOUNTPOINT_ALPHA;
+        private Color AIRTIGHT_UNAVAILABLE_COLOR = Color.Gray * MOUNTPOINT_ALPHA;
+
+        private const float SEETHROUGH_COLOR_MUL = 0.4f;
 
         private const double LABEL_TEXT_SCALE = 0.24;
         private readonly Vector2D LABEL_OFFSET = new Vector2D(0.1, 0.1);
@@ -293,6 +297,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             // TODO: show overlays on both held block and lock-on overlay at same time.
 
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+
             CellSize = (aimedBlock != null ? aimedBlock.CubeGrid.GridSize : Main.EquipmentMonitor.BlockGridSize);
             CellSizeHalf = CellSize / 2;
 
@@ -426,7 +432,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
 #endif
 
-                if(Main.Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
+                // draw ModelOffset indicator
+                if(Main.Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0 && CanDrawLabel())
                 {
                     const float OffsetLineThickness = 0.005f;
                     const float OffsetPointThickness = 0.05f;
@@ -435,8 +442,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     var start = drawMatrix.Translation;
                     var dir = Vector3D.TransformNormal(def.ModelOffset, drawMatrix);
 
-                    var cm = MyAPIGateway.Session.Camera.WorldMatrix;
-                    var offset = cm.Right * LABEL_SHADOW_OFFSET.X + cm.Up * LABEL_SHADOW_OFFSET.Y;
+                    var offset = camMatrix.Right * LABEL_SHADOW_OFFSET.X + camMatrix.Up * LABEL_SHADOW_OFFSET.Y;
 
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, dir, 1f, OffsetLineThickness, LABEL_SHADOW_BLEND_TYPE);
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, dir, 1f, OffsetLineThickness, blendType: OVERLAY_BLEND_TYPE);
@@ -447,7 +453,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, start + dir, OffsetPointThickness, 0, blendType: OVERLAY_BLEND_TYPE);
                 }
 
-                #region Draw mount points
+                // draw orientation indicators
                 if(Main.TextAPI.IsEnabled)
                 {
                     DrawMountPointAxisText(def, ref drawMatrix);
@@ -461,27 +467,41 @@ namespace Digi.BuildInfo.Features.Overlays
                     def.MountPoints = mp;
                 }
 
+                #region Draw mount points and airtightness sides
                 BlockFunctionalForPressure = true;
 
                 // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
                 if(Main.EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                 {
                     var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
-
                     if(aimedBlock.BuildLevelRatio < progressModel.BuildRatioUpperBound)
                         BlockFunctionalForPressure = false;
                 }
 
-                // draw custom mount point styling
                 {
                     var center = def.Center;
                     var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
                     var mountPoints = def.GetBuildProgressModelMountPoints(1f);
                     bool drawLabel = CanDrawLabel();
 
-                    if(DrawOverlay == 1 && BlockFunctionalForPressure)
+                    if(DrawOverlay == 1) // airtightness view
                     {
-                        // TODO: have a note saying that blocks that aren't fully built are always not airtight? (blockFunctionalForPressure)
+                        Color color = AIRTIGHT_COLOR;
+
+                        if(!BlockFunctionalForPressure)
+                        {
+                            if(drawLabel)
+                            {
+                                DynamicLabelSB.Clear().Append("Unfinished blocks are never airtight");
+
+                                Vector3D labelPos = drawMatrix.Translation;
+                                Vector3D labelDir = drawMatrix.Up;
+
+                                DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.OrangeRed, lineHeight: 0f, lineThick: 0f, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: true);
+                            }
+
+                            color = AIRTIGHT_UNAVAILABLE_COLOR;
+                        }
 
                         if(def.IsAirTight.HasValue)
                         {
@@ -489,7 +509,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             {
                                 var halfExtents = def.Size * CellSizeHalf;
                                 var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
-                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
                             }
                         }
                         else if(mountPoints != null)
@@ -521,13 +541,30 @@ namespace Digi.BuildInfo.Features.Overlays
                                     var scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
                                     MatrixD.Rescale(ref m, ref scale);
 
-                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref AIRTIGHT_COLOR, ref AIRTIGHT_COLOR, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref color, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+
+                                    // TODO: use see-through for airtightness and mountpoints?
+                                    #region See-through-wall version
+                                    //var closeMatrix = m;
+                                    //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
+                                    ////lineWdith *= depthScale;
+
+                                    //Color colorSeeThrough = color * SEETHROUGH_COLOR_MUL;
+
+                                    //MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorSeeThrough, ref colorSeeThrough, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                    #endregion
                                 }
                             }
                         }
                     }
-                    else if(DrawOverlay == 2 && mountPoints != null)
+                    else if(DrawOverlay == 2 && mountPoints != null) // mountpoints view
                     {
+                        double closestMountDist = double.MaxValue;
+                        MyCubeBlockDefinition.MountPoint? closestMount = null;
+                        int closestMountIndex = 0;
+                        MyOrientedBoundingBoxD closestMountOBB = default(MyOrientedBoundingBoxD);
+                        MatrixD closestMountMatrix = default(MatrixD);
+
                         for(int i = 0; i < mountPoints.Length; i++)
                         {
                             var mountPoint = mountPoints[i];
@@ -549,16 +586,141 @@ namespace Digi.BuildInfo.Features.Overlays
                             m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
                             m.Translation = obb.Center;
 
-                            Color colorFace = MOUNTPOINT_COLOR;
-                            if(mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0)
-                                colorFace = MOUNTPOINT_MASKED_COLOR;
+                            bool hasProperties = mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0;
+                            Color colorFace = hasProperties ? MOUNTPOINT_MASKED_COLOR : MOUNTPOINT_COLOR;
+                            Color colorDefault = MOUNTPOINT_DEFAULT_COLOR;
 
-                            // TODO: a way to visually tell which mounts with mask can be used on which?
+                            float lineWdith = 0.005f;
 
                             MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            if(mountPoint.Default)
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref colorDefault, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+
+                            #region See-through-wall version
+                            //var closeMatrix = m;
+                            //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
+                            //lineWdith *= depthScale;
+
+                            //colorFace *= SEETHROUGH_COLOR_MUL;
+                            //colorDefault *= SEETHROUGH_COLOR_MUL;
+
+                            //MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            //if(mountPoint.Default)
+                            //    MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorDefault, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                            #endregion
+
+                            if(drawLabel)
+                            {
+                                RayD aimLine = new RayD(camMatrix.Translation, camMatrix.Forward);
+                                double? distance = obb.Intersects(ref aimLine);
+                                if(distance.HasValue && distance.Value < closestMountDist)
+                                {
+                                    closestMountDist = distance.Value;
+                                    closestMount = mountPoint;
+                                    closestMountIndex = i;
+                                    closestMountOBB = obb;
+                                    closestMountMatrix = m;
+                                }
+                            }
+                        }
+
+                        if(closestMount.HasValue)
+                        {
+                            const float Scale = 0.7f;
+                            var labelPos = closestMountOBB.Center;
+                            var labelDir = Vector3.Forward;
+                            var mountPoint = closestMount.Value;
+
+                            // selection wire box over the mountpoint
+                            MatrixD.Rescale(ref closestMountMatrix, 1.01);
+                            float depthScale = ConvertToAlwaysOnTop(ref closestMountMatrix);
+                            float lineWdith = 0.005f * depthScale;
+                            MySimpleObjectDraw.DrawTransparentBox(ref closestMountMatrix, ref unitBB, ref MOUNTPOINT_AIMED_COLOR, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+
+                            DynamicLabelSB.Clear();
+                            if(mountPoint.PropertiesMask != 0 || mountPoint.ExclusionMask != 0)
+                                DynamicLabelSB.Append("Mount point");
+                            else
+                                DynamicLabelSB.Append("Standard mount point");
+
+                            if(mountPoint.PropertiesMask != 0)
+                            {
+                                DynamicLabelSB.Append("\nProperties: ");
+
+                                for(int i = 0; i < Hardcoded.MountPointMaskNames.Length; i++)
+                                {
+                                    if((mountPoint.PropertiesMask & Hardcoded.MountPointMaskValues[i]) != 0)
+                                    {
+                                        DynamicLabelSB.Append(Hardcoded.MountPointMaskNames[i]).Append(", ");
+                                    }
+                                }
+
+                                DynamicLabelSB.Length -= 2; // remove last comma and space
+                            }
+
+                            if(mountPoint.ExclusionMask != 0)
+                            {
+                                DynamicLabelSB.Append("\nExcludes: ");
+
+                                for(int i = 0; i < Hardcoded.MountPointMaskNames.Length; i++)
+                                {
+                                    if((mountPoint.ExclusionMask & Hardcoded.MountPointMaskValues[i]) != 0)
+                                    {
+                                        DynamicLabelSB.Append(Hardcoded.MountPointMaskNames[i]).Append(", ");
+                                    }
+                                }
+
+                                DynamicLabelSB.Length -= 2; // remove last comma and space
+                            }
 
                             if(mountPoint.Default)
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref MOUNTPOINT_DEFAULT_COLOR, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: 0.005f, lineMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                                DynamicLabelSB.Append("\nUsed by auto-rotate");
+
+#if false
+                            if((mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0) && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                            {
+                                //DynamicLabelSB.Append("\nProperties: ").Append(Convert.ToString(mountPoint.PropertiesMask, 2).PadLeft(8, '0'));
+                                //DynamicLabelSB.Append("\nExclusion: ").Append(Convert.ToString(mountPoint.ExclusionMask, 2).PadLeft(8, '0'));
+
+                                var mountIdxLookup = Main.Caches.MountRestrictions.GetValueOrDefault(def, null);
+                                if(mountIdxLookup != null)
+                                {
+                                    var noMountBlocks = mountIdxLookup.GetValueOrDefault(closestMountIndex, null);
+                                    if(noMountBlocks != null)
+                                    {
+                                        DynamicLabelSB.Append("\nBlocks that can't mount to this:");
+
+                                        string lastPrefix = null;
+
+                                        foreach(var displayName in noMountBlocks)
+                                        {
+                                            if(lastPrefix != null && displayName.StartsWith(lastPrefix, StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                DynamicLabelSB.Append(", ");
+                                            }
+                                            else
+                                            {
+                                                DynamicLabelSB.Append("\n - ");
+                                            }
+
+                                            lastPrefix = displayName.Substring(0, Math.Min(displayName.Length, 5));
+
+                                            DynamicLabelSB.Append(displayName);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DynamicLabelSB.Append("\nNo known blocks that can't mount to this.");
+                                    }
+                                }
+                                else
+                                {
+                                    DynamicLabelSB.Append("\nNo known blocks that can't mount to this.");
+                                }
+                            }
+#endif
+
+                            DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: Scale, lineHeight: 0, lineThick: 0, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: true);
                         }
                     }
                 }
@@ -1650,6 +1812,9 @@ namespace Digi.BuildInfo.Features.Overlays
             OverlayLabelsFlags settingFlag = OverlayLabelsFlags.Other, HudAPIv2.TextOrientation align = HudAPIv2.TextOrientation.ltr,
             bool autoAlign = true, bool alwaysOnTop = false)
         {
+            if(!Main.TextAPI.IsEnabled)
+                return;
+
             var cm = MyAPIGateway.Session.Camera.WorldMatrix;
 
             if(alwaysOnTop)

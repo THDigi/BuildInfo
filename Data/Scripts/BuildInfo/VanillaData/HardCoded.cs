@@ -431,5 +431,21 @@ namespace Digi.BuildInfo.VanillaData
 
             return Math.Min(torque, (mass > 0f ? (mass * mass) : torque));
         }
+
+        // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
+        public enum MountPointMask : byte
+        {
+            Extruding = (1 << 0),
+            Thin = (1 << 1),
+            CustomBit3 = (1 << 2),
+            CustomBit4 = (1 << 3),
+            CustomBit5 = (1 << 4),
+            CustomBit6 = (1 << 5),
+            CustomBit7 = (1 << 6),
+            CustomBit8 = (1 << 7),
+        }
+
+        public static readonly string[] MountPointMaskNames = Enum.GetNames(typeof(MountPointMask));
+        public static readonly byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
     }
 }
