@@ -10,7 +10,6 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
-using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
@@ -165,6 +164,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 Labels.Scale = Scale;
                 LabelsLine2.Scale = Scale;
                 UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
+                UpdateTextOpacity(1f);
             }
 
             WereVisible = null;
@@ -211,50 +211,86 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
         }
 
+        float TextOpacity = 1f;
+        bool TextOpacityNeedsReset = false;
+
+        void UpdateTextOpacity(float opacity)
+        {
+            Color whiteFade = Color.White * opacity;
+
+            Labels.InitialColor = whiteFade;
+            LabelsLine2.InitialColor = whiteFade;
+
+            Color blackFade = Color.Black * opacity;
+
+            Shadows.InitialColor = blackFade;
+            ShadowsLine2.InitialColor = blackFade;
+
+            TextOpacity = opacity;
+
+            // TODO: fade text+shadow more efficiently once textAPI has a transparency setting for text
+            if(opacity < 1)
+            {
+                if(Main.Tick % 6 == 0)
+                {
+                    TextOpacityNeedsReset = true;
+                    UpdateRender();
+                }
+            }
+            else
+            {
+                if(TextOpacityNeedsReset)
+                {
+                    TextOpacityNeedsReset = false;
+                    UpdateRender();
+                }
+            }
+        }
+
         void TextAPIDetected()
         {
+            const int SBCapacity = 512;
+
             Backgrounds = new List<HudAPIv2.BillBoardHUDMessage>(6);
 
             // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
-            Background.Visible = false;
+            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
             Backgrounds.Add(Background);
 
-            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
-            BackgroundTop.Visible = false;
+            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
             Backgrounds.Add(BackgroundTop);
 
-            CornerTopRight = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
-            CornerTopRight.Visible = false;
+            CornerTopRight = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
             CornerTopRight.Rotation = MathHelper.Pi;
             Backgrounds.Add(CornerTopRight);
 
-            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
-            BackgroundBottom.Visible = false;
+            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
             Backgrounds.Add(BackgroundBottom);
 
-            CornerBotomLeft = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White, HideHud: true, Blend: TextBlendType);
-            CornerBotomLeft.Visible = false;
+            CornerBotomLeft = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
             Backgrounds.Add(CornerBotomLeft);
 
             foreach(var bg in Backgrounds)
             {
+                bg.Visible = false;
+                bg.Blend = TextBlendType;
+                bg.Options = HudAPIv2.Options.HideHud;
                 bg.Width = 0f;
                 bg.Height = 0f;
             }
 
-            Shadows = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            Shadows = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             Shadows.InitialColor = Color.Black;
             Shadows.Visible = false;
 
-            ShadowsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            ShadowsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             ShadowsLine2.InitialColor = Color.Black;
             ShadowsLine2.Visible = false;
 
-            Labels = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            Labels = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             Labels.Visible = false;
 
-            LabelsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(512), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
+            LabelsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
             LabelsLine2.Visible = false;
 
             WereVisible = null;
@@ -371,93 +407,105 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
         }
 
+        bool ComputeVisible()
+        {
+            if(!Main.TextAPI.IsEnabled || LabelsMode == ToolbarLabelsMode.Off)
+                return false;
+
+            var shipController = MyAPIGateway.Session.ControlledObject as MyShipController;
+            if(shipController == null || shipController.BuildingMode)
+                return false;
+
+            if(!ToolbarMonitor.EnableGamepadSupport && MustBeVisible && MyAPIGateway.Input.IsJoystickLastUsed)
+                return false;
+
+            bool newInToolbarConfig = Main.GUIMonitor.InToolbarConfig;
+            if(newInToolbarConfig != InToolbarConfig)
+            {
+                InToolbarConfig = newInToolbarConfig;
+                WereVisible = null; // refresh as it could be switching styles
+            }
+
+            if(MyAPIGateway.Gui.IsCursorVisible && !InToolbarConfig)
+                return false;
+
+            if(InToolbarConfig)
+                return true;
+
+            // below is for HUD version only
+
+            bool emptyToolbar = (Main.ToolbarMonitor.HighestIndexUsed < 0);
+            bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.ShowOnPress || LabelsMode == ToolbarLabelsMode.HudHints);
+
+            if(modeForFadeOut && emptyToolbar) // don't fade for empty toolbars
+            {
+                ShowUntilTick = 0;
+            }
+
+            int tick = Main.Tick;
+
+            // if holding show toolbar bind in the right mode while just entering cockpit, skip the fade-out.
+            if(modeForFadeOut && ShowUntilTick > tick && Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE))
+            {
+                ShowUntilTick = 0;
+
+                if(BeenFaded)
+                {
+                    BeenFaded = false;
+                    UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
+                    UpdateTextOpacity(1f);
+                }
+            }
+
+            // show and fade out when entering cockpit
+            if(modeForFadeOut && ShowUntilTick >= tick && (LabelsMode != ToolbarLabelsMode.HudHints || Main.GameConfig.HudState != HudState.HINTS))
+            {
+                float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
+                float fadeTicks = (Constants.TICKS_PER_SECOND * 1.5f);
+
+                float bgOpacity = Main.GameConfig.HudBackgroundOpacity;
+                float textOpacity = 1f;
+                if(ShowUntilTick <= tick + fadeTicks)
+                {
+                    float lerpAmount = (ShowUntilTick - tick) / fadeTicks;
+                    bgOpacity = MathHelper.Lerp(0, bgOpacity, lerpAmount);
+                    textOpacity = lerpAmount;
+                }
+
+                UpdateBgOpacity(bgOpacity);
+                UpdateTextOpacity(textOpacity);
+                BeenFaded = true;
+
+                return true;
+            }
+
+            if(BeenFaded) // reset colors after fade
+            {
+                BeenFaded = false;
+                UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
+                UpdateTextOpacity(1f);
+            }
+
+            bool showPressed = Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE);
+
+            if(emptyToolbar && !showPressed) // don't show for empty toolbars
+                return false;
+
+            if(LabelsMode == ToolbarLabelsMode.HudHints && !(showPressed || Main.GameConfig.HudState == HudState.HINTS))
+                return false;
+
+            if(LabelsMode == ToolbarLabelsMode.ShowOnPress && !showPressed)
+                return false;
+
+            return true;
+        }
+
         public override void UpdateAfterSim(int tick)
         {
             if(Backgrounds == null)
                 return;
 
-            MustBeVisible = (Main.TextAPI.IsEnabled && LabelsMode != ToolbarLabelsMode.Off && MyAPIGateway.SpectatorTools.GetMode() == MyCameraMode.None);
-
-            if(MustBeVisible)
-            {
-                var shipController = MyAPIGateway.Session.ControlledObject as MyShipController;
-                if(shipController == null || shipController.BuildingMode)
-                    MustBeVisible = false;
-            }
-
-            if(!ToolbarMonitor.EnableGamepadSupport && MustBeVisible && MyAPIGateway.Input.IsJoystickLastUsed)
-            {
-                MustBeVisible = false;
-            }
-
-            if(MustBeVisible)
-            {
-                bool newInToolbarConfig = Main.GUIMonitor.InToolbarConfig;
-                if(newInToolbarConfig != InToolbarConfig)
-                {
-                    InToolbarConfig = newInToolbarConfig;
-                    WereVisible = null; // refresh as it could be switching styles
-                }
-
-                if(MyAPIGateway.Gui.IsCursorVisible && !InToolbarConfig)
-                    MustBeVisible = false;
-            }
-
-            if(MustBeVisible)
-            {
-                bool modeForFadeOut = (LabelsMode == ToolbarLabelsMode.ShowOnPress || LabelsMode == ToolbarLabelsMode.HudHints);
-
-                if(modeForFadeOut && Main.ToolbarMonitor.HighestIndexUsed < 0)
-                {
-                    // don't show+fade for empty toolbars
-                    ShowUntilTick = 0;
-                }
-
-                // if holding show toolbar bind in the right mode while just entering cockpit, skip the fade-out.
-                if(modeForFadeOut && ShowUntilTick > tick && Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE))
-                {
-                    ShowUntilTick = 0;
-
-                    if(BeenFaded)
-                        UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
-                }
-
-                // show and fade out when entering cockpit
-                if(modeForFadeOut && ShowUntilTick > tick && (LabelsMode != ToolbarLabelsMode.HudHints || Main.GameConfig.HudState != HudState.HINTS))
-                {
-                    MustBeVisible = true;
-
-                    float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
-                    float fadeSection = (showForTicks * 0.5f);
-                    float opacity = Main.GameConfig.HudBackgroundOpacity;
-                    if(ShowUntilTick <= tick + fadeSection)
-                        opacity = MathHelper.Lerp(0, opacity, (ShowUntilTick - tick) / fadeSection);
-
-                    UpdateBgOpacity(opacity);
-                    BeenFaded = true;
-
-                    // TODO: fade text+shadow too
-                }
-                else
-                {
-                    // reset colors after fade
-                    if(BeenFaded)
-                    {
-                        UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
-                        BeenFaded = false;
-                    }
-
-                    if(LabelsMode == ToolbarLabelsMode.HudHints && !(Main.GameConfig.HudState == HudState.HINTS || Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE)))
-                    {
-                        MustBeVisible = false;
-                    }
-
-                    if(LabelsMode == ToolbarLabelsMode.ShowOnPress && !Main.Config.ShowToolbarInfoBind.Value.IsPressed(Input.Devices.ControlContext.VEHICLE))
-                    {
-                        MustBeVisible = false;
-                    }
-                }
-            }
+            MustBeVisible = ComputeVisible();
 
             if(!WasInToolbarConfig.HasValue || InToolbarConfig != WasInToolbarConfig.Value)
             {
@@ -465,6 +513,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 UpdatePosition();
                 UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
+                UpdateTextOpacity(1f);
 
                 // refresh instantly to update names
                 if(MustBeVisible && NamesMode == ToolbarNameMode.InMenuOnly)
@@ -517,10 +566,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateRender()
         {
-            if(Labels == null)
-                return;
-
-            if(!MustBeVisible)
+            if(Labels == null || !MustBeVisible)
                 return;
 
             // avoid re-triggering same tick
@@ -538,6 +584,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             double topLinesWidth = 0;
 
+            float opacity = TextOpacity;
+
             StringBuilder sb = Labels.Message.Clear();
             StringBuilder sb2 = null;
 
@@ -550,7 +598,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
-                sb.Append("<color=255,240,220>Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i><color=gray>(BuildInfo Mod)<reset>\n");
+                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(BuildInfo Mod)<reset>\n");
             }
 
             for(int i = 0; i < slotsPerPage; i++)
@@ -561,7 +609,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 int index = startIndex + i;
                 var item = Main.ToolbarMonitor.Slots[index];
                 if(item.Name == null)
-                    sb.Color(Color.Gray);
+                    sb.ColorA(Color.Gray * opacity);
 
                 if(gamepadHUD)
                     sb.Append(Main.Constants.DPAD_CHARS[i]).Append("  ");
@@ -587,7 +635,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         || (NamesMode == ToolbarNameMode.InMenuOnly && InToolbarConfig))
                         {
                             if(item.GroupName != null)
-                                sb.Color(new Color(155, 220, 255)).Append('*');
+                                sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
 
                             int maxNameLength = (item.PBArgument != null ? MaxBlockNameLengthIfPbArg : MaxBlockNameLength);
                             string blockName = item.GroupName ?? item.Name;
@@ -600,7 +648,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             if(item.GroupName != null)
                                 sb.Append('*'); // .ResetFormatting();
 
-                            sb.Color(Color.Gray).Append(" - ").ResetFormatting();
+                            sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
                         }
 
                         string actionName = item.ActionName;
@@ -612,7 +660,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                         if(item.PBArgument != null)
                         {
-                            sb.Append(": <i>").Color(new Color(55, 200, 155));
+                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity);
 
                             string arg = item.PBArgument;
                             int argLen = arg.Length;
@@ -630,9 +678,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bool isWeaponSlot = (item.SlotOB.Data is MyObjectBuilder_ToolbarItemWeapon);
 
                     if(isWeaponSlot)
-                        sb.Color(new Color(255, 220, 155));
+                        sb.ColorA(new Color(255, 220, 155) * opacity);
                     else
-                        sb.Color(new Color(200, 210, 215));
+                        sb.ColorA(new Color(200, 210, 215) * opacity);
 
                     if(item.SlotOB.Data is MyObjectBuilder_ToolbarItemEmote || item.SlotOB.Data is MyObjectBuilder_ToolbarItemAnimation)
                     {

@@ -274,7 +274,13 @@ namespace Digi.BuildInfo.Utilities
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+            return s;
+        }
 
+        public static StringBuilder ColorA(this StringBuilder s, Color color)
+        {
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append(',').Append(color.A).Append('>');
             return s;
         }
 
