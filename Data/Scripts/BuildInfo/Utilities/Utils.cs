@@ -249,6 +249,15 @@ namespace Digi.BuildInfo.Utilities
             return (int)(damageResistance * 100);
         }
 
+        /// <summary>
+        /// HACK: matching vanilla HUD transparency better
+        /// </summary>
+        public static void FadeColorHUD(ref Color color, float opacity)
+        {
+            color *= opacity * (opacity * 1.075f);
+            color.A = (byte)(opacity * 255);
+        }
+
         // Optimized wireframe draw
         public static void DrawTransparentSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1f, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {

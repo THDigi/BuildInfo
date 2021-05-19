@@ -526,10 +526,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    // HACK: matching vanilla HUD transparency better
-                    float opacity = Main.GameConfig.HudBackgroundOpacity;
-                    color *= opacity * (opacity * 1.075f);
-                    color.A = (byte)(opacity * 255);
+                    Utils.FadeColorHUD(ref color, Main.GameConfig.HudBackgroundOpacity);
                 }
 
                 float edge = BG_EDGE * Main.Config.TextAPIScale.Value;

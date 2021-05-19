@@ -202,11 +202,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(Backgrounds == null)
                 return;
 
-            var color = (colorOverride.HasValue ? colorOverride.Value : BackgroundColor);
-
-            // HACK: matching vanilla HUD transparency better
-            color *= opacity * (opacity * 1.075f);
-            color.A = (byte)(opacity * 255);
+            Color color = (colorOverride.HasValue ? colorOverride.Value : BackgroundColor);
+            Utils.FadeColorHUD(ref color, opacity);
 
             foreach(var bg in Backgrounds)
             {
