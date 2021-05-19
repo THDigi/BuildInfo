@@ -310,7 +310,13 @@ namespace Digi.BuildInfo.VanillaData
 
             float currentPowerUsage = 0;
             if(thrust.IsWorking)
-                currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
+            {
+                // from MyThrusterBlockThrustComponent.RecomputeOverriddenParameters()
+                if(thrustInternal.IsOverridden) // NOTE: missing autopilot check
+                    currentPowerUsage = thrustInternal.ThrustOverride / thrustInternal.ThrustForce.Length() * thrustInternal.MaxPowerConsumption;
+                else
+                    currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
+            }
 
             float maxPowerUsage = thrustInternal.MaxPowerConsumption;
             float gravityLength = BuildInfoMod.Instance.Caches.GetGravityLengthAtGrid(thrust.CubeGrid);
