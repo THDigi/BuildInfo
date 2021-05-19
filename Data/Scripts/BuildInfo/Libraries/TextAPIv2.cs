@@ -906,7 +906,7 @@ namespace Draygo.API
             }
             #endregion
 
-            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = true, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = BlendTypeEnum.SDR)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.BillBoardHUDMessage);
@@ -936,11 +936,9 @@ namespace Draygo.API
                     this.Width = Width;
                     this.Height = Height;
                 }
-
-
             }
 
-            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 uvOffset, Vector2 uvSize, float TextureSize, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = true, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 uvOffset, Vector2 uvSize, float TextureSize, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = BlendTypeEnum.SDR)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.BillBoardHUDMessage);
@@ -974,8 +972,6 @@ namespace Draygo.API
                     this.Width = Width;
                     this.Height = Height;
                 }
-
-
             }
 
             public BillBoardHUDMessage()
