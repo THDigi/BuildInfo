@@ -6,6 +6,8 @@ using ParallelTasks;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
+using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -19,45 +21,52 @@ namespace Digi.BuildInfo.Features.LeakInfo
         public bool Enabled => MyAPIGateway.Session.SessionSettings.EnableOxygenPressurization && MyAPIGateway.Session.SessionSettings.EnableOxygen;
 
         // used in main thread
-        public ThreadStatus Status { get; private set; } // the scan/thread status
-        public IMyAirVent UsedFromVent = null; // the vent used to start the air leak scan from
-        public IMyTerminalControlOnOffSwitch TerminalControl = null; // the air vent button, used to refresh its state manually when clicking it doesn't actually turn to Find state.
-        private IMyAirVent VentInTerminal = null; // used to constantly update the detail info panel of the viewed air vent only
-        private Task task; // the background task
-        private IMyHudNotification notify = null;
-        private int drawTicks = 0; // ticks until the drawn lines expire
-        private bool stopSpawning = false; // used to stop spawning of particles when the first particle reaches the end point and loops back around
-        private int delayParticles = 0; // used to count spawning particles in Draw(), isolated from gamelogic (which is affected by pause)
-        private readonly List<Particle> particles = new List<Particle>();
+        public InfoStatus Status { get; private set; } // the scan/thread status
+        public IMyAirVent UsedFromVent { get; private set; } // the vent used to start the air leak scan from
+        public IMyTerminalControlOnOffSwitch TerminalControl; // the air vent button, used to refresh its state manually when clicking it doesn't actually turn to Find state.
+        IMyAirVent VentInTerminal = null; // used to constantly update the detail info panel of the viewed air vent only
+        Task Task;
+        IMyHudNotification Notify = null;
+        int DrawUntilTick;
+        bool StopSpawning = false; // used to stop spawning of particles when the first particle reaches the end point and loops back around
+        int DelayParticles = 0; // used to count spawning particles in Draw(), isolated from gamelogic (which is affected by pause)
+        readonly List<Particle> Particles = new List<Particle>();
+        MyConcurrentPool<Particle> ParticlePool = new MyConcurrentPool<Particle>(expectedAllocations: 0);
+        ParticleData CurrentParticleData = null;
+        int ReleaseMemoryAt = 0; // for memory releasing
 
         // used in background thread
-        private Vector3I startPosition;
-        private Breadcrumb crumb = null;
-        private readonly MinHeap openList = new MinHeap();
-        private readonly HashSet<MoveId> scanned = new HashSet<MoveId>(new MoveIdEqualityComparer());
+        Vector3I StartPosition;
+        BreadcrumbHeap.Crumb Crumb = null;
+        readonly BreadcrumbHeap Crumbs = new BreadcrumbHeap();
+        readonly HashSet<Vector4I> Scanned = new HashSet<Vector4I>(Vector4I.Comparer); // Vector3I position + byte direction
 
-        // shared between main and background thread, should probably not be accessed if thread is running
-        private IMyCubeGrid selectedGrid = null;
-        private List<LineI> lines = new List<LineI>();
+        // shared between main and background thread but not at the same time.
+        IMyCubeGrid SelectedGrid = null;
+        readonly List<MyTuple<Vector3I, Vector3I>> DrawLines = new List<MyTuple<Vector3I, Vector3I>>();
 
         // used in both threads, but I've learned this is safe to assign in main and read in the background thread
-        private bool cancelTask = false;
+        bool CancelTask = false;
 
-        // constants
-        public enum ThreadStatus { IDLE, RUNNING, DRAW }
-        public const int MIN_DRAW_SECONDS = 30; // cap for the dynamically calculated particle lifetime
-        public const int MAX_DRAW_SECONDS = 300;
-        public const int DRAW_FADE_OUT_TICKS = 60 * 3; // ticks before the end to start fading out the particles alpha
-        public const float DRAW_TRANSPARENCY = 1f; // starting particle alpha
-        public const float DRAW_POINT_SIZE = 0.15f; // the start and end point's size
-        public const double DRAW_DEPTH = 0.01; // camera distance for overlay particles
-        public const float DRAW_DEPTH_F = 0.01f; // float version of the above value
-        public readonly Color COLOR_START_OVERLAY = new Color(0, 255, 0); // color of the starting point sprite
-        public readonly Color COLOR_START_WORLD = new Color(0, 155, 0);
-        public readonly Color COLOR_END_OVERLAY = new Color(255, 0, 0); // color of the ending point sprite
-        public readonly Color COLOR_END_WORLD = new Color(155, 0, 0);
-        public readonly MyStringId MATERIAL_PARTICLE = MyStringId.GetOrCompute("BuildInfo_LeakInfo_Particle");
-        private readonly ParticleData[] particleDataGridSize = new ParticleData[]
+        public enum InfoStatus { None, Computing, Drawing }
+
+        public const int DrawMinSeconds = 30; // cap for the dynamically calculated particle lifetime
+        public const int DrawMaxSeconds = 300;
+        public const int DrawFadeOutTicks = Constants.TICKS_PER_SECOND * 3; // fade out particles over this many ticks before they vanish
+
+        public readonly MyStringId ParticleMaterial = MyStringId.GetOrCompute("BuildInfo_LeakInfo_Particle");
+        public const float EndPointSize = 0.15f;
+        public readonly Color StartPointColorOverlay = new Color(0, 255, 0);
+        public readonly Color StartPointColorWorld = new Color(0, 155, 0);
+        public readonly Color EndPointColorOverlay = new Color(255, 0, 0);
+        public readonly Color EndPointColorWorld = new Color(155, 0, 0);
+
+        public const double DrawDepth = 0.01; // for see-through-walls
+        public const float DrawDepthF = (float)DrawDepth;
+
+        public const int ReleaseMemoryAfterTicks = Constants.TICKS_PER_SECOND * 60 * 5;
+
+        readonly ParticleData[] ParticleDataGridSize = new ParticleData[]
         {
             new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
             new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
@@ -75,217 +84,11 @@ namespace Digi.BuildInfo.Features.LeakInfo
         public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= CustomControlGetter;
-            ClearStatus();
-        }
 
-        public override void UpdateAfterSim(int tick)
-        {
-            if(Status == ThreadStatus.DRAW) // if the path to air leak is shown then decrease the countdown timer or clear it directly if the grid suddenly vanishes.
-            {
-                if(--drawTicks <= 0)
-                {
-                    ClearStatus();
-                }
-            }
-        }
-
-        void SetStatus(ThreadStatus status)
-        {
-            bool different = (Status != status);
-
-            Status = status;
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (status == ThreadStatus.DRAW));
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (status == ThreadStatus.DRAW));
-
-            if(different && VentInTerminal != null)
-            {
-                VentInTerminal.RefreshCustomInfo();
-
-                // HACK: force refresh
-                bool orig = VentInTerminal.ShowInToolbarConfig;
-                VentInTerminal.ShowInToolbarConfig = !orig;
-                VentInTerminal.ShowInToolbarConfig = orig;
-            }
-        }
-
-        /// <summary>
-        /// Clears the lines, various status data and gracefully stops the processing thread if running.
-        /// </summary>
-        public void ClearStatus()
-        {
-            if(Status == ThreadStatus.RUNNING) // gracefully cancel the task by telling it to stop doing stuff and then wait for it to finish so we can clear its data.
-            {
-                cancelTask = true;
-                task.Wait();
-            }
-
-            if(selectedGrid != null)
-                selectedGrid.OnMarkForClose -= SelectedGridMarkedForClose;
-
-            SetStatus(ThreadStatus.IDLE);
-
-            lines.Clear();
-            particles.Clear();
-            stopSpawning = false;
-            drawTicks = 0;
-            crumb = null;
-            selectedGrid = null;
-            UsedFromVent = null;
-        }
-
-        public void StartThread(IMyAirVent block, Vector3I startPosition)
-        {
-            ClearStatus();
-
-            if(!Enabled)
+            if(!Main.ComponentsRegistered)
                 return;
 
-            UsedFromVent = block;
-            selectedGrid = block.CubeGrid;
-            selectedGrid.OnMarkForClose += SelectedGridMarkedForClose;
-            this.startPosition = startPosition;
-
-            task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
-
-            SetStatus(ThreadStatus.RUNNING);
-
-            NotifyHUD("Computing path...", 1000 * 60 * 60, FontsHandler.SkyBlueSh);
-        }
-
-        void SelectedGridMarkedForClose(IMyEntity ent)
-        {
-            ent.OnMarkForClose -= SelectedGridMarkedForClose;
             ClearStatus();
-        }
-
-        #region Pathfinding
-        /// <summary>
-        /// <para>A* Pathfinding - Credit for the original code to Roy T. - http://roy-t.nl/2011/09/24/another-faster-version-of-a-2d3d-in-c.html</para>
-        /// <para>This was modified and adapted to suit the needs of this mod, which changes the specific end vector to an "outside of grid" target.</para>
-        /// <para>Also made into a separate thread.</para>
-        /// </summary>
-        private void ThreadRun()
-        {
-            // generate crumbs and path cost
-            crumb = PathfindGenerateCrumbs(selectedGrid, ref startPosition);
-
-            // cleanup after PathfindGenerateCrumbs(), not critical but helps memory a tiny bit
-            scanned.Clear();
-            openList.Clear();
-
-            if(crumb != null)
-            {
-                while(crumb.Next != null)
-                {
-                    if(cancelTask)
-                        return;
-
-                    lines.Add(new LineI(crumb.Next.Position, crumb.Position));
-                    crumb = crumb.Next;
-                }
-            }
-        }
-
-        /// <summary>Find the closest path towards the exit.
-        /// <para>Returns null if no path was found.</para>
-        /// <para>NOTE: It can return null if <paramref name="start"/> is inside a closed door's position.</para>
-        /// </summary>
-        private Breadcrumb PathfindGenerateCrumbs(IMyCubeGrid grid, ref Vector3I start) // used in a background thread
-        {
-            scanned.Clear();
-            openList.Clear();
-            openList.Add(new Breadcrumb(start));
-
-            var directions = Base6Directions.IntDirections;
-
-            while(openList.HasNext())
-            {
-                var crumb = openList.GetFirst();
-
-                if(DistanceToBox(crumb.Position, grid.Min, grid.Max) < 0)
-                    return crumb; // found outside of grid, terminate.
-
-                for(int i = 0; i < directions.Length; ++i)
-                {
-                    if(cancelTask)
-                        return null;
-
-                    var dir = directions[i];
-                    var moveId = new MoveId(ref crumb.Position, ref dir);
-
-                    if(!scanned.Contains(moveId)) // ensure we didn't already check this position+direction
-                    {
-                        scanned.Add(moveId);
-
-                        var target = crumb.Position + dir;
-                        var distToOutside = DistanceToBox(target, grid.Min, grid.Max) + 1; // adding 1 to offset edges
-
-                        if(distToOutside < 0) // gone outside of edge already, exit
-                            return crumb;
-
-                        if(IsInInflatedBounds(grid, target) && !Pressurization.IsAirtightBetweenPositions(grid, crumb.Position, target))
-                        {
-                            int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
-                            int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
-
-                            openList.Add(new Breadcrumb(target, cost, pathCost, crumb));
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private bool IsInInflatedBounds(IMyCubeGrid grid, Vector3I pos)
-        {
-            var min = grid.Min - Vector3I.One;
-            var max = grid.Max + Vector3I.One;
-            return !(min != Vector3I.Min(pos, min)) && !(max != Vector3I.Max(pos, max));
-        }
-
-        /// <summary>
-        /// <para>Distance to min/max edges while point is inside the box.</para>
-        /// <para>Returns negative when point is outside of the box.</para>
-        /// <para>Thanks to Phoera for supplying this :]</para>
-        /// </summary>
-        private int DistanceToBox(Vector3I p, Vector3I min, Vector3I max)
-        {
-            var s = Vector3I.Min(max - p, p - min);
-            return Math.Min(s.X, Math.Min(s.Y, s.Z));
-        }
-        #endregion Pathfinding
-
-        private void ThreadFinished()
-        {
-            if(task.Exceptions != null && task.Exceptions.Length > 0)
-            {
-                foreach(var e in task.Exceptions)
-                {
-                    Log.Error("(Thread) " + e.ToString());
-                }
-            }
-
-            if(cancelTask)
-            {
-                ClearStatus();
-
-                NotifyHUD("Cancelled.", 1000, FontsHandler.YellowSh);
-            }
-            else if(crumb == null)
-            {
-                ClearStatus();
-
-                NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
-            }
-            else
-            {
-                drawTicks = (int)MathHelper.Clamp((lines.Count * 60 * 2 * selectedGrid.GridSize), 60 * MIN_DRAW_SECONDS, 60 * MAX_DRAW_SECONDS);
-
-                SetStatus(ThreadStatus.DRAW);
-
-                NotifyHUD("Found leak, path rendered.", 2000, FontsHandler.YellowSh);
-            }
         }
 
         /// <summary>
@@ -316,6 +119,251 @@ namespace Digi.BuildInfo.Features.LeakInfo
             VentInTerminal = null;
         }
 
+        public override void UpdateAfterSim(int tick)
+        {
+            if(Status == InfoStatus.Drawing) // if the path to air leak is shown then decrease the countdown timer or clear it directly if the grid suddenly vanishes.
+            {
+                if(DrawUntilTick <= tick)
+                {
+                    ClearStatus();
+                }
+            }
+            else if(Status == InfoStatus.None && ReleaseMemoryAt > 0 && ReleaseMemoryAt < tick)
+            {
+                ReleaseMemoryAt = 0;
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+                Particles.Capacity = 0;
+                ParticlePool = new MyConcurrentPool<Particle>(expectedAllocations: 0);
+
+                Crumbs.ClearPool();
+            }
+        }
+
+        void SetStatus(InfoStatus status)
+        {
+            bool different = (Status != status);
+
+            Status = status;
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (status == InfoStatus.Drawing));
+
+            if(status == InfoStatus.Drawing) // on only, it turns off itself after cleaning
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
+            if(different && VentInTerminal != null)
+            {
+                VentInTerminal.RefreshCustomInfo();
+
+                // HACK: force refresh
+                bool orig = VentInTerminal.ShowInToolbarConfig;
+                VentInTerminal.ShowInToolbarConfig = !orig;
+                VentInTerminal.ShowInToolbarConfig = orig;
+            }
+        }
+
+        /// <summary>
+        /// Clears the lines, various status data and gracefully stops the processing thread if running.
+        /// </summary>
+        public void ClearStatus()
+        {
+            if(Status == InfoStatus.Computing) // gracefully cancel the task by telling it to stop doing stuff and then wait for it to finish so we can clear its data.
+            {
+                CancelTask = true;
+                Task.WaitOrExecute(blocking: true);
+            }
+
+            if(SelectedGrid != null)
+                SelectedGrid.OnMarkForClose -= SelectedGridMarkedForClose;
+
+            SetStatus(InfoStatus.None);
+
+            ReleaseMemoryAt = Main.Tick + ReleaseMemoryAfterTicks;
+            DrawLines.Clear();
+            StopSpawning = false;
+            DrawUntilTick = 0;
+            Crumb = null;
+            SelectedGrid = null;
+            CurrentParticleData = null;
+            UsedFromVent = null;
+
+            foreach(Particle particle in Particles)
+            {
+                ParticlePool.Return(particle);
+            }
+            Particles.Clear();
+        }
+
+        public void StartThread(IMyAirVent block, Vector3I startPosition)
+        {
+            ClearStatus();
+
+            if(!Enabled)
+                return;
+
+            CancelTask = false;
+            UsedFromVent = block;
+            SelectedGrid = block.CubeGrid;
+            SelectedGrid.OnMarkForClose += SelectedGridMarkedForClose;
+            CurrentParticleData = ParticleDataGridSize[(int)SelectedGrid.GridSizeEnum]; // particle settings for the grid cell size
+            StartPosition = startPosition;
+
+            Task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
+
+            SetStatus(InfoStatus.Computing);
+
+            NotifyHUD("Computing path...", 1000 * 60 * 60, FontsHandler.SkyBlueSh);
+        }
+
+        void SelectedGridMarkedForClose(IMyEntity ent)
+        {
+            ent.OnMarkForClose -= SelectedGridMarkedForClose;
+            ClearStatus();
+        }
+
+        #region Pathfinding
+        /// <summary>
+        /// <para>A* Pathfinding - Credit for the original code to Roy T. - http://roy-t.nl/2011/09/24/another-faster-version-of-a-2d3d-in-c.html</para>
+        /// <para>This was modified and adapted to suit the needs of this mod, which changes the specific end vector to an "outside of grid" target.</para>
+        /// <para>Also made into a separate thread.</para>
+        /// </summary>
+        private void ThreadRun()
+        {
+            try
+            {
+                // generate crumbs and path cost
+                Crumb = PathfindGenerateCrumbs(SelectedGrid, ref StartPosition);
+
+                if(Crumb != null)
+                {
+                    while(Crumb.Next != null)
+                    {
+                        if(CancelTask)
+                            return;
+
+                        DrawLines.Add(MyTuple.Create(Crumb.Next.Position, Crumb.Position));
+                        Crumb = Crumb.Next;
+                    }
+                }
+            }
+            finally
+            {
+                // cleanup after PathfindGenerateCrumbs()
+                Scanned.Clear();
+                Crumbs.Clear();
+            }
+        }
+
+        /// <summary>Find the closest path towards the exit.
+        /// <para>Returns null if no path was found.</para>
+        /// <para>NOTE: It can return null if <paramref name="start"/> is inside a closed door's position.</para>
+        /// </summary>
+        private BreadcrumbHeap.Crumb PathfindGenerateCrumbs(IMyCubeGrid grid, ref Vector3I start) // used in a background thread
+        {
+            Scanned.Clear();
+            Crumbs.Clear();
+            Crumbs.Add(start);
+
+            Vector3I[] directions = Base6Directions.IntDirections;
+            const int DirLen = 6;
+
+            Vector3I min = grid.Min;
+            Vector3I max = grid.Max;
+            BoundingBoxI gridBB = new BoundingBoxI(min - Vector3I.One, max + Vector3I.One);
+
+            while(Crumbs.ListHead != null) // HACK: HasNext() inlined
+            {
+                // HACK: GetFirst() inlined
+                BreadcrumbHeap.Crumb crumb = Crumbs.ListHead;
+                Crumbs.ListHead = crumb.NextListElem;
+
+                {
+                    Vector3I s = Vector3I.Min(max - crumb.Position, crumb.Position - min);
+                    if(Math.Min(s.X, Math.Min(s.Y, s.Z)) < 0)
+                        return crumb;
+                }
+                // HACK: manually inlined ^v
+                //if(DistanceToBox(crumb.Position, grid.Min, grid.Max) < 0)
+                //    return crumb; // found outside of grid, terminate.
+
+                for(int dirIdx = 0; dirIdx < DirLen; ++dirIdx)
+                {
+                    if(CancelTask)
+                        return null;
+
+                    Vector4I moveId = new Vector4I(crumb.Position, dirIdx);
+                    if(Scanned.Add(moveId)) // ensure we didn't already check this position+direction, set.Add() returns false if it was already there.
+                    {
+                        Vector3I target = crumb.Position + directions[dirIdx];
+
+                        Vector3I s = Vector3I.Min(max - target, target - min);
+                        int distToOutside = Math.Min(s.X, Math.Min(s.Y, s.Z)) + 1;
+                        if(distToOutside < 0)
+                            return crumb;
+                        // HACK: manually inlined ^v
+                        //int distToOutside = DistanceToBox(target, grid.Min, grid.Max) + 1; // adding 1 to offset edges
+                        //if(distToOutside < 0) // gone outside of edge already, exit
+                        //    return crumb;
+
+                        if(gridBB.Contains(target) == ContainmentType.Contains && !Pressurization.IsAirtightBetweenPositions(grid, crumb.Position, target))
+                        {
+                            int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
+                            int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
+
+                            Crumbs.Add(target, cost, pathCost, crumb);
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// <para>Distance to min/max edges while point is inside the box.</para>
+        /// <para>Returns negative when point is outside of the box.</para>
+        /// <para>Thanks to Phoera for supplying this :]</para>
+        /// </summary>
+        //private int DistanceToBox(Vector3I pos, Vector3I min, Vector3I max)
+        //{
+        //    Vector3I s = Vector3I.Min(max - pos, pos - min);
+        //    return Math.Min(s.X, Math.Min(s.Y, s.Z));
+        //}
+        #endregion Pathfinding
+
+        private void ThreadFinished()
+        {
+            if(Task.Exceptions != null && Task.Exceptions.Length > 0)
+            {
+                foreach(Exception e in Task.Exceptions)
+                {
+                    Log.Error("(Thread) " + e.ToString());
+                }
+            }
+
+            if(CancelTask)
+            {
+                ClearStatus();
+
+                NotifyHUD("Cancelled.", 2000, FontsHandler.YellowSh);
+            }
+            else if(Crumb == null)
+            {
+                ClearStatus();
+
+                NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
+            }
+            else
+            {
+                DrawUntilTick = Main.Tick + (int)MathHelper.Clamp((DrawLines.Count * Constants.TICKS_PER_SECOND * 2 * SelectedGrid.GridSize), Constants.TICKS_PER_SECOND * DrawMinSeconds, Constants.TICKS_PER_SECOND * DrawMaxSeconds);
+
+                SetStatus(InfoStatus.Drawing);
+
+                NotifyHUD("Found leak, path rendered.", 2000, FontsHandler.YellowSh);
+            }
+
+            CancelTask = false;
+        }
+
         /// <summary>
         /// Prints a message to the player, repeated calls to this method will overwrite the previous message on the HUD, therefore preventing spam.
         /// </summary>
@@ -324,78 +372,102 @@ namespace Digi.BuildInfo.Features.LeakInfo
             if(time < 1000 && Main.IsPaused)
                 return; // HACK: avoid notification glitching out if showing them continuously when game is paused
 
-            if(notify == null)
-                notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
+            if(Notify == null)
+                Notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
 
-            notify.Hide(); // required since SE v1.194
-            notify.Text = "Air leak scan: " + message;
-            notify.AliveTime = time;
-            notify.Font = font;
-            notify.Show();
+            Notify.Hide(); // required since SE v1.194
+            Notify.Text = "Air leak scan: " + message;
+            Notify.AliveTime = time;
+            Notify.Font = font;
+            Notify.Show();
         }
 
         #region Drawing
         public override void UpdateDraw()
         {
-            if(Status != ThreadStatus.DRAW)
+            if(Status != InfoStatus.Drawing)
                 return;
 
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var camPos = camMatrix.Translation;
-            var camFw = camMatrix.Forward;
-            var alpha = (drawTicks < DRAW_FADE_OUT_TICKS ? (DRAW_TRANSPARENCY * ((float)drawTicks / (float)DRAW_FADE_OUT_TICKS)) : DRAW_TRANSPARENCY);
-            var particleColorWorld = Main.Config.LeakParticleColorWorld.Value * alpha;
-            var particleColorOverlay = Main.Config.LeakParticleColorOverlay.Value * alpha;
+            BoundingSphereD gridSphere = SelectedGrid.WorldVolume;
 
-            // start dot
-            var startPointWorld = selectedGrid.GridIntegerToWorld(lines[lines.Count - 1].Start);
-            if(IsVisibleFast(ref camPos, ref camFw, ref startPointWorld))
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3D camPos = camMatrix.Translation;
+
+            double distSq = gridSphere.Radius + 500;
+            distSq *= distSq;
+            if(Vector3D.DistanceSquared(gridSphere.Center, camPos) > distSq)
             {
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_START_WORLD * alpha, startPointWorld, DRAW_POINT_SIZE, 0);
-
-                var posOverlay = camPos + ((startPointWorld - camPos) * DRAW_DEPTH);
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_START_OVERLAY * alpha, posOverlay, DRAW_POINT_SIZE * 0.5f * DRAW_DEPTH_F, 0);
+                NotifyHUD("Too far, hidden.", 2000, FontsHandler.YellowSh);
+                ClearStatus();
+                return;
             }
 
-            var particleData = particleDataGridSize[(int)selectedGrid.GridSizeEnum]; // particle settings for the grid cell size
+            Vector3D camFw = camMatrix.Forward;
+            double dotPosFw = Vector3D.Dot(camPos, camFw);
+
+            float alpha = 1f;
+            Color particleColorWorld = Main.Config.LeakParticleColorWorld.Value;
+            Color particleColorOverlay = Main.Config.LeakParticleColorOverlay.Value;
+
+            int drawTicksLeft = DrawUntilTick - Main.Tick;
+            if(drawTicksLeft < DrawFadeOutTicks)
+            {
+                alpha = (drawTicksLeft / (float)DrawFadeOutTicks);
+                particleColorWorld *= alpha;
+                particleColorOverlay *= alpha;
+            }
+
+            // start dot
+            Vector3D startPointWorld = SelectedGrid.GridIntegerToWorld(DrawLines[DrawLines.Count - 1].Item1);
+            //if(IsVisibleFast(ref camPos, ref camFw, ref startPointWorld))
+            // HACK manually inlined ^v
+            if(Vector3D.Dot(camPos, startPointWorld) - dotPosFw > 0)
+            {
+                MyTransparentGeometry.AddPointBillboard(ParticleMaterial, StartPointColorWorld * alpha, startPointWorld, EndPointSize, 0);
+
+                Vector3D posOverlay = camPos + ((startPointWorld - camPos) * DrawDepth);
+                MyTransparentGeometry.AddPointBillboard(ParticleMaterial, StartPointColorOverlay * alpha, posOverlay, EndPointSize * 0.5f * DrawDepthF, 0);
+            }
 
             bool spawnSync = false;
 
             // timing particles
-            if(!MyParticlesManager.Paused && ++delayParticles > particleData.SpawnDelay)
+            if(!MyParticlesManager.Paused && ++DelayParticles > CurrentParticleData.SpawnDelay)
             {
-                delayParticles = 0;
+                DelayParticles = 0;
 
-                if(stopSpawning)
+                if(StopSpawning)
                     spawnSync = true;
                 else
-                    particles.Add(new Particle(selectedGrid, lines));
+                    Particles.Add(ParticlePool.Get().Init(SelectedGrid, DrawLines));
             }
 
             // draw/move particles
-            for(int i = particles.Count - 1; i >= 0; --i)
+            for(int i = Particles.Count - 1; i >= 0; --i)
             {
-                var drawReturn = particles[i].Draw(selectedGrid, lines, particleColorWorld, particleColorOverlay, particleData, ref camPos, ref camFw, ref delayParticles, spawnSync);
-
-                if(drawReturn == DrawReturn.STOP_SPAWNING)
-                    stopSpawning = true;
+                DrawReturn result = Particles[i].Draw(SelectedGrid, DrawLines, particleColorWorld, particleColorOverlay, CurrentParticleData, ref camPos, dotPosFw, spawnSync);
+                if(result == DrawReturn.StopSpawning)
+                    StopSpawning = true;
             }
 
             // end dot
-            var endPointWorld = selectedGrid.GridIntegerToWorld(lines[0].End);
-            if(IsVisibleFast(ref camPos, ref camFw, ref endPointWorld))
+            Vector3D endPointWorld = SelectedGrid.GridIntegerToWorld(DrawLines[0].Item2);
+            //if(IsVisibleFast(ref camPos, ref camFw, ref endPointWorld))
+            // HACK manually inlined ^v
+            if(Vector3D.Dot(camPos, endPointWorld) - dotPosFw > 0)
             {
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_END_WORLD * alpha, endPointWorld, DRAW_POINT_SIZE, 0);
+                MyTransparentGeometry.AddPointBillboard(ParticleMaterial, EndPointColorWorld * alpha, endPointWorld, EndPointSize, 0);
 
-                var posOverlay = camPos + ((endPointWorld - camPos) * DRAW_DEPTH);
-                MyTransparentGeometry.AddPointBillboard(MATERIAL_PARTICLE, COLOR_END_OVERLAY * alpha, posOverlay, DRAW_POINT_SIZE * 0.5f * DRAW_DEPTH_F, 0);
+                Vector3D posOverlay = camPos + ((endPointWorld - camPos) * DrawDepth);
+                MyTransparentGeometry.AddPointBillboard(ParticleMaterial, EndPointColorOverlay * alpha, posOverlay, EndPointSize * 0.5f * DrawDepthF, 0);
             }
         }
 
-        public static bool IsVisibleFast(ref Vector3D camPos, ref Vector3D camFw, ref Vector3D point)
-        {
-            return (((camPos.X * point.X + camPos.Y * point.Y + camPos.Z * point.Z) - (camPos.X * camFw.X + camPos.Y * camFw.Y + camPos.Z * camFw.Z)) > 0);
-        }
+        //public static bool IsVisibleFast(ref Vector3D camPos, ref Vector3D camFw, ref Vector3D point)
+        //{
+        //    // Vector3D.Dot(camPos, point) - Vector3D.Dot(camPos, camFw) > 0
+        //    return (((camPos.X * point.X + camPos.Y * point.Y + camPos.Z * point.Z) - (camPos.X * camFw.X + camPos.Y * camFw.Y + camPos.Z * camFw.Z)) > 0);
+        //}
         #endregion Drawing
     }
 }

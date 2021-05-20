@@ -187,9 +187,9 @@
     <Compile Include="Features\PBMonitor.cs" />
     <Compile Include="Features\JumpDriveMonitor.cs" />
     <Compile Include="Features\LeakInfo\AirVent.cs" />
-    <Compile Include="Features\LeakInfo\DrawObjects.cs" />
+    <Compile Include="Features\LeakInfo\Particle.cs" />
     <Compile Include="Features\LeakInfo\LeakInfo.cs" />
-    <Compile Include="Features\LeakInfo\PathfindingObjects.cs" />
+    <Compile Include="Features\LeakInfo\BreadcrumbHeap.cs" />
     <Compile Include="Features\LiveData\Base.cs" />
     <Compile Include="Features\LiveData\Collector.cs" />
     <Compile Include="Features\LiveData\Connector.cs" />

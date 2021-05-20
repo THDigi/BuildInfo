@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                     // if room is sealed and the leak info is running then clear it
                     var leakInfo = BuildInfoMod.Instance.LeakInfo;
-                    if(leakInfo.UsedFromVent == block && leakInfo.Status != ThreadStatus.IDLE && block.CanPressurize)
+                    if(leakInfo.UsedFromVent == block && leakInfo.Status != InfoStatus.None && block.CanPressurize)
                     {
                         leakInfo.ClearStatus();
                     }
@@ -136,7 +136,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 if(logic == null)
                     return;
 
-                if(leakInfo.Status != ThreadStatus.IDLE)
+                if(leakInfo.Status != InfoStatus.None)
                 {
                     leakInfo.ClearStatus();
                 }
@@ -162,7 +162,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         private static bool Terminal_Getter(IMyTerminalBlock block)
         {
             var leakInfo = BuildInfoMod.Instance.LeakInfo;
-            return (leakInfo.Status != ThreadStatus.IDLE);
+            return (leakInfo.Status != InfoStatus.None);
         }
 
         private static void CustomInfo(IMyTerminalBlock block, StringBuilder str)
@@ -193,7 +193,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                 switch(leakInfo.Status)
                 {
-                    case ThreadStatus.IDLE:
+                    case InfoStatus.None:
                         if(!vent.IsWorking)
                             str.Append("Air vent not working.");
                         else if(vent.CanPressurize)
@@ -201,10 +201,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         else
                             str.Append("Ready.");
                         break;
-                    case ThreadStatus.RUNNING:
+                    case InfoStatus.Computing:
                         str.Append("Computing...");
                         break;
-                    case ThreadStatus.DRAW:
+                    case InfoStatus.Drawing:
                         if(leakInfo.UsedFromVent != null && leakInfo.UsedFromVent.CubeGrid != block.CubeGrid)
                             str.Append("Leak found and displayed on another grid.");
                         else

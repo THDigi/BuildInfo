@@ -21,11 +21,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 7;
-        public const int VersionCompat_ShowToolbarBind = 6;
-        public const int VersionCompat_ShipToolInvBar_FixPosition = 5;
-        public const int VersionCompat_ToolbarLabels_Redesign = 4;
-        public const int VersionCompat_MenuBind = 2;
+        public const int ConfigVersion = 8;
 
         public BoolSetting Killswitch;
 
@@ -146,7 +142,7 @@ namespace Digi.BuildInfo.Features.Config
             }
         }
 
-        private void SettingsLoaded()
+        void SettingsLoaded()
         {
             if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", StringComparison.OrdinalIgnoreCase))
             {
@@ -161,11 +157,46 @@ namespace Digi.BuildInfo.Features.Config
                 }
             }
 
+            ConfigVersionTweaks();
+        }
+
+        void ConfigVersionTweaks()
+        {
             var cfgv = Handler.ConfigVersion.Value;
             if(cfgv <= 0 || cfgv >= ConfigVersion)
                 return;
 
-            if(cfgv <= VersionCompat_ShipToolInvBar_FixPosition)
+            if(cfgv == 2)
+            {
+                // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
+
+                var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+                var terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
+
+                // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
+                if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
+                {
+                    MenuBind.Value = Combination.Create(MENU_BIND_INPUT_NAME, "c.VoxelHandSettings");
+
+                    Log.Info("NOTE: Configurable binds were added and it seems your VoxelHandSettings isn't colliding so I'm setting MenuBind to that instead so you don't need to change anything.");
+                }
+
+                return;
+            }
+
+            if(cfgv == 4)
+            {
+                // change default position of the labels box
+
+                if(Vector2D.DistanceSquared(ToolbarLabelsPosition.Value, new Vector2D(-0.716, -0.707)) <= 0.001)
+                {
+                    ToolbarLabelsPosition.ResetToDefault();
+
+                    Log.Info($"NOTE: Default value for '{ToolbarLabelsPosition.Name}' changed and yours was the old default, setting reset to new default.");
+                }
+            }
+
+            if(cfgv <= 5)
             {
                 // old defaults were in the wrong value ranges, convert values to new space.
                 // e.g. 0.5, 0.84 => 0.0, -0.68
@@ -184,43 +215,23 @@ namespace Digi.BuildInfo.Features.Config
                 }
             }
 
-            if(cfgv == VersionCompat_ToolbarLabels_Redesign)
-            {
-                // change default position of the labels box
-
-                if(Vector2D.DistanceSquared(ToolbarLabelsPosition.Value, new Vector2D(-0.716, -0.707)) <= 0.001)
-                {
-                    ToolbarLabelsPosition.ResetToDefault();
-
-                    Log.Info($"NOTE: Default value for '{ToolbarLabelsPosition.Name}' changed and yours was the old default, setting reset to new default.");
-                }
-            }
-
-            if(cfgv == VersionCompat_MenuBind)
-            {
-                // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
-
-                var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
-                var terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
-
-                // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
-                if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
-                {
-                    MenuBind.Value = Combination.Create(MENU_BIND_INPUT_NAME, "c.VoxelHandSettings");
-
-                    Log.Info("NOTE: Configurable binds were added and it seems your VoxelHandSettings isn't colliding so I'm setting MenuBind to that instead so you don't need to change anything.");
-                }
-
-                return;
-            }
-
-            if(cfgv == VersionCompat_ShowToolbarBind)
+            if(cfgv == 6)
             {
                 if(ShowToolbarInfoBind.Value?.CombinationString == "alt")
                 {
                     ShowToolbarInfoBind.ResetToDefault();
 
                     Log.Info($"NOTE: '{ShowToolbarInfoBind.Name}' is the previous default (alt), resetting to new default ({ShowToolbarInfoBind.Value}).");
+                }
+            }
+
+            if(cfgv <= 7)
+            {
+                if(LeakParticleColorOverlay.Value == new Color(255, 255, 0))
+                {
+                    LeakParticleColorOverlay.ResetToDefault();
+
+                    Log.Info($"NOTE: '{LeakParticleColorOverlay.Name}' is the previous default (255, 255, 0), resetting to new default ({LeakParticleColorOverlay.Value.R.ToString()}, {LeakParticleColorOverlay.Value.G.ToString()}, {LeakParticleColorOverlay.Value.B.ToString()}).");
                 }
             }
         }
@@ -493,7 +504,7 @@ namespace Digi.BuildInfo.Features.Config
                 "",
                 "Color of airleak indicator particles in world, only visible if nothing is in the way.");
 
-            LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(255, 255, 0), false,
+            LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(140, 140, 0), false,
                 "Color of airleak indicator particles that are seen through walls.",
                 "NOTE: This color is overlayed on top of the world ones when those are visible too, making the colors mix, so pick wisely!");
             #endregion
