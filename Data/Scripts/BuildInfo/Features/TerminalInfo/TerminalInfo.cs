@@ -29,6 +29,8 @@ namespace Digi.BuildInfo.Features.Terminal
         public const int RefreshMinTicks = 15; // minimum amount of ticks between refresh calls
         private readonly string[] TickerText = { "––––––", "•–––––", "–•––––", "––•–––", "–––•––", "––––•–", "–––––•" };
 
+        public const int TextCharsExpected = 400; // used in calling EnsureCapacity() for CustomInfo event's StringBuilder
+
         public List<IMyTerminalBlock> SelectedInTerminal = new List<IMyTerminalBlock>();
         private List<IMyTerminalBlock> SelectingList = new List<IMyTerminalBlock>();
         private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
@@ -334,12 +336,16 @@ namespace Digi.BuildInfo.Features.Terminal
                 string otherModInfo = (info.Length > 0 ? info.ToString() : null);
 
                 info.Clear(); // mods shouldn't do this here, but I'm storing existing data and writing it back!
+                int capacity = info.Capacity;
 
                 bool addedCustomInfo = false;
                 bool header = Main.Config.TerminalDetailInfoHeader.Value;
 
                 if(Main.Config.TerminalDetailInfoAdditions.Value)
                 {
+                    info.EnsureCapacity(TextCharsExpected + (otherModInfo == null ? 0 : otherModInfo.Length));
+                    capacity = info.Capacity;
+
                     if(header)
                     {
                         tmpInfo.Clear();
@@ -367,20 +373,25 @@ namespace Digi.BuildInfo.Features.Terminal
                 if(otherModInfo != null)
                 {
                     if(addedCustomInfo)
-                        info.NewLine();
+                        info.Append('\n');
 
                     info.Append(otherModInfo);
                 }
 
                 if(!header && addedCustomInfo)
                 {
-                    info.NewLine().Append(TickerText[ticker]);
+                    info.Append('\n').Append(TickerText[ticker]);
                 }
 
                 if(tickerUpdateAt <= Main.Tick)
                 {
                     ticker = (ticker + 1) % TickerText.Length;
                     tickerUpdateAt = Main.Tick + RefreshMinTicks;
+                }
+
+                if(BuildInfoMod.IsDevMod && info.Capacity > capacity)
+                {
+                    Log.Error($"{info.Capacity} > {capacity} for {block.BlockDefinition}:\n{info.ToString()}", "custom info chars exceeded!");
                 }
             }
             catch(Exception e)
@@ -494,20 +505,20 @@ namespace Digi.BuildInfo.Features.Terminal
                 if(connector.Status == MyShipConnectorStatus.Connectable)
                 {
                     info.Append("Status: Ready to connect\n");
-                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).NewLine();
-                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).NewLine();
+                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
+                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
                 }
                 else if(connector.Status == MyShipConnectorStatus.Connected)
                 {
                     info.Append("Status: Connected\n");
-                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).NewLine();
-                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).NewLine();
+                    info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
+                    info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
                 }
                 else
                 {
                     info.Append("Status: Not connected\n");
-                    info.Append("Target: ").Append("N/A").NewLine();
-                    info.Append("Ship: ").Append("N/A").NewLine();
+                    info.Append("Target: N/A\n");
+                    info.Append("Ship: N/A\n");
                 }
             }
         }
@@ -551,7 +562,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 mags -= 1;
             }
 
-            info.Append("Ammo: ").Append(loadedAmmo).Append(" loaded + ").Append(mags * magDef.Capacity).Append(" in mags").NewLine();
+            info.Append("Ammo: ").Append(loadedAmmo).Append(" loaded + ").Append(mags * magDef.Capacity).Append(" in mags\n");
 
             var weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(block.EntityId, null);
             if(weaponTracker != null)
@@ -563,7 +574,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 else
                     info.Append(weaponTracker.ShotsUntilReload);
 
-                info.Append(" / ").Append(weaponTracker.InternalMagazineCapacity).NewLine();
+                info.Append(" / ").Append(weaponTracker.InternalMagazineCapacity).Append('\n');
             }
 
             const int MaxMagNameLength = 26;
@@ -572,12 +583,12 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(weaponDef == null || weaponDef.AmmoMagazinesId.Length == 1)
             {
-                info.Append("Type: ").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).NewLine();
+                info.Append("Type: ").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).Append('\n');
             }
             else
             {
                 info.Append("Types:\n");
-                info.Append(">").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).NewLine();
+                info.Append(">").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).Append('\n');
 
                 foreach(var otherMagId in weaponDef.AmmoMagazinesId)
                 {
@@ -586,7 +597,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
                     if(otherMagDef != null)
-                        info.Append("  ").AppendMaxLength(otherMagDef.DisplayNameText, MaxMagNameLength).NewLine();
+                        info.Append("  ").AppendMaxLength(otherMagDef.DisplayNameText, MaxMagNameLength).Append('\n');
                 }
             }
         }
@@ -618,16 +629,15 @@ namespace Digi.BuildInfo.Features.Terminal
             if(assembler != null)
             {
                 info.Append("Mode: ");
-
                 switch(assembler.Mode)
                 {
                     case MyAssemblerMode.Assembly: info.Append("Assemble"); break;
                     case MyAssemblerMode.Disassembly: info.Append("Disassemble"); break;
                     default: info.Append(assembler.Mode.ToString()); break;
                 }
+                info.Append('\n');
 
-                info.NewLine();
-                info.Append("Loop queue: ").Append(assembler.Repeating ? "On" : "Off").NewLine();
+                info.Append("Loop queue: ").Append(assembler.Repeating ? "On" : "Off").Append('\n');
             }
 
             if(production.IsQueueEmpty)
@@ -636,7 +646,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             else
             {
-                info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").NewLine();
+                info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").Append('\n');
 
                 List<MyProductionQueueItem> queue = production.GetQueue(); // TODO avoid alloc here somehow?
 
@@ -680,10 +690,10 @@ namespace Digi.BuildInfo.Features.Terminal
                             }
                         }
 
-                        tmp.Append(' ').Append(item.Blueprint.DisplayNameText).Append(" (").TimeFormat(time).Append(')').NewLine();
+                        tmp.Append(' ').Append(item.Blueprint.DisplayNameText).Append(" (").TimeFormat(time).Append(")\n");
                     }
 
-                    info.Append("Total time: ").TimeFormat(totalTime).NewLine();
+                    info.Append("Total time: ").TimeFormat(totalTime).Append('\n');
                     info.AppendStringBuilder(tmp);
                     tmp.Clear();
                 }
@@ -694,7 +704,7 @@ namespace Digi.BuildInfo.Features.Terminal
                         MyProductionQueueItem item = queue[i];
                         float amount = (float)item.Amount;
 
-                        info.Append("• x").Number(amount).Append(" ").Append(item.Blueprint.DisplayNameText).NewLine();
+                        info.Append("• x").Number(amount).Append(" ").Append(item.Blueprint.DisplayNameText).Append('\n');
                     }
                 }
             }
@@ -722,7 +732,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(upgradeModule.Connections > 0)
             {
-                info.NewLine();
+                info.Append('\n');
 
                 // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
                 longSetTemp.Clear();
@@ -755,7 +765,7 @@ namespace Digi.BuildInfo.Features.Terminal
                             if(!module.Compatible)
                                 info.Append(" (incompatible)");
 
-                            info.NewLine();
+                            info.Append('\n');
                             break;
                         }
                     }
@@ -776,7 +786,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             foreach(var item in upgrades)
             {
-                info.Append("• ").AppendUpgrade(item).NewLine();
+                info.Append("• ").AppendUpgrade(item).Append('\n');
             }
         }
 
@@ -802,7 +812,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.DetailInfo_CurrentPowerUsage(Sink);
 
             if(cockpit.OxygenCapacity > 0)
-                info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(')').NewLine();
+                info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(")\n");
 
             Suffix_ShipController(block, info);
         }
@@ -856,10 +866,10 @@ namespace Digi.BuildInfo.Features.Terminal
                     case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
                     case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
                 }
-                info.NewLine();
+                info.Append('\n');
 
-                info.Append("  Total required: ").PowerFormat(required).NewLine();
-                info.Append("  Total available: ").PowerFormat(available).NewLine();
+                info.Append("  Total required: ").PowerFormat(required).Append('\n');
+                info.Append("  Total available: ").PowerFormat(available).Append('\n');
 
                 info.Append("  Reactors: ");
                 if(reactors == 0)
@@ -1072,20 +1082,20 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 if(realTorque != pickedTorque)
                 {
-                    info.NewLine().Append("Capped Torque: ").TorqueFormat(realTorque).Append(" ([4] @ /bi)").NewLine();
+                    info.Append("\nCapped Torque: ").TorqueFormat(realTorque).Append(" ([4] @ /bi)\n");
                 }
 
                 if(mass > 0)
                 {
                     if(realTorque == pickedTorque)
-                        info.NewLine();
+                        info.Append('\n');
 
-                    info.Append("Attached Mass: ").MassFormat(mass).NewLine();
+                    info.Append("Attached Mass: ").MassFormat(mass).Append('\n');
                 }
 
                 if(Main.Config.InternalInfo.Value)
                 {
-                    info.NewLine().Append("API Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians").NewLine();
+                    info.Append("\nAPI Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians\n");
                 }
             }
         }
@@ -1101,7 +1111,7 @@ namespace Digi.BuildInfo.Features.Terminal
             if(Main.Config.InternalInfo.Value)
             {
                 var piston = (IMyPistonBase)block;
-                info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).NewLine();
+                info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).Append('\n');
             }
         }
 
@@ -1150,9 +1160,9 @@ namespace Digi.BuildInfo.Features.Terminal
                     float perSec = ratio * fuel.ConsumptionPerSecond_Items;
                     float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
 
-                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s").NewLine();
-                    info.Append("Time Left: ").TimeFormat(seconds).NewLine();
-                    info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).NewLine();
+                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s\n");
+                    info.Append("Time Left: ").TimeFormat(seconds).Append('\n');
+                    info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).Append('\n');
                 }
                 else
                 {
@@ -1161,16 +1171,16 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     foreach(var fuel in reactorDef.FuelInfos)
                     {
-                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)").NewLine();
+                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
 
                         perSec += ratio * fuel.ConsumptionPerSecond_Items;
                     }
 
                     float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
 
-                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s").NewLine();
-                    info.Append("Time Left: ").TimeFormat(seconds).NewLine();
-                    info.Append("Uses Combined Fuels: ").NewLine();
+                    info.Append("Current Usage: ").MassFormat(perSec).Append("/s\n");
+                    info.Append("Time Left: ").TimeFormat(seconds).Append('\n');
+                    info.Append("Uses Combined Fuels: ").Append('\n');
                     info.AppendStringBuilder(tmp);
                     tmp.Clear();
                 }
@@ -1206,7 +1216,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             float optimalOutput = turbineDef.MaxPowerOutput; // * ((turbineDef.RaycasterSize - 1) * turbineDef.RaycastersToFullEfficiency);
 
-            info.Append("Optimal Output: ").PowerFormat(optimalOutput).NewLine();
+            info.Append("Optimal Output: ").PowerFormat(optimalOutput).Append('\n');
 
             var grid = block.CubeGrid;
             Vector3D position = grid.Physics?.CenterOfMassWorld ?? grid.PositionComp.GetPosition();
@@ -1232,7 +1242,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Output: 0 W
 
             var solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
-            info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).NewLine();
+            info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).Append('\n');
         }
 
         //void Format_Gyro(IMyTerminalBlock block, StringBuilder info)
@@ -1255,34 +1265,34 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(thrustInfo.Fuel != MyResourceDistributorComponent.ElectricityId)
             {
-                info.Append("Requires: ").Append(thrustInfo.Fuel.SubtypeName).NewLine();
+                info.Append("Requires: ").Append(thrustInfo.Fuel.SubtypeName).Append('\n');
 
-                info.Append("Current Usage: ").VolumeFormat(thrustInfo.CurrentUsage).Append("/s");
+                info.Append("Current Usage*: ").VolumeFormat(thrustInfo.CurrentUsage).Append("/s");
                 if(Math.Abs(thrustInfo.CurrentConsumptionMul - 1) > 0.001f)
                     info.Append(" (x").RoundedNumber(thrustInfo.CurrentConsumptionMul, 2).Append(")");
-                info.NewLine();
+                info.Append('\n');
 
-                info.Append("Max Usage: ").VolumeFormat(thrustInfo.MaxUsage).Append("/s");
+                info.Append("Max Usage*: ").VolumeFormat(thrustInfo.MaxUsage).Append("/s");
                 if(Math.Abs(thrustInfo.EarthConsumpationMul - 1) > 0.001f)
                     info.Append(" (x").RoundedNumber(thrustInfo.EarthConsumpationMul, 2).Append(" @ 1g)");
-                info.NewLine();
+                info.Append('\n');
             }
             else
             {
-                info.Append("Requires: Electricity").NewLine();
+                info.Append("Requires: Electricity\n");
 
-                info.Append("Current Usage: ").PowerFormat(thrustInfo.CurrentUsage);
+                info.Append("Current Usage*: ").PowerFormat(thrustInfo.CurrentUsage);
                 if(Math.Abs(thrustInfo.CurrentConsumptionMul - 1) > 0.001f)
                     info.Append(" (x").RoundedNumber(thrustInfo.CurrentConsumptionMul, 2).Append(")");
-                info.NewLine();
+                info.Append('\n');
 
                 info.Append("Max Usage: ").PowerFormat(thrustInfo.MaxUsage);
                 if(Math.Abs(thrustInfo.EarthConsumpationMul - 1) > 0.001f)
                     info.Append(" (x").RoundedNumber(thrustInfo.EarthConsumpationMul, 2).Append(" @ 1g)");
-                info.NewLine();
+                info.Append('\n');
             }
 
-            info.NewLine();
+            info.Append('\n');
 
             // HACK NOTE: def.NeedsAtmosphereForInfluence does nothing, influence is always air density
             if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
@@ -1293,20 +1303,20 @@ namespace Digi.BuildInfo.Features.Terminal
                 float thrustAtMinAir = def.EffectivenessAtMinInfluence;
                 float thrustAtMaxAir = def.EffectivenessAtMaxInfluence;
 
-                info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).NewLine();
-                info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
-                info.Append("Limits:").NewLine();
+                info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).Append('\n');
+                info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
+                info.Append("Limits:\n");
 
                 // if mod has weird values, can't really present them in an understandable manner so just printing the values instead
                 if(!Hardcoded.Thrust_HasSaneLimits(def))
                 {
-                    info.Append(" Min air density: ").ProportionToPercent(minAir).NewLine();
-                    info.Append(" Max air density: ").ProportionToPercent(maxAir).NewLine();
-                    info.Append(" Thrust at min air: ").ProportionToPercent(thrustAtMinAir).NewLine();
-                    info.Append(" Thrust at max air: ").ProportionToPercent(thrustAtMaxAir).NewLine();
+                    info.Append(" Min air density: ").ProportionToPercent(minAir).Append('\n');
+                    info.Append(" Max air density: ").ProportionToPercent(maxAir).Append('\n');
+                    info.Append(" Thrust at min air: ").ProportionToPercent(thrustAtMinAir).Append('\n');
+                    info.Append(" Thrust at max air: ").ProportionToPercent(thrustAtMaxAir).Append('\n');
 
                     if(def.NeedsAtmosphereForInfluence)
-                        info.Append(" No atmosphere causes 'thrust at min air'.").NewLine();
+                        info.Append(" No atmosphere causes 'thrust at min air'.\n");
                 }
                 else
                 {
@@ -1317,20 +1327,20 @@ namespace Digi.BuildInfo.Features.Terminal
                         info.Append("in ").ProportionToPercent(maxAir).Append(" air density.");
                     else
                         info.Append("in atmosphere.");
-                    info.NewLine();
+                    info.Append('\n');
 
                     info.Append("  ").ProportionToPercent(thrustAtMinAir).Append(" thrust ");
                     if(def.NeedsAtmosphereForInfluence || minAir <= 0f)
                         info.Append("in vacuum.");
                     else
                         info.Append("below ").ProportionToPercent(minAir).Append(" air density.");
-                    info.NewLine();
+                    info.Append('\n');
                 }
             }
             else
             {
-                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).NewLine();
-                info.Append("No atmosphere or vacuum limits.");
+                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
+                info.Append("No atmosphere or vacuum limits.\n");
             }
         }
 
@@ -1342,7 +1352,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             var def = (MyRadioAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).NewLine();
+            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).Append('\n');
         }
 
         void Format_LaserAntenna(IMyTerminalBlock block, StringBuilder info)
@@ -1357,21 +1367,21 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Append("Power Usage:\n");
 
-            info.Append("  Current: ").PowerFormat(Sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId)).NewLine();
+            info.Append("  Current: ").PowerFormat(Sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId)).Append('\n');
 
             info.Append("  At Range: ");
             if(antenna.Range < 1E+08f)
                 info.PowerFormat(Hardcoded.LaserAntenna_PowerUsage(def, antenna.Range));
             else
                 info.Append("Infinite.");
-            info.NewLine();
+            info.Append('\n');
 
             info.Append("  Max: ");
             if(def.MaxRange > 0)
                 info.PowerFormat(Hardcoded.LaserAntenna_PowerUsage(def, def.MaxRange));
             else
                 info.Append("Infinite.");
-            info.NewLine();
+            info.Append('\n');
         }
 
         void Format_Beacon(IMyTerminalBlock block, StringBuilder info)
@@ -1382,7 +1392,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             var def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def)).NewLine();
+            info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def)).Append('\n');
         }
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
@@ -1455,7 +1465,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_Type(block);
             info.DetailInfo_Inventory(Inv);
-            info.Append("Atmosphere density: ").ProportionToPercent(parachute.Atmosphere).NewLine();
+            info.Append("Atmosphere density: ").ProportionToPercent(parachute.Atmosphere).Append('\n');
         }
 
         void Format_Collector(IMyTerminalBlock block, StringBuilder info)
@@ -1506,9 +1516,8 @@ namespace Digi.BuildInfo.Features.Terminal
             if(MyAPIGateway.Multiplayer.IsServer && Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
             {
                 float sec = (float)Math.Round((Main.Tick - pbd.SavedAtTick) / 60f);
-                info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from" : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)").NewLine();
-                info.NewLine();
-                info.Append(pbd.EchoText).NewLine();
+                info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from" : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)\n\n");
+                info.Append(pbd.EchoText).Append('\n');
             }
         }
 
