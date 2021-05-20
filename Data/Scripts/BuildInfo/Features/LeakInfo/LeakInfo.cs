@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using ParallelTasks;
@@ -39,7 +40,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         Vector3I StartPosition;
         BreadcrumbHeap.Crumb Crumb = null;
         readonly BreadcrumbHeap Crumbs = new BreadcrumbHeap();
-        readonly HashSet<Vector4I> Scanned = new HashSet<Vector4I>(Vector4I.Comparer); // Vector3I position + byte direction
+        readonly HashSet<Vector3I> Scanned = new HashSet<Vector3I>(Vector3I.Comparer);
 
         // shared between main and background thread but not at the same time.
         IMyCubeGrid SelectedGrid = null;
@@ -47,6 +48,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         // used in both threads, but I've learned this is safe to assign in main and read in the background thread
         bool CancelTask = false;
+        bool TaskProcessing = false;
+        bool TaskGeneratingLines = false;
+        int TaskComputedCells = 0;
 
         public enum InfoStatus { None, Computing, Drawing }
 
@@ -121,7 +125,27 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public override void UpdateAfterSim(int tick)
         {
-            if(Status == InfoStatus.Drawing) // if the path to air leak is shown then decrease the countdown timer or clear it directly if the grid suddenly vanishes.
+            if(Status == InfoStatus.Computing)
+            {
+                if(tick % 15 == 0)
+                {
+                    if(!TaskProcessing)
+                    {
+                        NotifyHUD($"Waiting for available thread.", 1000, FontsHandler.SkyBlueSh);
+                    }
+                    else if(TaskGeneratingLines)
+                    {
+                        NotifyHUD($"Computing path, finalizing...", 1000, FontsHandler.SkyBlueSh);
+                    }
+                    else
+                    {
+                        float totalCells = (SelectedGrid.Max - SelectedGrid.Min).Volume();
+                        int progress = (int)Math.Round((TaskComputedCells / totalCells) * 100);
+                        NotifyHUD($"Computing path, {progress.ToString()}% of volume walked...", 1000, FontsHandler.SkyBlueSh);
+                    }
+                }
+            }
+            else if(Status == InfoStatus.Drawing) // if the path to air leak is shown then decrease the countdown timer or clear it directly if the grid suddenly vanishes.
             {
                 if(DrawUntilTick <= tick)
                 {
@@ -186,6 +210,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
             CurrentParticleData = null;
             UsedFromVent = null;
 
+            TaskProcessing = false;
+            TaskGeneratingLines = false;
+            TaskComputedCells = 0;
+
             foreach(Particle particle in Particles)
             {
                 ParticlePool.Return(particle);
@@ -207,11 +235,15 @@ namespace Digi.BuildInfo.Features.LeakInfo
             CurrentParticleData = ParticleDataGridSize[(int)SelectedGrid.GridSizeEnum]; // particle settings for the grid cell size
             StartPosition = startPosition;
 
-            Task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
+            //int gridCells = (SelectedGrid.Max - SelectedGrid.Min).Volume();
+            //if(gridCells <= 50000)
+            //    Task = MyAPIGateway.Parallel.Start(ThreadRun, ThreadFinished);
+            //else
+            Task = MyAPIGateway.Parallel.StartBackground(ThreadRun, ThreadFinished);
 
             SetStatus(InfoStatus.Computing);
-
-            NotifyHUD("Computing path...", 1000 * 60 * 60, FontsHandler.SkyBlueSh);
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+            NotifyHUD("Computing path...", 1000 * 5, FontsHandler.SkyBlueSh);
         }
 
         void SelectedGridMarkedForClose(IMyEntity ent)
@@ -230,16 +262,17 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             try
             {
+                TaskProcessing = true;
+
                 // generate crumbs and path cost
                 Crumb = PathfindGenerateCrumbs(SelectedGrid, ref StartPosition);
 
                 if(Crumb != null)
                 {
+                    TaskGeneratingLines = true;
+
                     while(Crumb.Next != null)
                     {
-                        if(CancelTask)
-                            return;
-
                         DrawLines.Add(MyTuple.Create(Crumb.Next.Position, Crumb.Position));
                         Crumb = Crumb.Next;
                     }
@@ -272,6 +305,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
             while(Crumbs.ListHead != null) // HACK: HasNext() inlined
             {
+                if(CancelTask)
+                    return null;
+
                 // HACK: GetFirst() inlined
                 BreadcrumbHeap.Crumb crumb = Crumbs.ListHead;
                 Crumbs.ListHead = crumb.NextListElem;
@@ -285,32 +321,29 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 //if(DistanceToBox(crumb.Position, grid.Min, grid.Max) < 0)
                 //    return crumb; // found outside of grid, terminate.
 
+                if(!Scanned.Add(crumb.Position))
+                    continue;
+
+                Interlocked.Increment(ref TaskComputedCells);
+
                 for(int dirIdx = 0; dirIdx < DirLen; ++dirIdx)
                 {
-                    if(CancelTask)
-                        return null;
+                    Vector3I target = crumb.Position + directions[dirIdx];
+                    Vector3I s = Vector3I.Min(max - target, target - min);
+                    int distToOutside = Math.Min(s.X, Math.Min(s.Y, s.Z)) + 1;
+                    if(distToOutside < 0)
+                        return crumb;
+                    // HACK: manually inlined ^v
+                    //int distToOutside = DistanceToBox(target, grid.Min, grid.Max) + 1; // adding 1 to offset edges
+                    //if(distToOutside < 0) // gone outside of edge already, exit
+                    //    return crumb;
 
-                    Vector4I moveId = new Vector4I(crumb.Position, dirIdx);
-                    if(Scanned.Add(moveId)) // ensure we didn't already check this position+direction, set.Add() returns false if it was already there.
+                    if(gridBB.Contains(target) == ContainmentType.Contains && !Pressurization.IsAirtightBetweenPositions(grid, crumb.Position, target))
                     {
-                        Vector3I target = crumb.Position + directions[dirIdx];
+                        int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
+                        int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
 
-                        Vector3I s = Vector3I.Min(max - target, target - min);
-                        int distToOutside = Math.Min(s.X, Math.Min(s.Y, s.Z)) + 1;
-                        if(distToOutside < 0)
-                            return crumb;
-                        // HACK: manually inlined ^v
-                        //int distToOutside = DistanceToBox(target, grid.Min, grid.Max) + 1; // adding 1 to offset edges
-                        //if(distToOutside < 0) // gone outside of edge already, exit
-                        //    return crumb;
-
-                        if(gridBB.Contains(target) == ContainmentType.Contains && !Pressurization.IsAirtightBetweenPositions(grid, crumb.Position, target))
-                        {
-                            int pathCost = crumb.PathCost + 1; // direction movement cost, always 1 in our case
-                            int cost = pathCost + distToOutside; // using distance to box edge instead of a predefined end
-
-                            Crumbs.Add(target, cost, pathCost, crumb);
-                        }
+                        Crumbs.Add(target, cost, pathCost, crumb);
                     }
                 }
             }
@@ -332,36 +365,44 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         private void ThreadFinished()
         {
-            if(Task.Exceptions != null && Task.Exceptions.Length > 0)
+            try
             {
-                foreach(Exception e in Task.Exceptions)
+                if(Task.Exceptions != null && Task.Exceptions.Length > 0)
                 {
-                    Log.Error("(Thread) " + e.ToString());
+                    foreach(Exception e in Task.Exceptions)
+                    {
+                        Log.Error("(Thread) " + e.ToString());
+                    }
                 }
-            }
 
-            if(CancelTask)
+                if(CancelTask)
+                {
+                    ClearStatus();
+
+                    NotifyHUD("Cancelled.", 2000, FontsHandler.YellowSh);
+                }
+                else if(Crumb == null)
+                {
+                    ClearStatus();
+
+                    NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
+                }
+                else
+                {
+                    int drawSeconds = (int)MathHelper.Clamp((DrawLines.Count * 2 * SelectedGrid.GridSize), DrawMinSeconds, DrawMaxSeconds);
+                    DrawUntilTick = Main.Tick + (Constants.TICKS_PER_SECOND * drawSeconds);
+
+                    SetStatus(InfoStatus.Drawing);
+
+                    NotifyHUD($"Found leak, path rendered for {drawSeconds.ToString()}s.", 3000, FontsHandler.YellowSh);
+                }
+
+                CancelTask = false;
+            }
+            catch(Exception e)
             {
-                ClearStatus();
-
-                NotifyHUD("Cancelled.", 2000, FontsHandler.YellowSh);
+                Log.Error(e);
             }
-            else if(Crumb == null)
-            {
-                ClearStatus();
-
-                NotifyHUD("No leaks!", 2000, FontsHandler.GreenSh);
-            }
-            else
-            {
-                DrawUntilTick = Main.Tick + (int)MathHelper.Clamp((DrawLines.Count * Constants.TICKS_PER_SECOND * 2 * SelectedGrid.GridSize), Constants.TICKS_PER_SECOND * DrawMinSeconds, Constants.TICKS_PER_SECOND * DrawMaxSeconds);
-
-                SetStatus(InfoStatus.Drawing);
-
-                NotifyHUD("Found leak, path rendered.", 2000, FontsHandler.YellowSh);
-            }
-
-            CancelTask = false;
         }
 
         /// <summary>
