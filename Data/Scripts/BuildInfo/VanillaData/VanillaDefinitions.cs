@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.VanillaData
 
         void DefineVanillaBlocks()
         {
-            // Auto-generated vanilla definitions from SE v1.198.24
+            // Auto-generated vanilla definitions from SE v1.198.31
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRailStraight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere1), "DebugSphereLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere2), "DebugSphereLarge"));
@@ -635,6 +635,9 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiIntersection"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiGate"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_InteriorLight), "PassageSciFiLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageScifiCorner"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiTjunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiWindow"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "LargeWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "SmallWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Decoy), "LargeDecoy"));
