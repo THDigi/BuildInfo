@@ -53,6 +53,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     return true;
                 }
 
+                // HACK: MP clients only get PB detailed info when in terminal
+                if(!MyAPIGateway.Multiplayer.IsServer)
+                {
+                    sb.Append("No data\nin MP");
+                    return true;
+                }
+
                 string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
 
                 if(string.IsNullOrEmpty(detailInfo))
@@ -133,6 +140,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
                 sb.Append("ERROR:\nNotAllowed");
+                return true;
+            }
+
+            // HACK: MP clients only get PB detailed info when in terminal
+            if(!MyAPIGateway.Multiplayer.IsServer)
+            {
+                sb.Append("No data\nin MP");
                 return true;
             }
 

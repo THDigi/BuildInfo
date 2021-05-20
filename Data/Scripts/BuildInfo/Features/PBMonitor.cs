@@ -28,6 +28,10 @@ namespace Digi.BuildInfo.Features
 
         public PBMonitor(BuildInfoMod main) : base(main)
         {
+            // HACK: MP clients only get PB detailed info when in terminal, making this feature useless for them
+            if(!MyAPIGateway.Multiplayer.IsServer)
+                return;
+
             // catch already placed blocks too
             Main.BlockMonitor.BlockAdded += GlobalBlockAdded;
         }

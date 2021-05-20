@@ -1488,6 +1488,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
             }
 
+            // FIXME: this is detected as empty when it's not actually empty in the frame that it updates (PB with manual run only).
             string echoText = block.DetailedInfo;
             if(!string.IsNullOrEmpty(echoText))
                 return; // only print something if PB itself doesn't
@@ -1500,11 +1501,12 @@ namespace Digi.BuildInfo.Features.Terminal
             if(!block.GetPlayerRelationToOwner().IsFriendly())
                 return;
 
+            // HACK: MP clients only get PB detailed info when in terminal
             PBData pbd;
-            if(Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
+            if(MyAPIGateway.Multiplayer.IsServer && Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
             {
                 float sec = (float)Math.Round((Main.Tick - pbd.SavedAtTick) / 60f);
-                info.Append("(BuildInfo: text from ").TimeFormat(sec).Append(" ago)").NewLine();
+                info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from" : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)").NewLine();
                 info.NewLine();
                 info.Append(pbd.EchoText).NewLine();
             }
