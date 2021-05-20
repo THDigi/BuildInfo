@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Systems
 
         public WcApi API { get; private set; }
 
-        public readonly Dictionary<MyDefinitionId, WcApiDef.WeaponDefinition> Weapons = new Dictionary<MyDefinitionId, WcApiDef.WeaponDefinition>(MyDefinitionId.Comparer);
+        public readonly Dictionary<MyDefinitionId, List<WcApiDef.WeaponDefinition>> Weapons = new Dictionary<MyDefinitionId, List<WcApiDef.WeaponDefinition>>(MyDefinitionId.Comparer);
 
         public WeaponCoreAPIHandler(BuildInfoMod main) : base(main)
         {
@@ -97,10 +97,10 @@ namespace Digi.BuildInfo.Systems
                     // HACK: vanilla replacement. https://github.com/sstixrud/WeaponCore/blob/7051b905d13bc0b36f20aecc7ab9216de2121c6a/Data/Scripts/WeaponCore/Session/SessionSupport.cs#L785
                     switch(mount.SubtypeId)
                     {
-                        case "LargeGatlingTurret": Weapons[new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)] = weaponDef; continue;
-                        case "LargeMissileTurret": Weapons[new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)] = weaponDef; continue;
-                        case "SmallGatlingGun": Weapons[new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)] = weaponDef; continue;
-                        case "SmallMissileLauncher": Weapons[new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)] = weaponDef; continue;
+                        case "LargeGatlingTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
+                        case "LargeMissileTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)).Add(weaponDef); continue;
+                        case "SmallGatlingGun": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)).Add(weaponDef); continue;
+                        case "SmallMissileLauncher": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)).Add(weaponDef); continue;
                     }
 
                     List<MyObjectBuilderType> types;
@@ -108,7 +108,8 @@ namespace Digi.BuildInfo.Systems
                     {
                         foreach(var type in types)
                         {
-                            Weapons[new MyDefinitionId(type, subtype)] = weaponDef;
+                            var defId = new MyDefinitionId(type, subtype);
+                            Weapons.GetOrAdd(defId).Add(weaponDef);
                         }
                     }
                     else
@@ -116,6 +117,11 @@ namespace Digi.BuildInfo.Systems
                         Log.Info($"WARNING: Couldn't find any weapon item, weapon block, conveyor sorter with subtype '{subtype}' for WeaponCore, idx={idx.ToString()}, mod={weaponDef.ModPath}");
                     }
                 }
+            }
+
+            foreach(var wcDefs in Weapons.Values)
+            {
+                wcDefs.TrimExcess();
             }
         }
     }

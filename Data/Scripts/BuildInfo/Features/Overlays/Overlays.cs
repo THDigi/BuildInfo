@@ -951,10 +951,10 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Weapons(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            WcApiDef.WeaponDefinition wcDef;
-            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
+            List<WcApiDef.WeaponDefinition> wcDefs;
+            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
-                DrawOverlay_WeaponCoreWeapon(def, wcDef, drawMatrix);
+                DrawOverlay_WeaponCoreWeapon(def, wcDefs, drawMatrix);
                 return;
             }
 
@@ -1152,17 +1152,17 @@ namespace Digi.BuildInfo.Features.Overlays
             #endregion Turret pitch/yaw limits
         }
 
-        private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, WcApiDef.WeaponDefinition wcDef, MatrixD drawMatrix)
+        private void DrawOverlay_WeaponCoreWeapon(MyCubeBlockDefinition def, List<WcApiDef.WeaponDefinition> wcDefs, MatrixD drawMatrix)
         {
             // TODO implement
         }
 
         private void DrawOverlay_ConveyorSorter(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            WcApiDef.WeaponDefinition wcDef;
-            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
+            List<WcApiDef.WeaponDefinition> wcDefs;
+            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
-                DrawOverlay_WeaponCoreWeapon(def, wcDef, drawMatrix);
+                DrawOverlay_WeaponCoreWeapon(def, wcDefs, drawMatrix);
                 return;
             }
         }

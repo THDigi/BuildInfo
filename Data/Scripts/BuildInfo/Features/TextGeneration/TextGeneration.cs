@@ -2016,10 +2016,10 @@ namespace Digi.BuildInfo.Features
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
-            WcApiDef.WeaponDefinition wcDef;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
+            List<WcApiDef.WeaponDefinition> wcDefs;
+            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
-                Format_WeaponCore(def, wcDef);
+                Format_WeaponCore(def, wcDefs);
                 return;
             }
 
@@ -3316,10 +3316,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
-            WcApiDef.WeaponDefinition wcDef;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDef))
+            List<WcApiDef.WeaponDefinition> wcDefs;
+            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
-                Format_WeaponCore(def, wcDef);
+                Format_WeaponCore(def, wcDefs);
                 return;
             }
 
@@ -3559,7 +3559,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_WeaponCore(MyCubeBlockDefinition blockDef, WcApiDef.WeaponDefinition wcDef)
+        private void Format_WeaponCore(MyCubeBlockDefinition blockDef, List<WcApiDef.WeaponDefinition> wcDefs)
         {
             // NOTE: this includes conveyor sorter too
 
@@ -3583,20 +3583,26 @@ namespace Digi.BuildInfo.Features
 
             AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
 
-            //var ammos = wcDef.Ammos;
-            //if(ammos != null && ammos.Length > 0)
-            //{
-            //    if(ammos.Length == 1)
-            //    {
-            //        AddLine().Label("Ammo type").Append(ammos[0].AmmoMagazine);
-            //    }
-            //    else
-            //    {
-            //        AddLine().Label("Ammo types");
 
-            //        foreach(var ammo in wcDef.Ammos)
+            //for(int wcIdx = 0; wcIdx < wcDefs.Count; wcIdx++)
+            //{
+            //    var wcDef = wcDefs[wcIdx];
+
+            //    var ammos = wcDef.Ammos;
+            //    if(ammos != null && ammos.Length > 0)
+            //    {
+            //        if(ammos.Length == 1)
             //        {
-            //            AddLine().Color(COLOR_PART).Append("         | ").ResetFormatting().Append(ammo.AmmoMagazine);
+            //            AddLine().Label("Ammo type").Append(ammos[0].AmmoMagazine);
+            //        }
+            //        else
+            //        {
+            //            AddLine().Label("Ammo types");
+
+            //            foreach(var ammo in wcDef.Ammos)
+            //            {
+            //                AddLine().Color(COLOR_PART).Append("         | ").ResetFormatting().Append(ammo.AmmoMagazine);
+            //            }
             //        }
             //    }
             //}
