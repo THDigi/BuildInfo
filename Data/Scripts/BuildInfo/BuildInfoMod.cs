@@ -66,6 +66,7 @@ namespace Digi.BuildInfo
         public WhatsNew WhatsNew;
         public TooltipHandler TooltipHandler;
         public BlueprintTooltips BlueprintTooltips;
+        public BlockDescriptions BlockDescriptions;
         public ItemTooltips ItemTooltips;
         public ToolbarOverride ToolbarOverride;
         public ToolbarMonitor ToolbarMonitor;
@@ -129,6 +130,7 @@ namespace Digi.BuildInfo
             WhatsNew = new WhatsNew(this);
             TooltipHandler = new TooltipHandler(this);
             BlueprintTooltips = new BlueprintTooltips(this);
+            BlockDescriptions = new BlockDescriptions(this);
             ItemTooltips = new ItemTooltips(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);

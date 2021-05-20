@@ -49,6 +49,28 @@ namespace Digi.BuildInfo.Features
 
                     const StringComparison Compare = StringComparison.OrdinalIgnoreCase;
 
+                    if(target.Equals("All", Compare))
+                    {
+                        Main.TooltipHandler.IgnoreModItems.Add(defId);
+                        Main.TerminalInfo.IgnoreModBlocks.Add(defId);
+                        Main.BlockDescriptions.IgnoreBlockDefs.Add(defId);
+
+                        if(Main.Config.InternalInfo.Value)
+                            Log.Info($"Mod '{data.Item1}' asked BuildInfo to ignore all the things for {defId.ToString()}");
+
+                        return;
+                    }
+
+                    if(target.Equals("NoDescriptionInfo", Compare))
+                    {
+                        Main.BlockDescriptions.IgnoreBlockDefs.Add(defId);
+
+                        if(Main.Config.InternalInfo.Value)
+                            Log.Info($"Mod '{data.Item1}' asked BuildInfo to not show extra Description info for {defId.ToString()}");
+
+                        return;
+                    }
+
                     if(target.Equals("NoDetailInfo", Compare))
                     {
                         Main.TerminalInfo.IgnoreModBlocks.Add(defId);

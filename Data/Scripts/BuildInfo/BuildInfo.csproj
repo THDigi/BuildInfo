@@ -181,6 +181,7 @@
     <Compile Include="Features\LiveData\TargetDummy.cs" />
     <Compile Include="Features\TerminalInfo\MultiDetailInfo.cs" />
     <Compile Include="Features\TerminalInfo\DetailInfoRefresh.cs" />
+    <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
     <Compile Include="Features\Tooltips\ItemTooltips.cs" />
     <Compile Include="Features\Tooltips\TooltipHandler.cs" />
