@@ -129,7 +129,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             TextShadow.Scale = Text.Scale;
             TextShadow.Origin = pos;
-            TextShadow.Offset = Text.Offset + new Vector2D(0.0025, -0.0025) * TextShadow.Scale;
+            TextShadow.Offset = Text.Offset + new Vector2D(0.002, -0.002) * TextShadow.Scale;
 
             MoveIcon.Scale = scale;
             MoveIcon.Origin = pos;

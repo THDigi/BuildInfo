@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     sb.Length -= 1; // remove last space
 
                 var size = Main.TextAPI.GetStringSize(sb);
-                var spaceSize = Main.TextAPI.GetStringSize(new StringBuilder(" ")); // TODO cache result?
+                var spaceSize = Main.TextAPI.GetStringSize(new StringBuilder(" ")); // TODO: cache result?
 
                 double spacesWidth = size.X / spaceSize.X;
 

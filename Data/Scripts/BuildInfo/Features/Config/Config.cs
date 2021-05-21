@@ -252,7 +252,7 @@ namespace Digi.BuildInfo.Features.Config
             const string SubHeaderFormat = "—————— {0} ————————————————————————————————————————————————————————————";
 
             #region TextBox
-            // TODO turn it into a mode so that it can be shown only in HUD hints or only when holding alt.
+            // TODO: turn it into a mode so that it can be shown only in HUD hints or only when holding alt.
             TextShow = new BoolSetting(Handler, "TextBox: Show", true,
                 string.Format(SubHeaderFormat, "Text Box"),
                 "These settings affect the mod's text box that has the equipped/aimed block information.",

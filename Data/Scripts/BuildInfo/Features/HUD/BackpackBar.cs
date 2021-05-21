@@ -143,7 +143,7 @@ namespace Digi.BuildInfo.Features.HUD
             if(!enabled)
                 return CurrentValue.ToString(TextFormat);
 
-            // TODO toggle string formatting?
+            // TODO: toggle string formatting?
             if(WasInShip)
             {
                 if(UsingGroup)

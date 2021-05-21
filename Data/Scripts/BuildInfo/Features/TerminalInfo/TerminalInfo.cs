@@ -58,6 +58,8 @@ namespace Digi.BuildInfo.Features.Terminal
         private readonly HashSet<long> longSetTemp = new HashSet<long>();
         private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
 
+        readonly PowerSourcesMonitor PS;
+
         private MyResourceSinkComponent _sinkCache = null;
         private MyResourceSourceComponent _sourceCache = null;
         private IMyInventory _invCache = null;
@@ -79,6 +81,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public TerminalInfo(BuildInfoMod main) : base(main)
         {
+            PS = new PowerSourcesMonitor(Main);
         }
 
         public override void RegisterComponent()
@@ -216,7 +219,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     if(viewedInTerminal != null)
                     {
                         // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
-                        var orig = viewedInTerminal.ShowInToolbarConfig;
+                        bool orig = viewedInTerminal.ShowInToolbarConfig;
                         viewedInTerminal.ShowInToolbarConfig = !orig;
                         viewedInTerminal.ShowInToolbarConfig = orig;
                     }
@@ -278,9 +281,7 @@ namespace Digi.BuildInfo.Features.Terminal
             viewedInTerminal = null;
             currentFormatCall = null;
 
-            fullScan = true;
-            powerSourcesRecheckAfterTick = 0; // remove cooldown to instantly rescan
-            powerSources.Clear();
+            PS.Reset();
 
             ClearCaches(); // block changed so caches are no longer relevant
 
@@ -452,7 +453,7 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            var cargoDef = (MyCargoContainerDefinition)block.SlimBlock.BlockDefinition;
+            MyCargoContainerDefinition cargoDef = (MyCargoContainerDefinition)block.SlimBlock.BlockDefinition;
 
             info.DetailInfo_Type(block);
             info.DetailInfo_Inventory(Inv, cargoDef.InventorySize.Volume);
@@ -471,7 +472,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
             }
 
-            var sorterDef = (MyConveyorSorterDefinition)block.SlimBlock.BlockDefinition;
+            MyConveyorSorterDefinition sorterDef = (MyConveyorSorterDefinition)block.SlimBlock.BlockDefinition;
 
             info.DetailInfo_MaxPowerUsage(Sink);
             info.DetailInfo_Inventory(Inv, sorterDef.InventorySize.Volume);
@@ -485,7 +486,7 @@ namespace Digi.BuildInfo.Features.Terminal
             info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
 
-            var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
+            MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
             float volume;
 
             if(Utils.GetInventoryVolumeFromComponent(def, out volume))
@@ -497,10 +498,10 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.DetailInfo_Inventory(Inv, Hardcoded.ShipConnector_InventoryVolume(def));
             }
 
-            var data = Main.LiveDataHandler.Get<BData_Connector>(def);
+            BData_Connector data = Main.LiveDataHandler.Get<BData_Connector>(def);
             if(data != null && data.CanConnect)
             {
-                var connector = (IMyShipConnector)block;
+                IMyShipConnector connector = (IMyShipConnector)block;
 
                 if(connector.Status == MyShipConnectorStatus.Connectable)
                 {
@@ -537,7 +538,7 @@ namespace Digi.BuildInfo.Features.Terminal
             info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
 
-            var weaponBlockDef = block?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
+            MyWeaponBlockDefinition weaponBlockDef = block?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
             if(weaponBlockDef == null || Inv == null)
                 return;
 
@@ -547,13 +548,13 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_Inventory(Inv, maxVolume);
 
-            var gun = block as IMyGunObject<MyGunBase>;
+            IMyGunObject<MyGunBase> gun = block as IMyGunObject<MyGunBase>;
             if(gun?.GunBase?.CurrentAmmoMagazineDefinition == null || !gun.GunBase.HasAmmoMagazines)
                 return;
 
             int loadedAmmo = gun.GunBase.CurrentAmmo;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
-            var magDef = gun.GunBase.CurrentAmmoMagazineDefinition;
+            MyAmmoMagazineDefinition magDef = gun.GunBase.CurrentAmmoMagazineDefinition;
 
             // assume one mag is loaded for simplicty sake
             if(loadedAmmo == 0 && mags > 0)
@@ -564,7 +565,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Append("Ammo: ").Append(loadedAmmo).Append(" loaded + ").Append(mags * magDef.Capacity).Append(" in mags\n");
 
-            var weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(block.EntityId, null);
+            ReloadTracker.TrackedWeapon weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(block.EntityId, null);
             if(weaponTracker != null)
             {
                 info.Append("Shots until reload: ");
@@ -579,7 +580,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             const int MaxMagNameLength = 26;
 
-            var weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
+            MyWeaponDefinition weaponDef = MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId);
 
             if(weaponDef == null || weaponDef.AmmoMagazinesId.Length == 1)
             {
@@ -590,12 +591,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append("Types:\n");
                 info.Append(">").AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).Append('\n');
 
-                foreach(var otherMagId in weaponDef.AmmoMagazinesId)
+                foreach(MyDefinitionId otherMagId in weaponDef.AmmoMagazinesId)
                 {
                     if(otherMagId == magDef.Id)
                         continue;
 
-                    var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                    MyAmmoMagazineDefinition otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
                     if(otherMagDef != null)
                         info.Append("  ").AppendMaxLength(otherMagDef.DisplayNameText, MaxMagNameLength).Append('\n');
                 }
@@ -617,14 +618,14 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Power efficiency: <n>%
             //      Used upgrade module slots: <n> / <n>
 
-            var productionDef = (MyProductionBlockDefinition)block.SlimBlock.BlockDefinition;
-            var volume = (productionDef.InventoryMaxVolume > 0 ? productionDef.InventoryMaxVolume : productionDef.InventorySize.Volume);
+            MyProductionBlockDefinition productionDef = (MyProductionBlockDefinition)block.SlimBlock.BlockDefinition;
+            float volume = (productionDef.InventoryMaxVolume > 0 ? productionDef.InventoryMaxVolume : productionDef.InventorySize.Volume);
             info.DetailInfo_Inventory(Inv, volume, "Inventory In");
             info.DetailInfo_Inventory(Inv2, volume, "Inventory Out");
 
-            var production = (IMyProductionBlock)block;
-            var assembler = block as IMyAssembler;
-            var refinery = block as IMyRefinery;
+            IMyProductionBlock production = (IMyProductionBlock)block;
+            IMyAssembler assembler = block as IMyAssembler;
+            IMyRefinery refinery = block as IMyRefinery;
 
             if(assembler != null)
             {
@@ -648,12 +649,12 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").Append('\n');
 
-                List<MyProductionQueueItem> queue = production.GetQueue(); // TODO avoid alloc here somehow?
+                List<MyProductionQueueItem> queue = production.GetQueue(); // TODO: avoid alloc here somehow?
 
                 if(assembler != null || refinery != null)
                 {
-                    var assemblerDef = productionDef as MyAssemblerDefinition;
-                    var refineryDef = productionDef as MyRefineryDefinition;
+                    MyAssemblerDefinition assemblerDef = productionDef as MyAssemblerDefinition;
+                    MyRefineryDefinition refineryDef = productionDef as MyRefineryDefinition;
 
                     tmp.Clear();
                     float totalTime = 0;
@@ -661,7 +662,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     for(int i = 0; i < queue.Count; ++i)
                     {
                         MyProductionQueueItem item = queue[i];
-                        var bp = (MyBlueprintDefinitionBase)item.Blueprint;
+                        MyBlueprintDefinitionBase bp = (MyBlueprintDefinitionBase)item.Blueprint;
                         float amount = (float)item.Amount;
 
                         float time = 0;
@@ -717,8 +718,8 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_Type(block);
 
-            var upgradeModule = (IMyUpgradeModule)block;
-            var def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
+            IMyUpgradeModule upgradeModule = (IMyUpgradeModule)block;
+            MyUpgradeModuleDefinition def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
 
             if(def.Upgrades == null) // required as UpgradeCount throws NRE if block has no Upgrades tag at all (empty tag would be fine)
                 return;
@@ -726,7 +727,7 @@ namespace Digi.BuildInfo.Features.Terminal
             if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
                 return;
 
-            var upgradeModuleDef = (MyUpgradeModuleDefinition)block.SlimBlock.BlockDefinition;
+            MyUpgradeModuleDefinition upgradeModuleDef = (MyUpgradeModuleDefinition)block.SlimBlock.BlockDefinition;
 
             info.Append("Connections:");
 
@@ -740,7 +741,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 nearbyBlocksCache.Clear();
                 upgradeModule.SlimBlock.GetNeighbours(nearbyBlocksCache);
 
-                foreach(var nearSlim in nearbyBlocksCache)
+                foreach(IMySlimBlock nearSlim in nearbyBlocksCache)
                 {
                     if(nearSlim?.FatBlock == null)
                         continue;
@@ -750,16 +751,16 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     longSetTemp.Add(nearSlim.FatBlock.EntityId);
 
-                    var nearCube = (MyCubeBlock)nearSlim.FatBlock;
+                    MyCubeBlock nearCube = (MyCubeBlock)nearSlim.FatBlock;
 
                     if(nearCube.CurrentAttachedUpgradeModules == null)
                         continue;
 
-                    foreach(var module in nearCube.CurrentAttachedUpgradeModules.Values)
+                    foreach(MyCubeBlock.AttachedUpgradeModule module in nearCube.CurrentAttachedUpgradeModules.Values)
                     {
                         if(module.Block == upgradeModule)
                         {
-                            var name = ((nearCube as IMyTerminalBlock)?.CustomName ?? nearCube.DisplayNameText);
+                            string name = ((nearCube as IMyTerminalBlock)?.CustomName ?? nearCube.DisplayNameText);
                             info.Append("• ").Append(module.SlotCount).Append("x ").Append(name);
 
                             if(!module.Compatible)
@@ -784,7 +785,7 @@ namespace Digi.BuildInfo.Features.Terminal
             List<MyUpgradeModuleInfo> upgrades;
             upgradeModule.GetUpgradeList(out upgrades);
 
-            foreach(var item in upgrades)
+            foreach(MyUpgradeModuleInfo item in upgrades)
             {
                 info.Append("• ").AppendUpgrade(item).Append('\n');
             }
@@ -805,9 +806,9 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //     [Main ship cockpit: <name>]
 
-            var cockpit = (IMyCockpit)block;
+            IMyCockpit cockpit = (IMyCockpit)block;
 
-            var def = (MyCockpitDefinition)cockpit.SlimBlock.BlockDefinition;
+            MyCockpitDefinition def = (MyCockpitDefinition)cockpit.SlimBlock.BlockDefinition;
             if(Hardcoded.Cockpit_PowerRequired(def, cockpit.IsFunctional) > 0)
                 info.DetailInfo_CurrentPowerUsage(Sink);
 
@@ -833,12 +834,12 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             info.DetailInfo_Inventory(Inv, Hardcoded.Cockpit_InventoryVolume);
 
-            var blockToolbarData = Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(block.EntityId, null);
+            ToolbarInfo.CustomToolbarData blockToolbarData = Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(block.EntityId, null);
             if(blockToolbarData != null && blockToolbarData.ParseErrors.Count > 0)
             {
                 info.Append("\nToolbar CustomData Errors:");
 
-                foreach(var line in blockToolbarData.ParseErrors)
+                foreach(string line in blockToolbarData.ParseErrors)
                 {
                     info.Append('\n').Append(line);
                 }
@@ -846,19 +847,18 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append('\n');
             }
 
-            var def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
+            MyShipControllerDefinition def = (MyShipControllerDefinition)block.SlimBlock.BlockDefinition;
             if(def.EnableShipControl)
             {
-                var internalController = (MyShipController)block;
-                var distributor = internalController.GridResourceDistributor;
-                var state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
-                var required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
-                var available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+                MyShipController internalController = (MyShipController)block;
+                MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
+                MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
+                float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
 
-                FindPowerSources(block.CubeGrid);
+                PS.Update(block.CubeGrid);
 
-                info.Append("\nShip power statistics:\n");
-                info.Append("  Status: ");
+                info.Append("Ship power: ");
                 switch(state)
                 {
                     case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
@@ -872,195 +872,222 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append("  Total available: ").PowerFormat(available).Append('\n');
 
                 info.Append("  Reactors: ");
-                if(reactors == 0)
-                    info.Append("N/A\n");
+                if(PS.Reactors == 0)
+                    info.Append("None\n");
                 else
-                    info.Append(reactorsWorking).Append(" of ").Append(reactors).Append(" working\n");
+                    info.Append(PS.ReactorsWorking).Append(" of ").Append(PS.Reactors).Append(" working\n");
 
                 info.Append("  Engines: ");
-                if(engines == 0)
-                    info.Append("N/A\n");
+                if(PS.Engines == 0)
+                    info.Append("None\n");
                 else
-                    info.Append(enginesWorking).Append(" of ").Append(engines).Append(" working\n");
+                    info.Append(PS.EnginesWorking).Append(" of ").Append(PS.Engines).Append(" working\n");
 
                 info.Append("  Batteries: ");
-                if(batteries == 0)
-                    info.Append("N/A\n");
+                if(PS.Batteries == 0)
+                    info.Append("None\n");
                 else
-                    info.Append(batteriesWorking).Append(" of ").Append(batteries).Append(" working\n");
+                    info.Append(PS.BatteriesWorking).Append(" of ").Append(PS.Batteries).Append(" working\n");
 
                 info.Append("  Solar Panels: ");
-                if(solarPanels == 0)
-                    info.Append("N/A\n");
+                if(PS.SolarPanels == 0)
+                    info.Append("None\n");
                 else
-                    info.Append(solarPanelsWorking).Append(" of ").Append(solarPanels).Append(" working\n");
+                    info.Append(PS.SolarPanelsWorking).Append(" of ").Append(PS.SolarPanels).Append(" working\n");
 
                 info.Append("  Wind Turbines: ");
-                if(windTurbines == 0)
-                    info.Append("N/A\n");
+                if(PS.WindTurbines == 0)
+                    info.Append("None\n");
                 else
-                    info.Append(windTurbinesWorking).Append(" of ").Append(windTurbines).Append(" working\n");
+                    info.Append(PS.WindTurbinesWorking).Append(" of ").Append(PS.WindTurbines).Append(" working\n");
 
-                if(otherSources > 0)
-                    info.Append("  Other power sources: ").Append(otherSourcesWorking).Append(" of ").Append(otherSources).Append(" working\n");
+                if(PS.Other > 0)
+                    info.Append("  Other power sources: ").Append(PS.OthersWorking).Append(" of ").Append(PS.Other).Append(" working\n");
             }
         }
 
-        private int powerSourcesRecheckAfterTick = 0;
-        private bool fullScan = true;
-
-        private int reactors = 0;
-        private int reactorsWorking = 0;
-
-        private int engines = 0;
-        private int enginesWorking = 0;
-
-        private int batteries = 0;
-        private int batteriesWorking = 0;
-
-        private int solarPanels = 0;
-        private int solarPanelsWorking = 0;
-
-        private int windTurbines = 0;
-        private int windTurbinesWorking = 0;
-
-        private int otherSources = 0;
-        private int otherSourcesWorking = 0;
-
-        private readonly List<IMyTerminalBlock> powerSources = new List<IMyTerminalBlock>();
-
-        private void FindPowerSources(IMyCubeGrid grid)
+        class PowerSourcesMonitor
         {
-            if(grid == null || powerSourcesRecheckAfterTick > Main.Tick)
-                return;
+            public int Reactors { get; private set; }
+            public int ReactorsWorking { get; private set; }
 
-            powerSourcesRecheckAfterTick = Constants.TICKS_PER_SECOND * 3;
+            public int Engines { get; private set; }
+            public int EnginesWorking { get; private set; }
 
-            if(fullScan)
+            public int Batteries { get; private set; }
+            public int BatteriesWorking { get; private set; }
+
+            public int SolarPanels { get; private set; }
+            public int SolarPanelsWorking { get; private set; }
+
+            public int WindTurbines { get; private set; }
+            public int WindTurbinesWorking { get; private set; }
+
+            public int Other { get; private set; }
+            public int OthersWorking { get; private set; }
+
+            bool FullScan = true;
+            int RecheckAfterTick = 0;
+            IMyCubeGrid LastGrid;
+
+            readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
+            readonly BuildInfoMod Main;
+
+            // TODO: use the interface when one is added
+            readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine);
+            readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
+
+            public PowerSourcesMonitor(BuildInfoMod main)
             {
-                FindPowerSources_FullScan(grid);
+                Main = main;
             }
-            else
+
+            public void Reset()
             {
-                FindPowerSources_UpdateWorking(grid);
+                FullScan = true;
+                RecheckAfterTick = 0; // remove cooldown to instantly rescan
+                LastGrid = null;
+                Blocks.Clear();
             }
-        }
 
-        private void FindPowerSources_FullScan(IMyCubeGrid grid)
-        {
-            reactors = 0;
-            reactorsWorking = 0;
-            engines = 0;
-            enginesWorking = 0;
-            batteries = 0;
-            batteriesWorking = 0;
-            solarPanels = 0;
-            solarPanelsWorking = 0;
-            windTurbines = 0;
-            windTurbinesWorking = 0;
-            otherSources = 0;
-            otherSourcesWorking = 0;
-
-            powerSources.Clear();
-
-            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
-            if(gts != null)
-                gts.GetBlocksOfType(powerSources, FindPowerSources_ComputeBlock);
-        }
-
-        private bool FindPowerSources_ComputeBlock(IMyTerminalBlock block)
-        {
-            var source = block.Components?.Get<MyResourceSourceComponent>();
-            if(source == null)
-                return false;
-
-            foreach(var res in source.ResourceTypes)
+            public void Update(IMyCubeGrid grid)
             {
-                if(res == MyResourceDistributorComponent.ElectricityId)
+                if(grid == null || RecheckAfterTick > Main.Tick)
+                    return;
+
+                if(grid != LastGrid)
                 {
-                    bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
+                    Reset();
+                    LastGrid = grid;
+                }
 
-                    if(block is IMyReactor)
-                    {
-                        reactors++;
+                RecheckAfterTick = Constants.TICKS_PER_SECOND * 3;
 
-                        if(working)
-                            reactorsWorking++;
-                    }
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
-                    {
-                        engines++;
-
-                        if(working)
-                            enginesWorking++;
-                    }
-                    else if(block is IMyBatteryBlock)
-                    {
-                        batteries++;
-
-                        if(working)
-                            batteriesWorking++;
-                    }
-                    else if(block is IMySolarPanel)
-                    {
-                        solarPanels++;
-
-                        if(working)
-                            solarPanelsWorking++;
-                    }
-                    else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
-                    {
-                        windTurbines++;
-
-                        if(working)
-                            windTurbinesWorking++;
-                    }
-                    else
-                    {
-                        otherSources++;
-
-                        if(working)
-                            otherSourcesWorking++;
-                    }
-
-                    return true;
+                if(FullScan)
+                {
+                    RefreshEntirely(grid);
+                }
+                else
+                {
+                    RefreshWorking(grid);
                 }
             }
 
-            return false;
-        }
-
-        private void FindPowerSources_UpdateWorking(IMyCubeGrid grid)
-        {
-            reactorsWorking = 0;
-            enginesWorking = 0;
-            batteriesWorking = 0;
-            solarPanelsWorking = 0;
-            windTurbinesWorking = 0;
-            otherSourcesWorking = 0;
-
-            foreach(var block in powerSources)
+            void RefreshEntirely(IMyCubeGrid grid)
             {
-                var source = block.Components?.Get<MyResourceSourceComponent>();
+                Reactors = 0;
+                ReactorsWorking = 0;
+                Engines = 0;
+                EnginesWorking = 0;
+                Batteries = 0;
+                BatteriesWorking = 0;
+                SolarPanels = 0;
+                SolarPanelsWorking = 0;
+                WindTurbines = 0;
+                WindTurbinesWorking = 0;
+                Other = 0;
+                OthersWorking = 0;
+
+                Blocks.Clear();
+                MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid)?.GetBlocksOfType(Blocks, ComputeBlock);
+            }
+
+            bool ComputeBlock(IMyTerminalBlock block)
+            {
+                MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
                 if(source == null)
-                    continue;
+                    return false;
 
-                bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
-                if(!working)
-                    continue;
+                for(int i = 0; i < source.ResourceTypes.Count; i++)
+                {
+                    MyDefinitionId res = source.ResourceTypes[i];
+                    if(res == MyResourceDistributorComponent.ElectricityId)
+                    {
+                        bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
 
-                if(block is IMyReactor)
-                    reactorsWorking++;
-                else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine)) // TODO: use the interface when one is added
-                    enginesWorking++;
-                else if(block is IMyBatteryBlock)
-                    batteriesWorking++;
-                else if(block is IMySolarPanel)
-                    solarPanelsWorking++;
-                else if(block.BlockDefinition.TypeId == typeof(MyObjectBuilder_WindTurbine)) // TODO: use the interface when one is added
-                    windTurbinesWorking++;
-                else
-                    otherSourcesWorking++;
+                        if(block is IMyReactor)
+                        {
+                            Reactors++;
+                            if(working)
+                                ReactorsWorking++;
+                        }
+                        else if(block.BlockDefinition.TypeId == HydrogenEngineType)
+                        {
+                            Engines++;
+                            if(working)
+                                EnginesWorking++;
+                        }
+                        else if(block is IMyBatteryBlock)
+                        {
+                            Batteries++;
+                            if(working)
+                                BatteriesWorking++;
+                        }
+                        else if(block is IMySolarPanel)
+                        {
+                            SolarPanels++;
+                            if(working)
+                                SolarPanelsWorking++;
+                        }
+                        else if(block.BlockDefinition.TypeId == WindTurbineType)
+                        {
+                            WindTurbines++;
+                            if(working)
+                                WindTurbinesWorking++;
+                        }
+                        else
+                        {
+                            Other++;
+                            if(working)
+                                OthersWorking++;
+                        }
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            void RefreshWorking(IMyCubeGrid grid)
+            {
+                ReactorsWorking = 0;
+                EnginesWorking = 0;
+                BatteriesWorking = 0;
+                SolarPanelsWorking = 0;
+                WindTurbinesWorking = 0;
+                OthersWorking = 0;
+
+                for(int i = (Blocks.Count - 1); i >= 0; i--)
+                {
+                    IMyTerminalBlock block = Blocks[i];
+                    if(block.MarkedForClose)
+                    {
+                        Blocks.RemoveAtFast(i);
+                        continue;
+                    }
+
+                    MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
+                    if(source == null)
+                        continue;
+
+                    bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
+                    if(!working)
+                        continue;
+
+                    if(block is IMyReactor)
+                        ReactorsWorking++;
+                    else if(block.BlockDefinition.TypeId == HydrogenEngineType)
+                        EnginesWorking++;
+                    else if(block is IMyBatteryBlock)
+                        BatteriesWorking++;
+                    else if(block is IMySolarPanel)
+                        SolarPanelsWorking++;
+                    else if(block.BlockDefinition.TypeId == WindTurbineType)
+                        WindTurbinesWorking++;
+                    else
+                        OthersWorking++;
+                }
             }
         }
         #endregion ShipController extra stuff
@@ -1073,7 +1100,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_InputPower(Sink);
 
-            var rotorStator = block as IMyMotorStator;
+            IMyMotorStator rotorStator = block as IMyMotorStator;
             if(rotorStator != null)
             {
                 float mass;
@@ -1110,7 +1137,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(Main.Config.InternalInfo.Value)
             {
-                var piston = (IMyPistonBase)block;
+                IMyPistonBase piston = (IMyPistonBase)block;
                 info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).Append('\n');
             }
         }
@@ -1122,10 +1149,10 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Max Required Input: <n> W
             //      Room pressure: <status>
 
-            var sink = Sink;
+            MyResourceSinkComponent sink = Sink;
             info.DetailInfo_CurrentPowerUsage(sink);
 
-            var airVent = (IMyAirVent)block;
+            IMyAirVent airVent = (IMyAirVent)block;
             if(airVent.Depressurize)
             {
                 info.Append("Depressurizing:\n");
@@ -1148,15 +1175,15 @@ namespace Digi.BuildInfo.Features.Terminal
             if(Inv == null)
                 return;
 
-            var reactorDef = (MyReactorDefinition)block.SlimBlock.BlockDefinition;
+            MyReactorDefinition reactorDef = (MyReactorDefinition)block.SlimBlock.BlockDefinition;
 
             if(reactorDef.FuelInfos != null && reactorDef.FuelInfos.Length > 0)
             {
-                var ratio = Source.CurrentOutput / reactorDef.MaxPowerOutput;
+                float ratio = Source.CurrentOutput / reactorDef.MaxPowerOutput;
 
                 if(reactorDef.FuelInfos.Length == 1)
                 {
-                    var fuel = reactorDef.FuelInfos[0];
+                    MyReactorDefinition.FuelInfo fuel = reactorDef.FuelInfos[0];
                     float perSec = ratio * fuel.ConsumptionPerSecond_Items;
                     float seconds = (perSec > 0 ? ((float)Inv.CurrentMass / perSec) : 0);
 
@@ -1169,7 +1196,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     tmp.Clear();
                     float perSec = 0;
 
-                    foreach(var fuel in reactorDef.FuelInfos)
+                    foreach(MyReactorDefinition.FuelInfo fuel in reactorDef.FuelInfos)
                     {
                         tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
 
@@ -1212,15 +1239,15 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Output: 0 W
             //      Wind Clearance: <Text>
 
-            var turbineDef = (MyWindTurbineDefinition)block.SlimBlock.BlockDefinition;
+            MyWindTurbineDefinition turbineDef = (MyWindTurbineDefinition)block.SlimBlock.BlockDefinition;
 
             float optimalOutput = turbineDef.MaxPowerOutput; // * ((turbineDef.RaycasterSize - 1) * turbineDef.RaycastersToFullEfficiency);
 
             info.Append("Optimal Output: ").PowerFormat(optimalOutput).Append('\n');
 
-            var grid = block.CubeGrid;
+            IMyCubeGrid grid = block.CubeGrid;
             Vector3D position = grid.Physics?.CenterOfMassWorld ?? grid.PositionComp.GetPosition();
-            var planet = MyGamePruningStructure.GetClosestPlanet(position);
+            MyPlanet planet = MyGamePruningStructure.GetClosestPlanet(position);
 
             info.Append("Current wind speed: ");
             if(planet != null && planet.PositionComp.WorldAABB.Contains(position) != ContainmentType.Disjoint)
@@ -1241,7 +1268,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Max Output: 5.00 MW
             //      Current Output: 0 W
 
-            var solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
+            MySolarPanelDefinition solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
             info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).Append('\n');
         }
 
@@ -1259,9 +1286,9 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
 
-            var thrust = (IMyThrust)block;
-            var thrustInfo = Hardcoded.Thrust_GetUsage(thrust);
-            var def = thrustInfo.Def;
+            IMyThrust thrust = (IMyThrust)block;
+            Hardcoded.ThrustInfo thrustInfo = Hardcoded.Thrust_GetUsage(thrust);
+            MyThrustDefinition def = thrustInfo.Def;
 
             if(thrustInfo.Fuel != MyResourceDistributorComponent.ElectricityId)
             {
@@ -1350,7 +1377,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
-            var def = (MyRadioAntennaDefinition)block.SlimBlock.BlockDefinition;
+            MyRadioAntennaDefinition def = (MyRadioAntennaDefinition)block.SlimBlock.BlockDefinition;
 
             info.Append("Max Power Usage: ").PowerFormat(Hardcoded.RadioAntenna_PowerReq(def.MaxBroadcastRadius)).Append('\n');
         }
@@ -1362,8 +1389,8 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Input: <n> W
             //      <LaserAntennaStatus>
 
-            var antenna = (IMyLaserAntenna)block;
-            var def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
+            IMyLaserAntenna antenna = (IMyLaserAntenna)block;
+            MyLaserAntennaDefinition def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
 
             info.Append("Power Usage:\n");
 
@@ -1390,7 +1417,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Type: <BlockDefName>
             //      Current Input: <n> W
 
-            var def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
+            MyBeaconDefinition def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
             info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def)).Append('\n');
         }
@@ -1461,7 +1488,7 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //     (nothing)
 
-            var parachute = (IMyParachute)block;
+            IMyParachute parachute = (IMyParachute)block;
 
             info.DetailInfo_Type(block);
             info.DetailInfo_Inventory(Inv);
@@ -1511,12 +1538,12 @@ namespace Digi.BuildInfo.Features.Terminal
             if(!block.GetPlayerRelationToOwner().IsFriendly())
                 return;
 
-            // HACK: MP clients only get PB detailed info when in terminal
+            // HACK: MP clients only get PB detailed info when in terminal, making this feature even more unreliable for tracking last info.
             PBData pbd;
             if(MyAPIGateway.Multiplayer.IsServer && Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
             {
                 float sec = (float)Math.Round((Main.Tick - pbd.SavedAtTick) / 60f);
-                info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from" : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)\n\n");
+                info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from " : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)\n\n");
                 info.Append(pbd.EchoText).Append('\n');
             }
         }
