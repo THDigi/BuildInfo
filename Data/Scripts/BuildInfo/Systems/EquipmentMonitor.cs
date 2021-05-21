@@ -13,6 +13,7 @@ using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Weapons;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
@@ -137,6 +138,7 @@ namespace Digi.BuildInfo.Systems
         private MyCasterComponent handToolCasterComp;
         private bool closedSomeUI = false;
         private int recheckOBAtTick = 0;
+        private readonly List<MyEntity> Entities = new List<MyEntity>();
 
         public EquipmentMonitor(BuildInfoMod main) : base(main)
         {
@@ -575,24 +577,48 @@ namespace Digi.BuildInfo.Systems
             if(def == null)
                 def = block?.BlockDefinition as MyCubeBlockDefinition;
 
+            // these change independent of block so must always be updated
             AimedProjectedCanBuild = projectedCanBuild;
-            NearbyProjector = nearbyProjector;
 
             if(BlockDef == def && AimedBlock == block)
                 return;
 
             AimedBlock = block;
             AimedProjectedBy = null;
-            if(AimedBlock != null)
+            NearbyProjector = nearbyProjector;
+
+            if(block != null)
             {
-                var internalGrid = (MyCubeGrid)AimedBlock.CubeGrid;
+                var internalGrid = (MyCubeGrid)block.CubeGrid;
                 AimedProjectedBy = internalGrid?.Projector;
                 if(AimedProjectedBy != null)
                     NearbyProjector = AimedProjectedBy;
             }
 
             BlockDef = def;
-            BlockGridSize = (def == null ? 0 : (AimedBlock != null ? AimedBlock.CubeGrid.GridSize : MyDefinitionManager.Static.GetCubeSize(def.CubeSize)));
+            BlockGridSize = (def == null ? 0 : (block != null ? block.CubeGrid.GridSize : MyDefinitionManager.Static.GetCubeSize(def.CubeSize)));
+
+            // if no projector was detected by the other means, try again
+            if(NearbyProjector == null && block != null)
+            {
+                BoundingBoxD bb;
+                block.GetWorldBoundingBox(out bb);
+
+                Entities.Clear();
+                MyGamePruningStructure.GetTopMostEntitiesInBox(ref bb, Entities, MyEntityQueryType.Both);
+
+                for(int i = 0; i < Entities.Count; i++)
+                {
+                    var grid = Entities[i] as MyCubeGrid;
+                    if(grid == null || grid.Projector == null || grid.Projector.CubeGrid != block.CubeGrid)
+                        continue;
+
+                    NearbyProjector = grid.Projector;
+                    break;
+                }
+
+                Entities.Clear();
+            }
 
             BlockChanged?.Invoke(def, block);
         }

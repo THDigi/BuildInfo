@@ -20,7 +20,6 @@ using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
-using VRage.Game.ObjectBuilders.Components;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -101,6 +100,7 @@ namespace Digi.BuildInfo.Features
         public bool textShown = false;
         private bool aimInfoNeedsUpdate = false;
         private GridSplitType willSplitGrid;
+        private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
         public Vector3D lastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
 
@@ -1093,13 +1093,40 @@ namespace Digi.BuildInfo.Features
             #endregion Projector info and status
 
             #region Different block projected under this one
-            if(!projected && Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            var nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
+            if(!projected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
-                var projectionUnderAimed = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid?.GetCubeBlock(aimedBlock.Position);
-                if(projectionUnderAimed != null && projectionUnderAimed.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                ProjectedUnder.Clear();
+                string firstProjectedName = null;
+
+                Vector3I min = aimedBlock.Min;
+                Vector3I max = aimedBlock.Max;
+                var iterator = new Vector3I_RangeIterator(ref min, ref max);
+                while(iterator.IsValid())
                 {
-                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectionUnderAimed.BlockDefinition.DisplayNameText);
+                    IMySlimBlock projectedUnder = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
+                    if(projectedUnder != null && projectedUnder.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                    {
+                        if(firstProjectedName == null)
+                            firstProjectedName = projectedUnder.BlockDefinition.DisplayNameText;
+
+                        ProjectedUnder.Add(projectedUnder);
+                    }
+
+                    iterator.MoveNext();
                 }
+
+                int projectedUnderCount = ProjectedUnder.Count;
+                if(projectedUnderCount == 1)
+                {
+                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(firstProjectedName);
+                }
+                else if(projectedUnderCount > 1)
+                {
+                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectedUnderCount).Append(" blocks");
+                }
+
+                ProjectedUnder.Clear();
             }
             #endregion Different block projected under this one
 
