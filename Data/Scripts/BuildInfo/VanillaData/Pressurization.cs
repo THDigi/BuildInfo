@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.VanillaData
     public static class Pressurization
     {
         // TODO: update this code when changed in game.
-        // Last checked on v01_193_019.
+        // Last checked on v01_198_031.
         // All these are from Sandbox.Game.GameSystems.MyGridGasSystem.
         // Since that namespace is prohibited I have to copy it and convert it to work with modAPI.
 
