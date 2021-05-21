@@ -305,13 +305,15 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void UpdateDetailInfo(bool force = false)
         {
-            if(!force && !Main.Config.TerminalDetailInfoAdditions.Value)
-                return;
+            // disabled because it can leave info outdated when it suddenly stops updating
 
-            if(!force && refreshWaitForTick > Main.Tick)
-                return;
+            //if(!force && !Main.Config.TerminalDetailInfoAdditions.Value)
+            //    return;
 
-            refreshWaitForTick = (Main.Tick + RefreshMinTicks);
+            //if(!force && refreshWaitForTick > Main.Tick)
+            //    return;
+
+            //refreshWaitForTick = (Main.Tick + RefreshMinTicks);
             viewedInTerminal.RefreshCustomInfo();
         }
 
