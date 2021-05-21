@@ -567,6 +567,30 @@ namespace Digi.BuildInfo.Utilities
 
             //if(l >= 0.000001f)
             return s.Number(l * 1000000f).Append(" µL");
+
+            //else
+            //{
+            //    if(l >= 1000000000000)
+            //        return s.Number(l / 1000000000000f).Append(" km³");
+
+            //    if(l >= 1000000000)
+            //        return s.Number(l / 1000000000f).Append(" hm³");
+
+            //    if(l >= 1000000)
+            //        return s.Number(l / 1000000f).Append(" dam³");
+
+            //    if(l >= 1000)
+            //        return s.Number(l / 1000f).Append(" m³");
+
+            //    if(l >= 1)
+            //        return s.Number(l).Append(" L");
+
+            //    if(l >= 0.001f)
+            //        return s.Number(l * 1000f).Append(" cm³");
+
+            //    //if(l >= 0.000001f)
+            //    return s.Number(l * 1000000f).Append(" mm³");
+            //}
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)

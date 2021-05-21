@@ -6,6 +6,7 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -254,11 +255,24 @@ namespace Digi.BuildInfo.Features.Terminal
 
         readonly Dictionary<MyStringHash, ResInfo> ResInput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
         readonly Dictionary<MyStringHash, ResInfo> ResOutput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
+        readonly Dictionary<MyStringHash, ResInfo> ResStorage = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
 
         struct ResInfo
         {
-            public float Total;
+            public float Current;
+            public float Max;
             public int Blocks;
+        }
+
+        static void IncrementResInfo(Dictionary<MyStringHash, ResInfo> dict, MyStringHash key, float addCurrent, float addMax)
+        {
+            ResInfo resInfo = dict.GetValueOrDefault(key);
+
+            resInfo.Current += addCurrent;
+            resInfo.Max += addMax;
+            resInfo.Blocks++;
+
+            dict[key] = resInfo;
         }
 
         void UpdateText()
@@ -297,31 +311,19 @@ namespace Digi.BuildInfo.Features.Terminal
                 if(thrust != null)
                 {
                     Hardcoded.ThrustInfo thrustInfo = Hardcoded.Thrust_GetUsage(thrust);
+                    MyStringHash key = thrustInfo.Fuel.SubtypeId;
 
-                    MyStringHash key;
-                    if(thrustInfo.Fuel != MyResourceDistributorComponent.ElectricityId)
-                        key = thrustInfo.Fuel.SubtypeId;
-                    else
-                        key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
-
-                    ResInfo resInfo = ResInput.GetValueOrDefault(key);
-
-                    resInfo.Total += thrustInfo.CurrentUsage;
-                    resInfo.Blocks++;
-
-                    ResInput[key] = resInfo;
+                    IncrementResInfo(ResInput, key, thrustInfo.CurrentUsage, thrustInfo.MaxUsage);
                 }
                 else if(gyro != null)
                 {
                     if(gyro.IsFunctional && gyro.Enabled)
                     {
                         MyStringHash key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
-                        ResInfo resInfo = ResInput.GetValueOrDefault(key);
+                        MyGyro internalGyro = (MyGyro)gyro;
+                        MyGyroDefinition gyroDef = (MyGyroDefinition)internalGyro.BlockDefinition;
 
-                        resInfo.Total += ((MyGyro)gyro).RequiredPowerInput;
-                        resInfo.Blocks++;
-
-                        ResInput[key] = resInfo;
+                        IncrementResInfo(ResInput, key, internalGyro.RequiredPowerInput, gyroDef.RequiredPowerInput * gyro.PowerConsumptionMultiplier);
                     }
                 }
                 else
@@ -332,27 +334,36 @@ namespace Digi.BuildInfo.Features.Terminal
                         foreach(var resId in sink.AcceptedResources)
                         {
                             MyStringHash key = resId.SubtypeId;
-                            ResInfo resInfo = ResInput.GetValueOrDefault(key);
-
-                            resInfo.Total += sink.CurrentInputByType(resId);
-                            resInfo.Blocks++;
-
-                            ResInput[key] = resInfo;
+                            IncrementResInfo(ResInput, key, sink.CurrentInputByType(resId), sink.MaxRequiredInputByType(resId));
                         }
                     }
 
                     var source = block.Components.Get<MyResourceSourceComponent>();
                     if(source != null)
                     {
+                        IMyBatteryBlock battery = block as IMyBatteryBlock;
+                        IMyGasTank tank = (battery == null ? block as IMyGasTank : null);
+
                         foreach(var resId in source.ResourceTypes)
                         {
                             MyStringHash key = resId.SubtypeId;
-                            ResInfo resInfo = ResOutput.GetValueOrDefault(key);
 
-                            resInfo.Total += source.CurrentOutputByType(resId);
-                            resInfo.Blocks++;
+                            IncrementResInfo(ResOutput, key, source.CurrentOutputByType(resId), source.MaxOutputByType(resId));
 
-                            ResOutput[key] = resInfo;
+                            if(key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                            {
+                                if(battery != null)
+                                {
+                                    IncrementResInfo(ResStorage, key, battery.CurrentStoredPower, battery.MaxStoredPower);
+                                }
+                            }
+                            else
+                            {
+                                if(tank != null)
+                                {
+                                    IncrementResInfo(ResStorage, key, (float)(tank.FilledRatio * tank.Capacity), tank.Capacity);
+                                }
+                            }
                         }
                     }
                 }
@@ -400,40 +411,46 @@ namespace Digi.BuildInfo.Features.Terminal
 
             foreach(var kv in ResInput)
             {
+                MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;
-
-                if(kv.Key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                    info.Append(resInfo.Blocks).Append("x Consume Power: ").PowerFormat(resInfo.Total);
-                else
-                    info.Append(resInfo.Blocks).Append("x Consume ").Append(kv.Key.String).Append(": ").VolumeFormat(resInfo.Total).Append("/s");
-
-                info.Append('\n');
+                AppendInputFormat(info, resource, resInfo);
 
                 // get output for this resource too
-                if(ResOutput.TryGetValue(kv.Key, out resInfo))
+                if(ResOutput.TryGetValue(resource, out resInfo))
                 {
-                    ResOutput.Remove(kv.Key); // and consume it
+                    ResOutput.Remove(resource); // and consume it
+                    AppendOutputFormat(info, resource, resInfo);
+                }
 
-                    if(kv.Key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                        info.Append(resInfo.Blocks).Append("x Produce Power: ").PowerFormat(resInfo.Total);
-                    else
-                        info.Append(resInfo.Blocks).Append("x Produce ").Append(kv.Key.String).Append(": ").VolumeFormat(resInfo.Total).Append("/s");
-
-                    info.Append('\n');
+                // and storage too!
+                if(ResStorage.TryGetValue(resource, out resInfo))
+                {
+                    ResStorage.Remove(resource); // and consume it
+                    AppendStorageFormat(info, resource, resInfo);
                 }
             }
 
-            // print outputs that have no inputs
+            // print leftover outputs that have no inputs
             foreach(var kv in ResOutput)
             {
+                MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;
+                AppendOutputFormat(info, resource, resInfo);
 
-                if(kv.Key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                    info.Append(resInfo.Blocks).Append("x Produce Power: ").PowerFormat(resInfo.Total);
-                else
-                    info.Append(resInfo.Blocks).Append("x Produce ").Append(kv.Key.String).Append(": ").VolumeFormat(resInfo.Total).Append("/s");
+                // print storage for this resource
+                if(ResStorage.TryGetValue(resource, out resInfo))
+                {
+                    ResStorage.Remove(resource); // and consume it
+                    AppendStorageFormat(info, resource, resInfo);
+                }
+            }
 
-                info.Append('\n');
+            // print leftover storage
+            foreach(var kv in ResStorage)
+            {
+                MyStringHash resource = kv.Key;
+                ResInfo resInfo = kv.Value;
+                AppendStorageFormat(info, resource, resInfo);
             }
 
             if(inventoryBlocks > 0)
@@ -448,27 +465,51 @@ namespace Digi.BuildInfo.Features.Terminal
             }
         }
 
+        static void AppendInputFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
+        {
+            if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                info.Append(resInfo.Blocks).Append("x Power Consumers: ").PowerFormat(resInfo.Current);
+            else
+                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Consumers: ").VolumeFormat(resInfo.Current).Append("/s");
+            info.Append('\n');
+        }
+
+        static void AppendOutputFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
+        {
+            if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                info.Append(resInfo.Blocks).Append("x Power Producers: ").PowerFormat(resInfo.Current);
+            else
+                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Producers: ").VolumeFormat(resInfo.Current).Append("/s");
+            info.Append('\n');
+        }
+
+        static void AppendStorageFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
+        {
+            if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                info.Append(resInfo.Blocks).Append("x Power Storage: ").PowerStorageFormat(resInfo.Current);
+            else
+                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Storage: ").VolumeFormat(resInfo.Current).Append(" (max: ").VolumeFormat(resInfo.Max).Append(")");
+            info.Append('\n');
+        }
+
         #region Per-type formatters
         void SetupPerTypeFormatters()
         {
-            MultiInfoPerType.Add(typeof(MyObjectBuilder_BatteryBlock), Info_Battery);
+            //MultiInfoPerType.Add(typeof(MyObjectBuilder_BatteryBlock), Info_Battery);
         }
 
-        void Info_Battery(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId)
-        {
-            float currentStorage = 0f;
-            float maxStorage = 0f;
+        //void Info_Battery(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId)
+        //{
+        //    for(int blockIdx = 0; blockIdx < blocks.Count; blockIdx++)
+        //    {
+        //        IMyBatteryBlock block = (IMyBatteryBlock)blocks[blockIdx];
 
-            for(int blockIdx = 0; blockIdx < blocks.Count; blockIdx++)
-            {
-                IMyBatteryBlock block = (IMyBatteryBlock)blocks[blockIdx];
+        //        currentStorage += block.CurrentStoredPower;
+        //        maxStorage += block.MaxStoredPower;
+        //    }
 
-                currentStorage += block.CurrentStoredPower;
-                maxStorage += block.MaxStoredPower;
-            }
-
-            info.Append("Stored Power: ").PowerStorageFormat(currentStorage).Append(" (max: ").PowerStorageFormat(maxStorage).Append(")\n");
-        }
+        //    info.Append("Stored Power: ").PowerStorageFormat(currentStorage).Append(" (max: ").PowerStorageFormat(maxStorage).Append(")\n");
+        //}
         #endregion
     }
 }
