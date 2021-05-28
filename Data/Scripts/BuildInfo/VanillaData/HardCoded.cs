@@ -408,27 +408,7 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyGridJumpDriveSystem.Jump()
         public const float JumpDriveJumpDelay = 10f;
-
-        // from MyMotorStator.UpdateBeforeSimulation()
-        public static float RotorTorqueLimit(IMyMotorStator stator, out float mass)
-        {
-            mass = 0;
-            var topGrid = stator.TopGrid;
-            if(topGrid == null)
-                return 0;
-
-            float torque = stator.Torque;
-
-            mass = topGrid.Physics.Mass;
-            if(!topGrid.IsStatic && mass <= 0)
-            {
-                // need mass for clients in MP too, like when grids are LG'd
-                mass = BuildInfoMod.Instance.GridMassCompute.GetGridMass(stator.TopGrid);
-            }
-
-            return Math.Min(torque, (mass > 0f ? (mass * mass) : torque));
-        }
-
+        
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         public enum MountPointMask : byte
         {

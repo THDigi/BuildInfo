@@ -1696,7 +1696,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(upgradePorts > 0)
                     {
-                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(4);
+                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(3);
                     }
                 }
             }
@@ -2164,7 +2164,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(3);
+                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
