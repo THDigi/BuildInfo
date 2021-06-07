@@ -341,7 +341,8 @@ namespace Digi.BuildInfo.Features.Terminal
                     var source = block.Components.Get<MyResourceSourceComponent>();
                     if(source != null)
                     {
-                        IMyBatteryBlock battery = block as IMyBatteryBlock;
+                        bool isHydrogenEngine = (block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine));
+                        IMyBatteryBlock battery = (!isHydrogenEngine ? block as IMyBatteryBlock : null);
                         IMyGasTank tank = (battery == null ? block as IMyGasTank : null);
 
                         foreach(var resId in source.ResourceTypes)
@@ -364,6 +365,15 @@ namespace Digi.BuildInfo.Features.Terminal
                                     IncrementResInfo(ResStorage, key, (float)(tank.FilledRatio * tank.Capacity), tank.Capacity);
                                 }
                             }
+                        }
+
+                        if(isHydrogenEngine)
+                        {
+                            MyHydrogenEngineDefinition def = (MyHydrogenEngineDefinition)block.SlimBlock.BlockDefinition;
+                            MyStringHash key = def.Fuel.FuelId.SubtypeId;
+                            float filled = source.RemainingCapacityByType(MyResourceDistributorComponent.ElectricityId);
+
+                            IncrementResInfo(ResStorage, key, filled, def.FuelCapacity);
                         }
                     }
                 }

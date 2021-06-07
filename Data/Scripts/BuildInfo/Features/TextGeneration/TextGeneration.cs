@@ -3972,7 +3972,9 @@ namespace Digi.BuildInfo.Features
             if(!Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;
 
-            var res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
+            // TODO: show sync distance too for MP?
+
+            Vector2I res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
             AddLine().Label("Screen resolution").Append(res.X).Append("x").Append(res.Y).Separator().Label("View distance").DistanceFormat(lcd.MaxScreenRenderDistance);
             AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
         }
