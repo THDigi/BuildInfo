@@ -57,6 +57,7 @@ namespace Digi.BuildInfo
         public LiveDataHandler LiveDataHandler;
         public TurretHUD TurretHUD;
         public PlacementDistance PlacementDistance;
+        public CubeBuilderAdditions CubeBuilderAdditions;
         public BlockInfoAdditions BlockInfoAdditions;
         public ProjectedBlockInfo ProjectedBlockInfo;
         public OverrideToolSelectionDraw OverrideToolSelectionDraw;
@@ -122,6 +123,7 @@ namespace Digi.BuildInfo
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);
             PlacementDistance = new PlacementDistance(this);
+            CubeBuilderAdditions = new CubeBuilderAdditions(this);
             BlockInfoAdditions = new BlockInfoAdditions(this);
             RelativeDampenerInfo = new RelativeDampenerInfo(this);
             ShipToolInventoryBar = new ShipToolInventoryBar(this);

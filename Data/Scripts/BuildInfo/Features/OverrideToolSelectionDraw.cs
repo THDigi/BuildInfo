@@ -105,7 +105,7 @@ namespace Digi.BuildInfo.Features
             if(def == null)
                 return;
 
-            var grid = (MyCubeGrid)aimedBlock.CubeGrid;
+            MyCubeGrid grid = (MyCubeGrid)aimedBlock.CubeGrid;
             IMyProjector projector = Main.EquipmentMonitor.AimedProjectedBy;
 
             if(projector != null && !Main.Config.SelectAllProjectedBlocks.Value)
@@ -161,71 +161,79 @@ namespace Digi.BuildInfo.Features
             {
                 color = ColorCache.Value;
             }
-            #endregion
 
             MatrixD worldMatrix;
             BoundingBoxD localBB;
+            GetBlockLocalBB(aimedBlock, ref LocalBBCache, out localBB, out worldMatrix);
 
-            #region Compute box
-            var fatBlock = aimedBlock.FatBlock as MyCubeBlock;
+            localBB.Inflate((grid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
+            float lineWidth = (grid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
+
+            DrawSelection(ref worldMatrix, ref localBB, color, lineWidth);
+            #endregion
+        }
+
+        public void GetBlockLocalBB(IMySlimBlock block, ref BoundingBoxD? cache, out BoundingBoxD localBB, out MatrixD worldMatrix)
+        {
+            MyCubeBlock fatBlock = block.FatBlock as MyCubeBlock;
             if(fatBlock != null)
             {
                 worldMatrix = fatBlock.PositionComp.WorldMatrixRef;
 
-                if(!LocalBBCache.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
+                if(!cache.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
                 {
-                    var localAABB = fatBlock.PositionComp.LocalAABB;
+                    BoundingBox localAABB = fatBlock.PositionComp.LocalAABB;
                     localBB = new BoundingBoxD(localAABB.Min, localAABB.Max);
 
                     #region Subpart localBB inclusion
                     if(fatBlock.Subparts != null)
                     {
-                        var transformToBlockLocal = fatBlock.PositionComp.WorldMatrixInvScaled;
+                        MatrixD transformToBlockLocal = fatBlock.PositionComp.WorldMatrixInvScaled;
 
-                        foreach(var s1 in fatBlock.Subparts.Values)
+                        foreach(MyEntitySubpart s1 in fatBlock.Subparts.Values)
                         {
-                            var obbS1 = new MyOrientedBoundingBoxD(s1.PositionComp.LocalAABB, s1.PositionComp.WorldMatrixRef);
+                            MyOrientedBoundingBoxD obbS1 = new MyOrientedBoundingBoxD(s1.PositionComp.LocalAABB, s1.PositionComp.WorldMatrixRef);
                             obbS1.GetCorners(Corners, 0);
 
                             for(int i = 0; i < Corners.Length; i++)
                             {
-                                var corner = Corners[i];
+                                Vector3D corner = Corners[i];
                                 localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                             }
 
                             if(s1.Subparts != null)
-                                foreach(var s2 in s1.Subparts.Values)
+                                foreach(MyEntitySubpart s2 in s1.Subparts.Values)
                                 {
-                                    var obbS2 = new MyOrientedBoundingBoxD(s2.PositionComp.LocalAABB, s2.PositionComp.WorldMatrixRef);
+                                    MyOrientedBoundingBoxD obbS2 = new MyOrientedBoundingBoxD(s2.PositionComp.LocalAABB, s2.PositionComp.WorldMatrixRef);
                                     obbS2.GetCorners(Corners, 0);
 
                                     for(int i = 0; i < Corners.Length; i++)
                                     {
-                                        var corner = Corners[i];
+                                        Vector3D corner = Corners[i];
                                         localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                     }
 
                                     if(s2.Subparts != null)
-                                        foreach(var s3 in s2.Subparts.Values)
+                                        foreach(MyEntitySubpart s3 in s2.Subparts.Values)
                                         {
-                                            var obbS3 = new MyOrientedBoundingBoxD(s3.PositionComp.LocalAABB, s3.PositionComp.WorldMatrixRef);
+                                            MyOrientedBoundingBoxD obbS3 = new MyOrientedBoundingBoxD(s3.PositionComp.LocalAABB, s3.PositionComp.WorldMatrixRef);
                                             obbS3.GetCorners(Corners, 0);
 
                                             for(int i = 0; i < Corners.Length; i++)
                                             {
-                                                var corner = Corners[i];
+                                                Vector3D corner = Corners[i];
                                                 localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                             }
 
                                             if(s3.Subparts != null)
-                                                foreach(var s4 in s3.Subparts.Values)
+                                                foreach(MyEntitySubpart s4 in s3.Subparts.Values)
                                                 {
-                                                    var obbS4 = new MyOrientedBoundingBoxD(s4.PositionComp.LocalAABB, s4.PositionComp.WorldMatrixRef);
+                                                    MyOrientedBoundingBoxD obbS4 = new MyOrientedBoundingBoxD(s4.PositionComp.LocalAABB, s4.PositionComp.WorldMatrixRef);
                                                     obbS4.GetCorners(Corners, 0);
 
                                                     for(int i = 0; i < Corners.Length; i++)
                                                     {
-                                                        var corner = Corners[i];
+                                                        Vector3D corner = Corners[i];
                                                         localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                                     }
                                                 }
@@ -235,28 +243,30 @@ namespace Digi.BuildInfo.Features
                     }
                     #endregion
 
-                    LocalBBCache = localBB;
+                    cache = localBB;
                 }
                 else
                 {
-                    localBB = LocalBBCache.Value;
+                    localBB = cache.Value;
                 }
             }
             else
             {
+                MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
+                MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+
                 Matrix localMatrix;
-                aimedBlock.Orientation.GetMatrix(out localMatrix);
-                localMatrix.Translation = new Vector3(aimedBlock.Position) * grid.GridSize;
+                block.Orientation.GetMatrix(out localMatrix);
+                localMatrix.Translation = new Vector3(block.Position) * grid.GridSize;
                 worldMatrix = localMatrix * grid.WorldMatrix;
 
-                var halfSize = def.Size * grid.GridSizeHalf;
+                Vector3 halfSize = def.Size * grid.GridSizeHalf;
                 localBB = new BoundingBoxD(-halfSize, halfSize);
             }
-            #endregion
+        }
 
-            localBB.Inflate((grid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
-            float lineWidth = (grid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
-
+        public void DrawSelection(ref MatrixD worldMatrix, ref BoundingBoxD localBB, Color color, float lineWidth)
+        {
             #region Selection lines
             const float LineLength = 2f; // directions are half-long
 
@@ -269,22 +279,22 @@ namespace Digi.BuildInfo.Features
             Vector3D top = center + up;
             Vector3D bottom = center - up;
 
-            var cornerTop1 = top + left + back;
+            Vector3D cornerTop1 = top + left + back;
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop1, -left, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop1, -up, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop1, -back, LineLength, lineWidth, SelectionBlendType);
 
-            var cornerTop2 = top - left - back;
+            Vector3D cornerTop2 = top - left - back;
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop2, left, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop2, -up, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerTop2, back, LineLength, lineWidth, SelectionBlendType);
 
-            var cornerBottom1 = bottom + left - back;
+            Vector3D cornerBottom1 = bottom + left - back;
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom1, -left, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom1, up, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom1, back, LineLength, lineWidth, SelectionBlendType);
 
-            var cornerBottom2 = bottom - left + back;
+            Vector3D cornerBottom2 = bottom - left + back;
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, left, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, up, LineLength, lineWidth, SelectionBlendType);
             MyTransparentGeometry.AddLineBillboard(SelectionLineMaterial, color, cornerBottom2, -back, LineLength, lineWidth, SelectionBlendType);
@@ -299,14 +309,14 @@ namespace Digi.BuildInfo.Features
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom1, cornerRadius, 0, blendType: SelectionBlendType);
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom2, cornerRadius, 0, blendType: SelectionBlendType);
 
-            var cornerTop3 = top - left + back;
+            Vector3D cornerTop3 = top - left + back;
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop3, cornerRadius, 0, blendType: SelectionBlendType);
-            var cornerTop4 = top + left - back;
+            Vector3D cornerTop4 = top + left - back;
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerTop4, cornerRadius, 0, blendType: SelectionBlendType);
 
-            var cornerBottom3 = bottom - left - back;
+            Vector3D cornerBottom3 = bottom - left - back;
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom3, cornerRadius, 0, blendType: SelectionBlendType);
-            var cornerBottom4 = bottom + left + back;
+            Vector3D cornerBottom4 = bottom + left + back;
             MyTransparentGeometry.AddPointBillboard(SelectionCornerMaterial, colorCorner, cornerBottom4, cornerRadius, 0, blendType: SelectionBlendType);
             #endregion corners
 
