@@ -856,6 +856,9 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        /// <summary>
+        /// Number with thousands separator and 2 digits after period.
+        /// </summary>
         public static StringBuilder Number(this StringBuilder s, float value)
         {
             if(!IsValid(s, value))

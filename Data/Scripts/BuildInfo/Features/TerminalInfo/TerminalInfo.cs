@@ -391,11 +391,6 @@ namespace Digi.BuildInfo.Features.Terminal
                     ticker = (ticker + 1) % TickerText.Length;
                     tickerUpdateAt = Main.Tick + RefreshMinTicks;
                 }
-
-                if(BuildInfoMod.IsDevMod && info.Capacity > capacity)
-                {
-                    Log.Error($"{info.Capacity} > {capacity} for {block.BlockDefinition}:\n{info.ToString()}", "custom info chars exceeded!");
-                }
             }
             catch(Exception e)
             {
