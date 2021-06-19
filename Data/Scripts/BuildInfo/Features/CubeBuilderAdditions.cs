@@ -29,25 +29,31 @@ namespace Digi.BuildInfo.Features
         public override void UnregisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+
+            if(MyCubeBuilder.Static != null)
+                MyCubeBuilder.Static.ShowRemoveGizmo = true;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             LastRemoveBlock = null;
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.EquipmentMonitor.IsCubeBuilder && Utils.CreativeToolsEnabled);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.EquipmentMonitor.IsCubeBuilder);
         }
 
         public override void UpdateDraw()
         {
-            if(Main.IsPaused)
-                return;
-
-            if(!MyAPIGateway.CubeBuilder.IsActivated || !Utils.CreativeToolsEnabled)
+            if(Main.IsPaused || !MyAPIGateway.CubeBuilder.IsActivated)
                 return;
 
             AimedGrid = MyCubeBuilder.Static.FindClosestGrid();
             if(AimedGrid == null)
                 return;
+
+            bool creativeTools = Utils.CreativeToolsEnabled;
+            if(MyAPIGateway.Input.IsJoystickLastUsed && MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.BuildTool && !creativeTools)
+                return;
+
+            MyCubeBuilder.Static.ShowRemoveGizmo = true;
 
             // HACK: required to be able to give MySlimBlock to GetAddAndRemovePositions() because it needs to 'out' it.
             IMySlimBlock removeBlock = Hackery(BlockForHax.SlimBlock, (slim) =>
@@ -83,13 +89,25 @@ namespace Digi.BuildInfo.Features
                     name = LastRemoveBlock.BlockDefinition.DisplayNameText;
 
                 if(MyAPIGateway.Input.IsJoystickLastUsed)
-                    MyAPIGateway.Utilities.ShowNotification($" will remove [{name}]", 16, FontsHandler.RedSh);
+                {
+                    if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
+                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint: [{name}]", 16, FontsHandler.WhiteSh);
+                    else if(creativeTools)
+                        MyAPIGateway.Utilities.ShowNotification($"Selected for remove: [{name}]", 16, FontsHandler.WhiteSh);
+                }
                 else
-                    MyAPIGateway.Utilities.ShowNotification($"RMB will remove [{name}]", 16, FontsHandler.RedSh);
+                {
+                    if(creativeTools)
+                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint/remove: [{name}]", 16, FontsHandler.WhiteSh);
+                    else
+                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint: [{name}]", 16, FontsHandler.WhiteSh);
+                }
             }
 
             if(!Main.Config.OverrideToolSelectionDraw.Value)
                 return;
+
+            MyCubeBuilder.Static.ShowRemoveGizmo = false;
 
             MatrixD worldMatrix;
             BoundingBoxD localBB;
@@ -98,7 +116,7 @@ namespace Digi.BuildInfo.Features
             localBB.Inflate((LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
             float lineWidth = (LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
 
-            Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, Color.Red, lineWidth);
+            Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, Color.OrangeRed, lineWidth);
         }
 
         IMySlimBlock Hackery<T>(T refType, Func<T, IMySlimBlock> callback) where T : class
