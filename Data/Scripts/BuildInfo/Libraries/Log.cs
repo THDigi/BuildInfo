@@ -21,7 +21,6 @@ namespace Digi
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
     {
-        private static Log instance;
         private static Handler handler;
         private static bool unloaded = false;
         private static long dateStarted;
@@ -45,37 +44,27 @@ namespace Digi
         #region Handling of handler
         public override void LoadData()
         {
-            instance = this;
             EnsureHandlerCreated();
             handler.Init(this);
         }
 
         protected override void UnloadData()
         {
-            instance = null;
-
             if(handler != null && handler.AutoClose)
             {
                 Unload();
             }
         }
 
-        private void Unload()
+        private static void Unload()
         {
-            try
+            if(!unloaded)
             {
-                if(unloaded)
-                    return;
-
                 unloaded = true;
                 handler?.Close();
-                handler = null;
             }
-            catch(Exception e)
-            {
-                MyLog.Default.WriteLine($"Error in {ModContext.ModName} ({ModContext.ModId}): {e.Message}\n{e.StackTrace}");
-                throw new ModCrashedException(e, ModContext);
-            }
+
+            handler = null;
         }
 
         private static void EnsureHandlerCreated()
@@ -97,7 +86,7 @@ namespace Digi
         /// </summary>
         public static void Close()
         {
-            instance?.Unload();
+            Unload();
         }
 
         /// <summary>
