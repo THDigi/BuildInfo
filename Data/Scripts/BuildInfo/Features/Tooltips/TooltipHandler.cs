@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                             {
                                 TmpBpUsedIn.GetOrAdd(bp.Id).Add(prodDef);
 
-                                if(!isGasGenOrTank) // bp results of gas generators or gas tanks are not used, skip
+                                if(!isGasGenOrTank) // HACK: bp results of gas generators or gas tanks are not used, skip
                                 {
                                     foreach(var result in bp.Results)
                                     {

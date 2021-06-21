@@ -513,6 +513,10 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     foreach(var prodDef in prodList)
                     {
+                        // HACK: bp results of gas generators or gas tanks are not used, skip
+                        if(areResults && (prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition))
+                            continue;
+
                         string name = prodDef.DisplayNameText;
 
                         Sizes currentSize = (prodDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
