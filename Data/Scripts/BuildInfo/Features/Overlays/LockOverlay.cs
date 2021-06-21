@@ -34,7 +34,8 @@ namespace Digi.BuildInfo.Features.Overlays
             if(paused || inMenu)
                 return;
 
-            if(Main.Config.LockOverlayBind.Value.IsJustPressed())
+            var eq = Main.EquipmentMonitor;
+            if((LockedOnBlock != null || eq.IsAnyWelder || eq.IsAnyGrinder) && Main.Config.LockOverlayBind.Value.IsJustPressed())
             {
                 LockOverlayToAimedBlock();
             }
