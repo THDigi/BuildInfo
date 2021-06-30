@@ -593,7 +593,7 @@ namespace Digi.BuildInfo.Utilities
             //}
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint, MyInventoryComponentDefinition invComp)
         {
             var types = Caches.GetObTypeSet();
             types.AddSetReader(inputConstraint.ConstrainedTypes);
@@ -604,16 +604,16 @@ namespace Digi.BuildInfo.Utilities
             items.AddSetReader(outputConstraint.ConstrainedIds);
 
             // HACK only using input constraint's whitelist status, not sure if output inventory's whitelist is needed
-            return s.InventoryFormat(volume,
+            return s.InventoryFormat(volume, invComp,
                 types: types,
                 items: items,
                 isWhitelist: inputConstraint.IsWhitelist);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inventoryConstraint)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inventoryConstraint, MyInventoryComponentDefinition invComp)
         {
             if(inventoryConstraint == null)
-                return s.InventoryFormat(volume);
+                return s.InventoryFormat(volume, invComp);
 
             var types = Caches.GetObTypeSet();
             types.AddSetReader(inventoryConstraint.ConstrainedTypes);
@@ -621,37 +621,37 @@ namespace Digi.BuildInfo.Utilities
             var items = Caches.GetDefIdSet();
             items.AddSetReader(inventoryConstraint.ConstrainedIds);
 
-            return s.InventoryFormat(volume,
+            return s.InventoryFormat(volume, invComp,
                 types: types,
                 items: items,
                 isWhitelist: inventoryConstraint.IsWhitelist);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyObjectBuilderType allowedType)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyObjectBuilderType allowedType, MyInventoryComponentDefinition invComp)
         {
             var types = Caches.GetObTypeSet();
             types.Add(allowedType);
 
-            return s.InventoryFormat(volume, types: types);
+            return s.InventoryFormat(volume, invComp, types: types);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId[] allowedItems)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId[] allowedItems, MyInventoryComponentDefinition invComp)
         {
             var items = Caches.GetDefIdSet();
             items.AddArray(allowedItems);
 
-            return s.InventoryFormat(volume, items: items);
+            return s.InventoryFormat(volume, invComp, items: items);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId allowedItem)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId allowedItem, MyInventoryComponentDefinition invComp)
         {
             var items = Caches.GetDefIdSet();
             items.Add(allowedItem);
 
-            return s.InventoryFormat(volume, items: items);
+            return s.InventoryFormat(volume, invComp, items: items);
         }
 
-        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
+        public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryComponentDefinition invComp, HashSet<MyObjectBuilderType> types = null, HashSet<MyDefinitionId> items = null, bool isWhitelist = true)
         {
             if(volume == 0)
             {
@@ -660,19 +660,24 @@ namespace Digi.BuildInfo.Utilities
             }
 
             var bi = BuildInfoMod.Instance;
+            bool allowMultiplier = invComp?.MultiplierEnabled ?? true;
+            float blockInvMul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
 
-            if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryVolumeMultiplied))
+            if(allowMultiplier && bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryVolumeMultiplied))
             {
-                var mul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
+                s.VolumeFormat(volume * 1000 * blockInvMul);
 
-                s.VolumeFormat(volume * 1000 * mul);
-
-                if(Math.Abs(mul - 1) > 0.001f)
-                    s.Color(bi.TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(mul, 2)).Append(")").ResetFormatting();
+                if(Math.Abs(blockInvMul - 1) > 0.001f)
+                    s.Color(bi.TextGeneration.COLOR_UNIMPORTANT).Append(" (x").Append(Math.Round(blockInvMul, 2)).Append(")").ResetFormatting();
             }
             else
             {
                 s.VolumeFormat(volume * 1000);
+
+                if(!allowMultiplier && blockInvMul != 1f)
+                {
+                    s.Color(bi.TextGeneration.COLOR_WARNING).Append(" (ignores multiplier)").ResetFormatting();
+                }
             }
 
             if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))

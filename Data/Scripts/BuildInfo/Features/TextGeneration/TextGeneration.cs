@@ -11,6 +11,7 @@ using Digi.Input;
 using Draygo.API;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -1663,6 +1664,8 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional upgrades
 
+            bool hasFormatter = false;
+
             #region Per-block info
             if(def.Id.TypeId != typeof(MyObjectBuilder_CubeBlock)) // anything non-decorative
             {
@@ -1671,9 +1674,15 @@ namespace Digi.BuildInfo.Features
                 if(formatLookup.TryGetValue(def.Id.TypeId, out action))
                 {
                     action.Invoke(def);
+                    hasFormatter = true;
                 }
             }
             #endregion Per-block info
+
+            if(!hasFormatter)
+            {
+                InventoryStats(def);
+            }
 
             #region Added by mod
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
@@ -2168,11 +2177,9 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                float volume;
-                if(Utils.GetInventoryVolumeFromComponent(def, out volume))
-                    AddLine().Label("Inventory").InventoryFormat(volume, Hardcoded.ShipDrill_InventoryConstraint);
-                else
-                    AddLine().LabelHardcoded("Inventory").InventoryFormat(Hardcoded.ShipDrill_InventoryVolume(def), Hardcoded.ShipDrill_InventoryConstraint);
+                MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def);
+                float volume = invComp?.Volume ?? Hardcoded.ShipDrill_InventoryVolume(def);
+                AddLine().LabelHardcoded("Inventory").InventoryFormat(volume, Hardcoded.ShipDrill_InventoryConstraint, invComp);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2753,13 +2760,15 @@ namespace Digi.BuildInfo.Features
             {
                 var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
 
+                MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def);
+
                 if(refinery != null || assembler != null)
                 {
-                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint);
+                    AddLine().Append("In+out inventories: ").InventoryFormat(volume * 2, production.InputInventoryConstraint, production.OutputInventoryConstraint, invComp);
                 }
                 else
                 {
-                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint);
+                    AddLine().Append("Inventory: ").InventoryFormat(volume, production.InputInventoryConstraint, invComp);
                 }
             }
 
@@ -3370,7 +3379,8 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId);
+                MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def);
+                AddLine().Label("Inventory").InventoryFormat(weaponDef.InventoryMaxVolume, wpDef.AmmoMagazinesId, invComp);
             }
 
             if(turret != null)
@@ -3779,8 +3789,8 @@ namespace Digi.BuildInfo.Features
                 var invComp = Utils.GetInventoryFromComponent(def); // SafeZone type has no inventory data in its definition, only components can add inventory to it.
                 if(invComp != null)
                 {
-                    AddLine().Label("Inventory").InventoryFormat(invComp.Volume, invComp.InputConstraint);
-                    InventoryConstraints(invComp.Volume, invComp.InputConstraint);
+                    AddLine().Label("Inventory").InventoryFormat(invComp.Volume, invComp.InputConstraint, invComp);
+                    InventoryConstraints(invComp.Volume, invComp.InputConstraint, invComp);
                 }
             }
 
@@ -3914,58 +3924,114 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
                 float volume = alternateVolume;
-                var invComp = Utils.GetInventoryFromComponent(def);
+                MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def);
 
                 if(invComp != null)
                     volume = invComp.Volume;
 
-                var invConstraint = invComp?.InputConstraint ?? constraintFromDef;
+                MyInventoryConstraint invConstraint = invComp?.InputConstraint ?? constraintFromDef;
 
                 if(volume > 0)
-                    AddLine().Label("Inventory").InventoryFormat(volume, invConstraint);
+                    AddLine().Label("Inventory").InventoryFormat(volume, invConstraint, invComp);
                 else if(hardcodedVolume > 0)
-                    AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume, invConstraint);
+                    AddLine().LabelHardcoded("Inventory").InventoryFormat(hardcodedVolume, invConstraint, invComp);
 
-                if(showConstraints && invConstraint != null)
-                    InventoryConstraints(volume, invConstraint);
+                if((volume > 0 || hardcodedVolume > 0) && showConstraints)
+                    InventoryConstraints(volume, invConstraint, invComp);
             }
         }
 
-        private void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit)
+        private void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit, MyInventoryComponentDefinition invComp)
         {
-            if(invLimit != null && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
+            if(!Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
+                return;
+
+            if(invComp != null)
             {
-                AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "Inventory items allowed" : "Inventory items NOT allowed");
+                int maxItems = invComp.MaxItemCount;
+                float maxMass = invComp.Mass;
+
+                if(maxItems >= int.MaxValue)
+                    maxItems = 0;
+
+                if(maxMass >= float.MaxValue)
+                    maxMass = 0;
+
+                if(maxItems > 0 || maxMass > 0)
+                {
+                    AddLine().Append("    ");
+
+                    if(maxItems > 0)
+                    {
+                        GetLine().Color(COLOR_BAD).Label("Max items").Append(maxItems).ResetFormatting();
+                    }
+
+                    if(maxMass > 0)
+                    {
+                        if(maxItems > 0)
+                            GetLine().Separator();
+
+                        GetLine().Color(COLOR_BAD).Label("Max mass").MassFormat(maxMass).ResetFormatting();
+                    }
+                }
+            }
+
+            if(invLimit != null)
+            {
+                AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "    Items allowed" : "    Items NOT allowed");
 
                 foreach(var id in invLimit.ConstrainedIds)
                 {
-                    AddLine().Append("       - ").IdTypeSubtypeFormat(id).Append(" (Max fit: ");
-
-                    var itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
-
+                    MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
                     if(itemDef == null)
+                        continue;
+
+                    AddLine().Append("       - ").Append(itemDef.DisplayNameText).Append(" (").IdTypeSubtypeFormat(id).Append(")");
+
+                    //AddLine().Append("       - ").IdTypeSubtypeFormat(id).Append(" (Max fit: ");
+                    //
+                    //MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
+                    //if(itemDef == null)
+                    //{
+                    //    GetLine().Color(COLOR_BAD).Append("ERROR: NOT FOUND!").ResetFormatting();
+                    //}
+                    //else
+                    //{
+                    //    float maxFit = (maxVolume / itemDef.Volume);
+                    //
+                    //    if(itemDef.HasIntegralAmounts)
+                    //        GetLine().Append(Math.Floor(maxFit));
+                    //    else
+                    //        GetLine().Append(maxFit.ToString("0.##"));
+                    //}
+                    //
+                    //GetLine().Append(")");
+                }
+
+                foreach(MyObjectBuilderType type in invLimit.ConstrainedTypes)
+                {
+                    AddLine().Append("       - All of type: ");
+
+                    string friendlyName = TypeFriendlyNames.GetValueOrDefault(type, null);
+                    if(friendlyName != null)
                     {
-                        GetLine().Color(COLOR_BAD).Append("ERROR: NOT FOUND!").ResetFormatting();
+                        GetLine().Append(friendlyName).Append(" (").IdTypeFormat(type).Append(")");
                     }
                     else
                     {
-                        float maxFit = (maxVolume / itemDef.Volume);
-
-                        if(itemDef.HasIntegralAmounts)
-                            GetLine().Append(Math.Floor(maxFit));
-                        else
-                            GetLine().Append(maxFit.ToString("0.##"));
+                        GetLine().IdTypeFormat(type);
                     }
-
-                    GetLine().Append(")");
-                }
-
-                foreach(var type in invLimit.ConstrainedTypes)
-                {
-                    AddLine().Append("       - All of type: ").IdTypeFormat(type);
                 }
             }
         }
+
+        readonly Dictionary<MyObjectBuilderType, string> TypeFriendlyNames = new Dictionary<MyObjectBuilderType, string>()
+        {
+            [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand-Tool/Gun",
+            [typeof(MyObjectBuilder_AmmoMagazine)] = "Ammo Magazine",
+            [typeof(MyObjectBuilder_GasContainerObject)] = "Gas Bottle",
+            [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
+        };
 
         private void Screen(MyCubeBlockDefinition def, MyTextPanelDefinition lcd)
         {
