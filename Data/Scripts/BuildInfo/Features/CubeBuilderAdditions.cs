@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Features
         IMySlimBlock LastRemoveBlock;
         MyCubeGrid AimedGrid;
         BoundingBoxD? LocalBBCache;
+        IMyHudNotification Notify;
 
         readonly MyCubeBlock BlockForHax = new MyCubeBlock(); // needed just for the MySlimBlock reference for the generic hax below
 
@@ -83,30 +84,32 @@ namespace Digi.BuildInfo.Features
             if(removeBlock == null)
                 return;
 
+            // TODO: compute mirrored selections too?
+
             if(!Main.IsPaused)
             {
                 string name = null;
-                IMyTerminalBlock tb = LastRemoveBlock?.FatBlock as IMyTerminalBlock;
+                IMyTerminalBlock tb = removeBlock?.FatBlock as IMyTerminalBlock;
 
                 if(tb != null)
                     name = tb.CustomName;
 
                 if(string.IsNullOrWhiteSpace(name))
-                    name = LastRemoveBlock.BlockDefinition.DisplayNameText;
+                    name = removeBlock.BlockDefinition.DisplayNameText;
 
                 if(MyAPIGateway.Input.IsJoystickLastUsed)
                 {
                     if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
-                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint: [{name}]", 16, FontsHandler.WhiteSh);
+                        ShowHUDNotification($"Selected for paint: [{name}]");
                     else if(creativeTools)
-                        MyAPIGateway.Utilities.ShowNotification($"Selected for remove: [{name}]", 16, FontsHandler.WhiteSh);
+                        ShowHUDNotification($"Selected for remove: [{name}]");
                 }
                 else
                 {
                     if(creativeTools)
-                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint/remove: [{name}]", 16, FontsHandler.WhiteSh);
+                        ShowHUDNotification($"Selected for paint/remove: [{name}]");
                     else
-                        MyAPIGateway.Utilities.ShowNotification($"Selected for paint: [{name}]", 16, FontsHandler.WhiteSh);
+                        ShowHUDNotification($"Selected for paint: [{name}]");
                 }
             }
 
@@ -115,12 +118,22 @@ namespace Digi.BuildInfo.Features
 
             MatrixD worldMatrix;
             BoundingBoxD localBB;
-            Main.OverrideToolSelectionDraw.GetBlockLocalBB(LastRemoveBlock, ref LocalBBCache, out localBB, out worldMatrix);
+            Main.OverrideToolSelectionDraw.GetBlockLocalBB(removeBlock, ref LocalBBCache, out localBB, out worldMatrix);
 
-            localBB.Inflate((LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
-            float lineWidth = (LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
+            localBB.Inflate((removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
+            float lineWidth = (removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
 
             Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, new Color(255, 200, 55), lineWidth);
+        }
+
+        void ShowHUDNotification(string message)
+        {
+            if(Notify == null)
+                Notify = MyAPIGateway.Utilities.CreateNotification("", 16 * 5, FontsHandler.WhiteSh);
+
+            Notify.Hide();
+            Notify.Text = message;
+            Notify.Show();
         }
 
         IMySlimBlock Hackery<T>(T refType, Func<T, IMySlimBlock> callback) where T : class
