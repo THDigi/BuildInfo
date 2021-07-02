@@ -115,7 +115,7 @@ namespace Digi.BuildInfo.Features
             localBB.Inflate((LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
             float lineWidth = (LastRemoveBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
 
-            Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, Color.OrangeRed, lineWidth);
+            Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, new Color(255, 200, 55), lineWidth);
         }
 
         IMySlimBlock Hackery<T>(T refType, Func<T, IMySlimBlock> callback) where T : class
