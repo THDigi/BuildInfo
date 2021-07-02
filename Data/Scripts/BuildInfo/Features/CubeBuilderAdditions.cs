@@ -1,6 +1,7 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -54,6 +55,10 @@ namespace Digi.BuildInfo.Features
 
             bool creativeTools = Utils.CreativeToolsEnabled;
             if(MyAPIGateway.Input.IsJoystickLastUsed && MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.BuildTool && !creativeTools)
+                return;
+
+            MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+            if(def == null || def.CubeSize != AimedGrid.GridSizeEnum)
                 return;
 
             // HACK: required to be able to give MySlimBlock to GetAddAndRemovePositions() because it needs to 'out' it.
