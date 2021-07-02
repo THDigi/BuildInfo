@@ -37,7 +37,10 @@ namespace Digi.BuildInfo.Features
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             LastRemoveBlock = null;
+
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.EquipmentMonitor.IsCubeBuilder);
+
+            MyCubeBuilder.Static.ShowRemoveGizmo = !Main.Config.OverrideToolSelectionDraw.Value;
         }
 
         public override void UpdateDraw()
@@ -52,8 +55,6 @@ namespace Digi.BuildInfo.Features
             bool creativeTools = Utils.CreativeToolsEnabled;
             if(MyAPIGateway.Input.IsJoystickLastUsed && MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.BuildTool && !creativeTools)
                 return;
-
-            MyCubeBuilder.Static.ShowRemoveGizmo = true;
 
             // HACK: required to be able to give MySlimBlock to GetAddAndRemovePositions() because it needs to 'out' it.
             IMySlimBlock removeBlock = Hackery(BlockForHax.SlimBlock, (slim) =>
@@ -106,8 +107,6 @@ namespace Digi.BuildInfo.Features
 
             if(!Main.Config.OverrideToolSelectionDraw.Value)
                 return;
-
-            MyCubeBuilder.Static.ShowRemoveGizmo = false;
 
             MatrixD worldMatrix;
             BoundingBoxD localBB;
