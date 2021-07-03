@@ -35,6 +35,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ScrollableComponentsList;
         public BoolSetting SelectAllProjectedBlocks;
         public BoolSetting OverrideToolSelectionDraw;
+        public IntegerSetting CubeBuilderSelectionInfoMode;
 
         public BoolSetting ShipToolInvBarShow;
         public Vector2DSetting ShipToolInvBarPosition;
@@ -91,6 +92,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting BlockPickerBind;
         public InputCombinationSetting LockOverlayBind;
         public InputCombinationSetting ShowToolbarInfoBind;
+        public InputCombinationSetting ShowCubeBuilderSelectionInfoBind;
 
         public BoolSetting InternalInfo;
 
@@ -105,6 +107,7 @@ namespace Digi.BuildInfo.Features.Config
         public const string BLOCK_PICKER_INPUT_NAME = "bi.blockPicker";
         public const string LOCK_OVERLAY_INPUT_NAME = "bi.lockOverlay";
         public const string SHOW_TOOLBAR_INFO_INPUT_NAME = "bi.showToolbarInfo";
+        public const string SHOW_CB_SELECTION_INFO_INPUT_NAME = "bi.showCBSelectionInfo";
 
         public Config(BuildInfoMod main) : base(main)
         {
@@ -323,7 +326,19 @@ namespace Digi.BuildInfo.Features.Config
             OverrideToolSelectionDraw = new BoolSetting(Handler, "HUD: Override Tool Selection draw", true,
                 "Replaces block selection with a model-shrink-wrapped-box and a bit thicker, for welder and grinder.",
                 "For example, a large-grid camera block would show selection over the camera model itself, instead of the entire grid cell.",
-                "Cube builder/placer is unaffected, you can still see block's boundingbox with that.");
+                "CubeBuilder's block selection for paint/removal is affected, but the box around your ghost block is not (because it's inaccessible).");
+
+            CubeBuilderSelectionInfoMode = CreateEnumSetting("HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
+            {
+                "When holding a block (CubeBuilder tool), aiming at blocks allows you to paint or remove them.",
+                "This setting shows the terminal name or definition name for the aimed block.",
+                $"The selection box is controlled by '{OverrideToolSelectionDraw.Name}' instead.",
+            },
+            new Dictionary<CubeBuilderSelectionInfo, string>()
+            {
+                [CubeBuilderSelectionInfo.ShowOnPress] = $"input can be configured in 'Bind: Show CubeBuilder Selection Info'", // can't use field as it's not yet assigned
+                [CubeBuilderSelectionInfo.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.",
+            });
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected.");
@@ -537,6 +552,10 @@ namespace Digi.BuildInfo.Features.Config
             ShowToolbarInfoBind = new InputCombinationSetting(Handler, "Bind: Show Toolbar Info", Combination.Create(SHOW_TOOLBAR_INFO_INPUT_NAME, "c.lookaround"),
                 $"Shows ToolbarInfo while held when in a cockpit.",
                 $"Only works if '{ToolbarLabels.Name}' is set to {nameof(ToolbarLabelsMode.ShowOnPress)} or {nameof(ToolbarLabelsMode.HudHints)}.");
+
+            ShowCubeBuilderSelectionInfoBind = new InputCombinationSetting(Handler, "Bind: Show CubeBuilder Selection Info", Combination.Create(SHOW_CB_SELECTION_INFO_INPUT_NAME, "shift"),
+                $"When holding a cube and aiming at a block, holding this bind would show what block you're selecting for removal/paint.",
+                $"Only works if '{CubeBuilderSelectionInfoMode.Name}' is set to {nameof(CubeBuilderSelectionInfo.ShowOnPress)} or {nameof(CubeBuilderSelectionInfo.HudHints)}.");
             #endregion
 
             #region Misc

@@ -140,6 +140,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
             SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
             SimpleToggle(Category_HUD, null, Main.Config.OverrideToolSelectionDraw);
+            SimpleEnumCycle(Category_HUD, null, typeof(CubeBuilderSelectionInfo), Main.Config.CubeBuilderSelectionInfoMode);
             AddSpacer(Category_HUD);
             SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
             SimpleToggle(Category_HUD, null, Main.Config.HudStatOverrides);
@@ -197,6 +198,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleBind(Category_Binds, "Block Picker Bind", Config.Config.BLOCK_PICKER_INPUT_NAME, Main.Config.BlockPickerBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Lock Overlay Bind", Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show Toolbar Info Bind", Config.Config.SHOW_TOOLBAR_INFO_INPUT_NAME, Main.Config.ShowToolbarInfoBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Show CubeBuilder Selection Info Bind", Config.Config.SHOW_CB_SELECTION_INFO_INPUT_NAME, Main.Config.ShowCubeBuilderSelectionInfoBind, groupBinds, groupBinds);
 
             SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);

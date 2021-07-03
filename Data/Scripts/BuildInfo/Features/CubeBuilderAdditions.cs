@@ -1,7 +1,11 @@
 ﻿using System;
+using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.Input.Devices;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -16,6 +20,7 @@ namespace Digi.BuildInfo.Features
         MyCubeGrid AimedGrid;
         BoundingBoxD? LocalBBCache;
         IMyHudNotification Notify;
+        CubeBuilderSelectionInfo Mode;
 
         readonly MyCubeBlock BlockForHax = new MyCubeBlock(); // needed just for the MySlimBlock reference for the generic hax below
 
@@ -26,28 +31,48 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+
+            Main.Config.CubeBuilderSelectionInfoMode.ValueAssigned += CubeBuilderSelectionInfoMode_ValueAssigned;
         }
 
         public override void UnregisterComponent()
         {
-            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-
             if(MyCubeBuilder.Static != null)
                 MyCubeBuilder.Static.ShowRemoveGizmo = true;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+
+            Main.Config.CubeBuilderSelectionInfoMode.ValueAssigned -= CubeBuilderSelectionInfoMode_ValueAssigned;
         }
 
-        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        void CubeBuilderSelectionInfoMode_ValueAssigned(int oldValue, int newValue, ConfigLib.SettingBase<int> setting)
+        {
+            Mode = (CubeBuilderSelectionInfo)newValue;
+        }
+
+        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             LastRemoveBlock = null;
+            LocalBBCache = null;
 
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Main.EquipmentMonitor.IsCubeBuilder);
+            bool drawBox = Main.Config.OverrideToolSelectionDraw.Value;
+            bool showInfo = Main.EquipmentMonitor.IsCubeBuilder && (drawBox || Mode != CubeBuilderSelectionInfo.Off);
 
-            MyCubeBuilder.Static.ShowRemoveGizmo = !Main.Config.OverrideToolSelectionDraw.Value;
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, showInfo);
+
+            MyCubeBuilder.Static.ShowRemoveGizmo = !(showInfo && drawBox);
         }
 
         public override void UpdateDraw()
         {
             if(Main.IsPaused || !MyAPIGateway.CubeBuilder.IsActivated)
+                return;
+
+            // drag-to-build/remove shouldn't show selection anymore.
+            if(MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION) || MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.SECONDARY_TOOL_ACTION))
                 return;
 
             AimedGrid = MyCubeBuilder.Static.FindClosestGrid();
@@ -84,9 +109,28 @@ namespace Digi.BuildInfo.Features
             if(removeBlock == null)
                 return;
 
-            // TODO: compute mirrored selections too?
+            bool showMessage = false;
+            if(!Main.IsPaused && Main.GameConfig.HudState != HudState.OFF)
+            {
+                if(Mode == CubeBuilderSelectionInfo.AlwaysOn)
+                    showMessage = true;
 
-            if(!Main.IsPaused)
+                if(Mode == CubeBuilderSelectionInfo.HudHints && Main.GameConfig.HudState == HudState.HINTS)
+                    showMessage = true;
+
+                if(Mode == CubeBuilderSelectionInfo.HudHints || Mode == CubeBuilderSelectionInfo.ShowOnPress)
+                {
+                    ControlContext context = (MyAPIGateway.Session.ControlledObject is IMyCharacter ? ControlContext.CHARACTER : ControlContext.VEHICLE);
+                    if(Main.Config.ShowCubeBuilderSelectionInfoBind.Value.IsPressed(context))
+                        showMessage = true;
+                }
+            }
+
+            // TODO: compute mirrored selections too?
+            // TODO: expand selection (preferably white) when holding ctrl or shift to show what will be painted?
+            // TODO: include area-paint info in message?
+
+            if(showMessage)
             {
                 string name = null;
                 IMyTerminalBlock tb = removeBlock?.FatBlock as IMyTerminalBlock;

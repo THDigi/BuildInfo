@@ -59,6 +59,14 @@ namespace Digi.BuildInfo.Features.Config
         Right = 8,
     }
 
+    public enum CubeBuilderSelectionInfo
+    {
+        Off = 0,
+        AlwaysOn = 1,
+        ShowOnPress = 2,
+        HudHints = 3,
+    }
+
     [Flags]
     public enum OverlayLabelsFlags
     {
