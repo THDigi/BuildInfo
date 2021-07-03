@@ -113,17 +113,19 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(!Main.Config.OverrideToolSelectionDraw.Value)
-                return;
+            if(Main.Config.OverrideToolSelectionDraw.Value)
+            {
+                MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
 
-            MatrixD worldMatrix;
-            BoundingBoxD localBB;
-            Main.OverrideToolSelectionDraw.GetBlockLocalBB(removeBlock, ref LocalBBCache, out localBB, out worldMatrix);
+                MatrixD worldMatrix;
+                BoundingBoxD localBB;
+                Main.OverrideToolSelectionDraw.GetBlockLocalBB(removeBlock, ref LocalBBCache, out localBB, out worldMatrix);
 
-            localBB.Inflate((removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
-            float lineWidth = (removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
+                localBB.Inflate((removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
+                float lineWidth = (removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
 
-            Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, new Color(255, 200, 55), lineWidth);
+                Main.OverrideToolSelectionDraw.DrawSelection(ref worldMatrix, ref localBB, new Color(255, 200, 55), lineWidth);
+            }
         }
 
         void ShowHUDNotification(string message)
