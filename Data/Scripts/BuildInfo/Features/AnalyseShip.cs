@@ -13,7 +13,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 
-using ModId = System.ValueTuple<ulong, string, string>;
+using ModId = VRage.MyTuple<ulong, string, string>;
 
 namespace Digi.BuildInfo.Features
 {
@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features
         }
 
         // per ship data
-        private readonly StringBuilder sb = new StringBuilder(512);
+        private readonly StringBuilder SB = new StringBuilder(512);
         private readonly Dictionary<string, Objects> DLCs = new Dictionary<string, Objects>();
         private readonly Dictionary<ModId, Objects> Mods = new Dictionary<ModId, Objects>();
         private readonly Dictionary<ModId, Objects> ModsChangingVanilla = new Dictionary<ModId, Objects>();
@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features
         private readonly Dictionary<MyStringHash, string> ArmorSkinDLC = new Dictionary<MyStringHash, string>(MyStringHash.Comparer);
         private readonly Dictionary<MyStringHash, ModId> ArmorSkinMods = new Dictionary<MyStringHash, ModId>(MyStringHash.Comparer);
 
-        private IMyTerminalControlButton projectorButton;
+        private IMyTerminalControlButton ProjectorButton;
 
         private Action<ResultEnum> WindowClosedAction;
 
@@ -61,9 +61,9 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                if(block is IMyProjector && projectorButton != null)
+                if(block is IMyProjector && ProjectorButton != null)
                 {
-                    controls?.Add(projectorButton);
+                    controls?.Add(ProjectorButton);
                 }
             }
             catch(Exception e)
@@ -89,7 +89,7 @@ namespace Digi.BuildInfo.Features
                 if(projector.ProjectedGrid != null)
                     Analyse(projector.ProjectedGrid);
             };
-            projectorButton = c;
+            ProjectorButton = c;
         }
 
         void GetArmorSkinDefinitions()
@@ -218,12 +218,12 @@ namespace Digi.BuildInfo.Features
 
         void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
         {
-            sb.Clear();
-            AppendTitle(sb, "Blocks or skins from DLCs", DLCs.Count);
+            SB.Clear();
+            AppendTitle(SB, "Blocks or skins from DLCs", DLCs.Count);
 
             if(DLCs.Count == 0)
             {
-                sb.Append(" (None)").NewLine();
+                SB.Append(" (None)").NewLine();
             }
             else
             {
@@ -239,19 +239,19 @@ namespace Digi.BuildInfo.Features
                         displayName = MyTexts.GetString(dlc.DisplayName);
                     }
 
-                    sb.Append("- ").Append(displayName).NewLine();
+                    SB.Append("- ").Append(displayName).NewLine();
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
+                    SB.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
                         .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
 
-            sb.NewLine();
-            AppendTitle(sb, "Blocks or skins from mods", Mods.Count);
+            SB.NewLine();
+            AppendTitle(SB, "Blocks or skins from mods", Mods.Count);
 
             if(Mods.Count == 0)
             {
-                sb.Append(" (None)").NewLine();
+                SB.Append(" (None)").NewLine();
             }
             else
             {
@@ -260,23 +260,23 @@ namespace Digi.BuildInfo.Features
                     var modId = kv.Key;
                     var objects = kv.Value;
 
-                    sb.Append("- ");
+                    SB.Append("- ");
                     if(modId.Item1 != 0)
-                        sb.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
-                    sb.Append(modId.Item3).NewLine();
+                        SB.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
+                    SB.Append(modId.Item3).NewLine();
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
+                    SB.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? " and " : "s and ")
                         .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
 
-            sb.NewLine();
-            AppendTitle(sb, "Vanilla blocks altered by mods", ModsChangingVanilla.Count);
-            sb.Append("NOTE: This list can't show mods that alter blocks only with scripts.").NewLine();
+            SB.NewLine();
+            AppendTitle(SB, "Vanilla blocks altered by mods", ModsChangingVanilla.Count);
+            SB.Append("NOTE: This list can't show mods that alter blocks only with scripts.").NewLine();
 
             if(ModsChangingVanilla.Count == 0)
             {
-                sb.Append(" (None)").NewLine();
+                SB.Append(" (None)").NewLine();
             }
             else
             {
@@ -285,25 +285,25 @@ namespace Digi.BuildInfo.Features
                     var modId = kv.Key;
                     var objects = kv.Value;
 
-                    sb.Append("- ");
+                    SB.Append("- ");
                     if(modId.Item1 != 0)
-                        sb.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
-                    sb.Append(modId.Item3).NewLine();
+                        SB.Append("(").Append(modId.Item2).Append(":").Append(modId.Item1).Append(") ");
+                    SB.Append(modId.Item3).NewLine();
 
-                    sb.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? "." : "s.").NewLine();
+                    SB.Append("    ").Append(objects.Blocks).Append(" block").Append(objects.Blocks == 1 ? "." : "s.").NewLine();
 
-                    sb.NewLine();
+                    SB.NewLine();
                 }
             }
 
-            shipInfoText = sb.ToString();
+            shipInfoText = SB.ToString();
 
-            sb.Clear();
-            sb.Append(mainGrid.CustomName);
+            SB.Clear();
+            SB.Append(mainGrid.CustomName);
             if(grids.Count > 1)
-                sb.Append(" + ").Append((grids.Count - 1).ToString()).Append(" subgrids");
+                SB.Append(" + ").Append(grids.Count - 1).Append(" subgrids");
 
-            shipInfoTitle = sb.ToString();
+            shipInfoTitle = SB.ToString();
 
             MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", shipInfoTitle, string.Empty, shipInfoText, WindowClosedAction, "Export info to file\n(Press [Esc] to not export)");
         }
@@ -342,15 +342,15 @@ namespace Digi.BuildInfo.Features
                     fileNameSb.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
                     fileNameSb.Append(".txt");
 
-                    var invalidFileNameChars = Path.GetInvalidFileNameChars();
+                    char[] invalidFileNameChars = Path.GetInvalidFileNameChars();
 
                     foreach(char invalidChar in invalidFileNameChars)
                     {
                         fileNameSb.Replace(invalidChar, '_');
                     }
 
-                    var fileName = fileNameSb.ToString();
-                    var modStorageName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+                    string fileName = fileNameSb.ToString();
+                    string modStorageName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
 
                     TextWriter writer = null;
                     try
