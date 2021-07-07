@@ -303,8 +303,14 @@ namespace Digi.BuildInfo.Features.Terminal
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (viewedInTerminal != null));
         }
 
+        int RefreshedAtTick = 0;
         void UpdateDetailInfo(bool force = false)
         {
+            if(RefreshedAtTick == Main.Tick)
+                return; // prevent some infinite loop cases with other mods
+
+            RefreshedAtTick = Main.Tick;
+
             // disabled because it can leave info outdated when it suddenly stops updating
 
             //if(!force && !Main.Config.TerminalDetailInfoAdditions.Value)
