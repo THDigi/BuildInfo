@@ -21,6 +21,7 @@ namespace Digi.BuildInfo.Features.Config
         OverlayHint = (1 << 11),
         Projected = (1 << 12),
         RequiresDLC = (1 << 13),
+        ComponentsVolume = (1 << 14),
     }
 
     [Flags]
@@ -48,6 +49,7 @@ namespace Digi.BuildInfo.Features.Config
         AmmoDetails = (1 << 17),
         Warnings = (1 << 18),
         RequiresDLC = (1 << 19),
+        ComponentsVolume = (1 << 20),
     }
 
     [Flags]
