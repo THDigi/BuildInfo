@@ -827,7 +827,7 @@ namespace Digi.BuildInfo.Features
             // TODO: remove last condition when adding overlay to WC
             if(Main.Overlays.DrawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
             {
-                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
+                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
                 GetLine().Append(" to cycle)");
             }
