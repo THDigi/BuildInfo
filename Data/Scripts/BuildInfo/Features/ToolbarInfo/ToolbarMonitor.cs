@@ -125,6 +125,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             // refresh render 1 tick later so that Writer can finish updating the items too.
             Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
+            Main.ToolbarLabelRender.IgnoreTick = Main.Tick;
 
             // can't disable this just for the visual toolbar because status relies on this aswell.
             //if(Main.Config.ToolbarLabels.Value == 0)
