@@ -39,6 +39,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private float CellSize;
         private float CellSizeHalf;
+        private MyOrientedBoundingBoxD? PrevOBB;
+        private int ConsecutiveErrors = 0;
 
         private bool AnyLabelShown;
         private readonly LabelData[] Labels;
@@ -314,7 +316,31 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
 
-                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    // HACK: very rare errors from thread concurrency with game's parallel Draw()...
+                    MyOrientedBoundingBoxD box;
+                    bool errors = false;
+                    try
+                    {
+                        box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    }
+                    catch(Exception e)
+                    {
+                        if(++ConsecutiveErrors > 10)
+                            throw e;
+
+                        if(!PrevOBB.HasValue)
+                            throw e;
+
+                        box = PrevOBB.Value;
+                        errors = true;
+                    }
+
+                    if(!errors)
+                    {
+                        ConsecutiveErrors = 0;
+                        PrevOBB = box;
+                    }
+
                     drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
 
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
