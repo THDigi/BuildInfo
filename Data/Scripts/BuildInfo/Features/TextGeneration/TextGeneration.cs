@@ -3060,9 +3060,21 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     float dischargeTime = (battery.MaxStoredPower * 60 * 60) / battery.MaxPowerOutput;
-                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * Hardcoded.BatteryRechargeMultiplier);
                     AddLine().Label("Discharge time").TimeFormat(dischargeTime);
-                    AddLine().Label("Recharge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.BatteryRechargeMultiplier);
+
+#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
+                    const float OldHardcodedRechargeMultiplier = 0.8f;
+                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * OldHardcodedRechargeMultiplier);
+                    AddLine().Label("Recharge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - OldHardcodedRechargeMultiplier);
+#else
+                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * battery.RechargeMultiplier);
+                    AddLine().Label("Recharge  time").TimeFormat(chargeTime).Separator();
+
+                    if(battery.RechargeMultiplier <= 1f)
+                        GetLine().Color(battery.RechargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - battery.RechargeMultiplier);
+                    else
+                        GetLine().Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(battery.RechargeMultiplier);
+#endif
                 }
 
                 return;

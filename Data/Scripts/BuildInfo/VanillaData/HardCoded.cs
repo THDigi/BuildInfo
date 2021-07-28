@@ -403,9 +403,6 @@ namespace Digi.BuildInfo.VanillaData
             return relativeEnt.PositionComp.WorldAABB.DistanceSquared(controlledEnt.PositionComp.GetPosition()) <= RelativeDampeners_MaxDistanceSq;
         }
 
-        // from MyBatteryBlock.StorePower()
-        public const float BatteryRechargeMultiplier = 0.8f;
-
         // from MyJumpDrive.StorePower()
         public const float JumpDriveRechargeMultiplier = 0.8f;
 
