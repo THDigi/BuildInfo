@@ -857,7 +857,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
                 MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
                 float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+
+#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
                 float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+#else
+                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, internalController.CubeGrid);
+#endif
 
                 PS.Update(block.CubeGrid);
 
