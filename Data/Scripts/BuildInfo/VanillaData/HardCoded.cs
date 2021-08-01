@@ -51,16 +51,6 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         // from MyShipConnector
-        public const string ShipConnector_PowerGroup = "Conveyors";
-        public static float ShipConnector_PowerReq(MyCubeBlockDefinition def)
-        {
-            var requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_CONNECTOR;
-
-            if(def.CubeSize == MyCubeSize.Small)
-                requiredPower *= 0.01f;
-
-            return requiredPower;
-        }
         public static float ShipConnector_InventoryVolume(MyCubeBlockDefinition def)
         {
             var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);

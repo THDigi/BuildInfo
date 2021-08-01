@@ -2070,7 +2070,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Connector(MyCubeBlockDefinition def)
         {
-            PowerRequired(Hardcoded.ShipConnector_PowerReq(def), Hardcoded.ShipConnector_PowerGroup, powerHardcoded: true, groupHardcoded: true);
+            PowerRequired(0, null, powerHardcoded: true);
 
             InventoryStats(def, hardcodedVolume: Hardcoded.ShipConnector_InventoryVolume(def));
 

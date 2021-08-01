@@ -148,7 +148,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 tooltip = Main.TooltipHandler.Tooltips.GetValueOrDefault(physDef.Id, null);
             }
 
-            var itemTooltipSB = physDef.ExtraInventoryTooltipLine;
+            StringBuilder itemTooltipSB = physDef.ExtraInventoryTooltipLine;
 
             if(tooltip != null)
             {
