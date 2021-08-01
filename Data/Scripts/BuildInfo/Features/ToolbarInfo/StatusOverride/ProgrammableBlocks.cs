@@ -56,6 +56,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 // HACK: MP clients only get PB detailed info when in terminal
                 if(!MyAPIGateway.Multiplayer.IsServer)
                 {
+                    // TODO: split off into a separate mod, with networking
                     sb.Append("No data\nin MP");
                     return true;
                 }

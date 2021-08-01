@@ -857,7 +857,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
                 MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
                 float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+
+#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
                 float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+#else
+                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, internalController.CubeGrid);
+#endif
 
                 PS.Update(block.CubeGrid);
 
@@ -1103,25 +1108,31 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_InputPower(Sink);
 
+            // NOTE: this includes suspensions too
+
             IMyMotorStator rotorStator = block as IMyMotorStator;
             if(rotorStator != null)
             {
-                float mass;
-                float pickedTorque = rotorStator.Torque;
-                float realTorque = Hardcoded.RotorTorqueLimit(rotorStator, out mass);
+                IMyCubeGrid topGrid = rotorStator.TopGrid;
+                float attachedMass = 0;
 
-                if(realTorque != pickedTorque)
+                if(topGrid?.Physics != null)
                 {
-                    info.Append("\nCapped Torque: ").TorqueFormat(realTorque).Append(" ([4] @ /bi)\n");
+                    attachedMass = topGrid.Physics.Mass;
+                    if(!topGrid.IsStatic && attachedMass <= 0)
+                    {
+                        // need mass for clients in MP too, like when grids are LG'd
+                        attachedMass = BuildInfoMod.Instance.GridMassCompute.GetGridMass(topGrid);
+                    }
                 }
 
-                if(mass > 0)
-                {
-                    if(realTorque == pickedTorque)
-                        info.Append('\n');
-
-                    info.Append("Attached Mass: ").MassFormat(mass).Append('\n');
-                }
+                info.Append("Attached Mass: ");
+                if(topGrid == null)
+                    info.Append("(not available)\n");
+                else if(attachedMass > 0)
+                    info.MassFormat(attachedMass).Append('\n');
+                else
+                    info.Append("(unknown)\n");
 
                 if(Main.Config.InternalInfo.Value)
                 {

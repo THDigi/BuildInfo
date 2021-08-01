@@ -50,6 +50,8 @@ namespace Digi.BuildInfo.Features
         private readonly Color BG_COLOR = new Color(41, 54, 62);
         private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
+        private const float CharInvVolM3Offset = 50 / 1000f; // subtracting 50L from char inv max volume to account for common tools
+
         private const float MENU_BG_OPACITY = 0.7f;
 
         private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
@@ -825,7 +827,7 @@ namespace Digi.BuildInfo.Features
             // TODO: remove last condition when adding overlay to WC
             if(Main.Overlays.DrawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
             {
-                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Overlay available. ");
+                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
                 GetLine().Append(" to cycle)");
             }
@@ -1152,6 +1154,42 @@ namespace Digi.BuildInfo.Features
                 }
             }
             #endregion Integrity
+
+            #region Component volume
+            if(Main.Config.AimInfo.IsSet(AimInfoFlags.ComponentsVolume))
+            {
+                float totalVolumeM3 = 0f;
+
+                foreach(var comp in def.Components)
+                {
+                    totalVolumeM3 += comp.Definition.Volume * comp.Count;
+                }
+
+                Dictionary<string, int> names = Main.Caches.NamedSums;
+                names.Clear();
+                aimedBlock.GetMissingComponents(names);
+
+                float missingVolumeM3 = 0f;
+
+                foreach(var kv in names)
+                {
+                    MyComponentDefinition compDef;
+                    if(MyDefinitionManager.Static.TryGetComponentDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Component), kv.Key), out compDef))
+                    {
+                        missingVolumeM3 += compDef.Volume * kv.Value;
+                    }
+                }
+
+                float installedVolumeM3 = totalVolumeM3 - missingVolumeM3;
+
+                float charInvVolM3 = float.MaxValue;
+                IMyInventory inv = MyAPIGateway.Session?.Player?.Character?.GetInventory();
+                if(inv != null)
+                    charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
+
+                AddLine().Append("Components: ").VolumeFormat(installedVolumeM3 * 1000).Append(" / ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
+            }
+            #endregion Component volume
 
             #region Optional: intake damage multiplier
             if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
@@ -1658,7 +1696,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(upgradePorts > 0)
                     {
-                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(4);
+                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(3);
                     }
                 }
             }
@@ -1750,7 +1788,6 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Mass/size/build time/deconstruct time/no models
 
-            #region Integrity, deformable, damage intake
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
                 AddLine();
@@ -1761,7 +1798,7 @@ namespace Digi.BuildInfo.Features
                 GetLine().Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
                 if(deformable)
-                    GetLine().Separator().Label("Deformable").RoundedNumber(def.DeformationRatio, 2);
+                    GetLine().Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
 
                 float dmgMul = def.GeneralDamageMultiplier;
                 if(dmgMul != 1)
@@ -1769,6 +1806,23 @@ namespace Digi.BuildInfo.Features
                     GetLine().Separator();
                     ResistanceFormat(dmgMul);
                 }
+            }
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ComponentsVolume))
+            {
+                float totalVolumeM3 = 0f;
+
+                foreach(var comp in def.Components)
+                {
+                    totalVolumeM3 += comp.Definition.Volume * comp.Count;
+                }
+
+                float charInvVolM3 = float.MaxValue;
+                IMyInventory inv = MyAPIGateway.Session?.Player?.Character?.GetInventory();
+                if(inv != null)
+                    charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
+
+                AddLine().Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -1789,7 +1843,6 @@ namespace Digi.BuildInfo.Features
                     GetLine().Color(COLOR_WARNING).Append("No standalone").MoreInfoInHelp(2);
                 }
             }
-            #endregion Integrity, deformable, damage intake
 
             #region Airtightness
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
@@ -2017,7 +2070,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Connector(MyCubeBlockDefinition def)
         {
-            PowerRequired(Hardcoded.ShipConnector_PowerReq(def), Hardcoded.ShipConnector_PowerGroup, powerHardcoded: true, groupHardcoded: true);
+            PowerRequired(0, null, powerHardcoded: true);
 
             InventoryStats(def, hardcodedVolume: Hardcoded.ShipConnector_InventoryVolume(def));
 
@@ -2111,7 +2164,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude).MoreInfoInHelp(3);
+                    AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
                     {
@@ -3007,9 +3060,21 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     float dischargeTime = (battery.MaxStoredPower * 60 * 60) / battery.MaxPowerOutput;
-                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * Hardcoded.BatteryRechargeMultiplier);
                     AddLine().Label("Discharge time").TimeFormat(dischargeTime);
-                    AddLine().Label("Recharge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.BatteryRechargeMultiplier);
+
+#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
+                    const float OldHardcodedRechargeMultiplier = 0.8f;
+                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * OldHardcodedRechargeMultiplier);
+                    AddLine().Label("Recharge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - OldHardcodedRechargeMultiplier);
+#else
+                    float chargeTime = (battery.MaxStoredPower * 60 * 60) / (battery.RequiredPowerInput * battery.RechargeMultiplier);
+                    AddLine().Label("Recharge  time").TimeFormat(chargeTime).Separator();
+
+                    if(battery.RechargeMultiplier <= 1f)
+                        GetLine().Color(battery.RechargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - battery.RechargeMultiplier);
+                    else
+                        GetLine().Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(battery.RechargeMultiplier);
+#endif
                 }
 
                 return;

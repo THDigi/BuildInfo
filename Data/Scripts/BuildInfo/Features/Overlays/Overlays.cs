@@ -39,6 +39,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private float CellSize;
         private float CellSizeHalf;
+        private MyOrientedBoundingBoxD? PrevOBB;
+        private int ConsecutiveErrors = 0;
 
         private bool AnyLabelShown;
         private readonly LabelData[] Labels;
@@ -69,7 +71,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private const BlendTypeEnum MOUNTPOINT_BLEND_TYPE = BlendTypeEnum.SDR;
         private const double MOUNTPOINT_THICKNESS = 0.075;
-        private const float MOUNTPOINT_ALPHA = 0.5f;
+        private const float MOUNTPOINT_ALPHA = 0.75f;
         private Color MOUNTPOINT_COLOR = new Color(255, 255, 0) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_MASKED_COLOR = new Color(255, 55, 0) * MOUNTPOINT_ALPHA;
         private Color MOUNTPOINT_DEFAULT_COLOR = new Color(0, 55, 255) * MOUNTPOINT_ALPHA;
@@ -77,6 +79,8 @@ namespace Digi.BuildInfo.Features.Overlays
         private Color AIRTIGHT_COLOR = new Color(0, 155, 255) * MOUNTPOINT_ALPHA;
         private Color AIRTIGHT_TOGGLE_COLOR = new Color(0, 255, 155) * MOUNTPOINT_ALPHA;
         private Color AIRTIGHT_UNAVAILABLE_COLOR = Color.Gray * MOUNTPOINT_ALPHA;
+
+        private const float BlockOverlayAlpha = 0.75f;
 
         private const float SEETHROUGH_COLOR_MUL = 0.4f;
 
@@ -92,8 +96,8 @@ namespace Digi.BuildInfo.Features.Overlays
         public readonly string[] OverlayNames = new string[]
         {
             "OFF",
-            "Airtightness",
-            "Mounting",
+            "Airtightness + Specialized",
+            "Mount Points",
             "Ports",
         };
 
@@ -228,7 +232,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     OverlayNotification = MyAPIGateway.Utilities.CreateNotification("", 2000, FontsHandler.WhiteSh);
 
                 OverlayNotification.Hide(); // required since SE v1.194
-                OverlayNotification.Text = "Overlays: " + OverlayNames[DrawOverlay];
+                OverlayNotification.Text = $"Overlays: [{OverlayNames[DrawOverlay]}]";
                 OverlayNotification.Show();
             }
         }
@@ -312,7 +316,31 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(MyAPIGateway.Session.IsCameraUserControlledSpectator && !Utils.CreativeToolsEnabled)
                         return;
 
-                    var box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    // HACK: very rare errors from thread concurrency with game's parallel Draw()...
+                    MyOrientedBoundingBoxD box;
+                    bool errors = false;
+                    try
+                    {
+                        box = MyCubeBuilder.Static.GetBuildBoundingBox();
+                    }
+                    catch(Exception e)
+                    {
+                        if(++ConsecutiveErrors > 10)
+                            throw e;
+
+                        if(!PrevOBB.HasValue)
+                            throw e;
+
+                        box = PrevOBB.Value;
+                        errors = true;
+                    }
+
+                    if(!errors)
+                    {
+                        ConsecutiveErrors = 0;
+                        PrevOBB = box;
+                    }
+
                     drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
 
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
@@ -473,15 +501,15 @@ namespace Digi.BuildInfo.Features.Overlays
                 // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
                 if(Main.EquipmentMonitor.AimedProjectedBy == null && aimedBlock != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                 {
-                    var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
+                    MyCubeBlockDefinition.BuildProgressModel progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
                     if(aimedBlock.BuildLevelRatio < progressModel.BuildRatioUpperBound)
                         BlockFunctionalForPressure = false;
                 }
 
                 {
-                    var center = def.Center;
-                    var mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
-                    var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+                    Vector3I center = def.Center;
+                    MatrixD mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
+                    MyCubeBlockDefinition.MountPoint[] mountPoints = def.GetBuildProgressModelMountPoints(1f);
                     bool drawLabel = CanDrawLabel();
 
                     if(DrawOverlay == 1) // airtightness view
@@ -490,15 +518,15 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         if(!BlockFunctionalForPressure)
                         {
-                            if(drawLabel)
-                            {
-                                DynamicLabelSB.Clear().Append("Unfinished blocks are never airtight");
-
-                                Vector3D labelPos = drawMatrix.Translation;
-                                Vector3D labelDir = drawMatrix.Up;
-
-                                DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.OrangeRed, lineHeight: 0f, lineThick: 0f, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: true);
-                            }
+                            //if(drawLabel)
+                            //{
+                            //    DynamicLabelSB.Clear().Append("Unfinished blocks are never airtight");
+                            //
+                            //    Vector3D labelPos = drawMatrix.Translation;
+                            //    Vector3D labelDir = drawMatrix.Up;
+                            //
+                            //    DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.OrangeRed, lineHeight: 0f, lineThick: 0f, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: true);
+                            //}
 
                             color = AIRTIGHT_UNAVAILABLE_COLOR;
                         }
@@ -567,20 +595,20 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         for(int i = 0; i < mountPoints.Length; i++)
                         {
-                            var mountPoint = mountPoints[i];
+                            MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
 
                             if(!mountPoint.Enabled)
                                 continue; // ignore all disabled mount points as airtight ones are rendered separate
 
-                            var startLocal = mountPoint.Start - center;
-                            var endLocal = mountPoint.End - center;
+                            Vector3 startLocal = mountPoint.Start - center;
+                            Vector3 endLocal = mountPoint.End - center;
 
-                            var bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * CellSize, Vector3.Max(startLocal, endLocal) * CellSize);
-                            var obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+                            BoundingBoxD bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * CellSize, Vector3.Max(startLocal, endLocal) * CellSize);
+                            MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
 
-                            var normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
+                            Base6Directions.Axis normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
 
-                            var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                            MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
                             m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MOUNTPOINT_THICKNESS : 0));
                             m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MOUNTPOINT_THICKNESS : 0));
                             m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MOUNTPOINT_THICKNESS : 0));
@@ -626,16 +654,22 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         if(closestMount.HasValue)
                         {
-                            const float Scale = 0.7f;
-                            var labelPos = closestMountOBB.Center;
-                            var labelDir = Vector3.Forward;
-                            var mountPoint = closestMount.Value;
+                            const float textScale = 1.5f;
+
+                            Vector3D labelPos = closestMountOBB.Center;
+                            Vector3D labelDir = Vector3D.Normalize(camMatrix.Up + camMatrix.Right * 0.5);
+                            MyCubeBlockDefinition.MountPoint mountPoint = closestMount.Value;
 
                             // selection wire box over the mountpoint
                             MatrixD.Rescale(ref closestMountMatrix, 1.01);
                             float depthScale = ConvertToAlwaysOnTop(ref closestMountMatrix);
-                            float lineWdith = 0.005f * depthScale;
+                            float lineWdith = 0.01f * depthScale;
+
+                            Color colorFace = Color.White * 0.25f;
+                            MySimpleObjectDraw.DrawTransparentBox(ref closestMountMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
                             MySimpleObjectDraw.DrawTransparentBox(ref closestMountMatrix, ref unitBB, ref MOUNTPOINT_AIMED_COLOR, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
+
 
                             DynamicLabelSB.Clear();
                             if(mountPoint.PropertiesMask != 0 || mountPoint.ExclusionMask != 0)
@@ -720,17 +754,17 @@ namespace Digi.BuildInfo.Features.Overlays
                             }
 #endif
 
-                            DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: Scale, lineHeight: 0, lineThick: 0, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: true);
+                            DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: textScale, autoAlign: false, alwaysOnTop: true);
                         }
                     }
                 }
                 #endregion Draw mount points
 
-                // draw per-block overlays
+                if(DrawOverlay == 1 && SelectedOverlayCall != null)
+                    SelectedOverlayCall.Invoke(def, drawMatrix);
+
                 if(DrawOverlay == 3)
                     DrawPortsMode(def, drawMatrix);
-                else if(SelectedOverlayCall != null)
-                    SelectedOverlayCall.Invoke(def, drawMatrix);
 
                 // TODO: real time neighbour airtight display?
 #if false
@@ -1214,11 +1248,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
             const int wireDivRatio = 20;
             var colorSensorText = Color.Gray;
-            var colorSensorFace = colorSensorText * 0.75f;
+            var colorSensorFace = colorSensorText * BlockOverlayAlpha;
             var colorMineText = Color.Lime;
-            var colorMineFace = colorMineText * 0.75f;
+            var colorMineFace = colorMineText * BlockOverlayAlpha;
             var colorCarveText = Color.Red;
-            var colorCarveFace = colorCarveText * 0.75f;
+            var colorCarveFace = colorCarveText * BlockOverlayAlpha;
             float lineThickness = 0.03f;
             var material = OVERLAY_LASER_MATERIAL;
             bool drawLabel = CanDrawLabel();
@@ -1277,7 +1311,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             const int wireDivRatio = 20;
             var color = Color.Lime;
-            var colorFace = color * 0.75f;
+            var colorFace = color * BlockOverlayAlpha;
             float lineThickness = 0.03f;
 
             var toolDef = (MyShipToolDefinition)def;
@@ -1309,14 +1343,14 @@ namespace Digi.BuildInfo.Features.Overlays
 
             const int wireDivideRatio = 20;
             const float lineThickness = 0.02f;
-            var color = Color.Red;
-            var colorFace = color * 0.5f;
-            var capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
+            Color color = Color.Red;
+            Color colorFace = color;
+            MatrixD capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
             bool drawLabel = CanDrawLabel();
 
             foreach(var flame in data.Flames)
             {
-                var start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
+                Vector3D start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
 
                 float paddedRadius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
@@ -1325,8 +1359,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(drawLabel)
                 {
                     drawLabel = false; // label only on the first flame
-                    var labelDir = drawMatrix.Down;
-                    var labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
+                    Vector3D labelDir = drawMatrix.Down;
+                    Vector3D labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
                     DrawLineLabel(TextAPIMsgIds.ThrustDamage, labelLineStart, labelDir, color, message: "Thrust damage");
                 }
             }
@@ -1339,7 +1373,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
 
             var color = new Color(20, 255, 155);
-            var colorFace = color * 0.5f;
+            var colorFace = color * BlockOverlayAlpha;
             bool drawLabel = CanDrawLabel();
 
             foreach(var obb in data.Magents)
@@ -1368,7 +1402,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
 
             var color = new Color(20, 255, 100);
-            var colorFace = color * 0.5f;
+            var colorFace = color * BlockOverlayAlpha;
             bool drawLabel = CanDrawLabel();
 
             var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
@@ -1384,6 +1418,14 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
+        static readonly Color WindTurbine_minColor = Color.Red;
+        static readonly Color WindTurbine_maxColor = Color.YellowGreen;
+        static readonly Vector4 WindTurbine_minLineColorVec = WindTurbine_minColor.ToVector4();
+        static readonly Vector4 WindTurbine_maxLineColorVec = WindTurbine_maxColor.ToVector4();
+        static readonly Vector4 WindTurbine_minColorVec = (WindTurbine_minColor * 0.45f).ToVector4();
+        static readonly Vector4 WindTurbine_maxColorVec = (WindTurbine_maxColor * 0.45f).ToVector4();
+        static readonly Vector4 WindTurbine_triangleColor = WindTurbine_minColorVec.ToLinearRGB(); // HACK required to match the colors of other billboards
+
         private void DrawOverlay_WindTurbine(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
             var turbineDef = (MyWindTurbineDefinition)def;
@@ -1392,13 +1434,6 @@ namespace Digi.BuildInfo.Features.Overlays
             const float lineThick = 0.05f;
             const float groundLineThick = 0.1f;
             const float groundBottomLineThick = 0.05f;
-            Color minColor = Color.Red;
-            Color maxColor = Color.YellowGreen;
-            Vector4 minLineColorVec = minColor.ToVector4();
-            Vector4 maxLineColorVec = maxColor.ToVector4();
-            Vector4 minColorVec = (minColor * 0.4f).ToVector4();
-            Vector4 maxColorVec = (maxColor * 0.4f).ToVector4();
-            Vector4 triangleColor = minColorVec.ToLinearRGB(); // HACK required to match the colors of bother billboards
             MyQuadD quad;
 
             #region Side clearence circle
@@ -1433,7 +1468,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(i > 0)
                 {
                     // inner circle slice
-                    MyTransparentGeometry.AddTriangleBillboard(center, inner, previousInner, up, up, up, Vector2.Zero, Vector2.Zero, Vector2.Zero, OVERLAY_SQUARE_MATERIAL, 0, center, triangleColor, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddTriangleBillboard(center, inner, previousInner, up, up, up, Vector2.Zero, Vector2.Zero, Vector2.Zero, OVERLAY_SQUARE_MATERIAL, 0, center, WindTurbine_triangleColor, OVERLAY_BLEND_TYPE);
 
                     // outer circle gradient slices
                     quad = new MyQuadD()
@@ -1443,7 +1478,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         Point2 = current,
                         Point3 = inner,
                     };
-                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, minColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, WindTurbine_minColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
 
                     quad = new MyQuadD()
                     {
@@ -1452,11 +1487,11 @@ namespace Digi.BuildInfo.Features.Overlays
                         Point2 = inner,
                         Point3 = current,
                     };
-                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, maxColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, WindTurbine_maxColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
 
                     // inner+outer circle rims
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, minLineColorVec, previousInner, (inner - previousInner), 1f, lineThick, OVERLAY_BLEND_TYPE);
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, maxLineColorVec, previous, (current - previous), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_minLineColorVec, previousInner, (inner - previousInner), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_maxLineColorVec, previous, (current - previous), 1f, lineThick, OVERLAY_BLEND_TYPE);
                 }
 
                 previous = current;
@@ -1489,20 +1524,20 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Vector3D minClearence = Vector3D.Lerp(lineStart, end, turbineDef.MinRaycasterClearance);
 
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, minColor, lineStart, (minClearence - lineStart), 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, WindTurbine_minColor, lineStart, (minClearence - lineStart), 1f, groundLineThick, OVERLAY_BLEND_TYPE);
 
             Vector3D lineDir = (end - minClearence);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, minColor, minClearence, lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, maxColor, end, -lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, WindTurbine_minColor, minClearence, lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, WindTurbine_maxColor, end, -lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
 
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D right = Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward)); // this determines line width, it's normalized so 1m, doubled because of below math
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, maxColor, end - right, right, 2f, groundBottomLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, WindTurbine_maxColor, end - right, right, 2f, groundBottomLineThick, OVERLAY_BLEND_TYPE);
 
             if(drawLabel)
             {
-                var labelDir = drawMatrix.Left;
-                var labelLineStart = Vector3D.Lerp(lineStart, end, 0.5f);
+                Vector3D labelDir = drawMatrix.Left;
+                Vector3D labelLineStart = Vector3D.Lerp(lineStart, end, 0.5f);
                 DrawLineLabel(TextAPIMsgIds.TerrainClearence, labelLineStart, labelDir, new Color(255, 155, 0), message: "Terrain Clearence");
             }
             #endregion Ground clearence line
@@ -1535,7 +1570,7 @@ namespace Digi.BuildInfo.Features.Overlays
             int maxYaw = antennaDef.MaxAzimuthDegrees;
 
             {
-                var colorPitch = (Color.Red * 0.3f).ToVector4();
+                var colorPitch = (Color.Red * BlockOverlayAlpha).ToVector4();
                 var colorPitchLine = Color.Red.ToVector4();
 
                 MatrixD pitchMatrix = drawMatrix;
@@ -1585,7 +1620,7 @@ namespace Digi.BuildInfo.Features.Overlays
             }
 
             {
-                var colorYaw = (Color.Lime * 0.25f).ToVector4();
+                var colorYaw = (Color.Lime * BlockOverlayAlpha).ToVector4();
                 var colorYawLine = Color.Lime.ToVector4();
 
                 Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
@@ -1614,15 +1649,6 @@ namespace Digi.BuildInfo.Features.Overlays
             var data = Main.LiveDataHandler.Get<BData_Base>(def);
             if(data == null)
                 return;
-
-            // since it's 3D text, these are in metric, per character.
-            //float textScale = 0.2f + (Math.Max(0, (def.Size.AbsMax() - 5)) * 0.05f); // add text size for every cell the block is bigger than 8 (in largest axis only)
-            //if(def.CubeSize == MyCubeSize.Small)
-            //    textScale *= 0.25f; // tweaked text size for smallgrid
-            //
-            //textScale = MathHelper.Clamp(textScale, 0.01f, 0.5f);
-
-            float textScale = (def.CubeSize == MyCubeSize.Large ? 0.6f : 0.4f);
 
             if(data.ConveyorPorts != null)
             {
@@ -1695,9 +1721,9 @@ namespace Digi.BuildInfo.Features.Overlays
             // NOTE: not using classic labels (one per color type) because some ports are small, others large...
             if(AimedPorts.Count > 0)
             {
-                float scale = (float)(textScale * DepthRatio);
+                const float textScale = 1.5f;
 
-                PortInfo? closestRender = null;
+                PortInfo? closestPort = null;
                 double closestDistance = double.MaxValue;
 
                 foreach(var portInfo in AimedPorts)
@@ -1705,21 +1731,34 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(closestDistance > portInfo.Distance)
                     {
                         closestDistance = portInfo.Distance;
-                        closestRender = portInfo;
+                        closestPort = portInfo;
                     }
                 }
 
-                if(closestRender.HasValue)
+                if(closestPort.HasValue)
                 {
-                    var labelPos = closestRender.Value.Matrix.Translation;
-                    var labelDir = closestRender.Value.Matrix.Right;
+                    // overlayed selection box
+                    Color colorFace = Color.White * 0.25f;
+                    //Color colorLine = Color.White;
+                    //float lineWidth = 0.01f * (float)DepthRatio;
 
-                    if(closestRender.Value.Message == null)
-                        DynamicLabelSB.Clear().Append("Unknown port").MoreInfoInHelp(4);
+                    MatrixD closeRenderMatrix = closestPort.Value.CloseMatrix;
+
+                    MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
+                    //MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref unitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+
+                    // label text
+                    MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
+                    Vector3D labelPos = closestPort.Value.Matrix.Translation;
+                    Vector3D labelDir = Vector3D.Normalize(cm.Up + cm.Right * 0.5);
+
+                    if(closestPort.Value.Message == null)
+                        DynamicLabelSB.Clear().Append("Unknown port").MoreInfoInHelp(3);
                     else
-                        DynamicLabelSB.Clear().Append(closestRender.Value.Message);
+                        DynamicLabelSB.Clear().Append(closestPort.Value.Message);
 
-                    DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: scale, lineHeight: 0, lineThick: 0, align: HudAPIv2.TextOrientation.center, autoAlign: false, alwaysOnTop: false);
+                    DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, Color.White, scale: textScale, autoAlign: false, alwaysOnTop: true);
                 }
 
                 AimedPorts.Clear();
@@ -1733,19 +1772,18 @@ namespace Digi.BuildInfo.Features.Overlays
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             float lineWidth = 0.01f;
 
-            var closeRenderMatrix = portMatrix;
+            MatrixD closeRenderMatrix = portMatrix;
 
             // see through walls
             float scale = ConvertToAlwaysOnTop(ref closeRenderMatrix);
             lineWidth *= scale;
 
-            var bb = new BoundingBoxD(-Vector3D.Half, Vector3D.Half);
             Color colorFace = color * 0.1f;
             Color colorLine = color;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref bb, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref unitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             // TODO: some kind of large conveyor indicator?
             //if(largeShip)
@@ -1762,7 +1800,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //        scaleVec.X = 0.05; // Y is thin, pick either X or Z
             //
             //    MatrixD.Rescale(ref middleMatrix, ref scaleVec);
-            //    MySimpleObjectDraw.DrawTransparentBox(ref middleMatrix, ref bb, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
+            //    MySimpleObjectDraw.DrawTransparentBox(ref middleMatrix, ref unitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
             //}
 
             if(Main.TextAPI.IsEnabled)
@@ -1772,7 +1810,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 double? distance = obb.Intersects(ref aimLine);
                 if(distance.HasValue)
                 {
-                    AimedPorts.Add(new PortInfo((float)distance.Value, closeRenderMatrix, color, message));
+                    AimedPorts.Add(new PortInfo((float)distance.Value, portMatrix, closeRenderMatrix, color, message));
                 }
             }
         }
@@ -1781,13 +1819,15 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             public readonly float Distance;
             public readonly MatrixD Matrix;
+            public readonly MatrixD CloseMatrix;
             public readonly Color Color;
             public readonly string Message;
 
-            public PortInfo(float distance, MatrixD matrix, Color color, string message)
+            public PortInfo(float distance, MatrixD matrix, MatrixD closeMatrix, Color color, string message)
             {
                 Distance = distance;
                 Matrix = matrix;
+                CloseMatrix = closeMatrix;
                 Color = color;
                 Message = message;
             }
@@ -1815,7 +1855,8 @@ namespace Digi.BuildInfo.Features.Overlays
             if(!Main.TextAPI.IsEnabled)
                 return;
 
-            var cm = MyAPIGateway.Session.Camera.WorldMatrix;
+            MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3D textWorldPos = start + direction * lineHeight;
 
             if(alwaysOnTop)
             {
@@ -1824,7 +1865,15 @@ namespace Digi.BuildInfo.Features.Overlays
             }
 
             lineHeight *= scale;
+
+            // TODO: config setting for overlay text relative scale?
+            float distanceToCam = (float)Vector3D.Distance(cm.Translation, textWorldPos);
+            distanceToCam = Math.Max(distanceToCam, 1f);
+            scale = scale * 0.1f * distanceToCam;
+
             lineThick *= scale;
+
+            textWorldPos = start + direction * lineHeight;
 
             Vector3D shadowOffset = cm.Right * (LABEL_SHADOW_OFFSET.X * scale) + cm.Up * (LABEL_SHADOW_OFFSET.Y * scale);
 
@@ -1833,8 +1882,6 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)))
                 return;
-
-            var textWorldPos = start + direction * lineHeight;
 
             // has issue on always-on-top labels
             //if(!alwaysOnTop)
@@ -1852,18 +1899,18 @@ namespace Digi.BuildInfo.Features.Overlays
                     align = HudAPIv2.TextOrientation.rtl;
             }
 
-            var textPos = textWorldPos + textDir * (LABEL_OFFSET.X * scale) + cm.Up * (LABEL_OFFSET.Y * scale);
-            var shadowPos = textPos + textDir * (LABEL_SHADOW_OFFSET.X * scale) + cm.Up * (LABEL_SHADOW_OFFSET.Y * scale) + cm.Forward * 0.0001;
+            Vector3D textPos = textWorldPos + textDir * (LABEL_OFFSET.X * scale) + cm.Up * (LABEL_OFFSET.Y * scale);
+            Vector3D shadowPos = textPos + textDir * (LABEL_SHADOW_OFFSET.X * scale) + cm.Up * (LABEL_SHADOW_OFFSET.Y * scale) + cm.Forward * 0.00000001;
 
-            var i = (int)id;
-            var labelData = Labels[i];
+            int i = (int)id;
+            LabelData labelData = Labels[i];
             if(labelData == null)
                 Labels[i] = labelData = new LabelData();
 
             if(labelData.Text == null)
             {
-                var shadowSB = new StringBuilder(DynamicLabelSB.Capacity);
-                var msgSB = new StringBuilder(DynamicLabelSB.Capacity);
+                StringBuilder shadowSB = new StringBuilder(DynamicLabelSB.Capacity);
+                StringBuilder msgSB = new StringBuilder(DynamicLabelSB.Capacity);
 
                 labelData.Shadow = new HudAPIv2.SpaceMessage(shadowSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_SHADOW_BLEND_TYPE);
                 labelData.Text = new HudAPIv2.SpaceMessage(msgSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, LABEL_TEXT_SCALE, Blend: LABEL_BLEND_TYPE);
@@ -1881,8 +1928,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
             }
 
-            var shadow = labelData.Shadow;
-            var text = labelData.Text;
+            HudAPIv2.SpaceMessage shadow = labelData.Shadow;
+            HudAPIv2.SpaceMessage text = labelData.Text;
 
             if(message == null)
             {
@@ -1906,7 +1953,7 @@ namespace Digi.BuildInfo.Features.Overlays
             text.Up = cm.Up;
             text.Draw();
 
-            var underlineLength = labelData.UnderlineLength * scale;
+            float underlineLength = labelData.UnderlineLength * scale;
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, textWorldPos + shadowOffset, textDir, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, textWorldPos, textDir, underlineLength, lineThick, LABEL_BLEND_TYPE);
 
@@ -1921,7 +1968,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawMountPointAxisText(MyCubeBlockDefinition def, ref MatrixD drawMatrix)
         {
-            float textScale = (def.CubeSize == MyCubeSize.Large ? 1.5f : 0.75f);
+            float textScale = 1f;
 
             var matrix = MatrixD.CreateScale(def.Size * (CellSize / textScale / 2f) + new Vector3D(0.5f));
             matrix.Translation = Vector3D.Zero; // (def.Center - (def.Size * 0.5f));

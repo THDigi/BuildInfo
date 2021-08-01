@@ -30,12 +30,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Blocks with no collisions also have this limitation." +
             "\n  Also no-collision blocks provide no mass to the grid." +
             "\n" +
-            "\n [3] Hidden rotor torque limit:" +
-            "\n  Torque is limited by the rotor top's mass squared (mass*mass)." +
-            "\n  This causes issues for chained structures that have lightweight inner parts and heavy at the ends." +
-            "\n  To work around it you must add more mass on the rotor's top, flip the rotor so your bigger ship/station is the top grid." +
-            "\n" +
-            "\n [4] Unknown ports:" +
+            "\n [3] Unknown ports:" +
             "\n  These ports are upgrade ports but the block has no upgrades declared in code." +
             "\n  They can have custom functionality provided by a mod or no functionality at all, can't tell from code." +
             "\n  They're shown in overlays because their position is still useful if you can identify their purpose." +

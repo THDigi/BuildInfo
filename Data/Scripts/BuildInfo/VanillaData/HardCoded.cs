@@ -51,16 +51,6 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         // from MyShipConnector
-        public const string ShipConnector_PowerGroup = "Conveyors";
-        public static float ShipConnector_PowerReq(MyCubeBlockDefinition def)
-        {
-            var requiredPower = MyEnergyConstants.MAX_REQUIRED_POWER_CONNECTOR;
-
-            if(def.CubeSize == MyCubeSize.Small)
-                requiredPower *= 0.01f;
-
-            return requiredPower;
-        }
         public static float ShipConnector_InventoryVolume(MyCubeBlockDefinition def)
         {
             var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
@@ -403,35 +393,12 @@ namespace Digi.BuildInfo.VanillaData
             return relativeEnt.PositionComp.WorldAABB.DistanceSquared(controlledEnt.PositionComp.GetPosition()) <= RelativeDampeners_MaxDistanceSq;
         }
 
-        // from MyBatteryBlock.StorePower()
-        public const float BatteryRechargeMultiplier = 0.8f;
-
         // from MyJumpDrive.StorePower()
         public const float JumpDriveRechargeMultiplier = 0.8f;
 
         // from MyGridJumpDriveSystem.Jump()
         public const float JumpDriveJumpDelay = 10f;
-
-        // from MyMotorStator.UpdateBeforeSimulation()
-        public static float RotorTorqueLimit(IMyMotorStator stator, out float mass)
-        {
-            mass = 0;
-            var topGrid = stator.TopGrid;
-            if(topGrid == null)
-                return 0;
-
-            float torque = stator.Torque;
-
-            mass = topGrid.Physics.Mass;
-            if(!topGrid.IsStatic && mass <= 0)
-            {
-                // need mass for clients in MP too, like when grids are LG'd
-                mass = BuildInfoMod.Instance.GridMassCompute.GetGridMass(stator.TopGrid);
-            }
-
-            return Math.Min(torque, (mass > 0f ? (mass * mass) : torque));
-        }
-
+        
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         public enum MountPointMask : byte
         {

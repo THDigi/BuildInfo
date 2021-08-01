@@ -31,6 +31,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const double SplitModeLeftSideMinWidth = 0.32;
 
         public int ForceRefreshAtTick;
+        public int IgnoreTick;
 
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
         Vector2D PosInGUI = new Vector2D(0.5, -0.5);
@@ -548,7 +549,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(MustBeVisible)
             {
-                if(ForceRefreshAtTick == tick || tick % 60 == 0)
+                // offset on tick to avoid it synchronizing with other things
+                if(ForceRefreshAtTick == tick || (tick + 10) % 60 == 0)
                 {
                     UpdateRender();
                 }
@@ -569,10 +571,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(Labels == null || !MustBeVisible)
                 return;
 
+            int tick = Main.Tick;
+
             // avoid re-triggering same tick
-            if(RenderedAtTick == Main.Tick)
+            if(RenderedAtTick == tick)
                 return;
-            RenderedAtTick = Main.Tick;
+            RenderedAtTick = tick;
+
+            // avoid rendering the same tick that toolbar updated, meaning it doesn't have full data yet
+            if(IgnoreTick == tick)
+            {
+                ForceRefreshAtTick = tick + 1;
+                return;
+            }
 
             bool gamepadHUD = ToolbarMonitor.EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed;
             int slotsPerPage = (gamepadHUD ? ToolbarMonitor.SlotsPerPageGamepad : ToolbarMonitor.SlotsPerPage);
@@ -581,6 +592,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             int maxIndexPage = (startIndex + slotsPerPage - 1);
             int highestUsedIndex = Math.Max(Main.ToolbarMonitor.HighestIndexUsed, 0);
             int maxUsedIndex = Math.Min(highestUsedIndex, maxIndexPage);
+
+            ToolbarItem[] slots = Main.ToolbarMonitor.Slots;
+
+            // TODO: still required?
+            // if any slot is not fully updated, skip this render update.
+            //for(int i = 0; i < slotsPerPage; i++)
+            //{
+            //    int index = startIndex + i;
+            //    ToolbarItem item = slots[index];
+
+            //    if(item.ActionId != null && item.Name == null)
+            //        return;
+            //}
 
             double topLinesWidth = 0;
 
@@ -607,7 +631,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     sb = sb2;
 
                 int index = startIndex + i;
-                var item = Main.ToolbarMonitor.Slots[index];
+                ToolbarItem item = slots[index];
                 if(item.Name == null)
                     sb.ColorA(Color.Gray * opacity);
 

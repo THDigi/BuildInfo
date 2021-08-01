@@ -21,6 +21,8 @@ namespace Digi.BuildInfo.Utilities
         public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
         public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
         public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
+        public readonly Dictionary<string, int> NamedSums = new Dictionary<string, int>();
+
         //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
 
         private readonly HashSet<MyObjectBuilderType> OBTypeSet = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
