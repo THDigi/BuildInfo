@@ -3898,11 +3898,30 @@ namespace Digi.BuildInfo.Features
                                 GetLine().Append("Oxygen").Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
                                 break;
                             case ItemTypes.PhysicalItem:
+                            {
+                                MyPhysicalItemDefinition itemDef = null;
+                                bool exists = MyDefinitionManager.Static.TryGetDefinition(entry.Item.Value, out itemDef); // same getter the game uses
+                                if(!exists)
+                                    GetLine().Color(COLOR_BAD);
+
                                 GetLine().IdTypeSubtypeFormat(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+
+                                if(!exists)
+                                    GetLine().Append(" (Item not found!)").ResetFormatting();
                                 break;
+                            }
                             case ItemTypes.Grid:
+                            {
+                                MyPrefabDefinition prefabDef = MyDefinitionManager.Static.GetPrefabDefinition(entry.PrefabName); // same getter the game uses
+                                if(prefabDef == null)
+                                    GetLine().Color(COLOR_BAD);
+
                                 GetLine().Append(entry.PrefabName).Append(" (").Append(entry.PrefabTotalPcu).Append(" PCU)").Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+
+                                if(prefabDef == null)
+                                    GetLine().Append(" (Prefab not found!)").ResetFormatting();
                                 break;
+                            }
                         }
                     }
                 }
