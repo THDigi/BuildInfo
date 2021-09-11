@@ -194,6 +194,8 @@ namespace Digi
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Info(string message, string printText = null, int printTimeMs = DEFAULT_TIME_INFO)
         {
+            // FIXME: using printText before update starts would make player miss the text
+
             EnsureHandlerCreated();
             handler.Info(message, printText, printTimeMs);
         }
@@ -334,7 +336,7 @@ namespace Digi
 
                 sb.Clear();
                 sb.Append("Initialized; ").Append(DateTime.Now.ToString("yyyy MMMM dd (dddd) HH:mm:ss")).Append("; GameVersion=").Append(MyAPIGateway.Session.Version.ToString());
-                sb.Append("\nModWorkshopId=").Append(WorkshopId).Append("; ModName=").Append(modName);
+                sb.Append("\nModWorkshopId=").Append(WorkshopId).Append("; ModName=").Append(modName).Append("; ModService=").Append(sessionComp.ModContext.ModServiceName);
                 sb.Append("\nGameMode=").Append(worldsettings.GameMode.ToString()).Append("; OnlineMode=").Append(worldsettings.OnlineMode.ToString());
                 sb.Append("\nServer=").Append(MyAPIGateway.Session.IsServer).Append("; DS=").Append(MyAPIGateway.Utilities.IsDedicated);
                 sb.Append("\nDefined=");
