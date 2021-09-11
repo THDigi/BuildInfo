@@ -115,16 +115,22 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            if(block?.Model == null)
+            {
+                //Log.Error($"Block '{def.Id.ToString()}' has a FatBlock but no Model, this will crash when opening info tab on its grid; I recommend you add a <Model> tag to it, even if it's a single tiny triangle model.", Log.PRINT_MESSAGE);
+                return;
+            }
+
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
             if(dummies.Count == 0)
                 return;
 
-            var colorTerminalOnly = new Color(55, 255, 220);
-            var colorInteractiveAndTerminal = new Color(50, 255, 150);
-            var colorInteractiveOnly = new Color(25, 100, 155);
+            Color colorTerminalOnly = new Color(55, 255, 220);
+            Color colorInteractiveAndTerminal = new Color(50, 255, 150);
+            Color colorInteractiveOnly = new Color(25, 100, 155);
             const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
 
             Interactive = new List<InteractionInfo>(8);

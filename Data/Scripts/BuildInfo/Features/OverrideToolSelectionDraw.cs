@@ -176,7 +176,9 @@ namespace Digi.BuildInfo.Features
         public void GetBlockLocalBB(IMySlimBlock block, ref BoundingBoxD? cache, out BoundingBoxD localBB, out MatrixD worldMatrix)
         {
             MyCubeBlock fatBlock = block.FatBlock as MyCubeBlock;
-            if(fatBlock != null)
+            MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+
+            if(fatBlock != null && def.BlockTopology == MyBlockTopology.TriangleMesh)
             {
                 worldMatrix = fatBlock.PositionComp.WorldMatrixRef;
 
@@ -250,10 +252,9 @@ namespace Digi.BuildInfo.Features
                     localBB = cache.Value;
                 }
             }
-            else
+            else // no singular model, use boundingbox instead
             {
                 MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
-                MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
 
                 Matrix localMatrix;
                 block.Orientation.GetMatrix(out localMatrix);
