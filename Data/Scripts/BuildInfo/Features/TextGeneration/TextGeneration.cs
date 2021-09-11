@@ -2370,7 +2370,7 @@ namespace Digi.BuildInfo.Features
         {
             var thrust = (MyThrustDefinition)def;
 
-            if(!thrust.FuelConverter.FuelId.IsNull())
+            if(thrust.FuelConverter != null && !thrust.FuelConverter.FuelId.IsNull() && thrust.FuelConverter.FuelId != MyResourceDistributorComponent.ElectricityId)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
