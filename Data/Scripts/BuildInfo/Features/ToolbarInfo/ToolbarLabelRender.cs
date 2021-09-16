@@ -413,11 +413,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!Main.TextAPI.IsEnabled || LabelsMode == ToolbarLabelsMode.Off)
                 return false;
 
-            var shipController = MyAPIGateway.Session.ControlledObject as MyShipController;
+            MyShipController shipController = MyAPIGateway.Session.ControlledObject as MyShipController;
             if(shipController == null || shipController.BuildingMode)
                 return false;
 
-            if(!ToolbarMonitor.EnableGamepadSupport && MustBeVisible && MyAPIGateway.Input.IsJoystickLastUsed)
+            if(!ToolbarMonitor.EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed)
                 return false;
 
             bool newInToolbarConfig = Main.GUIMonitor.InToolbarConfig;
