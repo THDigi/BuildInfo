@@ -8,7 +8,7 @@ namespace Digi.BuildInfo.Features
     public class JumpDriveMonitor : ModComponent
     {
         private readonly Dictionary<long, int> JumpStartAt = new Dictionary<long, int>();
-        private int CleanAtTick = -1;
+        private int CleanAtTick = 0;
 
         public JumpDriveMonitor(BuildInfoMod main) : base(main)
         {
@@ -55,7 +55,7 @@ namespace Digi.BuildInfo.Features
         {
             if(CleanAtTick > 0 && CleanAtTick <= tick)
             {
-                CleanAtTick = -1;
+                CleanAtTick = 0;
                 JumpStartAt.Clear();
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
             }

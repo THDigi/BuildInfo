@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.VanillaData
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick >= WarnAtTick)
+            if(WarnAtTick > 0 && tick >= WarnAtTick)
             {
                 WarnAtTick = 0;
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
