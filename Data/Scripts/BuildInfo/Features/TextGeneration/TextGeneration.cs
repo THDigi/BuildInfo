@@ -2004,13 +2004,17 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
 
-            Add(typeof(MyObjectBuilder_SoundBlock), Format_SoundBlock);
+            action = Format_SoundBlock;
+            Add(typeof(MyObjectBuilder_SoundBlock), action);
+            Add(typeof(MyObjectBuilder_Jukebox), action);
 
             Add(typeof(MyObjectBuilder_SensorBlock), Format_Sensor);
 
             Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
 
             Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
+
+            Add(typeof(MyObjectBuilder_LCDPanelsBlock), Format_LCDPanels);
 
             action = Format_GravityGenerator;
             Add(typeof(MyObjectBuilder_GravityGeneratorBase), action);
@@ -3265,7 +3269,8 @@ namespace Digi.BuildInfo.Features
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
         {
-            var sound = (MySoundBlockDefinition)def;
+            // NOTE: this includes jukebox
+            MySoundBlockDefinition sound = (MySoundBlockDefinition)def;
 
             PowerRequired(Hardcoded.SoundBlock_PowerReq, sound.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3275,6 +3280,12 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Max loop time").TimeFormat(sound.MaxLoopPeriod);
 
                 // EmitterNumber and LoopUpdateThreshold seem unused
+            }
+
+            MyJukeboxDefinition jukebox = def as MyJukeboxDefinition;
+            if(jukebox != null)
+            {
+                Screens(def, jukebox.ScreenAreas);
             }
         }
 
@@ -3331,6 +3342,17 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Button count").Append(button.ButtonCount);
             }
+
+            Screens(def, button.ScreenAreas);
+        }
+
+        private void Format_LCDPanels(MyCubeBlockDefinition def)
+        {
+            MyLCDPanelsBlockDefinition panel = (MyLCDPanelsBlockDefinition)def;
+
+            PowerRequired(panel.RequiredPowerInput, panel.ResourceSinkGroup);
+
+            Screens(def, panel.ScreenAreas);
         }
 
         #region Magic blocks
