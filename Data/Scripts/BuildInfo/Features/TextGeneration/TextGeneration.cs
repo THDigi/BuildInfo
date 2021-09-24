@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
+using System.Xml.Serialization;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
@@ -10,6 +12,7 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Draygo.API;
 using ObjectBuilders.SafeZone;
+using ProtoBuf;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
@@ -2367,7 +2370,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            Screens(def, shipController.ScreenAreas);
+            AddScreenInfo(def, shipController.ScreenAreas);
         }
 
         private void Format_Thrust(MyCubeBlockDefinition def)
@@ -2561,7 +2564,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
 
-            Screens(def, projector.ScreenAreas);
+            AddScreenInfo(def, projector.ScreenAreas);
         }
 
         #region Doors
@@ -2728,7 +2731,7 @@ namespace Digi.BuildInfo.Features
                     AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetFormatting();
             }
 
-            Screens(def, medicalRoom.ScreenAreas);
+            AddScreenInfo(def, medicalRoom.ScreenAreas);
         }
 
         #region Production
@@ -2765,7 +2768,7 @@ namespace Digi.BuildInfo.Features
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
                 }
 
-                Screens(def, survivalKit.ScreenAreas);
+                AddScreenInfo(def, survivalKit.ScreenAreas);
             }
 
             var refinery = def as MyRefineryDefinition;
@@ -3210,7 +3213,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
 
-            Screens(def, pb.ScreenAreas);
+            AddScreenInfo(def, pb.ScreenAreas);
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
             {
@@ -3227,44 +3230,43 @@ namespace Digi.BuildInfo.Features
 
         private void Format_LCD(MyCubeBlockDefinition def)
         {
-            var lcd = (MyTextPanelDefinition)def;
+            MyTextPanelDefinition lcd = (MyTextPanelDefinition)def;
 
             PowerRequired(lcd.RequiredPowerInput, lcd.ResourceSinkGroup);
 
-            Screen(def, lcd);
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                Hardcoded.TextSurfaceInfo info;
+                HackyScreenArea surface;
+                string script = null;
+                bool supportsRotation = false;
 
-            // TODO: deal with ScreenAreas rotation stuff once the OB is no longer prohibited...
-            //
-            //m_maxRenderDistanceSquared = BlockDefinition.MaxScreenRenderDistance * BlockDefinition.MaxScreenRenderDistance;
-            //MyObjectBuilder_TextPanel myObjectBuilder_TextPanel = (MyObjectBuilder_TextPanel)objectBuilder;
-            //if(BlockDefinition.ScreenAreas != null && BlockDefinition.ScreenAreas.Count == 4)
-            //{
-            //    for(int i = 0; i < BlockDefinition.ScreenAreas.Count; i++)
-            //    {
-            //        MyTextPanelComponent myTextPanelComponent = new MyTextPanelComponent(i, this, BlockDefinition.ScreenAreas[i].Name, BlockDefinition.ScreenAreas[i].DisplayName, BlockDefinition.ScreenAreas[i].TextureResolution, BlockDefinition.ScreenAreas[i].ScreenWidth, BlockDefinition.ScreenAreas[i].ScreenHeight);
-            //        base.SyncType.Append(myTextPanelComponent);
-            //        myTextPanelComponent.Init(myObjectBuilder_TextPanel?.Sprites ?? default(MySerializableSpriteCollection), null, SendAddImagesToSelectionRequest, SendRemoveSelectedImageRequest, ChangeTextRequest, UpdateSpriteCollection);
-            //        m_panelComponents.Add(myTextPanelComponent);
-            //    }
-            //    m_activePanelComponent = m_panelComponents[0];
-            //    base.SyncType.Append(m_panelComponents);
-            //    if(myObjectBuilder_TextPanel.SelectedRotationIndex.HasValue && myObjectBuilder_TextPanel.SelectedRotationIndex.Value > 0 && myObjectBuilder_TextPanel.SelectedRotationIndex.Value < m_panelComponents.Count)
-            //    {
-            //        m_selectedRotationIndex = (m_newSelectedRotationIndex = myObjectBuilder_TextPanel.SelectedRotationIndex.Value);
-            //        m_activePanelComponent = m_panelComponents[m_selectedRotationIndex];
-            //    }
-            //}
-            //else
-            //{
-            //    m_activePanelComponent = new MyTextPanelComponent(0, this, BlockDefinition.PanelMaterialName, BlockDefinition.PanelMaterialName, BlockDefinition.TextureResolution, BlockDefinition.ScreenWidth, BlockDefinition.ScreenHeight);
-            //    base.SyncType.Append(m_activePanelComponent);
-            //    m_activePanelComponent.Init(myObjectBuilder_TextPanel?.Sprites ?? default(MySerializableSpriteCollection), null, SendAddImagesToSelectionRequest, SendRemoveSelectedImageRequest, ChangeTextRequest, UpdateSpriteCollection);
-            //    m_panelComponents.Add(m_activePanelComponent);
-            //}
-            //if(myObjectBuilder_TextPanel != null)
-            //{
-            //    InitTextPanelComponent(m_activePanelComponent, myObjectBuilder_TextPanel);
-            //}
+                // HACK: LCD block has rotations under these conditions, otherwise it just uses the old data from the definition
+                if(lcd.ScreenAreas != null && lcd.ScreenAreas.Count == 4)
+                {
+                    supportsRotation = true;
+                    List<HackyScreenArea> surfaces = GetOrParseScreenAreaData(lcd.Id, lcd.ScreenAreas, onlyFirst: true);
+                    surface = surfaces[0];
+
+                    info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
+                    script = surface.Script;
+                }
+                else
+                {
+                    info = Hardcoded.TextSurface_GetInfo(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
+                }
+
+                AddLine().Label("Resolution").Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
+                    .Separator().Label("Rotatable").BoolFormat(supportsRotation)
+                    .Separator().Label("Render").DistanceFormat(lcd.MaxScreenRenderDistance)
+                    .Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+
+                // not that useful info
+                //if(!string.IsNullOrEmpty(script))
+                //    AddLine().Label("Default script").Color(COLOR_STAT_TRAVEL).Append(script).ResetFormatting();
+
+                AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
+            }
         }
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
@@ -3285,7 +3287,7 @@ namespace Digi.BuildInfo.Features
             MyJukeboxDefinition jukebox = def as MyJukeboxDefinition;
             if(jukebox != null)
             {
-                Screens(def, jukebox.ScreenAreas);
+                AddScreenInfo(def, jukebox.ScreenAreas);
             }
         }
 
@@ -3343,7 +3345,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Button count").Append(button.ButtonCount);
             }
 
-            Screens(def, button.ScreenAreas);
+            AddScreenInfo(def, button.ScreenAreas);
         }
 
         private void Format_LCDPanels(MyCubeBlockDefinition def)
@@ -3352,7 +3354,7 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(panel.RequiredPowerInput, panel.ResourceSinkGroup);
 
-            Screens(def, panel.ScreenAreas);
+            AddScreenInfo(def, panel.ScreenAreas);
         }
 
         #region Magic blocks
@@ -3599,7 +3601,7 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (");
+                        AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (");
 
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
@@ -3654,7 +3656,7 @@ namespace Digi.BuildInfo.Features
                         var mag = data.Item1;
                         var ammo = data.Item2;
 
-                        AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
+                        AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
                             .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
 
@@ -3881,14 +3883,14 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            Screens(def, safeZone.ScreenAreas);
+            AddScreenInfo(def, safeZone.ScreenAreas);
         }
 
         private void Format_ContractBlock(MyCubeBlockDefinition def)
         {
             var contracts = (MyContractBlockDefinition)def;
 
-            Screens(def, contracts.ScreenAreas);
+            AddScreenInfo(def, contracts.ScreenAreas);
         }
 
         private void Format_StoreBlock(MyCubeBlockDefinition def)
@@ -3898,7 +3900,7 @@ namespace Digi.BuildInfo.Features
 
             InventoryStats(def);
 
-            Screens(def, store.ScreenAreas);
+            AddScreenInfo(def, store.ScreenAreas);
 
             if(vending != null)
             {
@@ -4139,48 +4141,98 @@ namespace Digi.BuildInfo.Features
             [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
         };
 
-        private void Screen(MyCubeBlockDefinition def, MyTextPanelDefinition lcd)
+        [ProtoContract]
+        public class HackyScreenArea
         {
-            if(!Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
-                return;
+            [ProtoMember(1)]
+            [XmlAttribute]
+            public string Name;
 
-            // TODO: show sync distance too for MP?
+            [ProtoMember(4)]
+            [XmlAttribute]
+            public string DisplayName;
 
-            Vector2I res = Hardcoded.TextSurface_GetResolution(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
-            AddLine().Label("Screen resolution").Append(res.X).Append("x").Append(res.Y).Separator().Label("View distance").DistanceFormat(lcd.MaxScreenRenderDistance);
-            AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
+            [ProtoMember(7)]
+            [XmlAttribute]
+            [DefaultValue(512)]
+            public int TextureResolution = 512;
+
+            [ProtoMember(10)]
+            [XmlAttribute]
+            [DefaultValue(1)]
+            public int ScreenWidth = 1;
+
+            [ProtoMember(13)]
+            [XmlAttribute]
+            [DefaultValue(1)]
+            public int ScreenHeight = 1;
+
+            [ProtoMember(16)]
+            [XmlAttribute]
+            [DefaultValue(null)]
+            public string Script;
         }
 
-        private void Screens<T>(MyCubeBlockDefinition def, List<T> surfaces)
+        readonly Dictionary<MyDefinitionId, List<HackyScreenArea>> ScreenAreaData = new Dictionary<MyDefinitionId, List<HackyScreenArea>>(MyDefinitionId.Comparer);
+
+        /// <summary>
+        /// HACK: getting data from prohibited serializable class
+        /// </summary>
+        private List<HackyScreenArea> GetOrParseScreenAreaData<T>(MyDefinitionId defId, List<T> screenAreas, bool onlyFirst = false)
         {
-            if(surfaces == null || surfaces.Count == 0 || !Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            List<HackyScreenArea> cachedSurfaces;
+            if(!ScreenAreaData.TryGetValue(defId, out cachedSurfaces))
+            {
+                ScreenAreaData[defId] = cachedSurfaces = new List<HackyScreenArea>();
+
+                for(int i = 0; i < screenAreas.Count; i++)
+                {
+                    byte[] binary = MyAPIGateway.Utilities.SerializeToBinary(screenAreas[i]);
+                    HackyScreenArea surface = MyAPIGateway.Utilities.SerializeFromBinary<HackyScreenArea>(binary);
+                    cachedSurfaces.Add(surface);
+
+                    if(onlyFirst)
+                        break;
+                }
+            }
+
+            return cachedSurfaces;
+        }
+
+        private void AddScreenInfo<T>(MyCubeBlockDefinition def, List<T> screens)
+        {
+            if(screens == null || screens.Count == 0 || !Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 return;
 
-            AddLine().Label("Screens").Append(surfaces.Count);
+            List<HackyScreenArea> surfaces = GetOrParseScreenAreaData(def.Id, screens);
 
-            // TODO: design screens info better, once the OB is no longer prohibited
-            //if(surfaces.Count == 1)
-            //{
-            //    var surface = surfaces[0];
-            //    var displayName = MyTexts.Get(MyStringId.GetOrCompute(surface.DisplayName));
-            //    var res = Hardcoded.TextSurface_GetResolution(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
-            //
-            //    AddLine().Label("Text Surface").AppendSB(displayName).Append(" (").Append(surface.Name).Append(")")
-            //        .Separator().Label("Resolution").Append(res.X).Append("x").Append(res.Y)
-            //        .Separator().Label("Default script").Append(string.IsNullOrEmpty(surface.Script) ? "(None)" : surface.Script);
-            //}
-            //
-            //AddLine().Label("Text Surfaces");
-            //
-            //foreach(var surface in surfaces)
-            //{
-            //    var displayName = MyTexts.Get(MyStringId.GetOrCompute(surface.DisplayName));
-            //    var res = Hardcoded.TextSurface_GetResolution(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
-            //
-            //    AddLine().Append("   ").AppendSB(displayName).Append(" (").Append(surface.Name).Append(")")
-            //        .Separator().Label("Resolution").Append(res.X).Append("x").Append(res.Y)
-            //        .Separator().Label("Script").Append(string.IsNullOrEmpty(surface.Script) ? "(None)" : surface.Script);
-            //}
+            const int SpacePrefix = 9;
+            AddLine().Label(surfaces.Count > 1 ? "LCDs" : "LCD");
+
+            // TODO: toggle between list and just count?
+            for(int i = 0; i < surfaces.Count; i++)
+            {
+                HackyScreenArea surface = surfaces[i];
+                string displayName = MyTexts.GetString(MyStringId.GetOrCompute(surface.DisplayName));
+                Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
+
+                if(i > 0)
+                    AddLine().Append(' ', SpacePrefix).Append("| ");
+
+                GetLine().Append(displayName);
+
+                // very edge case use for a lot of width added, who needs it can get it from API or SBC
+                //if(Main.Config.InternalInfo.Value)
+                //    GetLine().Color(COLOR_UNIMPORTANT).Append(" (").Append(surface.Name).Append(")");
+
+                GetLine().ResetFormatting().Separator().Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
+
+                // not that useful info
+                //if(!string.IsNullOrEmpty(surface.Script))
+                //    GetLine().Separator().Color(COLOR_STAT_TRAVEL).Label("Default script").Append(surface.Script).ResetFormatting();
+            }
+
+            AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
         }
 
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();

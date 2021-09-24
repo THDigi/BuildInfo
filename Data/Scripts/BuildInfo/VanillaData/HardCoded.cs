@@ -6,7 +6,6 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -365,22 +364,60 @@ namespace Digi.BuildInfo.VanillaData
             maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / GAME_EARTH_GRAVITY;
         }
 
-        // from MyTextPanelComponent.GetTextureResolutionForAspectRatio()
-        public static Vector2I TextSurface_GetResolution(int width, int height, int textureSize)
-        {
-            if(width == height)
-                return new Vector2I(textureSize, textureSize);
+        // from where MyMultiTextPanelComponent.Init() is being called
+        public const float TextSurfaceMaxRenderDistance = 120f;
 
-            if(width > height)
+        // from where VRage.Network.DistanceRadiusAttribute is being used
+        public const float TextSurfaceMaxSyncDistance = 32f;
+
+        public struct TextSurfaceInfo
+        {
+            public readonly Vector2I TextureSize;
+            public readonly Vector2 AspectRatio;
+            public readonly Vector2 SurfaceSize;
+
+            public TextSurfaceInfo(Vector2I textureSize, Vector2 aspectRatio, Vector2 surfaceSize)
+            {
+                TextureSize = textureSize;
+                AspectRatio = aspectRatio;
+                SurfaceSize = surfaceSize;
+            }
+        }
+
+        public static TextSurfaceInfo TextSurface_GetInfo(int width, int height, int textureResolution)
+        {
+            // from MyTextPanelComponent.GetTextureResolutionForAspectRatio()
+            Vector2I textureRes;
+            if(width == height)
+            {
+                textureRes = new Vector2I(textureResolution, textureResolution);
+            }
+            else if(width > height)
             {
                 int n = MathHelper.Pow2(MathHelper.Log2(width / height));
-                return new Vector2I(textureSize * n, textureSize);
+                textureRes = new Vector2I(textureResolution * n, textureResolution);
             }
             else
             {
                 int n = MathHelper.Pow2(MathHelper.Log2(height / width));
-                return new Vector2I(textureSize, textureSize * n);
+                textureRes = new Vector2I(textureResolution, textureResolution * n);
             }
+
+            // from MyTextPanelComponent.ctor()
+            Vector2 aspectRatio;
+            if(width > height)
+                aspectRatio = new Vector2(1f, 1f * (float)height / (float)width);
+            else
+                aspectRatio = new Vector2(1f * (float)width / (float)height, 1f);
+
+            // from MyRenderComponentScreenAreas.CalcAspectFactor()
+            Vector2 aspectFactor;
+            if(textureRes.X > textureRes.Y)
+                aspectFactor = aspectRatio * new Vector2(1f, textureRes.X / textureRes.Y);
+            else
+                aspectFactor = aspectRatio * new Vector2(textureRes.Y / textureRes.X, 1f);
+
+            return new TextSurfaceInfo(textureRes, aspectRatio, textureRes * aspectFactor);
         }
 
         // from MyEntityThrustComponent
@@ -398,7 +435,7 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyGridJumpDriveSystem.Jump()
         public const float JumpDriveJumpDelay = 10f;
-        
+
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         public enum MountPointMask : byte
         {
