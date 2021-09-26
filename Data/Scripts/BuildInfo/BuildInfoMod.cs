@@ -14,6 +14,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using VRage.Game.Components;
+using Whiplash.WeaponFramework;
 
 namespace Digi.BuildInfo
 {
@@ -35,6 +36,8 @@ namespace Digi.BuildInfo
         public InputLibHandler InputLibHandler;
         public EquipmentMonitor EquipmentMonitor;
         public WeaponCoreAPIHandler WeaponCoreAPIHandler;
+        public WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
+        public DefenseShieldsDetector DefenseShieldsDetector;
 
         // Features
         public Config Config;
@@ -100,6 +103,8 @@ namespace Digi.BuildInfo
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
+            WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
+            DefenseShieldsDetector = new DefenseShieldsDetector(this);
 
             // Features
             Config = new Config(this);

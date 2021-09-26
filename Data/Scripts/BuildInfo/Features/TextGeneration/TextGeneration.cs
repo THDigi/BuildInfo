@@ -29,6 +29,7 @@ using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 using WeaponCore.Api;
+using Whiplash.WeaponFramework;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 // FIXME: internal info not vanishing on older cached blocks text when resetting config
@@ -3448,8 +3449,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var weaponDef = (MyWeaponBlockDefinition)def;
-
+            MyWeaponBlockDefinition weaponDef = (MyWeaponBlockDefinition)def;
             MyWeaponDefinition wpDef;
             if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponDef.WeaponDefinitionId, out wpDef))
             {
@@ -3461,10 +3461,30 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var turret = def as MyLargeTurretBaseDefinition;
-            float requiredPowerInput = (turret != null ? Hardcoded.Turret_PowerReq : Hardcoded.ShipGun_PowerReq);
+            MyLargeTurretBaseDefinition turret = def as MyLargeTurretBaseDefinition;
 
-            PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
+            WeaponConfig gunWWF = Main.WhipWeaponFrameworkAPI.Weapons.GetValueOrDefault(def.Id, null);
+            TurretWeaponConfig turretWWF = gunWWF as TurretWeaponConfig;
+
+            bool extraInfo = Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo);
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                if(gunWWF != null)
+                {
+                    float powerUsage = turretWWF?.IdlePowerDrawMax ?? gunWWF.IdlePowerDrawBase;
+                    AddLine().Label("Power - Idle").PowerFormat(powerUsage).Separator().Label("Recharge").PowerFormat(gunWWF.ReloadPowerDraw).Append(" (adaptable)");
+
+                    // HACK: hardcoded like in https://gitlab.com/whiplash141/Revived-Railgun-Mod/-/blob/develop/Data/Scripts/WeaponFramework/WhipsWeaponFramework/WeaponBlockBase.cs#L566
+                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                        GetLine().Separator().ResourcePriority("Thrust", true);
+                }
+                else
+                {
+                    float requiredPowerInput = (turret != null ? Hardcoded.Turret_PowerReq : Hardcoded.ShipGun_PowerReq);
+                    PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
+                }
+            }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
@@ -3474,9 +3494,10 @@ namespace Digi.BuildInfo.Features
 
             if(turret != null)
             {
-                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+
+                if(extraInfo)
                 {
-                    AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
                     AddLine().Append("Rotation - ");
 
                     int minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
@@ -3501,13 +3522,73 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            if(gunWWF == null && extraInfo)
             {
                 // accuracy cone diameter = tan(angle) * baseRadius * 2
-                AddLine().Label("Accuracy").DistanceFormat((float)Math.Tan(wpDef.DeviateShotAngle) * 200).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(wpDef.ReloadTime / 1000);
+                float accuracyAt100m = (float)Math.Tan(wpDef.DeviateShotAngle) * 100 * 2;
+                float reloadTime = wpDef.ReloadTime / 1000;
+
+                AddLine().Label("Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(reloadTime);
             }
 
-            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
+            bool showAmmoDetails = Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails);
+
+            if(gunWWF != null)
+            {
+                AddLine().Append("Whiplash Weapon Framework:");
+
+                float reloadTime = 60f / gunWWF.RateOfFireRPM;
+                AddLine().Label("| Fire rate").Number(gunWWF.RateOfFireRPM).Append(" RPM").Separator().Append("Reload: ").TimeFormat(reloadTime).Append(" at max power");
+
+                if(extraInfo)
+                {
+                    float accuracyAt100m = (float)Math.Tan(MathHelper.ToRadians(gunWWF.DeviationAngleDeg)) * 100 * 2;
+                    AddLine().Label("| Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m").Separator().Label("Recoil force").ForceFormat(gunWWF.RecoilImpulse);
+                }
+
+                if(showAmmoDetails)
+                {
+                    const int MaxMagNameLength = 20;
+
+                    // only supports one magazine so no point in trying to show all.
+                    if(wpDef.AmmoMagazinesId.Length > 0)
+                    {
+                        MyAmmoMagazineDefinition magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[0]);
+                        AddLine().Label("| Ammo Magazine").Color(COLOR_STAT_TYPE).AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).ResetFormatting();
+                    }
+
+                    AddLine().Label("| Projectile - Velocity").SpeedFormat(gunWWF.MuzzleVelocity).Separator().Label("Max range").DistanceFormat(gunWWF.MaxRange).Separator().Label("Impact force").ForceFormat(gunWWF.HitImpulse);
+
+                    if(extraInfo)
+                    {
+                        AddLine().Label("| Influenced by gravity").MultiplierToPercent(gunWWF.NaturalGravityMultiplier).Append(" natural").Separator().MultiplierToPercent(gunWWF.ArtificialGravityMultiplier).Append(" artificial");
+                    }
+
+                    if(gunWWF.PenetrateOnContact)
+                        AddLine().Label("| Penetration damage pool").Append(gunWWF.PenetrationDamage).Separator().Label("Max depth").DistanceFormat(gunWWF.PenetrationRange);
+
+                    if(extraInfo)
+                    {
+                        if(gunWWF.ExplodePostPenetration && gunWWF.PenetrationExplosionDamage > 0)
+                            AddLine().Label("| Penetration stopped explosion - Damage").Append(gunWWF.PenetrationExplosionDamage).Separator().Label("Radius").DistanceFormat(gunWWF.PenetrationExplosionRadius);
+
+                        if(gunWWF.ExplodeOnContact && gunWWF.ContactExplosionDamage > 0)
+                            AddLine().Label("| Contact explosion - Damage").Append(gunWWF.ContactExplosionDamage).Separator().Label("Radius").DistanceFormat(gunWWF.ContactExplosionRadius);
+                    }
+
+                    if(Main.DefenseShieldsDetector.IsRunning)
+                    {
+                        // HACK: calculated like in https://gitlab.com/whiplash141/Revived-Railgun-Mod/-/blob/develop/Data/Scripts/WeaponFramework/WhipsWeaponFramework/Projectiles/WeaponProjectile.cs#L234
+                        float shieldDamage = (gunWWF.PenetrationDamage + gunWWF.ContactExplosionDamage) * gunWWF.ShieldDamageMultiplier;
+                        AddLine().Label("| Damage against DefenseShields").Append(shieldDamage);
+                    }
+
+                    if(gunWWF.ShouldProximityDetonate)
+                        AddLine().Label("| Proximity detonation").Append(gunWWF.ProximityDetonationRange).Separator().Label("Travel for arming").DistanceFormat(gunWWF.ProximityDetonationArmingRange);
+                }
+            }
+
+            if(showAmmoDetails && gunWWF == null)
             {
                 ammoProjectiles.Clear();
                 ammoMissiles.Clear();
@@ -3575,7 +3656,7 @@ namespace Digi.BuildInfo.Features
                 {
                     // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
 
-                    var projectilesData = wpDef.WeaponAmmoDatas[0];
+                    MyWeaponDefinition.MyWeaponAmmoData projectilesData = wpDef.WeaponAmmoDatas[0];
 
                     bool hasReload = (blockTypeCanReload && projectilesData.ShotsInBurst > 0);
                     double rps = Math.Round(projectilesData.RateOfFire / 60f, 2);
@@ -3597,9 +3678,9 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < ammoProjectiles.Count; ++i)
                     {
-                        var data = ammoProjectiles[i];
-                        var mag = data.Item1;
-                        var ammo = data.Item2;
+                        MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
+                        MyAmmoMagazineDefinition mag = data.Item1;
+                        MyProjectileAmmoDefinition ammo = data.Item2;
 
                         AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (");
 
@@ -3631,7 +3712,7 @@ namespace Digi.BuildInfo.Features
 
                 if(ammoMissiles.Count > 0)
                 {
-                    var missileData = wpDef.WeaponAmmoDatas[1];
+                    MyWeaponDefinition.MyWeaponAmmoData missileData = wpDef.WeaponAmmoDatas[1];
 
                     bool hasReload = (blockTypeCanReload && missileData.ShotsInBurst > 0);
                     double rps = Math.Round(missileData.RateOfFire / 60f, 2);
