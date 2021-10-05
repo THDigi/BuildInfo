@@ -9,7 +9,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Warheads(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_Warhead);
+            Type type = typeof(MyObjectBuilder_Warhead);
 
             processor.AddStatus(type, Countdown, "IncreaseDetonationTime", "DecreaseDetonationTime", "StartCountdown", "StopCountdown");
             processor.AddStatus(type, Safety, "Safety", "Detonate");
@@ -19,8 +19,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Countdown(StringBuilder sb, ToolbarItem item)
         {
-            var warhead = (IMyWarhead)item.Block;
-            var span = TimeSpan.FromSeconds(warhead.DetonationTime);
+            IMyWarhead warhead = (IMyWarhead)item.Block;
+            TimeSpan span = TimeSpan.FromSeconds(warhead.DetonationTime);
             int minutes = span.Minutes;
 
             if(span.Hours > 0)
@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Safety(StringBuilder sb, ToolbarItem item)
         {
-            var warhead = (IMyWarhead)item.Block;
+            IMyWarhead warhead = (IMyWarhead)item.Block;
             if(warhead.IsArmed)
             {
                 bool isTrigger = (item.ActionId == "Detonate");

@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Open(StringBuilder sb, ToolbarItem item)
         {
-            var door = (IMyDoor)item.Block;
+            IMyDoor door = (IMyDoor)item.Block;
 
             Processor.AppendSingleStats(sb, item.Block);
 

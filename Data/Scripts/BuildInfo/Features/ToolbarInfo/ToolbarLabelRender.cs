@@ -10,6 +10,7 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
@@ -187,7 +188,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bottomLeftPos = PosOnHUD;
             }
 
-            foreach(var bg in Backgrounds)
+            foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
                 bg.Origin = bottomLeftPos;
             }
@@ -206,7 +207,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Color color = (colorOverride.HasValue ? colorOverride.Value : BackgroundColor);
             Utils.FadeColorHUD(ref color, opacity);
 
-            foreach(var bg in Backgrounds)
+            foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
                 bg.BillBoardColor = color;
             }
@@ -271,7 +272,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CornerBotomLeft = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
             Backgrounds.Add(CornerBotomLeft);
 
-            foreach(var bg in Backgrounds)
+            foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
                 bg.Visible = false;
                 bg.Blend = TextBlendType;
@@ -307,7 +308,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(Main.Config.ToolbarLabelsEnterCockpitTime.Value > 0)
                 {
-                    var player = MyAPIGateway.Session?.Player;
+                    IMyPlayer player = MyAPIGateway.Session?.Player;
                     if(player != null && player.IdentityId == playerId)
                     {
                         ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
@@ -339,22 +340,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
             {
                 const int Rounding = 6;
-                var screenSize = MyAPIGateway.Input.GetMouseAreaSize();
-                var mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
-                var mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
+                Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
+                Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
+                Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
 
                 Vector2D bottomLeftPos = Labels.Origin;
                 float edge = (float)(BackgroundPadding * Scale);
-                var box = new BoundingBox2D(bottomLeftPos, bottomLeftPos + new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y)) + edge);
+                BoundingBox2D box = new BoundingBox2D(bottomLeftPos, bottomLeftPos + new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y)) + edge);
                 box.Min = Vector2D.Min(box.Min, box.Max);
                 box.Max = Vector2D.Max(box.Min, box.Max);
 
                 //{
-                //    var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+                //    MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
                 //    float w = (0.032f * DrawUtils.ScaleFOV);
                 //    float h = w;
 
-                //    var worldPos = DrawUtils.TextAPIHUDtoWorld(box.Min);
+                //    Vector3D worldPos = DrawUtils.TextAPIHUDtoWorld(box.Min);
                 //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
 
                 //    worldPos = DrawUtils.TextAPIHUDtoWorld(box.Max);
@@ -396,7 +397,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
                 {
-                    var newPos = mouseOnScreen + ClickOffset.Value;
+                    Vector2D newPos = mouseOnScreen + ClickOffset.Value;
                     newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
                     newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
@@ -529,7 +530,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(!WereVisible.HasValue || MustBeVisible != WereVisible)
             {
-                foreach(var bg in Backgrounds)
+                foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
                 {
                     bg.Visible = MustBeVisible;
                 }
@@ -770,13 +771,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Vector2D shadowOffset = new Vector2D(ShadowOffset, -ShadowOffset);
 
-            var textOffset = new Vector2D(0, -TextSize.Y); // bottom-left pivot
+            Vector2D textOffset = new Vector2D(0, -TextSize.Y); // bottom-left pivot
             Labels.Offset = textOffset + halfEdgeVec;
             Shadows.Offset = textOffset + halfEdgeVec + shadowOffset;
 
             if(splitMode)
             {
-                var l2offset = new Vector2D(labelsTextSize.X + separator, -TextSize.Y);
+                Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -TextSize.Y);
                 LabelsLine2.Offset = l2offset + halfEdgeVec;
                 ShadowsLine2.Offset = l2offset + halfEdgeVec + shadowOffset;
             }

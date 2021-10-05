@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyTerminalBlock b in groupData.Blocks)
             {
-                var prop = b.GetProperty("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
+                ITerminalProperty prop = b.GetProperty("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
                 if(prop != null)
                 {
                     if(prop.AsBool().GetValue(b))

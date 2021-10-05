@@ -191,7 +191,7 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        foreach(var comp in ComponentRefreshFlags)
+                        foreach(IComponent comp in ComponentRefreshFlags)
                         {
                             comp.RefreshFlags();
                         }
@@ -248,7 +248,7 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        foreach(var comp in ComponentRefreshFlags)
+                        foreach(IComponent comp in ComponentRefreshFlags)
                         {
                             comp.RefreshFlags();
                         }
@@ -297,7 +297,7 @@ namespace Digi.ComponentLib
 
                     if(ComponentRefreshFlags.Count > 0)
                     {
-                        foreach(var comp in ComponentRefreshFlags)
+                        foreach(IComponent comp in ComponentRefreshFlags)
                         {
                             comp.RefreshFlags();
                         }

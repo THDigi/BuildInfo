@@ -252,7 +252,7 @@ namespace Digi.BuildInfo.Features
 
         private void Update(int tick)
         {
-            var prevToolDefId = Main.EquipmentMonitor.ToolDefId;
+            MyDefinitionId prevToolDefId = Main.EquipmentMonitor.ToolDefId;
 
             if(Main.EquipmentMonitor.AimedBlock != null && tick % 10 == 0) // make the aimed info refresh every 10 ticks
                 aimInfoNeedsUpdate = true;
@@ -266,7 +266,7 @@ namespace Digi.BuildInfo.Features
                 Main.QuickMenu.SetFreezePlacement(false);
             }
 
-            var def = Main.EquipmentMonitor.BlockDef;
+            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
 
             if(def != null || Main.QuickMenu.Shown)
             {
@@ -380,7 +380,7 @@ namespace Digi.BuildInfo.Features
             {
                 textAPIlines.TrimEndWhitespace();
 
-                var textSize = UpdateTextAPIvisuals(textAPIlines);
+                Vector2D textSize = UpdateTextAPIvisuals(textAPIlines);
 
                 if(useCache)
                 {
@@ -400,9 +400,9 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = line; i >= 0; --i)
                 {
-                    var l = notificationLines[i];
+                    HudLine l = notificationLines[i];
 
-                    var textWidthPx = largestLineWidth - l.lineWidthPx;
+                    int textWidthPx = largestLineWidth - l.lineWidthPx;
 
                     int fillChars = (int)Math.Floor((float)textWidthPx / (float)SPACE_SIZE);
 
@@ -438,13 +438,13 @@ namespace Digi.BuildInfo.Features
             //textObject.Visible = true;
 
             #region Update text and count lines
-            var msg = textObject.Message;
+            StringBuilder msg = textObject.Message;
             msg.Clear().EnsureCapacity(msg.Length + textSB.Length);
             lines = 0;
 
             for(int i = 0; i < textSB.Length; i++)
             {
-                var c = textSB[i];
+                char c = textSB[i];
 
                 msg.Append(c);
 
@@ -455,8 +455,8 @@ namespace Digi.BuildInfo.Features
             textObject.Flush();
             #endregion Update text and count lines
 
-            var textPos = Vector2D.Zero;
-            var textOffset = Vector2D.Zero;
+            Vector2D textPos = Vector2D.Zero;
+            Vector2D textOffset = Vector2D.Zero;
 
             // calculate text size if it wasn't inputted
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
@@ -469,21 +469,21 @@ namespace Digi.BuildInfo.Features
 #if false // disabled blockinfo-attached GUI
             else if(selectedBlock != null) // welder/grinder info attached to the game's block info
             {
-                var cam = MyAPIGateway.Session.Camera;
-                var camMatrix = cam.WorldMatrix;
+                IMyCamera cam = MyAPIGateway.Session.Camera;
+                MatrixD camMatrix = cam.WorldMatrix;
 
                 var hud = GetGameHudBlockInfoPos();
                 hud.Y -= (BLOCKINFO_ITEM_HEIGHT * selectedDef.Components.Length) + BLOCKINFO_Y_OFFSET; // make the position top-right
 
-                var worldPos = HudToWorld(hud);
-                var size = GetGameHudBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f);
-                var offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * ScaleFOV;
+                Vector3D worldPos = HudToWorld(hud);
+                Vector2D size = GetGameHudBlockInfoSize((float)Math.Abs(textSize.Y) / 0.03f);
+                Vector2D offset = new Vector2D(BLOCKINFO_TEXT_PADDING, BLOCKINFO_TEXT_PADDING) * ScaleFOV;
 
                 worldPos += camMatrix.Left * (size.X + (size.X - offset.X)) + camMatrix.Up * (size.Y + (size.Y - offset.Y));
 
                 // using textAPI's math to convert from world to its local coords
                 double localScale = 0.1 * ScaleFOV;
-                var local = Vector3D.Transform(worldPos, cam.ViewMatrix);
+                Vector3D local = Vector3D.Transform(worldPos, cam.ViewMatrix);
                 local.X = (local.X / (localScale * aspectRatio)) * 2;
                 local.Y = (local.Y / localScale) * 2;
 
@@ -552,7 +552,7 @@ namespace Digi.BuildInfo.Features
 
         public void UpdateVisualText()
         {
-            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
 
             if(Main.TextAPI.IsEnabled)
             {
@@ -578,7 +578,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(cache != null)
                     {
-                        var cacheTextAPI = (CacheTextAPI)cache;
+                        CacheTextAPI cacheTextAPI = (CacheTextAPI)cache;
                         cacheTextAPI.ResetExpiry();
                         UpdateTextAPIvisuals(cacheTextAPI.Text, cacheTextAPI.TextSize);
                     }
@@ -600,7 +600,7 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < notificationLines.Count; ++i)
                     {
-                        var line = notificationLines[i];
+                        HudLine line = notificationLines[i];
 
                         if(line.str.Length > 0)
                         {
@@ -640,7 +640,7 @@ namespace Digi.BuildInfo.Features
 
                 int lines = 0;
 
-                foreach(var hud in hudLines)
+                foreach(IMyHudNotification hud in hudLines)
                 {
                     if(hud.Text.Length > 0)
                         lines++;
@@ -654,7 +654,7 @@ namespace Digi.BuildInfo.Features
                     const int itemsStartAt = 1;
                     const int itemsEndAt = QuickMenu.MENU_TOTAL_ITEMS;
 
-                    var selected = itemsStartAt + Main.QuickMenu.SelectedItem;
+                    int selected = itemsStartAt + Main.QuickMenu.SelectedItem;
 
                     for(int l = 0; l < lines; ++l)
                     {
@@ -666,7 +666,7 @@ namespace Digi.BuildInfo.Features
                         || l == (selected + 1)
                         || (selected == itemsStartAt && l == (selected + 2)))
                         {
-                            var hud = hudLines[l];
+                            IMyHudNotification hud = hudLines[l];
                             hud.Hide(); // required since SE v1.194
                             hud.ResetAliveTime();
                             hud.Show();
@@ -681,7 +681,7 @@ namespace Digi.BuildInfo.Features
 
                         for(l = 0; l < lines; ++l)
                         {
-                            var hud = hudLines[l];
+                            IMyHudNotification hud = hudLines[l];
 
                             if(l < SCROLL_FROM_LINE)
                             {
@@ -696,7 +696,7 @@ namespace Digi.BuildInfo.Features
 
                         while(d < MAX_LINES)
                         {
-                            var hud = hudLines[l];
+                            IMyHudNotification hud = hudLines[l];
 
                             if(hud.Text.Length == 0)
                                 break;
@@ -725,7 +725,7 @@ namespace Digi.BuildInfo.Features
                     {
                         for(int l = 0; l < lines; l++)
                         {
-                            var hud = hudLines[l];
+                            IMyHudNotification hud = hudLines[l];
                             hud.Hide(); // required since SE v1.194
                             hud.ResetAliveTime();
                             hud.Show();
@@ -766,7 +766,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                foreach(var l in notificationLines)
+                foreach(HudLine l in notificationLines)
                 {
                     l.str.Clear();
                 }
@@ -793,7 +793,7 @@ namespace Digi.BuildInfo.Features
                 if(line >= notificationLines.Count)
                     notificationLines.Add(new HudLine());
 
-                var nl = notificationLines[line];
+                HudLine nl = notificationLines[line];
                 nl.font = font;
 
                 return nl.str.Append("• ");
@@ -813,7 +813,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                var px = GetStringSizeNotif(notificationLines[line].str);
+                int px = GetStringSizeNotif(notificationLines[line].str);
 
                 largestLineWidth = Math.Max(largestLineWidth, px);
 
@@ -965,12 +965,12 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            var localPlayer = MyAPIGateway.Session?.Player;
+            IMyPlayer localPlayer = MyAPIGateway.Session?.Player;
 
             if(Main.Config.AimInfo.Value == 0 || localPlayer == null)
                 return;
 
-            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
             if(aimedBlock == null)
             {
                 Log.Error($"Aimed block not found in GenerateAimBlockText() :: defId={def?.Id.ToString()}", Log.PRINT_MESSAGE);
@@ -1012,8 +1012,8 @@ namespace Digi.BuildInfo.Features
             #region Mass, grid mass
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Mass))
             {
-                var mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
-                var massColor = Color.GreenYellow;
+                float mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
+                Color massColor = Color.GreenYellow;
 
                 if(projected)
                 {
@@ -1022,16 +1022,16 @@ namespace Digi.BuildInfo.Features
                 else
                 {
                     // include inventory mass
-                    var aimedFatblock = aimedBlock.FatBlock;
+                    IMyCubeBlock aimedFatblock = aimedBlock.FatBlock;
                     if(aimedFatblock != null && aimedFatblock.InventoryCount > 0)
                     {
                         for(int i = (aimedFatblock.InventoryCount - 1); i >= 0; i--)
                         {
-                            var inv = aimedFatblock.GetInventory(i);
+                            IMyInventory inv = aimedFatblock.GetInventory(i);
                             if(inv == null)
                                 continue;
 
-                            var invMass = (float)inv.CurrentMass;
+                            float invMass = (float)inv.CurrentMass;
                             if(invMass > 0)
                             {
                                 mass += invMass;
@@ -1100,7 +1100,7 @@ namespace Digi.BuildInfo.Features
             #endregion Projector info and status
 
             #region Different block projected under this one
-            var nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
+            IMyCubeGrid nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
             if(!projected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 ProjectedUnder.Clear();
@@ -1108,7 +1108,7 @@ namespace Digi.BuildInfo.Features
 
                 Vector3I min = aimedBlock.Min;
                 Vector3I max = aimedBlock.Max;
-                var iterator = new Vector3I_RangeIterator(ref min, ref max);
+                Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref min, ref max);
                 while(iterator.IsValid())
                 {
                     IMySlimBlock projectedUnder = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
@@ -1142,7 +1142,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(projected)
                 {
-                    var originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
+                    float originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
                     AddLine().ResetFormatting().Append("Integrity in blueprint: ").Color(originalIntegrity < 1 ? COLOR_WARNING : COLOR_GOOD)
                         .ProportionToPercent(originalIntegrity).ResetFormatting();
@@ -1164,7 +1164,7 @@ namespace Digi.BuildInfo.Features
             {
                 float totalVolumeM3 = 0f;
 
-                foreach(var comp in def.Components)
+                foreach(MyCubeBlockDefinition.Component comp in def.Components)
                 {
                     totalVolumeM3 += comp.Definition.Volume * comp.Count;
                 }
@@ -1175,7 +1175,7 @@ namespace Digi.BuildInfo.Features
 
                 float missingVolumeM3 = 0f;
 
-                foreach(var kv in names)
+                foreach(KeyValuePair<string, int> kv in names)
                 {
                     MyComponentDefinition compDef;
                     if(MyDefinitionManager.Static.TryGetComponentDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Component), kv.Key), out compDef))
@@ -1223,8 +1223,8 @@ namespace Digi.BuildInfo.Features
             {
                 if(!projected && hasComputer)
                 {
-                    var relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
-                    var shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
+                    MyRelationsBetweenPlayerAndBlock relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+                    MyOwnershipShareModeEnum shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
 
                     AddLine();
 
@@ -1246,7 +1246,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("Owner: ");
 
                         // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
-                        var factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
+                        string factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
                             GetLine().Append(factionTag).Append('.');
@@ -1290,7 +1290,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else if(projected)
                 {
-                    var relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+                    MyRelationsBetweenPlayerAndBlock relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
 
                     AddLine();
 
@@ -1312,7 +1312,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("Projector owner: ");
 
                         // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
-                        var factionTag = projectedBy.GetOwnerFactionTag();
+                        string factionTag = projectedBy.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
                             GetLine().Append(factionTag).Append('.');
@@ -1331,7 +1331,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.EquipmentMonitor.HandTool != null)
                 {
-                    var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(Main.EquipmentMonitor.HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+                    MyEngineerToolBaseDefinition toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(Main.EquipmentMonitor.HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
                     float toolMul = toolDef?.SpeedMultiplier ?? 1;
 
                     if(isWelder)
@@ -1359,7 +1359,7 @@ namespace Digi.BuildInfo.Features
 
                         if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
                         {
-                            var funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
+                            float funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
 
                             GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
                         }
@@ -1373,7 +1373,7 @@ namespace Digi.BuildInfo.Features
                     float hackMultiplier = 1f;
                     if(Main.EquipmentMonitor.HandTool != null && aimedBlock?.FatBlock != null) // HACK: HackSpeedMultiplier seems to be only used for hand-grinder
                     {
-                        var relation = aimedBlock.FatBlock.GetPlayerRelationToOwner();
+                        MyRelationsBetweenPlayerAndBlock relation = aimedBlock.FatBlock.GetPlayerRelationToOwner();
                         if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
                         {
                             hackMultiplier = MyAPIGateway.Session.HackSpeedMultiplier;
@@ -1387,7 +1387,7 @@ namespace Digi.BuildInfo.Features
                     float hackTime = 0;
                     if(hackMultiplier != 1)
                     {
-                        var noOwnershipTime = (grindTime * def.OwnershipIntegrityRatio);
+                        float noOwnershipTime = (grindTime * def.OwnershipIntegrityRatio);
                         hackTime = (grindTime * ((1 - def.OwnershipIntegrityRatio) - (1 - integrityRatio))) / MyAPIGateway.Session.HackSpeedMultiplier;
                         grindTime = noOwnershipTime + hackTime;
                     }
@@ -1412,7 +1412,7 @@ namespace Digi.BuildInfo.Features
             #region Optional: item changes on grind
             if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
             {
-                foreach(var comp in def.Components)
+                foreach(MyCubeBlockDefinition.Component comp in def.Components)
                 {
                     if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
@@ -1451,10 +1451,10 @@ namespace Digi.BuildInfo.Features
             #region Optional: ship grinder apply force
             if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
-                var controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
+                IMyShipController controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
                 if(controller != null)
                 {
-                    var impulse = Hardcoded.ShipGrinderImpulseForce(controller.CubeGrid, aimedBlock);
+                    float impulse = Hardcoded.ShipGrinderImpulseForce(controller.CubeGrid, aimedBlock);
                     if(impulse > 0.00001f)
                     {
                         float gridMass = Main.GridMassCompute.GetGridMass(aimedBlock.CubeGrid);
@@ -1485,14 +1485,14 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: grinder makes grid split
 
             #region Optional: added by mod
-            var context = def.Context;
+            MyModContext context = def.Context;
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.AddedByMod) && !context.IsBaseGame)
             {
                 if(Main.TextAPI.IsEnabled)
                 {
                     AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
-                    var modItem = context.GetModItem();
+                    MyObjectBuilder_Checkpoint.ModItem modItem = context.GetModItem();
                     if(modItem.Name != null && modItem.PublishedFileId > 0)
                         AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("ID: ").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId);
                 }
@@ -1534,7 +1534,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
-                var variantsGroup = def.BlockVariantsGroup;
+                MyBlockVariantGroup variantsGroup = def.BlockVariantsGroup;
 
                 if(variantsGroup != null)
                 {
@@ -1544,7 +1544,7 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < variantsGroup.Blocks.Length; ++i)
                     {
-                        var blockDef = variantsGroup.Blocks[i];
+                        MyCubeBlockDefinition blockDef = variantsGroup.Blocks[i];
 
                         if(blockDef.CubeSize == def.CubeSize)
                         {
@@ -1569,7 +1569,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Color(COLOR_NORMAL).Append(def.BlockPairName);
 
-                var offset = def.ModelOffset;
+                Vector3 offset = def.ModelOffset;
                 if(offset.LengthSquared() > 0)
                     AddLine().Color(COLOR_INTERNAL).Label("ModelOffset").Color(COLOR_WARNING).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z);
             }
@@ -1580,7 +1580,7 @@ namespace Digi.BuildInfo.Features
             #region Optional - different item gain on grinding
             if(!Main.TextAPI.IsEnabled && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.GrindChangeWarning))
             {
-                foreach(var comp in def.Components)
+                foreach(MyCubeBlockDefinition.Component comp in def.Components)
                 {
                     if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
                     {
@@ -1756,12 +1756,12 @@ namespace Digi.BuildInfo.Features
         {
             int airTightFaces = 0;
             int totalFaces = 0;
-            var airTight = Utils.GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
-            var deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
-            var assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
-            var buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
-            var weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-            var grindRatio = def.DisassembleRatio;
+            AirTightMode airTight = Utils.GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
+            bool deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
+            int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
+            bool buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
+            float weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+            float grindRatio = def.DisassembleRatio;
 
             if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
                 grindRatio *= Hardcoded.Door_Closed_DisassembleRatioMultiplier;
@@ -1816,7 +1816,7 @@ namespace Digi.BuildInfo.Features
             {
                 float totalVolumeM3 = 0f;
 
-                foreach(var comp in def.Components)
+                foreach(MyCubeBlockDefinition.Component comp in def.Components)
                 {
                     totalVolumeM3 += comp.Definition.Volume * comp.Count;
                 }
@@ -1869,7 +1869,7 @@ namespace Digi.BuildInfo.Features
                     {
                         for(int i = 0; i < 6; ++i)
                         {
-                            var normal = (Vector3I)Main.Overlays.DIRECTIONS[i];
+                            Vector3I normal = (Vector3I)Main.Overlays.DIRECTIONS[i];
 
                             if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
                             {
@@ -2084,7 +2084,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                var data = Main.LiveDataHandler.Get<BData_Connector>(def);
+                BData_Connector data = Main.LiveDataHandler.Get<BData_Connector>(def);
                 if(data != null)
                 {
                     if(data.CanConnect)
@@ -2099,9 +2099,9 @@ namespace Digi.BuildInfo.Features
 
         private void Format_CargoAndCollector(MyCubeBlockDefinition def)
         {
-            var cargo = (MyCargoContainerDefinition)def;
+            MyCargoContainerDefinition cargo = (MyCargoContainerDefinition)def;
 
-            var poweredCargo = def as MyPoweredCargoContainerDefinition; // collector
+            MyPoweredCargoContainerDefinition poweredCargo = def as MyPoweredCargoContainerDefinition; // collector
             if(poweredCargo != null)
             {
                 PowerRequired(poweredCargo.RequiredPowerInput, poweredCargo.ResourceSinkGroup);
@@ -2120,7 +2120,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var sorter = def as MyConveyorSorterDefinition; // does not extend MyPoweredCargoContainerDefinition
+            MyConveyorSorterDefinition sorter = def as MyConveyorSorterDefinition; // does not extend MyPoweredCargoContainerDefinition
             if(sorter == null)
                 return;
 
@@ -2132,7 +2132,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Piston(MyCubeBlockDefinition def)
         {
-            var piston = (MyPistonBaseDefinition)def;
+            MyPistonBaseDefinition piston = (MyPistonBaseDefinition)def;
 
             PowerRequired(piston.RequiredPowerInput, piston.ResourceSinkGroup);
 
@@ -2147,8 +2147,8 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Rotor(MyCubeBlockDefinition def)
         {
-            var motor = (MyMotorStatorDefinition)def;
-            var suspension = def as MyMotorSuspensionDefinition;
+            MyMotorStatorDefinition motor = (MyMotorStatorDefinition)def;
+            MyMotorSuspensionDefinition suspension = def as MyMotorSuspensionDefinition;
             if(suspension != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
@@ -2193,11 +2193,11 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
             {
-                var group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
+                MyCubeBlockDefinitionGroup group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
                 if(group == null)
                     return;
 
-                var partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
+                MyCubeBlockDefinition partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
 
                 AppendBasics(partDef, part: true);
             }
@@ -2205,7 +2205,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_MergeBlock(MyCubeBlockDefinition def)
         {
-            var merge = (MyMergeBlockDefinition)def;
+            MyMergeBlockDefinition merge = (MyMergeBlockDefinition)def;
 
             // HACK hardcoded; MergeBlock doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -2218,7 +2218,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_LandingGear(MyCubeBlockDefinition def)
         {
-            var lg = (MyLandingGearDefinition)def;
+            MyLandingGearDefinition lg = (MyLandingGearDefinition)def;
 
             // HACK: hardcoded; LG doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -2232,7 +2232,7 @@ namespace Digi.BuildInfo.Features
         #region Ship tools
         private void Format_Drill(MyCubeBlockDefinition def)
         {
-            var shipDrill = (MyShipDrillDefinition)def;
+            MyShipDrillDefinition shipDrill = (MyShipDrillDefinition)def;
 
             PowerRequired(Hardcoded.ShipDrill_Power, shipDrill.ResourceSinkGroup, powerHardcoded: true);
 
@@ -2254,8 +2254,8 @@ namespace Digi.BuildInfo.Features
 
         private void Format_WelderAndGrinder(MyCubeBlockDefinition def)
         {
-            var shipTool = (MyShipToolDefinition)def;
-            var isWelder = def is MyShipWelderDefinition;
+            MyShipToolDefinition shipTool = (MyShipToolDefinition)def;
+            bool isWelder = def is MyShipWelderDefinition;
 
             PowerRequired(Hardcoded.ShipTool_PowerReq, Hardcoded.ShipTool_PowerGroup, powerHardcoded: true, groupHardcoded: true);
 
@@ -2265,7 +2265,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(isWelder)
                 {
-                    var mul = MyAPIGateway.Session.WelderSpeedMultiplier;
+                    float mul = MyAPIGateway.Session.WelderSpeedMultiplier;
 
                     float peakWeld = Hardcoded.ShipWelder_WeldPerSec(1);
 
@@ -2279,7 +2279,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    var mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+                    float mul = MyAPIGateway.Session.GrinderSpeedMultiplier;
 
                     float peakGrind = Hardcoded.ShipGrinder_GrindPerSec(1);
 
@@ -2297,15 +2297,15 @@ namespace Digi.BuildInfo.Features
 
         private void Format_ShipController(MyCubeBlockDefinition def)
         {
-            var shipController = (MyShipControllerDefinition)def;
+            MyShipControllerDefinition shipController = (MyShipControllerDefinition)def;
 
-            var rc = def as MyRemoteControlDefinition;
+            MyRemoteControlDefinition rc = def as MyRemoteControlDefinition;
             if(rc != null)
             {
                 PowerRequired(rc.RequiredPowerInput, rc.ResourceSinkGroup);
             }
 
-            var cryo = def as MyCryoChamberDefinition;
+            MyCryoChamberDefinition cryo = def as MyCryoChamberDefinition;
             if(cryo != null)
             {
                 PowerRequired(cryo.IdlePowerConsumption, cryo.ResourceSinkGroup);
@@ -2315,7 +2315,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Append("Abilities: ");
 
-                var preLen = GetLine().Length;
+                int preLen = GetLine().Length;
 
                 if(shipController.EnableShipControl)
                     GetLine().Append("Ship control, ");
@@ -2337,7 +2337,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            var cockpit = def as MyCockpitDefinition;
+            MyCockpitDefinition cockpit = def as MyCockpitDefinition;
             if(cockpit != null)
             {
                 if(cockpit.HasInventory)
@@ -2376,7 +2376,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Thrust(MyCubeBlockDefinition def)
         {
-            var thrust = (MyThrustDefinition)def;
+            MyThrustDefinition thrust = (MyThrustDefinition)def;
 
             if(thrust.FuelConverter != null && !thrust.FuelConverter.FuelId.IsNull() && thrust.FuelConverter.FuelId != MyResourceDistributorComponent.ElectricityId)
             {
@@ -2499,7 +2499,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                var data = Main.LiveDataHandler.Get<BData_Thrust>(def);
+                BData_Thrust data = Main.LiveDataHandler.Get<BData_Thrust>(def);
                 if(data != null)
                 {
                     AddLine().Label("Flames").Append(data.Flames.Count)
@@ -2517,7 +2517,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Gyro(MyCubeBlockDefinition def)
         {
-            var gyro = (MyGyroDefinition)def;
+            MyGyroDefinition gyro = (MyGyroDefinition)def;
 
             PowerRequired(gyro.RequiredPowerInput, gyro.ResourceSinkGroup);
 
@@ -2529,10 +2529,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Light(MyCubeBlockDefinition def)
         {
-            var light = (MyLightingBlockDefinition)def;
+            MyLightingBlockDefinition light = (MyLightingBlockDefinition)def;
 
-            var radius = light.LightRadius;
-            var isSpotlight = (def is MyReflectorBlockDefinition);
+            MyBounds radius = light.LightRadius;
+            bool isSpotlight = (def is MyReflectorBlockDefinition);
 
             if(isSpotlight)
                 radius = light.LightReflectorRadius;
@@ -2549,7 +2549,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_OreDetector(MyCubeBlockDefinition def)
         {
-            var oreDetector = (MyOreDetectorDefinition)def;
+            MyOreDetectorDefinition oreDetector = (MyOreDetectorDefinition)def;
 
             PowerRequired(Hardcoded.OreDetector_PowerReq, oreDetector.ResourceSinkGroup, powerHardcoded: true);
 
@@ -2561,7 +2561,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Projector(MyCubeBlockDefinition def)
         {
-            var projector = (MyProjectorDefinition)def;
+            MyProjectorDefinition projector = (MyProjectorDefinition)def;
 
             PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
 
@@ -2571,7 +2571,7 @@ namespace Digi.BuildInfo.Features
         #region Doors
         private void Format_Door(MyCubeBlockDefinition def)
         {
-            var door = (MyDoorDefinition)def;
+            MyDoorDefinition door = (MyDoorDefinition)def;
 
             PowerRequired(Hardcoded.Door_PowerReq, door.ResourceSinkGroup, powerHardcoded: true);
 
@@ -2584,7 +2584,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_AirtightDoor(MyCubeBlockDefinition def)
         {
-            var airTightDoor = (MyAirtightDoorGenericDefinition)def; // does not extend MyDoorDefinition
+            MyAirtightDoorGenericDefinition airTightDoor = (MyAirtightDoorGenericDefinition)def; // does not extend MyDoorDefinition
 
             // MyAirtightHangarDoorDefinition and MyAirtightSlideDoorDefinition are empty
 
@@ -2605,7 +2605,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_AdvancedDoor(MyCubeBlockDefinition def)
         {
-            var advDoor = (MyAdvancedDoorDefinition)def; // does not extend MyDoorDefinition
+            MyAdvancedDoorDefinition advDoor = (MyAdvancedDoorDefinition)def; // does not extend MyDoorDefinition
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -2627,7 +2627,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Parachute(MyCubeBlockDefinition def)
         {
-            var parachute = (MyParachuteDefinition)def;
+            MyParachuteDefinition parachute = (MyParachuteDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -2659,7 +2659,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_MedicalRoom(MyCubeBlockDefinition def)
         {
-            var medicalRoom = (MyMedicalRoomDefinition)def;
+            MyMedicalRoomDefinition medicalRoom = (MyMedicalRoomDefinition)def;
 
             PowerRequired(Hardcoded.MedicalRoom_PowerReq, medicalRoom.ResourceSinkGroup, powerHardcoded: true);
 
@@ -2716,7 +2716,7 @@ namespace Digi.BuildInfo.Features
 
                     if(medicalRoom.CustomWardrobesEnabled && medicalRoom.CustomWardrobeNames != null && medicalRoom.CustomWardrobeNames.Count > 0)
                     {
-                        foreach(var charName in medicalRoom.CustomWardrobeNames)
+                        foreach(string charName in medicalRoom.CustomWardrobeNames)
                         {
                             MyCharacterDefinition charDef;
                             if(!MyDefinitionManager.Static.Characters.TryGetValue(charName, out charDef))
@@ -2738,7 +2738,7 @@ namespace Digi.BuildInfo.Features
         #region Production
         private void Format_Production(MyCubeBlockDefinition def)
         {
-            var production = (MyProductionBlockDefinition)def;
+            MyProductionBlockDefinition production = (MyProductionBlockDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -2748,19 +2748,19 @@ namespace Digi.BuildInfo.Features
                     GetLine().Separator().ResourcePriority(production.ResourceSinkGroup);
             }
 
-            var assembler = def as MyAssemblerDefinition;
+            MyAssemblerDefinition assembler = def as MyAssemblerDefinition;
             if(assembler != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    var mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
-                    var mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
+                    float mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
+                    float mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
                     AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
                 }
             }
 
-            var survivalKit = def as MySurvivalKitDefinition; // this extends MyAssemblerDefinition
+            MySurvivalKitDefinition survivalKit = def as MySurvivalKitDefinition; // this extends MyAssemblerDefinition
             if(survivalKit != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
@@ -2772,18 +2772,18 @@ namespace Digi.BuildInfo.Features
                 AddScreenInfo(def, survivalKit.ScreenAreas);
             }
 
-            var refinery = def as MyRefineryDefinition;
+            MyRefineryDefinition refinery = def as MyRefineryDefinition;
             if(refinery != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    var mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
+                    float mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
                     AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
                 }
             }
 
-            var gasTank = def as MyGasTankDefinition;
+            MyGasTankDefinition gasTank = def as MyGasTankDefinition;
             if(gasTank != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
@@ -2792,7 +2792,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            var oxygenGenerator = def as MyOxygenGeneratorDefinition;
+            MyOxygenGeneratorDefinition oxygenGenerator = def as MyOxygenGeneratorDefinition;
             if(oxygenGenerator != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
@@ -2803,7 +2803,7 @@ namespace Digi.BuildInfo.Features
                     {
                         AddLine().Append("Produces: ");
 
-                        foreach(var gas in oxygenGenerator.ProducedGases)
+                        foreach(MyOxygenGeneratorDefinition.MyGasGeneratorResourceInfo gas in oxygenGenerator.ProducedGases)
                         {
                             GetLine().Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(oxygenGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
                         }
@@ -2819,7 +2819,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                var volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
+                float volume = (production.InventoryMaxVolume > 0 ? production.InventoryMaxVolume : production.InventorySize.Volume);
 
                 MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def);
 
@@ -2872,7 +2872,7 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < production.BlueprintClasses.Count; i++)
                     {
-                        var bp = production.BlueprintClasses[i];
+                        MyBlueprintClassDefinition bp = production.BlueprintClasses[i];
 
                         if(i > 0)
                         {
@@ -2909,7 +2909,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_OxygenFarm(MyCubeBlockDefinition def)
         {
-            var oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
+            MyOxygenFarmDefinition oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
 
             PowerRequired(oxygenFarm.OperationalPowerConsumption, oxygenFarm.ResourceSinkGroup);
 
@@ -2929,7 +2929,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_AirVent(MyCubeBlockDefinition def)
         {
-            var vent = (MyAirVentDefinition)def; // does not extend MyProductionBlockDefinition
+            MyAirVentDefinition vent = (MyAirVentDefinition)def; // does not extend MyProductionBlockDefinition
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -2958,11 +2958,11 @@ namespace Digi.BuildInfo.Features
 
         private void Format_UpgradeModule(MyCubeBlockDefinition def)
         {
-            var upgradeModule = (MyUpgradeModuleDefinition)def;
+            MyUpgradeModuleDefinition upgradeModule = (MyUpgradeModuleDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                var data = Main.LiveDataHandler.Get<BData_Base>(def);
+                BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
                 if(data != null)
                 {
                     if(upgradeModule.Upgrades == null || upgradeModule.Upgrades.Length == 0)
@@ -2993,7 +2993,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_PowerProducer(MyCubeBlockDefinition def)
         {
-            var powerProducer = (MyPowerProducerDefinition)def;
+            MyPowerProducerDefinition powerProducer = (MyPowerProducerDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
@@ -3003,7 +3003,7 @@ namespace Digi.BuildInfo.Features
                     GetLine().Separator().ResourcePriority(powerProducer.ResourceSourceGroup, isSource: true);
             }
 
-            var h2Engine = def as MyHydrogenEngineDefinition;
+            MyHydrogenEngineDefinition h2Engine = def as MyHydrogenEngineDefinition;
             if(h2Engine != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
@@ -3020,7 +3020,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var reactor = def as MyReactorDefinition;
+            MyReactorDefinition reactor = def as MyReactorDefinition;
             if(reactor != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
@@ -3034,7 +3034,7 @@ namespace Digi.BuildInfo.Features
                         else
                             AddLine().Color(COLOR_WARNING).Append("Needs combined fuels:").ResetFormatting();
 
-                        foreach(var fuel in reactor.FuelInfos)
+                        foreach(MyReactorDefinition.FuelInfo fuel in reactor.FuelInfos)
                         {
                             if(!hasOneFuel)
                                 AddLine().Append("       - ");
@@ -3044,12 +3044,12 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
-                var volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
+                float volume = (reactor.InventoryMaxVolume > 0 ? reactor.InventoryMaxVolume : reactor.InventorySize.Volume);
                 InventoryStats(def, alternateVolume: volume);
                 return;
             }
 
-            var battery = def as MyBatteryBlockDefinition;
+            MyBatteryBlockDefinition battery = def as MyBatteryBlockDefinition;
             if(battery != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
@@ -3088,7 +3088,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var solarPanel = def as MySolarPanelDefinition;
+            MySolarPanelDefinition solarPanel = def as MySolarPanelDefinition;
             if(solarPanel != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -3099,7 +3099,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var windTurbine = def as MyWindTurbineDefinition;
+            MyWindTurbineDefinition windTurbine = def as MyWindTurbineDefinition;
             if(windTurbine != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -3124,7 +3124,7 @@ namespace Digi.BuildInfo.Features
         #region Communication
         private void Format_RadioAntenna(MyCubeBlockDefinition def)
         {
-            var radioAntenna = (MyRadioAntennaDefinition)def;
+            MyRadioAntennaDefinition radioAntenna = (MyRadioAntennaDefinition)def;
 
             PowerRequired(Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius), radioAntenna.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3136,7 +3136,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_LaserAntenna(MyCubeBlockDefinition def)
         {
-            var laserAntenna = (MyLaserAntennaDefinition)def;
+            MyLaserAntennaDefinition laserAntenna = (MyLaserAntennaDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -3185,7 +3185,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Beacon(MyCubeBlockDefinition def)
         {
-            var beacon = (MyBeaconDefinition)def;
+            MyBeaconDefinition beacon = (MyBeaconDefinition)def;
 
             PowerRequired(Hardcoded.Beacon_PowerReq(beacon), beacon.ResourceSinkGroup);
 
@@ -3198,7 +3198,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Timer(MyCubeBlockDefinition def)
         {
-            var timer = (MyTimerBlockDefinition)def;
+            MyTimerBlockDefinition timer = (MyTimerBlockDefinition)def;
 
             PowerRequired(Hardcoded.Timer_PowerReq, timer.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3210,7 +3210,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_ProgrammableBlock(MyCubeBlockDefinition def)
         {
-            var pb = (MyProgrammableBlockDefinition)def;
+            MyProgrammableBlockDefinition pb = (MyProgrammableBlockDefinition)def;
 
             PowerRequired(Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3294,10 +3294,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Sensor(MyCubeBlockDefinition def)
         {
-            var sensor = (MySensorBlockDefinition)def;
+            MySensorBlockDefinition sensor = (MySensorBlockDefinition)def;
 
-            var minField = Hardcoded.Sensor_MinField;
-            var maxField = Hardcoded.Sensor_MaxField(sensor.MaxRange);
+            Vector3 minField = Hardcoded.Sensor_MinField;
+            Vector3 maxField = Hardcoded.Sensor_MaxField(sensor.MaxRange);
 
             PowerRequired(Hardcoded.Sensor_PowerReq(maxField), sensor.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3309,7 +3309,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Camera(MyCubeBlockDefinition def)
         {
-            var camera = (MyCameraBlockDefinition)def;
+            MyCameraBlockDefinition camera = (MyCameraBlockDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -3337,7 +3337,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Button(MyCubeBlockDefinition def)
         {
-            var button = (MyButtonPanelDefinition)def;
+            MyButtonPanelDefinition button = (MyButtonPanelDefinition)def;
 
             PowerRequired(Hardcoded.ButtonPanel_PowerReq, button.ResourceSinkGroup, powerHardcoded: true);
 
@@ -3361,9 +3361,9 @@ namespace Digi.BuildInfo.Features
         #region Magic blocks
         private void Format_GravityGenerator(MyCubeBlockDefinition def)
         {
-            var gravGen = (MyGravityGeneratorBaseDefinition)def;
+            MyGravityGeneratorBaseDefinition gravGen = (MyGravityGeneratorBaseDefinition)def;
 
-            var flatGravGen = def as MyGravityGeneratorDefinition;
+            MyGravityGeneratorDefinition flatGravGen = def as MyGravityGeneratorDefinition;
             if(flatGravGen != null)
             {
                 PowerRequired(flatGravGen.RequiredPowerInput, flatGravGen.ResourceSinkGroup);
@@ -3375,7 +3375,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                var sphereGravGen = def as MyGravityGeneratorSphereDefinition;
+                MyGravityGeneratorSphereDefinition sphereGravGen = def as MyGravityGeneratorSphereDefinition;
                 if(sphereGravGen != null)
                 {
                     PowerRequired(Hardcoded.SphericalGravGen_PowerReq(sphereGravGen, sphereGravGen.MaxRadius, sphereGravGen.MaxGravityAcceleration), sphereGravGen.ResourceSinkGroup, powerHardcoded: true);
@@ -3395,7 +3395,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_ArtificialMass(MyCubeBlockDefinition def)
         {
-            var artificialMass = (MyVirtualMassDefinition)def;
+            MyVirtualMassDefinition artificialMass = (MyVirtualMassDefinition)def;
 
             PowerRequired(artificialMass.RequiredPowerInput, artificialMass.ResourceSinkGroup);
 
@@ -3407,7 +3407,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_SpaceBall(MyCubeBlockDefinition def)
         {
-            var spaceBall = (MySpaceBallDefinition)def; // this doesn't extend MyVirtualMassDefinition
+            MySpaceBallDefinition spaceBall = (MySpaceBallDefinition)def; // this doesn't extend MyVirtualMassDefinition
 
             // HACK: hardcoded; SpaceBall doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -3420,7 +3420,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_JumpDrive(MyCubeBlockDefinition def)
         {
-            var jumpDrive = (MyJumpDriveDefinition)def;
+            MyJumpDriveDefinition jumpDrive = (MyJumpDriveDefinition)def;
 
             PowerRequired(jumpDrive.RequiredPowerInput, jumpDrive.ResourceSinkGroup);
 
@@ -3595,8 +3595,8 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = 0; i < wpDef.AmmoMagazinesId.Length; i++)
                 {
-                    var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[i]);
-                    var ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
+                    MyAmmoMagazineDefinition mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[i]);
+                    MyAmmoDefinition ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
                     int ammoType = (int)ammo.AmmoType;
 
                     if(wpDef.WeaponAmmoDatas[ammoType] != null)
@@ -3615,8 +3615,8 @@ namespace Digi.BuildInfo.Features
                 {
                     for(int i = 0; i < ammoProjectiles.Count; ++i)
                     {
-                        var data = ammoProjectiles[i];
-                        var ammo = data.Item2;
+                        MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
+                        MyProjectileAmmoDefinition ammo = data.Item2;
 
                         if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0))
                         {
@@ -3627,8 +3627,8 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
-                        var data = ammoMissiles[i];
-                        var ammo = data.Item2;
+                        MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
+                        MyMissileAmmoDefinition ammo = data.Item2;
 
                         if(ammo.MissileExplosionDamage != 0)
                         {
@@ -3733,9 +3733,9 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
-                        var data = ammoMissiles[i];
-                        var mag = data.Item1;
-                        var ammo = data.Item2;
+                        MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
+                        MyAmmoMagazineDefinition mag = data.Item1;
+                        MyMissileAmmoDefinition ammo = data.Item2;
 
                         AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
                             .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
@@ -3873,7 +3873,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Warhead(MyCubeBlockDefinition def)
         {
-            var warhead = (MyWarheadDefinition)def; // does not extend MyWeaponBlockDefinition
+            MyWarheadDefinition warhead = (MyWarheadDefinition)def; // does not extend MyWeaponBlockDefinition
 
             // HACK: hardcoded; Warhead doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -3887,7 +3887,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_TargetDummy(MyCubeBlockDefinition def)
         {
-            var dummyDef = (MyTargetDummyBlockDefinition)def;
+            MyTargetDummyBlockDefinition dummyDef = (MyTargetDummyBlockDefinition)def;
 
             // HACK: hardcoded; TargetDummy doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -3913,7 +3913,7 @@ namespace Digi.BuildInfo.Features
 
                     bool first = true;
 
-                    foreach(var kv in dummyDef.SubpartDefinitions)
+                    foreach(KeyValuePair<string, MyTargetDummyBlockDefinition.MyDummySubpartDescription> kv in dummyDef.SubpartDefinitions)
                     {
                         string name = kv.Key;
                         float hp = kv.Value.Health;
@@ -3932,7 +3932,7 @@ namespace Digi.BuildInfo.Features
 
         private void Format_SafeZone(MyCubeBlockDefinition def)
         {
-            var safeZone = (MySafeZoneBlockDefinition)def;
+            MySafeZoneBlockDefinition safeZone = (MySafeZoneBlockDefinition)def;
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -3948,7 +3948,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Activation time").TimeFormat(safeZone.SafeZoneActivationTimeS);
 
                 // HACK block is hardcoded to only use zone chips, see MySafeZoneComponent.TryConsumeUpkeep().
-                var zoneChipDef = MyDefinitionManager.Static.GetComponentDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Component), "ZoneChip"));
+                MyComponentDefinition zoneChipDef = MyDefinitionManager.Static.GetComponentDefinition(new MyDefinitionId(typeof(MyObjectBuilder_Component), "ZoneChip"));
                 string itemName = (zoneChipDef == null ? "ZoneChip" : zoneChipDef.DisplayNameText);
 
                 AddLine().Label("Upkeep").Append(safeZone.SafeZoneUpkeep).Append("x ").Append(itemName).Separator().Label("for").TimeFormat(safeZone.SafeZoneUpkeepTimeM * 60f);
@@ -3956,7 +3956,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
-                var invComp = Utils.GetInventoryFromComponent(def); // SafeZone type has no inventory data in its definition, only components can add inventory to it.
+                MyInventoryComponentDefinition invComp = Utils.GetInventoryFromComponent(def); // SafeZone type has no inventory data in its definition, only components can add inventory to it.
                 if(invComp != null)
                 {
                     AddLine().Label("Inventory").InventoryFormat(invComp.Volume, invComp.InputConstraint, invComp);
@@ -3969,15 +3969,15 @@ namespace Digi.BuildInfo.Features
 
         private void Format_ContractBlock(MyCubeBlockDefinition def)
         {
-            var contracts = (MyContractBlockDefinition)def;
+            MyContractBlockDefinition contracts = (MyContractBlockDefinition)def;
 
             AddScreenInfo(def, contracts.ScreenAreas);
         }
 
         private void Format_StoreBlock(MyCubeBlockDefinition def)
         {
-            var store = (MyStoreBlockDefinition)def;
-            var vending = def as MyVendingMachineDefinition;
+            MyStoreBlockDefinition store = (MyStoreBlockDefinition)def;
+            MyVendingMachineDefinition vending = def as MyVendingMachineDefinition;
 
             InventoryStats(def);
 
@@ -3989,7 +3989,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Label("Default store items:");
 
-                    foreach(var entry in vending.DefaultItems)
+                    foreach(MyObjectBuilder_StoreItem entry in vending.DefaultItems)
                     {
                         AddLine().Append("    ")
                             .Append(entry.StoreItemType == StoreItemTypes.Offer ? "Sell: " : "Buy: ");
@@ -4080,7 +4080,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                var groupNameHash = (groupName != null ? MyStringHash.GetOrCompute(groupName) : MyStringHash.NullOrEmpty);
+                MyStringHash groupNameHash = (groupName != null ? MyStringHash.GetOrCompute(groupName) : MyStringHash.NullOrEmpty);
                 PowerRequired(mw, groupNameHash, powerHardcoded, groupHardcoded);
             }
         }
@@ -4089,7 +4089,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                var color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
+                Color color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
 
                 if(powerHardcoded)
                     AddLine().Color(color).LabelHardcoded("Power required", color);
@@ -4169,7 +4169,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Label(invLimit.IsWhitelist ? "    Items allowed" : "    Items NOT allowed");
 
-                foreach(var id in invLimit.ConstrainedIds)
+                foreach(MyDefinitionId id in invLimit.ConstrainedIds)
                 {
                     MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
                     if(itemDef == null)
@@ -4319,24 +4319,24 @@ namespace Digi.BuildInfo.Features
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
         private void PurgeCache()
         {
-            var haveNotifCache = CachedBuildInfoNotification.Count > 0;
-            var haveTextAPICache = CachedBuildInfoTextAPI.Count > 0;
+            bool haveNotifCache = CachedBuildInfoNotification.Count > 0;
+            bool haveTextAPICache = CachedBuildInfoTextAPI.Count > 0;
 
             if(haveNotifCache || haveTextAPICache)
             {
                 removeCacheIds.Clear();
-                var time = DateTime.UtcNow.Ticks;
+                long time = DateTime.UtcNow.Ticks;
 
                 if(haveNotifCache)
                 {
-                    foreach(var kv in CachedBuildInfoNotification)
+                    foreach(KeyValuePair<MyDefinitionId, Cache> kv in CachedBuildInfoNotification)
                         if(kv.Value.expires < time)
                             removeCacheIds.Add(kv.Key);
 
                     if(CachedBuildInfoNotification.Count == removeCacheIds.Count)
                         CachedBuildInfoNotification.Clear();
                     else
-                        foreach(var key in removeCacheIds)
+                        foreach(MyDefinitionId key in removeCacheIds)
                             CachedBuildInfoNotification.Remove(key);
 
                     removeCacheIds.Clear();
@@ -4344,14 +4344,14 @@ namespace Digi.BuildInfo.Features
 
                 if(haveTextAPICache)
                 {
-                    foreach(var kv in CachedBuildInfoTextAPI)
+                    foreach(KeyValuePair<MyDefinitionId, Cache> kv in CachedBuildInfoTextAPI)
                         if(kv.Value.expires < time)
                             removeCacheIds.Add(kv.Key);
 
                     if(CachedBuildInfoTextAPI.Count == removeCacheIds.Count)
                         CachedBuildInfoTextAPI.Clear();
                     else
-                        foreach(var key in removeCacheIds)
+                        foreach(MyDefinitionId key in removeCacheIds)
                             CachedBuildInfoTextAPI.Remove(key);
 
                     removeCacheIds.Clear();
@@ -4433,7 +4433,7 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = 0; i < hudLines.Count; ++i)
                 {
-                    var line = hudLines[i];
+                    HudLine line = hudLines[i];
                     if(line.str.Length > 0)
                         lineNum++;
                 }
@@ -4442,7 +4442,7 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = 0; i < hudLines.Count; ++i)
                 {
-                    var line = hudLines[i];
+                    HudLine line = hudLines[i];
 
                     if(line.str.Length > 0)
                     {

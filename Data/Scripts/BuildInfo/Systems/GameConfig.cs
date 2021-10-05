@@ -2,6 +2,8 @@
 using Digi.ComponentLib;
 using Sandbox.Game;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Systems
 {
@@ -72,13 +74,13 @@ namespace Digi.BuildInfo.Systems
         {
             UpdateHudState();
 
-            var cfg = MyAPIGateway.Session.Config;
+            IMyConfig cfg = MyAPIGateway.Session.Config;
 
             HudBackgroundOpacity = cfg?.HUDBkOpacity ?? 0.6f;
             UIBackgroundOpacity = cfg?.UIBkOpacity ?? 0.8f;
             RotationHints = cfg?.RotationHints ?? true;
 
-            var viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
+            Vector2 viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
 
             OptionsMenuClosed?.Invoke();
@@ -86,7 +88,7 @@ namespace Digi.BuildInfo.Systems
 
         private void UpdateHudState()
         {
-            var prevState = HudState;
+            HudState prevState = HudState;
 
             HudState = (HudState)(MyAPIGateway.Session.Config?.HudState ?? (int)HudState.HINTS);
 

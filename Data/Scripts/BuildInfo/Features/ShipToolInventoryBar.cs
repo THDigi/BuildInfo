@@ -122,12 +122,12 @@ namespace Digi.BuildInfo.Features
             blocks.Clear();
 
             // NOTE: ship tool toolbar item's click turns on tools beyond rotors/pistons and connectors aswell, so no filtering here.
-            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
+            IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             gts?.GetBlocksOfType<T>(blocks);
 
             foreach(T block in blocks)
             {
-                var inv = block.GetInventory(0);
+                IMyInventory inv = block.GetInventory(0);
                 if(inv == null)
                     continue;
 
@@ -149,8 +149,8 @@ namespace Digi.BuildInfo.Features
 
             Shown = true;
 
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var worldPos = Main.DrawUtils.TextAPIHUDtoWorld(Main.Config.ShipToolInvBarPosition.Value);
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3D worldPos = Main.DrawUtils.TextAPIHUDtoWorld(Main.Config.ShipToolInvBarPosition.Value);
 
             Vector2D size = DefaultSize * Main.Config.ShipToolInvBarScale.Value;
             float w = (float)(size.X * Main.DrawUtils.ScaleFOV);
@@ -185,8 +185,8 @@ namespace Digi.BuildInfo.Features
                 // UV cutoff, quite manually tweaked...
                 const float min = 0.06f;
                 const float max = 0.98f;
-                var barFill = min + ((max - min) * FilledRatio);
-                var uv = new Vector2(-(1 - barFill), 0);
+                float barFill = min + ((max - min) * FilledRatio);
+                Vector2 uv = new Vector2(-(1 - barFill), 0);
 
                 worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * Main.DrawUtils.ScaleFOV);
 

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -11,7 +12,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            var aimedGrid = Main.EquipmentMonitor?.AimedBlock?.CubeGrid;
+            IMyCubeGrid aimedGrid = Main.EquipmentMonitor?.AimedBlock?.CubeGrid;
             if(aimedGrid == null)
             {
                 PrintChat("Aim at a ship with a welder/grinder first.", FontsHandler.RedSh);

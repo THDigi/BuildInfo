@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Batteries(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_BatteryBlock);
+            Type type = typeof(MyObjectBuilder_BatteryBlock);
 
             processor.AddStatus(type, Charge, "ChargeMode", "Recharge", "Discharge", "Auto");
 
@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Charge(StringBuilder sb, ToolbarItem item)
         {
-            var battery = (IMyBatteryBlock)item.Block;
+            IMyBatteryBlock battery = (IMyBatteryBlock)item.Block;
 
             Processor.AppendSingleStats(sb, item.Block);
 

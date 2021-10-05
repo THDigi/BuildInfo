@@ -1,10 +1,12 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage.Game.Entity;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
@@ -12,7 +14,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public GasGenerators(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_OxygenGenerator);
+            Type type = typeof(MyObjectBuilder_OxygenGenerator);
 
             processor.AddStatus(type, Refill, "Refill");
 
@@ -22,16 +24,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Refill(StringBuilder sb, ToolbarItem item)
         {
-            var generator = (IMyGasGenerator)item.Block;
+            IMyGasGenerator generator = (IMyGasGenerator)item.Block;
             int itemsToFill = 0;
             bool hasIce = false;
 
             if(generator.IsWorking && MyAPIGateway.Session.SessionSettings.EnableOxygen)
             {
                 bool makesOxygen = false;
-                var generatorDef = (MyOxygenGeneratorDefinition)generator.SlimBlock.BlockDefinition;
+                MyOxygenGeneratorDefinition generatorDef = (MyOxygenGeneratorDefinition)generator.SlimBlock.BlockDefinition;
 
-                foreach(var gas in generatorDef.ProducedGases)
+                foreach(MyOxygenGeneratorDefinition.MyGasGeneratorResourceInfo gas in generatorDef.ProducedGases)
                 {
                     if(gas.Id == MyResourceDistributorComponent.OxygenId)
                     {
@@ -42,12 +44,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                 if(makesOxygen)
                 {
-                    var inv = generator.GetInventory(0) as MyInventory;
+                    MyInventory inv = generator.GetInventory(0) as MyInventory;
                     if(inv != null)
                     {
-                        foreach(var physItem in inv.GetItems())
+                        foreach(MyPhysicalInventoryItem physItem in inv.GetItems())
                         {
-                            var containerOB = physItem.Content as MyObjectBuilder_GasContainerObject;
+                            MyObjectBuilder_GasContainerObject containerOB = physItem.Content as MyObjectBuilder_GasContainerObject;
                             if(containerOB == null)
                                 hasIce = true; // HACK: similar behavior to game's internals: anything non-bottle is fuel
                             else if(containerOB.GasLevel < 1f)

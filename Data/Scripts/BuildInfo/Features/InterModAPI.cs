@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(obj is MyTuple<string, string, MyDefinitionId>)
                 {
-                    var data = (MyTuple<string, string, MyDefinitionId>)obj;
+                    MyTuple<string, string, MyDefinitionId> data = (MyTuple<string, string, MyDefinitionId>)obj;
 
                     string modName = data.Item1;
                     string target = data.Item2;
@@ -104,7 +104,7 @@ namespace Digi.BuildInfo.Features
                         return;
                     }
 
-                    var id = (MyDefinitionId)obj;
+                    MyDefinitionId id = (MyDefinitionId)obj;
                     Main.TerminalInfo.IgnoreModBlocks.Add(id);
                     return;
                 }

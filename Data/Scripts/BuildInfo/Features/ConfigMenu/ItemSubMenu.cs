@@ -23,8 +23,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = Utils.ColorTag(Item.Interactable ? Color : Color.Gray);
+            string titleColor = (Item.Interactable ? "" : "<color=gray>");
+            string valueColor = Utils.ColorTag(Item.Interactable ? Color : Color.Gray);
             Item.Text = $"{titleColor}{Title} {valueColor}>>>";
         }
     }

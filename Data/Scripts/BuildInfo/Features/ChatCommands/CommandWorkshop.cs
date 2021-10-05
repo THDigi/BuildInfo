@@ -12,11 +12,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            var id = Log.WorkshopId;
+            ulong id = Log.WorkshopId;
 
             if(id > 0)
             {
-                var link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
+                string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
 
                 MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 

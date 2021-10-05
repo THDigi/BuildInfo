@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -52,7 +53,7 @@ namespace Digi.BuildInfo.VanillaData
         // from MyShipConnector
         public static float ShipConnector_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (def.Size * gridSize * 0.8f).Volume;
         }
 
@@ -75,7 +76,7 @@ namespace Digi.BuildInfo.VanillaData
         public static readonly MyObjectBuilderType ShipDrill_InventoryConstraint = typeof(MyObjectBuilder_Ore);
         public static float ShipDrill_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return def.Size.X * def.Size.Y * def.Size.Z * gridSize * gridSize * gridSize * 0.5f;
         }
         public const float ShipDrill_VoxelVisualAdd = 0.6f; // based on visual tests
@@ -90,7 +91,7 @@ namespace Digi.BuildInfo.VanillaData
         public const string ShipTool_PowerGroup = "Defense";
         public static float ShipTool_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
         }
         public const float ShipTool_ReachDistance = 4.5f; // MyShipToolBase.DEFAULT_REACH_DISTANCE
@@ -121,11 +122,11 @@ namespace Digi.BuildInfo.VanillaData
         /// </summary>
         public static float ShipGrinderImpulseForce(IMyCubeGrid sourceGrid, IMySlimBlock targetBlock)
         {
-            var targetGrid = targetBlock.CubeGrid;
+            IMyCubeGrid targetGrid = targetBlock.CubeGrid;
 
             if(MyAPIGateway.Session.SessionSettings.EnableToolShake && targetGrid.Physics != null && !targetGrid.Physics.IsStatic)
             {
-                var f = 1.73205078f; // MyUtils.GetRandomVector3()'s max length
+                float f = 1.73205078f; // MyUtils.GetRandomVector3()'s max length
                 return (f * sourceGrid.GridSize * 500f);
             }
 
@@ -168,9 +169,9 @@ namespace Digi.BuildInfo.VanillaData
             openTime = 0;
             closeTime = 0;
 
-            foreach(var seq in advDoor.OpeningSequence)
+            foreach(MyObjectBuilder_AdvancedDoorDefinition.Opening seq in advDoor.OpeningSequence)
             {
-                var moveTime = (seq.MaxOpen / seq.Speed);
+                float moveTime = (seq.MaxOpen / seq.Speed);
 
                 openTime = Math.Max(openTime, seq.OpenDelay + moveTime);
                 closeTime = Math.Max(closeTime, seq.CloseDelay + moveTime);
@@ -294,8 +295,8 @@ namespace Digi.BuildInfo.VanillaData
 
         public static ThrustInfo Thrust_GetUsage(IMyThrust thrust)
         {
-            var thrustInternal = (MyThrust)thrust;
-            var def = thrustInternal.BlockDefinition;
+            MyThrust thrustInternal = (MyThrust)thrust;
+            MyThrustDefinition def = thrustInternal.BlockDefinition;
 
             float currentPowerUsage = 0;
             if(thrust.IsWorking)

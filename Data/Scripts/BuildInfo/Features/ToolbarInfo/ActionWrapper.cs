@@ -74,7 +74,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return;
                 }
 
-                var toolbarMonitor = BuildInfoMod.Instance.ToolbarMonitor;
+                ToolbarMonitor toolbarMonitor = BuildInfoMod.Instance.ToolbarMonitor;
 
                 if(ToolbarMonitor.DebugLogging)
                     Log.Info($"Writer :: action={Action.Id}; block={block.CustomName}; wrapperSlotIndex={toolbarMonitor.WrapperSlotIndex.ToString()}");
@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 // HACK: find next matching slot, it could not match if a mod adds actions via event which won't have this status override class
                 // other issues are PBs or timer blocks calling actions and causing the writer to get triggered, desynchronizing the order.
-                var toolbarItem = toolbarMonitor.SequencedItems[num];
+                ToolbarItem toolbarItem = toolbarMonitor.SequencedItems[num];
                 while(toolbarItem.ActionId != Action.Id || toolbarItem.BlockEntId != block.EntityId)
                 {
                     num++;

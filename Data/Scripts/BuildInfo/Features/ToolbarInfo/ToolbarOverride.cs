@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void BlockAdded(IMySlimBlock slimBlock)
         {
-            var block = slimBlock.FatBlock as IMyTerminalBlock;
+            IMyTerminalBlock block = slimBlock.FatBlock as IMyTerminalBlock;
             if(block == null)
                 return;
 
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             while(QueuedTypes.Count > 0 && QueuedTypes.Peek().ReadAtTick <= tick)
             {
-                var data = QueuedTypes.Dequeue();
+                QueuedActionGet data = QueuedTypes.Dequeue();
 
                 // no remove from CheckedType, any new real-time-added actions should be caught by the CustomActionGetter... unless it's only used in a group.
 
@@ -106,7 +106,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         bool CollectAction(ITerminalAction a)
         {
-            var action = (IMyTerminalAction)a;
+            IMyTerminalAction action = (IMyTerminalAction)a;
 
             if(!ActionWrappers.ContainsKey(action))
             {

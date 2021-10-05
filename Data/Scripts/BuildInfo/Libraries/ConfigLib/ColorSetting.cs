@@ -20,7 +20,7 @@ namespace Digi.ConfigLib
             error = null;
 
             byte r, g, b, a;
-            var split = value.Split(SPLIT_BY);
+            string[] split = value.Split(SPLIT_BY);
             if(split.Length >= 3 && byte.TryParse(split[0], out r) && byte.TryParse(split[1], out g) && byte.TryParse(split[2], out b))
             {
                 a = 255; // default alpha if not defined

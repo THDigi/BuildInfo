@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 
@@ -8,7 +9,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Thrusters(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_Thrust);
+            Type type = typeof(MyObjectBuilder_Thrust);
 
             Processor.AddStatus(type, Override, "IncreaseOverride", "DecreaseOverride");
 
@@ -17,7 +18,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Override(StringBuilder sb, ToolbarItem item)
         {
-            var thrust = (IMyThrust)item.Block;
+            IMyThrust thrust = (IMyThrust)item.Block;
 
             Processor.AppendSingleStats(sb, item.Block);
 

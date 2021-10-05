@@ -49,9 +49,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var title = (Item.Interactable ? Title : "<color=gray>" + Title);
-            var valueColor = (Item.Interactable ? "<color=yellow>" : "");
-            var value = Getter();
+            string title = (Item.Interactable ? Title : "<color=gray>" + Title);
+            string valueColor = (Item.Interactable ? "<color=yellow>" : "");
+            Vector2D value = Getter();
             Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)} <color=gray>[default:{DefaultValue.X.ToString(format)},{DefaultValue.Y.ToString(format)}]";
         }
 

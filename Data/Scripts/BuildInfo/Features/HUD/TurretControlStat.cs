@@ -1,8 +1,10 @@
 ﻿using System;
 using Digi.ComponentLib;
+using Digi.ConfigLib;
 using Sandbox.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
+using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features.HUD
 {
@@ -28,7 +30,7 @@ namespace Digi.BuildInfo.Features.HUD
 
             try
             {
-                var setting = BuildInfoMod.Instance?.Config?.TurretHUD;
+                BoolSetting setting = BuildInfoMod.Instance?.Config?.TurretHUD;
                 if(setting != null && setting.Value)
                 {
                     CurrentValue = 0f;
@@ -36,7 +38,7 @@ namespace Digi.BuildInfo.Features.HUD
                 else
                 {
                     // vanilla game's logic for this stat
-                    var controlled = MyAPIGateway.Session?.ControlledObject;
+                    IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
                     if(controlled == null)
                         CurrentValue = 0f;
                     else

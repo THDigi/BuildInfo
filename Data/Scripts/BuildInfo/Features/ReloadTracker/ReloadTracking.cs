@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
-            var action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
+            BlockMonitor.CallbackDelegate action = new BlockMonitor.CallbackDelegate(WeaponBlockAdded);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeGatlingTurret), action);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_LargeMissileTurret), action);
             Main.BlockMonitor.MonitorType(typeof(MyObjectBuilder_SmallMissileLauncher), action);
@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
 
-            var gunBlock = block.FatBlock as IMyUserControllableGun;
+            IMyUserControllableGun gunBlock = block.FatBlock as IMyUserControllableGun;
             if(gunBlock == null)
                 return; // ignore weirdness
 

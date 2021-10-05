@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Apply = apply;
             Preview = preview;
 
-            var inputDialogTitle = $"{Title} | Default: {Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}";
+            string inputDialogTitle = $"{Title} | Default: {Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}";
 
             Item = new MenuColorPickerInput(title, category, setting.Value, inputDialogTitle, OnSubmit, OnSlide, OnCancel, useAlpha);
 
@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var valueColor = Utils.ColorTag(Setting.Value);
+            string valueColor = Utils.ColorTag(Setting.Value);
             Item.Text = $"{Title}: {valueColor}{Setting.Value.R.ToString()},{Setting.Value.G.ToString()},{Setting.Value.B.ToString()} <color=gray>[default:{Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}]";
         }
 

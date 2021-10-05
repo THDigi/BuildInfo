@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features.Config
                 {
                     Log.Info($"Found legacy {FILE} loading and deleting...");
 
-                    using(var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FILE, typeof(LegacyConfig)))
+                    using(TextReader file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FILE, typeof(LegacyConfig)))
                     {
                         ReadSettings(file);
                     }
@@ -82,14 +82,14 @@ namespace Digi.BuildInfo.Features.Config
                 bool axisLabels = true;
                 int configVersion = 0;
                 string l;
-                var lines = new List<string>();
+                List<string> lines = new List<string>();
 
                 while((l = file.ReadLine()) != null)
                 {
                     if(l.Length == 0)
                         continue;
 
-                    var index = l.IndexOf("//");
+                    int index = l.IndexOf("//");
 
                     if(index > -1)
                         l = (index == 0 ? "" : l.Substring(0, index));
@@ -99,7 +99,7 @@ namespace Digi.BuildInfo.Features.Config
 
                     lines.Add(l);
 
-                    var args = l.Split(CHARS, 2);
+                    string[] args = l.Split(CHARS, 2);
 
                     if(args.Length != 2)
                     {
@@ -107,7 +107,7 @@ namespace Digi.BuildInfo.Features.Config
                         continue;
                     }
 
-                    var key = args[0].Trim();
+                    string key = args[0].Trim();
 
                     if(configVersion == 0 && key.Equals("ConfigVersion", COMPARE_TYPE))
                     {
@@ -123,9 +123,9 @@ namespace Digi.BuildInfo.Features.Config
 
                 Main.Config.Handler.ConfigVersion.Value = Math.Min(configVersion, 2); // can't be higher than 2
 
-                foreach(var line in lines)
+                foreach(string line in lines)
                 {
-                    var args = line.Split(CHARS, 2);
+                    string[] args = line.Split(CHARS, 2);
 
                     if(args.Length != 2)
                     {
@@ -133,8 +133,8 @@ namespace Digi.BuildInfo.Features.Config
                         continue;
                     }
 
-                    var key = args[0].Trim();
-                    var val = args[1].Trim();
+                    string key = args[0].Trim();
+                    string val = args[1].Trim();
 
                     if(key.Equals("MenuBind", COMPARE_TYPE))
                     {

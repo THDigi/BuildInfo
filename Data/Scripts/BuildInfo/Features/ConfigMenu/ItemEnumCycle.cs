@@ -40,9 +40,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         protected override void UpdateTitle()
         {
             int val = Getter();
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueIntColor = (Item.Interactable ? Utils.ColorTag(ColorValue) : "");
-            var valueNameColor = (Item.Interactable ? Utils.ColorTag(ColorValueName) : "");
+            string titleColor = (Item.Interactable ? "" : "<color=gray>");
+            string valueIntColor = (Item.Interactable ? Utils.ColorTag(ColorValue) : "");
+            string valueNameColor = (Item.Interactable ? Utils.ColorTag(ColorValueName) : "");
             Item.Text = $"{titleColor}{Title}: {valueIntColor}{val.ToString()} of {(names.Length - 1).ToString()} {valueNameColor}({names[val]}){(defaultValue == val ? " <color=gray>[default]" : "")}";
         }
 

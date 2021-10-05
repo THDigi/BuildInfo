@@ -51,9 +51,9 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            var eq = Main.EquipmentMonitor;
-            var def = eq.BlockDef;
-            var hud = MyHud.BlockInfo;
+            EquipmentMonitor eq = Main.EquipmentMonitor;
+            MyCubeBlockDefinition def = eq.BlockDef;
+            MyHudBlockInfo hud = MyHud.BlockInfo;
 
             if(def != null)
             {
@@ -119,8 +119,8 @@ namespace Digi.BuildInfo.Features
             {
                 waitBlock = 0;
 
-                var tool = eq.HandTool as IMyHandheldGunObject<MyToolBase>;
-                var toolDef = tool?.PhysicalItemDefinition;
+                IMyHandheldGunObject<MyToolBase> tool = eq.HandTool as IMyHandheldGunObject<MyToolBase>;
+                MyPhysicalItemDefinition toolDef = tool?.PhysicalItemDefinition;
                 if(toolDef != null)
                 {
                     if(hud.DefinitionId == toolDef.Id)
@@ -163,7 +163,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            var eq = Main.EquipmentMonitor;
+            EquipmentMonitor eq = Main.EquipmentMonitor;
             bool aimingAtProjected = (eq.AimedBlock != null && eq.AimedProjectedBy != null);
             bool aimedProjectedBuildable = (eq.IsAnyWelder && eq.AimedProjectedCanBuild == BuildCheckResult.OK);
 
@@ -185,7 +185,7 @@ namespace Digi.BuildInfo.Features
             if(Main.EquipmentMonitor.IsAnyWelder && Main.EquipmentMonitor.AimedProjectedCanBuild == BuildCheckResult.OK)
                 return; // buildable blocks already have a selection box
 
-            var grid = (MyCubeGrid)aimedBlock.CubeGrid;
+            MyCubeGrid grid = (MyCubeGrid)aimedBlock.CubeGrid;
             MyCubeBuilder.DrawSemiTransparentBox(aimedBlock.Min, aimedBlock.Max, grid, Color.White, onlyWireframe: true, lineMaterial: MaterialGizmoRedLine);
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -29,7 +30,7 @@ namespace Digi.BuildInfo.Utilities
                 if(idx < 0)
                     break;
 
-                var c = sb[idx];
+                char c = sb[idx];
                 if(c != ' ' && c != '\n' && c != '\r')
                     break;
 
@@ -152,7 +153,7 @@ namespace Digi.BuildInfo.Utilities
 
             for(int charIdx = 0; charIdx < text.Length; charIdx++)
             {
-                var c = text[charIdx];
+                char c = text[charIdx];
 
                 switch(c)
                 {
@@ -202,7 +203,7 @@ namespace Digi.BuildInfo.Utilities
 
             if(noNewLines)
             {
-                var newLine = text.IndexOf('\n');
+                int newLine = text.IndexOf('\n');
                 if(newLine >= 0)
                     maxLength = Math.Min(maxLength, newLine); // redefine max length to before the first newline character
             }
@@ -305,7 +306,7 @@ namespace Digi.BuildInfo.Utilities
             else
                 s.Label("Priority");
 
-            var constants = BuildInfoMod.Instance.Constants;
+            Constants constants = BuildInfoMod.Instance.Constants;
             ResourceGroupData data;
 
             if(groupId != MyStringHash.NullOrEmpty && constants.resourceGroupPriority.TryGetValue(groupId, out data))
@@ -595,11 +596,11 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint, MyInventoryComponentDefinition invComp)
         {
-            var types = Caches.GetObTypeSet();
+            HashSet<MyObjectBuilderType> types = Caches.GetObTypeSet();
             types.AddSetReader(inputConstraint.ConstrainedTypes);
             types.AddSetReader(outputConstraint.ConstrainedTypes);
 
-            var items = Caches.GetDefIdSet();
+            HashSet<MyDefinitionId> items = Caches.GetDefIdSet();
             items.AddSetReader(inputConstraint.ConstrainedIds);
             items.AddSetReader(outputConstraint.ConstrainedIds);
 
@@ -615,10 +616,10 @@ namespace Digi.BuildInfo.Utilities
             if(inventoryConstraint == null)
                 return s.InventoryFormat(volume, invComp);
 
-            var types = Caches.GetObTypeSet();
+            HashSet<MyObjectBuilderType> types = Caches.GetObTypeSet();
             types.AddSetReader(inventoryConstraint.ConstrainedTypes);
 
-            var items = Caches.GetDefIdSet();
+            HashSet<MyDefinitionId> items = Caches.GetDefIdSet();
             items.AddSetReader(inventoryConstraint.ConstrainedIds);
 
             return s.InventoryFormat(volume, invComp,
@@ -629,7 +630,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyObjectBuilderType allowedType, MyInventoryComponentDefinition invComp)
         {
-            var types = Caches.GetObTypeSet();
+            HashSet<MyObjectBuilderType> types = Caches.GetObTypeSet();
             types.Add(allowedType);
 
             return s.InventoryFormat(volume, invComp, types: types);
@@ -637,7 +638,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId[] allowedItems, MyInventoryComponentDefinition invComp)
         {
-            var items = Caches.GetDefIdSet();
+            HashSet<MyDefinitionId> items = Caches.GetDefIdSet();
             items.AddArray(allowedItems);
 
             return s.InventoryFormat(volume, invComp, items: items);
@@ -645,7 +646,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyDefinitionId allowedItem, MyInventoryComponentDefinition invComp)
         {
-            var items = Caches.GetDefIdSet();
+            HashSet<MyDefinitionId> items = Caches.GetDefIdSet();
             items.Add(allowedItem);
 
             return s.InventoryFormat(volume, invComp, items: items);
@@ -659,7 +660,7 @@ namespace Digi.BuildInfo.Utilities
                 return s;
             }
 
-            var bi = BuildInfoMod.Instance;
+            BuildInfoMod bi = BuildInfoMod.Instance;
             bool allowMultiplier = invComp?.MultiplierEnabled ?? true;
             float blockInvMul = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
 
@@ -685,10 +686,10 @@ namespace Digi.BuildInfo.Utilities
                 if(types == null && items == null)
                     types = bi.Constants.DEFAULT_ALLOWED_TYPES;
 
-                var minMass = float.MaxValue;
-                var maxMass = 0f;
+                float minMass = float.MaxValue;
+                float maxMass = 0f;
 
-                foreach(var physDef in bi.Caches.ItemDefs)
+                foreach(MyPhysicalItemDefinition physDef in bi.Caches.ItemDefs)
                 {
                     if(!physDef.Public || physDef.Mass <= 0 || physDef.Volume <= 0)
                         continue; // skip hidden and physically impossible items
@@ -726,7 +727,7 @@ namespace Digi.BuildInfo.Utilities
             if(totalSeconds > (60 * 60 * 24 * 365))
                 return s.Append("1 y+");
 
-            var span = TimeSpan.FromSeconds(totalSeconds);
+            TimeSpan span = TimeSpan.FromSeconds(totalSeconds);
 
             if(span.Days > 7)
             {
@@ -834,8 +835,8 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder IdTypeFormat(this StringBuilder s, MyObjectBuilderType type)
         {
-            var typeName = type.ToString();
-            var index = typeName.IndexOf('_') + 1;
+            string typeName = type.ToString();
+            int index = typeName.IndexOf('_') + 1;
             s.Append(typeName, index, typeName.Length - index);
 
             if(typeName.EndsWith("GasProperties"))
@@ -851,10 +852,10 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder ModFormat(this StringBuilder s, MyModContext context)
         {
-            var tg = BuildInfoMod.Instance.TextGeneration;
+            TextGeneration tg = BuildInfoMod.Instance.TextGeneration;
             s.Color(tg.COLOR_MOD_TITLE).AppendMaxLength(context.ModName, TextGeneration.MOD_NAME_MAX_LENGTH);
 
-            var modItem = context.GetModItem();
+            MyObjectBuilder_Checkpoint.ModItem modItem = context.GetModItem();
             if(modItem.Name != null && modItem.PublishedFileId > 0)
                 s.Color(tg.COLOR_UNIMPORTANT).Append(" (").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId).Append(")");
 
@@ -912,7 +913,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)
         {
-            var modifier = (float)Math.Round(upgrade.Modifier, 3);
+            float modifier = (float)Math.Round(upgrade.Modifier, 3);
 
             switch(upgrade.ModifierType)
             {
@@ -948,7 +949,7 @@ namespace Digi.BuildInfo.Utilities
                 maxVolume = (float)inv.MaxVolume;
             }
 
-            var volume = (float)inv.CurrentVolume;
+            float volume = (float)inv.CurrentVolume;
 
             if(maxVolume > 0)
             {
@@ -1036,7 +1037,7 @@ namespace Digi.BuildInfo.Utilities
             if(sink == null)
                 return s;
 
-            foreach(var res in sink.AcceptedResources)
+            foreach(MyDefinitionId res in sink.AcceptedResources)
             {
                 if(res == MyResourceDistributorComponent.ElectricityId)
                     continue;
@@ -1064,13 +1065,13 @@ namespace Digi.BuildInfo.Utilities
             if(source == null)
                 return s;
 
-            foreach(var res in source.ResourceTypes)
+            foreach(MyDefinitionId res in source.ResourceTypes)
             {
                 if(res == MyResourceDistributorComponent.ElectricityId)
                     continue;
 
-                var current = source.CurrentOutputByType(res);
-                var max = source.MaxOutputByType(res);
+                float current = source.CurrentOutputByType(res);
+                float max = source.MaxOutputByType(res);
 
                 s.Append(linePrefix);
 

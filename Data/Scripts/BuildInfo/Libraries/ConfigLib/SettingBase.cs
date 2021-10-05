@@ -13,7 +13,7 @@ namespace Digi.ConfigLib
             get { return _value; }
             set
             {
-                var oldValue = _value;
+                T oldValue = _value;
                 _value = value;
 
                 try
@@ -66,7 +66,7 @@ namespace Digi.ConfigLib
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             WriteValue(sb);
             return sb.ToString();
         }
@@ -99,7 +99,7 @@ namespace Digi.ConfigLib
 
         protected void AppendComments(StringBuilder output)
         {
-            foreach(var line in commentLines)
+            foreach(string line in commentLines)
             {
                 if(string.IsNullOrEmpty(line))
                     output.AppendLine();

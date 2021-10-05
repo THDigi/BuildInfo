@@ -17,6 +17,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -199,10 +200,10 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.SDR;
                 const float REACH_DISTANCE = Hardcoded.ShipTool_ReachDistance;
-                var color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
-                var shipCtrlDef = (MyShipControllerDefinition)shipController.SlimBlock.BlockDefinition;
+                Vector4 color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
+                MyShipControllerDefinition shipCtrlDef = (MyShipControllerDefinition)shipController.SlimBlock.BlockDefinition;
 
-                var m = shipController.WorldMatrix;
+                MatrixD m = shipController.WorldMatrix;
                 m.Translation = Vector3D.Transform(shipCtrlDef.RaycastOffset, m);
 
                 MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, color, m.Translation, m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
@@ -292,8 +293,8 @@ namespace Digi.BuildInfo.Features.Overlays
             if(DrawOverlay == 0 || (Main.LockOverlay.LockedOnBlock == null && Main.EquipmentMonitor.BlockDef == null) || (Main.GameConfig.HudState == HudState.OFF && !Main.Config.OverlaysAlwaysVisible.Value))
                 return;
 
-            var def = Main.EquipmentMonitor.BlockDef;
-            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
 
             // re-assigns def & aimedBlock if overlay is locked-on to something different than the aimed block
             if(Main.LockOverlay.LockedOnBlock != null && !Main.LockOverlay.UpdateLockedOnBlock(ref aimedBlock, ref def))
@@ -309,7 +310,7 @@ namespace Digi.BuildInfo.Features.Overlays
             try
             {
                 #region DrawMatrix and other needed data
-                var drawMatrix = MatrixD.Identity;
+                MatrixD drawMatrix = MatrixD.Identity;
 
                 if(Main.LockOverlay.LockedOnBlock == null && Main.EquipmentMonitor.IsCubeBuilder)
                 {
@@ -345,7 +346,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
                     {
-                        var hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
+                        IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
                         if(hitEnt != null && hitEnt is IMyVoxelBase)
                             drawMatrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
                         else
@@ -408,13 +409,13 @@ namespace Digi.BuildInfo.Features.Overlays
 #if false // TODO: implement solar as overlay? a box that covers the rays+padding and points towards sun, fades out to not expose max distance...
                 if(aimedBlock != null)
                 {
-                    var solarPanel = aimedBlock.FatBlock as IMySolarPanel;
+                    IMySolarPanel solarPanel = aimedBlock.FatBlock as IMySolarPanel;
                     if(solarPanel != null)
                     {
-                        var sunDir = Sandbox.Game.MyVisualScriptLogicProvider.GetSunDirection();
-                        var solarDef = (MySolarPanelDefinition)def;
+                        Vector3 sunDir = MyVisualScriptLogicProvider.GetSunDirection();
+                        MySolarPanelDefinition solarDef = (MySolarPanelDefinition)def;
 
-                        var angleToSun = Vector3.Dot(Vector3.Transform(solarDef.PanelOrientation, solarPanel.WorldMatrix.GetOrientation()), sunDir);
+                        float angleToSun = Vector3.Dot(Vector3.Transform(solarDef.PanelOrientation, solarPanel.WorldMatrix.GetOrientation()), sunDir);
                         bool isTwoSided = solarDef.IsTwoSided;
 
                         for(int idx = 0; idx < 8; idx++)
@@ -441,7 +442,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             //    continue;
 
                             MatrixD orientation = solarPanel.WorldMatrix.GetOrientation();
-                            var panelOrientationWorld = Vector3.Transform(solarDef.PanelOrientation, orientation);
+                            Vector3D panelOrientationWorld = Vector3.Transform(solarDef.PanelOrientation, orientation);
 
                             float dotFw = (float)solarPanel.WorldMatrix.Forward.Dot(panelOrientationWorld);
 
@@ -451,8 +452,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
                             translation += CellSize * dotFw * (solarDef.Size.Z / 2f) * panelOrientationWorld * solarDef.PanelOffset;
 
-                            var from = translation + sunDir * 100f;
-                            var to = translation + sunDir * solarPanel.CubeGrid.GridSize / 4f;
+                            Vector3D from = translation + sunDir * 100f;
+                            Vector3D to = translation + sunDir * solarPanel.CubeGrid.GridSize / 4f;
 
                             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Orange, from, (to - from), 1f, 0.05f, OVERLAY_BLEND_TYPE);
                         }
@@ -467,10 +468,10 @@ namespace Digi.BuildInfo.Features.Overlays
                     const float OffsetPointThickness = 0.05f;
                     Color color = new Color(255, 0, 255);
 
-                    var start = drawMatrix.Translation;
-                    var dir = Vector3D.TransformNormal(def.ModelOffset, drawMatrix);
+                    Vector3D start = drawMatrix.Translation;
+                    Vector3D dir = Vector3D.TransformNormal(def.ModelOffset, drawMatrix);
 
-                    var offset = camMatrix.Right * LABEL_SHADOW_OFFSET.X + camMatrix.Up * LABEL_SHADOW_OFFSET.Y;
+                    Vector3D offset = camMatrix.Right * LABEL_SHADOW_OFFSET.X + camMatrix.Up * LABEL_SHADOW_OFFSET.Y;
 
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + offset, dir, 1f, OffsetLineThickness, LABEL_SHADOW_BLEND_TYPE);
                     MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, dir, 1f, OffsetLineThickness, blendType: OVERLAY_BLEND_TYPE);
@@ -489,7 +490,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 else
                 {
                     // re-assigning mount points temporarily to prevent the original mountpoint wireframe from being drawn while keeping the axis information
-                    var mp = def.MountPoints;
+                    MyCubeBlockDefinition.MountPoint[] mp = def.MountPoints;
                     def.MountPoints = BLANK_MOUNTPOINTS;
                     MyCubeBuilder.DrawMountPoints(CellSize, def, ref drawMatrix);
                     def.MountPoints = mp;
@@ -535,30 +536,30 @@ namespace Digi.BuildInfo.Features.Overlays
                         {
                             if(def.IsAirTight.Value)
                             {
-                                var halfExtents = def.Size * CellSizeHalf;
-                                var localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
+                                Vector3 halfExtents = def.Size * CellSizeHalf;
+                                BoundingBoxD localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MOUNTPOINT_THICKNESS * 0.5);
                                 MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
                             }
                         }
                         else if(mountPoints != null)
                         {
-                            var half = Vector3D.One * -CellSizeHalf;
-                            var corner = (Vector3D)def.Size * -CellSizeHalf;
-                            var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
+                            Vector3D half = Vector3D.One * -CellSizeHalf;
+                            Vector3D corner = (Vector3D)def.Size * -CellSizeHalf;
+                            MatrixD transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
-                            foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
+                            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
                             {
-                                foreach(var kv2 in kv.Value)
+                                foreach(KeyValuePair<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark> kv2 in kv.Value)
                                 {
                                     if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways) // pos+normal not always airtight
                                         continue;
 
-                                    var pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
-                                    var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
-                                    var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
-                                    var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+                                    Vector3D pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
+                                    Vector3 dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                                    int dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
+                                    Vector3 dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
-                                    var m = MatrixD.Identity;
+                                    MatrixD m = MatrixD.Identity;
                                     m.Translation = pos + dirForward * CellSizeHalf;
                                     m.Forward = dirForward;
                                     m.Backward = -dirForward;
@@ -566,7 +567,7 @@ namespace Digi.BuildInfo.Features.Overlays
                                     m.Right = -m.Left;
                                     m.Up = dirUp;
                                     m.Down = -dirUp;
-                                    var scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
+                                    Vector3D scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
                                     MatrixD.Rescale(ref m, ref scale);
 
                                     MySimpleObjectDraw.DrawTransparentBox(ref m, ref unitBB, ref color, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
@@ -856,7 +857,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //    doorAirtightBlink = !doorAirtightBlink;
             //}
 
-            var cubeSize = def.Size * CellSizeHalf;
+            Vector3 cubeSize = def.Size * CellSizeHalf;
             bool drawLabel = CanDrawLabel();
 
             //if(!drawLabel && !DoorAirtightBlink)
@@ -866,34 +867,34 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(block != null)
             {
-                var door = block.FatBlock as IMyDoor;
+                IMyDoor door = block.FatBlock as IMyDoor;
                 if(door != null)
                     fullyClosed = (door.Status == Sandbox.ModAPI.Ingame.DoorStatus.Closed);
             }
 
-            var isAirTight = Pressurization.IsAirtightFromDefinition(def, 1f);
+            AirTightMode isAirTight = Pressurization.IsAirtightFromDefinition(def, 1f);
             if(isAirTight == AirTightMode.SEALED)
                 return; // if block is entirely sealed anyway, don't bother with door specifics
 
             #region Draw sealed sides
             for(int i = 0; i < 6; ++i)
             {
-                var normal = DIRECTIONS[i];
-                var normalI = (Vector3I)normal;
+                Vector3 normal = DIRECTIONS[i];
+                Vector3I normalI = (Vector3I)normal;
 
                 if(Pressurization.IsDoorAirtightInternal(def, ref normalI, true))
                 {
-                    var dirForward = Vector3D.TransformNormal(normal, drawMatrix);
-                    var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
-                    var dirUp = Vector3D.TransformNormal(DIRECTIONS[((i + 2) % 6)], drawMatrix);
+                    Vector3D dirForward = Vector3D.TransformNormal(normal, drawMatrix);
+                    Vector3D dirLeft = Vector3D.TransformNormal(DIRECTIONS[((i + 4) % 6)], drawMatrix);
+                    Vector3D dirUp = Vector3D.TransformNormal(DIRECTIONS[((i + 2) % 6)], drawMatrix);
 
-                    var pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
+                    Vector3D pos = drawMatrix.Translation + dirForward * cubeSize.GetDim((i % 6) / 2);
                     float width = cubeSize.GetDim(((i + 4) % 6) / 2);
                     float height = cubeSize.GetDim(((i + 2) % 6) / 2);
 
                     if(DoorAirtightBlink)
                     {
-                        var m = MatrixD.CreateWorld(pos, dirForward, dirUp);
+                        MatrixD m = MatrixD.CreateWorld(pos, dirForward, dirUp);
                         m.Right *= width * 2;
                         m.Up *= height * 2;
                         m.Forward *= MOUNTPOINT_THICKNESS;
@@ -908,7 +909,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     {
                         drawLabel = false;
 
-                        var labelPos = pos + dirLeft * width + dirUp * height;
+                        Vector3D labelPos = pos + dirLeft * width + dirUp * height;
                         DrawLineLabel(TextAPIMsgIds.AirtightWhenClosed, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
                         if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
@@ -919,29 +920,29 @@ namespace Digi.BuildInfo.Features.Overlays
             #endregion
 
             #region Find door-toggled mountpoints
-            var mountPoints = def.GetBuildProgressModelMountPoints(1f);
+            MyCubeBlockDefinition.MountPoint[] mountPoints = def.GetBuildProgressModelMountPoints(1f);
             if(mountPoints != null)
             {
-                var half = Vector3D.One * -CellSizeHalf;
-                var corner = (Vector3D)def.Size * -CellSizeHalf;
-                var transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
+                Vector3D half = Vector3D.One * -CellSizeHalf;
+                Vector3D corner = (Vector3D)def.Size * -CellSizeHalf;
+                MatrixD transformMatrix = MatrixD.CreateTranslation(corner - half) * drawMatrix;
 
-                foreach(var kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
+                foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized) // precomputed: [position][normal] = airtight type
                 {
-                    foreach(var kv2 in kv.Value)
+                    foreach(KeyValuePair<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark> kv2 in kv.Value)
                     {
                         // only look for cell sides that are pressurized when doors are closed
                         if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed)
                             continue;
 
-                        var pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
-                        var dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
-                        var dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
-                        var dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
+                        Vector3D pos = Vector3D.Transform((Vector3D)(kv.Key * CellSize), transformMatrix);
+                        Vector3 dirForward = Vector3.TransformNormal(kv2.Key, drawMatrix);
+                        int dirIndex = (int)Base6Directions.GetDirection(kv2.Key);
+                        Vector3 dirUp = Vector3.TransformNormal(DIRECTIONS[((dirIndex + 2) % 6)], drawMatrix);
 
                         if(DoorAirtightBlink)
                         {
-                            var m = MatrixD.Identity;
+                            MatrixD m = MatrixD.Identity;
                             m.Translation = pos + dirForward * CellSizeHalf;
                             m.Forward = dirForward;
                             m.Backward = -dirForward;
@@ -949,7 +950,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             m.Right = -m.Left;
                             m.Up = dirUp;
                             m.Down = -dirUp;
-                            var scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
+                            Vector3D scale = new Vector3D(CellSize, CellSize, MOUNTPOINT_THICKNESS);
                             MatrixD.Rescale(ref m, ref scale);
 
                             if(fullyClosed)
@@ -962,11 +963,11 @@ namespace Digi.BuildInfo.Features.Overlays
                         {
                             drawLabel = false;
 
-                            var dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
+                            Vector3D dirLeft = Vector3D.TransformNormal(DIRECTIONS[((dirIndex + 4) % 6)], drawMatrix);
                             float width = cubeSize.GetDim(((dirIndex + 4) % 6) / 2);
                             float height = cubeSize.GetDim(((dirIndex + 2) % 6) / 2);
 
-                            var labelPos = pos + dirLeft * width + dirUp * height;
+                            Vector3D labelPos = pos + dirLeft * width + dirUp * height;
                             DrawLineLabel(TextAPIMsgIds.AirtightWhenClosed, labelPos, dirLeft, AIRTIGHT_TOGGLE_COLOR, message: "Airtight when closed");
 
                             if(!DoorAirtightBlink) // no need to iterate further if no faces need to be rendered
@@ -992,11 +993,11 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
             }
 
-            var data = Main.LiveDataHandler.Get<BData_Weapon>(def);
+            BData_Weapon data = Main.LiveDataHandler.Get<BData_Weapon>(def);
             if(data == null)
                 return;
 
-            var weaponBlockDef = def as MyWeaponBlockDefinition;
+            MyWeaponBlockDefinition weaponBlockDef = def as MyWeaponBlockDefinition;
             MyWeaponDefinition weaponDef;
             if(weaponBlockDef == null || !MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef))
                 return;
@@ -1004,7 +1005,7 @@ namespace Digi.BuildInfo.Features.Overlays
             bool canDrawLabel = CanDrawLabel();
 
             IMySlimBlock slimBlock = (Main.LockOverlay.LockedOnBlock ?? Main.EquipmentMonitor.AimedBlock);
-            var weaponBlock = slimBlock?.FatBlock as IMyGunObject<MyGunBase>;
+            IMyGunObject<MyGunBase> weaponBlock = slimBlock?.FatBlock as IMyGunObject<MyGunBase>;
 
             IMyEntity muzzleEntity = null;
             bool hasMuzzles = (data.Muzzles != null && data.Muzzles.Count > 0);
@@ -1015,7 +1016,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 MyAmmoDefinition ammoDef = weaponBlock?.GunBase?.CurrentAmmoDefinition;
                 if(ammoDef == null)
                 {
-                    var mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
+                    MyAmmoMagazineDefinition mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
                     ammoDef = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
                 }
 
@@ -1035,12 +1036,12 @@ namespace Digi.BuildInfo.Features.Overlays
                 //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Green, barrelMatrix.Translation, barrelMatrix.Up, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
                 //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Blue, barrelMatrix.Translation, barrelMatrix.Forward, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
 
-                var md = data.Muzzles[0];
+                MuzzleData md = data.Muzzles[0];
                 MatrixD accMatrix = (muzzleEntity != null ? md.MatrixForSubpart : md.MatrixForBlock) * barrelMatrix;
 
                 const float AccLineThick = 0.01f;
                 const int ConeWireDivideRatio = 36;
-                var accColor = new Color(255, 155, 0);
+                Color accColor = new Color(255, 155, 0);
 
                 float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
                 float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
@@ -1068,8 +1069,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if(canDrawLabel)
                 {
-                    var labelDir = accMatrix.Up;
-                    var labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
+                    Vector3D labelDir = accMatrix.Up;
+                    Vector3D labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
 
                     if(randomizedRange)
                         DynamicLabelSB.Clear().Append("Accuracy cone\n").DistanceRangeFormat(projectileMinTravel, projectileMaxTravel);
@@ -1092,7 +1093,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 bool haveSubpart = (muzzleEntity != null);
 
-                foreach(var md in data.Muzzles)
+                foreach(MuzzleData md in data.Muzzles)
                 {
                     MatrixD wm = (haveSubpart ? md.MatrixForSubpart * muzzleEntity.WorldMatrix : md.MatrixForBlock * drawMatrix);
 
@@ -1106,7 +1107,7 @@ namespace Digi.BuildInfo.Features.Overlays
             #endregion Barrels
 
             #region Turret pitch/yaw limits
-            var turretDef = def as MyLargeTurretBaseDefinition;
+            MyLargeTurretBaseDefinition turretDef = def as MyLargeTurretBaseDefinition;
             bool isTurret = (turretDef != null && data.Turret != null);
             if(isTurret)
             {
@@ -1150,7 +1151,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        var labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
+                        Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
                         DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, labelDir, colorPitchLine, "Pitch limit");
                     }
                 }
@@ -1171,7 +1172,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     if(canDrawLabel)
                     {
-                        var labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
+                        Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
                         DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, labelDir, colorYawLine, "Yaw limit");
                     }
                 }
@@ -1203,35 +1204,35 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_TargetDummy(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var dummyDef = def as MyTargetDummyBlockDefinition;
+            MyTargetDummyBlockDefinition dummyDef = def as MyTargetDummyBlockDefinition;
             if(dummyDef == null)
                 return;
 
-            var data = Main.LiveDataHandler.Get<BData_TargetDummy>(def);
+            BData_TargetDummy data = Main.LiveDataHandler.Get<BData_TargetDummy>(def);
             if(data == null)
                 return;
 
             if(data.Subparts.Count > 0)
             {
-                var colorCrit = new Color(255, 180, 55);
-                var colorLimb = new Color(55, 100, 155);
+                Color colorCrit = new Color(255, 180, 55);
+                Color colorLimb = new Color(55, 100, 155);
 
                 bool drawLabel = CanDrawLabel();
 
-                foreach(var kv in data.Subparts)
+                foreach(KeyValuePair<string, BData_TargetDummy.SubpartInfo> kv in data.Subparts)
                 {
                     string subpartName = kv.Key;
-                    var subpartInfo = kv.Value;
+                    BData_TargetDummy.SubpartInfo subpartInfo = kv.Value;
                     MatrixD matrix = subpartInfo.LocalMatrix * drawMatrix;
 
-                    var color = (subpartInfo.IsCritical ? colorCrit : colorLimb);
+                    Color color = (subpartInfo.IsCritical ? colorCrit : colorLimb);
 
                     MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, matrix.Translation, 0.05f, 0, blendType: OVERLAY_BLEND_TYPE);
 
                     if(drawLabel)
                     {
-                        var labelDir = (subpartName.ContainsIgnoreCase("head") ? drawMatrix.Up : (subpartName.ContainsIgnoreCase("right") ? drawMatrix.Left : drawMatrix.Right)); // bad xD
-                        var labelPos = matrix.Translation;
+                        Vector3D labelDir = (subpartName.ContainsIgnoreCase("head") ? drawMatrix.Up : (subpartName.ContainsIgnoreCase("right") ? drawMatrix.Left : drawMatrix.Right)); // bad xD
+                        Vector3D labelPos = matrix.Translation;
 
                         DynamicLabelSB.Clear().Append(subpartName).Append("\n").Append(subpartInfo.Health).Append(" hp").Append(subpartInfo.IsCritical ? " (critical)" : "");
                         DrawLineLabel(TextAPIMsgIds.DynamicLabel, labelPos, labelDir, color, scale: 0.5f, lineHeight: 1f);
@@ -1242,50 +1243,50 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Drill(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var drill = def as MyShipDrillDefinition;
+            MyShipDrillDefinition drill = def as MyShipDrillDefinition;
             if(drill == null)
                 return;
 
             const int wireDivRatio = 20;
-            var colorSensorText = Color.Gray;
-            var colorSensorFace = colorSensorText * BlockOverlayAlpha;
-            var colorMineText = Color.Lime;
-            var colorMineFace = colorMineText * BlockOverlayAlpha;
-            var colorCarveText = Color.Red;
-            var colorCarveFace = colorCarveText * BlockOverlayAlpha;
+            Color colorSensorText = Color.Gray;
+            Color colorSensorFace = colorSensorText * BlockOverlayAlpha;
+            Color colorMineText = Color.Lime;
+            Color colorMineFace = colorMineText * BlockOverlayAlpha;
+            Color colorCarveText = Color.Red;
+            Color colorCarveFace = colorCarveText * BlockOverlayAlpha;
             float lineThickness = 0.03f;
-            var material = OVERLAY_LASER_MATERIAL;
+            MyStringId material = OVERLAY_LASER_MATERIAL;
             bool drawLabel = CanDrawLabel();
 
             #region Mining
-            var mineMatrix = drawMatrix;
+            MatrixD mineMatrix = drawMatrix;
             mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
             float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
             Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref colorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabel)
             {
-                var labelDir = mineMatrix.Up;
-                var sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
+                Vector3D labelDir = mineMatrix.Up;
+                Vector3D sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
                 DrawLineLabel(TextAPIMsgIds.MineRadius, sphereEdge, labelDir, colorMineText, message: "Mining radius");
             }
             #endregion
 
             #region Carving
-            var carveMatrix = mineMatrix;
+            MatrixD carveMatrix = mineMatrix;
             float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
             Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref colorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: material, blendType: OVERLAY_BLEND_TYPE);
 
             if(drawLabel)
             {
-                var labelDir = carveMatrix.Up;
-                var sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
+                Vector3D labelDir = carveMatrix.Up;
+                Vector3D sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
                 DrawLineLabel(TextAPIMsgIds.CarveRadius, sphereEdge, labelDir, colorCarveText, message: "Carving radius");
             }
             #endregion
 
             #region Sensor
-            var sensorMatrix = drawMatrix;
+            MatrixD sensorMatrix = drawMatrix;
             sensorMatrix.Translation += sensorMatrix.Forward * drill.SensorOffset;
             float sensorRadius = drill.SensorRadius;
 
@@ -1296,8 +1297,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(drawLabel)
             {
-                var labelDir = drawMatrix.Left;
-                var sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
+                Vector3D labelDir = drawMatrix.Left;
+                Vector3D sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
                 DrawLineLabel(TextAPIMsgIds.SensorRadius, sphereEdge, labelDir, colorSensorText, message: "Entity detection radius");
             }
             #endregion
@@ -1305,28 +1306,28 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_ShipTool(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = Main.LiveDataHandler.Get<BData_ShipTool>(def);
+            BData_ShipTool data = Main.LiveDataHandler.Get<BData_ShipTool>(def);
             if(data == null)
                 return;
 
             const int wireDivRatio = 20;
-            var color = Color.Lime;
-            var colorFace = color * BlockOverlayAlpha;
+            Color color = Color.Lime;
+            Color colorFace = color * BlockOverlayAlpha;
             float lineThickness = 0.03f;
 
-            var toolDef = (MyShipToolDefinition)def;
-            var matrix = data.DummyMatrix;
-            var sensorCenter = matrix.Translation + matrix.Forward * toolDef.SensorOffset;
+            MyShipToolDefinition toolDef = (MyShipToolDefinition)def;
+            Matrix matrix = data.DummyMatrix;
+            Vector3 sensorCenter = matrix.Translation + matrix.Forward * toolDef.SensorOffset;
             drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
-            var radius = toolDef.SensorRadius;
+            float radius = toolDef.SensorRadius;
 
             Utils.DrawTransparentSphere(ref drawMatrix, radius, ref colorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: OVERLAY_LASER_MATERIAL, blendType: OVERLAY_BLEND_TYPE);
 
             if(CanDrawLabel())
             {
                 bool isWelder = def is MyShipWelderDefinition;
-                var labelDir = drawMatrix.Down;
-                var sphereEdge = drawMatrix.Translation + (labelDir * radius);
+                Vector3D labelDir = drawMatrix.Down;
+                Vector3D sphereEdge = drawMatrix.Translation + (labelDir * radius);
 
                 if(isWelder)
                     DrawLineLabel(TextAPIMsgIds.WeldingRadius, sphereEdge, labelDir, color, "Welding radius");
@@ -1337,7 +1338,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Thruster(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = Main.LiveDataHandler.Get<BData_Thrust>(def);
+            BData_Thrust data = Main.LiveDataHandler.Get<BData_Thrust>(def);
             if(data == null)
                 return;
 
@@ -1348,7 +1349,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MatrixD capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
             bool drawLabel = CanDrawLabel();
 
-            foreach(var flame in data.Flames)
+            foreach(BData_Thrust.FlameInfo flame in data.Flames)
             {
                 Vector3D start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
@@ -1368,18 +1369,18 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_LandingGear(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = Main.LiveDataHandler.Get<BData_LandingGear>(def);
+            BData_LandingGear data = Main.LiveDataHandler.Get<BData_LandingGear>(def);
             if(data == null)
                 return;
 
-            var color = new Color(20, 255, 155);
-            var colorFace = color * BlockOverlayAlpha;
+            Color color = new Color(20, 255, 155);
+            Color colorFace = color * BlockOverlayAlpha;
             bool drawLabel = CanDrawLabel();
 
-            foreach(var obb in data.Magents)
+            foreach(MyOrientedBoundingBoxD obb in data.Magents)
             {
-                var localBB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
-                var m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                BoundingBoxD localBB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
+                MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
                 m.Translation = obb.Center;
                 m *= drawMatrix;
 
@@ -1388,8 +1389,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(drawLabel)
                 {
                     drawLabel = false; // only label the first one
-                    var labelDir = drawMatrix.Down;
-                    var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
+                    Vector3D labelDir = drawMatrix.Down;
+                    Vector3D labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
                     DrawLineLabel(TextAPIMsgIds.MagnetizedArea, labelLineStart, labelDir, color, message: "Magnetized Area");
                 }
             }
@@ -1397,23 +1398,23 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_Collector(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = Main.LiveDataHandler.Get<BData_Collector>(def);
+            BData_Collector data = Main.LiveDataHandler.Get<BData_Collector>(def);
             if(data == null)
                 return;
 
-            var color = new Color(20, 255, 100);
-            var colorFace = color * BlockOverlayAlpha;
+            Color color = new Color(20, 255, 100);
+            Color colorFace = color * BlockOverlayAlpha;
             bool drawLabel = CanDrawLabel();
 
-            var localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
-            var m = data.boxLocalMatrix * drawMatrix;
+            BoundingBoxD localBB = new BoundingBoxD(-Vector3.Half, Vector3.Half);
+            MatrixD m = data.boxLocalMatrix * drawMatrix;
 
             MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref colorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: OVERLAY_LASER_MATERIAL, blendType: MOUNTPOINT_BLEND_TYPE);
 
             if(drawLabel)
             {
-                var labelDir = drawMatrix.Down;
-                var labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
+                Vector3D labelDir = drawMatrix.Down;
+                Vector3D labelLineStart = m.Translation + (m.Down * localBB.HalfExtents.Y) + (m.Backward * localBB.HalfExtents.Z) + (m.Left * localBB.HalfExtents.X);
                 DrawLineLabel(TextAPIMsgIds.CollectionArea, labelLineStart, labelDir, color, message: "Collection Area");
             }
         }
@@ -1428,7 +1429,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_WindTurbine(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var turbineDef = (MyWindTurbineDefinition)def;
+            MyWindTurbineDefinition turbineDef = (MyWindTurbineDefinition)def;
             bool drawLabel = CanDrawLabel();
 
             const float lineThick = 0.05f;
@@ -1501,8 +1502,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(drawLabel)
             {
-                var labelDir = drawMatrix.Up;
-                var labelLineStart = center + drawMatrix.Left * minRadius;
+                Vector3D labelDir = drawMatrix.Up;
+                Vector3D labelLineStart = center + drawMatrix.Left * minRadius;
                 DrawLineLabel(TextAPIMsgIds.SideClearence, labelLineStart, labelDir, new Color(255, 155, 0), message: "Side Clearence", lineHeight: 0.5f);
 
                 //labelDir = drawMatrix.Up;
@@ -1545,11 +1546,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawOverlay_LaserAntenna(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var antennaDef = def as MyLaserAntennaDefinition;
+            MyLaserAntennaDefinition antennaDef = def as MyLaserAntennaDefinition;
             if(antennaDef == null)
                 return;
 
-            var data = Main.LiveDataHandler.Get<BData_LaserAntenna>(def);
+            BData_LaserAntenna data = Main.LiveDataHandler.Get<BData_LaserAntenna>(def);
             if(data == null)
                 return;
 
@@ -1570,17 +1571,17 @@ namespace Digi.BuildInfo.Features.Overlays
             int maxYaw = antennaDef.MaxAzimuthDegrees;
 
             {
-                var colorPitch = (Color.Red * BlockOverlayAlpha).ToVector4();
-                var colorPitchLine = Color.Red.ToVector4();
+                Vector4 colorPitch = (Color.Red * BlockOverlayAlpha).ToVector4();
+                Vector4 colorPitchLine = Color.Red.ToVector4();
 
                 MatrixD pitchMatrix = drawMatrix;
                 if(slimBlock?.FatBlock != null)
                 {
-                    var internalBlock = (MyCubeBlock)slimBlock.FatBlock;
+                    MyCubeBlock internalBlock = (MyCubeBlock)slimBlock.FatBlock;
 
                     // from MyLaserAntenna.OnModelChange()
-                    var subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
-                    var subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
+                    MyEntitySubpart subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
+                    MyEntitySubpart subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
 
                     if(subpartPitch != null)
                     {
@@ -1591,7 +1592,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
 
                 // only yaw rotation
-                var m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
+                MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
                 Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
 
                 // laser visualization
@@ -1600,7 +1601,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if(canDrawLabel)
                 {
-                    var labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
+                    Vector3D labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
                     DrawLineLabel(TextAPIMsgIds.Laser, labelPos, pitchMatrix.Up, laserColor, "Laser");
                 }
 
@@ -1614,18 +1615,18 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if(canDrawLabel)
                 {
-                    var labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
+                    Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
                     DrawLineLabel(TextAPIMsgIds.PitchLimit, lastOuterRimVec, labelDir, colorPitchLine, "Pitch limit");
                 }
             }
 
             {
-                var colorYaw = (Color.Lime * BlockOverlayAlpha).ToVector4();
-                var colorYawLine = Color.Lime.ToVector4();
+                Vector4 colorYaw = (Color.Lime * BlockOverlayAlpha).ToVector4();
+                Vector4 colorYawLine = Color.Lime.ToVector4();
 
                 Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
 
-                var yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
+                MatrixD yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
 
                 Vector3D firstOuterRimVec, lastOuterRimVec;
                 DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
@@ -1634,7 +1635,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if(canDrawLabel)
                 {
-                    var labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
+                    Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
                     DrawLineLabel(TextAPIMsgIds.YawLimit, firstOuterRimVec, labelDir, colorYawLine, "Yaw limit");
                 }
             }
@@ -1646,17 +1647,17 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private void DrawPortsMode(MyCubeBlockDefinition def, MatrixD drawMatrix)
         {
-            var data = Main.LiveDataHandler.Get<BData_Base>(def);
+            BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
             if(data == null)
                 return;
 
             if(data.ConveyorPorts != null)
             {
-                var color = new Color(255, 255, 0);
+                Color color = new Color(255, 255, 0);
 
-                foreach(var info in data.ConveyorPorts)
+                foreach(ConveyorInfo info in data.ConveyorPorts)
                 {
-                    var matrix = info.LocalMatrix * drawMatrix;
+                    MatrixD matrix = info.LocalMatrix * drawMatrix;
 
                     if((info.Flags & ConveyorFlags.Small) != 0)
                         DrawPort("       Small\nConveyor port", matrix, color);
@@ -1667,11 +1668,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(data.InteractableConveyorPorts != null)
             {
-                var color = new Color(155, 255, 0);
+                Color color = new Color(155, 255, 0);
 
-                foreach(var info in data.InteractableConveyorPorts)
+                foreach(ConveyorInfo info in data.InteractableConveyorPorts)
                 {
-                    var matrix = info.LocalMatrix * drawMatrix;
+                    MatrixD matrix = info.LocalMatrix * drawMatrix;
 
                     if((info.Flags & ConveyorFlags.Small) != 0)
                         DrawPort("        Interactive\nSmall conveyor port", matrix, color);
@@ -1682,9 +1683,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(data.Interactive != null)
             {
-                foreach(var info in data.Interactive)
+                foreach(InteractionInfo info in data.Interactive)
                 {
-                    var matrix = info.LocalMatrix * drawMatrix;
+                    MatrixD matrix = info.LocalMatrix * drawMatrix;
                     DrawPort(info.Name, matrix, info.Color);
                 }
             }
@@ -1692,12 +1693,12 @@ namespace Digi.BuildInfo.Features.Overlays
             if(data.UpgradePorts != null)
             {
                 bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
-                var upgradePortColor = new Color(200, 55, 255);
-                var unknownPortColor = new Color(0, 0, 200);
+                Color upgradePortColor = new Color(200, 55, 255);
+                Color unknownPortColor = new Color(0, 0, 200);
 
-                foreach(var localMatrix in data.UpgradePorts)
+                foreach(Matrix localMatrix in data.UpgradePorts)
                 {
-                    var matrix = localMatrix * drawMatrix;
+                    MatrixD matrix = localMatrix * drawMatrix;
 
                     if(hasUpgrades)
                         DrawPort("Upgrade port", matrix, upgradePortColor);
@@ -1726,7 +1727,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 PortInfo? closestPort = null;
                 double closestDistance = double.MaxValue;
 
-                foreach(var portInfo in AimedPorts)
+                foreach(PortInfo portInfo in AimedPorts)
                 {
                     if(closestDistance > portInfo.Distance)
                     {
@@ -1805,7 +1806,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(Main.TextAPI.IsEnabled)
             {
-                var obb = new MyOrientedBoundingBoxD(portMatrix);
+                MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(portMatrix);
                 RayD aimLine = new RayD(camMatrix.Translation, camMatrix.Forward);
                 double? distance = obb.Intersects(ref aimLine);
                 if(distance.HasValue)
@@ -1962,7 +1963,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         private float GetLabelUnderlineLength(HudAPIv2.SpaceMessage msg)
         {
-            var textSize = msg.GetTextLength();
+            Vector2D textSize = msg.GetTextLength();
             return (float)(LABEL_OFFSET.X + (textSize.X * LABEL_TEXT_SCALE));
         }
 
@@ -1970,7 +1971,7 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             float textScale = 1f;
 
-            var matrix = MatrixD.CreateScale(def.Size * (CellSize / textScale / 2f) + new Vector3D(0.5f));
+            MatrixD matrix = MatrixD.CreateScale(def.Size * (CellSize / textScale / 2f) + new Vector3D(0.5f));
             matrix.Translation = Vector3D.Zero; // (def.Center - (def.Size * 0.5f));
             matrix = matrix * drawMatrix;
 

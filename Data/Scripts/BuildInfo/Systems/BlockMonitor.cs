@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
@@ -38,7 +39,7 @@ namespace Digi.BuildInfo.Systems
 
             MyAPIGateway.Entities.OnEntityAdd += EntitySpawned;
 
-            foreach(var ent in MyEntities.GetEntities())
+            foreach(MyEntity ent in MyEntities.GetEntities())
             {
                 EntitySpawned(ent);
             }
@@ -90,14 +91,14 @@ namespace Digi.BuildInfo.Systems
         {
             try
             {
-                var grid = ent as IMyCubeGrid;
+                IMyCubeGrid grid = ent as IMyCubeGrid;
                 if(grid == null)
                     return;
 
                 grid.OnBlockAdded += BlockAdd;
                 grid.OnClose += GridClosed;
 
-                var internalGrid = (MyCubeGrid)grid;
+                MyCubeGrid internalGrid = (MyCubeGrid)grid;
                 foreach(IMySlimBlock slim in internalGrid.CubeBlocks)
                 {
                     BlockAdd(slim);
@@ -111,7 +112,7 @@ namespace Digi.BuildInfo.Systems
 
         void GridClosed(IMyEntity ent)
         {
-            var grid = (IMyCubeGrid)ent;
+            IMyCubeGrid grid = (IMyCubeGrid)ent;
             grid.OnBlockAdded -= BlockAdd;
             grid.OnClose -= GridClosed;
         }
@@ -129,7 +130,7 @@ namespace Digi.BuildInfo.Systems
                     Log.Error(e);
                 }
 
-                var typeId = slim.BlockDefinition.Id.TypeId;
+                MyObjectBuilderType typeId = slim.BlockDefinition.Id.TypeId;
 
                 List<CallbackDelegate> callbacks;
                 if(!MonitorBlockTypes.TryGetValue(typeId, out callbacks))

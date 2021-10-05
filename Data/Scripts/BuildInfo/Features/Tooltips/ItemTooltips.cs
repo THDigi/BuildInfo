@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 return;
 
             // restore original symbol and tooltips, which doesn't seem necessary for items but better safe.
-            foreach(var data in OriginalItemData)
+            foreach(OriginalData data in OriginalItemData)
             {
                 data.Def.IconSymbol = data.Symbol;
                 data.Def.ExtraInventoryTooltipLine?.Clear()?.Append(data.Tooltip);
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void Setup(bool generate)
         {
-            foreach(var physDef in Main.Caches.ItemDefs)
+            foreach(MyPhysicalItemDefinition physDef in Main.Caches.ItemDefs)
             {
                 if(generate)
                 {
@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 if(physDef.IconSymbol.HasValue)
                 {
-                    var symbolString = physDef.IconSymbol.Value.String;
+                    string symbolString = physDef.IconSymbol.Value.String;
 
                     // only add if it's not there already
                     if(symbolString.IndexOf(ReqLargeConveyorSymbolAdd) == -1)
@@ -111,7 +111,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 if(physDef.IconSymbol.HasValue)
                 {
-                    var symbolString = physDef.IconSymbol.Value.String;
+                    string symbolString = physDef.IconSymbol.Value.String;
                     if(symbolString == ReqLargeConveyorSymbolSet)
                     {
                         // remove symbol if item didn't have one.
@@ -204,21 +204,21 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public void TooltipConsumable(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
-            var consumable = physDef as MyConsumableItemDefinition;
+            MyConsumableItemDefinition consumable = physDef as MyConsumableItemDefinition;
             if(consumable != null && consumable.Stats.Count > 0)
             {
                 s.Append("\nConsumption: ");
 
-                var statNames = Main.TooltipHandler.TmpStatDisplayNames;
+                Dictionary<string, string> statNames = Main.TooltipHandler.TmpStatDisplayNames;
 
                 if(consumable.Stats.Count == 1)
                 {
-                    var stat = consumable.Stats[0];
+                    MyConsumableItemDefinition.StatValue stat = consumable.Stats[0];
                     s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                 }
                 else
                 {
-                    foreach(var stat in consumable.Stats)
+                    foreach(MyConsumableItemDefinition.StatValue stat in consumable.Stats)
                     {
                         s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                     }
@@ -228,13 +228,13 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void TooltipFuel(StringBuilder s, MyPhysicalItemDefinition physDef)
         {
-            var blocks = Main.TooltipHandler.TmpBlockFuel.GetValueOrDefault(physDef.Id, null);
+            List<MyCubeBlockDefinition> blocks = Main.TooltipHandler.TmpBlockFuel.GetValueOrDefault(physDef.Id, null);
             if(blocks == null || blocks.Count == 0)
                 return;
 
             TmpNameAndSize.Clear();
 
-            foreach(var blockDef in blocks)
+            foreach(MyCubeBlockDefinition blockDef in blocks)
             {
                 string key = blockDef.DisplayNameText;
                 Sizes currentSize = (blockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
@@ -253,7 +253,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             s.Append("\nConsumed by: ");
 
             int limit = 0;
-            foreach(var kv in TmpNameAndSize)
+            foreach(KeyValuePair<string, Sizes> kv in TmpNameAndSize)
             {
                 if(++limit > ListLimit)
                 {
@@ -275,7 +275,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public void TooltipBottle(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
-            var bottleDef = physDef as MyOxygenContainerDefinition;
+            MyOxygenContainerDefinition bottleDef = physDef as MyOxygenContainerDefinition;
             if(bottleDef == null)
                 return;
 
@@ -287,11 +287,11 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(!MyDefinitionManager.Static.HandItemExistsFor(physDef.Id)) // HACK: because TryGetHandItemForPhysicalItem() logs on failure, spamming the log. 
                 return;
 
-            var toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(physDef.Id) as MyEngineerToolBaseDefinition;
+            MyEngineerToolBaseDefinition toolDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(physDef.Id) as MyEngineerToolBaseDefinition;
             if(toolDef == null)
                 return;
 
-            var drillDef = toolDef as MyHandDrillDefinition;
+            MyHandDrillDefinition drillDef = toolDef as MyHandDrillDefinition;
             if(drillDef != null)
             {
                 s.Append("\nDrill radius: ").DistanceFormat(Hardcoded.HandDrill_DefaultRadius * toolDef.DistanceMultiplier).Append(" (x").RoundedNumber(Hardcoded.Drill_MineVoelNoOreRadiusMul, 2).Append(" with secondary)");
@@ -323,7 +323,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public void TooltipWeapon(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
-            var weaponItemDef = physDef as MyWeaponItemDefinition;
+            MyWeaponItemDefinition weaponItemDef = physDef as MyWeaponItemDefinition;
             if(weaponItemDef == null)
                 return;
 
@@ -341,11 +341,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                 else
                     s.Append("\nUses magazines:");
 
-                foreach(var magId in weaponDef.AmmoMagazinesId)
+                foreach(MyDefinitionId magId in weaponDef.AmmoMagazinesId)
                 {
                     s.Append("\n  ");
 
-                    var magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(magId);
+                    MyAmmoMagazineDefinition magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(magId);
                     if(magDef == null)
                         s.Append("(NotFound=").Append(magId.ToString()).Append(")");
                     else
@@ -359,7 +359,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         public void TooltipAmmo(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
-            var magDef = physDef as MyAmmoMagazineDefinition;
+            MyAmmoMagazineDefinition magDef = physDef as MyAmmoMagazineDefinition;
             if(magDef == null)
                 return;
 
@@ -371,10 +371,10 @@ namespace Digi.BuildInfo.Features.Tooltips
             List<MyTuple<MyDefinitionBase, MyWeaponDefinition>> weapons;
             if(Main.TooltipHandler.TmpMagUsedIn.TryGetValue(magDef.Id, out weapons))
             {
-                foreach(var tuple in weapons)
+                foreach(MyTuple<MyDefinitionBase, MyWeaponDefinition> tuple in weapons)
                 {
                     {
-                        var wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
+                        MyWeaponBlockDefinition wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
                         if(wpBlockDef != null)
                         {
                             string key = wpBlockDef.DisplayNameText;
@@ -393,7 +393,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                         }
                     }
                     {
-                        var wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
+                        MyWeaponItemDefinition wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
                         if(wpPhysItem != null)
                         {
                             TmpNameAndSize[wpPhysItem.DisplayNameText] = Sizes.HandWeapon;
@@ -409,7 +409,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             s.Append("\nUsed by:");
 
             int limit = 0;
-            foreach(var kv in TmpNameAndSize)
+            foreach(KeyValuePair<string, Sizes> kv in TmpNameAndSize)
             {
                 if(++limit > ListLimit)
                 {
@@ -438,11 +438,11 @@ namespace Digi.BuildInfo.Features.Tooltips
             int usedForBlocks = 0;
             int usedForAssembly = 0;
 
-            foreach(var bp in MyDefinitionManager.Static.GetBlueprintDefinitions())
+            foreach(MyBlueprintDefinitionBase bp in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
                 bool isResult = false;
 
-                foreach(var result in bp.Results)
+                foreach(MyBlueprintDefinitionBase.Item result in bp.Results)
                 {
                     if(result.Id == physDef.Id)
                     {
@@ -452,7 +452,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     }
                 }
 
-                foreach(var req in bp.Prerequisites)
+                foreach(MyBlueprintDefinitionBase.Item req in bp.Prerequisites)
                 {
                     if(req.Id == physDef.Id)
                     {
@@ -506,12 +506,12 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         static void ComputeBps(HashSet<MyBlueprintDefinitionBase> bps, Dictionary<string, Sizes> dict, ref int usedFor, bool areResults = false)
         {
-            foreach(var bp in bps)
+            foreach(MyBlueprintDefinitionBase bp in bps)
             {
                 List<MyProductionBlockDefinition> prodList;
                 if(BuildInfoMod.Instance.TooltipHandler.TmpBpUsedIn.TryGetValue(bp.Id, out prodList))
                 {
-                    foreach(var prodDef in prodList)
+                    foreach(MyProductionBlockDefinition prodDef in prodList)
                     {
                         // HACK: bp results of gas generators or gas tanks are not used, skip
                         if(areResults && (prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition))
@@ -534,7 +534,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
 
                 // determine if this is a composite bp generated for a block, which contains the block's "Type/Subtype" as the bp's subtype.
-                var composite = bp as MyCompositeBlueprintDefinition;
+                MyCompositeBlueprintDefinition composite = bp as MyCompositeBlueprintDefinition;
                 if(composite != null && composite.Id.SubtypeName.IndexOf('/') != -1)
                 {
                     MyDefinitionId blockId;
@@ -553,7 +553,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             s.Append(label);
             int limit = 0;
 
-            foreach(var kv in list)
+            foreach(KeyValuePair<string, Sizes> kv in list)
             {
                 if(++limit > ListLimit)
                 {

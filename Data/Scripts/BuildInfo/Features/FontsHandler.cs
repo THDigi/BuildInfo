@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features
         {
             for(int i = 0; i < chars.Length; i++)
             {
-                var chr = chars[i];
+                char chr = chars[i];
                 int existingSize;
                 if(CharSize.TryGetValue(chr, out existingSize))
                 {

@@ -1,5 +1,6 @@
 ﻿using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.ModAPI;
 using VRage.Utils;
 
 namespace Digi.Input
@@ -11,7 +12,7 @@ namespace Digi.Input
         /// </summary>
         public static string GetAssignedInputName(this MyStringId controlId)
         {
-            var control = MyAPIGateway.Input.GetGameControl(controlId);
+            IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
 
             if(control.GetKeyboardControl() != MyKeys.None)
                 return control.GetKeyboardControl().ToString();

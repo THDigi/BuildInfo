@@ -54,9 +54,9 @@ namespace Digi.BuildInfo.Systems
 
         void ParseDefinitions()
         {
-            var weaponSubtypes = new Dictionary<string, List<MyObjectBuilderType>>(32);
+            Dictionary<string, List<MyObjectBuilderType>> weaponSubtypes = new Dictionary<string, List<MyObjectBuilderType>>(32);
 
-            foreach(var blockDef in Main.Caches.BlockDefs)
+            foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
             {
                 if(blockDef is MyWeaponBlockDefinition || blockDef is MyConveyorSorterDefinition)
                 {
@@ -64,7 +64,7 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
-            foreach(var physItemDef in Main.Caches.ItemDefs)
+            foreach(MyPhysicalItemDefinition physItemDef in Main.Caches.ItemDefs)
             {
                 if(physItemDef is MyWeaponItemDefinition)
                 {
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
-            var definitionsAsBytes = new List<byte[]>(32);
+            List<byte[]> definitionsAsBytes = new List<byte[]>(32);
             API.GetAllWeaponDefinitions(definitionsAsBytes);
 
             for(int idx = 0; idx < definitionsAsBytes.Count; idx++)
@@ -90,7 +90,7 @@ namespace Digi.BuildInfo.Systems
                     continue;
                 }
 
-                foreach(var mount in weaponDef.Assignments.MountPoints)
+                foreach(WcApiDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
                 {
                     string subtype = mount.SubtypeId;
 
@@ -106,9 +106,9 @@ namespace Digi.BuildInfo.Systems
                     List<MyObjectBuilderType> types;
                     if(weaponSubtypes.TryGetValue(subtype, out types))
                     {
-                        foreach(var type in types)
+                        foreach(MyObjectBuilderType type in types)
                         {
-                            var defId = new MyDefinitionId(type, subtype);
+                            MyDefinitionId defId = new MyDefinitionId(type, subtype);
                             Weapons.GetOrAdd(defId).Add(weaponDef);
                         }
                     }
@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
-            foreach(var wcDefs in Weapons.Values)
+            foreach(List<WcApiDef.WeaponDefinition> wcDefs in Weapons.Values)
             {
                 wcDefs.TrimExcess();
             }

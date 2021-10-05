@@ -11,6 +11,7 @@ using VRage;
 using VRage.Game;
 using VRage.Input;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
@@ -131,16 +132,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             //if(Main.Config.ToolbarLabels.Value == 0)
             //    return;
 
-            var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            IMyShipController shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
             if(shipController != null)
                 Main.ToolbarCustomLabels.ParseCustomData(shipController);
 
-            var labelData = (shipController == null ? null : Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(shipController.EntityId, null));
+            CustomToolbarData labelData = (shipController == null ? null : Main.ToolbarCustomLabels.BlockData.GetValueOrDefault(shipController.EntityId, null));
 
             // reset all slots first
             for(int index = Slots.Length - 1; index >= 0; index--)
             {
-                var slot = Slots[index];
+                ToolbarItem slot = Slots[index];
                 slot.BlockEntId = 0;
                 slot.Block = null;
                 slot.Name = null;
@@ -193,11 +194,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             for(int i = 0; i < items.Count; i++)
             {
-                var item = items[i];
+                MyObjectBuilder_Toolbar.Slot item = items[i];
                 if(item.Index >= TotalSlots)
                     break; // HACK: gamepad pages can go forever...
 
-                var slotData = Slots[item.Index];
+                ToolbarItem slotData = Slots[item.Index];
 
                 slotData.SlotOB = item;
 
@@ -206,7 +207,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 HighestIndexUsed = Math.Max(HighestIndexUsed, item.Index);
 
-                var terminalItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
+                MyObjectBuilder_ToolbarItemTerminal terminalItem = item.Data as MyObjectBuilder_ToolbarItemTerminal;
                 if(terminalItem != null)
                 {
                     // HACK: major assumptions here, but there's no other use case and some stuff is prohibited so just w/e
@@ -223,16 +224,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     IMyTerminalBlock block = null;
 
                     // checking if slot is valid otherwise it'll break the sequence for Writer.
-                    var groupItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalGroup;
+                    MyObjectBuilder_ToolbarItemTerminalGroup groupItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalGroup;
                     if(groupItem != null && groupItem.GroupName != null)
                     {
                         // groupItem.BlockEntityId is only the toolbar host, and we need first block in the group so we're looking for it:
-                        var toolbarBlock = MyEntities.GetEntityById(groupItem.BlockEntityId) as IMyTerminalBlock;
+                        IMyTerminalBlock toolbarBlock = MyEntities.GetEntityById(groupItem.BlockEntityId) as IMyTerminalBlock;
                         if(toolbarBlock != null)
                         {
                             TmpBlocks.Clear();
-                            var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(toolbarBlock.CubeGrid);
-                            var group = gts?.GetBlockGroupWithName(groupItem.GroupName);
+                            IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(toolbarBlock.CubeGrid);
+                            IMyBlockGroup group = gts?.GetBlockGroupWithName(groupItem.GroupName);
                             group?.GetBlocks(TmpBlocks);
 
                             slotData.Group = group;
@@ -260,7 +261,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     }
                     else
                     {
-                        var blockItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalBlock;
+                        MyObjectBuilder_ToolbarItemTerminalBlock blockItem = terminalItem as MyObjectBuilder_ToolbarItemTerminalBlock;
                         if(blockItem != null)
                         {
                             block = MyEntities.GetEntityById(blockItem.BlockEntityId) as IMyTerminalBlock;
@@ -285,10 +286,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
                 else
                 {
-                    var itemDef = item.Data as MyObjectBuilder_ToolbarItemDefinition;
+                    MyObjectBuilder_ToolbarItemDefinition itemDef = item.Data as MyObjectBuilder_ToolbarItemDefinition;
                     if(itemDef != null)
                     {
-                        var def = MyDefinitionManager.Static.GetDefinition(itemDef.DefinitionId);
+                        MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(itemDef.DefinitionId);
                         if(def != null)
                         {
                             slotData.Name = def.DisplayNameText;
@@ -334,7 +335,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(MyAPIGateway.Gui.IsCursorVisible && !Main.GUIMonitor.InToolbarConfig)
                 return;
 
-            var controlSlots = Main.Constants.CONTROL_SLOTS;
+            MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
 
             for(int i = 1; i < controlSlots.Length; ++i) // intentionally skipping SLOT0
             {
@@ -373,7 +374,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed && MyAPIGateway.Input.IsAnyNewMouseOrJoystickPressed())
             {
                 // selecting slot
-                var dpad = Main.Constants.DPAD_NAMES;
+                MyJoystickButtonsEnum[] dpad = Main.Constants.DPAD_NAMES;
 
                 for(int i = 0; i < dpad.Length; ++i)
                 {

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using SpaceEngineers.Game.ModAPI;
@@ -9,7 +10,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Timers(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_TimerBlock);
+            Type type = typeof(MyObjectBuilder_TimerBlock);
 
             processor.AddStatus(type, StartStop, "Start", "Stop");
             processor.AddStatus(type, Silent, "Silent");
@@ -20,7 +21,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool StartStop(StringBuilder sb, ToolbarItem item)
         {
-            var timer = (IMyTimerBlock)item.Block;
+            IMyTimerBlock timer = (IMyTimerBlock)item.Block;
 
             Processor.AppendSingleStats(sb, item.Block);
 
@@ -76,7 +77,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Silent(StringBuilder sb, ToolbarItem item)
         {
-            var timer = (IMyTimerBlock)item.Block;
+            IMyTimerBlock timer = (IMyTimerBlock)item.Block;
             sb.Append(timer.Silent ? "Silent" : "Loud");
             return true;
         }

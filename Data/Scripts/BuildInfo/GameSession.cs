@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
@@ -65,7 +66,7 @@ namespace Digi.ComponentLib
             if(!MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FileName, typeof(Config)))
                 return false;
 
-            using(var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(Config.FileName, typeof(Config)))
+            using(TextReader file = MyAPIGateway.Utilities.ReadFileInLocalStorage(Config.FileName, typeof(Config)))
             {
                 string line;
                 while((line = file.ReadLine()) != null)
@@ -73,14 +74,14 @@ namespace Digi.ComponentLib
                     if(!line.StartsWith(Config.KillswitchName, StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    var args = line.Split(new char[] { ConfigHandler.VALUE_SEPARATOR }, 2);
+                    string[] args = line.Split(new char[] { ConfigHandler.VALUE_SEPARATOR }, 2);
                     if(args.Length != 2)
                     {
                         Log.Error($"Config '{Config.KillswitchName}' has too many or no separators ({ConfigHandler.VALUE_SEPARATOR.ToString()}), line: '{line}'");
                         break;
                     }
 
-                    var value = args[1];
+                    string value = args[1];
                     bool on;
                     if(!bool.TryParse(value, out on))
                     {

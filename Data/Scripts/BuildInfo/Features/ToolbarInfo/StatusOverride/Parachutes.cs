@@ -1,7 +1,9 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
@@ -13,7 +15,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Parachutes(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_Parachute);
+            Type type = typeof(MyObjectBuilder_Parachute);
 
             processor.AddStatus(type, Deploy, "Open", "Open_On", "Open_Off");
             processor.AddStatus(type, AutoDeploy, "AutoDeploy"); // vanilla status is borked
@@ -24,14 +26,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Deploy(StringBuilder sb, ToolbarItem item)
         {
-            var parachute = (IMyParachute)item.Block;
+            IMyParachute parachute = (IMyParachute)item.Block;
             bool hasAmmo = true;
 
-            var inv = parachute.GetInventory();
+            MyInventory inv = parachute.GetInventory() as MyInventory;
             if(inv != null)
             {
-                var def = (MyParachuteDefinition)item.Block.SlimBlock.BlockDefinition;
-                var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
+                MyParachuteDefinition def = (MyParachuteDefinition)item.Block.SlimBlock.BlockDefinition;
+                float foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
                 hasAmmo = (foundItems >= def.MaterialDeployCost);
             }
 
@@ -54,7 +56,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool AutoDeploy(StringBuilder sb, ToolbarItem item)
         {
-            var parachute = (IMyParachute)item.Block;
+            IMyParachute parachute = (IMyParachute)item.Block;
             bool autoDeploy = parachute.GetValue<bool>("AutoDeploy"); // HACK: no interface members for this
 
             if(autoDeploy)
@@ -93,12 +95,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                 if(parachute.Status != DoorStatus.Open)
                 {
-                    var inv = parachute.GetInventory();
+                    MyInventory inv = parachute.GetInventory() as MyInventory;
                     if(inv != null)
                     {
                         // HACK: block cast needed because modAPI IMyParachute implements ingame interfaces instead of modAPI ones.
-                        var def = (MyParachuteDefinition)((IMyTerminalBlock)parachute).SlimBlock.BlockDefinition;
-                        var foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
+                        MyParachuteDefinition def = (MyParachuteDefinition)((IMyTerminalBlock)parachute).SlimBlock.BlockDefinition;
+                        float foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
                         if(foundItems < def.MaterialDeployCost)
                             allAmmo = false;
                     }

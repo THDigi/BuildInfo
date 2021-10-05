@@ -5,7 +5,6 @@ using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Definitions;
 using Sandbox.Game;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -135,14 +134,14 @@ namespace Digi.BuildInfo.Features
                     MaxVisible = MaxVisibleHudMinChar;
             }
 
-            var hudComps = MyHud.BlockInfo.Components;
+            List<MyHudBlockInfo.ComponentInfo> hudComps = MyHud.BlockInfo.Components;
             if(hudComps.Count > MaxVisible)
             {
                 CycleComponents.Clear();
 
                 for(int i = 0; i < hudComps.Count; i++)
                 {
-                    var comp = hudComps[i];
+                    MyHudBlockInfo.ComponentInfo comp = hudComps[i];
 
                     // rename it in comps list (not the def) to better visually track
                     comp.ComponentName = $"{(i + 1).ToString()}. {comp.ComponentName}";
@@ -152,7 +151,7 @@ namespace Digi.BuildInfo.Features
 
                 Refresh = true;
 
-                var slimBlock = Main.EquipmentMonitor.AimedBlock;
+                IMySlimBlock slimBlock = Main.EquipmentMonitor.AimedBlock;
                 if(slimBlock != null)
                 {
                     // auto-scroll to higher if block is built
@@ -192,7 +191,7 @@ namespace Digi.BuildInfo.Features
             {
                 Refresh = false;
 
-                var comps = MyHud.BlockInfo.Components;
+                List<MyHudBlockInfo.ComponentInfo> comps = MyHud.BlockInfo.Components;
                 comps.Clear();
 
                 // auto-scroll while welding/grinding the block

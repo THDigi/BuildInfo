@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Sandbox.ModAPI;
 
@@ -58,7 +59,7 @@ namespace Digi.ConfigLib
 
         public void ResetToDefaults()
         {
-            foreach(var setting in Settings.Values)
+            foreach(ISetting setting in Settings.Values)
             {
                 if(object.ReferenceEquals(setting, ConfigVersion))
                     continue; // don't affect config version
@@ -77,7 +78,7 @@ namespace Digi.ConfigLib
 
                 if(MyAPIGateway.Utilities.FileExistsInLocalStorage(FileName, typeof(ConfigHandler)))
                 {
-                    using(var file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FileName, typeof(ConfigHandler)))
+                    using(TextReader file = MyAPIGateway.Utilities.ReadFileInLocalStorage(FileName, typeof(ConfigHandler)))
                     {
                         string line;
                         int lineNumber = 0;
@@ -90,7 +91,7 @@ namespace Digi.ConfigLib
                             if(line.Length == 0)
                                 continue;
 
-                            var index = line.IndexOf(COMMENT_PREFIX);
+                            int index = line.IndexOf(COMMENT_PREFIX);
 
                             if(index > -1)
                                 line = (index == 0 ? "" : line.Substring(0, index));
@@ -100,13 +101,13 @@ namespace Digi.ConfigLib
 
                             if(setting != null && setting.IsMultiLine && line[0] == MULTILINE_PREFIX)
                             {
-                                var value = line.Substring(1);
+                                string value = line.Substring(1);
                                 ReadLine(setting, value, lineNumber);
                             }
                             else
                             {
                                 setting = null;
-                                var args = line.Split(separatorCache, 2);
+                                string[] args = line.Split(separatorCache, 2);
 
                                 if(args.Length != 2)
                                 {
@@ -114,13 +115,13 @@ namespace Digi.ConfigLib
                                     continue;
                                 }
 
-                                var key = args[0].Trim();
+                                string key = args[0].Trim();
 
                                 if(Settings.TryGetValue(key, out setting) || SettingsAlias.TryGetValue(key, out setting))
                                 {
                                     if(!setting.IsMultiLine) // only send the subsequent lines for multi-line settings
                                     {
-                                        var value = args[1];
+                                        string value = args[1];
                                         ReadLine(setting, value, lineNumber);
                                     }
                                 }
@@ -162,13 +163,13 @@ namespace Digi.ConfigLib
 
                 for(int i = 0; i < HeaderComments.Count; i++)
                 {
-                    sb.Append(ConfigHandler.COMMENT_PREFIX).Append(HeaderComments[i]).AppendLine();
+                    sb.Append(COMMENT_PREFIX).Append(HeaderComments[i]).AppendLine();
                 }
 
                 sb.AppendLine();
                 sb.AppendLine();
 
-                foreach(var setting in Settings.Values)
+                foreach(ISetting setting in Settings.Values)
                 {
                     if(object.ReferenceEquals(setting, ConfigVersion))
                         continue; // config version is added last
@@ -182,7 +183,7 @@ namespace Digi.ConfigLib
 
                 for(int i = 0; i < FooterComments.Count; i++)
                 {
-                    sb.Append(ConfigHandler.COMMENT_PREFIX).Append(FooterComments[i]).AppendLine();
+                    sb.Append(COMMENT_PREFIX).Append(FooterComments[i]).AppendLine();
                 }
 
                 sb.AppendLine();
@@ -190,7 +191,7 @@ namespace Digi.ConfigLib
 
                 ConfigVersion.SaveSetting(sb);
 
-                using(var file = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(ConfigHandler)))
+                using(TextWriter file = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(ConfigHandler)))
                 {
                     file.Write(sb.ToString());
                 }

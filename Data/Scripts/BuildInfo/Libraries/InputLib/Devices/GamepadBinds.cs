@@ -36,7 +36,7 @@ namespace Digi.Input.Devices
 
         public GamepadBindings()
         {
-            var contextCount = Enum.GetValues(typeof(ControlContext)).Length;
+            int contextCount = Enum.GetValues(typeof(ControlContext)).Length;
             contexts = new ContextData[contextCount];
 
             // HACK needs manual updating
@@ -50,7 +50,7 @@ namespace Digi.Input.Devices
 
         public IControl GetControl(ControlContext contextId, MyStringId control)
         {
-            var contextIndex = (int)contextId;
+            int contextIndex = (int)contextId;
 
             if(contextIndex < 0 || contextIndex >= contexts.Length)
                 throw new Exception($"Invalid contextId/index: {contextIndex}");
@@ -155,7 +155,7 @@ namespace Digi.Input.Devices
         #region Private binding adding methods
         private void AddContext(ControlContext contextId, ControlContext parentContextId = ControlContext.NONE)
         {
-            var contextData = new ContextData();
+            ContextData contextData = new ContextData();
             contexts[(int)contextId] = contextData;
 
             if(parentContextId != ControlContext.NONE)

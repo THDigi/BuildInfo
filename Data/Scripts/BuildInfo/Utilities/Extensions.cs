@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static ulong GetWorkshopID(this MyModContext modContext)
         {
-            foreach(var mod in MyAPIGateway.Session.Mods)
+            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
             {
                 if(mod.Name == modContext.ModId)
                     return mod.PublishedFileId;
@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static MyObjectBuilder_Checkpoint.ModItem GetModItem(this MyModContext modContext)
         {
-            foreach(var mod in MyAPIGateway.Session.Mods)
+            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
             {
                 if(mod.Name == modContext.ModId)
                     return mod;
@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Utilities
 
         public static void AddSetReader<T>(this HashSet<T> set, HashSetReader<T> read)
         {
-            foreach(var item in read)
+            foreach(T item in read)
             {
                 set.Add(item);
             }

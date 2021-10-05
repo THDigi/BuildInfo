@@ -1,4 +1,5 @@
-﻿using Digi.BuildInfo.Utilities;
+﻿using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 
@@ -13,11 +14,11 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
-            foreach(var name in dummies.Keys)
+            foreach(string name in dummies.Keys)
             {
                 // HACK: behavior from MyShipConnector.LoadDummies()
                 if(name.ContainsIgnoreCase("connector"))

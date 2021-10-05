@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features
         {
             // HACK hardcoded: from Data/Game/SessionComponents.sbc
 
-            var def = Main.EquipmentMonitor.BlockDef;
+            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
             if(def == null)
                 return 20f;
 

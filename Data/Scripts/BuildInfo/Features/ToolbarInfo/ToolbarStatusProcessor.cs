@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(Group == null)
             {
-                var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(Grid);
+                IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(Grid);
                 Group = gts?.GetBlockGroupWithName(GroupName);
             }
 
@@ -91,7 +91,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             // doesn't need IsFunctional, slot is grayed out in that case
 
-            var toggleable = block as IMyFunctionalBlock;
+            IMyFunctionalBlock toggleable = block as IMyFunctionalBlock;
             if(toggleable != null && !toggleable.Enabled)
             {
                 sb.Append("OFF\n");
@@ -177,7 +177,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!StatusOverrides.TryGetValue(type, out actions))
                 StatusOverrides[type] = actions = new Dictionary<string, StatusDel>();
 
-            foreach(var actionId in actionIds)
+            foreach(string actionId in actionIds)
             {
                 actions.Add(actionId, func);
             }
@@ -198,7 +198,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!GroupStatusOverrides.TryGetValue(type, out actions))
                 GroupStatusOverrides[type] = actions = new Dictionary<string, GroupStatusDel>();
 
-            foreach(var actionId in actionIds)
+            foreach(string actionId in actionIds)
             {
                 actions.Add(actionId, func);
             }
@@ -236,7 +236,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!refreshTriggered && tick % 2 != 0)
                 return;
 
-            var shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            IMyShipController shipController = MyAPIGateway.Session.ControlledObject as IMyShipController;
             if(shipController == null)
                 return;
 
@@ -273,11 +273,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(index >= ToolbarMonitor.TotalSlots)
                     continue;
 
-                var item = Main.ToolbarMonitor.Slots[index];
+                ToolbarItem item = Main.ToolbarMonitor.Slots[index];
                 if(item.ActionWrapper == null)
                     continue; // not valid, skip
 
-                var sb = item.StatusSB.Clear();
+                StringBuilder sb = item.StatusSB.Clear();
 
                 bool overrideStatus = false;
 
@@ -335,7 +335,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             int lines = 0;
                             for(int i = 0; i < StatusSB.Length; ++i)
                             {
-                                var chr = StatusSB[i];
+                                char chr = StatusSB[i];
                                 if(chr == '\n')
                                     lines++;
                             }

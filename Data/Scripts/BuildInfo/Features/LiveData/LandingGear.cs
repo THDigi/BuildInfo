@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             bool success = false;
 
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
             block.Model.GetDummies(dummies);
@@ -24,15 +24,15 @@ namespace Digi.BuildInfo.Features.LiveData
             //                     where s.Key.ToLower().Contains("gear_lock")
             //                     select s.Value.Matrix).ToArray<Matrix>();
 
-            foreach(var dummy in dummies.Values)
+            foreach(IMyModelDummy dummy in dummies.Values)
             {
                 if(!dummy.Name.ContainsIgnoreCase("gear_lock"))
                     continue;
 
                 // HACK: copied from MyLandingGear.GetBoxFromMatrix()
-                var mn = MatrixD.Normalize(dummy.Matrix);
-                var orientation = Quaternion.CreateFromRotationMatrix(mn);
-                var halfExtents = Vector3.Abs(dummy.Matrix.Scale) / 2f;
+                MatrixD mn = MatrixD.Normalize(dummy.Matrix);
+                Quaternion orientation = Quaternion.CreateFromRotationMatrix(mn);
+                Vector3 halfExtents = Vector3.Abs(dummy.Matrix.Scale) / 2f;
 
                 // ... and from MyLandingGear.FindBody()
                 halfExtents *= new Vector3(2f, 1f, 2f);

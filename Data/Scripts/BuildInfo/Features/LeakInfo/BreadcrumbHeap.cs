@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             }
             else
             {
-                var pointer = ListHead;
+                Crumb pointer = ListHead;
 
                 while(pointer.NextListElem != null && pointer.NextListElem.Cost < item.Cost)
                 {
@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         //public Crumb GetFirst()
         //{
-        //    var result = ListHead;
+        //    Crumb result = ListHead;
         //    ListHead = ListHead.NextListElem;
         //    return result;
         //}

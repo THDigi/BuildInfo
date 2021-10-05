@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Timers;
 using Digi.BuildInfo.Utilities;
@@ -8,6 +9,7 @@ using ProtoBuf;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.Entity;
@@ -110,7 +112,7 @@ namespace Digi.BuildInfo
 
             Log.Info($"{NAME}: Starting timer and waiting...");
 
-            var timer = new Timer(3000);
+            Timer timer = new Timer(3000);
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
         }
@@ -123,10 +125,10 @@ namespace Digi.BuildInfo
             {
                 string xml = null;
 
-                using(var reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(readFile, typeof(VanillaDataCompare)))
+                using(TextReader reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(readFile, typeof(VanillaDataCompare)))
                 {
                     xml = reader.ReadToEnd();
-                    var info = MyAPIGateway.Utilities.SerializeFromXML<VanillaDetailInfo>(xml);
+                    VanillaDetailInfo info = MyAPIGateway.Utilities.SerializeFromXML<VanillaDetailInfo>(xml);
 
                     if(info == null)
                     {
@@ -142,7 +144,7 @@ namespace Digi.BuildInfo
 
                     vanillaDetailInfo = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
 
-                    foreach(var block in info.Blocks)
+                    foreach(InfoEntry block in info.Blocks)
                     {
                         vanillaDetailInfo.Add(MyDefinitionId.Parse(block.Id), block.DetailInfo);
                     }
@@ -150,7 +152,7 @@ namespace Digi.BuildInfo
 
                 Log.Info($"{NAME}: Backing up {readFile} as {backupFile}.");
 
-                using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(backupFile, typeof(VanillaDataCompare)))
+                using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(backupFile, typeof(VanillaDataCompare)))
                 {
                     writer.Write(xml);
                 }
@@ -166,14 +168,14 @@ namespace Digi.BuildInfo
 
         void SpawnVanillaBlocks()
         {
-            var definitions = MyDefinitionManager.Static.GetAllDefinitions();
-            var spawned = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
+            DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> definitions = MyDefinitionManager.Static.GetAllDefinitions();
+            HashSet<MyObjectBuilderType> spawned = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
 
             Log.Info($"{NAME}: Spawning blocks...");
 
-            var matrix = MatrixD.Identity;
+            MatrixD matrix = MatrixD.Identity;
 
-            foreach(var def in definitions)
+            foreach(MyDefinitionBase def in definitions)
             {
                 try
                 {
@@ -183,7 +185,7 @@ namespace Digi.BuildInfo
                     if(!def.Context.IsBaseGame) // only vanilla definitions
                         continue;
 
-                    var blockDef = def as MyCubeBlockDefinition;
+                    MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                     if(blockDef == null)
                         continue;
 
@@ -204,8 +206,8 @@ namespace Digi.BuildInfo
 
         private void GridSpawned(MyEntity ent)
         {
-            var grid = (IMyCubeGrid)ent;
-            var block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
+            IMyCubeGrid grid = (IMyCubeGrid)ent;
+            IMyCubeBlock block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
 
             if(block == null)
             {
@@ -215,7 +217,7 @@ namespace Digi.BuildInfo
                 return;
             }
 
-            var terminalBlock = block as IMyTerminalBlock;
+            IMyTerminalBlock terminalBlock = block as IMyTerminalBlock;
 
             if(terminalBlock == null)
             {
@@ -236,7 +238,7 @@ namespace Digi.BuildInfo
             {
                 grids = Caches.GetGrids(grid, GridLinkTypeEnum.Physical);
 
-                foreach(var g in grids)
+                foreach(IMyCubeGrid g in grids)
                 {
                     g.Close();
                 }
@@ -251,7 +253,7 @@ namespace Digi.BuildInfo
         {
             MyAPIGateway.Utilities.InvokeOnGameThread(CompareDetailInfo);
 
-            var timer = (Timer)sender;
+            Timer timer = (Timer)sender;
             timer.Stop();
         }
 
@@ -260,7 +262,7 @@ namespace Digi.BuildInfo
             try
             {
                 bool newDetected = false;
-                var data = new VanillaDetailInfo
+                VanillaDetailInfo data = new VanillaDetailInfo
                 {
                     GameVersion = MyAPIGateway.Session.Version.ToString(),
                     Blocks = new List<InfoEntry>()
@@ -271,10 +273,10 @@ namespace Digi.BuildInfo
                     Log.Info($"{NAME}: Iterating blocks...");
                     Log.IncreaseIndent();
 
-                    foreach(var block in spawnedBlocks)
+                    foreach(IMyTerminalBlock block in spawnedBlocks)
                     {
-                        var detailInfo = block.DetailedInfo;
-                        var hasInfo = !string.IsNullOrWhiteSpace(detailInfo);
+                        string detailInfo = block.DetailedInfo;
+                        bool hasInfo = !string.IsNullOrWhiteSpace(detailInfo);
 
                         if(hasInfo)
                         {
@@ -315,9 +317,9 @@ namespace Digi.BuildInfo
 
                 Log.Info($"{NAME}: Writing 'Storage/{writeFile}'...");
 
-                var xml = MyAPIGateway.Utilities.SerializeToXML(data);
+                string xml = MyAPIGateway.Utilities.SerializeToXML(data);
 
-                using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(writeFile, typeof(VanillaDataCompare)))
+                using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(writeFile, typeof(VanillaDataCompare)))
                 {
                     writer.Write(xml);
                     writer.Flush();
@@ -345,9 +347,9 @@ namespace Digi.BuildInfo
 
         private static string ToLiteral(string input)
         {
-            var literal = new StringBuilder(input.Length);
+            StringBuilder literal = new StringBuilder(input.Length);
 
-            foreach(var c in input)
+            foreach(char c in input)
             {
                 switch(c)
                 {

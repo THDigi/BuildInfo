@@ -55,7 +55,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void CreateToggleAll(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, ToggleTitle,
+            ItemToggle item = new ItemToggle(category, ToggleTitle,
                 getter: () => Setting.Value == allValue,
                 setter: (v) =>
                 {
@@ -72,19 +72,19 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void CreateFlagToggles(MenuCategoryBase category)
         {
-            var names = Enum.GetNames(typeof(T));
-            var values = (int[])Enum.GetValues(typeof(T));
+            string[] names = Enum.GetNames(typeof(T));
+            int[] values = (int[])Enum.GetValues(typeof(T));
 
             for(int i = 0; i < names.Length; ++i)
             {
-                var name = names[i];
+                string name = names[i];
 
                 if(name == "All" || name == "None")
                     continue;
 
                 int value = values[i]; // captured by lambda, needs to be in this scope to not change
 
-                var item = new ItemToggle(category, $"    {name}",
+                ItemToggle item = new ItemToggle(category, $"    {name}",
                     getter: () => Setting.IsSet(value),
                     setter: (v) =>
                     {

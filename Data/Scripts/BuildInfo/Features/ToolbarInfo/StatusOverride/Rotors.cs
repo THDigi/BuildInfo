@@ -39,14 +39,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Attached(StringBuilder sb, ToolbarItem item)
         {
-            var stator = (IMyMotorBase)item.Block;
+            IMyMotorBase stator = (IMyMotorBase)item.Block;
             sb.Append(stator.IsAttached ? "Atached" : "Detached");
             return true;
         }
 
         bool Reverse(StringBuilder sb, ToolbarItem item)
         {
-            var stator = (IMyMotorStator)item.Block;
+            IMyMotorStator stator = (IMyMotorStator)item.Block;
             float angleRad = stator.Angle;
 
             if(!Processor.AppendSingleStats(sb, item.Block) && !Processor.AnimFlip && stator.TargetVelocityRPM == 0)

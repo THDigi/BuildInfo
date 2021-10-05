@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                 send = false;
 
-                var alias = (args.Count > 1 ? args.Get(1) : "");
+                string alias = (args.Count > 1 ? args.Get(1) : "");
                 Command cmd;
 
                 if(AliasToCommand.TryGetValue(alias, out cmd))
@@ -99,7 +99,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             Commands.Add(cmd);
 
-            foreach(var alias in cmd.Aliases)
+            foreach(string alias in cmd.Aliases)
             {
                 if(AliasToCommand.ContainsKey(alias))
                 {

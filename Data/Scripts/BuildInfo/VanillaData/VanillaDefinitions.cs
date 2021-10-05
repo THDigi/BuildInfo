@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -94,7 +95,7 @@ namespace Digi.BuildInfo.VanillaData
                 }
             }
 
-            using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(VanillaDefinitions)))
+            using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(VanillaDefinitions)))
             {
                 writer.Write(sb.ToString());
             }

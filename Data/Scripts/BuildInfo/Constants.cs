@@ -6,7 +6,9 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage;
+using VRage.Collections;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -115,13 +117,13 @@ namespace Digi.BuildInfo
         public override void UpdateAfterSim(int tick)
         {
             // HACK: because it can be null in MP: https://support.keenswh.com/spaceengineers/pc/topic/01-190-101modapi-myapigateway-session-player-is-null-for-first-3-ticks-for-mp-clients
-            var localPlayer = MyAPIGateway.Session?.Player;
+            IMyPlayer localPlayer = MyAPIGateway.Session?.Player;
             if(localPlayer != null)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
 
                 // HACK: only way to get currency short name is by getting it from a player or faction's balance string...
-                var balanceText = localPlayer.GetBalanceShortString();
+                string balanceText = localPlayer.GetBalanceShortString();
                 if(balanceText != null)
                 {
                     string[] parts = balanceText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -143,11 +145,11 @@ namespace Digi.BuildInfo
             resourceSinkGroups = 0;
 
             // from MyResourceDistributorComponent.InitializeMappings()
-            var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
-            var orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
+            ListReader<MyResourceDistributionGroupDefinition> groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
+            IOrderedEnumerable<MyResourceDistributionGroupDefinition> orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
 
             // compact priorities into an ordered number.
-            foreach(var group in orderedGroupsEnumerable)
+            foreach(MyResourceDistributionGroupDefinition group in orderedGroupsEnumerable)
             {
                 int priority = 0;
 

@@ -133,7 +133,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append(SegmentPrefix).Append("Chat Commands").Append(SegmentSuffix).NewLine();
             sb.NewLine();
 
-            foreach(var handler in Main.ChatCommandHandler.Commands)
+            foreach(Command handler in Main.ChatCommandHandler.Commands)
             {
                 int preLen = sb.Length;
                 handler.PrintHelp(sb);

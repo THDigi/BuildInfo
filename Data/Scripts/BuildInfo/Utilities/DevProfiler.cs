@@ -39,7 +39,7 @@ namespace Digi
         {
             long end = Stopwatch.GetTimestamp();
             long diff = end - Start;
-            var timespan = TimeSpan.FromTicks((long)(diff * TickFrequency));
+            TimeSpan timespan = TimeSpan.FromTicks((long)(diff * TickFrequency));
 
             if(DataOut != null)
             {
@@ -47,7 +47,7 @@ namespace Digi
             }
             else
             {
-                var text = $"PROFILE: {Name}: {timespan.TotalMilliseconds.ToString(NumberFormat)} ms";
+                string text = $"PROFILE: {Name}: {timespan.TotalMilliseconds.ToString(NumberFormat)} ms";
 
                 Log.Info(text);
 
@@ -126,12 +126,12 @@ namespace Digi
             else
             {
                 double avg = Times.Average(i => i.TimeMs);
-                var minFrame = GetMinFrame();
-                var maxFrame = GetMaxFrame();
+                FrameInfo minFrame = GetMinFrame();
+                FrameInfo maxFrame = GetMaxFrame();
                 double total = Times.Sum(i => i.TimeMs);
 
                 string ago;
-                var timeAgo = (DateTime.UtcNow - LastProfiledAt);
+                TimeSpan timeAgo = (DateTime.UtcNow - LastProfiledAt);
                 if(timeAgo.TotalMilliseconds < 1000)
                     ago = timeAgo.TotalMilliseconds.ToString("0.0") + "ms ago";
                 else if(timeAgo.TotalSeconds < 60)
@@ -164,7 +164,7 @@ namespace Digi
             FrameInfo minFrame = default(FrameInfo);
             double minTime = double.MaxValue;
 
-            foreach(var frame in Times)
+            foreach(FrameInfo frame in Times)
             {
                 if(frame.TimeMs < minTime)
                 {
@@ -181,7 +181,7 @@ namespace Digi
             FrameInfo maxFrame = default(FrameInfo);
             double maxTime = double.MinValue;
 
-            foreach(var frame in Times)
+            foreach(FrameInfo frame in Times)
             {
                 if(frame.TimeMs > maxTime)
                 {

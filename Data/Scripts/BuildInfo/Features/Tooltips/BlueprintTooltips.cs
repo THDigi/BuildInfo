@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void Setup(bool generate)
         {
-            foreach(var bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
+            foreach(MyBlueprintDefinitionBase bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
                 HandleTooltip(bpBaseDef, generate);
             }
@@ -189,11 +189,11 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void TooltipPhysItemResult(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
-            var physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
+            MyPhysicalItemDefinition physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
             if(physDef == null)
                 return;
 
-            var it = Main.ItemTooltips;
+            ItemTooltips it = Main.ItemTooltips;
             it.TooltipBottle(s, physDef, true);
             it.TooltipTool(s, physDef, true);
             it.TooltipWeapon(s, physDef, true);

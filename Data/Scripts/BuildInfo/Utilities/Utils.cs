@@ -57,8 +57,8 @@ namespace Digi.BuildInfo.Utilities
         public static bool CheckSafezoneAction(IMySlimBlock block, object actionId, long sourceEntityId = 0)
         {
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
-            var grid = (MyCubeGrid)block.CubeGrid;
-            var box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector, block.Max * grid.GridSize + grid.GridSizeHalfVector).TransformFast(grid.PositionComp.WorldMatrixRef);
+            MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
+            BoundingBoxD box = new BoundingBoxD(block.Min * grid.GridSize - grid.GridSizeHalfVector, block.Max * grid.GridSize + grid.GridSizeHalfVector).TransformFast(grid.PositionComp.WorldMatrixRef);
             return MySessionComponentSafeZones.IsActionAllowed(box, CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
         }
 
@@ -112,11 +112,11 @@ namespace Digi.BuildInfo.Utilities
         {
             if(block != null)
             {
-                var internalBlock = (MyCubeBlock)block;
+                MyCubeBlock internalBlock = (MyCubeBlock)block;
 
                 // Because the game has 2 ownership systems and I've no idea which one is actually used in what case, and it doesn't seem it knows either since it uses both in initialization.
                 // HACK MyEntityOwnershipComponent is not whitelisted
-                //var ownershipComp = internalBlock.Components.Get<MyEntityOwnershipComponent>();
+                //MyEntityOwnershipComponent ownershipComp = internalBlock.Components.Get<MyEntityOwnershipComponent>();
                 //
                 //if(ownershipComp != null)
                 //    return ownershipComp.ShareMode;
@@ -142,17 +142,17 @@ namespace Digi.BuildInfo.Utilities
             if(def.IsAirTight.HasValue)
                 return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
 
-            var cubes = BuildInfoMod.Instance.Caches.Vector3ISet;
+            HashSet<Vector3I> cubes = BuildInfoMod.Instance.Caches.Vector3ISet;
             cubes.Clear();
 
-            foreach(var kv in def.IsCubePressurized)
+            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
             {
                 cubes.Add(kv.Key);
             }
 
-            foreach(var kv in def.IsCubePressurized)
+            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
             {
-                foreach(var kv2 in kv.Value)
+                foreach(KeyValuePair<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark> kv2 in kv.Value)
                 {
                     if(cubes.Contains(kv.Key + kv2.Key))
                         continue;
@@ -180,7 +180,7 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static bool GetInventoryVolumeFromComponent(MyDefinitionBase def, out float volume)
         {
-            var invComp = GetInventoryFromComponent(def);
+            MyInventoryComponentDefinition invComp = GetInventoryFromComponent(def);
 
             if(invComp != null)
             {
@@ -205,11 +205,11 @@ namespace Digi.BuildInfo.Utilities
             {
                 MyComponentDefinitionBase compDefBase;
 
-                foreach(var compPointer in containerDef.DefaultComponents)
+                foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
                 {
                     if(compPointer.BuilderType == typeof(MyObjectBuilder_Inventory) && MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
                     {
-                        var invComp = compDefBase as MyInventoryComponentDefinition;
+                        MyInventoryComponentDefinition invComp = compDefBase as MyInventoryComponentDefinition;
 
                         if(invComp != null && invComp.Id.SubtypeId == def.Id.SubtypeId)
                         {
@@ -267,7 +267,7 @@ namespace Digi.BuildInfo.Utilities
             if(lineThickness < 0)
                 lineThickness = 0.01f;
 
-            var vertices = BuildInfoMod.Instance.Caches.Vertices;
+            List<Vector3D> vertices = BuildInfoMod.Instance.Caches.Vertices;
             vertices.Clear();
             GetSphereVertices(ref worldMatrix, radius, wireDivideRatio, vertices);
             Vector3D center = worldMatrix.Translation;
@@ -355,12 +355,12 @@ namespace Digi.BuildInfo.Utilities
             sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
             sphereMatrix *= worldMatrix;
 
-            var vertices = BuildInfoMod.Instance.Caches.Vertices;
+            List<Vector3D> vertices = BuildInfoMod.Instance.Caches.Vertices;
             vertices.Clear();
             GetSphereVertices(ref sphereMatrix, radius, wireDivideRatio, vertices);
 
             int halfVerts = vertices.Count / 2;
-            var addVec = worldMatrix.Down * height;
+            Vector3D addVec = worldMatrix.Down * height;
 
             for(int i = 0; i < vertices.Count; i += 4)
             {
@@ -445,7 +445,7 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static void GetSphereVertices(ref MatrixD worldMatrix, float radius, int steps, List<Vector3D> vertices)
         {
-            var generatedSphereData = BuildInfoMod.Instance.Caches.GeneratedSphereData;
+            Dictionary<int, List<Vector3D>> generatedSphereData = BuildInfoMod.Instance.Caches.GeneratedSphereData;
             List<Vector3D> cachedVerts;
             if(!generatedSphereData.TryGetValue(steps, out cachedVerts))
             {
@@ -454,7 +454,7 @@ namespace Digi.BuildInfo.Utilities
                 GenerateSphere(ref worldMatrix, radius, steps, cachedVerts);
             }
 
-            foreach(var vert in cachedVerts)
+            foreach(Vector3D vert in cachedVerts)
             {
                 vertices.Add(Vector3D.Transform(vert * radius, worldMatrix));
             }
@@ -469,19 +469,19 @@ namespace Digi.BuildInfo.Utilities
 
             for(double ang1 = 0f; ang1 <= ang1max; ang1 += angleStep)
             {
-                var ang1sin = Math.Sin(ang1);
-                var ang1cos = Math.Cos(ang1);
+                double ang1sin = Math.Sin(ang1);
+                double ang1cos = Math.Cos(ang1);
 
                 for(double ang2 = 0f; ang2 <= ang2max; ang2 += angleStep)
                 {
-                    var ang2sin = Math.Sin(ang2);
-                    var ang2cos = Math.Cos(ang2);
+                    double ang2sin = Math.Sin(ang2);
+                    double ang2cos = Math.Cos(ang2);
 
-                    var nextAng1sin = Math.Sin(ang1 + angleStep);
-                    var nextAng1cos = Math.Cos(ang1 + angleStep);
+                    double nextAng1sin = Math.Sin(ang1 + angleStep);
+                    double nextAng1cos = Math.Cos(ang1 + angleStep);
 
-                    var nextAng2sin = Math.Sin(ang2 + angleStep);
-                    var nextAng2cos = Math.Cos(ang2 + angleStep);
+                    double nextAng2sin = Math.Sin(ang2 + angleStep);
+                    double nextAng2cos = Math.Cos(ang2 + angleStep);
 
                     vec.X = ang2sin * ang1sin;
                     vec.Y = ang2cos * ang1sin;
@@ -509,7 +509,7 @@ namespace Digi.BuildInfo.Utilities
             int totalBeforeAdd = vertices.Count;
             for(int i = 0; i < totalBeforeAdd; i++)
             {
-                var v = vertices[i];
+                Vector3D v = vertices[i];
                 vertices.Add(new Vector3D(v.X, v.Y, 0.0 - v.Z));
             }
         }

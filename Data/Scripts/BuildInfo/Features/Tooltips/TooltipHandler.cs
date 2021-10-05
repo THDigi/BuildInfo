@@ -83,13 +83,13 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             bool survival = MyAPIGateway.Session.SurvivalMode;
 
-            foreach(var blockDef in Main.Caches.BlockDefs)
+            foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
             {
                 if(!blockDef.Public || (!survival && blockDef.AvailableInSurvival))
                     continue;
 
                 {
-                    var weaponBlockDef = blockDef as MyWeaponBlockDefinition;
+                    MyWeaponBlockDefinition weaponBlockDef = blockDef as MyWeaponBlockDefinition;
                     if(weaponBlockDef != null)
                     {
                         // TODO: weaponcore?
@@ -100,7 +100,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                         if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
                         {
-                            foreach(var magId in wpDef.AmmoMagazinesId)
+                            foreach(MyDefinitionId magId in wpDef.AmmoMagazinesId)
                             {
                                 TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponBlockDef, wpDef));
                             }
@@ -108,20 +108,20 @@ namespace Digi.BuildInfo.Features.Tooltips
                     }
                 }
                 {
-                    var prodDef = blockDef as MyProductionBlockDefinition;
+                    MyProductionBlockDefinition prodDef = blockDef as MyProductionBlockDefinition;
                     if(prodDef != null)
                     {
                         bool isGasGenOrTank = blockDef is MyGasTankDefinition || blockDef is MyOxygenGeneratorDefinition;
 
-                        foreach(var bpClass in prodDef.BlueprintClasses)
+                        foreach(MyBlueprintClassDefinition bpClass in prodDef.BlueprintClasses)
                         {
-                            foreach(var bp in bpClass)
+                            foreach(MyBlueprintDefinitionBase bp in bpClass)
                             {
                                 TmpBpUsedIn.GetOrAdd(bp.Id).Add(prodDef);
 
                                 if(!isGasGenOrTank) // HACK: bp results of gas generators or gas tanks are not used, skip
                                 {
-                                    foreach(var result in bp.Results)
+                                    foreach(MyBlueprintDefinitionBase.Item result in bp.Results)
                                     {
                                         TmpHasBP.Add(result.Id);
                                     }
@@ -131,17 +131,17 @@ namespace Digi.BuildInfo.Features.Tooltips
                     }
                 }
                 {
-                    var reactorDef = blockDef as MyReactorDefinition; // only one that has FuelInfos it seems
+                    MyReactorDefinition reactorDef = blockDef as MyReactorDefinition; // only one that has FuelInfos it seems
                     if(reactorDef != null)
                     {
-                        foreach(var fuelInfo in reactorDef.FuelInfos)
+                        foreach(MyReactorDefinition.FuelInfo fuelInfo in reactorDef.FuelInfos)
                         {
                             TmpBlockFuel.GetOrAdd(fuelInfo.FuelId).Add(reactorDef);
                         }
                     }
                 }
                 {
-                    var parachuteDef = blockDef as MyParachuteDefinition;
+                    MyParachuteDefinition parachuteDef = blockDef as MyParachuteDefinition;
                     if(parachuteDef != null)
                     {
                         TmpBlockFuel.GetOrAdd(parachuteDef.MaterialDefinitionId).Add(parachuteDef);
@@ -149,9 +149,9 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
-            foreach(var physItemDef in Main.Caches.ItemDefs)
+            foreach(MyPhysicalItemDefinition physItemDef in Main.Caches.ItemDefs)
             {
-                var weaponItemDef = physItemDef as MyWeaponItemDefinition;
+                MyWeaponItemDefinition weaponItemDef = physItemDef as MyWeaponItemDefinition;
                 if(weaponItemDef != null)
                 {
                     // TODO: weaponcore?
@@ -162,7 +162,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                     if(wpDef.AmmoMagazinesId != null && wpDef.AmmoMagazinesId.Length > 0)
                     {
-                        foreach(var magId in wpDef.AmmoMagazinesId)
+                        foreach(MyDefinitionId magId in wpDef.AmmoMagazinesId)
                         {
                             TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponItemDef, wpDef));
                         }
@@ -184,7 +184,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(generate)
                 MyLog.Default.WriteLine("BuildInfo mod: Starting to generate tooltips...");
 
-            var timer = (generate ? Stopwatch.StartNew() : null);
+            Stopwatch timer = (generate ? Stopwatch.StartNew() : null);
 
             if(generate)
             {
@@ -214,7 +214,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 s.Append("\nMod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen);
 
-                var modItem = def.Context.GetModItem();
+                MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.GetModItem();
                 if(modItem.Name != null && modItem.PublishedFileId > 0)
                 {
                     s.Append("\nModId: ").Append(modItem.PublishedServiceName).Append(':').Append(modItem.PublishedFileId);

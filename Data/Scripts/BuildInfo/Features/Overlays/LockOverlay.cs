@@ -1,4 +1,5 @@
 ﻿using System;
+using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
@@ -34,7 +35,7 @@ namespace Digi.BuildInfo.Features.Overlays
             if(paused || inMenu)
                 return;
 
-            var eq = Main.EquipmentMonitor;
+            EquipmentMonitor eq = Main.EquipmentMonitor;
             if((LockedOnBlock != null || eq.IsAnyWelder || eq.IsAnyGrinder) && Main.Config.LockOverlayBind.Value.IsJustPressed())
             {
                 LockOverlayToAimedBlock();
@@ -50,8 +51,8 @@ namespace Digi.BuildInfo.Features.Overlays
             if(Main.Overlays.DrawOverlay > 0)
                 return;
 
-            var def = Main.EquipmentMonitor.BlockDef;
-            var aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
             UpdateLockedOnBlock(ref aimedBlock, ref def);
         }
 
@@ -79,7 +80,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(LockedOnBlock.FatBlock != null)
             {
-                var blockVolume = LockedOnBlock.FatBlock.WorldVolume;
+                BoundingSphereD blockVolume = LockedOnBlock.FatBlock.WorldVolume;
                 maxRangeSq = blockVolume.Radius;
                 blockPos = blockVolume.Center;
             }
@@ -163,7 +164,7 @@ namespace Digi.BuildInfo.Features.Overlays
         {
             try
             {
-                var block = ent as IMyCubeBlock;
+                IMyCubeBlock block = ent as IMyCubeBlock;
                 if(block != null)
                     block.OnMarkForClose -= LockedOnBlock_MarkedForClose;
 

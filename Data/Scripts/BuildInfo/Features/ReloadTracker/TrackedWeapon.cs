@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             Block = gunBlock;
             Gun = gunBlock as IMyGunObject<MyGunBase>;
-            var blockDef = gunBlock.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+            MyWeaponBlockDefinition blockDef = gunBlock.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
             if(Gun == null || blockDef == null)
                 return false;
 

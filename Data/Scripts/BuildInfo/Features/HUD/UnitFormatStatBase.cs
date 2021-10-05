@@ -1,6 +1,7 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using VRage;
 using VRage.ModAPI;
 using VRage.Utils;
 
@@ -54,7 +55,7 @@ namespace Digi.BuildInfo.Features.HUD
 
                     _maxValue = value;
 
-                    foreach(var tuple in Constants.UnitMulipliers)
+                    foreach(MyTuple<float, string> tuple in Constants.UnitMulipliers)
                     {
                         if(value > tuple.Item1)
                         {
@@ -114,7 +115,7 @@ namespace Digi.BuildInfo.Features.HUD
                     return rawRounded.ToString() + UnitSymbol;
             }
 
-            var formats = Constants.DigitFormats;
+            string[] formats = Constants.DigitFormats;
             round = Math.Min(round, formats.Length - 1);
             return val.ToString(formats[round]) + UnitPrefix + UnitSymbol;
         }
@@ -136,7 +137,7 @@ namespace Digi.BuildInfo.Features.HUD
                 int tick = BuildInfoMod.Instance.Tick;
                 if(UpdateTicks <= 0 || tick % UpdateTicks == 0)
                 {
-                    var setting = BuildInfoMod.Instance.Config.HudStatOverrides.Value;
+                    bool setting = BuildInfoMod.Instance.Config.HudStatOverrides.Value;
                     if(!PrevSetting.HasValue || PrevSetting.Value != setting)
                     {
                         PrevSetting = setting;

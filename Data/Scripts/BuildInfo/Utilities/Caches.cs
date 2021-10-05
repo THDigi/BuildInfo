@@ -50,10 +50,10 @@ namespace Digi.BuildInfo.Utilities
             ItemDefs.Clear();
             BlockDefs.Clear();
 
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 {
-                    var physDef = def as MyPhysicalItemDefinition;
+                    MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
                     if(physDef != null)
                     {
                         ItemDefs.Add(physDef);
@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Utilities
                     }
                 }
                 {
-                    var blockDef = def as MyCubeBlockDefinition;
+                    MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                     if(blockDef != null)
                     {
                         BlockDefs.Add(blockDef);
@@ -134,14 +134,14 @@ namespace Digi.BuildInfo.Utilities
 
         public static HashSet<MyObjectBuilderType> GetObTypeSet()
         {
-            var set = BuildInfoMod.Instance.Caches.OBTypeSet;
+            HashSet<MyObjectBuilderType> set = BuildInfoMod.Instance.Caches.OBTypeSet;
             set.Clear();
             return set;
         }
 
         public static HashSet<MyDefinitionId> GetDefIdSet()
         {
-            var set = BuildInfoMod.Instance.Caches.DefIdSet;
+            HashSet<MyDefinitionId> set = BuildInfoMod.Instance.Caches.DefIdSet;
             set.Clear();
             return set;
         }
@@ -153,7 +153,7 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static List<IMyCubeGrid> GetGrids(IMyCubeGrid mainGrid, GridLinkTypeEnum type)
         {
-            var grids = BuildInfoMod.Instance.Caches.Grids;
+            List<IMyCubeGrid> grids = BuildInfoMod.Instance.Caches.Grids;
             if(grids.Count > 0)
                 Log.Error("WARNING: Potential stacking of Caches.GetGrids()");
 

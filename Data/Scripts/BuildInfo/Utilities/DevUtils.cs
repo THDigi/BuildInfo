@@ -22,7 +22,7 @@ namespace Digi
             if(modifier != MyKeys.None && !MyAPIGateway.Input.IsKeyPress(modifier))
                 return val;
 
-            var scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+            int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
 
             if(scroll != 0)
             {

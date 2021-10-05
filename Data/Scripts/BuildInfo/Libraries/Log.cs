@@ -212,7 +212,7 @@ namespace Digi
 
             if(task.Exceptions != null && task.Exceptions.Length > 0)
             {
-                foreach(var e in task.Exceptions)
+                foreach(Exception e in task.Exceptions)
                 {
                     Error($"Error in {taskName} thread!\n{e}");
                 }
@@ -320,7 +320,7 @@ namespace Digi
 
                 Info($"--- pre-init messages ---");
 
-                foreach(var msg in preInitMessages)
+                foreach(string msg in preInitMessages)
                 {
                     Info(msg);
                 }
@@ -332,7 +332,7 @@ namespace Digi
 
             private void InitMessage()
             {
-                var worldsettings = MyAPIGateway.Session.SessionSettings;
+                MyObjectBuilder_SessionSettings worldsettings = MyAPIGateway.Session.SessionSettings;
 
                 sb.Clear();
                 sb.Append("Initialized; ").Append(DateTime.Now.ToString("yyyy MMMM dd (dddd) HH:mm:ss")).Append("; GameVersion=").Append(MyAPIGateway.Session.Version.ToString());
@@ -521,7 +521,7 @@ namespace Digi
             private ulong GetWorkshopID(string modId)
             {
                 // NOTE: workaround for MyModContext not having the actual workshop ID number.
-                foreach(var mod in MyAPIGateway.Session.Mods)
+                foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
                 {
                     if(mod.Name == modId)
                         return mod.PublishedFileId;

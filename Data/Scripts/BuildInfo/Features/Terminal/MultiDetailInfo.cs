@@ -153,7 +153,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 Main.ConfigMenuHandler.RefreshAll();
             }
 
-            var selectedNum = Main.TerminalInfo.SelectedInTerminal.Count;
+            int selectedNum = Main.TerminalInfo.SelectedInTerminal.Count;
             if(selectedNum <= 1
             || !Main.TextAPI.IsEnabled
             || !MyAPIGateway.Gui.IsCursorVisible
@@ -164,7 +164,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(Text == null)
             {
-                var sharedSB = new StringBuilder(512);
+                StringBuilder sharedSB = new StringBuilder(512);
 
                 Text = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
                 Text.Visible = false;
@@ -176,10 +176,10 @@ namespace Digi.BuildInfo.Features.Terminal
                 MoveIcon = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Vector2D.Zero, Color.White, HideHud: false, Shadowing: false, Blend: BlendType);
                 MoveIcon.Visible = false;
 
-                var hintSB = new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo.");
+                StringBuilder hintSB = new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo.");
                 Hint = new HudAPIv2.HUDMessage(hintSB, new Vector2D(0, -0.98), Scale: 0.6f, HideHud: false, Shadowing: true, Blend: BlendType);
                 Hint.Visible = false;
-                var hintTextSize = Hint.GetTextLength();
+                Vector2D hintTextSize = Hint.GetTextLength();
                 Hint.Offset = new Vector2D(hintTextSize.X / -2, 0);
 
                 RefreshPositions();
@@ -240,7 +240,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 const int Rounding = 4;
 
-                var newPos = mouseOnScreen + DragOffset.Value;
+                Vector2D newPos = mouseOnScreen + DragOffset.Value;
                 newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
                 newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
@@ -328,24 +328,24 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
                 else
                 {
-                    var sink = block.Components.Get<MyResourceSinkComponent>();
+                    MyResourceSinkComponent sink = block.Components.Get<MyResourceSinkComponent>();
                     if(sink != null)
                     {
-                        foreach(var resId in sink.AcceptedResources)
+                        foreach(MyDefinitionId resId in sink.AcceptedResources)
                         {
                             MyStringHash key = resId.SubtypeId;
                             IncrementResInfo(ResInput, key, sink.CurrentInputByType(resId), sink.MaxRequiredInputByType(resId));
                         }
                     }
 
-                    var source = block.Components.Get<MyResourceSourceComponent>();
+                    MyResourceSourceComponent source = block.Components.Get<MyResourceSourceComponent>();
                     if(source != null)
                     {
                         bool isHydrogenEngine = (block.BlockDefinition.TypeId == typeof(MyObjectBuilder_HydrogenEngine));
                         IMyBatteryBlock battery = (!isHydrogenEngine ? block as IMyBatteryBlock : null);
                         IMyGasTank tank = (battery == null ? block as IMyGasTank : null);
 
-                        foreach(var resId in source.ResourceTypes)
+                        foreach(MyDefinitionId resId in source.ResourceTypes)
                         {
                             MyStringHash key = resId.SubtypeId;
 
@@ -382,7 +382,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 {
                     for(int invIdx = 0; invIdx < block.InventoryCount; invIdx++)
                     {
-                        var inv = block.GetInventory(invIdx);
+                        IMyInventory inv = block.GetInventory(invIdx);
 
                         inventoryCurrentM3 += (float)inv.CurrentVolume;
                         inventoryMaxM3 += (float)inv.MaxVolume;
@@ -419,7 +419,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Append(" ---\n");
 
-            foreach(var kv in ResInput)
+            foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResInput)
             {
                 MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;
@@ -441,7 +441,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             // print leftover outputs that have no inputs
-            foreach(var kv in ResOutput)
+            foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResOutput)
             {
                 MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;
@@ -456,7 +456,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             // print leftover storage
-            foreach(var kv in ResStorage)
+            foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResStorage)
             {
                 MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;

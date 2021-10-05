@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
@@ -45,7 +46,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         return;
                     }
 
-                    var leakInfo = BuildInfoMod.Instance?.LeakInfo;
+                    LeakInfo leakInfo = BuildInfoMod.Instance?.LeakInfo;
                     if(leakInfo == null) // wait until leak info component is assigned
                         return;
 
@@ -59,7 +60,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         MyAPIGateway.TerminalControls.AddControl<IMyAirVent>(MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, IMyAirVent>(string.Empty));
 
                         // on/off switch
-                        var c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlOnOffSwitch, IMyAirVent>("FindAirLeak");
+                        IMyTerminalControlOnOffSwitch c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlOnOffSwitch, IMyAirVent>("FindAirLeak");
                         c.Title = MyStringId.GetOrCompute("Air leak scan");
                         //c.Tooltip = MyStringId.GetOrCompute("Finds the path towards an air leak and displays it as blue lines, for a maximum of " + LeakInfoComponent.MAX_DRAW_SECONDS + " seconds.\nTo find the leak it first requires the air vent to be powered, functional, enabled and the room not sealed.\nIt only searches once and doesn't update in realtime. If you alter the ship or open/close doors you need to start it again.\nThe lines are only shown to the player that requests the air leak scan.\nDepending on ship size the computation might take a while, you can cancel at any time however.\nAll air vents control the same system, therefore you can start it from one and stop it from another.\n\nAdded by the Build Info mod.");
                         c.Tooltip = MyStringId.GetOrCompute("A client-side pathfinding towards an air leak.\nAdded by Build Info mod.");
@@ -78,7 +79,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 {
                     dummyIsSet = true;
 
-                    var dummies = BuildInfoMod.Instance.Caches.Dummies;
+                    Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
                     dummies.Clear();
 
                     IMyModelDummy dummy;
@@ -95,7 +96,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     skip = 0;
 
                     // if room is sealed and the leak info is running then clear it
-                    var leakInfo = BuildInfoMod.Instance.LeakInfo;
+                    LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
                     if(leakInfo.UsedFromVent == block && leakInfo.Status != InfoStatus.None && block.CanPressurize)
                     {
                         leakInfo.ClearStatus();
@@ -127,12 +128,12 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 if(BuildInfoMod.Instance.IsDedicatedServer)
                     return;
 
-                var leakInfo = BuildInfoMod.Instance.LeakInfo;
+                LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
                 if(!leakInfo.Enabled)
                     return;
 
-                var vent = (IMyAirVent)block;
-                var logic = block.GameLogic.GetAs<AirVent>();
+                IMyAirVent vent = (IMyAirVent)block;
+                AirVent logic = block.GameLogic.GetAs<AirVent>();
                 if(logic == null)
                     return;
 
@@ -148,7 +149,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                         return;
                     }
 
-                    var startPosition = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(logic.dummyLocalPosition, block.WorldMatrix));
+                    Vector3I startPosition = block.CubeGrid.WorldToGridInteger(Vector3D.Transform(logic.dummyLocalPosition, block.WorldMatrix));
 
                     leakInfo.StartThread(vent, startPosition);
                 }
@@ -161,7 +162,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         private static bool Terminal_Getter(IMyTerminalBlock block)
         {
-            var leakInfo = BuildInfoMod.Instance.LeakInfo;
+            LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
             return (leakInfo.Status != InfoStatus.None);
         }
 
@@ -169,8 +170,8 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             try
             {
-                var vent = (IMyAirVent)block;
-                var logic = block.GameLogic.GetAs<AirVent>();
+                IMyAirVent vent = (IMyAirVent)block;
+                AirVent logic = block.GameLogic.GetAs<AirVent>();
 
                 if(logic == null)
                     return;
@@ -178,7 +179,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 str.Append('\n');
                 str.Append("Air leak scan status:\n");
 
-                var leakInfo = BuildInfoMod.Instance.LeakInfo;
+                LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
                 if(leakInfo == null)
                 {
                     str.Append("Not initialized.");

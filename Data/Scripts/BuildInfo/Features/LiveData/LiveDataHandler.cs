@@ -115,23 +115,23 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void BlockMonitor_BlockAdded(IMySlimBlock slimBlock)
         {
-            var block = slimBlock?.FatBlock;
+            IMyCubeBlock block = slimBlock?.FatBlock;
             if(block == null)
                 return; // ignore deformable armor
 
             // separate process as it needs different kind of caching, and must happen before.
             CheckConveyorSupport(block);
 
-            var defId = slimBlock.BlockDefinition.Id;
+            MyDefinitionId defId = slimBlock.BlockDefinition.Id;
             if(BlockData.ContainsKey(defId))
                 return; // already got data for this block type+subtype, ignore
 
             bool success = false;
-            var internalBlock = (MyCubeBlock)block;
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
             if(internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
             {
                 // instance special type if available, otherwise the base one.
-                var data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
+                BData_Base data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
                 success = data.CheckAndAdd(block);
             }
 
@@ -152,14 +152,14 @@ namespace Digi.BuildInfo.Features.LiveData
             if(ConveyorSupportTypes.ContainsKey(block.BlockDefinition.TypeId))
                 return;
 
-            var interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
+            Type[] interfaces = MyAPIGateway.Reflection.GetInterfaces(block.GetType());
             bool supportsConveyors = false;
 
             if(ConveyorEndpointInterface == null || ConveyorSegmentInterface == null)
             {
                 for(int i = (interfaces.Length - 1); i >= 0; i--)
                 {
-                    var iface = interfaces[i];
+                    Type iface = interfaces[i];
                     if(iface.Name == "IMyConveyorEndpointBlock")
                     {
                         ConveyorEndpointInterface = iface;
@@ -178,7 +178,7 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 for(int i = (interfaces.Length - 1); i >= 0; i--)
                 {
-                    var iface = interfaces[i];
+                    Type iface = interfaces[i];
                     if(iface == ConveyorEndpointInterface || iface == ConveyorSegmentInterface)
                     {
                         supportsConveyors = true;

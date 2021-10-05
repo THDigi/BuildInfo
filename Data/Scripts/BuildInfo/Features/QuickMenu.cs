@@ -1,5 +1,6 @@
 ﻿using Digi.ComponentLib;
 using Digi.Input;
+using Digi.Input.Devices;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -157,7 +158,7 @@ namespace Digi.BuildInfo.Features
         private void UpdateHotkeys()
         {
             bool toolEquipped = (Main.EquipmentMonitor.IsBuildTool || Main.EquipmentMonitor.IsCubeBuilder);
-            var context = InputLib.GetCurrentInputContext();
+            ControlContext context = InputLib.GetCurrentInputContext();
 
             if(toolEquipped && Main.Config.ToggleTransparencyBind.Value.IsPressed(context))
             {

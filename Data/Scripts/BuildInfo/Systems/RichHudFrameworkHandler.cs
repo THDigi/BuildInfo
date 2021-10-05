@@ -1,13 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using Digi.BuildInfo.Utilities;
 using RichHudFramework.Client;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using Sandbox.ModAPI;
-using VRage.Game;
-using VRage.ObjectBuilders;
-using WeaponCore.Api;
 
 namespace Digi.BuildInfo.Systems
 {

@@ -1,6 +1,7 @@
 ﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features
 {
@@ -28,7 +29,7 @@ namespace Digi.BuildInfo.Features
             if(tick % Constants.TICKS_PER_SECOND != 0)
                 return;
 
-            var character = MyAPIGateway.Session?.Player?.Character;
+            IMyCharacter character = MyAPIGateway.Session?.Player?.Character;
             if(character != null) // wait until first spawn
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);

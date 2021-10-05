@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -28,11 +29,11 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             bool success = false;
 
-            var internalBlock = (MyCubeBlock)block;
-            var dummyDef = def as MyTargetDummyBlockDefinition;
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
+            MyTargetDummyBlockDefinition dummyDef = def as MyTargetDummyBlockDefinition;
             if(dummyDef != null)
             {
-                foreach(var kv in internalBlock.Subparts)
+                foreach(KeyValuePair<string, MyEntitySubpart> kv in internalBlock.Subparts)
                 {
                     MyTargetDummyBlockDefinition.MyDummySubpartDescription subpartDesc;
                     if(dummyDef.SubpartDefinitions.TryGetValue(kv.Key, out subpartDesc))
