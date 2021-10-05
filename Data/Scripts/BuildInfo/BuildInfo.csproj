@@ -184,8 +184,8 @@
     <Compile Include="Features\HUD\ShipMassStat.cs" />
     <Compile Include="Features\HUD\UnitFormatStatBase.cs" />
     <Compile Include="Features\LiveData\TargetDummy.cs" />
-    <Compile Include="Features\TerminalInfo\MultiDetailInfo.cs" />
-    <Compile Include="Features\TerminalInfo\DetailInfoRefresh.cs" />
+    <Compile Include="Features\Terminal\MultiDetailInfo.cs" />
+    <Compile Include="Features\Terminal\DetailInfoRefresh.cs" />
     <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
     <Compile Include="Features\Tooltips\ItemTooltips.cs" />
@@ -218,7 +218,7 @@
     <Compile Include="Features\ShipToolInventoryBar.cs" />
     <Compile Include="Features\InterModAPI.cs" />
     <Compile Include="Features\GridMassCompute.cs" />
-    <Compile Include="Features\TerminalInfo\TerminalInfo.cs" />
+    <Compile Include="Features\Terminal\TerminalInfo.cs" />
     <Compile Include="Features\ConfigMenu\IItem.cs" />
     <Compile Include="Features\ConfigMenu\ItemBase.cs" />
     <Compile Include="Features\ConfigMenu\ItemBoxMove.cs" />
