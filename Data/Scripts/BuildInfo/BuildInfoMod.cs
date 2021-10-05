@@ -55,7 +55,7 @@ namespace Digi.BuildInfo
         public ChatCommandHandler ChatCommandHandler;
         public ReloadTracking ReloadTracking;
         public TerminalInfo TerminalInfo;
-        public DetailInfoRefresh DetailInfoRefresh;
+        public DetailInfoButtons DetailInfoButtons;
         public MultiDetailInfo MultiDetailInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
@@ -125,7 +125,7 @@ namespace Digi.BuildInfo
             ChatCommandHandler = new ChatCommandHandler(this);
             ReloadTracking = new ReloadTracking(this);
             TerminalInfo = new TerminalInfo(this);
-            DetailInfoRefresh = new DetailInfoRefresh(this);
+            DetailInfoButtons = new DetailInfoButtons(this);
             MultiDetailInfo = new MultiDetailInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);

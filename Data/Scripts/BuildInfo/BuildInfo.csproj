@@ -185,7 +185,7 @@
     <Compile Include="Features\HUD\UnitFormatStatBase.cs" />
     <Compile Include="Features\LiveData\TargetDummy.cs" />
     <Compile Include="Features\Terminal\MultiDetailInfo.cs" />
-    <Compile Include="Features\Terminal\DetailInfoRefresh.cs" />
+    <Compile Include="Features\Terminal\DetailInfoButtons.cs" />
     <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
     <Compile Include="Features\Tooltips\ItemTooltips.cs" />

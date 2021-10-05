@@ -24,8 +24,8 @@ namespace Digi.BuildInfo.Features.Terminal
         readonly BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         bool RefreshNext;
-        HudAPIv2.HUDMessage Text;
-        HudAPIv2.HUDMessage TextShadow;
+        public HudAPIv2.HUDMessage Text;
+        public HudAPIv2.HUDMessage TextShadow;
 
         HudAPIv2.BillBoardHUDMessage MoveIcon;
         Vector2D? DragOffset;
