@@ -54,6 +54,8 @@ namespace Digi.BuildInfo.Features.Terminal
             MyAPIGateway.TerminalControls.CustomControlGetter += TerminalCustomControlGetter;
 
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
+            Main.Config.TerminalButtonsScale.ValueAssigned += TerminalButtonsScale_ValueAssigned;
+            Main.Config.TerminalButtonsPosition.ValueAssigned += TerminalButtonsPosition_ValueAssigned;
             Main.GameConfig.OptionsMenuClosed += RefreshPositions;
         }
 
@@ -65,7 +67,19 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
 
             Main.Config.Handler.SettingsLoaded -= RefreshPositions;
+            Main.Config.TerminalButtonsScale.ValueAssigned -= TerminalButtonsScale_ValueAssigned;
+            Main.Config.TerminalButtonsPosition.ValueAssigned -= TerminalButtonsPosition_ValueAssigned;
             Main.GameConfig.OptionsMenuClosed -= RefreshPositions;
+        }
+
+        void TerminalButtonsScale_ValueAssigned(float oldValue, float newValue, ConfigLib.SettingBase<float> setting)
+        {
+            RefreshPositions();
+        }
+
+        void TerminalButtonsPosition_ValueAssigned(Vector2D oldValue, Vector2D newValue, ConfigLib.SettingBase<Vector2D> setting)
+        {
+            RefreshPositions();
         }
 
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
@@ -185,7 +199,7 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             if(MyAPIGateway.Input.IsNewRightMousePressed())
             {
-                DragOffset = Main.Config.TerminalRefreshInfoPosition.Value - MousePos;
+                DragOffset = Main.Config.TerminalButtonsPosition.Value - MousePos;
                 DragShowTooltipTicks = 60;
             }
         }
@@ -195,8 +209,8 @@ namespace Digi.BuildInfo.Features.Terminal
             if(Buttons == null)
                 return;
 
-            Vector2D pos = Main.Config.TerminalRefreshInfoPosition.Value;
-            float scale = Main.Config.TerminalRefreshInfoScale.Value;
+            Vector2D pos = Main.Config.TerminalButtonsPosition.Value;
+            float scale = Main.Config.TerminalButtonsScale.Value;
             float buttonScale = scale * ButtonScaleOffset;
 
             for(int i = 0; i < Buttons.Length; i++)
@@ -254,7 +268,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 // using this instead of MousePos because this works after mouse is at the edge of screen
                 Vector2D deltaMouse = new Vector2D(MyAPIGateway.Input.GetMouseX() / screenSize.X, -MyAPIGateway.Input.GetMouseY() / screenSize.Y);
 
-                Vector2D newPos = Main.Config.TerminalRefreshInfoPosition.Value;
+                Vector2D newPos = Main.Config.TerminalButtonsPosition.Value;
 
                 if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
                     newPos += deltaMouse / 4;
@@ -266,7 +280,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
-                Main.Config.TerminalRefreshInfoPosition.Value = newPos;
+                Main.Config.TerminalButtonsPosition.Value = newPos;
                 RefreshPositions();
 
                 if(DragShowTooltipTicks > 0 && --DragShowTooltipTicks > 0)

@@ -196,10 +196,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
-            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalRefreshInfoPosition),
-                () => ShowNotify("'Refresh Detail Info' button can always be moved in terminal by holding RMB on it.", 7000));
-            SimplePositionReset(Category_Terminal, Main.Config.TerminalRefreshInfoPosition);
-            SimpleSlider(Category_Terminal, null, Main.Config.TerminalRefreshInfoScale);
+            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
+                () => ShowNotify("Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", 7000));
+            SimplePositionReset(Category_Terminal, Main.Config.TerminalButtonsPosition);
+            SimpleSlider(Category_Terminal, null, Main.Config.TerminalButtonsScale);
 
             new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
                 () => ShowNotify("Multi-select info is always movable with RMB on the vertical line.", 7000));
