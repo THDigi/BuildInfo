@@ -4,6 +4,8 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
+using RichHudFramework.UI;
+using RichHudFramework.UI.Client;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -71,16 +73,18 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public ConfigMenuHandler(BuildInfoMod main) : base(main)
         {
+            Main.TextAPI.Detected += TextAPI_Detected;
+            Main.RichHud.Initialized += RichHud_Initialized;
         }
 
         public override void RegisterComponent()
         {
-            Main.TextAPI.Detected += TextAPI_Detected;
         }
 
         public override void UnregisterComponent()
         {
             Main.TextAPI.Detected -= TextAPI_Detected;
+            Main.RichHud.Initialized -= RichHud_Initialized;
             Main.Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
         }
 
@@ -97,8 +101,25 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void TextAPI_Detected()
+        void RichHud_Initialized()
         {
+            Log.Info("RichHUD detected, creating menu.");
+
+            RichHudTerminal.Root.Enabled = true;
+
+            RichHudTerminal.Root.Add(new TextPage()
+            {
+                Name = "Settings?",
+                SubHeaderText = "",
+                HeaderText = BuildInfoMod.MOD_NAME + " Settings",
+                Text = new RichText("Open chat and press F2 to open TextAPI's mod config menu, you should see on the left a \"Mod Settings\" button."),
+            });
+        }
+
+        void TextAPI_Detected()
+        {
+            Log.Info($"TextAPI detected, creating menu.");
+
             Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", () =>

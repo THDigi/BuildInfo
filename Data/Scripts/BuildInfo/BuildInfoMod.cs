@@ -38,6 +38,7 @@ namespace Digi.BuildInfo
         public WeaponCoreAPIHandler WeaponCoreAPIHandler;
         public WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
         public DefenseShieldsDetector DefenseShieldsDetector;
+        public RichHudFrameworkHandler RichHud;
 
         // Features
         public Config Config;
@@ -105,6 +106,7 @@ namespace Digi.BuildInfo
             WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
             WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
             DefenseShieldsDetector = new DefenseShieldsDetector(this);
+            RichHud = new RichHudFrameworkHandler(this);
 
             // Features
             Config = new Config(this);
