@@ -17,7 +17,6 @@ namespace Digi.BuildInfo.Systems
 
         public RichHudFrameworkHandler(BuildInfoMod main) : base(main)
         {
-            Log.Info("RichHud handler registered");
             RichHudClient.Init(Log.ModName, InitCallback, ResetCallback);
         }
 
@@ -37,8 +36,6 @@ namespace Digi.BuildInfo.Systems
         {
             try
             {
-                Log.Info("RichHud init");
-
                 IsRunning = true;
                 Initialized?.Invoke();
             }
@@ -50,7 +47,6 @@ namespace Digi.BuildInfo.Systems
 
         void ResetCallback()
         {
-            Log.Info("RichHud reset");
         }
     }
 }

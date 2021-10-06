@@ -92,8 +92,8 @@ namespace Whiplash.WeaponFramework
             // clients will automatically ask and this mod will receive, but server does not so I must ask it myself.
             if(tick >= 100)
             {
-                if(BuildInfoMod.IsDevMod)
-                    Log.Info($"{nameof(WhipWeaponFrameworkAPI)}: asking server for weapon details...");
+                //if(BuildInfoMod.IsDevMod)
+                //    Log.Info($"{nameof(WhipWeaponFrameworkAPI)}: asking server for weapon details...");
 
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
                 SendClientConfigSyncRequest();
@@ -167,8 +167,8 @@ namespace Whiplash.WeaponFramework
 
             Weapons[foundDef.Id] = config;
 
-            if(BuildInfoMod.IsDevMod)
-                Log.Info($"{nameof(WhipWeaponFrameworkAPI)}: Registered {(isFixed ? "fixed" : "turret")} weapon - blockDefId={foundDef.Id.ToString()}");
+            //if(BuildInfoMod.IsDevMod)
+            //    Log.Info($"{nameof(WhipWeaponFrameworkAPI)}: Registered {(isFixed ? "fixed" : "turret")} weapon - blockDefId={foundDef.Id.ToString()}");
         }
     }
 }

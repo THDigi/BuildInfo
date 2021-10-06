@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Systems
             {
                 string name = obj.GetType().Name;
 
-                if(BuildInfoMod.IsDevMod && name != "MyGuiScreenLoading" && (Screens.Count == 0 || Screens[Screens.Count - 1] != name))
+                if(LogEvents && name != "MyGuiScreenLoading" && (Screens.Count == 0 || Screens[Screens.Count - 1] != name))
                 {
                     Log.Error($"{GetType().Name}: Other screen ({name}) got removed before the last one! list={string.Join("/", Screens)}");
                 }
