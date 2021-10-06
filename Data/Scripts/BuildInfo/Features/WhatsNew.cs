@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             int modVersion = Main.Config.ModVersion.Value;
-            if(modVersion > 0 && modVersion < Constants.MOD_VERSION)
+            if(modVersion < Constants.MOD_VERSION)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }

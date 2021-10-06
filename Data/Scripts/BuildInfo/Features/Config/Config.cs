@@ -595,7 +595,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
             #endregion
 
-            ModVersion = new IntegerSetting(Handler, "Mod Version", 0, 0, int.MaxValue,
+            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.MOD_VERSION, 0, int.MaxValue,
                 "Latest version loaded for notifying you of notable changes.",
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;
