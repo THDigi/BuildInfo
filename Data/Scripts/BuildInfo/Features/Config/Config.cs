@@ -395,7 +395,7 @@ namespace Digi.BuildInfo.Features.Config
             TerminalDetailInfoHeader = new BoolSetting(Handler, "Terminal: Detail Info Header", true,
                 "Adds a \"--- (BuildInfo | /bi) ---\" before this mod's detail info additions to more easily identify them.");
 
-            TerminalButtonsPosition = new Vector2DSetting(Handler, "Terminal: Detail Info Buttons Position", new Vector2D(0.73, -0.988), -Vector2D.One, Vector2D.One,
+            TerminalButtonsPosition = new Vector2DSetting(Handler, "Terminal: Detail Info Buttons Position", new Vector2D(0.731, -0.988), -Vector2D.One, Vector2D.One,
                 "UI position of the Refresh and Copy buttons in the terminal.",
                 "Can also be moved in the menu by holding right mouse button on it.");
             TerminalButtonsPosition.AddCompatibilityNames("Terminal: Refresh Info Button Position");

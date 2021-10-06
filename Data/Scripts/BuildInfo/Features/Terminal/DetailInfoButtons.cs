@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.Terminal
         const float TooltipOffset = 0.05f;
 
         const float ButtonScaleOffset = 1.2f;
-        const float ButtonBgEdge = 0.02f;
+        const float ButtonBgEdge = 0.025f;
 
         IMyTerminalBlock ViewedInTerminal;
 
@@ -145,7 +145,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 if(Main.TerminalInfo.SelectedInTerminal.Count > 1)
                 {
-                    text = Main.MultiDetailInfo.TextShadow.Message.ToString();
+                    text = Main.MultiDetailInfo?.TextShadow?.Message?.ToString();
                 }
                 else
                 {
@@ -217,7 +217,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 Button button = Buttons[i];
                 button.Refresh(pos, buttonScale);
-                pos -= new Vector2D(button.Background.Width + (ButtonBgEdge * buttonScale), 0);
+                pos -= new Vector2D(button.Background.Width + ((ButtonBgEdge * buttonScale) / 4), 0);
             }
 
             Tooltip?.Refresh(scale * TooltipScaleOffset);
@@ -270,7 +270,9 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 Vector2D newPos = Main.Config.TerminalButtonsPosition.Value;
 
-                if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                bool isAnyShift = MyAPIGateway.Input.IsAnyShiftKeyPressed();
+
+                if(isAnyShift)
                     newPos += deltaMouse / 4;
                 else
                     newPos += deltaMouse;
@@ -281,11 +283,26 @@ namespace Digi.BuildInfo.Features.Terminal
                 newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
                 Main.Config.TerminalButtonsPosition.Value = newPos;
+
+                int deltaScroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(deltaScroll != 0)
+                {
+                    float scale = Main.Config.TerminalButtonsScale.Value;
+                    float amount = (isAnyShift ? 0.01f : 0.05f);
+
+                    if(deltaScroll > 0)
+                        scale += amount;
+                    else if(deltaScroll < 0)
+                        scale -= amount;
+
+                    Main.Config.TerminalButtonsScale.Value = (float)Math.Round(MathHelper.Clamp(scale, Main.Config.TerminalButtonsScale.Min, Main.Config.TerminalButtonsScale.Max), 2);
+                }
+
                 RefreshPositions();
 
                 if(DragShowTooltipTicks > 0 && --DragShowTooltipTicks > 0)
                 {
-                    Tooltip?.Hover("Hold Shift to slow down.");
+                    Tooltip?.Hover("Hold Shift to slow down.\nScroll to rescale (and Shift rescale slower).");
                     Tooltip?.Draw(newPos);
                 }
             }
@@ -331,7 +348,6 @@ namespace Digi.BuildInfo.Features.Terminal
 
             public void Refresh(Vector2D pos, float scale)
             {
-                Background.Scale = scale;
                 Background.Origin = pos;
                 Text.Scale = scale;
                 Text.Origin = pos;
@@ -407,8 +423,8 @@ namespace Digi.BuildInfo.Features.Terminal
 
             public void Refresh(float scale)
             {
-                Background.Scale = scale;
                 Text.Scale = scale;
+                TextSize = Text.GetTextLength();
             }
 
             public void Hover(string tooltip)
@@ -443,10 +459,8 @@ namespace Digi.BuildInfo.Features.Terminal
                 float tooltipOffset = (TooltipOffset * scale);
                 float tooltipEdge = (TooltipBgEdge * scale);
 
-                // top-left pivot
-                Vector2D offset = new Vector2D(tooltipOffset, -tooltipOffset);
-
                 Vector2D pos = mouseOnScreen;
+                Vector2D offset = new Vector2D(tooltipOffset, -tooltipOffset); // top-left pivot
 
                 if((mouseOnScreen.X + absTextSize.X + tooltipOffset) > 1) // box collides with right side of screen
                 {
