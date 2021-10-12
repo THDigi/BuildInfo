@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.Terminal
         private readonly HashSet<long> longSetTemp = new HashSet<long>();
         private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
 
-        readonly PowerSourcesMonitor PS;
+        readonly ResourceStatsCollector ResourceStats;
 
         private MyResourceSinkComponent _sinkCache = null;
         private MyResourceSourceComponent _sourceCache = null;
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public TerminalInfo(BuildInfoMod main) : base(main)
         {
-            PS = new PowerSourcesMonitor(Main);
+            ResourceStats = new ResourceStatsCollector(Main);
         }
 
         public override void RegisterComponent()
@@ -282,7 +282,7 @@ namespace Digi.BuildInfo.Features.Terminal
             viewedInTerminal = null;
             currentFormatCall = null;
 
-            PS.Reset();
+            ResourceStats.Reset();
 
             ClearCaches(); // block changed so caches are no longer relevant
 
@@ -875,7 +875,7 @@ namespace Digi.BuildInfo.Features.Terminal
             float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
 #endif
 
-            PS.Update(block.CubeGrid);
+            ResourceStats.Update(block.CubeGrid);
 
             // TODO: find an alternate way of getting power required as it's very buggy (usually negative or 0) if there's only solar panels (prob wind turbines too)
             //if(PS.SolarPanelsWorking > 0 || PS.WindTurbinesWorking > 0)
@@ -901,230 +901,58 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             info.Append('\n');
 
-            info.Append("  Total required: ").PowerFormat(required).Append('\n');
-            info.Append("  Total available: ").PowerFormat(available).Append('\n');
+            //info.Append("  Total required: ").PowerFormat(required).Append('\n');
+            //info.Append("  Total available: ").PowerFormat(available).Append('\n');
+
+            //info.Append("  Input: ").PowerFormat(PS.PowerInput).Append(" / ").PowerFormat(PS.PowerRequired).Append('\n');
+            //info.Append("  Output: ").PowerFormat(PS.PowerOutput).Append(" / ").PowerFormat(PS.PowerMaxOutput).Append('\n');
+
+            info.Append("  Total required: ").PowerFormat(ResourceStats.PowerRequired).Append('\n');
+            info.Append("  Total available: ").PowerFormat(ResourceStats.PowerMaxOutput).Append('\n');
+
             info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
 
             if(lite)
                 return;
 
-            info.Append("  Reactors: ");
-            if(PS.Reactors == 0)
+            info.Append("  Consumers: ");
+            if(ResourceStats.Consumers == 0)
                 info.Append("None\n");
             else
-                info.Append(PS.ReactorsWorking).Append(" of ").Append(PS.Reactors).Append(" working\n");
+                info.Append(ResourceStats.ConsumersWorking).Append(" of ").Append(ResourceStats.Consumers).Append(" working\n");
+
+            info.Append("  Reactors: ");
+            if(ResourceStats.Reactors == 0)
+                info.Append("None\n");
+            else
+                info.Append(ResourceStats.ReactorsWorking).Append(" of ").Append(ResourceStats.Reactors).Append(" working\n");
 
             info.Append("  Engines: ");
-            if(PS.Engines == 0)
+            if(ResourceStats.Engines == 0)
                 info.Append("None\n");
             else
-                info.Append(PS.EnginesWorking).Append(" of ").Append(PS.Engines).Append(" working\n");
+                info.Append(ResourceStats.EnginesWorking).Append(" of ").Append(ResourceStats.Engines).Append(" working\n");
 
             info.Append("  Batteries: ");
-            if(PS.Batteries == 0)
+            if(ResourceStats.Batteries == 0)
                 info.Append("None\n");
             else
-                info.Append(PS.BatteriesWorking).Append(" of ").Append(PS.Batteries).Append(" working\n");
+                info.Append(ResourceStats.BatteriesWorking).Append(" of ").Append(ResourceStats.Batteries).Append(" working\n");
 
             info.Append("  Solar Panels: ");
-            if(PS.SolarPanels == 0)
+            if(ResourceStats.SolarPanels == 0)
                 info.Append("None\n");
             else
-                info.Append(PS.SolarPanelsWorking).Append(" of ").Append(PS.SolarPanels).Append(" working\n");
+                info.Append(ResourceStats.SolarPanelsWorking).Append(" of ").Append(ResourceStats.SolarPanels).Append(" working\n");
 
             info.Append("  Wind Turbines: ");
-            if(PS.WindTurbines == 0)
+            if(ResourceStats.WindTurbines == 0)
                 info.Append("None\n");
             else
-                info.Append(PS.WindTurbinesWorking).Append(" of ").Append(PS.WindTurbines).Append(" working\n");
+                info.Append(ResourceStats.WindTurbinesWorking).Append(" of ").Append(ResourceStats.WindTurbines).Append(" working\n");
 
-            if(PS.Other > 0)
-                info.Append("  Other power sources: ").Append(PS.OthersWorking).Append(" of ").Append(PS.Other).Append(" working\n");
-        }
-
-        class PowerSourcesMonitor
-        {
-            public int Reactors { get; private set; }
-            public int ReactorsWorking { get; private set; }
-
-            public int Engines { get; private set; }
-            public int EnginesWorking { get; private set; }
-
-            public int Batteries { get; private set; }
-            public int BatteriesWorking { get; private set; }
-
-            public int SolarPanels { get; private set; }
-            public int SolarPanelsWorking { get; private set; }
-
-            public int WindTurbines { get; private set; }
-            public int WindTurbinesWorking { get; private set; }
-
-            public int Other { get; private set; }
-            public int OthersWorking { get; private set; }
-
-            bool FullScan = true;
-            int RecheckAfterTick = 0;
-            IMyCubeGrid LastGrid;
-
-            readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
-            readonly BuildInfoMod Main;
-
-            // TODO: use the interface when one is added
-            readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine);
-            readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
-
-            public PowerSourcesMonitor(BuildInfoMod main)
-            {
-                Main = main;
-            }
-
-            public void Reset()
-            {
-                FullScan = true;
-                RecheckAfterTick = 0; // remove cooldown to instantly rescan
-                LastGrid = null;
-                Blocks.Clear();
-            }
-
-            public void Update(IMyCubeGrid grid)
-            {
-                if(grid == null || RecheckAfterTick > Main.Tick)
-                    return;
-
-                if(grid != LastGrid)
-                {
-                    Reset();
-                    LastGrid = grid;
-                }
-
-                RecheckAfterTick = Constants.TICKS_PER_SECOND * 3;
-
-                if(FullScan)
-                {
-                    RefreshEntirely(grid);
-                }
-                else
-                {
-                    RefreshWorking(grid);
-                }
-            }
-
-            void RefreshEntirely(IMyCubeGrid grid)
-            {
-                Reactors = 0;
-                ReactorsWorking = 0;
-                Engines = 0;
-                EnginesWorking = 0;
-                Batteries = 0;
-                BatteriesWorking = 0;
-                SolarPanels = 0;
-                SolarPanelsWorking = 0;
-                WindTurbines = 0;
-                WindTurbinesWorking = 0;
-                Other = 0;
-                OthersWorking = 0;
-
-                Blocks.Clear();
-                MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid)?.GetBlocksOfType(Blocks, ComputeBlock);
-            }
-
-            bool ComputeBlock(IMyTerminalBlock block)
-            {
-                MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
-                if(source == null)
-                    return false;
-
-                for(int i = 0; i < source.ResourceTypes.Count; i++)
-                {
-                    MyDefinitionId res = source.ResourceTypes[i];
-                    if(res == MyResourceDistributorComponent.ElectricityId)
-                    {
-                        bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
-
-                        if(block is IMyReactor)
-                        {
-                            Reactors++;
-                            if(working)
-                                ReactorsWorking++;
-                        }
-                        else if(block.BlockDefinition.TypeId == HydrogenEngineType)
-                        {
-                            Engines++;
-                            if(working)
-                                EnginesWorking++;
-                        }
-                        else if(block is IMyBatteryBlock)
-                        {
-                            Batteries++;
-                            if(working)
-                                BatteriesWorking++;
-                        }
-                        else if(block is IMySolarPanel)
-                        {
-                            SolarPanels++;
-                            if(working)
-                                SolarPanelsWorking++;
-                        }
-                        else if(block.BlockDefinition.TypeId == WindTurbineType)
-                        {
-                            WindTurbines++;
-                            if(working)
-                                WindTurbinesWorking++;
-                        }
-                        else
-                        {
-                            Other++;
-                            if(working)
-                                OthersWorking++;
-                        }
-
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            void RefreshWorking(IMyCubeGrid grid)
-            {
-                ReactorsWorking = 0;
-                EnginesWorking = 0;
-                BatteriesWorking = 0;
-                SolarPanelsWorking = 0;
-                WindTurbinesWorking = 0;
-                OthersWorking = 0;
-
-                for(int i = (Blocks.Count - 1); i >= 0; i--)
-                {
-                    IMyTerminalBlock block = Blocks[i];
-                    if(block.MarkedForClose)
-                    {
-                        Blocks.RemoveAtFast(i);
-                        continue;
-                    }
-
-                    MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
-                    if(source == null)
-                        continue;
-
-                    bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
-                    if(!working)
-                        continue;
-
-                    if(block is IMyReactor)
-                        ReactorsWorking++;
-                    else if(block.BlockDefinition.TypeId == HydrogenEngineType)
-                        EnginesWorking++;
-                    else if(block is IMyBatteryBlock)
-                        BatteriesWorking++;
-                    else if(block is IMySolarPanel)
-                        SolarPanelsWorking++;
-                    else if(block.BlockDefinition.TypeId == WindTurbineType)
-                        WindTurbinesWorking++;
-                    else
-                        OthersWorking++;
-                }
-            }
+            if(ResourceStats.Other > 0)
+                info.Append("  Other power sources: ").Append(ResourceStats.OthersWorking).Append(" of ").Append(ResourceStats.Other).Append(" working\n");
         }
         #endregion ShipController extra stuff
 
