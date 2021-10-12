@@ -2,6 +2,7 @@
 using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -102,22 +103,23 @@ namespace Digi.BuildInfo.Features
                         CloseMenu();
                         break;
                     case 1:
-                        if(Main.EquipmentMonitor.AimedBlock != null)
+                        IMySlimBlock aimed = Main.EquipmentMonitor.AimedBlock ?? Main.EquipmentMonitor.BuilderAimedBlock;
+                        if(aimed != null)
                         {
                             CloseMenu();
-                            Main.PickBlock.AskToPick(Main.EquipmentMonitor.BlockDef);
+                            Main.PickBlock.AskToPick((MyCubeBlockDefinition)aimed.BlockDefinition);
                         }
                         else
-                            MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification("First aim at a block using builder/welder/grinder.", 3000, FontsHandler.RedSh);
                         break;
                     case 2:
                         if(Main.EquipmentMonitor.BlockDef == null)
                         {
-                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added/changed by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else if(Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                         {
-                            MyAPIGateway.Utilities.ShowNotification($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} was not added/changed by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else
                         {
