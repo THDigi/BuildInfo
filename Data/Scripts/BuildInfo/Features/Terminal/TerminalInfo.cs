@@ -171,6 +171,7 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_Collector), Format_Collector);
 
             Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
+            Add(typeof(MyObjectBuilder_BatteryBlock), Format_Battery);
             Add(typeof(MyObjectBuilder_HydrogenEngine), Format_HydrogenEngine);
             Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
             Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
@@ -855,63 +856,90 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 MyShipController internalController = (MyShipController)block;
                 MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
-                MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
-                float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+                Suffix_PowerSources(block, info, distributor);
+            }
+        }
 
+        void Suffix_PowerSources(IMyTerminalBlock block, StringBuilder info, MyResourceDistributorComponent distributor, bool lite = false)
+        {
 #if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
-                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+            MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
+            float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+            float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+            float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId);
 #else
-                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, internalController.CubeGrid);
+            MyCubeGrid internalGrid = (MyCubeGrid)block.CubeGrid;
+            MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
 #endif
 
-                PS.Update(block.CubeGrid);
+            PS.Update(block.CubeGrid);
 
-                info.Append("Ship power: ");
-                switch(state)
-                {
-                    case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
-                    case MyResourceStateEnum.Ok: info.Append("OK"); break;
-                    case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
-                    case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
-                }
+            // TODO: find an alternate way of getting power required as it's very buggy (usually negative or 0) if there's only solar panels (prob wind turbines too)
+            //if(PS.SolarPanelsWorking > 0 || PS.WindTurbinesWorking > 0)
+            //{
+            //    if(PS.BatteriesWorking == 0 && PS.EnginesWorking == 0 && PS.ReactorsWorking == 0 && PS.OthersWorking == 0)
+            //    {
+            //        required = 0;
+            //    }
+            //}
+
+            if(info.Length > 0)
                 info.Append('\n');
 
-                info.Append("  Total required: ").PowerFormat(required).Append('\n');
-                info.Append("  Total available: ").PowerFormat(available).Append('\n');
-
-                info.Append("  Reactors: ");
-                if(PS.Reactors == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.ReactorsWorking).Append(" of ").Append(PS.Reactors).Append(" working\n");
-
-                info.Append("  Engines: ");
-                if(PS.Engines == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.EnginesWorking).Append(" of ").Append(PS.Engines).Append(" working\n");
-
-                info.Append("  Batteries: ");
-                if(PS.Batteries == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.BatteriesWorking).Append(" of ").Append(PS.Batteries).Append(" working\n");
-
-                info.Append("  Solar Panels: ");
-                if(PS.SolarPanels == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.SolarPanelsWorking).Append(" of ").Append(PS.SolarPanels).Append(" working\n");
-
-                info.Append("  Wind Turbines: ");
-                if(PS.WindTurbines == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.WindTurbinesWorking).Append(" of ").Append(PS.WindTurbines).Append(" working\n");
-
-                if(PS.Other > 0)
-                    info.Append("  Other power sources: ").Append(PS.OthersWorking).Append(" of ").Append(PS.Other).Append(" working\n");
+            info.Append("Ship power: ");
+            switch(state)
+            {
+                case MyResourceStateEnum.Disconnected: info.Append("Disconnected!"); break;
+                case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
+                case MyResourceStateEnum.Ok: info.Append("OK"); break;
+                case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
+                case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
+                default: info.Append(state.ToString()); break;
             }
+            info.Append('\n');
+
+            info.Append("  Total required: ").PowerFormat(required).Append('\n');
+            info.Append("  Total available: ").PowerFormat(available).Append('\n');
+            info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
+
+            if(lite)
+                return;
+
+            info.Append("  Reactors: ");
+            if(PS.Reactors == 0)
+                info.Append("None\n");
+            else
+                info.Append(PS.ReactorsWorking).Append(" of ").Append(PS.Reactors).Append(" working\n");
+
+            info.Append("  Engines: ");
+            if(PS.Engines == 0)
+                info.Append("None\n");
+            else
+                info.Append(PS.EnginesWorking).Append(" of ").Append(PS.Engines).Append(" working\n");
+
+            info.Append("  Batteries: ");
+            if(PS.Batteries == 0)
+                info.Append("None\n");
+            else
+                info.Append(PS.BatteriesWorking).Append(" of ").Append(PS.Batteries).Append(" working\n");
+
+            info.Append("  Solar Panels: ");
+            if(PS.SolarPanels == 0)
+                info.Append("None\n");
+            else
+                info.Append(PS.SolarPanelsWorking).Append(" of ").Append(PS.SolarPanels).Append(" working\n");
+
+            info.Append("  Wind Turbines: ");
+            if(PS.WindTurbines == 0)
+                info.Append("None\n");
+            else
+                info.Append(PS.WindTurbinesWorking).Append(" of ").Append(PS.WindTurbines).Append(" working\n");
+
+            if(PS.Other > 0)
+                info.Append("  Other power sources: ").Append(PS.OthersWorking).Append(" of ").Append(PS.Other).Append(" working\n");
         }
 
         class PowerSourcesMonitor
@@ -1232,6 +1260,23 @@ namespace Digi.BuildInfo.Features.Terminal
                 maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
 
             info.DetailInfo_Inventory(Inv, maxVolume);
+
+            Suffix_PowerSourceGridStats(block, info);
+        }
+
+        void Format_Battery(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.199.025:
+            //      Type: <BlockDefName>
+            //      Max Output: <n> W
+            //      Max Required Input: <n> W
+            //      Max Stored Power: <n> Wh
+            //      Current Input: <n> W
+            //      Current Output: <n> W
+            //      Stored Power: <n> Wh
+            //      Fully depleted/recharged in: <time>
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_HydrogenEngine(IMyTerminalBlock block, StringBuilder info)
@@ -1243,6 +1288,8 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Filled: 0.0% (0L/500000L)
 
             info.DetailInfo_InputHydrogen(Sink);
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_WindTurbine(IMyTerminalBlock block, StringBuilder info)
@@ -1273,6 +1320,8 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("N/A");
             }
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_SolarPanel(IMyTerminalBlock block, StringBuilder info)
@@ -1284,6 +1333,17 @@ namespace Digi.BuildInfo.Features.Terminal
 
             MySolarPanelDefinition solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
             info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).Append('\n');
+
+            Suffix_PowerSourceGridStats(block, info);
+        }
+
+        MyShipController _fakeController = new MyShipController();
+        void Suffix_PowerSourceGridStats(IMyTerminalBlock block, StringBuilder info)
+        {
+            // HACK: trickery to get resource distributor
+            _fakeController.SlimBlock = Utils.CastHax(_fakeController.SlimBlock, block.SlimBlock);
+            MyResourceDistributorComponent distributor = _fakeController.GridResourceDistributor;
+            Suffix_PowerSources(block, info, distributor, lite: true);
         }
 
         //void Format_Gyro(IMyTerminalBlock block, StringBuilder info)
