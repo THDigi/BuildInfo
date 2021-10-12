@@ -45,8 +45,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public void RefreshAll()
         {
-            groupTextInfo.SetInteractable(Main.Config.TextShow.Value);
-            groupCustomStyling.SetInteractable(Main.Config.TextShow.Value && Main.Config.TextAPICustomStyling.Value);
+            bool textModeOn = Main.Config.TextShow.Value != 0;
+
+            groupTextInfo.SetInteractable(textModeOn);
+            groupCustomStyling.SetInteractable(textModeOn && Main.Config.TextAPICustomStyling.Value);
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
             groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
@@ -137,7 +139,15 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_Binds = AddCategory("Binds", Category_Mod, header: "Key/button bindings");
             Category_Misc = AddCategory("Misc", Category_Mod, header: "Various other settings");
 
-            ItemAdd_TextShow(Category_Textbox);
+            SimpleEnumCycle(Category_Textbox, null, Main.Config.TextShow, execOnCycle: (v) =>
+            {
+                Main.Config.TextShow.Value = v;
+                bool off = (v == 0);
+                bool forceShow = (!off && Main.EquipmentMonitor.BlockDef == null);
+                UpdateTextBox(redraw: !off, drawTicks: (forceShow ? TOGGLE_FORCEDRAWTICKS : 0));
+                groupTextInfo.SetInteractable(!off);
+                groupCustomStyling.SetInteractable(!off ? Main.Config.TextAPICustomStyling.Value : false);
+            });
             SimpleToggle(Category_Textbox, null, Main.Config.TextAlwaysVisible, groupTextInfo);
             ItemAdd_TextInfoScale(Category_Textbox, groupTextInfo);
             ItemAdd_BackgroundOpacity(Category_Textbox);
@@ -213,6 +223,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorOverlay);
 
             SimpleBind(Category_Binds, "Menu Bind", Config.Config.MENU_BIND_INPUT_NAME, Main.Config.MenuBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Text Show Bind", Config.Config.TEXT_SHOW_INPUT_NAME, Main.Config.TextShowBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Main.Config.CycleOverlaysBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Freeze Placement Bind", Config.Config.FREEZE_PLACEMENT_INPUT_NAME, Main.Config.FreezePlacementBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Toggle Transparency Bind", Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Main.Config.ToggleTransparencyBind, groupBinds, groupBinds);
@@ -247,22 +258,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         void Handler_SettingsLoaded()
         {
             RefreshAll();
-        }
-
-        private void ItemAdd_TextShow(MenuCategoryBase category)
-        {
-            ItemToggle item = new ItemToggle(category, "Show",
-                getter: () => Main.Config.TextShow.Value,
-                setter: (v) =>
-                {
-                    Main.Config.TextShow.Value = v;
-                    UpdateTextBox(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0));
-                    groupTextInfo.SetInteractable(v);
-                    groupCustomStyling.SetInteractable(v ? Main.Config.TextAPICustomStyling.Value : false);
-                },
-                defaultValue: Main.Config.TextShow.DefaultValue);
-
-            groupAll.Add(item);
         }
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)

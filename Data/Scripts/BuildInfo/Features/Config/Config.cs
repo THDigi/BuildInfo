@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting Killswitch;
 
-        public BoolSetting TextShow;
+        public TextShowModeSetting TextShow;
         public BoolSetting TextAlwaysVisible;
 
         public FlagsSetting<PlaceInfoFlags> PlaceInfo;
@@ -87,6 +87,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting AdjustBuildDistanceShipCreative;
 
         public InputCombinationSetting MenuBind;
+        public InputCombinationSetting TextShowBind;
         public InputCombinationSetting CycleOverlaysBind;
         public InputCombinationSetting ToggleTransparencyBind;
         public InputCombinationSetting FreezePlacementBind;
@@ -102,6 +103,7 @@ namespace Digi.BuildInfo.Features.Config
         public IntegerSetting ModVersion;
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
+        public const string TEXT_SHOW_INPUT_NAME = "bi.textShow";
         public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
         public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";
         public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
@@ -266,13 +268,16 @@ namespace Digi.BuildInfo.Features.Config
             const string SubHeaderFormat = "—————— {0} ————————————————————————————————————————————————————————————";
 
             #region TextBox
-            // TODO: turn it into a mode so that it can be shown only in HUD hints or only when holding alt.
-            TextShow = new BoolSetting(Handler, "TextBox: Show", true,
+            TextShow = new TextShowModeSetting(Handler, "TextBox: Show Mode", TextShowMode.AlwaysOn, new string[]
+            {
                 string.Format(SubHeaderFormat, "Text Box"),
                 "These settings affect the mod's text box that has the equipped/aimed block information.",
                 "",
-                "Toggle if the text box is shown or not.");
-            TextShow.AddCompatibilityNames("Text: Show");
+                "Toggle if the text box is shown or not."
+            });
+            TextShow.SetEnumComment(TextShowMode.ShowOnPress, $"input can be configured in 'Bind: Text Show'"); // can't use field as it's not yet assigned
+            TextShow.SetEnumComment(TextShowMode.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(TextShowMode.ShowOnPress)}'s behavior.");
+            TextShow.AddCompatibilityNames("Text: Show", "TextBox: Show");
 
             TextAlwaysVisible = new BoolSetting(Handler, "TextBox: Show when HUD is off", false,
                 "If true, text box is shown in all HUD states including hidden HUD.");
@@ -534,6 +539,10 @@ namespace Digi.BuildInfo.Features.Config
                 string.Format(SubHeaderFormat, "Key/button binds"),
                 "",
                 "For accessing the quick menu.");
+
+            TextShowBind = new InputCombinationSetting(Handler, "Bind: Text Show", Combination.Create(TEXT_SHOW_INPUT_NAME, "c.lookaround"),
+                $"Shows block text info while holding a block or aiming at one with welder/grinder.",
+                $"Only works if '{TextShow.Name}' is set to {nameof(TextShowMode.ShowOnPress)} or {nameof(TextShowMode.HudHints)}.");
 
             CycleOverlaysBind = new InputCombinationSetting(Handler, "Bind: Cycle Overlays", Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, "ctrl " + MENU_BIND_INPUT_NAME),
                 $"For cycling through block overlays ({string.Join(", ", Main.Overlays.OverlayNames)}).");

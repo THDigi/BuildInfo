@@ -317,7 +317,7 @@ namespace Digi.BuildInfo.Features
                 {
                     LastDefId = def.Id;
 
-                    if(Main.Config.TextShow.Value)
+                    if(Main.Config.TextShow.ShouldShowText)
                     {
                         if(hasAimedBlock)
                         {
@@ -556,7 +556,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.TextAPI.IsEnabled)
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.ShouldShowText && !Main.QuickMenu.Shown))
                 {
                     HideText();
                     return;
@@ -589,7 +589,7 @@ namespace Digi.BuildInfo.Features
                 if(Main.IsPaused)
                     return; // HACK: avoid notification glitching out if showing them continuously when game is paused
 
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.ShouldShowText && !Main.QuickMenu.Shown))
                     return;
 
                 List<IMyHudNotification> hudLines = null;
@@ -917,7 +917,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:");
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.Value ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.ValueName);
 
             AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayNames[Main.Overlays.DrawOverlay]);
             if(Main.Config.CycleOverlaysBind.Value.IsAssigned())

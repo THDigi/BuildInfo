@@ -1,4 +1,5 @@
-﻿using Digi.ComponentLib;
+﻿using Digi.BuildInfo.Features.Config;
+using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
 using Sandbox.Game;
@@ -227,14 +228,18 @@ namespace Digi.BuildInfo.Features
 
         public void ToggleTextInfo()
         {
-            Main.Config.TextShow.Value = !Main.Config.TextShow.Value;
+            int value = Main.Config.TextShow.Value;
+            if(++value > Main.Config.TextShow.HighestValue)
+                value = 0;
+
+            Main.Config.TextShow.Value = value;
             Main.Config.Save();
 
             if(buildInfoNotification == null)
                 buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
 
             buildInfoNotification.Hide(); // required since SE v1.194
-            buildInfoNotification.Text = (Main.Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
+            buildInfoNotification.Text = $"Text info mode set to [{Main.Config.TextShow.ValueName}] + saved to config";
             buildInfoNotification.Show();
         }
 
