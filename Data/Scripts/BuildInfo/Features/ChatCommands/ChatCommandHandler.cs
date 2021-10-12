@@ -23,6 +23,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandLaserPower CommandLaserPower;
         public CommandReloadConfig CommandReloadConfig;
         public CommandClearCache CommandClearCache;
+        public CommandLCDResolution CommandLCDResolution;
         public CommandMeasureText CommandMeasureText;
 
         private readonly Arguments args = new Arguments();
@@ -43,6 +44,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandLaserPower = new CommandLaserPower();
             CommandReloadConfig = new CommandReloadConfig();
             CommandClearCache = new CommandClearCache();
+            CommandLCDResolution = new CommandLCDResolution();
             CommandMeasureText = new CommandMeasureText();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;

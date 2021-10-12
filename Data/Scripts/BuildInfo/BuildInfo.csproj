@@ -148,6 +148,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
     <Compile Include="Features\AnalyseShip.cs" />
+    <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\OverrideToolSelectionDraw.cs" />
     <Compile Include="Features\CubeBuilderAdditions.cs" />
     <Compile Include="Features\ProjectedBlockInfo.cs" />
