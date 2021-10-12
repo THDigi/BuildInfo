@@ -274,6 +274,7 @@
     <Compile Include="Libraries\ConfigLib\IntegerSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ISetting.cs" />
     <Compile Include="Libraries\ConfigLib\SettingBase.cs" />
+    <Compile Include="Libraries\ConfigLib\EnumSetting.cs" />
     <Compile Include="Libraries\ConfigLib\Vector2DSetting.cs" />
     <Compile Include="Libraries\InputLib\Devices\GameControlInputs.cs" />
     <Compile Include="Libraries\InputLib\Devices\GamepadBinds.cs" />

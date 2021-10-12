@@ -161,7 +161,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
             SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
             SimpleToggle(Category_HUD, null, Main.Config.OverrideToolSelectionDraw);
-            SimpleEnumCycle(Category_HUD, null, typeof(CubeBuilderSelectionInfo), Main.Config.CubeBuilderSelectionInfoMode);
+            SimpleEnumCycle(Category_HUD, null, Main.Config.CubeBuilderSelectionInfoMode);
             AddSpacer(Category_HUD);
             SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
             SimpleToggle(Category_HUD, null, Main.Config.HudStatOverrides);
@@ -174,15 +174,15 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
 
             ItemSlider cockpitEnterTimeSlider = null;
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
             {
                 ToolbarLabelsMode ve = (ToolbarLabelsMode)v;
                 cockpitEnterTimeSlider.Interactable = (ve == ToolbarLabelsMode.ShowOnPress || ve == ToolbarLabelsMode.HudHints);
             });
             cockpitEnterTimeSlider = SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels, dialogTitle: "Shown for this many seconds if not always visible.");
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarItemNameMode, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarLabelsHeader, groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarStyleMode, groupToolbarLabels);
             AddSpacer(Category_Toolbar);
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
@@ -734,7 +734,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         //    groupAll.Add(item);
         //}
 
-        private void SimpleEnumCycle(MenuCategoryBase category, string label, Type enumType, IntegerSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0, Action<int> execOnCycle = null)
+        private void SimpleEnumCycle<TEnum>(MenuCategoryBase category, string label, EnumSetting<TEnum> setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0, Action<int> execOnCycle = null) where TEnum : struct
         {
             ItemEnumCycle item = new ItemEnumCycle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
@@ -745,7 +745,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     execOnCycle?.Invoke(v);
                     Main.Config.Save();
                 },
-                enumType: enumType,
+                enumType: typeof(TEnum),
                 defaultValue: setting.DefaultValue);
 
             group?.Add(item);

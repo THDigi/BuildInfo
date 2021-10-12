@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ScrollableComponentsList;
         public BoolSetting SelectAllProjectedBlocks;
         public BoolSetting OverrideToolSelectionDraw;
-        public IntegerSetting CubeBuilderSelectionInfoMode;
+        public EnumSetting<CubeBuilderSelectionInfo> CubeBuilderSelectionInfoMode;
 
         public BoolSetting ShipToolInvBarShow;
         public Vector2DSetting ShipToolInvBarPosition;
@@ -53,11 +53,11 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting TurretHUD;
 
-        public IntegerSetting ToolbarLabels;
+        public EnumSetting<ToolbarLabelsMode> ToolbarLabels;
         public FloatSetting ToolbarLabelsEnterCockpitTime;
-        public IntegerSetting ToolbarItemNameMode;
+        public EnumSetting<ToolbarNameMode> ToolbarItemNameMode;
         public BoolSetting ToolbarLabelsHeader;
-        public IntegerSetting ToolbarStyleMode;
+        public EnumSetting<ToolbarStyle> ToolbarStyleMode;
         public Vector2DSetting ToolbarLabelsPosition;
         public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
@@ -339,17 +339,14 @@ namespace Digi.BuildInfo.Features.Config
                 "For example, a large-grid camera block would show selection over the camera model itself, instead of the entire grid cell.",
                 "CubeBuilder's block selection for paint/removal is affected, but the box around your ghost block is not (because it's inaccessible).");
 
-            CubeBuilderSelectionInfoMode = CreateEnumSetting("HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
+            CubeBuilderSelectionInfoMode = new EnumSetting<CubeBuilderSelectionInfo>(Handler, "HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
             {
                 "When holding a block (CubeBuilder tool), aiming at blocks allows you to paint or remove them.",
                 "This setting shows the terminal name or definition name for the aimed block.",
                 $"The selection box is controlled by '{OverrideToolSelectionDraw.Name}' instead.",
-            },
-            new Dictionary<CubeBuilderSelectionInfo, string>()
-            {
-                [CubeBuilderSelectionInfo.ShowOnPress] = $"input can be configured in 'Bind: Show CubeBuilder Selection Info'", // can't use field as it's not yet assigned
-                [CubeBuilderSelectionInfo.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.",
             });
+            CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.ShowOnPress, $"input can be configured in 'Bind: Show CubeBuilder Selection Info'"); // can't use field as it's not yet assigned
+            CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected.");
@@ -418,19 +415,16 @@ namespace Digi.BuildInfo.Features.Config
             #endregion
 
             #region Toolbar
-            ToolbarLabels = CreateEnumSetting("Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
+            ToolbarLabels = new EnumSetting<ToolbarLabelsMode>(Handler, "Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
             {
                 "",
                 string.Format(SubHeaderFormat, "Toolbar & ToolbarInfo box"),
                 "",
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the ToolbarInfo stuff (except status override)."
-            },
-            new Dictionary<ToolbarLabelsMode, string>()
-            {
-                [ToolbarLabelsMode.ShowOnPress] = $"input can be configured in 'Bind: Show Toolbar Info'", // can't use field as it's not yet assigned
-                [ToolbarLabelsMode.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.",
             });
+            ToolbarLabels.SetEnumComment(ToolbarLabelsMode.ShowOnPress, $"input can be configured in 'Bind: Show Toolbar Info'"); // can't use field as it's not yet assigned
+            ToolbarLabels.SetEnumComment(ToolbarLabelsMode.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.");
             ToolbarLabels.AddCompatibilityNames("Toolbar: Labels Mode");
 
             ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: ToolbarInfo Show on Cockpit Enter", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
@@ -440,16 +434,13 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsEnterCockpitTime.AddCompatibilityNames("Toolbar: Enter Cockpit Time");
 
-            ToolbarItemNameMode = CreateEnumSetting("Toolbar: ToolbarInfo Name Mode", ToolbarNameMode.AlwaysShow, new string[]
+            ToolbarItemNameMode = new EnumSetting<ToolbarNameMode>(Handler, "Toolbar: ToolbarInfo Name Mode", ToolbarNameMode.AlwaysShow, new string[]
             {
                 "Pick what blocks should have their custom name printed in the action label.",
                 "Visibility of this is affected by the above setting."
-            },
-            new Dictionary<ToolbarNameMode, string>()
-            {
-                [ToolbarNameMode.InMenuOnly] = "only shown when toolbar menu is open",
-                [ToolbarNameMode.GroupsOnly] = "only block group names",
             });
+            ToolbarItemNameMode.SetEnumComment(ToolbarNameMode.InMenuOnly, "only shown when toolbar menu is open");
+            ToolbarItemNameMode.SetEnumComment(ToolbarNameMode.GroupsOnly, "only block group names");
             ToolbarItemNameMode.AddCompatibilityNames("Toolbar: Item Name Mode");
 
             ToolbarLabelsHeader = new BoolSetting(Handler, "Toolbar: ToolbarInfo Header+Page", true,
@@ -457,7 +448,7 @@ namespace Digi.BuildInfo.Features.Config
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
             ToolbarLabelsHeader.AddCompatibilityNames("Toolbar: Toolbar Labels Show Title");
 
-            ToolbarStyleMode = CreateEnumSetting("Toolbar: ToolbarInfo Style", ToolbarStyle.TwoColumns, new string[]
+            ToolbarStyleMode = new EnumSetting<ToolbarStyle>(Handler, "Toolbar: ToolbarInfo Style", ToolbarStyle.TwoColumns, new string[]
             {
                 "Changes the visual layout of the toolbar labels box.",
             });
@@ -600,32 +591,6 @@ namespace Digi.BuildInfo.Features.Config
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;
             ModVersion.AddValidRangeComment = false;
-        }
-
-        IntegerSetting CreateEnumSetting<T>(string title, T defaultValue, string[] comments, Dictionary<T, string> enumComments = null)
-        {
-            string[] names = Enum.GetNames(typeof(T));
-            int[] values = (int[])Enum.GetValues(typeof(T));
-
-            string[] finalComments = new string[names.Length + comments.Length];
-
-            for(int i = 0; i < comments.Length; i++)
-            {
-                finalComments[i] = comments[i];
-            }
-
-            for(int n = 0; n < names.Length; ++n)
-            {
-                int enumInt = values[n];
-                int index = n + comments.Length;
-                finalComments[index] = $"    {enumInt.ToString()} = {names[n]}";
-
-                string comment;
-                if(enumComments != null && enumComments.TryGetValue((T)(object)n, out comment))
-                    finalComments[index] += "  (" + comment + ")";
-            }
-
-            return new IntegerSetting(Handler, title, defaultValue: (int)(object)defaultValue, min: values[0], max: values[values.Length - 1], commentLines: finalComments);
         }
 
         public void Save()
