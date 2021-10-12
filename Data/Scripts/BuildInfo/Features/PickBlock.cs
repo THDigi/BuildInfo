@@ -20,7 +20,8 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged += ToolBlockAimChanged;
+            Main.EquipmentMonitor.BuilderAimedBlockChanged += BuilderAimedBlockChanged;
         }
 
         public override void UnregisterComponent()
@@ -28,13 +29,14 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.BlockChanged -= ToolBlockAimChanged;
+            Main.EquipmentMonitor.BuilderAimedBlockChanged -= BuilderAimedBlockChanged;
         }
 
         public void AskToPick(MyCubeBlockDefinition def)
         {
             PickedBlockDef = def;
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (def != null || Main.EquipmentMonitor.AimedBlock != null));
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (def != null || Main.EquipmentMonitor.AimedBlock != null || Main.EquipmentMonitor.BuilderAimedBlock != null));
 
             if(def != null)
             {
@@ -42,28 +44,23 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        void ToolBlockAimChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (slimBlock != null || PickedBlockDef != null));
         }
 
-        void ShowText(string text, int notifyMs, string font)
+        void BuilderAimedBlockChanged(IMySlimBlock slimBlock)
         {
-            if(Notify == null)
-                Notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
-
-            Notify.Hide();
-            Notify.Text = text;
-            Notify.AliveTime = notifyMs;
-            Notify.Font = font;
-            Notify.Show();
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (slimBlock != null || PickedBlockDef != null));
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             if(PickedBlockDef == null)
             {
-                if(Main.EquipmentMonitor.AimedBlock != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
+                IMySlimBlock aimed = Main.EquipmentMonitor.AimedBlock ?? Main.EquipmentMonitor.BuilderAimedBlock;
+
+                if(aimed != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
                 {
                     if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
                     {
@@ -71,7 +68,7 @@ namespace Digi.BuildInfo.Features
                         return;
                     }
 
-                    AskToPick(Main.EquipmentMonitor.BlockDef);
+                    AskToPick((MyCubeBlockDefinition)aimed.BlockDefinition);
                 }
             }
             else
@@ -158,6 +155,18 @@ namespace Digi.BuildInfo.Features
                     AskToPick(null);
                 }
             }
+        }
+
+        void ShowText(string text, int notifyMs, string font)
+        {
+            if(Notify == null)
+                Notify = MyAPIGateway.Utilities.CreateNotification(string.Empty);
+
+            Notify.Hide();
+            Notify.Text = text;
+            Notify.AliveTime = notifyMs;
+            Notify.Font = font;
+            Notify.Show();
         }
     }
 }

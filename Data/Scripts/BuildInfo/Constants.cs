@@ -28,9 +28,10 @@ namespace Digi.BuildInfo
 
         public readonly MyDefinitionId COMPUTER_COMPONENT_ID = new MyDefinitionId(typeof(MyObjectBuilder_Component), MyStringHash.GetOrCompute("Computer")); // HACK: this is what the game uses for determining if a block can have ownership
 
-        public const bool BLOCKPICKER_IN_MP = true;
+        public const bool BLOCKPICKER_IN_MP = true; // no longer broken, allowed.
         public const string BLOCKPICKER_DISABLED_CONFIG = "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/pc/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect";
         public const string BLOCKPICKER_DISABLED_CHAT = "Pick block feature disabled in MP because of issues, see workshop page for details.";
+
         public const string PLAYER_IS_NULL = "Local Player is null, silly bugs... try again in a few seconds.";
 
         public static bool EXPORT_VANILLA_BLOCKS = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
