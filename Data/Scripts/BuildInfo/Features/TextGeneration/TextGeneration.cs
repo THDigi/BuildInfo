@@ -4101,7 +4101,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().PowerFormat(mw);
 
-                if(groupName != MyStringHash.NullOrEmpty && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
                     GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }

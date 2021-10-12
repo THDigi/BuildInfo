@@ -133,16 +133,16 @@ namespace Digi.BuildInfo
         }
 
         #region Resource group priorities
-        public int resourceSinkGroups = 0;
-        public int resourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority
+        public int ResourceSinkGroups = 0;
+        public int ResourceSourceGroups = 0;
+        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority
                   = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
 
         private void ComputeResourceGroups()
         {
-            resourceGroupPriority.Clear();
-            resourceSourceGroups = 0;
-            resourceSinkGroups = 0;
+            ResourceGroupPriority.Clear();
+            ResourceSourceGroups = 0;
+            ResourceSinkGroups = 0;
 
             // from MyResourceDistributorComponent.InitializeMappings()
             ListReader<MyResourceDistributionGroupDefinition> groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
@@ -155,16 +155,16 @@ namespace Digi.BuildInfo
 
                 if(group.IsSource)
                 {
-                    resourceSourceGroups++;
-                    priority = resourceSourceGroups;
+                    ResourceSourceGroups++;
+                    priority = ResourceSourceGroups;
                 }
                 else
                 {
-                    resourceSinkGroups++;
-                    priority = resourceSinkGroups;
+                    ResourceSinkGroups++;
+                    priority = ResourceSinkGroups;
                 }
 
-                resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData(group, priority));
+                ResourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData(group, priority));
             }
         }
 

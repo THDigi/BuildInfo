@@ -309,13 +309,13 @@ namespace Digi.BuildInfo.Utilities
             Constants constants = BuildInfoMod.Instance.Constants;
             ResourceGroupData data;
 
-            if(groupId != MyStringHash.NullOrEmpty && constants.resourceGroupPriority.TryGetValue(groupId, out data))
+            if(groupId != MyStringHash.NullOrEmpty && constants.ResourceGroupPriority.TryGetValue(groupId, out data))
             {
-                s.Append(groupId.String).Append(" (").Append(data.Priority).Append("/").Append(data.Def.IsSource ? constants.resourceSourceGroups : constants.resourceSinkGroups).Append(")");
+                s.Append(data.Priority).Append("/").Append(data.Def.IsSource ? constants.ResourceSourceGroups : constants.ResourceSinkGroups).Append(" (").Append(groupId.String).Append(")");
             }
             else
             {
-                s.Append("Undefined (last)");
+                s.Append("last (Undefined)");
             }
 
             return s;
