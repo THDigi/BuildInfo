@@ -72,8 +72,8 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         readonly ParticleData[] ParticleDataGridSize = new ParticleData[]
         {
-            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.075, walkSpeed: 0.1f), // largeship
-            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.25, walkSpeed: 0.4f) // smallship
+            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.075f, walkSpeed: 0.1f), // largeship
+            new ParticleData(size: 0.1f, spawnDelay: 30, lerpPos: 0.25f, walkSpeed: 0.4f) // smallship
         };
 
         public LeakInfo(BuildInfoMod main) : base(main)

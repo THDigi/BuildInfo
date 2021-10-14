@@ -156,7 +156,7 @@ namespace Digi.BuildInfo.Features
             float w = (float)(size.X * Main.DrawUtils.ScaleFOV);
             float h = (float)(size.Y * Main.DrawUtils.ScaleFOV);
 
-            MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
+            MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             MyStringId iconMaterial;
             if(Main.EquipmentMonitor.IsAnyGrinder)
@@ -164,7 +164,7 @@ namespace Digi.BuildInfo.Features
             else
                 iconMaterial = DrillIconMaterial;
 
-            MyTransparentGeometry.AddBillboardOriented(iconMaterial, IconColor, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
+            MyTransparentGeometry.AddBillboardOriented(iconMaterial, IconColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             if(FilledRatio > 0)
             {
@@ -190,7 +190,7 @@ namespace Digi.BuildInfo.Features
 
                 worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * Main.DrawUtils.ScaleFOV);
 
-                MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, camMatrix.Left, camMatrix.Up, w, h, uv, blendType: BlendType);
+                MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, uv, blendType: BlendType);
             }
         }
     }

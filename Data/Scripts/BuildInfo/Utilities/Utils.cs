@@ -286,8 +286,8 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
                 if(drawSolid)
@@ -324,8 +324,8 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
-                    MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (apexPosition - prevPoint), 1f, lineThickness, blendType, customViewProjection);
-                    MyTransparentGeometry.AddLineBillboard(material, color, nextPoint, (apexPosition - nextPoint), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (Vector3)(apexPosition - prevPoint), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, nextPoint, (Vector3)(apexPosition - nextPoint), 1f, lineThickness, blendType, customViewProjection);
                 }
 
                 if(drawSolid)
@@ -385,8 +385,8 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
                 if(drawSolid)
@@ -430,8 +430,8 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
                 if(drawSolid)

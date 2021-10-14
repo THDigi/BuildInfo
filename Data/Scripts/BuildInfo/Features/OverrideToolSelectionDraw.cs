@@ -293,9 +293,9 @@ namespace Digi.BuildInfo.Features
 
             Vector3D center = Vector3D.Transform((localBB.Min + localBB.Max) * 0.5, worldMatrix);
             Vector3D halfExtent = (localBB.Max - localBB.Min) * 0.5;
-            Vector3D left = worldMatrix.Left * halfExtent.X;
-            Vector3D up = worldMatrix.Up * halfExtent.Y;
-            Vector3D back = worldMatrix.Backward * halfExtent.Z;
+            Vector3 left = (Vector3)(worldMatrix.Left * halfExtent.X);
+            Vector3 up = (Vector3)(worldMatrix.Up * halfExtent.Y);
+            Vector3 back = (Vector3)(worldMatrix.Backward * halfExtent.Z);
 
             Vector3D top = center + up;
             Vector3D bottom = center - up;

@@ -179,7 +179,7 @@ namespace Digi.BuildInfo.Features
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
-                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_FUNCTIONAL, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_FUNCTIONAL, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
                 }
 
                 // blue hacking line
@@ -195,7 +195,7 @@ namespace Digi.BuildInfo.Features
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
 
-                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_OWNERSHIP, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_OWNERSHIP, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
                 }
 
                 int maxVisible = Main.BlockInfoScrollComponents.MaxVisible;
@@ -259,7 +259,7 @@ namespace Digi.BuildInfo.Features
 
                         worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
-                        MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_COMPLOSS, worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                        MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_COMPLOSS, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
                     }
                 }
             }

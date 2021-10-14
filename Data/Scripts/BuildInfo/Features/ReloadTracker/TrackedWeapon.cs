@@ -4,6 +4,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ReloadTracker
 {

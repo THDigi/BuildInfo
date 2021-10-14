@@ -225,13 +225,13 @@ namespace Digi.BuildInfo.Features.LiveData
             MyEntitySubpart subpartYaw;
             if(block.TryGetSubpart(yawName, out subpartYaw))
             {
-                turret.YawLocalPos = Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+                turret.YawLocalPos = (Vector3)Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.WorldMatrixInvScaled);
 
                 // avoid y-fighting if it's a multiple of grid size
                 int y = (int)(turret.YawLocalPos.Y * 100);
                 int gs = (int)(block.CubeGrid.GridSize * 100);
                 if(y % gs == 0)
-                    turret.YawLocalPos += new Vector3D(0, 0.05f, 0);
+                    turret.YawLocalPos += new Vector3(0, 0.05f, 0);
             }
             else
             {
@@ -242,7 +242,7 @@ namespace Digi.BuildInfo.Features.LiveData
             MyEntitySubpart subpartPitch;
             if(subpartYaw.TryGetSubpart(pitchName, out subpartPitch))
             {
-                turret.PitchLocalPos = Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+                turret.PitchLocalPos = (Vector3)Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
 
                 // FIXME: camera dummy is ignored on engineer turret block?!
 

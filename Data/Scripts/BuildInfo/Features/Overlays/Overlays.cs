@@ -206,7 +206,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 MatrixD m = shipController.WorldMatrix;
                 m.Translation = Vector3D.Transform(shipCtrlDef.RaycastOffset, m);
 
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, color, m.Translation, m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, color, m.Translation, (Vector3)m.Forward, REACH_DISTANCE, 0.005f, blendType: BLEND_TYPE);
                 MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, color, m.Translation + m.Forward * REACH_DISTANCE, 0.015f, 0f, blendType: BLEND_TYPE);
             }
         }
@@ -469,7 +469,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     Color color = new Color(255, 0, 255);
 
                     Vector3D start = drawMatrix.Translation;
-                    Vector3D dir = Vector3D.TransformNormal(def.ModelOffset, drawMatrix);
+                    Vector3 dir = Vector3.TransformNormal(def.ModelOffset, drawMatrix);
 
                     Vector3D offset = camMatrix.Right * LABEL_SHADOW_OFFSET.X + camMatrix.Up * LABEL_SHADOW_OFFSET.Y;
 
@@ -1061,7 +1061,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
                 else
                 {
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, accColor, accMatrix.Translation, accMatrix.Forward, projectileMaxTravel, AccLineThick, blendType: OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, accColor, accMatrix.Translation, (Vector3)accMatrix.Forward, projectileMaxTravel, AccLineThick, blendType: OVERLAY_BLEND_TYPE);
                 }
 
                 //const float PointRadius = 0.025f;
@@ -1101,7 +1101,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     float size = (md.Missile ? 0.06f : 0.025f);
                     float len = (md.Missile ? 2f : 5f);
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, wm.Forward, len, size, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, barrelColor, wm.Translation, (Vector3)wm.Forward, len, size, OVERLAY_BLEND_TYPE);
                 }
             }
             #endregion Barrels
@@ -1181,7 +1181,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     Color colorCamera = new Color(55, 155, 255);
                     MatrixD turretCamMatrix = (muzzleEntity == null ? data.Turret.CameraForBlock * drawMatrix : data.Turret.CameraForSubpart * muzzleEntity.WorldMatrix);
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, colorCamera, turretCamMatrix.Translation, turretCamMatrix.Forward, 3, 0.01f, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, colorCamera, turretCamMatrix.Translation, (Vector3)turretCamMatrix.Forward, 3, 0.01f, OVERLAY_BLEND_TYPE);
                 }
             }
             #endregion Turret pitch/yaw limits
@@ -1444,7 +1444,7 @@ namespace Digi.BuildInfo.Features.Overlays
             float minRadiusRatio = turbineDef.MinRaycasterClearance;
             float maxRadiusRatio = 1f - minRadiusRatio;
 
-            Vector3D up = drawMatrix.Up;
+            Vector3 up = (Vector3)drawMatrix.Up;
             Vector3D center = drawMatrix.Translation;
 
             Vector3D current = Vector3D.Zero;
@@ -1491,8 +1491,8 @@ namespace Digi.BuildInfo.Features.Overlays
                     MyTransparentGeometry.AddQuad(OVERLAY_GRADIENT_MATERIAL, ref quad, WindTurbine_maxColorVec, ref center, blendType: OVERLAY_BLEND_TYPE);
 
                     // inner+outer circle rims
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_minLineColorVec, previousInner, (inner - previousInner), 1f, lineThick, OVERLAY_BLEND_TYPE);
-                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_maxLineColorVec, previous, (current - previous), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_minLineColorVec, previousInner, (Vector3)(inner - previousInner), 1f, lineThick, OVERLAY_BLEND_TYPE);
+                    MyTransparentGeometry.AddLineBillboard(OVERLAY_LASER_MATERIAL, WindTurbine_maxLineColorVec, previous, (Vector3)(current - previous), 1f, lineThick, OVERLAY_BLEND_TYPE);
                 }
 
                 previous = current;
@@ -1525,14 +1525,14 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Vector3D minClearence = Vector3D.Lerp(lineStart, end, turbineDef.MinRaycasterClearance);
 
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, WindTurbine_minColor, lineStart, (minClearence - lineStart), 1f, groundLineThick, OVERLAY_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, WindTurbine_minColor, lineStart, (Vector3)(minClearence - lineStart), 1f, groundLineThick, OVERLAY_BLEND_TYPE);
 
-            Vector3D lineDir = (end - minClearence);
+            Vector3 lineDir = (Vector3)(end - minClearence);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, WindTurbine_minColor, minClearence, lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
             MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, WindTurbine_maxColor, end, -lineDir, 1f, groundLineThick, OVERLAY_BLEND_TYPE);
 
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            Vector3D right = Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward)); // this determines line width, it's normalized so 1m, doubled because of below math
+            Vector3 right = (Vector3)Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward)); // this determines line width, it's normalized so 1m, doubled because of below math
             MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, WindTurbine_maxColor, end - right, right, 2f, groundBottomLineThick, OVERLAY_BLEND_TYPE);
 
             if(drawLabel)
@@ -1597,7 +1597,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 // laser visualization
                 Color laserColor = new Color(255, 155, 0);
-                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, laserColor, rotationPivot, pitchMatrix.Forward, LaserLength, LaserThick, OVERLAY_BLEND_TYPE);
+                MyTransparentGeometry.AddLineBillboard(OVERLAY_GRADIENT_MATERIAL, laserColor, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, OVERLAY_BLEND_TYPE);
 
                 if(canDrawLabel)
                 {
@@ -1878,8 +1878,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Vector3D shadowOffset = cm.Right * (LABEL_SHADOW_OFFSET.X * scale) + cm.Up * (LABEL_SHADOW_OFFSET.Y * scale);
 
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + shadowOffset, direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, start + shadowOffset, (Vector3)direction, lineHeight, lineThick, LABEL_SHADOW_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, start, (Vector3)direction, lineHeight, lineThick, LABEL_BLEND_TYPE);
 
             if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)))
                 return;
@@ -1955,8 +1955,8 @@ namespace Digi.BuildInfo.Features.Overlays
             text.Draw();
 
             float underlineLength = labelData.UnderlineLength * scale;
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, textWorldPos + shadowOffset, textDir, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
-            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, textWorldPos, textDir, underlineLength, lineThick, LABEL_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, LABEL_SHADOW_COLOR, textWorldPos + shadowOffset, (Vector3)textDir, underlineLength, lineThick, LABEL_SHADOW_BLEND_TYPE);
+            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, color, textWorldPos, (Vector3)textDir, underlineLength, lineThick, LABEL_BLEND_TYPE);
 
             AnyLabelShown = true;
         }
@@ -2050,12 +2050,13 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if((first || exit) && lineMaterial.HasValue)
                 {
-                    MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, lineColor, center, (current - center), 1f, lineThickness, blendType);
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial.Value, lineColor, center, (Vector3)(current - center), 1f, lineThickness, blendType);
                 }
 
                 if(!first && faceMaterial.HasValue)
                 {
-                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normal, normal, normal, uv0, uv1, uv2, faceMaterial.Value, 0, center, triangleColor, blendType);
+                    Vector3 normalF = (Vector3)normal;
+                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normalF, normalF, normalF, uv0, uv1, uv2, faceMaterial.Value, 0, center, triangleColor, blendType);
                 }
 
                 if(exit)

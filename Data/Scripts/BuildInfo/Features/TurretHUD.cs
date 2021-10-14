@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features
             double dirDot = Vector3D.Dot(camMatrix.Forward, shipForwardScreen);
             Color color = Color.Lerp(Color.Red, Color.Lime, (float)((1 + dirDot) / 2));
 
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, pos, shipForwardScreen, length, thick, BlendTypeEnum.PostPP);
+            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, pos, (Vector3)shipForwardScreen, length, thick, BlendTypeEnum.PostPP);
 
             float radius = 0.0005f * scaleFOV;
             MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);

@@ -227,12 +227,12 @@ namespace Digi.BuildInfo.Features
 
             data.ConstraintStrength = num2 / num4;
 
-            Vector3 vector = other.PositionComp.GetPosition() - block.PositionComp.GetPosition();
-            Vector3 value = block.WorldMatrix.GetDirectionVector(forward);
+            Vector3D vector = other.PositionComp.GetPosition() - block.PositionComp.GetPosition();
+            Vector3D value = block.WorldMatrix.GetDirectionVector(forward);
 
             Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(block.WorldMatrix.GetDirectionVector(right));
 
-            data.Distance = vector.Length();
+            data.Distance = (float)vector.Length();
             data.PositionOk = (data.Distance < block.CubeGrid.GridSize + 0.17f);
             data.AxisDelta = (float)(value + other.WorldMatrix.GetDirectionVector(forward)).Length();
             data.AxisOk = (data.AxisDelta < 0.1f);

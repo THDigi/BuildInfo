@@ -344,7 +344,7 @@ namespace Digi.BuildInfo.Systems
             MatrixD worldMatrix = MatrixD.CreateTranslation(weaponPosition.LogicalPositionWorld);
             worldMatrix.Right = character.WorldMatrix.Right;
             worldMatrix.Forward = weaponPosition.LogicalOrientationWorld;
-            worldMatrix.Up = Vector3.Cross(worldMatrix.Right, worldMatrix.Forward);
+            worldMatrix.Up = Vector3D.Cross(worldMatrix.Right, worldMatrix.Forward);
 
             Vector3D forward = worldMatrix.Forward;
             Vector3D start = worldMatrix.Translation; // + forward * originOffset;

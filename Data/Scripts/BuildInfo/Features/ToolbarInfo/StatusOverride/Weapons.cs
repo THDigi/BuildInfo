@@ -7,6 +7,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
