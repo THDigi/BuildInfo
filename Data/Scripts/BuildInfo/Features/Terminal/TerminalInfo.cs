@@ -95,6 +95,8 @@ namespace Digi.BuildInfo.Features.Terminal
         public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= TerminalCustomControlGetter;
+
+            ResourceStats?.Dispose();
         }
 
         private void RegisterFormats()
@@ -283,8 +285,6 @@ namespace Digi.BuildInfo.Features.Terminal
             viewedInTerminal = null;
             currentFormatCall = null;
 
-            ResourceStats.Reset();
-
             ClearCaches(); // block changed so caches are no longer relevant
 
             if(newBlock != null)
@@ -300,6 +300,15 @@ namespace Digi.BuildInfo.Features.Terminal
                 newBlock.PropertiesChanged += PropertiesChanged;
 
                 UpdateDetailInfo(force: true);
+
+                if(oldBlock == null || oldBlock.CubeGrid != newBlock.CubeGrid)
+                {
+                    ResourceStats.Reset(oldBlock == null ? "no prev block" : "grid changed");
+                }
+            }
+            else
+            {
+                ResourceStats.Reset("deselected");
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (viewedInTerminal != null));
@@ -876,17 +885,6 @@ namespace Digi.BuildInfo.Features.Terminal
             float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
 #endif
 
-            ResourceStats.Update(block.CubeGrid);
-
-            // TODO: find an alternate way of getting power required as it's very buggy (usually negative or 0) if there's only solar panels (prob wind turbines too)
-            //if(PS.SolarPanelsWorking > 0 || PS.WindTurbinesWorking > 0)
-            //{
-            //    if(PS.BatteriesWorking == 0 && PS.EnginesWorking == 0 && PS.ReactorsWorking == 0 && PS.OthersWorking == 0)
-            //    {
-            //        required = 0;
-            //    }
-            //}
-
             if(info.Length > 0)
                 info.Append('\n');
 
@@ -902,58 +900,73 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             info.Append('\n');
 
+#if true
+            // TODO: find an alternate way of getting power required as it's buggy (usually negative or 0) if there's only solar panels (prob wind turbines too)
+            info.Append("  Total required: ").PowerFormat(required).Append('\n');
+            info.Append("  Total available: ").PowerFormat(available).Append('\n');
+            info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
+#else
+            ResourceStats.Update(block.CubeGrid);
+            ResourceStatsCollector.Stats stats = ResourceStats.ComputedStats;
+
             //info.Append("  Total required: ").PowerFormat(required).Append('\n');
             //info.Append("  Total available: ").PowerFormat(available).Append('\n');
 
             //info.Append("  Input: ").PowerFormat(PS.PowerInput).Append(" / ").PowerFormat(PS.PowerRequired).Append('\n');
             //info.Append("  Output: ").PowerFormat(PS.PowerOutput).Append(" / ").PowerFormat(PS.PowerMaxOutput).Append('\n');
 
-            info.Append("  Total required: ").PowerFormat(ResourceStats.PowerRequired).Append('\n');
-            info.Append("  Total available: ").PowerFormat(ResourceStats.PowerMaxOutput).Append('\n');
+            info.Append("  Total required: ").PowerFormat(stats.PowerRequired).Append('\n');
+            info.Append("  Total available: ").PowerFormat(stats.PowerOutputCapacity).Append('\n');
+
+
+            info.Append("  Full: ").Append(ResourceStats.RefreshFullMs.ToString("0.##########")).Append(" ms").Append('\n'); 
+            info.Append("  Working: ").Append(ResourceStats.RefreshWorkingMs.ToString("0.##########")).Append(" ms").Append('\n');
+            info.Append($"  Blocks: {ResourceStats.Blocks.Count}\n");
 
             info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
 
             if(lite)
                 return;
 
-            info.Append("  Consumers: ");
-            if(ResourceStats.Consumers == 0)
-                info.Append("None\n");
-            else
-                info.Append(ResourceStats.ConsumersWorking).Append(" of ").Append(ResourceStats.Consumers).Append(" working\n");
+            //info.Append("  Consumers: ");
+            //if(ResourceStats.Consumers == 0)
+            //    info.Append("None\n");
+            //else
+            //    info.Append(ResourceStats.ConsumersWorking).Append(" of ").Append(ResourceStats.Consumers).Append(" working\n");
 
             info.Append("  Reactors: ");
-            if(ResourceStats.Reactors == 0)
+            if(stats.Reactors == 0)
                 info.Append("None\n");
             else
-                info.Append(ResourceStats.ReactorsWorking).Append(" of ").Append(ResourceStats.Reactors).Append(" working\n");
+                info.Append(stats.ReactorsWorking).Append(" of ").Append(stats.Reactors).Append(" working\n");
 
             info.Append("  Engines: ");
-            if(ResourceStats.Engines == 0)
+            if(stats.Engines == 0)
                 info.Append("None\n");
             else
-                info.Append(ResourceStats.EnginesWorking).Append(" of ").Append(ResourceStats.Engines).Append(" working\n");
+                info.Append(stats.EnginesWorking).Append(" of ").Append(stats.Engines).Append(" working\n");
 
             info.Append("  Batteries: ");
-            if(ResourceStats.Batteries == 0)
+            if(stats.Batteries == 0)
                 info.Append("None\n");
             else
-                info.Append(ResourceStats.BatteriesWorking).Append(" of ").Append(ResourceStats.Batteries).Append(" working\n");
+                info.Append(stats.BatteriesWorking).Append(" of ").Append(stats.Batteries).Append(" working\n");
 
             info.Append("  Solar Panels: ");
-            if(ResourceStats.SolarPanels == 0)
+            if(stats.SolarPanels == 0)
                 info.Append("None\n");
             else
-                info.Append(ResourceStats.SolarPanelsWorking).Append(" of ").Append(ResourceStats.SolarPanels).Append(" working\n");
+                info.Append(stats.SolarPanelsWorking).Append(" of ").Append(stats.SolarPanels).Append(" working\n");
 
             info.Append("  Wind Turbines: ");
-            if(ResourceStats.WindTurbines == 0)
+            if(stats.WindTurbines == 0)
                 info.Append("None\n");
             else
-                info.Append(ResourceStats.WindTurbinesWorking).Append(" of ").Append(ResourceStats.WindTurbines).Append(" working\n");
+                info.Append(stats.WindTurbinesWorking).Append(" of ").Append(stats.WindTurbines).Append(" working\n");
 
-            if(ResourceStats.Other > 0)
-                info.Append("  Other power sources: ").Append(ResourceStats.OthersWorking).Append(" of ").Append(ResourceStats.Other).Append(" working\n");
+            if(stats.OtherProducers > 0)
+                info.Append("  Other power sources: ").Append(stats.OtherProducersWorking).Append(" of ").Append(stats.OtherProducers).Append(" working\n");
+#endif
         }
         #endregion ShipController extra stuff
 
