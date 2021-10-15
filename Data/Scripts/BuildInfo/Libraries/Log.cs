@@ -481,7 +481,7 @@ namespace Digi
                 try
                 {
                     sb.Clear();
-                    sb.Append(DateTime.Now.ToString("[HH:mm:ss] "));
+                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(MyAPIGateway.Session.GameplayFrameCounter % 60).Append("] ");
 
                     if(writer == null)
                         sb.Append("(PRE-INIT) ");

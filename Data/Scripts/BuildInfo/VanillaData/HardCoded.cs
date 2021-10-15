@@ -21,10 +21,10 @@ namespace Digi.BuildInfo.VanillaData
     /// </summary>
     public static class Hardcoded
     {
-        public const float GAME_EARTH_GRAVITY = 9.81f;
+        public const float EarthGravity = 9.81f;
 
         // from MyGridConveyorSystem
-        public const float Conveyors_PowerReqPerGrid = 0.0000001f; /// <see cref="Features.ChatCommands.CommandHelp.Footer"/>
+        public const float Conveyors_PowerReqPerGrid = 0.000001f; // HACK: CONVEYOR_SYSTEM_CONSUMPTION is 1E-07f (0.1W) but ingame it's 1W... so I dunno.
         public const string Conveyors_PowerGroup = "Conveyors";
 
         // from MyGridConveyorSystem.NeedsLargeTube()
@@ -257,7 +257,7 @@ namespace Digi.BuildInfo.VanillaData
         {
             float currentVolume = (float)(Math.Pow(radius, def.ConsumptionPower) * Math.PI * 0.75);
             float defaultVolume = (float)(Math.Pow(100, def.ConsumptionPower) * Math.PI * 0.75);
-            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / GAME_EARTH_GRAVITY);
+            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / EarthGravity);
         }
 
         public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
@@ -313,8 +313,8 @@ namespace Digi.BuildInfo.VanillaData
 
             // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
             // remove thge last ' / Hardcoded.GAME_EARTH_GRAVITY' when it's fixed.
-            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
-            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
+            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
+            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.EarthGravity / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
 
             if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
             {
@@ -362,7 +362,7 @@ namespace Digi.BuildInfo.VanillaData
             float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
             float realAirDensity = (atmosphere * 1.225f);
 
-            maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / GAME_EARTH_GRAVITY;
+            maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / EarthGravity;
         }
 
         // from where MyMultiTextPanelComponent.Init() is being called

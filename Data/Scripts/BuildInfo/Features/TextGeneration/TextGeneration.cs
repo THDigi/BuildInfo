@@ -2419,7 +2419,7 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
-                float consumptionMultiplier = 1f + (thrust.ConsumptionFactorPerG / Hardcoded.GAME_EARTH_GRAVITY);
+                float consumptionMultiplier = 1f + (thrust.ConsumptionFactorPerG / Hardcoded.EarthGravity);
                 //float consumptionMultiplier = 1f + thrust.ConsumptionFactorPerG;
 
                 bool show = true;
