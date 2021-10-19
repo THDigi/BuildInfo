@@ -1367,6 +1367,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
+                    // accounts for hardcoded multipliers from MyDoor and MyAdvancedDoor
                     float grindRatio = (aimedBlock?.FatBlock != null ? aimedBlock.FatBlock.DisassembleRatio : def.DisassembleRatio);
 
                     bool hackable = false;
@@ -1763,8 +1764,10 @@ namespace Digi.BuildInfo.Features
             float weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
             float grindRatio = def.DisassembleRatio;
 
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
-                grindRatio *= Hardcoded.Door_Closed_DisassembleRatioMultiplier;
+            if(def is MyDoorDefinition)
+                grindRatio *= Hardcoded.Door_DisassembleRatioMultiplier;
+            else if(def is MyAdvancedDoorDefinition)
+                grindRatio *= Hardcoded.AdvDoor_Closed_DisassembleRatioMultiplier;
 
             string padding = (part ? (Main.TextAPI.IsEnabled ? "        | " : "       | ") : "");
 

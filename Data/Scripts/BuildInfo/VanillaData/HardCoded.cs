@@ -15,6 +15,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.VanillaData
 {
+    // TODO: make a comparer (or compare folder structure for winmerge) to find changes in all these hardcoded values in decompiled game code.
     // HACK: various hardcoded data from game sources
     /// <summary>
     /// Various hardcoded data and behavior extracted from game source because it's not directly accessible.
@@ -158,7 +159,9 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyDoor
         public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR;
-        public const float Door_Closed_DisassembleRatioMultiplier = 3.3f; // both MyDoor and MyAdvanced door override DisassembleRatio and multiply by this when closed
+        public const float Door_DisassembleRatioMultiplier = 3.3f; // MyDoor override DisassembleRatio and multiplies definition by this no matter of open/close state
+        public const float AdvDoor_Closed_DisassembleRatioMultiplier = 3.3f; // MyAdvancedDoor override DisassembleRatio and multiplies definition by this when closed
+
         public static float Door_MoveSpeed(float openingSpeed, float travelDistance = 1f)
         {
             return travelDistance / openingSpeed;
