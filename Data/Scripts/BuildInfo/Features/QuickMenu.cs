@@ -139,7 +139,7 @@ namespace Digi.BuildInfo.Features
                         ToggleTextInfo();
                         break;
                     case 6:
-                        Main.Overlays.CycleOverlayMode(showNotification: false);
+                        Main.Overlays.CycleMode(showNotification: false);
                         break;
                     case 7:
                         SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
@@ -179,7 +179,7 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.CycleOverlaysBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
-                    Main.Overlays.CycleOverlayMode();
+                    Main.Overlays.CycleMode();
                 }
 
                 return;

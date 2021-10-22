@@ -48,6 +48,7 @@ namespace Digi.BuildInfo
         public JumpDriveMonitor JumpDriveMonitor;
         public LeakInfo LeakInfo;
         public Overlays Overlays;
+        public SpecializedOverlays SpecializedOverlays;
         public LockOverlay LockOverlay;
         public PickBlock PickBlock;
         public QuickMenu QuickMenu;
@@ -117,6 +118,7 @@ namespace Digi.BuildInfo
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             Overlays = new Overlays(this);
+            SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);
             LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);

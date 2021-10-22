@@ -150,6 +150,22 @@
     <Compile Include="Features\AnalyseShip.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\Overlays\LabelRendering.cs" />
+    <Compile Include="Features\Overlays\Specialized\LaserAntenna.cs" />
+    <Compile Include="Features\Overlays\Specialized\TargetDummy.cs" />
+    <Compile Include="Features\Overlays\Specialized\Thruster.cs" />
+    <Compile Include="Features\Overlays\Specialized\LandingGear.cs" />
+    <Compile Include="Features\Overlays\Specialized\WindTurbine.cs" />
+    <Compile Include="Features\Overlays\Specialized\Door.cs" />
+    <Compile Include="Features\Overlays\Specialized\ShipDrill.cs" />
+    <Compile Include="Features\Overlays\Specialized\ConveyorSorter.cs" />
+    <Compile Include="Features\Overlays\Specialized\Weapon.cs" />
+    <Compile Include="Features\Overlays\Specialized\ShipTool.cs" />
+    <Compile Include="Features\Overlays\Specialized\SpecializedOverlayBase.cs" />
+    <Compile Include="Features\Overlays\Specialized\Collector.cs" />
+    <Compile Include="Features\Overlays\OverlayDrawInstance.cs" />
+    <Compile Include="Features\Overlays\Overlays.cs" />
+    <Compile Include="Features\Overlays\SpecializedOverlays.cs" />
     <Compile Include="Features\OverrideToolSelectionDraw.cs" />
     <Compile Include="Features\CubeBuilderAdditions.cs" />
     <Compile Include="Features\ProjectedBlockInfo.cs" />
@@ -211,7 +227,6 @@
     <Compile Include="Features\LiveData\Weapon.cs" />
     <Compile Include="Features\MergeFailDetector.cs" />
     <Compile Include="Features\Overlays\LockOverlay.cs" />
-    <Compile Include="Features\Overlays\Overlays.cs" />
     <Compile Include="Features\PickBlock.cs" />
     <Compile Include="Features\PlacementDistance.cs" />
     <Compile Include="Features\QuickMenu.cs" />
@@ -379,5 +394,6 @@
     <Compile Include="VanillaData\Hardcoded.cs" />
     <Compile Include="VanillaData\Pressurization.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

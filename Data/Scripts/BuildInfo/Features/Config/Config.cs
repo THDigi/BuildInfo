@@ -79,6 +79,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
         public BoolSetting OverlaysShowLabelsWithBind;
+        // TODO ^ rebindable key?
 
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;

@@ -829,7 +829,7 @@ namespace Digi.BuildInfo.Features
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
-            if(Main.Overlays.DrawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
@@ -919,7 +919,7 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.ValueName);
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayNames[Main.Overlays.DrawOverlay]);
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayModeName);
             if(Main.Config.CycleOverlaysBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
@@ -1872,7 +1872,7 @@ namespace Digi.BuildInfo.Features
                     {
                         for(int i = 0; i < 6; ++i)
                         {
-                            Vector3I normal = (Vector3I)Main.Overlays.DIRECTIONS[i];
+                            Vector3I normal = Base6Directions.IntDirections[i];
 
                             if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
                             {

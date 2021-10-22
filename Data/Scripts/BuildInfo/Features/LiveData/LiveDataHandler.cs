@@ -18,8 +18,16 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
-        BData_Base DataCache;
-        MyDefinitionId DataCacheForId;
+        Type ConveyorEndpointInterface = null;
+        Type ConveyorSegmentInterface = null;
+
+        readonly Cache DefaultCache = new Cache();
+
+        public class Cache
+        {
+            public BData_Base Data;
+            public MyDefinitionBase ForDef;
+        }
 
         readonly HashSet<MyDefinitionId> BlockIdsSpawned = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         readonly Dictionary<MyObjectBuilderType, Func<BData_Base>> BDataInstancer = new Dictionary<MyObjectBuilderType, Func<BData_Base>>();
@@ -49,28 +57,28 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
             // every other block type is going to use BData_Base
-
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
 
         public override void RegisterComponent()
         {
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         public override void UnregisterComponent()
         {
             Main.BlockMonitor.BlockAdded -= BlockMonitor_BlockAdded;
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
-        public T Get<T>(MyCubeBlockDefinition def) where T : BData_Base
+        public T Get<T>(MyCubeBlockDefinition def, Cache cache = null) where T : BData_Base
         {
             T data = null;
 
-            if(DataCache != null && def.Id == DataCacheForId)
+            if(cache == null)
+                cache = DefaultCache;
+
+            if(cache.ForDef == def)
             {
-                data = DataCache as T;
+                data = cache.Data as T;
                 if(data != null)
                     return data;
             }
@@ -89,21 +97,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 data = null; // will work next time
             }
 
-            DataCacheForId = def.Id;
-            DataCache = data;
+            cache.Data = data;
+            cache.ForDef = def;
             return data;
-        }
-
-        public void InvalidateCache()
-        {
-            DataCache = null;
-            DataCacheForId = default(MyDefinitionId);
-        }
-
-        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
-        {
-            DataCache = null;
-            DataCacheForId = default(MyDefinitionId);
         }
 
         void AddType<T>(MyObjectBuilderType blockType) where T : BData_Base, new()
@@ -143,9 +139,6 @@ namespace Digi.BuildInfo.Features.LiveData
                 Main.TextGeneration.LastDefId = default(MyDefinitionId);
             }
         }
-
-        Type ConveyorEndpointInterface;
-        Type ConveyorSegmentInterface;
 
         void CheckConveyorSupport(IMyCubeBlock block)
         {
