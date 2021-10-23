@@ -1,8 +1,10 @@
-﻿using Digi.BuildInfo.Features.Config;
+﻿using System;
+using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.Input.Devices;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -25,6 +27,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
+            MyCubeBuilder.Static.OnBlockSizeChanged += CubeBuilder_SizeChanged;
             Main.EquipmentMonitor.ToolChanged += ToolChanged;
             Main.EquipmentMonitor.BuilderAimedBlockChanged += BuilderAimedBlockChanged;
         }
@@ -34,11 +37,47 @@ namespace Digi.BuildInfo.Features
             if(MyCubeBuilder.Static != null)
                 MyCubeBuilder.Static.ShowRemoveGizmo = true;
 
+            if(MyCubeBuilder.Static != null)
+                MyCubeBuilder.Static.OnBlockSizeChanged -= CubeBuilder_SizeChanged;
+
             if(!Main.ComponentsRegistered)
                 return;
 
             Main.EquipmentMonitor.ToolChanged -= ToolChanged;
             Main.EquipmentMonitor.BuilderAimedBlockChanged -= BuilderAimedBlockChanged;
+        }
+
+        bool IgnoreNextBuilderSizeChangeEvent = false;
+        void CubeBuilder_SizeChanged()
+        {
+            try
+            {
+                if(IgnoreNextBuilderSizeChangeEvent)
+                {
+                    IgnoreNextBuilderSizeChangeEvent = false;
+                    return;
+                }
+
+                // prevent cube size from changing when pressing any modifier, simple solution to prevent it from interferring hotkeys
+                MyCubeBlockDefinition blockDef = MyCubeBuilder.Static?.CurrentBlockDefinition;
+                if(blockDef != null && (MyAPIGateway.Input.IsAnyShiftKeyPressed() || MyAPIGateway.Input.IsAnyCtrlKeyPressed() || MyAPIGateway.Input.IsAnyAltKeyPressed()))
+                {
+                    MyCubeBlockDefinitionGroup blockPairDef = MyDefinitionManager.Static.GetDefinitionGroup(blockDef.BlockPairName);
+                    if((blockDef.CubeSize == MyCubeSize.Large && blockPairDef.Small != null) || (blockDef.CubeSize == MyCubeSize.Small && blockPairDef.Large != null))
+                    {
+                        IgnoreNextBuilderSizeChangeEvent = true;
+
+                        if(blockDef.CubeSize == MyCubeSize.Large)
+                            MyCubeBuilder.Static.Activate(blockPairDef.Small.Id);
+                        else
+                            MyCubeBuilder.Static.Activate(blockPairDef.Large.Id);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         void BuilderAimedBlockChanged(IMySlimBlock obj)
