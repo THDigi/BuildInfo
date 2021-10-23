@@ -43,7 +43,6 @@ namespace Digi.BuildInfo
 
         // Features
         public readonly Config Config;
-        public readonly LegacyConfig LegacyConfig;
         public readonly FontsHandler FontsHandler;
         public readonly ConfigMenuHandler ConfigMenuHandler;
         public readonly JumpDriveMonitor JumpDriveMonitor;
@@ -115,7 +114,6 @@ namespace Digi.BuildInfo
 
             // Features
             Config = new Config(this);
-            LegacyConfig = new LegacyConfig(this);
             FontsHandler = new FontsHandler(this);
             ConfigMenuHandler = new ConfigMenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);

@@ -191,7 +191,6 @@
     <Compile Include="Features\Config\FlagExtensions.cs" />
     <Compile Include="Features\Config\Flags.cs" />
     <Compile Include="Features\Config\InputCombinationSetting.cs" />
-    <Compile Include="Features\Config\LegacySettings.cs" />
     <Compile Include="Features\Config\MenuCustomInput.cs" />
     <Compile Include="Features\Config\TextAlignSetting.cs" />
     <Compile Include="Features\DebugLog.cs" />
