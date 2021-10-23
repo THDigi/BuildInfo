@@ -10,13 +10,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     {
         public readonly IMyTerminalAction Action;
         public readonly string DisplayName;
+        public readonly string OriginalIcon;
         public Action<IMyTerminalBlock, StringBuilder> OriginalWriter { get; private set; }
+
+        public string CustomIcon = null;
 
         private readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
 
         public ActionWrapper(IMyTerminalAction action)
         {
             Action = action;
+
+            OriginalIcon = action.Icon;
 
             OriginalWriter = Action.Writer;
             CustomWriter = NewWriter;

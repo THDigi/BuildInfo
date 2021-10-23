@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.Input;
 using Sandbox.Definitions;
@@ -33,11 +34,12 @@ namespace Digi.BuildInfo.Features
 
         MyHudBlockInfo.ComponentInfo HintComponent = new MyHudBlockInfo.ComponentInfo()
         {
-            Icons = new string[] { @"Textures\GUI\Icons\HUD 2017\HelpScreen.png" },
+            Icons = new string[1],
         };
 
         public BlockInfoScrollComponents(BuildInfoMod main) : base(main)
         {
+            HintComponent.Icons[0] = Utils.GetModFullPath(@"Textures\UIHelpIcon.dds");
         }
 
         public override void RegisterComponent()

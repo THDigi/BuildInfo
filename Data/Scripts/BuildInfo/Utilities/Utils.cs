@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
@@ -37,7 +38,10 @@ namespace Digi.BuildInfo.Utilities
 
         public static string GetModFullPath(string relativePath)
         {
-            return BuildInfoMod.Instance.Session.ModContext.ModPath + @"\" + relativePath;
+            if(relativePath.StartsWith("\\") || relativePath.StartsWith("/"))
+                relativePath = relativePath.Substring(1); // remove leading slashes
+
+            return Path.Combine(BuildInfoMod.Instance.Session.ModContext.ModPath, relativePath);
         }
 
         // from MySafeZoneAction
