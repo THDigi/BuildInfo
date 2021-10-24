@@ -277,6 +277,7 @@
     <Compile Include="Features\TurretHUD.cs" />
     <Compile Include="Features\WhatsNew.cs" />
     <Compile Include="GameSession.cs" />
+    <Compile Include="Libraries\ComponentLib\ProfilingObjects.cs" />
     <Compile Include="Libraries\ComponentLib\ComponentBase.cs" />
     <Compile Include="Libraries\ComponentLib\GameSession.cs" />
     <Compile Include="Libraries\ComponentLib\IComponent.cs" />

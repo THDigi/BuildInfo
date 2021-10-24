@@ -196,13 +196,9 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(generate)
             {
                 DisposeTempObjects();
-            }
-
-            if(generate)
-            {
                 timer.Stop();
 
-                string msg = $"Finished generating {Tooltips.Count.ToString()} tooltips in {timer.Elapsed.TotalMilliseconds.ToString("0.##########")} ms";
+                string msg = $"Finished generating {Tooltips.Count.ToString()} tooltips in {timer.Elapsed.TotalMilliseconds.ToString("###,###,###,##0.##")} ms";
                 MyLog.Default.WriteLine($"{BuildInfoMod.ModName} mod: {msg}");
                 Log.Info(msg);
             }

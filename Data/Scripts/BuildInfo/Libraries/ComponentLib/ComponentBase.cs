@@ -1,4 +1,7 @@
-﻿namespace Digi.ComponentLib
+﻿using System;
+using VRage;
+
+namespace Digi.ComponentLib
 {
     public abstract class ComponentBase<TModBase> : IComponent where TModBase : IModBase
     {
@@ -47,6 +50,8 @@
             else
                 UpdateMethods = UpdateMethods & ~flag;
         }
+
+        ProfileUpdates IComponent.Profiled { get; } = new ProfileUpdates();
 
         /// <summary>
         /// Called in LoadData()

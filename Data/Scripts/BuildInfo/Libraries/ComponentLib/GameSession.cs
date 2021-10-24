@@ -18,6 +18,7 @@ namespace Digi.ComponentLib
             try
             {
                 LoadMod();
+                main.FinishProfilingConstructors();
             }
             catch(Exception e)
             {

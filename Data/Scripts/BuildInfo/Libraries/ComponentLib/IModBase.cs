@@ -1,4 +1,9 @@
-﻿namespace Digi.ComponentLib
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using VRage;
+
+namespace Digi.ComponentLib
 {
     /// <summary>
     /// Main class interface for internal use.
@@ -25,5 +30,8 @@
 
         bool SessionHasBeforeSim { get; }
         bool SessionHasAfterSim { get; }
+
+        bool Profile { get; set; }
+        void FinishProfilingConstructors();
     }
 }

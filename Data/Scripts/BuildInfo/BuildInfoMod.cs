@@ -91,7 +91,7 @@ namespace Digi.BuildInfo
 
         public BuildInfoMod(BuildInfo_GameSession session) : base(ModName, session, MyUpdateOrder.AfterSimulation)
         {
-            IsDevMod = (Log.WorkshopId == 0 && session?.ModContext?.ModId == "BuildInfo.dev");
+            IsDevMod = (IsLocalMod && session?.ModContext?.ModId == "BuildInfo.dev");
 
             // Utils
             Caches = new Caches(this);
