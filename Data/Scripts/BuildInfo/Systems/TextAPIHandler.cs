@@ -98,6 +98,7 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
+        // TODO move to an extensions class ?
         HudAPIv2.HUDMessage measuringMsg;
         public Vector2D GetStringSize(StringBuilder text)
         {

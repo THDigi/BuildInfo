@@ -371,8 +371,8 @@
     <Compile Include="Libraries\RichHudFramework\Shared\UI\SettingsMenu\ITerminalPage.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\SettingsMenu\ITerminalPageCategory.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\SettingsMenu\ITextPage.cs" />
-    <Compile Include="Libraries\TextAPIv2.cs" />
-    <Compile Include="Libraries\WeaponCoreAPI.cs" />
+    <Compile Include="Libraries\TextHudAPI\HudAPIv2.cs" />
+    <Compile Include="Libraries\WeaponCore\WeaponCoreAPI.cs" />
     <Compile Include="Libraries\WhiplashWeaponFramework\WhipWeaponFrameworkAPI.cs" />
     <Compile Include="Libraries\WhiplashWeaponFramework\WeaponConfig.cs" />
     <Compile Include="ModComponent.cs" />
