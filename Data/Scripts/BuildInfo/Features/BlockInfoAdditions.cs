@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.ConfigLib;
 using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.Game.Gui;
@@ -17,25 +19,34 @@ namespace Digi.BuildInfo.Features
 {
     public class BlockInfoAdditions : ModComponent
     {
-        public readonly MyStringId LINE_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
-        private const BlendTypeEnum BLEND_TYPE = BlendTypeEnum.PostPP;
-        private const float BLOCKINFO_COMPONENT_HEIGHT = 0.037f; // component height in the vanilla block info
-        private const float BLOCKINFO_COMPONENT_WIDTH = 0.011f;
-        private const float BLOCKINFO_COMPONENT_UNDERLINE_OFFSET = 0.012f;
-        private const float BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT = 0.0014f;
-        private const float BLOCKINFO_Y_OFFSET = 0.12f;
-        private const float BLOCKINFO_Y_OFFSET_2 = 0.0102f;
-        private const float BLOCKINFO_LINE_HEIGHT = 0.0001f;
-        private readonly Vector4 BLOCKINFO_LINE_FUNCTIONAL = Color.Red.ToVector4();
-        private readonly Vector4 BLOCKINFO_LINE_OWNERSHIP = Color.Blue.ToVector4();
-        private readonly Vector4 BLOCKINFO_LINE_COMPLOSS = (Color.Yellow * 0.75f).ToVector4();
+        readonly Vector4 LineFunctionalColor = Color.Red.ToVector4();
+        readonly Vector4 LineOwnershipColor = Color.Blue.ToVector4();
+        readonly Vector4 HighlightCompLossColor = (Color.Yellow * 0.75f).ToVector4();
 
-        private int ComputerComponentIndex = -1;
+        // from MyGuiControlBlockGroupInfo.CreateBlockInfoControl()
+        readonly Vector4 ScrollbarColor = new Vector4(118f / 255f, 166f / 255f, 64f / 85f, 1f);
+        readonly Vector4 ScrollbarBgColor = new Vector4(142f / (339f * MathHelper.Pi), 46f / 255f, 52f / 255f, 1f);
 
-        private int ComponentReplaceInfoCount = 0;
-        private readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(10);
+        readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+        const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
-        private class ComponentInfo
+        const float HudComponentHeight = 0.037f; // on HUD space
+        const float HudComponentWidth = 0.011f;
+        const float HudComponentUnderlineOffset = 0.012f;
+
+        const float WorldBlockInfoLineHeight = 0.0001f; // on world space
+        const float WorldComponentHighlightHeight = 0.0014f;
+        const float WorldComponentHeight = 0.00185f;
+        const float WorldBuildInfoMargin = 0.0008f;
+
+        const float WorldScrollbarWidth = 0.0005f;
+        const float WorldScrollbarInnerMargin = (WorldScrollbarWidth / 4f);
+
+        int ComputerComponentIndex = -1;
+        int ComponentReplaceInfoCount = 0;
+        readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(10);
+
+        class ComponentInfo
         {
             public int Index;
             public MyPhysicalItemDefinition Replaced;
@@ -47,7 +58,7 @@ namespace Digi.BuildInfo.Features
                 Replaced = replaced;
             }
 
-            public void Clear()
+            public void Reset()
             {
                 //if(Text != null)
                 //    Text.Visible = false;
@@ -75,7 +86,7 @@ namespace Digi.BuildInfo.Features
             Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditions_ValueAssigned;
         }
 
-        void BlockInfoAdditions_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        void BlockInfoAdditions_ValueAssigned(bool oldValue, bool newValue, SettingBase<bool> setting)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
         }
@@ -86,7 +97,7 @@ namespace Digi.BuildInfo.Features
 
             for(int i = 0; i < ComponentReplaceInfoCount; ++i)
             {
-                ComponentReplaceInfo[i].Clear();
+                ComponentReplaceInfo[i].Reset();
             }
 
             ComponentReplaceInfoCount = 0;
@@ -143,75 +154,135 @@ namespace Digi.BuildInfo.Features
                 MyCubeBlockDefinition blockDef = Main.EquipmentMonitor.BlockDef;
                 MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-                Vector2 posCompList = Main.DrawUtils.GetHudComponentListStart();
+                #region Compute BlockInfo HUD position
+                // it's actually bottom right of the top component line... O:)
+                Vector2 compListTopRight = new Vector2(0.9894f, 0.678f);
+
+                if(MyAPIGateway.Session.ControlledObject is IMyShipController)
+                    compListTopRight.Y = 0.498f;
+
+                if(Main.GameConfig.HudState == HudState.BASIC)
+                    compListTopRight.Y = 0.558f;
+
+                // FIXME: vanilla UI is all over the place with this, needs tweaking
+                if(Main.GameConfig.AspectRatio > 5) // triple monitor
+                    compListTopRight.X += 0.75f;
+                #endregion
+
                 int totalComps = blockDef.Components.Length;
 
-                int scrollIndexOffset = Main.BlockInfoScrollComponents.IndexOffset;
+                int maxVisibleComps = Main.BlockInfoScrollComponents.MaxVisible;
+                int scrollIdx = Main.BlockInfoScrollComponents.Index;
+                int scrollIdxOffset = Main.BlockInfoScrollComponents.IndexOffset;
+                int maxScrollIdx = scrollIdx + maxVisibleComps;
+
+                float scaleFOV = Main.DrawUtils.ScaleFOV;
 
                 // for debugging
                 //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Control))
                 //{
                 //    for(int i = totalComps - 1; i >= 0; --i)
                 //    {
-                //        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * DrawUtils.ScaleFOV);
-                //
-                //        var hud = posCompList;
-                //        hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - i - scrollIndexOffset - 1);
-                //
-                //        var worldPos = DrawUtils.HUDtoWorld(hud);
-                //
-                //        worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
-                //
-                //        MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), worldPos, camMatrix.Left, camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                //        Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldComponentHighlightHeight * scaleFOV);
+
+                //        Vector2 posHud = compListTopRight;
+                //        posHud.Y += HudComponentHeight * (totalComps - i - scrollIdxOffset - 1);
+                //        Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
+
+                //        DrawDotAt(posWorld, new Color(255, 0, 255));
+
+                //        posWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                //        posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y; // move to center of sprite?
+
+                //        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                 //    }
                 //}
 
                 // red functionality line
-                int critIndex = blockDef.CriticalGroup + scrollIndexOffset;
+                int critIndex = blockDef.CriticalGroup + scrollIdxOffset;
                 if(critIndex >= 0 && critIndex < totalComps)
                 {
-                    Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
+                    Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
 
-                    Vector2 hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - critIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+                    Vector2 posHud = compListTopRight;
+                    posHud.Y += HudComponentHeight * (totalComps - critIndex - 2) + HudComponentUnderlineOffset;
 
-                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                    worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+                    posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y;
 
-                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_FUNCTIONAL, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                 }
 
                 // blue hacking line
-                int compIndex = ComputerComponentIndex + scrollIndexOffset;
+                int compIndex = ComputerComponentIndex + scrollIdxOffset;
                 if(compIndex >= 0 && compIndex < totalComps)
                 {
-                    Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
+                    Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
 
-                    Vector2 hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - compIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
+                    Vector2 posHud = compListTopRight;
+                    posHud.Y += HudComponentHeight * (totalComps - compIndex - 2) + HudComponentUnderlineOffset;
 
-                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D posWOrld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                    worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
+                    posWOrld += camMatrix.Left * sizeWorld.X + camMatrix.Up * (sizeWorld.Y * 3); // extra offset to allow for red line to be visible
 
-                    MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_OWNERSHIP, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                 }
 
-                int maxVisible = Main.BlockInfoScrollComponents.MaxVisible;
-                int scrollIdx = Main.BlockInfoScrollComponents.Index;
-                int maxIdx = scrollIdx + maxVisible;
+                // scrollbar for scrollable components feature
+                if(Main.Config.ScrollableComponentsList.Value && totalComps > maxVisibleComps)
+                {
+                    float scrollbarHeightRatio = 1f;
+                    float scrollPos = 0f;
+
+                    if(totalComps > maxVisibleComps)
+                    {
+                        scrollbarHeightRatio = ((float)maxVisibleComps / (float)totalComps);
+                        scrollPos = (float)scrollIdxOffset / (float)(totalComps - maxVisibleComps);
+                    }
+
+                    Vector2 posHud = compListTopRight;
+                    posHud.Y -= HudComponentHeight; // make it actually top-right
+
+                    #region background coordinates
+                    int visibleComps = Math.Min(maxVisibleComps, totalComps);
+                    Vector2 bgSizeWorld = new Vector2(WorldScrollbarWidth * scaleFOV, visibleComps * WorldComponentHeight * scaleFOV);
+
+                    Vector3D bgPosWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                    bgPosWorld += camMatrix.Right * bgSizeWorld.X * 2 + camMatrix.Down * bgSizeWorld.Y;
+                    #endregion
+
+                    #region bar coordinates
+                    float emptySpaceHeight = (bgSizeWorld.Y * (1 - scrollbarHeightRatio));
+                    Vector2 barSizeWorld = new Vector2(bgSizeWorld.X, bgSizeWorld.Y * scrollbarHeightRatio);
+
+                    Vector3D barPosWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                    barPosWorld += camMatrix.Right * barSizeWorld.X * 2 + camMatrix.Down * (barSizeWorld.Y + (emptySpaceHeight * 2 * scrollPos));
+                    #endregion
+
+                    // make scrollbar smaller than the background
+                    barSizeWorld.X -= WorldScrollbarInnerMargin;
+                    barSizeWorld.Y -= WorldScrollbarInnerMargin;
+
+                    // shift entire scrollbar down until it lines up with the bottom, as it looks too high because of the bottom-aligned texts on components
+                    bgPosWorld += camMatrix.Down * WorldBuildInfoMargin;
+                    barPosWorld += camMatrix.Down * WorldBuildInfoMargin;
+
+                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarBgColor, bgPosWorld, camMatrix.Left, camMatrix.Up, bgSizeWorld.X, bgSizeWorld.Y, Vector2.Zero, BlendType);
+                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarColor, barPosWorld, camMatrix.Left, camMatrix.Up, barSizeWorld.X, barSizeWorld.Y, Vector2.Zero, BlendType);
+                }
 
                 // different return item on grind
                 for(int i = (ComponentReplaceInfoCount - 1); i >= 0; --i)
                 {
                     ComponentInfo info = ComponentReplaceInfo[i];
-                    int index = info.Index + scrollIndexOffset;
+                    int index = info.Index + scrollIdxOffset;
 
-                    if(info.Index >= maxIdx // hide for components scrolled above
+                    if(info.Index >= maxScrollIdx // hide for components scrolled above
                     || info.Index < scrollIdx // hide for components scrolled below
-                    || info.Index == (maxVisible - 1) && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
-                    || info.Index == (totalComps - maxVisible) && Main.BlockInfoScrollComponents.ShowDownHint) // hide for bottom hint component
+                    || info.Index == (maxVisibleComps - 1) && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
+                    || info.Index == (totalComps - maxVisibleComps) && Main.BlockInfoScrollComponents.ShowDownHint) // hide for bottom hint component
                     {
                         //if(info.Text != null)
                         //    info.Text.Visible = false;
@@ -219,28 +290,28 @@ namespace Digi.BuildInfo.Features
                         continue;
                     }
 
-                    Vector2 hud = posCompList;
-                    hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - index - 1);
+                    Vector2 hud = compListTopRight;
+                    hud.Y += HudComponentHeight * (totalComps - index - 1);
 
-                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D posWorld = Main.DrawUtils.HUDtoWorld(hud);
 
                     if(Main.TextAPI.IsEnabled)
                     {
                         const double LeftOffset = 0.0183;
                         const string LabelPrefix = "<color=255,255,0>Grinds to: ";
                         const int NameMaxChars = 24;
-                        double textScale = 0.0012 * Main.DrawUtils.ScaleFOV;
+                        double textScale = 0.0012 * scaleFOV;
 
-                        worldPos += camMatrix.Left * (LeftOffset * Main.DrawUtils.ScaleFOV);
+                        posWorld += camMatrix.Left * (LeftOffset * scaleFOV);
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), worldPos, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BLEND_TYPE);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), posWorld, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BlendType);
                             info.Text.Visible = false; // not required when using manual .Draw()
                         }
                         else
                         {
-                            info.Text.WorldPosition = worldPos;
+                            info.Text.WorldPosition = posWorld;
                             info.Text.Left = camMatrix.Left;
                             info.Text.Up = camMatrix.Up;
                             info.Text.Scale = textScale;
@@ -255,14 +326,21 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * Main.DrawUtils.ScaleFOV);
+                        Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldComponentHighlightHeight * scaleFOV);
 
-                        worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
+                        posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y;
 
-                        MyTransparentGeometry.AddBillboardOriented(LINE_MATERIAL, BLOCKINFO_LINE_COMPLOSS, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, size.X, size.Y, Vector2.Zero, BLEND_TYPE);
+                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, HighlightCompLossColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                     }
                 }
             }
+        }
+
+        void DrawDotAt(Vector3D posWorld, Color color)
+        {
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            float dotSize = 0.0001f;
+            MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * 0.75f, posWorld, camMatrix.Left, camMatrix.Up, dotSize, dotSize, Vector2.Zero, BlendType);
         }
     }
 }

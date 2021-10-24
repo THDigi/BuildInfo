@@ -126,22 +126,5 @@ namespace Digi.BuildInfo.Utilities
 
             return size;
         }
-
-        public Vector2 GetHudComponentListStart()
-        {
-            Vector2 posHUD = new Vector2(0.9894f, 0.678f);
-
-            if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                posHUD.Y = 0.498f;
-
-            if(Main.GameConfig.HudState == HudState.BASIC)
-                posHUD.Y = 0.558f;
-
-            // FIXME: vanilla UI is all over the place with this, needs tweaking
-            if(Main.GameConfig.AspectRatio > 5) // triple monitor
-                posHUD.X += 0.75f;
-
-            return posHUD;
-        }
     }
 }
