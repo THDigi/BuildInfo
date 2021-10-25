@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Digi.ConfigLib;
 using Digi.Input;
 using Sandbox.Definitions;
-using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
+using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -14,15 +15,19 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    // TODO: maybe also scroll description if it's insanely long? (it can get too long with this mod adding Mod: and DLC: lines)
+
     public class BlockInfoScrollComponents : ModComponent
     {
-        public const int MaxVisibleHudHints = 9;
-        public const int MaxVisibleHudMinChar = 13;
-        public const int MaxVisibleHudMinShip = 7;
+        const int MaxCompsCharacterHudHints = 9;
+        const int MaxCompsCharacter = 13;
+
+        const int MaxCompsShipHudHints = 9;
+        const int MaxCompsShip = 7;
 
         public int IndexOffset { get; private set; }
         public int Index { get; private set; }
-        public int MaxVisible { get; private set; } = MaxVisibleHudHints;
+        public int MaxVisible { get; private set; } = MaxCompsCharacterHudHints;
         public bool ShowUpHint { get; private set; }
         public bool ShowDownHint { get; private set; }
 
@@ -30,6 +35,7 @@ namespace Digi.BuildInfo.Features
         bool ShowScrollHint;
         HudState HudState;
 
+        MyDefinitionId? ComputedForDefinitionId;
         readonly List<MyHudBlockInfo.ComponentInfo> CycleComponents = new List<MyHudBlockInfo.ComponentInfo>(16);
 
         MyHudBlockInfo.ComponentInfo HintComponent = new MyHudBlockInfo.ComponentInfo()
@@ -61,12 +67,13 @@ namespace Digi.BuildInfo.Features
             Main.Config.ScrollableComponentsList.ValueAssigned -= SettingValueSet;
         }
 
-        void SettingValueSet(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        void SettingValueSet(bool oldValue, bool newValue, SettingBase<bool> setting)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
 
             if(oldValue != newValue)
             {
+                ComputedForDefinitionId = null;
                 CycleComponents.Clear();
                 Index = 0;
                 IndexOffset = 0;
@@ -85,6 +92,7 @@ namespace Digi.BuildInfo.Features
 
             HudState = state;
 
+            ComputedForDefinitionId = null;
             CycleComponents.Clear();
             Index = 0;
             IndexOffset = 0;
@@ -93,8 +101,23 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.ScrollableComponentsList.Value)
             {
-                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
                 MyHud.BlockInfo.Components.Clear();
+                MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
+
+                if(MyAPIGateway.Session.ControlledObject is IMyCubeBlock)
+                {
+                    // refreshing doesn't seem necessary for ship
+                }
+                else
+                {
+                    IMyGunObject<MyToolBase> toolEnt = MyAPIGateway.Session?.Player?.Character?.EquippedTool as IMyGunObject<MyToolBase>;
+                    if(toolEnt != null)
+                    {
+                        // HACK: forcing tool to refresh HUD... also needs a MyCharacter so had to hackily cast that aswell.
+                        toolEnt.OnControlReleased();
+                        toolEnt.OnControlAcquired(Utils.CastHax(new MyCockpit().Pilot, MyAPIGateway.Session.Player.Character));
+                    }
+                }
             }
         }
 
@@ -102,18 +125,16 @@ namespace Digi.BuildInfo.Features
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null && Main.Config.ScrollableComponentsList.Value));
 
-            CycleComponents.Clear();
-            Index = 0;
-            IndexOffset = 0;
-            ShowDownHint = false;
-            ShowUpHint = false;
-            ShowScrollHint = true;
-
-            //if(Main.Config.ScrollableComponentsList.Value)
-            //{
-            //    MyHud.BlockInfo.DefinitionId = default(MyDefinitionId);
-            //    MyHud.BlockInfo.Components.Clear();
-            //}
+            if(def == null || (ComputedForDefinitionId != null && ComputedForDefinitionId != def.Id))
+            {
+                ComputedForDefinitionId = null;
+                CycleComponents.Clear();
+                Index = 0;
+                IndexOffset = 0;
+                ShowDownHint = false;
+                ShowUpHint = false;
+                ShowScrollHint = true;
+            }
         }
 
         public override void UpdateDraw()
@@ -127,14 +148,13 @@ namespace Digi.BuildInfo.Features
             if(Main.EquipmentMonitor.BlockDef == null)
                 return;
 
-            MaxVisible = MaxVisibleHudHints;
-            if(HudState == HudState.BASIC)
-            {
-                if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                    MaxVisible = MaxVisibleHudMinShip;
-                else
-                    MaxVisible = MaxVisibleHudMinChar;
-            }
+            bool hudHints = (HudState == HudState.HINTS);
+            bool inShip = (MyAPIGateway.Session.ControlledObject is IMyCubeBlock);
+
+            if(inShip)
+                MaxVisible = (hudHints ? MaxCompsShipHudHints : MaxCompsShip);
+            else
+                MaxVisible = (hudHints ? MaxCompsCharacterHudHints : MaxCompsCharacter);
 
             List<MyHudBlockInfo.ComponentInfo> hudComps = MyHud.BlockInfo.Components;
             if(hudComps.Count > MaxVisible)
@@ -151,17 +171,35 @@ namespace Digi.BuildInfo.Features
                     CycleComponents.Add(comp);
                 }
 
+                ComputedForDefinitionId = MyHud.BlockInfo.DefinitionId;
                 Refresh = true;
 
-                IMySlimBlock slimBlock = Main.EquipmentMonitor.AimedBlock;
-                if(slimBlock != null)
+                #region auto-scroll depending on build progress
+                IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
+                if(aimedBlock != null)
                 {
-                    // auto-scroll to higher if block is built
                     if(Main.EquipmentMonitor.AimedProjectedBy != null)
-                        Index = 0;
+                    {
+                        Index = 0; // projected, never has placed components
+                    }
                     else
-                        Index = MathHelper.FloorToInt(Math.Max(0, slimBlock.BuildLevelRatio * CycleComponents.Count - 6));
+                    {
+                        // follow the highest mounted or stockpiled component.
+                        int totalComponents = CycleComponents.Count;
+                        int midPoint = MaxVisible / 2;
+
+                        for(int i = 0; i < totalComponents; i++)
+                        {
+                            if(CycleComponents[i].InstalledCount > 0)
+                            {
+                                Index = i;
+                            }
+                        }
+
+                        Index -= midPoint;
+                    }
                 }
+                #endregion
 
                 int maxIndex = CycleComponents.Count - MaxVisible;
                 Index = MathHelper.Clamp(Index, 0, maxIndex);
@@ -171,8 +209,8 @@ namespace Digi.BuildInfo.Features
             if(CycleComponents.Count == 0)
                 return;
 
-            bool inChar = InputLib.IsInputReadable(checkSpectator: false);
-            if(inChar && MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            bool inputReadable = InputLib.IsInputReadable(checkSpectator: false);
+            if(inputReadable && MyAPIGateway.Input.IsAnyShiftKeyPressed())
             {
                 int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
                 if(scroll > 0)
@@ -196,15 +234,20 @@ namespace Digi.BuildInfo.Features
                 List<MyHudBlockInfo.ComponentInfo> comps = MyHud.BlockInfo.Components;
                 comps.Clear();
 
+                int totalComponents = CycleComponents.Count;
+
+                // commented out because it's not necessary, when welding/grinding it gets fully recomputed anyway.
                 // auto-scroll while welding/grinding the block
                 // also nice side effect of this not triggering unless components change
-                if(inChar && Main.EquipmentMonitor.AimedBlock != null && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION))
-                {
-                    Index = MathHelper.FloorToInt(Math.Max(0, Main.EquipmentMonitor.AimedBlock.BuildLevelRatio * CycleComponents.Count - 6));
-                }
+                //IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
+                //if(inputReadable && aimedBlock != null && MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION))
+                //{
+                //    int midPoint = MaxVisible / 2;
+                //    Index = MathHelper.FloorToInt(Math.Max(0, (aimedBlock.BuildLevelRatio * totalComponents) - midPoint));
+                //}
 
                 int scrollShow = MaxVisible;
-                int maxIndex = CycleComponents.Count - scrollShow;
+                int maxIndex = totalComponents - scrollShow;
                 Index = MathHelper.Clamp(Index, 0, maxIndex);
                 IndexOffset = maxIndex - Index;
 
@@ -227,7 +270,7 @@ namespace Digi.BuildInfo.Features
                 for(int i = loopStart; i < loopEnd; ++i)
                 {
                     int idx = i + Index;
-                    if(idx >= CycleComponents.Count)
+                    if(idx >= totalComponents)
                         break; // final redundancy
 
                     comps.Add(CycleComponents[idx]);

@@ -158,6 +158,7 @@ namespace Digi.BuildInfo.Features
                 // it's actually bottom right of the top component line... O:)
                 Vector2 compListTopRight = new Vector2(0.9894f, 0.678f);
 
+                // HACK: MyGuiScreenHudSpace.PrepareDraw() does an offset
                 if(MyAPIGateway.Session.ControlledObject is IMyShipController)
                     compListTopRight.Y = 0.498f;
 
