@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
         static readonly Vector4 MaxLineColorVec = MaxColor.ToVector4();
         static readonly Vector4 MinColorVec = (MinColor * 0.45f).ToVector4();
         static readonly Vector4 MaxColorVec = (MaxColor * 0.45f).ToVector4();
-        static readonly Vector4 TriangleColor = MinColorVec.ToLinearRGB(); // HACK required to match the colors of other billboards
+        static readonly Vector4 TriangleColor = MinColorVec.ToLinearRGB(); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
 
         public WindTurbine(SpecializedOverlays processor) : base(processor)
         {

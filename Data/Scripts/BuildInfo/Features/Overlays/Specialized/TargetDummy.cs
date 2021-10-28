@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -15,7 +16,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
         public TargetDummy(SpecializedOverlays processor) : base(processor)
         {
-            Add(Constants.TargetDummyType);
+            Add(Hardcoded.TargetDummyType);
         }
 
         public override void Draw(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block)

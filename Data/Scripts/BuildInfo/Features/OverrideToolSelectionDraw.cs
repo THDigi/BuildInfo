@@ -215,7 +215,7 @@ namespace Digi.BuildInfo.Features
             {
                 fillData.ModelMatrix = fatBlock.PositionComp.WorldMatrixRef;
 
-                if(!fillData.ModelBB.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
+                if(!fillData.ModelBB.HasValue || Main.Tick % (Constants.TicksPerSecond / 4) == 0)
                 {
                     BoundingBox localAABB = fatBlock.PositionComp.LocalAABB;
                     BoundingBoxD modelBB = new BoundingBoxD(localAABB.Min, localAABB.Max);

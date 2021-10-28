@@ -13,42 +13,27 @@ using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
-using VRageMath;
 
 namespace Digi.BuildInfo
 {
     public class Constants : ModComponent
     {
-        public const int MOD_VERSION = 4; // notifies player of notable changes and links them to workshop's changelog.
+        public const int ModVersion = 4; // notifies player of notable changes and links them to workshop's changelog.
 
-        public readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
-        public const float ASPECT_RATIO_54_FIX = 0.938f;
-        public const float BLOCKINFO_TEXT_PADDING = 0.001f;
+        public const int TicksPerSecond = (int)(MyEngineConstants.UPDATE_STEPS_PER_MINUTE / 60);
 
-        public const int TICKS_PER_SECOND = 60;
+        public const string WarnPlayerIsNull = "Local Player is null, silly bugs... try again in a few seconds.";
 
-        public readonly MyDefinitionId COMPUTER_COMPONENT_ID = new MyDefinitionId(typeof(MyObjectBuilder_Component), MyStringHash.GetOrCompute("Computer")); // HACK: this is what the game uses for determining if a block can have ownership
+        public static bool ExportVanillaDefinitions = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
 
-        public const bool BLOCKPICKER_IN_MP = true; // no longer broken, allowed.
-        public const string BLOCKPICKER_DISABLED_CONFIG = "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/pc/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect";
-        public const string BLOCKPICKER_DISABLED_CHAT = "Pick block feature disabled in MP because of issues, see workshop page for details.";
-
-        public const string PLAYER_IS_NULL = "Local Player is null, silly bugs... try again in a few seconds.";
-
-        public static bool EXPORT_VANILLA_BLOCKS = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
-
-        public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
-        public static readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine); // TODO: use the interface when one is added
-        public static readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
-
-        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
+        public readonly HashSet<MyObjectBuilderType> DefaultInventoryAllowedTypes = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {
             typeof(MyObjectBuilder_Ore),
             typeof(MyObjectBuilder_Ingot),
             typeof(MyObjectBuilder_Component)
         };
 
-        public readonly MyStringId[] CONTROL_SLOTS = new MyStringId[]
+        public readonly MyStringId[] ToolbarSlotControlIds = new MyStringId[]
         {
             MyControlsSpace.SLOT0, // do not edit order
             MyControlsSpace.SLOT1,
@@ -62,7 +47,7 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT9,
         };
 
-        public readonly MyJoystickButtonsEnum[] DPAD_NAMES = new MyJoystickButtonsEnum[]
+        public readonly MyJoystickButtonsEnum[] DPadValues = new MyJoystickButtonsEnum[]
         {
             MyJoystickButtonsEnum.JDUp, // do not edit order
             MyJoystickButtonsEnum.JDLeft,
@@ -70,7 +55,7 @@ namespace Digi.BuildInfo
             MyJoystickButtonsEnum.JDDown,
         };
 
-        public readonly char[] DPAD_CHARS = new char[]
+        public readonly char[] DPadIcons = new char[]
         {
             '\ue011', // do not edit order
             '\ue010',
@@ -139,10 +124,9 @@ namespace Digi.BuildInfo
         #region Resource group priorities
         public int ResourceSinkGroups = 0;
         public int ResourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority
-                  = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
+        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
 
-        private void ComputeResourceGroups()
+        void ComputeResourceGroups()
         {
             ResourceGroupPriority.Clear();
             ResourceSourceGroups = 0;

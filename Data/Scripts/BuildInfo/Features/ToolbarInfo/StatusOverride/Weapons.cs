@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             ReloadTracker.TrackedWeapon weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
             if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
             {
-                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
                 sb.Append("Rld:").TimeFormat(seconds);
             }
             else
@@ -128,7 +128,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     {
                         reloading++;
 
-                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
                         minReloadTimeLeft = Math.Min(minReloadTimeLeft, seconds);
                     }
                     else

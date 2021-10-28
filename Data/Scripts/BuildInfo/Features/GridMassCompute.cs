@@ -15,8 +15,8 @@ namespace Digi.BuildInfo.Features
 {
     public class GridMassCompute : ModComponent
     {
-        public const int MassDataExpireTicks = (Constants.TICKS_PER_SECOND * 60 * 5);
-        public const int MassDataCheckTicks = (Constants.TICKS_PER_SECOND * 60);
+        public const int MassDataExpireTicks = (Constants.TicksPerSecond * 60 * 5);
+        public const int MassDataCheckTicks = (Constants.TicksPerSecond * 60);
 
         readonly MyConcurrentPool<MassData> DataPool = new MyConcurrentPool<MassData>();
         readonly Dictionary<IMyCubeGrid, MassData> Grids = new Dictionary<IMyCubeGrid, MassData>();

@@ -2046,7 +2046,7 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
-            Add(Constants.TargetDummyType, Format_TargetDummy);
+            Add(Hardcoded.TargetDummyType, Format_TargetDummy);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
@@ -2509,8 +2509,8 @@ namespace Digi.BuildInfo.Features
                         .Separator().Label("Longest").DistanceFormat(data.LongestFlame, 2)
                         .Append(" (").DistanceFormat(data.LongestFlamePastEdge).Append(" past cube edge)");
 
-                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TICKS_PER_SECOND).Append("/s")
-                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TICKS_PER_SECOND).Append("/s");
+                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TicksPerSecond).Append("/s")
+                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TicksPerSecond).Append("/s");
                 }
 
                 if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)

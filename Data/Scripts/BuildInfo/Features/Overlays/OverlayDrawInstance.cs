@@ -162,7 +162,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     {
                         //drawMatrix.Translation = box.Center;
 
-                        // HACK: potential fix for jittery overlays when aiming at a grid.
+                        // potential fix for jittery overlays when aiming at a grid.
                         Vector3D addPosition;
                         MyCubeBuilder.Static.GetAddPosition(out addPosition);
                         drawMatrix.Translation = addPosition;
@@ -252,7 +252,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         if(Main.EquipmentMonitor.AimedProjectedBy == null && block != null && def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
                         {
-                            // HACK condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
+                            // HACK: condition matching the condition in MyGridGasSystem.IsAirtightFromDefinition()
                             MyCubeBlockDefinition.BuildProgressModel progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
                             if(block.BuildLevelRatio < progressModel.BuildRatioUpperBound)
                                 BlockFunctionalForPressure = false;
@@ -689,7 +689,7 @@ namespace Digi.BuildInfo.Features.Overlays
             firstOuterRimVec = center + normal * radius; // fallback
             lastOuterRimVec = firstOuterRimVec;
 
-            Vector4 triangleColor = (faceMaterial.HasValue ? faceColor.ToLinearRGB() : faceColor); // HACK keeping color consistent with other billboards
+            Vector4 triangleColor = (faceMaterial.HasValue ? faceColor.ToLinearRGB() : faceColor); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
 
             // from MyLargeTurretBase
 

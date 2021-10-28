@@ -227,7 +227,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick % (Constants.TICKS_PER_SECOND / 2) == 0)
+            if(tick % (Constants.TicksPerSecond / 2) == 0)
             {
                 AnimFlip = !AnimFlip;
             }

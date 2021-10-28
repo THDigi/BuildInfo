@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -189,9 +190,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 // from classes that use MyUseObjectAttribute
                 else if(detectorType.EqualsIgnoreCase("terminal"))
                 {
-                    // HACK: MyUseObjectsComponent.CreateInteractiveObject() hardcodes 'detector_terminal' to be door open/close if it's MyDoor type.
-                    // HACK: Can't use `is IMyDoor` because it's implemented by all doors
-                    if(block.GetType().Name == "MyDoor")
+                    if(Hardcoded.DetectorIsOpenCloseDoor("terminal", block))
                         Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
                     else
                         Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));

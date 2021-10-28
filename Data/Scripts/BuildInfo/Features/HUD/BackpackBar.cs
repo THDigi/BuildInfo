@@ -12,7 +12,7 @@ namespace Digi.BuildInfo.Features.HUD
     public class BackpackBarStat : IMyHudStat
     {
         public const string GroupName = "Cargo";
-        public const int UpdateFrequencyTicks = (int)(Constants.TICKS_PER_SECOND * 1.0);
+        public const int UpdateFrequencyTicks = (int)(Constants.TicksPerSecond * 1.0);
         public const string TextFormat = "###,###,###,###,##0.##";
 
         public MyStringHash Id { get; private set; }

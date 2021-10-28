@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features
 
         private float VanillaSurvivalDistance()
         {
-            // HACK hardcoded: from Data/Game/SessionComponents.sbc
+            // HACK: hardcoded from Data/Game/SessionComponents.sbc
 
             MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
             if(def == null)

@@ -163,8 +163,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         void SetNotification(string message, int aliveTimeMs = 2000, string font = FontsHandler.WhiteSh)
         {
-            if(aliveTimeMs < 1000 && Main.IsPaused)
-                return; // HACK: avoid notification glitching out if showing them continuously when game is paused
+            if(Main.IsPaused)
+                return; // avoid notification glitching out if showing them continuously when game is paused
 
             if(Notification == null)
                 Notification = MyAPIGateway.Utilities.CreateNotification("");

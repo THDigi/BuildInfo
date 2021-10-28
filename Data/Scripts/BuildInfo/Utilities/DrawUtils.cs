@@ -114,14 +114,14 @@ namespace Digi.BuildInfo.Utilities
 
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
-            Vector2 size = Main.Constants.BLOCKINFO_SIZE;
+            Vector2 size = new Vector2(0.02164f, 0.00076f);
             size.Y *= Ymultiplier;
-            size.Y += Constants.BLOCKINFO_TEXT_PADDING;
+            size.Y += 0.001f; // padding
             size *= ScaleFOV;
 
             if(Math.Abs(Main.GameConfig.AspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
             {
-                size.X *= Constants.ASPECT_RATIO_54_FIX;
+                size.X *= 0.938f;
             }
 
             return size;

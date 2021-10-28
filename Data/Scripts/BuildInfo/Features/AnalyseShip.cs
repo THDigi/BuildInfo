@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(MyAPIGateway.Session?.Player == null)
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
                     return true; // must be true to avoid showing other messages
                 }
 

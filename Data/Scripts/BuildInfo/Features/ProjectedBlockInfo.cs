@@ -69,6 +69,7 @@ namespace Digi.BuildInfo.Features
 
                     if(eq.AimedProjectedBy != null && (eq.IsAnyGrinder || eq.AimedProjectedCanBuild != BuildCheckResult.OK))
                     {
+                        // HACK TODO: continue hardcoded hunt
                         // HACK: hardcoded from MyWelder.DrawHud()
                         hud.MissingComponentIndex = 0;
                         hud.DefinitionId = def.Id;

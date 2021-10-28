@@ -311,7 +311,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     IMyPlayer player = MyAPIGateway.Session?.Player;
                     if(player != null && player.IdentityId == playerId)
                     {
-                        ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
+                        ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TicksPerSecond);
                     }
                 }
             }
@@ -462,8 +462,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // show and fade out when entering cockpit
             if(modeForFadeOut && ShowUntilTick >= tick && (LabelsMode != ToolbarLabelsMode.HudHints || Main.GameConfig.HudState != HudState.HINTS))
             {
-                float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
-                float fadeTicks = (Constants.TICKS_PER_SECOND * 1.5f);
+                float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TicksPerSecond);
+                float fadeTicks = (Constants.TicksPerSecond * 1.5f);
 
                 float bgOpacity = Main.GameConfig.HudBackgroundOpacity;
                 float textOpacity = 1f;
@@ -637,7 +637,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     sb.ColorA(Color.Gray * opacity);
 
                 if(gamepadHUD)
-                    sb.Append(Main.Constants.DPAD_CHARS[i]).Append("  ");
+                    sb.Append(Main.Constants.DPadIcons[i]).Append("  ");
                 else
                     sb.Append(i + 1).Append(". ");
 

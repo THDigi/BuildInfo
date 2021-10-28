@@ -56,7 +56,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public const int DrawMinSeconds = 30; // cap for the dynamically calculated particle lifetime
         public const int DrawMaxSeconds = 300;
-        public const int DrawFadeOutTicks = Constants.TICKS_PER_SECOND * 3; // fade out particles over this many ticks before they vanish
+        public const int DrawFadeOutTicks = Constants.TicksPerSecond * 3; // fade out particles over this many ticks before they vanish
 
         public readonly MyStringId ParticleMaterial = MyStringId.GetOrCompute("BuildInfo_LeakInfo_Particle");
         public const float EndPointSize = 0.15f;
@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
         public const double DrawDepth = 0.01; // for see-through-walls
         public const float DrawDepthF = (float)DrawDepth;
 
-        public const int ReleaseMemoryAfterTicks = Constants.TICKS_PER_SECOND * 60 * 5;
+        public const int ReleaseMemoryAfterTicks = Constants.TicksPerSecond * 60 * 5;
 
         readonly ParticleData[] ParticleDataGridSize = new ParticleData[]
         {
@@ -390,7 +390,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 else
                 {
                     int drawSeconds = (int)MathHelper.Clamp((DrawLines.Count * 2 * SelectedGrid.GridSize), DrawMinSeconds, DrawMaxSeconds);
-                    DrawUntilTick = Main.Tick + (Constants.TICKS_PER_SECOND * drawSeconds);
+                    DrawUntilTick = Main.Tick + (Constants.TicksPerSecond * drawSeconds);
 
                     SetStatus(InfoStatus.Drawing);
 
@@ -461,7 +461,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             // start dot
             Vector3D startPointWorld = SelectedGrid.GridIntegerToWorld(DrawLines[DrawLines.Count - 1].Item1);
             //if(IsVisibleFast(ref camPos, ref camFw, ref startPointWorld))
-            // HACK manually inlined ^v
+            // HACK: manually inlined ^v
             if(Vector3D.Dot(camPos, startPointWorld) - dotPosFw > 0)
             {
                 MyTransparentGeometry.AddPointBillboard(ParticleMaterial, StartPointColorWorld * alpha, startPointWorld, EndPointSize, 0);
@@ -494,7 +494,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             // end dot
             Vector3D endPointWorld = SelectedGrid.GridIntegerToWorld(DrawLines[0].Item2);
             //if(IsVisibleFast(ref camPos, ref camFw, ref endPointWorld))
-            // HACK manually inlined ^v
+            // HACK: manually inlined ^v
             if(Vector3D.Dot(camPos, endPointWorld) - dotPosFw > 0)
             {
                 MyTransparentGeometry.AddPointBillboard(ParticleMaterial, EndPointColorWorld * alpha, endPointWorld, EndPointSize, 0);

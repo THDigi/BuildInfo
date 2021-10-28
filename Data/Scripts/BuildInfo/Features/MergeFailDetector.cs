@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        // HACK copied from MyShipMergeBlock
+        // HACK: copied from MyShipMergeBlock
         #region Converted vanilla code
         private void LoadDummies()
         {

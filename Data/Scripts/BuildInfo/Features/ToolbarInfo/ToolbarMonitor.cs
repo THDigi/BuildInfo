@@ -335,7 +335,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(MyAPIGateway.Gui.IsCursorVisible && !Main.GUIMonitor.InToolbarConfig)
                 return;
 
-            MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
+            MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
             for(int i = 1; i < controlSlots.Length; ++i) // intentionally skipping SLOT0
             {
@@ -374,7 +374,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed && MyAPIGateway.Input.IsAnyNewMouseOrJoystickPressed())
             {
                 // selecting slot
-                MyJoystickButtonsEnum[] dpad = Main.Constants.DPAD_NAMES;
+                MyJoystickButtonsEnum[] dpad = Main.Constants.DPadValues;
 
                 for(int i = 0; i < dpad.Length; ++i)
                 {

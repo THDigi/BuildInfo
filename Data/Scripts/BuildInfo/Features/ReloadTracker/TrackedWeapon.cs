@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(projectileShotsInBurst == 0 && missileShotsInBurst == 0)
                 return false;
 
-            ReloadDurationTicks = (int)(Constants.TICKS_PER_SECOND * (WeaponDef.ReloadTime / 1000f));
+            ReloadDurationTicks = (int)(Constants.TicksPerSecond * (WeaponDef.ReloadTime / 1000f));
             lastShotTime = Gun.GunBase.LastShootTime.Ticks; // needed because it starts non-0 as it is serialized to save.
             return true;
         }

@@ -556,8 +556,7 @@ namespace Digi.BuildInfo.Features.Config
 
             BlockPickerBind = new InputCombinationSetting(Handler, "Bind: Block Picker", Combination.Create(BLOCK_PICKER_INPUT_NAME, "ctrl c.cubesizemode"),
                 "The bind for adding the aimed block to the toolbar.",
-                "NOTE: It does request a number press afterwards.",
-                (!Constants.BLOCKPICKER_IN_MP ? Constants.BLOCKPICKER_DISABLED_CONFIG : ""));
+                "NOTE: It does request a number press afterwards.");
 
             LockOverlayBind = new InputCombinationSetting(Handler, "Bind: Lock Overlay", Combination.Create(LOCK_OVERLAY_INPUT_NAME, "shift c.cubesizemode"),
                 "When aiming at a block with a tool it locks overlays to that block so you can move around.",
@@ -596,7 +595,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
             #endregion
 
-            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.MOD_VERSION, 0, int.MaxValue,
+            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.ModVersion, 0, int.MaxValue,
                 "Latest version loaded for notifying you of notable changes.",
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;

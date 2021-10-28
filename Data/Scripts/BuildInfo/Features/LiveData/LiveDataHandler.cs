@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -52,7 +53,7 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeMissileTurret));
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
 
-            AddType<BData_TargetDummy>(Constants.TargetDummyType);
+            AddType<BData_TargetDummy>(Hardcoded.TargetDummyType);
 
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 

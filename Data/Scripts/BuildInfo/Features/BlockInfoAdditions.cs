@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Draygo.API;
@@ -109,7 +110,7 @@ namespace Digi.BuildInfo.Features
                 {
                     MyCubeBlockDefinition.Component comp = def.Components[i];
 
-                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Main.Constants.COMPUTER_COMPONENT_ID)
+                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Hardcoded.ComputerComponentId)
                     {
                         ComputerComponentIndex = i;
                     }
@@ -158,9 +159,8 @@ namespace Digi.BuildInfo.Features
                 // it's actually bottom right of the top component line... O:)
                 Vector2 compListTopRight = new Vector2(0.9894f, 0.678f);
 
-                // HACK: MyGuiScreenHudSpace.PrepareDraw() does an offset
                 if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                    compListTopRight.Y = 0.498f;
+                    compListTopRight.Y = Hardcoded.HudBlockInfoOffsetInShip;
 
                 if(Main.GameConfig.HudState == HudState.BASIC)
                     compListTopRight.Y = 0.558f;

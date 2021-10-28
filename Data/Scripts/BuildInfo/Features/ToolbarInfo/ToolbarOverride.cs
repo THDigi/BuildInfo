@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void UpdateAfterSim(int tick)
         {
-            if(RehookForSeconds > 0 && tick % Constants.TICKS_PER_SECOND == 0)
+            if(RehookForSeconds > 0 && tick % Constants.TicksPerSecond == 0)
             {
                 // HACK: must register late as possible
                 MyAPIGateway.TerminalControls.CustomActionGetter -= CustomActionGetter;

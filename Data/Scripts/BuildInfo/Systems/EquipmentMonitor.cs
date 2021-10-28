@@ -470,7 +470,7 @@ namespace Digi.BuildInfo.Systems
 
                     if(!check)
                     {
-                        MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
+                        MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
                         // intentionally skipping SLOT0
                         for(int i = 1; i < controlSlots.Length; ++i)

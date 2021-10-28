@@ -684,7 +684,7 @@ namespace Digi.BuildInfo.Utilities
             if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
                 if(types == null && items == null)
-                    types = bi.Constants.DEFAULT_ALLOWED_TYPES;
+                    types = bi.Constants.DefaultInventoryAllowedTypes;
 
                 float minMass = float.MaxValue;
                 float maxMass = 0f;

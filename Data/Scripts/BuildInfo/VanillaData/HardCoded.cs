@@ -11,22 +11,23 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.VanillaData
 {
-    // TODO: make a comparer (or compare folder structure for winmerge) to find changes in all these hardcoded values in decompiled game code.
     // HACK: various hardcoded data from game sources
     /// <summary>
     /// Various hardcoded data and behavior extracted from game source because it's not directly accessible.
     /// </summary>
     public static class Hardcoded
     {
+        // from MyGravityProviderSystem.G
         public const float EarthGravity = 9.81f;
 
         // from MyGridConveyorSystem
         public const float Conveyors_PowerReqPerGrid = 0.000001f; // HACK: CONVEYOR_SYSTEM_CONSUMPTION is 1E-07f (0.1W) but ingame it's 1W... so I dunno.
-        public const string Conveyors_PowerGroup = "Conveyors";
+        public const string Conveyors_PowerGroup = "Conveyors"; // in ctor()
 
         // from MyGridConveyorSystem.NeedsLargeTube()
         public static bool Conveyors_ItemNeedsLargeTube(MyPhysicalItemDefinition physicalItemDefinition)
@@ -51,12 +52,18 @@ namespace Digi.BuildInfo.VanillaData
             return (bp.BaseProductionTimeInSeconds / speed);
         }
 
-        // from MyShipConnector
+        // from MyShipConnector.Init()
         public static float ShipConnector_InventoryVolume(MyCubeBlockDefinition def)
         {
             float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (def.Size * gridSize * 0.8f).Volume;
         }
+
+        // from MyShipConnector.LoadDummies()
+        public static string Connector_DummyName = "connector"; // see BData_Connector too!
+
+        // from MyShipMergeBlock.LoadDummies()
+        public static string Merge_DummyName = "merge"; // see MergeFailDetector too!
 
         // from MyEngineerToolBase
         public const float EngineerToolBase_DefaultReachDistance = 2f;
@@ -97,6 +104,9 @@ namespace Digi.BuildInfo.VanillaData
         }
         public const float ShipTool_ReachDistance = 4.5f; // MyShipToolBase.DEFAULT_REACH_DISTANCE
 
+        const float ShipTool_ActivationsPerSecond = 3; // got from testing
+        // TODO investigate ^ should be 6 as it gets called in update10() ... hmm
+
         // from MyShipWelder.Activate()
         public const int ShipWelder_DivideByTargets = 4;
         public static float ShipWelder_WeldPerSec(int targets)
@@ -115,9 +125,7 @@ namespace Digi.BuildInfo.VanillaData
             return ShipTool_ActivationsPerSecond * coefficient * MyAPIGateway.Session.GrinderSpeedMultiplier * MyShipGrinderConstants.GRINDER_AMOUNT_PER_SECOND;
         }
 
-        // from testing
-        private const float ShipTool_ActivationsPerSecond = 3;
-
+        // from MyShipGrinder.ApplyImpulse()+UpdateAfterSimulation10()
         /// <summary>
         /// Returns maximum possible force applied to targetBlock's grid from sourceGrid's grinder.
         /// </summary>
@@ -134,7 +142,7 @@ namespace Digi.BuildInfo.VanillaData
             return 0f;
         }
 
-        // from MyButtonPanel
+        // from MyButtonPanel.Init()
         public const float ButtonPanel_PowerReq = 0.0001f;
 
         // from MySensorBlock
@@ -146,27 +154,35 @@ namespace Digi.BuildInfo.VanillaData
             return 0.0003f * (float)Math.Pow((maxField - Sensor_MinField).Volume, 1d / 3d);
         }
 
-        // from MyCockpit
+        // from MyCockpit.Init()
         public const float Cockpit_InventoryVolume = 1f; // Vector3.One.Volume;
+        public static float Cockpit_PowerRequired(MyCockpitDefinition def, bool isFunctional = true) => (isFunctional && def.EnableShipControl ? 0.003f : 0f);
 
-        public static float Cockpit_PowerRequired(MyCockpitDefinition def, bool isFunctional = true)
-        {
-            return (isFunctional && def.EnableShipControl ? 0.003f : 0f);
-        }
+        // from MyOreDetector.Init()
+        public const float OreDetector_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_ORE_DETECTOR; // 0.002f
 
-        // from MyOreDetector
-        public const float OreDetector_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_ORE_DETECTOR;
+        // from MyCollector.LoadDummies()
+        public static string Collector_DummyName = "collector"; // see BData_Collector too!
 
-        // from MyDoor
-        public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR;
+        // from MyLandingGear.LoadDummies()
+        public static string LandingGear_DummyName = "gear_lock"; // see BData_LandingGear too!
+
+        // from MyDoor.Init()
+        public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR; // 3E-05f
+
+        // from MyDoor.DisassembleRatio
         public const float Door_DisassembleRatioMultiplier = 3.3f; // MyDoor override DisassembleRatio and multiplies definition by this no matter of open/close state
+
+        // from MyAdvancedDoor.DisassembleRatio
         public const float AdvDoor_Closed_DisassembleRatioMultiplier = 3.3f; // MyAdvancedDoor override DisassembleRatio and multiplies definition by this when closed
 
+        // simplified from MyDoor.UpdateCurrentOpening()
         public static float Door_MoveSpeed(float openingSpeed, float travelDistance = 1f)
         {
             return travelDistance / openingSpeed;
-            //return (1f / ((MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS / 1000f) * openingSpeed)) / MyEngineConstants.UPDATE_STEPS_PER_SECOND; // computed after MyDoor.UpdateCurrentOpening()
         }
+
+        // simplified from MyAdvancedDoor.UpdateCurrentOpening()
         public static void AdvDoor_MoveSpeed(MyAdvancedDoorDefinition advDoor, out float openTime, out float closeTime)
         {
             openTime = 0;
@@ -175,17 +191,22 @@ namespace Digi.BuildInfo.VanillaData
             foreach(MyObjectBuilder_AdvancedDoorDefinition.Opening seq in advDoor.OpeningSequence)
             {
                 float moveTime = (seq.MaxOpen / seq.Speed);
-
                 openTime = Math.Max(openTime, seq.OpenDelay + moveTime);
                 closeTime = Math.Max(closeTime, seq.CloseDelay + moveTime);
             }
         }
 
-        // from MyMedicalRoom
-        public const float MedicalRoom_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_MEDICAL_ROOM;
+        // from MyMedicalRoom.Init()
+        public const float MedicalRoom_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_MEDICAL_ROOM; // 0.002f
 
-        // from MyRadioAntenna
-        public static float RadioAntenna_PowerReq(float maxRange) => (maxRange / 500f) * MyEnergyConstants.MAX_REQUIRED_POWER_ANTENNA;
+        // from MyRadioAntenna.UpdatePowerInput()
+        public static float RadioAntenna_PowerReq(float range, bool broadcasting = true)
+        {
+            if(!broadcasting)
+                range = 1f;
+
+            return (range / 500f) * MyEnergyConstants.MAX_REQUIRED_POWER_ANTENNA; // 0.002f
+        }
 
         // from MyBeacon.UpdatePowerInput()
         public static float Beacon_PowerReq(MyBeaconDefinition def, float? range = null)
@@ -196,62 +217,61 @@ namespace Digi.BuildInfo.VanillaData
                 return (def.MaxBroadcastPowerDrainkW / 1000f);
         }
 
-        // from MyTimerBlock
+        // from MyTimerBlock.Init()
         public const float Timer_PowerReq = 1E-07f;
 
-        // from MyProgrammableBlock
+        // from MyProgrammableBlock.Init()
         public const float ProgrammableBlock_PowerReq = 0.0005f;
 
-        // from MySoundBlock
-        public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK;
+        // from MySoundBlock.UpdateRequiredPowerInput()
+        public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK; // 0.0002f
 
-        // from tracking ShotsInBurst
+        // from <weapon>.CanShoot() taking ShotsInBurst into account.
         public static readonly HashSet<MyObjectBuilderType> NoReloadTypes = new HashSet<MyObjectBuilderType>()
         {
-            typeof(MyObjectBuilder_InteriorTurret),
-            typeof(MyObjectBuilder_SmallGatlingGun),
+            typeof(MyObjectBuilder_InteriorTurret), // MyLargeInteriorBarrel.StartShooting()
+            typeof(MyObjectBuilder_SmallGatlingGun), // MySmallGatlingGun.CanShoot()
         };
 
-        // from MyLargeTurretBase
-        public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET;
+        // from MyLargeTurretBase.Init()
+        public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET; // 0.002f
 
         // from MyLargeTurretBase.RotationAndElevation() - rotation speed is radisans per milisecond(ish) (since it uses 16, not 1/60)
         public const float Turret_RotationSpeedMul = MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS * 60;
 
-        // from MyLaserAntenna.RotationAndElevation() - rotation speed is radians per milisecond
-        public const float LaserAntenna_RotationSpeedMul = 1000;
+        // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
+        public const float LaserAntenna_RotationSpeedMul = 1000f;
 
+        // copied and converted from MyLaserAntenna.UpdatePowerInput()
         /// <summary>
         /// Distance in meters, returns power in MW.
         /// </summary>
         public static float LaserAntenna_PowerUsage(MyLaserAntennaDefinition def, double distanceMeters)
         {
-            // HACK copied and converted from MyLaserAntenna.UpdatePowerInput()
-
             double powerRatio = def.PowerInputLasing;
             double maxRange = (def.MaxRange < 0 ? double.MaxValue : def.MaxRange);
-
-            double A = powerRatio / 2.0 / 200000.0;
-            double B = powerRatio * 200000.0 - A * 200000.0 * 200000.0;
             double distance = Math.Min(distanceMeters, maxRange);
 
-            if(distance > 200000)
+            const double LinearUpToMeters = 200000;
+            if(distance > LinearUpToMeters)
             {
-                return (float)((distance * distance) * A + B) / 1000000f;
+                double a = powerRatio / 2.0 / LinearUpToMeters;
+                double b = powerRatio * LinearUpToMeters - a * LinearUpToMeters * LinearUpToMeters;
+                return (float)(((distance * distance) * a + b) / 1000.0 / 1000.0);
             }
             else
             {
-                return (float)(powerRatio * distance) / 1000000f;
+                return (float)((powerRatio * distance) / 1000.0 / 1000.0);
             }
         }
 
-        // used to determine what range is considered infinite
-        public const float LaserAntenna_InfiniteRange = 100000000;
+        // MyLaserAntenna.INFINITE_RANGE - used to determine what range is considered infinite
+        public const float LaserAntenna_InfiniteRange = 1E+08f;
 
-        // from MySmallMissileLauncher & MySmallGatlingGun
-        public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN;
+        // from MySmallMissileLauncher.Init() & from MySmallGatlingGun.Init()
+        public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN; // 0.0002f
 
-        // from Sandbox.Game.Weapons.MyProjectile.Start()
+        // from MyProjectile.Start()
         public const float Projectile_RangeMultiplier_Min = 0.8f;
         public const float Projectile_RangeMultiplier_Max = 1f;
 
@@ -304,8 +324,11 @@ namespace Digi.BuildInfo.VanillaData
             float currentPowerUsage = 0;
             if(thrust.IsWorking)
             {
-                // from MyThrusterBlockThrustComponent.RecomputeOverriddenParameters()
-                if(thrustInternal.IsOverridden) // NOTE: missing autopilot check
+                // could use as an alternate autopilot check, but needs more iterations/monitoring/hacks:
+                // base.CubeGrid.GridSystems.ControlSystem.GetShipController().Priority == ControllerPriority.AutoPilot
+
+                // from MyThrusterBlockThrustComponent.RecomputeOverriddenParameters() and UpdateThrustStrength()
+                if(thrustInternal.IsOverridden) // from IsOverridden(), NOTE: missing fast autopilot check
                     currentPowerUsage = thrustInternal.ThrustOverride / thrustInternal.ThrustForce.Length() * thrustInternal.MaxPowerConsumption;
                 else
                     currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
@@ -314,8 +337,8 @@ namespace Digi.BuildInfo.VanillaData
             float maxPowerUsage = thrustInternal.MaxPowerConsumption;
             float gravityLength = BuildInfoMod.Instance.Caches.GetGravityLengthAtGrid(thrust.CubeGrid);
 
-            // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
-            // remove thge last ' / Hardcoded.GAME_EARTH_GRAVITY' when it's fixed.
+            // from MyEntityThrustComponent.RecomputeTypeThrustParameters() + calling CalculateConsumptionMultiplier()
+            // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration; remove the last single division when it's fixed.
             float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
             float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.EarthGravity / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
 
@@ -334,7 +357,10 @@ namespace Digi.BuildInfo.VanillaData
             }
         }
 
-        // from MyAirVent.VentDummy getter
+        // from MyThrust.LoadDummies()
+        public const string Thrust_DummyPrefix = "thruster_flame";
+
+        // from MyAirVent.VentDummy
         public const string AirVent_DummyName = "vent_001";
 
         // from MyParachute.UpdateParachute()
@@ -368,10 +394,10 @@ namespace Digi.BuildInfo.VanillaData
             maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / EarthGravity;
         }
 
-        // from where MyMultiTextPanelComponent.Init() is being called
+        // where MyMultiTextPanelComponent.Init() is called: MyCockpit, MyContractBlock, MyLCDPanelsBlock, MyProgrammableBlock, MyProjectorBase, MyStoreBlock, MyButtonPanel, MyJukebox.
         public const float TextSurfaceMaxRenderDistance = 120f;
 
-        // from where VRage.Network.DistanceRadiusAttribute is being used
+        // where VRage.Network.DistanceRadiusAttribute is appled: MyCockpit, MyContractBlock, MyLCDPanelsBlock, MyProgrammableBlock, MyProjectorBase, MyStoreBlock, MyButtonPanel, MyJukebox.
         public const float TextSurfaceMaxSyncDistance = 32f;
 
         public struct TextSurfaceInfo
@@ -424,11 +450,12 @@ namespace Digi.BuildInfo.VanillaData
             return new TextSurfaceInfo(textureRes, aspectRatio, textureRes * aspectFactor);
         }
 
-        // from MyEntityThrustComponent
+        // from MyEntityThrustComponent.MAX_DISTANCE_RELATIVE_DAMPENING and MAX_DISTANCE_RELATIVE_DAMPENING_SQ
         public const double RelativeDampeners_MaxDistance = 100f;
         public const double RelativeDampeners_MaxDistanceSq = RelativeDampeners_MaxDistance * RelativeDampeners_MaxDistance;
 
         // from MyEntityThrustComponent.UpdateRelativeDampeningEntity()
+        // NOTE: required because MyPlayerCollection.SetDampeningEntity() has 1000m detection, this mod's RelativeDampenerInfo.cs fixes it.
         public static bool RelativeDampeners_DistanceCheck(IMyEntity controlledEnt, IMyEntity relativeEnt)
         {
             return relativeEnt.PositionComp.WorldAABB.DistanceSquared(controlledEnt.PositionComp.GetPosition()) <= RelativeDampeners_MaxDistanceSq;
@@ -437,10 +464,28 @@ namespace Digi.BuildInfo.VanillaData
         // from MyJumpDrive.StorePower()
         public const float JumpDriveRechargeMultiplier = 0.8f;
 
-        // from MyGridJumpDriveSystem.Jump()
+        // from MyGridJumpDriveSystem @ void Jump(Vector3D jumpTarget, long userId)
         public const float JumpDriveJumpDelay = 10f;
 
+        // from MyUseObjectsComponent.CreateInteractiveObject()
+        public static bool DetectorIsOpenCloseDoor(string detectorName, IMyEntity entity)
+        {
+            // can't use `is IMyDoor` because it's implemented by all doors, while MyDoor is just the classic door.
+            return entity is MyDoor && detectorName == "terminal";
+        }
+
+        // from MyCubeBlockDefinition.Init() and ContainsComputer(), MyDefinitionManager.InitCubeBlocks()
+        public static readonly MyDefinitionId ComputerComponentId = new MyDefinitionId(typeof(MyObjectBuilder_Component), MyStringHash.GetOrCompute("Computer"));
+
+        public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
+        public static readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine); // TODO: use the interface when one is added
+        public static readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
+
+        // from MyGuiScreenHudSpace.PrepareDraw()
+        public const float HudBlockInfoOffsetInShip = 0.498f;
+
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
+        // VanillaDefinitions checks vanilla definitions if any has >3 to alert me if they're using a new flag.
         public enum MountPointMask : byte
         {
             Extruding = (1 << 0),
@@ -454,6 +499,7 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         public static readonly string[] MountPointMaskNames = Enum.GetNames(typeof(MountPointMask));
+
         public static readonly byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
     }
 }

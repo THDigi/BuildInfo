@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 
@@ -20,8 +21,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             foreach(string name in dummies.Keys)
             {
-                // HACK: behavior from MyShipConnector.LoadDummies()
-                if(name.ContainsIgnoreCase("connector"))
+                // from MyShipConnector.LoadDummies()
+                if(name.ContainsIgnoreCase(Hardcoded.Connector_DummyName))
                 {
                     CanConnect = true;
                     break;

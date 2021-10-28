@@ -62,12 +62,6 @@ namespace Digi.BuildInfo.Features
 
                 if(aimed != null && Main.Config.BlockPickerBind.Value.IsJustPressed())
                 {
-                    if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
-                    {
-                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
-                        return;
-                    }
-
                     AskToPick((MyCubeBlockDefinition)aimed.BlockDefinition);
                 }
             }
@@ -87,14 +81,7 @@ namespace Digi.BuildInfo.Features
                 if(MyAPIGateway.Session?.Player == null)
                 {
                     AskToPick(null);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
-                    return;
-                }
-
-                if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
-                {
-                    AskToPick(null);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
                     return;
                 }
 
@@ -106,7 +93,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 int slot = 0;
-                MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
+                MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
                 // intentionally skipping 0
                 for(int i = 1; i < controlSlots.Length; ++i)

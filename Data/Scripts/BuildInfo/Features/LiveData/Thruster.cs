@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -43,8 +44,6 @@ namespace Digi.BuildInfo.Features.LiveData
             MatrixD thrustMatrix = thrust.WorldMatrix;
             MatrixD invMatrix = block.WorldMatrixInvScaled;
 
-            // HACK data copied from MyThrust
-
             // ThrustLengthRand = CurrentStrength * 10f * MyUtils.GetRandomFloat(0.6f, 1f) * BlockDefinition.FlameLengthScale;
             float thrustMaxLength = 10f * thrustDef.FlameLengthScale;
 
@@ -60,11 +59,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
             foreach(IMyModelDummy dummy in dummies.Values)
             {
-                if(dummy.Name.StartsWith("thruster_flame", StringComparison.InvariantCultureIgnoreCase))
+                // from MyThrust.LoadDummies()
+                if(dummy.Name.StartsWith(Hardcoded.Thrust_DummyPrefix, StringComparison.InvariantCultureIgnoreCase))
                 {
                     Vector3 startPosition = dummy.Matrix.Translation;
                     Vector3 direction = Vector3.Normalize(dummy.Matrix.Forward);
-                    float dummyRadius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f; // from MyThrust.LoadDummies()
+                    float dummyRadius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f;
 
                     DamagePerTickToBlocks += thrustDef.FlameDamage; // from MyThrust.DamageGrid()
                     DamagePerTickToOther += dummyRadius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()

@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features
             public LogMsg(string callerName, string message)
             {
                 // NOTE: not designed for this to be configurable per-message!
-                ExpiresAtTick = BuildInfoMod.Instance.Tick + (Constants.TICKS_PER_SECOND * MessageExpireSeconds);
+                ExpiresAtTick = BuildInfoMod.Instance.Tick + (Constants.TicksPerSecond * MessageExpireSeconds);
                 CallerName = callerName;
                 Message = message;
             }
