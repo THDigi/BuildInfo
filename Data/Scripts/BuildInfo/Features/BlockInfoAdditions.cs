@@ -20,8 +20,8 @@ namespace Digi.BuildInfo.Features
 {
     public class BlockInfoAdditions : ModComponent
     {
-        readonly Vector4 LineFunctionalColor = Color.Red.ToVector4();
-        readonly Vector4 LineOwnershipColor = Color.Blue.ToVector4();
+        readonly Vector4 LineFunctionalColor = new Color(115, 69, 80).ToVector4(); // from MyGuiScreenHudSpace.RecreateControls()
+        readonly Vector4 LineOwnershipColor = new Color(56, 67, 147).ToVector4();
         readonly Vector4 HighlightCompLossColor = (Color.Yellow * 0.75f).ToVector4();
 
         // from MyGuiControlBlockGroupInfo.CreateBlockInfoControl()
