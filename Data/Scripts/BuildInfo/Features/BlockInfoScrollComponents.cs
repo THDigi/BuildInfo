@@ -108,7 +108,7 @@ namespace Digi.BuildInfo.Features
                 {
                     // refreshing doesn't seem necessary for ship
                 }
-                else
+                else if(!MyCubeBuilder.Static.IsActivated) // unequips this if it's called for it, skip!
                 {
                     IMyGunObject<MyToolBase> toolEnt = MyAPIGateway.Session?.Player?.Character?.EquippedTool as IMyGunObject<MyToolBase>;
                     if(toolEnt != null)
