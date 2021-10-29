@@ -156,9 +156,19 @@ namespace Digi.BuildInfo.Features
                     if(Main.EquipmentMonitor.IsAnyGrinder)
                     {
                         if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, Utils.SZAGrinding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAGrinding))
+                        {
                             color = Color.DarkRed;
+                        }
                         else
-                            color = new Color(255, 200, 75);
+                        {
+                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Recalculate)
+                                Main.TextGeneration.WillSplitGrid = aimedBlock.CubeGrid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+
+                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Split)
+                                color = Main.TextGeneration.COLOR_BAD;
+                            else
+                                color = new Color(255, 200, 75);
+                        }
                     }
                     else
                     {

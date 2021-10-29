@@ -166,6 +166,7 @@
     <Compile Include="Features\Overlays\OverlayDrawInstance.cs" />
     <Compile Include="Features\Overlays\Overlays.cs" />
     <Compile Include="Features\Overlays\SpecializedOverlays.cs" />
+    <Compile Include="Features\CrosshairMessages.cs" />
     <Compile Include="Features\OverrideToolSelectionDraw.cs" />
     <Compile Include="Features\CubeBuilderAdditions.cs" />
     <Compile Include="Features\ProjectedBlockInfo.cs" />

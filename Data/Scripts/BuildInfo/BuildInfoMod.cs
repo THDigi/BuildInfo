@@ -59,6 +59,7 @@ namespace Digi.BuildInfo
         public DetailInfoButtons DetailInfoButtons;
         public MultiDetailInfo MultiDetailInfo;
         public TextGeneration TextGeneration;
+        public CrosshairMessages CrosshairMessages;
         public LiveDataHandler LiveDataHandler;
         public TurretHUD TurretHUD;
         public PlacementDistance PlacementDistance;
@@ -130,6 +131,7 @@ namespace Digi.BuildInfo
             DetailInfoButtons = new DetailInfoButtons(this);
             MultiDetailInfo = new MultiDetailInfo(this);
             TextGeneration = new TextGeneration(this);
+            CrosshairMessages = new CrosshairMessages(this);
             LiveDataHandler = new LiveDataHandler(this);
             PlacementDistance = new PlacementDistance(this);
             CubeBuilderAdditions = new CubeBuilderAdditions(this);

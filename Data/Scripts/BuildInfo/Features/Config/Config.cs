@@ -37,6 +37,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting SelectAllProjectedBlocks;
         public BoolSetting OverrideToolSelectionDraw;
         public EnumSetting<CubeBuilderSelectionInfo> CubeBuilderSelectionInfoMode;
+        public BoolSetting UnderCrosshairMessages;
 
         public BoolSetting ShipToolInvBarShow;
         public Vector2DSetting ShipToolInvBarPosition;
@@ -353,6 +354,10 @@ namespace Digi.BuildInfo.Features.Config
             });
             CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.ShowOnPress, $"input can be configured in 'Bind: Show CubeBuilder Selection Info'"); // can't use field as it's not yet assigned
             CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.");
+
+            UnderCrosshairMessages = new BoolSetting(Handler, "HUD: Under-Crosshair Messages", false,
+                "An opt-in feature for moving certain easily missable messages from text box to under the crosshair.",
+                $"Currently only 'Grid will split if block is removed' is affected by this, which sill requires {nameof(AimInfoFlags.GrindGridSplit)} to be enabled in '{AimInfo.Name}' setting.");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected.");

@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
         public readonly Color COLOR_NORMAL = Color.White;
         public readonly Color COLOR_GOOD = Color.Lime;
-        public readonly Color COLOR_BAD = Color.Red;
+        public readonly Color COLOR_BAD = new Color(255, 10, 10);
         public readonly Color COLOR_WARNING = Color.Yellow;
         public readonly Color COLOR_UNIMPORTANT = Color.Gray;
         public readonly Color COLOR_PART = new Color(55, 255, 155);
@@ -106,7 +106,7 @@ namespace Digi.BuildInfo.Features
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public bool textShown = false;
         private bool aimInfoNeedsUpdate = false;
-        private GridSplitType willSplitGrid;
+        public GridSplitType WillSplitGrid;
         private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
         public Vector3D lastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
@@ -200,7 +200,7 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            willSplitGrid = GridSplitType.Recalculate;
+            WillSplitGrid = GridSplitType.Recalculate;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
@@ -1473,13 +1473,13 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: ship grinder apply force
 
             #region Optional: grinder makes grid split
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
+            if(!Main.Config.UnderCrosshairMessages.Value && !projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
             {
-                if(willSplitGrid == GridSplitType.Recalculate)
-                    willSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+                if(WillSplitGrid == GridSplitType.Recalculate)
+                    WillSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
-                if(willSplitGrid == GridSplitType.Split)
-                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Grid will split if removed!");
+                if(WillSplitGrid == GridSplitType.Split)
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Grid will split if removed!");
 
                 // TODO: find if split grid will vanish due to no physics/no standalone
             }
