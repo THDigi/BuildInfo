@@ -33,62 +33,6 @@ namespace Digi.BuildInfo.Features.Terminal
 
         HudAPIv2.HUDMessage Hint;
 
-        readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
-        {
-            [typeof(MyObjectBuilder_MotorSuspension)] = "Suspension",
-            [typeof(MyObjectBuilder_MotorStator)] = "Rotor Base",
-            [typeof(MyObjectBuilder_MotorAdvancedStator)] = "Adv. Rotor Base",
-            [typeof(MyObjectBuilder_MotorRotor)] = "Rotor Top",
-            [typeof(MyObjectBuilder_MotorAdvancedRotor)] = "Adv. Rotor Top",
-            [typeof(MyObjectBuilder_ExtendedPistonBase)] = "Piston",
-            [typeof(MyObjectBuilder_PistonBase)] = "Piston",
-            [typeof(MyObjectBuilder_PistonTop)] = "Piston Top",
-
-            [typeof(MyObjectBuilder_OxygenGenerator)] = "Gas Generator",
-            [typeof(MyObjectBuilder_OxygenTank)] = "Gas Tank",
-            [typeof(MyObjectBuilder_HydrogenEngine)] = "Hydrogen Engine",
-
-            [typeof(MyObjectBuilder_LargeGatlingTurret)] = "Gatling Turret",
-            [typeof(MyObjectBuilder_LargeMissileTurret)] = "Missile Turret",
-            [typeof(MyObjectBuilder_InteriorTurret)] = "Interior Turret",
-            [typeof(MyObjectBuilder_SmallGatlingGun)] = "Gatling Gun",
-            [typeof(MyObjectBuilder_SmallMissileLauncher)] = "Missile Launcher",
-            [typeof(MyObjectBuilder_SmallMissileLauncherReload)] = "Reloadable Missile Launcher",
-
-            [typeof(MyObjectBuilder_ShipConnector)] = "Connector",
-            [typeof(MyObjectBuilder_MergeBlock)] = "Merge",
-            [typeof(MyObjectBuilder_ExhaustBlock)] = "Exhaust",
-            [typeof(MyObjectBuilder_CameraBlock)] = "Camera",
-            [typeof(MyObjectBuilder_BatteryBlock)] = "Battery",
-
-            [typeof(MyObjectBuilder_SensorBlock)] = "Sensor",
-            [typeof(MyObjectBuilder_ReflectorLight)] = "Spotlight",
-            [typeof(MyObjectBuilder_InteriorLight)] = "Interior Light",
-
-            [typeof(MyObjectBuilder_OreDetector)] = "Ore Detector",
-            [typeof(MyObjectBuilder_RadioAntenna)] = "Radio Antenna",
-            [typeof(MyObjectBuilder_LaserAntenna)] = "Laser Antenna",
-            [typeof(MyObjectBuilder_LandingGear)] = "Landing Gear",
-            [typeof(MyObjectBuilder_JumpDrive)] = "Jump Drive",
-            [typeof(MyObjectBuilder_GravityGenerator)] = "Gravity Generator",
-            [typeof(MyObjectBuilder_GravityGeneratorSphere)] = "Spherical Gravity Generator",
-            [typeof(MyObjectBuilder_CryoChamber)] = "Cryo Chamber",
-            [typeof(MyObjectBuilder_ConveyorSorter)] = "Conveyor Sorter",
-            [typeof(MyObjectBuilder_ControlPanel)] = "Control Panel",
-            [typeof(MyObjectBuilder_CargoContainer)] = "Cargo Container",
-            [typeof(MyObjectBuilder_ButtonPanel)] = "Button Panel",
-            [typeof(MyObjectBuilder_AirVent)] = "Air Vent",
-            [typeof(MyObjectBuilder_AirtightSlideDoor)] = "Slide Door",
-            [typeof(MyObjectBuilder_AirtightHangarDoor)] = "Hangar Door",
-            [typeof(MyObjectBuilder_AdvancedDoor)] = "Advanced Door",
-
-            [typeof(MyObjectBuilder_ShipGrinder)] = "Grinder",
-            [typeof(MyObjectBuilder_ShipWelder)] = "Welder",
-
-            [typeof(MyObjectBuilder_TextPanel)] = "LCD",
-            [typeof(MyObjectBuilder_LCDPanelsBlock)] = "Decorative with LCD",
-        };
-
         delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId);
         readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>();
 
@@ -405,12 +349,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             else if(allSameType)
             {
-                string friendlyName = TypeToFriendlyName.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null);
-                if(friendlyName != null)
-                    info.Append(friendlyName);
-                else
-                    info.IdTypeFormat(firstBlock.BlockDefinition.TypeId);
-                info.Append(" blocks");
+                info.IdTypeFormat(firstBlock.BlockDefinition.TypeId).Append(" blocks");
             }
             else
             {

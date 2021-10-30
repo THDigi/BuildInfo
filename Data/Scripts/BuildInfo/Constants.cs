@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -10,6 +11,7 @@ using VRage;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -26,11 +28,76 @@ namespace Digi.BuildInfo
 
         public static bool ExportVanillaDefinitions = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
 
-        public readonly HashSet<MyObjectBuilderType> DefaultInventoryAllowedTypes = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
+        public readonly HashSet<MyObjectBuilderType> DefaultItemsForMass = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting to compute min/max mass
         {
             typeof(MyObjectBuilder_Ore),
             typeof(MyObjectBuilder_Ingot),
             typeof(MyObjectBuilder_Component)
+        };
+
+        public static readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
+        {
+            [typeof(MyObjectBuilder_GasProperties)] = "Gas",
+
+            // items
+            [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand Tool/Gun",
+            [typeof(MyObjectBuilder_AmmoMagazine)] = "Magazine",
+            [typeof(MyObjectBuilder_GasContainerObject)] = "Gas Bottle",
+            [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
+
+            // blocks
+            [typeof(MyObjectBuilder_MotorSuspension)] = "Suspension",
+            [typeof(MyObjectBuilder_MotorStator)] = "Rotor Base",
+            [typeof(MyObjectBuilder_MotorAdvancedStator)] = "Adv. Rotor Base",
+            [typeof(MyObjectBuilder_MotorRotor)] = "Rotor Top",
+            [typeof(MyObjectBuilder_MotorAdvancedRotor)] = "Adv. Rotor Top",
+            [typeof(MyObjectBuilder_ExtendedPistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonTop)] = "Piston Top",
+
+            [typeof(MyObjectBuilder_OxygenGenerator)] = "Gas Generator",
+            [typeof(MyObjectBuilder_OxygenTank)] = "Gas Tank",
+            [typeof(MyObjectBuilder_HydrogenEngine)] = "Hydrogen Engine",
+
+            [typeof(MyObjectBuilder_LargeGatlingTurret)] = "Gatling Turret",
+            [typeof(MyObjectBuilder_LargeMissileTurret)] = "Missile Turret",
+            [typeof(MyObjectBuilder_InteriorTurret)] = "Interior Turret",
+            [typeof(MyObjectBuilder_SmallGatlingGun)] = "Gatling Gun",
+            [typeof(MyObjectBuilder_SmallMissileLauncher)] = "Missile Launcher",
+            [typeof(MyObjectBuilder_SmallMissileLauncherReload)] = "Reloadable Missile Launcher",
+
+            [typeof(MyObjectBuilder_ShipConnector)] = "Connector",
+            [typeof(MyObjectBuilder_MergeBlock)] = "Merge",
+            [typeof(MyObjectBuilder_ExhaustBlock)] = "Exhaust",
+            [typeof(MyObjectBuilder_CameraBlock)] = "Camera",
+            [typeof(MyObjectBuilder_BatteryBlock)] = "Battery",
+
+            [typeof(MyObjectBuilder_SensorBlock)] = "Sensor",
+            [typeof(MyObjectBuilder_ReflectorLight)] = "Spotlight",
+            [typeof(MyObjectBuilder_InteriorLight)] = "Interior Light",
+
+            [typeof(MyObjectBuilder_OreDetector)] = "Ore Detector",
+            [typeof(MyObjectBuilder_RadioAntenna)] = "Radio Antenna",
+            [typeof(MyObjectBuilder_LaserAntenna)] = "Laser Antenna",
+            [typeof(MyObjectBuilder_LandingGear)] = "Landing Gear",
+            [typeof(MyObjectBuilder_JumpDrive)] = "Jump Drive",
+            [typeof(MyObjectBuilder_GravityGenerator)] = "Gravity Generator",
+            [typeof(MyObjectBuilder_GravityGeneratorSphere)] = "Spherical Gravity Generator",
+            [typeof(MyObjectBuilder_CryoChamber)] = "Cryo Chamber",
+            [typeof(MyObjectBuilder_ConveyorSorter)] = "Conveyor Sorter",
+            [typeof(MyObjectBuilder_ControlPanel)] = "Control Panel",
+            [typeof(MyObjectBuilder_CargoContainer)] = "Cargo Container",
+            [typeof(MyObjectBuilder_ButtonPanel)] = "Button Panel",
+            [typeof(MyObjectBuilder_AirVent)] = "Air Vent",
+            [typeof(MyObjectBuilder_AirtightSlideDoor)] = "Slide Door",
+            [typeof(MyObjectBuilder_AirtightHangarDoor)] = "Hangar Door",
+            [typeof(MyObjectBuilder_AdvancedDoor)] = "Advanced Door",
+
+            [typeof(MyObjectBuilder_ShipGrinder)] = "Grinder",
+            [typeof(MyObjectBuilder_ShipWelder)] = "Welder",
+
+            [typeof(MyObjectBuilder_TextPanel)] = "LCD",
+            [typeof(MyObjectBuilder_LCDPanelsBlock)] = "Decorative with LCD",
         };
 
         public readonly MyStringId[] ToolbarSlotControlIds = new MyStringId[]

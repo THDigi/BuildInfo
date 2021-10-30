@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
@@ -11,6 +12,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -684,7 +686,7 @@ namespace Digi.BuildInfo.Utilities
             if(bi.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
             {
                 if(types == null && items == null)
-                    types = bi.Constants.DefaultInventoryAllowedTypes;
+                    types = bi.Constants.DefaultItemsForMass;
 
                 float minMass = float.MaxValue;
                 float maxMass = 0f;
@@ -833,20 +835,69 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder IdTypeFormat(this StringBuilder s, MyObjectBuilderType type)
+        public static StringBuilder IdTypeFormat(this StringBuilder s, MyObjectBuilderType type, bool useFriendlyName = true)
         {
+            string friendlyName;
+            if(useFriendlyName && Constants.TypeToFriendlyName.TryGetValue(type, out friendlyName))
+            {
+                s.Append(friendlyName);
+                return s;
+            }
+
+            // fallback to the objectbuilder name without the prefix
             string typeName = type.ToString();
             int index = typeName.IndexOf('_') + 1;
-            s.Append(typeName, index, typeName.Length - index);
 
-            if(typeName.EndsWith("GasProperties"))
-                s.Length -= "Properties".Length; // manually fixing "GasProperties" to just "Gas"
-
+            if(index > -1)
+                s.Append(typeName, index, typeName.Length - index);
+            else
+                s.Append(typeName);
             return s;
         }
 
-        public static StringBuilder IdTypeSubtypeFormat(this StringBuilder s, MyDefinitionId id)
+        public static StringBuilder IdTypeSubtypeFormat(this StringBuilder s, MyDefinitionId id, bool useFriendlyName = true)
         {
+            if(id == MyResourceDistributorComponent.ElectricityId)
+                return s.Append("Electricity");
+
+            if(id == MyResourceDistributorComponent.OxygenId)
+                return s.Append("Oxygen");
+
+            if(id == MyResourceDistributorComponent.HydrogenId)
+                return s.Append("Hydrogen");
+
+            if(id.TypeId == typeof(MyObjectBuilder_GasProperties))
+                return s.Append(id.SubtypeName).Append(" gas");
+
+            if(id.TypeId == typeof(MyObjectBuilder_GasContainerObject) || id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject))
+                return s.Append(id.SubtypeName).Append(" bottle");
+
+            return s.Append(id.SubtypeName).Append(' ').IdTypeFormat(id.TypeId);
+        }
+
+        /// <summary>
+        /// Looks up the physical item or gas resource name.
+        /// </summary>
+        public static StringBuilder ItemName(this StringBuilder s, MyDefinitionId id)
+        {
+            if(id == MyResourceDistributorComponent.ElectricityId)
+                return s.Append("Electricity");
+
+            if(id == MyResourceDistributorComponent.OxygenId)
+                return s.Append("Oxygen");
+
+            if(id == MyResourceDistributorComponent.HydrogenId)
+                return s.Append("Hydrogen");
+
+            if(id.TypeId == typeof(MyObjectBuilder_GasProperties))
+                return s.Append(id.SubtypeName).Append(" gas");
+
+            MyPhysicalItemDefinition itemDef;
+            if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(id, out itemDef))
+            {
+                return s.Append(itemDef.DisplayNameText);
+            }
+
             return s.Append(id.SubtypeName).Append(' ').IdTypeFormat(id.TypeId);
         }
 

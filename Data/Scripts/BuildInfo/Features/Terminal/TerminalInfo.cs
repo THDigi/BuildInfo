@@ -1073,7 +1073,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     info.Append("Current Usage: ").MassFormat(perSec).Append("/s\n");
                     info.Append("Time Left: ").TimeFormat(seconds).Append('\n');
-                    info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).Append('\n');
+                    info.Append("Uses Fuel: ").ItemName(fuel.FuelId).Append('\n');
                 }
                 else
                 {
@@ -1082,7 +1082,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     foreach(MyReactorDefinition.FuelInfo fuel in reactorDef.FuelInfos)
                     {
-                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
+                        tmp.Append("  ").ItemName(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
 
                         perSec += ratio * fuel.ConsumptionPerSecond_Items;
                     }

@@ -2648,7 +2648,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
-                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId);
+                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").ItemName(parachute.MaterialDefinitionId);
                 }
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -3011,7 +3011,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
-                    AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId);
+                    AddLine().Label("Needs fuel").ItemName(h2Engine.Fuel.FuelId);
                     AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
 
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
@@ -3042,7 +3042,7 @@ namespace Digi.BuildInfo.Features
                             if(!hasOneFuel)
                                 AddLine().Append("       - ");
 
-                            GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)");
+                            GetLine().ItemName(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)");
                         }
                     }
                 }
@@ -3902,7 +3902,7 @@ namespace Digi.BuildInfo.Features
                 if(dummyDef.ConstructionItemAmount == 0)
                     AddLine().Color(COLOR_GOOD).Label("Regeneration requires item").Append("(nothing)");
                 else
-                    AddLine().Color(COLOR_WARNING).Label("Regeneration requires item").Append(dummyDef.ConstructionItemAmount).Append("x ").IdTypeSubtypeFormat(dummyDef.ConstructionItem);
+                    AddLine().Color(COLOR_WARNING).Label("Regeneration requires item").Append(dummyDef.ConstructionItemAmount).Append("x ").ItemName(dummyDef.ConstructionItem);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -4012,10 +4012,13 @@ namespace Digi.BuildInfo.Features
                                 if(!exists)
                                     GetLine().Color(COLOR_BAD);
 
-                                GetLine().IdTypeSubtypeFormat(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                GetLine().ItemName(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
 
                                 if(!exists)
-                                    GetLine().Append(" (Item not found!)").ResetFormatting();
+                                    GetLine().ResetFormatting();
+
+                                //if(!exists)
+                                //    GetLine().Append(" (Item not found!)").ResetFormatting();
                                 break;
                             }
                             case ItemTypes.Grid:
@@ -4174,11 +4177,13 @@ namespace Digi.BuildInfo.Features
 
                 foreach(MyDefinitionId id in invLimit.ConstrainedIds)
                 {
-                    MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
-                    if(itemDef == null)
-                        continue;
+                    AddLine().Append("       - ").ItemName(id);
 
-                    AddLine().Append("       - ").Append(itemDef.DisplayNameText).Append(" (").IdTypeSubtypeFormat(id).Append(")");
+                    //MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
+                    //if(itemDef == null)
+                    //    continue;
+
+                    //AddLine().Append("       - ").Append(itemDef.DisplayNameText).Append(" (").IdTypeSubtypeFormat(id).Append(")");
 
                     //AddLine().Append("       - ").IdTypeSubtypeFormat(id).Append(" (Max fit: ");
                     //
@@ -4202,28 +4207,10 @@ namespace Digi.BuildInfo.Features
 
                 foreach(MyObjectBuilderType type in invLimit.ConstrainedTypes)
                 {
-                    AddLine().Append("       - All of type: ");
-
-                    string friendlyName = TypeFriendlyNames.GetValueOrDefault(type, null);
-                    if(friendlyName != null)
-                    {
-                        GetLine().Append(friendlyName).Append(" (").IdTypeFormat(type).Append(")");
-                    }
-                    else
-                    {
-                        GetLine().IdTypeFormat(type);
-                    }
+                    AddLine().Append("       - All of type: ").IdTypeFormat(type);
                 }
             }
         }
-
-        readonly Dictionary<MyObjectBuilderType, string> TypeFriendlyNames = new Dictionary<MyObjectBuilderType, string>()
-        {
-            [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand-Tool/Gun",
-            [typeof(MyObjectBuilder_AmmoMagazine)] = "Ammo Magazine",
-            [typeof(MyObjectBuilder_GasContainerObject)] = "Gas Bottle",
-            [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
-        };
 
         [ProtoContract]
         public class HackyScreenArea
