@@ -978,9 +978,9 @@ namespace Digi.BuildInfo.Features
             }
 
             IMyProjector projectedBy = Main.EquipmentMonitor.AimedProjectedBy;
-            bool projected = (projectedBy != null);
-            float integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
-            IMyCubeGrid grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
+            bool isProjected = (projectedBy != null);
+            float integrityRatio = (isProjected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
+            IMyCubeGrid grid = (isProjected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
 
             IMyTerminalBlock terminalBlock = aimedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
@@ -992,7 +992,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Append('"').Color(COLOR_BLOCKTITLE).AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
                 }
-                else if(projected) // show block def name because game might not.
+                else if(isProjected) // show block def name because game might not.
                 {
                     AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetFormatting();
                 }
@@ -1015,7 +1015,7 @@ namespace Digi.BuildInfo.Features
                 float mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
                 Color massColor = Color.GreenYellow;
 
-                if(projected)
+                if(isProjected)
                 {
                     AddLine().Color(massColor).MassFormat(mass);
                 }
@@ -1058,7 +1058,7 @@ namespace Digi.BuildInfo.Features
             #endregion Mass, grid mass
 
             #region Projector info and status
-            if(projected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            if(isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
 
@@ -1101,23 +1101,20 @@ namespace Digi.BuildInfo.Features
 
             #region Different block projected under this one
             IMyCubeGrid nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
-            if(!projected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            if(!isProjected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 ProjectedUnder.Clear();
-                string firstProjectedName = null;
 
-                Vector3I min = aimedBlock.Min;
-                Vector3I max = aimedBlock.Max;
+                // need the real block's positions in the projected grid's space
+                Vector3I min = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Min));
+                Vector3I max = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Max));
                 Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref min, ref max);
                 while(iterator.IsValid())
                 {
-                    IMySlimBlock projectedUnder = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
-                    if(projectedUnder != null && projectedUnder.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                    IMySlimBlock projectedBlock = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
+                    if(projectedBlock != null && projectedBlock.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
                     {
-                        if(firstProjectedName == null)
-                            firstProjectedName = projectedUnder.BlockDefinition.DisplayNameText;
-
-                        ProjectedUnder.Add(projectedUnder);
+                        ProjectedUnder.Add(projectedBlock);
                     }
 
                     iterator.MoveNext();
@@ -1126,12 +1123,14 @@ namespace Digi.BuildInfo.Features
                 int projectedUnderCount = ProjectedUnder.Count;
                 if(projectedUnderCount == 1)
                 {
-                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(firstProjectedName);
+                    AddLine().Color(COLOR_BAD).Label("Projected under").AppendMaxLength(ProjectedUnder.FirstElement().BlockDefinition.DisplayNameText, 24);
                 }
                 else if(projectedUnderCount > 1)
                 {
                     AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectedUnderCount).Append(" blocks");
                 }
+
+                // TODO: add this to under-crosshair messages?
 
                 ProjectedUnder.Clear();
             }
@@ -1140,7 +1139,7 @@ namespace Digi.BuildInfo.Features
             #region Integrity
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Integrity))
             {
-                if(projected)
+                if(isProjected)
                 {
                     float originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
@@ -1196,7 +1195,7 @@ namespace Digi.BuildInfo.Features
             #endregion Component volume
 
             #region Optional: intake damage multiplier
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
                 float dmgMul = aimedBlock.DamageRatio * def.GeneralDamageMultiplier;
@@ -1221,7 +1220,7 @@ namespace Digi.BuildInfo.Features
             #region Optional: ownership
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Ownership))
             {
-                if(!projected && hasComputer)
+                if(!isProjected && hasComputer)
                 {
                     MyRelationsBetweenPlayerAndBlock relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
                     MyOwnershipShareModeEnum shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
@@ -1288,7 +1287,7 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("Access: Owner");
                     }
                 }
-                else if(projected)
+                else if(isProjected)
                 {
                     MyRelationsBetweenPlayerAndBlock relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
 
@@ -1411,7 +1410,7 @@ namespace Digi.BuildInfo.Features
             #endregion Time to complete/grind
 
             #region Optional: item changes on grind
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
             {
                 foreach(MyCubeBlockDefinition.Component comp in def.Components)
                 {
@@ -1450,7 +1449,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: grid moving
 
             #region Optional: ship grinder apply force
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 IMyShipController controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
                 if(controller != null)
@@ -1473,7 +1472,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: ship grinder apply force
 
             #region Optional: grinder makes grid split
-            if(!Main.Config.UnderCrosshairMessages.Value && !projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
+            if(!Main.Config.UnderCrosshairMessages.Value && !isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
             {
                 if(WillSplitGrid == GridSplitType.Recalculate)
                     WillSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
@@ -1559,6 +1558,21 @@ namespace Digi.BuildInfo.Features
                     if(totalBlocks > 1)
                         GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(blockNumber).Append(" of ").Append(totalBlocks).Append(")");
                 }
+
+                // TODO: implement in some nicer way?
+                //MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(def.BlockPairName);
+                //if(pairDef != null)
+                //{
+                //    if(pairDef.Large != null && pairDef.Small != null)
+                //    {
+                //        GetLine().ResetFormatting().Append(" (");
+
+                //        if(def.CubeSize == MyCubeSize.Small)
+                //            GetLine().Color(COLOR_GOOD).Append("s").ResetFormatting().Append("|L)");
+                //        else
+                //            GetLine().Append("s|").Color(COLOR_GOOD).Append("L").ResetFormatting().Append(")");
+                //    }
+                //}
             }
             #endregion Block name line only for textAPI
 

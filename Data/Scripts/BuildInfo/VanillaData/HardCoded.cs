@@ -476,6 +476,7 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyCubeBlockDefinition.Init() and ContainsComputer(), MyDefinitionManager.InitCubeBlocks()
         public static readonly MyDefinitionId ComputerComponentId = new MyDefinitionId(typeof(MyObjectBuilder_Component), MyStringHash.GetOrCompute("Computer"));
+        // TODO: `MyCubeBlock.UseObjectsComponent.GetDetectors("ownership").Count > 0` is also used to allow ownership, how does this interact with ownership line and all that...
 
         public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
         public static readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine); // TODO: use the interface when one is added

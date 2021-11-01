@@ -17,6 +17,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         StringBuilder SB = new StringBuilder(512);
 
+        // HACK: fill in args using the help of game code instead of cloning it.
+        MyHudBlockInfo DescriptionParser = new MyHudBlockInfo();
+
         void DisposeTempObjects()
         {
         }
@@ -75,10 +78,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(blockDef.DescriptionArgs != null)
             {
-                // HACK: fill in args using the help of game code instead of cloning it.
                 // also fixes description in G-menu not getting any replacements.
-                MyHud.BlockInfo.SetContextHelp(blockDef);
-                SB.Append(MyHud.BlockInfo.ContextHelp);
+                DescriptionParser.SetContextHelp(blockDef);
+                SB.Append(DescriptionParser.ContextHelp);
                 blockDef.DescriptionArgs = null;
             }
             else
