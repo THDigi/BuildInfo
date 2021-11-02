@@ -76,7 +76,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            if(aimedBlock != null && Main.EquipmentMonitor.IsAnyGrinder)
+            if(aimedBlock != null && Main.EquipmentMonitor.IsAnyGrinder && Main.EquipmentMonitor.AimedProjectedBy == null)
             {
                 if(Main.TextGeneration.WillSplitGrid == GridSplitType.Recalculate)
                     Main.TextGeneration.WillSplitGrid = aimedBlock.CubeGrid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
