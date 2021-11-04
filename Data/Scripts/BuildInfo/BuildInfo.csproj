@@ -208,6 +208,7 @@
     <Compile Include="Features\Terminal\DetailInfoButtons.cs" />
     <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
+    <Compile Include="Features\Tooltips\Inventories.cs" />
     <Compile Include="Features\Tooltips\ItemTooltips.cs" />
     <Compile Include="Features\Tooltips\TooltipHandler.cs" />
     <Compile Include="Features\PBMonitor.cs" />
