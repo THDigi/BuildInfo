@@ -49,10 +49,31 @@ namespace Digi.BuildInfo.Features.LiveData
     public enum BlockHas : byte
     {
         Nothing = 0,
+
+        /// <summary>
+        /// Block type supports connecting to conveyor network.
+        /// </summary>
         ConveyorSupport = (1 << 0),
+
+        /// <summary>
+        /// Block has a terminal (is IMyTerminalBlock)
+        /// </summary>
         Terminal = (1 << 1),
+
+        /// <summary>
+        /// Block has at least one inventory.
+        /// </summary>
         Inventory = (1 << 2),
+
+        /// <summary>
+        /// Block model has interactive access to terminal/inventory
+        /// </summary>
         TerminalAndInventoryAccess = (1 << 3),
+
+        /// <summary>
+        /// Block has detector_ownership in the model which enables ownership support (but rather buggy, especially if it's not present in construction model).
+        /// </summary>
+        OwnershipDetector = (1 << 4),
     }
 
     public class BData_Base
@@ -104,6 +125,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void ComputeHas(IMyCubeBlock block)
         {
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
+
             if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
                 Has |= BlockHas.ConveyorSupport;
 
@@ -112,6 +135,10 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(block.HasInventory)
                 Has |= BlockHas.Inventory;
+
+            // HACK: from MyCubeBlock.InitOwnership()
+            if(internalBlock.UseObjectsComponent != null && internalBlock.UseObjectsComponent.GetDetectors("ownership").Count > 0)
+                Has |= BlockHas.OwnershipDetector;
         }
 
         void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)

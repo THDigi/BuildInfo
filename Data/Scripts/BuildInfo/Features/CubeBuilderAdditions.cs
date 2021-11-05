@@ -12,6 +12,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    // TODO: find in-paste grid and show some info on the right? or maybe in BI's text info...
     public class CubeBuilderAdditions : ModComponent
     {
         IMyHudNotification Notify;
