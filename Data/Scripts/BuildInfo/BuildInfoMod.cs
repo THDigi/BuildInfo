@@ -35,6 +35,7 @@ namespace Digi.BuildInfo
         public readonly BlockMonitor BlockMonitor;
         public readonly InputLibHandler InputLibHandler;
         public readonly EquipmentMonitor EquipmentMonitor;
+        public readonly GameBlockInfoHandler GameBlockInfoHandler;
         public readonly WeaponCoreAPIHandler WeaponCoreAPIHandler;
         public readonly WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
         public readonly DefenseShieldsDetector DefenseShieldsDetector;
@@ -46,6 +47,7 @@ namespace Digi.BuildInfo
         public readonly FontsHandler FontsHandler;
         public readonly ConfigMenuHandler ConfigMenuHandler;
         public readonly JumpDriveMonitor JumpDriveMonitor;
+        public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly LeakInfo LeakInfo;
         public readonly Overlays Overlays;
         public readonly SpecializedOverlays SpecializedOverlays;
@@ -65,7 +67,6 @@ namespace Digi.BuildInfo
         public readonly PlacementDistance PlacementDistance;
         public readonly CubeBuilderAdditions CubeBuilderAdditions;
         public readonly BlockInfoAdditions BlockInfoAdditions;
-        public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly OverrideToolSelectionDraw OverrideToolSelectionDraw;
         public readonly RelativeDampenerInfo RelativeDampenerInfo;
         public readonly ShipToolInventoryBar ShipToolInventoryBar;
@@ -106,6 +107,7 @@ namespace Digi.BuildInfo
             GUIMonitor = new GUIMonitor(this);
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
+            GameBlockInfoHandler = new GameBlockInfoHandler(this);
             WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
             WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
             DefenseShieldsDetector = new DefenseShieldsDetector(this);

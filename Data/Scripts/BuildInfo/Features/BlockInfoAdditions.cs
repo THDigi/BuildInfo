@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
@@ -8,9 +9,14 @@ using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Draygo.API;
 using Sandbox.Definitions;
+using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
+using VRage;
+using VRage.Collections;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -43,29 +49,19 @@ namespace Digi.BuildInfo.Features
         const float WorldScrollbarWidth = 0.0005f;
         const float WorldScrollbarInnerMargin = (WorldScrollbarWidth / 4f);
 
-        int ComputerComponentIndex = -1;
+        MyCubeBlockDefinition CurrentHudBlockDef;
+        int? OwnershipComponentIndex = null;
         int ComponentReplaceInfoCount = 0;
-        readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(10);
+        readonly List<ComponentInfo> ComponentReplaceInfo = new List<ComponentInfo>(2);
+        readonly Dictionary<MyDefinitionId, int> CompsInInv = new Dictionary<MyDefinitionId, int>(MyDefinitionId.Comparer);
+
+        List<MyInventory> MonitorInventories = new List<MyInventory>(2);
 
         class ComponentInfo
         {
             public int Index;
             public MyPhysicalItemDefinition Replaced;
             public HudAPIv2.SpaceMessage Text;
-
-            public void Set(int index, MyPhysicalItemDefinition replaced)
-            {
-                Index = index;
-                Replaced = replaced;
-            }
-
-            public void Reset()
-            {
-                //if(Text != null)
-                //    Text.Visible = false;
-
-                Replaced = null;
-            }
         }
 
         public BlockInfoAdditions(BuildInfoMod main) : base(main)
@@ -74,8 +70,10 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
-            Main.Config.BlockInfoAdditions.ValueAssigned += BlockInfoAdditions_ValueAssigned;
+            Main.GameBlockInfoHandler.RegisterHudChangedEvent(HudInfoChanged, 100);
+            Main.Config.BlockInfoAdditions.ValueAssigned += ConfigValueSet;
+            Main.BlockInfoScrollComponents.ScrollUpdate += BlockInfoScrollUpdate;
+            Main.EquipmentMonitor.BlockChanged += BlockChanged;
         }
 
         public override void UnregisterComponent()
@@ -83,76 +81,352 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-            Main.Config.BlockInfoAdditions.ValueAssigned -= BlockInfoAdditions_ValueAssigned;
+            Main.Config.BlockInfoAdditions.ValueAssigned -= ConfigValueSet;
+            Main.BlockInfoScrollComponents.ScrollUpdate -= BlockInfoScrollUpdate;
+            Main.EquipmentMonitor.BlockChanged -= BlockChanged;
         }
 
-        void BlockInfoAdditions_ValueAssigned(bool oldValue, bool newValue, SettingBase<bool> setting)
+        void ConfigValueSet(bool oldValue, bool newValue, SettingBase<bool> setting)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (newValue && Main.EquipmentMonitor.BlockDef != null));
+            Main.GameBlockInfoHandler.ForceResetBlockInfo();
         }
 
-        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
+        void BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (def != null && Main.Config.BlockInfoAdditions.Value));
+            if(def == null)
+            {
+                StopUpdates();
+            }
+        }
+
+        void StopUpdates()
+        {
+            CurrentHudBlockDef = null;
+
+            if(MonitorInventories.Count > 0)
+            {
+                foreach(MyInventory inv in MonitorInventories)
+                {
+                    inv.InventoryContentChanged -= InventoryContentChanged;
+                }
+                MonitorInventories.Clear();
+            }
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+        }
+
+        void HudInfoChanged(MyHudBlockInfo hud)
+        {
+            CurrentHudBlockDef = null;
+
+            MyCubeBlockDefinition blockDef;
+            if(!Main.Config.BlockInfoAdditions.Value || !MyDefinitionManager.Static.TryGetCubeBlockDefinition(hud.DefinitionId, out blockDef))
+            {
+                StopUpdates();
+                return;
+            }
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
+            CurrentHudBlockDef = blockDef;
+            BData_Base data = Main.LiveDataHandler.Get<BData_Base>(blockDef);
+
+            #region compute ownership component index and grind loss marks
+            ComponentReplaceInfoCount = 0;
+            OwnershipComponentIndex = null;
+
+            if(data != null && (data.Has & BlockHas.OwnershipDetector) != 0)
+            {
+                // HACK: fixing ownership line to be representitive
+                if(blockDef.OwnershipIntegrityRatio > 0)
+                    OwnershipComponentIndex = blockDef.CriticalGroup; // has computer, means it can be hacked, but at critical integrity not at computer position
+                else
+                    OwnershipComponentIndex = -1; // no computer, no hacking, see early exit in MyCubeBlock.OnIntegrityChanged()
+            }
 
             for(int i = 0; i < ComponentReplaceInfoCount; ++i)
             {
-                ComponentReplaceInfo[i].Reset();
+                ComponentInfo info = ComponentReplaceInfo[i];
+                info.Replaced = null;
             }
 
-            ComponentReplaceInfoCount = 0;
-            ComputerComponentIndex = -1;
-
-            if(def != null)
+            for(int i = 0; i < blockDef.Components.Length; ++i)
             {
-                for(int i = 0; i < def.Components.Length; ++i)
+                MyCubeBlockDefinition.Component comp = blockDef.Components[i];
+
+                if(!OwnershipComponentIndex.HasValue && comp.Definition.Id == Hardcoded.ComputerComponentId)
                 {
-                    MyCubeBlockDefinition.Component comp = def.Components[i];
+                    OwnershipComponentIndex = i;
+                }
 
-                    if(ComputerComponentIndex == -1 && comp.Definition.Id == Hardcoded.ComputerComponentId)
+                if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                {
+                    ComponentInfo info = null;
+                    if(ComponentReplaceInfoCount >= ComponentReplaceInfo.Count)
                     {
-                        ComputerComponentIndex = i;
+                        info = new ComponentInfo();
+                        ComponentReplaceInfo.Add(info);
+                    }
+                    else
+                    {
+                        info = ComponentReplaceInfo[ComponentReplaceInfoCount];
                     }
 
-                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                    info.Index = i;
+                    info.Replaced = comp.DeconstructItem;
+
+                    ComponentReplaceInfoCount++;
+                }
+            }
+            #endregion
+
+            #region set vanilla critical & ownership lines
+            hud.CriticalComponentIndex = blockDef.CriticalGroup;
+            hud.CriticalIntegrity = blockDef.CriticalIntegrityRatio;
+            hud.OwnershipIntegrity = blockDef.OwnershipIntegrityRatio;
+
+            // HACK: fixing ownership line to be representitive
+            if(data != null && (data.Has & BlockHas.OwnershipDetector) != 0)
+            {
+                if(blockDef.OwnershipIntegrityRatio > 0)
+                    hud.OwnershipIntegrity = blockDef.CriticalIntegrityRatio; // has computer, means it can be hacked, but at critical integrity not at computer position
+                else
+                    hud.OwnershipIntegrity = 0; // no computer, no hacking, see early exit in MyCubeBlock.OnIntegrityChanged()
+            }
+            #endregion
+
+            if(MyCubeBuilder.Static.IsActivated)
+            {
+                // TODO: find a nicer way of showing this:
+                #region inform player if the block has the other size available
+                //MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(blockDef.BlockPairName);
+                //if(pairDef != null && pairDef.Large != null && pairDef.Small != null)
+                //{
+                //    const int NameSpacePadding = 24; // make name wider so that font gets smaller
+
+                //    IMyControl control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.CUBE_BUILDER_CUBESIZE_MODE);
+                //    if(control != null)
+                //    {
+                //        string bind = control.GetControlButtonName(MyGuiInputDeviceEnum.Mouse);
+
+                //        if(string.IsNullOrEmpty(bind))
+                //            bind = control.GetControlButtonName(MyGuiInputDeviceEnum.Keyboard);
+
+                //        if(string.IsNullOrEmpty(bind))
+                //            bind = control.GetControlButtonName(MyGuiInputDeviceEnum.KeyboardSecond);
+
+                //        if(string.IsNullOrEmpty(bind))
+                //            MyHud.BlockInfo.BlockName = $"{blockDef.DisplayNameText,-NameSpacePadding}\n(can swap size)";
+                //        else
+                //            MyHud.BlockInfo.BlockName = $"{blockDef.DisplayNameText,-NameSpacePadding}\n({bind} to swap size)";
+                //    }
+                //    else
+                //    {
+                //        MyHud.BlockInfo.BlockName = $"{blockDef.DisplayNameText,-NameSpacePadding}\n(can swap size)";
+                //    }
+                //}
+                #endregion
+
+                UpdateHudInventoryComps();
+            }
+
+            Main.GameBlockInfoHandler.RedrawBlockInfo();
+        }
+
+        void InventoryContentChanged(MyInventoryBase inventory, MyPhysicalInventoryItem item, MyFixedPoint amount)
+        {
+            UpdateHudInventoryComps();
+            Main.GameBlockInfoHandler.RedrawBlockInfo();
+        }
+
+        void BlockInfoScrollUpdate(ListReader<MyHudBlockInfo.ComponentInfo> originalComponents)
+        {
+            if(MonitorInventories.Count <= 0 || Utils.CreativeToolsEnabled)
+                return;
+
+            MyHudBlockInfo hud = MyHud.BlockInfo;
+            hud.MissingComponentIndex = -1;
+
+            // scrolled at the bottom
+            if(Main.BlockInfoScrollComponents.Index == 0)
+            {
+                MyHudBlockInfo.ComponentInfo firstComp = originalComponents[0];
+
+                int amount = 0;
+                foreach(MyInventory inv in MonitorInventories)
+                {
+                    amount += (int)inv.GetItemAmount(firstComp.DefinitionId);
+                    if(amount > 0)
+                        break;
+                }
+
+                if(amount <= 0)
+                    hud.MissingComponentIndex = 0;
+            }
+        }
+
+        void UpdateHudInventoryComps()
+        {
+            MyHudBlockInfo hud = MyHud.BlockInfo;
+            MyCubeBlockDefinition blockDef;
+            if(!Main.Config.BlockInfoAdditions.Value || !MyDefinitionManager.Static.TryGetCubeBlockDefinition(hud.DefinitionId, out blockDef))
+            {
+                StopUpdates();
+                return;
+            }
+
+            if(!MyCubeBuilder.Static.IsActivated)
+                return;
+
+            bool isCreative = Utils.CreativeToolsEnabled;
+
+            hud.BlockIntegrity = (isCreative ? blockDef.MaxIntegrityRatio : 0.0000001f);
+
+            #region Inventory find and monitor
+            foreach(MyInventory inv in MonitorInventories)
+            {
+                inv.InventoryContentChanged -= InventoryContentChanged;
+            }
+
+            MonitorInventories.Clear();
+
+            MyCockpit cockpit = MyAPIGateway.Session.ControlledObject as MyCockpit;
+            if(cockpit != null)
+            {
+                IMyCharacter pilot = cockpit.Pilot;
+                if(pilot.HasInventory)
+                    MonitorInventories.Add((MyInventory)pilot.GetInventory());
+
+                if(cockpit.HasInventory)
+                {
+                    for(int i = 0; i < cockpit.InventoryCount; i++)
                     {
-                        AddCompLoss(i, comp.DeconstructItem);
+                        MonitorInventories.Add(cockpit.GetInventory(i));
                     }
+
+                    // TODO: cockpit build mode uses conveyor-connected blocks too... use?
+                    //ListReader<MyCubeBlock> fatBlocks = cockpit.CubeGrid.GetFatBlocks();
+                    //if(fatBlocks.Count <= 500)
+                    //{
+                    //    VRage.Game.ModAPI.Ingame.MyItemType standardBuildingItem = VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("SteelPlate"); // TODO: maybe find any large-conveyor requiring item instead?
+                    //    IMyInventory cockpitInventory = cockpit.GetInventory(0);
+                    //
+                    //    foreach(MyCubeBlock block in fatBlocks)
+                    //    {
+                    //        if(block == cockpit)
+                    //            continue;
+                    //
+                    //        if(!block.HasInventory)
+                    //            continue;
+                    //
+                    //        IMyInventory firstInv = block.GetInventory(0);
+                    //        if(!firstInv.CanTransferItemTo(cockpitInventory, standardBuildingItem))
+                    //            continue;
+                    //
+                    //        for(int i = 0; i < block.InventoryCount; i++)
+                    //        {
+                    //            MyInventory inv = block.GetInventory(i);
+                    //            MonitorInventories.Add(inv);
+                    //        }
+                    //    }
+                    //}
+                }
+            }
+            else
+            {
+                IMyCharacter chr = MyAPIGateway.Session.ControlledObject as IMyCharacter;
+                if(chr != null && chr.HasInventory)
+                {
+                    MonitorInventories.Add((MyInventory)chr.GetInventory());
+                }
+            }
+
+            foreach(MyInventory inv in MonitorInventories)
+            {
+                inv.InventoryContentChanged += InventoryContentChanged;
+            }
+            #endregion
+
+            if(!isCreative && MonitorInventories.Count > 0)
+            {
+                CompsInInv.Clear();
+
+                for(int i = 0; i < hud.Components.Count; i++)
+                {
+                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+
+                    if(!CompsInInv.ContainsKey(comp.DefinitionId))
+                    {
+                        int amount = 0;
+                        foreach(MyInventory inv in MonitorInventories)
+                        {
+                            amount += (int)inv.GetItemAmount(comp.DefinitionId);
+                        }
+                        CompsInInv[comp.DefinitionId] = amount;
+                    }
+                }
+
+                // mark first component red if you don't have it to indicate you can't place it
+                if(CompsInInv.GetValueOrDefault(hud.Components[0].DefinitionId, 0) <= 0)
+                {
+                    hud.MissingComponentIndex = 0;
+                }
+
+                for(int i = 0; i < hud.Components.Count; i++)
+                {
+                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+
+                    int inInv = Math.Max(0, CompsInInv[comp.DefinitionId]);
+                    if(inInv > 0)
+                        CompsInInv[comp.DefinitionId] = inInv - comp.TotalCount; // remove for next comp stack of same type
+
+                    if(inInv > comp.TotalCount)
+                    {
+                        // HACK: hardcoded based on how math is handled in MyGuiControlBlockInfo.Draw(float transitionAlpha, float backgroundTransitionAlpha)
+                        // goal is to show the inventory contents while also getting the font to be white.
+
+                        // this affects if text is white or grayed out: if(c.MountedCount == c.TotalCount)
+                        comp.MountedCount = comp.TotalCount;
+
+                        // this gets printed: InstalledCount => MountedCount + StockpileCount;
+                        comp.StockpileCount = inInv - comp.TotalCount;
+                    }
+                    else
+                    {
+                        comp.MountedCount = 0;
+                        comp.StockpileCount = inInv;
+                    }
+
+                    hud.Components[i] = comp;
+                }
+            }
+            else // creative mode or no inventory found
+            {
+                for(int i = 0; i < hud.Components.Count; i++)
+                {
+                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+
+                    // needs to print -1 but also show font as white, see above HACK comments for explanation
+                    comp.MountedCount = comp.TotalCount;
+                    comp.StockpileCount = -1 - comp.TotalCount;
+
+                    hud.Components[i] = comp;
                 }
             }
         }
 
-        private void AddCompLoss(int index, MyPhysicalItemDefinition replaced)
-        {
-            ComponentInfo info = null;
-
-            if(ComponentReplaceInfoCount >= ComponentReplaceInfo.Count)
-            {
-                info = new ComponentInfo();
-                ComponentReplaceInfo.Add(info);
-            }
-            else
-            {
-                info = ComponentReplaceInfo[ComponentReplaceInfoCount];
-            }
-
-            info.Set(index, replaced);
-            ComponentReplaceInfoCount++;
-        }
-
         public override void UpdateDraw()
         {
-            if(Main.GameConfig.HudState == HudState.OFF || Main.EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
+            MyHudBlockInfo hud = MyHud.BlockInfo;
+            if(CurrentHudBlockDef == null || Main.GameConfig.HudState == HudState.OFF || MyAPIGateway.Gui.IsCursorVisible || hud == null)
                 return;
 
-            List<MyHudBlockInfo.ComponentInfo> hudComps = MyHud.BlockInfo?.Components;
+            List<MyHudBlockInfo.ComponentInfo> hudComps = hud.Components;
             if(hudComps == null || hudComps.Count == 0) // don't show block info additions if the block info isn't visible
                 return;
 
             //if(Main.Config.BlockInfoAdditions.Value)
             {
-                MyCubeBlockDefinition blockDef = Main.EquipmentMonitor.BlockDef;
+                MyCubeBlockDefinition blockDef = CurrentHudBlockDef;
                 MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
                 #region Compute BlockInfo HUD position
@@ -173,13 +447,14 @@ namespace Digi.BuildInfo.Features
                 int totalComps = blockDef.Components.Length;
 
                 int maxVisibleComps = Main.BlockInfoScrollComponents.MaxVisible;
+                int maxVisibleIdx = (maxVisibleComps - 1);
                 int scrollIdx = Main.BlockInfoScrollComponents.Index;
                 int scrollIdxOffset = Main.BlockInfoScrollComponents.IndexOffset;
                 int maxScrollIdx = scrollIdx + maxVisibleComps;
 
                 float scaleFOV = Main.DrawUtils.ScaleFOV;
 
-                // for debugging
+                #region for debugging
                 //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Control))
                 //{
                 //    for(int i = totalComps - 1; i >= 0; --i)
@@ -198,40 +473,44 @@ namespace Digi.BuildInfo.Features
                 //        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                 //    }
                 //}
+                #endregion
 
-                // red functionality line
-                int critIndex = blockDef.CriticalGroup + scrollIdxOffset;
-                if(critIndex >= 0 && critIndex < totalComps)
+                Vector2 lineSizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
+
+                #region red functionality line
+                int criticalIndex = (blockDef.CriticalGroup == 0 ? -1 : blockDef.CriticalGroup) + scrollIdxOffset;
+                if(blockDef.CriticalGroup >= 0 && criticalIndex >= -1 && criticalIndex < totalComps && criticalIndex >= maxVisibleIdx)
                 {
-                    Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
-
                     Vector2 posHud = compListTopRight;
-                    posHud.Y += HudComponentHeight * (totalComps - critIndex - 2) + HudComponentUnderlineOffset;
+                    posHud.Y += HudComponentHeight * (totalComps - criticalIndex - 2) + HudComponentUnderlineOffset;
 
                     Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                    posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y;
+                    posWorld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * lineSizeWorld.Y;
 
-                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
                 }
+                #endregion
 
-                // blue hacking line
-                int compIndex = ComputerComponentIndex + scrollIdxOffset;
-                if(compIndex >= 0 && compIndex < totalComps)
+                #region blue hacking line
+                if(OwnershipComponentIndex.HasValue)
                 {
-                    Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
+                    int ownershipIndex = (OwnershipComponentIndex.HasValue ? OwnershipComponentIndex.Value + scrollIdxOffset : -999);
+                    if(ownershipIndex >= -1 && ownershipIndex < totalComps && ownershipIndex >= maxVisibleIdx)
+                    {
+                        Vector2 posHud = compListTopRight;
+                        posHud.Y += HudComponentHeight * (totalComps - ownershipIndex - 2) + HudComponentUnderlineOffset;
 
-                    Vector2 posHud = compListTopRight;
-                    posHud.Y += HudComponentHeight * (totalComps - compIndex - 2) + HudComponentUnderlineOffset;
+                        Vector3D posWOrld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                    Vector3D posWOrld = Main.DrawUtils.HUDtoWorld(posHud);
+                        posWOrld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * (lineSizeWorld.Y * 3); // extra offset to allow for red line to be visible
 
-                    posWOrld += camMatrix.Left * sizeWorld.X + camMatrix.Up * (sizeWorld.Y * 3); // extra offset to allow for red line to be visible
-
-                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
+                    }
                 }
+                #endregion
 
-                // scrollbar for scrollable components feature
+                #region scrollbar for scrollable components feature
                 if(Main.Config.ScrollableComponentsList.Value && totalComps > maxVisibleComps)
                 {
                     float scrollbarHeightRatio = 1f;
@@ -273,8 +552,9 @@ namespace Digi.BuildInfo.Features
                     MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarBgColor, bgPosWorld, camMatrix.Left, camMatrix.Up, bgSizeWorld.X, bgSizeWorld.Y, Vector2.Zero, BlendType);
                     MyTransparentGeometry.AddBillboardOriented(MaterialSquare, ScrollbarColor, barPosWorld, camMatrix.Left, camMatrix.Up, barSizeWorld.X, barSizeWorld.Y, Vector2.Zero, BlendType);
                 }
+                #endregion
 
-                // different return item on grind
+                #region different return item on grind
                 for(int i = (ComponentReplaceInfoCount - 1); i >= 0; --i)
                 {
                     ComponentInfo info = ComponentReplaceInfo[i];
@@ -282,7 +562,7 @@ namespace Digi.BuildInfo.Features
 
                     if(info.Index >= maxScrollIdx // hide for components scrolled above
                     || info.Index < scrollIdx // hide for components scrolled below
-                    || info.Index == (maxVisibleComps - 1) && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
+                    || info.Index == maxVisibleIdx && Main.BlockInfoScrollComponents.ShowUpHint // hide for top hint component
                     || info.Index == (totalComps - maxVisibleComps) && Main.BlockInfoScrollComponents.ShowDownHint) // hide for bottom hint component
                     {
                         //if(info.Text != null)
@@ -291,10 +571,10 @@ namespace Digi.BuildInfo.Features
                         continue;
                     }
 
-                    Vector2 hud = compListTopRight;
-                    hud.Y += HudComponentHeight * (totalComps - index - 1);
+                    Vector2 posHud = compListTopRight;
+                    posHud.Y += HudComponentHeight * (totalComps - index - 1);
 
-                    Vector3D posWorld = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
                     if(Main.TextAPI.IsEnabled)
                     {
@@ -334,6 +614,7 @@ namespace Digi.BuildInfo.Features
                         MyTransparentGeometry.AddBillboardOriented(MaterialSquare, HighlightCompLossColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                     }
                 }
+                #endregion
             }
         }
 
