@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Features
                 if(debugEquipmentMsg == null)
                     debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false, Blend: BlendType.PostPP);
 
-                debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
+                debugEquipmentMsg.Message.Clear().Append($"{BuildInfoMod.ModName} Debug - Equipment.Update()\n" +
                     $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
                     $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
                     $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");

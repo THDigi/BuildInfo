@@ -112,8 +112,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             RichHudTerminal.Root.Add(new TextPage()
             {
                 Name = "Settings?",
-                SubHeaderText = "",
-                HeaderText = BuildInfoMod.MOD_NAME + " Settings",
+                SubHeaderText = string.Empty,
+                HeaderText = $"{BuildInfoMod.ModName} Settings",
                 Text = new RichText("Open chat and press F2 to open TextAPI's mod config menu, you should see on the left a \"Mod Settings\" button."),
             });
         }
@@ -122,7 +122,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             Log.Info($"TextAPI detected, creating menu.");
 
-            Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
+            Category_Mod = new MenuRootCategory(BuildInfoMod.ModName, MenuFlag.PlayerMenu, BuildInfoMod.ModName + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", () =>
             {

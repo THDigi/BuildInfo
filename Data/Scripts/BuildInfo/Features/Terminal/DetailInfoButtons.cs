@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             Buttons = new Button[2];
 
-            string moveHint = $"\nHold RMB to move. Added by {BuildInfoMod.MOD_NAME} mod.";
+            string moveHint = $"\nHold RMB to move. Added by {BuildInfoMod.ModName} mod.";
 
             Buttons[0] = CopyButton = new Button("Copy", tooltip: "Copies the detailed info text to clipboard." + moveHint, tooltipHandler: Tooltip,
                 hover: CopyHover, hoverEnd: CopyHoverEnd);

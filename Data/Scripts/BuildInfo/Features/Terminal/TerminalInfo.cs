@@ -412,7 +412,7 @@ namespace Digi.BuildInfo.Features.Terminal
             catch(Exception e)
             {
                 Log.Error(e);
-                info?.Append($"\n[ {Log.ModName} ERROR; SEND GAME LOG! ]");
+                info?.Append($"\n[ {BuildInfoMod.ModName} ERROR; SEND GAME LOG! ]");
             }
         }
 

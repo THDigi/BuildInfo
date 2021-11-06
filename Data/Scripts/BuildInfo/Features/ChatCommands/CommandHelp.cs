@@ -145,7 +145,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             sb.Append(Footer);
 
-            MyAPIGateway.Utilities.ShowMissionScreen(BuildInfoMod.MOD_NAME + " help", null, null, sb.ToString(), null, "Close");
+            MyAPIGateway.Utilities.ShowMissionScreen($"{BuildInfoMod.ModName} help", null, null, sb.ToString(), null, "Close");
         }
 
         public override void PrintHelp(StringBuilder sb)

@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Systems
 
         public RichHudFrameworkHandler(BuildInfoMod main) : base(main)
         {
-            RichHudClient.Init(Log.ModName, InitCallback, ResetCallback);
+            RichHudClient.Init(BuildInfoMod.ModName, InitCallback, ResetCallback);
         }
 
         public override void RegisterComponent()

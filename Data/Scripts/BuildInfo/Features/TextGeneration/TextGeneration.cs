@@ -868,7 +868,7 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.MOD_NAME).Append(" mod");
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.ModName).Append(" mod");
 
             int i = 0;
 

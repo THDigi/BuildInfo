@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features
 
                 Main.Config.ModVersion.Value = Constants.ModVersion;
                 Main.Config.Save();
-                Utils.ShowColoredChatMessage(Log.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
             }
         }
     }

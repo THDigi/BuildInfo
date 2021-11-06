@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features
                 if(MyAPIGateway.Session?.Player == null)
                 {
                     AskToPick(null);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
                     return;
                 }
 

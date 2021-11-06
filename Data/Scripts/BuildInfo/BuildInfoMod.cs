@@ -20,7 +20,7 @@ namespace Digi.BuildInfo
 {
     public class BuildInfoMod : ModBase<BuildInfoMod>
     {
-        public const string MOD_NAME = "Build Info";
+        public const string ModName = "Build Info";
 
         // Utils
         public readonly Caches Caches;
@@ -90,7 +90,7 @@ namespace Digi.BuildInfo
 
         public static bool IsDevMod { get; private set; } = false;
 
-        public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session, MyUpdateOrder.AfterSimulation)
+        public BuildInfoMod(BuildInfo_GameSession session) : base(ModName, session, MyUpdateOrder.AfterSimulation)
         {
             IsDevMod = (Log.WorkshopId == 0 && session?.ModContext?.ModId == "BuildInfo.dev");
 
