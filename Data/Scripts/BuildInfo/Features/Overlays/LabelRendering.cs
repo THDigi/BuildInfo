@@ -69,6 +69,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public readonly StringBuilder DynamicLabel = new StringBuilder(128);
         public bool AnyLabelShown { get; private set; }
+        public bool ForceDrawLabel = false;
 
         readonly LabelData[] LabelByType;
         readonly OverlayDrawInstance DrawInstance;
@@ -95,7 +96,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public bool CanDrawLabel(OverlayLabelsFlags labelsSetting = OverlayLabelsFlags.Other)
         {
-            return Main.TextAPI.IsEnabled && (Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)));
+            return Main.TextAPI.IsEnabled && (ForceDrawLabel || Main.Config.OverlayLabels.IsSet(labelsSetting) || (Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)));
         }
 
         public void DrawLine(Vector3D start, Vector3D direction, Color color,

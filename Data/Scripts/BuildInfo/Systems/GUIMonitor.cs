@@ -25,6 +25,9 @@ namespace Digi.BuildInfo.Systems
         /// </summary>
         public readonly List<string> Screens = new List<string>();
 
+        public event Action<string> ScreenAdded;
+        public event Action<string> ScreenRemoved;
+
         readonly bool LogEvents = false;
 
         public GUIMonitor(BuildInfoMod main) : base(main)
@@ -68,6 +71,8 @@ namespace Digi.BuildInfo.Systems
 
                 if(LogEvents)
                     DebugLog.PrintHUD(this, $"GUI Added: {name}; screens={string.Join("/", Screens)}", log: true);
+
+                ScreenAdded?.Invoke(name);
             }
             catch(Exception e)
             {
@@ -100,6 +105,8 @@ namespace Digi.BuildInfo.Systems
 
                 if(LogEvents)
                     DebugLog.PrintHUD(this, $"GUI Removed: {name}; screens={string.Join("/", Screens)}", log: true);
+
+                ScreenRemoved?.Invoke(name);
             }
             catch(Exception e)
             {

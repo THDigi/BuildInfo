@@ -207,6 +207,7 @@
     <Compile Include="Features\Terminal\ResourceStatsCollector.cs" />
     <Compile Include="Features\Terminal\MultiDetailInfo.cs" />
     <Compile Include="Features\Terminal\DetailInfoButtons.cs" />
+    <Compile Include="Features\ToolbarInfo\EventToolbarInfo.cs" />
     <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
     <Compile Include="Features\Tooltips\Inventories.cs" />
