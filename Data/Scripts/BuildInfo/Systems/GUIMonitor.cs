@@ -21,6 +21,11 @@ namespace Digi.BuildInfo.Systems
         public bool InAnyDialogBox { get; private set; }
 
         /// <summary>
+        /// If terminal has been opened but not necessarily the focus screen.
+        /// </summary>
+        public bool InTerminal { get; private set; }
+
+        /// <summary>
         /// List of currently seen screens
         /// </summary>
         public readonly List<string> Screens = new List<string>();
@@ -68,6 +73,10 @@ namespace Digi.BuildInfo.Systems
                 {
                     InAnyDialogBox = true;
                 }
+                else if(name.EndsWith("GuiScreenTerminal")) // terminal window, from MyGuiScreenTerminal.GetFriendlyName()
+                {
+                    InTerminal = true;
+                }
 
                 if(LogEvents)
                     DebugLog.PrintHUD(this, $"GUI Added: {name}; screens={string.Join("/", Screens)}", log: true);
@@ -101,6 +110,10 @@ namespace Digi.BuildInfo.Systems
                 else if(name.StartsWith("MyGuiScreenDialog"))
                 {
                     InAnyDialogBox = false;
+                }
+                else if(name.EndsWith("GuiScreenTerminal"))
+                {
+                    InTerminal = false;
                 }
 
                 if(LogEvents)

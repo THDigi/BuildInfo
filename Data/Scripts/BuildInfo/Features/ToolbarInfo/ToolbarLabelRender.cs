@@ -11,6 +11,7 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
@@ -40,6 +41,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         const BlendType TextBlendType = BlendType.PostPP;
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
+        const float OpacityInMenu = 0.75f;
+
         const string TextFont = "white";
         const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;
@@ -64,9 +67,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         int RenderedAtTick = -1;
 
-        Vector2D? ClickOffset;
-        Vector2D TextSize;
-        bool SelectedBox;
+        BoxDragging BoxDrag;
 
         HudAPIv2.BillBoardHUDMessage Background;
         HudAPIv2.BillBoardHUDMessage BackgroundBottom;
@@ -102,6 +103,31 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
+
+            BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : MathHelper.Clamp(Main.GameConfig.HudBackgroundOpacity * 1.5f, 0.5f, 1f), BackgroundColorSelected);
+            BoxDrag.BoxDeselected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : Main.GameConfig.HudBackgroundOpacity);
+            BoxDrag.Dragging += (newPos) =>
+            {
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll != 0)
+                {
+                    ConfigLib.FloatSetting setting = Main.Config.ToolbarLabelsScale;
+                    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
+                    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
+                    setting.Value = (float)Math.Round(scale, 3);
+                }
+
+                if(InToolbarConfig)
+                    Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
+                else
+                    Main.Config.ToolbarLabelsPosition.Value = newPos;
+            };
+            BoxDrag.FinishedDragging += (finalPos) =>
+            {
+                Main.Config.Save();
+                Main.ConfigMenuHandler.RefreshAll();
+            };
         }
 
         public override void UnregisterComponent()
@@ -126,6 +152,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
+
+            BoxDrag = null;
         }
 
         void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -326,86 +354,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
         }
 
-        //HudAPIv2.HUDMessage DebugMousePos;
-
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(ClickOffset.HasValue && MyAPIGateway.Input.IsNewLeftMouseReleased())
-            {
-                ClickOffset = null;
-                Main.Config.Save();
-                Main.ConfigMenuHandler.RefreshAll();
-            }
-
             if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
             {
-                const int Rounding = 6;
-                Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
-                Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
-                Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
-
-                Vector2D bottomLeftPos = Labels.Origin;
-                float edge = (float)(BackgroundPadding * Scale);
-                BoundingBox2D box = new BoundingBox2D(bottomLeftPos, bottomLeftPos + new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y)) + edge);
-                box.Min = Vector2D.Min(box.Min, box.Max);
-                box.Max = Vector2D.Max(box.Min, box.Max);
-
-                //{
-                //    MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-                //    float w = (0.032f * DrawUtils.ScaleFOV);
-                //    float h = w;
-
-                //    Vector3D worldPos = DrawUtils.TextAPIHUDtoWorld(box.Min);
-                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
-
-                //    worldPos = DrawUtils.TextAPIHUDtoWorld(box.Max);
-                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Red, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
-                //}
-
-                //if(DebugMousePos == null)
-                //    DebugMousePos = new HudAPIv2.HUDMessage(new StringBuilder(128), Vector2D.Zero, Shadowing: true, Blend: BlendType.PostPP);
-                //DebugMousePos.Origin = Config.ToolbarLabelsInMenuPosition.Value + new Vector2D(-0.1, 0.4);
-                //DebugMousePos.Message.Clear().Append($"MousePos={mousePos.X:0.##},{mousePos.Y:0.##}" +
-                //    $"\nMouseOnScreen={mouseOnScreen.X:0.##},{mouseOnScreen.Y:0.##}" +
-                //    $"\nTextSize={TextSize.X:0.##},{TextSize.Y:0.##}" +
-                //    $"\nBoxMin={box.Min.X:0.##},{box.Min.Y:0.##}; Max={box.Max.X:0.##},{box.Max.Y:0.##}");
-
-                if(box.Contains(mouseOnScreen) == ContainmentType.Contains)
-                {
-                    if(!SelectedBox)
-                    {
-                        SelectedBox = true;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : Math.Min(1f, Main.GameConfig.HudBackgroundOpacity * 1.2f), BackgroundColorSelected);
-                    }
-
-                    if(MyAPIGateway.Input.IsNewLeftMousePressed())
-                    {
-                        if(InToolbarConfig)
-                            ClickOffset = Main.Config.ToolbarLabelsInMenuPosition.Value - mouseOnScreen;
-                        else
-                            ClickOffset = Main.Config.ToolbarLabelsPosition.Value - mouseOnScreen;
-                    }
-                }
-                else
-                {
-                    if(SelectedBox)
-                    {
-                        SelectedBox = false;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
-                    }
-                }
-
-                if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
-                {
-                    Vector2D newPos = mouseOnScreen + ClickOffset.Value;
-                    newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
-                    newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
-
-                    if(InToolbarConfig)
-                        Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
-                    else
-                        Main.Config.ToolbarLabelsPosition.Value = newPos;
-                }
+                BoxDrag.Position = Labels.Origin;
+                BoxDrag.Update();
             }
         }
 
@@ -514,7 +468,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 WasInToolbarConfig = InToolbarConfig;
 
                 UpdatePosition();
-                UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
+                UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : Main.GameConfig.HudBackgroundOpacity);
                 UpdateTextOpacity(1f);
 
                 // refresh instantly to update names
@@ -747,6 +701,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Vector2D labelsTextSize = Labels.GetTextLength();
             Vector2D labelsLine2TextSize = Vector2D.Zero;
+            Vector2D textSize;
 
             if(splitMode)
             {
@@ -754,30 +709,30 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 separator = (0.015f * Scale);
                 labelsLine2TextSize = LabelsLine2.GetTextLength();
-                TextSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
+                textSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
             }
             else
             {
-                TextSize = labelsTextSize;
+                textSize = labelsTextSize;
             }
 
             float cornerHeight = (float)(CornerSize * Scale);
             float cornerWidth = (float)(cornerHeight / Main.GameConfig.AspectRatio);
 
             float edge = (float)(BackgroundPadding * Scale);
-            float bgWidth = (float)Math.Abs(TextSize.X) + edge;
-            float bgHeight = (float)Math.Abs(TextSize.Y) + edge;
+            float bgWidth = (float)Math.Abs(textSize.X) + edge;
+            float bgHeight = (float)Math.Abs(textSize.Y) + edge;
             Vector2D halfEdgeVec = new Vector2D(edge / 2);
 
             Vector2D shadowOffset = new Vector2D(ShadowOffset, -ShadowOffset);
 
-            Vector2D textOffset = new Vector2D(0, -TextSize.Y); // bottom-left pivot
+            Vector2D textOffset = new Vector2D(0, -textSize.Y); // bottom-left pivot
             Labels.Offset = textOffset + halfEdgeVec;
             Shadows.Offset = textOffset + halfEdgeVec + shadowOffset;
 
             if(splitMode)
             {
-                Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -TextSize.Y);
+                Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -textSize.Y);
                 LabelsLine2.Offset = l2offset + halfEdgeVec;
                 ShadowsLine2.Offset = l2offset + halfEdgeVec + shadowOffset;
             }
@@ -803,7 +758,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Background.Width = bgWidth;
             Background.Height = bgHeight - cornerHeight - (cornerHeight * topRightCornerScale);
-            Background.Offset = textOffset + (TextSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
+            Background.Offset = textOffset + (textSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
+
+            // update draggable box
+            Vector2D center = Labels.Origin;
+            BoundingBox2D box = new BoundingBox2D(center, center + new Vector2D(bgWidth, bgHeight));
+            BoxDrag.DragHitbox = box;
         }
     }
 }

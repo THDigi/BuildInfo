@@ -65,6 +65,10 @@ namespace Digi.BuildInfo.Features.Config
         public Vector2DSetting ToolbarLabelsOffsetForInvBar;
         public BoolSetting ToolbarActionStatus;
 
+        public BoolSetting EventToolbarInfo;
+        public Vector2DSetting EventToolbarInfoPosition;
+        public FloatSetting EventToolbarInfoScale;
+
         public BoolSetting TerminalDetailInfoAdditions;
         public BoolSetting TerminalDetailInfoHeader;
         public Vector2DSetting TerminalButtonsPosition;
@@ -501,6 +505,23 @@ namespace Digi.BuildInfo.Features.Config
                 "This is independent of the ToolbarLabels feature."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
+
+            EventToolbarInfo = new BoolSetting(Handler, "Toolbar: EventToolbarInfo", true,
+                "Blocks that have an event toolbar (like sensors, airvents, etc) don't have any representation on what the slots do.",
+                "This setting shows a small box on the left of those slots to inform you of what they do.",
+                "It also tells you what button you aimed at when you opened its toolbar config menu, as well as show the button panel's overlays in the background.");
+
+            EventToolbarInfoPosition = new Vector2DSetting(Handler, "Toolbar: EventToolbarInfo Position", defaultValue: new Vector2D(-0.50625, -0.741111), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The position (bottom-right corner pivot) of the event toolbar information, somewhere on the left of the toolbar is recommended.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+
+            EventToolbarInfoScale = new FloatSetting(Handler, "Toolbar: EventToolbarInfo Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            {
+                "The scale of the event toolbar info box."
+            });
             #endregion
 
             #region Overlays

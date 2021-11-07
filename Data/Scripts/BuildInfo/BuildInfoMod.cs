@@ -81,6 +81,7 @@ namespace Digi.BuildInfo
         public readonly ToolbarCustomLabels ToolbarCustomLabels;
         public readonly ToolbarStatusProcessor ToolbarStatusProcessor;
         public readonly ToolbarLabelRender ToolbarLabelRender;
+        public readonly EventToolbarMonitor EventToolbarMonitor;
         public readonly EventToolbarInfo EventToolbarInfo;
         public readonly GridMassCompute GridMassCompute;
         public readonly PBMonitor PBMonitor;
@@ -153,6 +154,7 @@ namespace Digi.BuildInfo
             ToolbarCustomLabels = new ToolbarCustomLabels(this);
             ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
             ToolbarLabelRender = new ToolbarLabelRender(this);
+            EventToolbarMonitor = new EventToolbarMonitor(this);
             EventToolbarInfo = new EventToolbarInfo(this);
             GridMassCompute = new GridMassCompute(this);
             PBMonitor = new PBMonitor(this);

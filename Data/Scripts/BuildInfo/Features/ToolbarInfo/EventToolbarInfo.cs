@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.Overlays.Specialized;
@@ -10,14 +8,10 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Character.Components;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
-using VRage.Game;
-using VRage.Game.Entity.UseObject;
-using VRage.Game.ModAPI;
+using VRage.Collections;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -33,27 +27,27 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color SlotColor = new Color(55, 200, 155);
         readonly Color ModNameColor = Color.Gray;
 
+        const float BackgroundOpacity = 0.75f;
         readonly Color BackgroundColor = new Color(41, 54, 62);
+        readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         const string TextFont = "white";
-        const double TextScaleMultiplier = 1f;
+        const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;
         const float BackgroundPadding = 0.03f;
 
-        IMyUseObject LastAimedUseObject;
-        IMyTerminalBlock TargetBlock;
-
-        Vector2D GUIPosition = new Vector2D(0.5, -0.5);
         double GUIScale;
-
-        Vector2D GuiPositionOffset = new Vector2D(0, 0);
 
         HudAPIv2.BillBoardHUDMessage Background;
         HudAPIv2.HUDMessage TextShadow;
         HudAPIv2.HUDMessage Text;
 
+        IMyTerminalBlock TargetBlock;
+        ListReader<IMyTerminalBlock> LastSeenBlocks = ListReader<IMyTerminalBlock>.Empty; // required or NRE's on Count
+
         OverlayDrawInstance DrawInstance;
+        BoxDragging BoxDrag;
 
         public EventToolbarInfo(BuildInfoMod main) : base(main)
         {
@@ -61,34 +55,86 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void RegisterComponent()
         {
-            MyCharacterDetectorComponent.OnInteractiveObjectChanged += UseObjectChanged;
+            Main.EventToolbarMonitor.OpenedToolbarConfig += OpenedToolbarConfig;
+            Main.EventToolbarMonitor.ClosedToolbarConfig += ClosedToolbarConfig;
 
-            Main.GUIMonitor.ScreenAdded += GUIScreenAdded;
-            Main.GUIMonitor.ScreenRemoved += GUIScreenRemoved;
             Main.TextAPI.Detected += TextAPIDetected;
 
-            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
-            Main.Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
+            Main.Config.EventToolbarInfoPosition.ValueAssigned += ConfigPositionChanged;
+            Main.Config.EventToolbarInfoScale.ValueAssigned += ConfigFloatChanged;
             Main.GameConfig.OptionsMenuClosed += UpdateFromConfig;
 
             DrawInstance = new OverlayDrawInstance(Main.Overlays, GetType().Name);
             DrawInstance.LabelRender.ForceDrawLabel = true;
+
+            BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity(BackgroundOpacity, BackgroundColorSelected);
+            BoxDrag.BoxDeselected += () => UpdateBgOpacity(BackgroundOpacity);
+            BoxDrag.Dragging += (newPos) =>
+            {
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll != 0)
+                {
+                    ConfigLib.FloatSetting setting = Main.Config.EventToolbarInfoScale;
+                    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
+                    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
+                    setting.Value = (float)Math.Round(scale, 3);
+                }
+
+                Main.Config.EventToolbarInfoPosition.Value = newPos;
+                UpdateFromConfig();
+            };
+            BoxDrag.FinishedDragging += (finalPos) =>
+            {
+                Main.Config.Save();
+                Main.ConfigMenuHandler.RefreshAll();
+            };
         }
 
         public override void UnregisterComponent()
         {
-            MyCharacterDetectorComponent.OnInteractiveObjectChanged -= UseObjectChanged;
-
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
-            Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
+            Main.EventToolbarMonitor.OpenedToolbarConfig -= OpenedToolbarConfig;
+            Main.EventToolbarMonitor.ClosedToolbarConfig -= ClosedToolbarConfig;
+
             Main.TextAPI.Detected -= TextAPIDetected;
 
-            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
-            Main.Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
+            Main.Config.EventToolbarInfoPosition.ValueAssigned -= ConfigPositionChanged;
+            Main.Config.EventToolbarInfoScale.ValueAssigned -= ConfigFloatChanged;
             Main.GameConfig.OptionsMenuClosed -= UpdateFromConfig;
+
+            DrawInstance = null;
+            BoxDrag = null;
+        }
+
+        void TextAPIDetected()
+        {
+            const int SBCapacity = 256;
+
+            // creation order important for draw order
+            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), BoxDrag.Position, Color.White);
+            Background.Visible = false;
+            Background.Blend = BlendType;
+            Background.Options = HudAPIv2.Options.HideHud;
+            Background.Width = 0f;
+            Background.Height = 0f;
+
+            TextShadow = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), BoxDrag.Position, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
+            TextShadow.InitialColor = Color.Black;
+            TextShadow.Visible = false;
+
+            Text = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), BoxDrag.Position, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
+            Text.Visible = false;
+
+            UpdateFromConfig();
+
+            // render if toolbar menu is already open
+            if(LastSeenBlocks.Count > 0 && Main.Config.EventToolbarInfo.Value && Main.TextAPI.IsEnabled)
+            {
+                RenderBox(LastSeenBlocks);
+            }
         }
 
         void ConfigFloatChanged(float oldValue, float newValue, ConfigLib.SettingBase<float> setting)
@@ -103,26 +149,44 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateFromConfig()
         {
-            GUIPosition = Main.Config.ToolbarLabelsInMenuPosition.Value;
-            GUIScale = (float)(TextScaleMultiplier * Main.Config.ToolbarLabelsScale.Value);
+            GUIScale = (float)(TextScaleMultiplier * Main.Config.EventToolbarInfoScale.Value);
 
             if(Text != null)
             {
                 TextShadow.Scale = GUIScale;
                 Text.Scale = GUIScale;
-
-                // compute vertical text size of a single line, for offsetting
-                Text.Message.Clear().Append("SampleText");
-                Vector2D textSize = Text.GetTextLength();
-                GuiPositionOffset = new Vector2D(0, Math.Abs(textSize.Y) * 3); // offset 3 lines
-                Text.Message.Clear();
-
-                //Text.Origin = GUIPosition;
-                //TextShadow.Origin = GUIPosition;
-                //Background.Origin = GUIPosition;
-
-                UpdateBgOpacity(Main.GameConfig.UIBackgroundOpacity);
+                UpdateBgOpacity(BackgroundOpacity);
+                UpdateBoxPosition();
+                UpdateScale();
             }
+        }
+
+        void UpdateBoxPosition()
+        {
+            if(Text != null)
+            {
+                Vector2D position = Main.Config.EventToolbarInfoPosition.Value;
+                Text.Origin = position;
+                TextShadow.Origin = position;
+                Background.Origin = position;
+            }
+        }
+
+        void UpdateScale()
+        {
+            Vector2D textSize = Text.GetTextLength();
+
+            float edge = (float)(BackgroundPadding * GUIScale);
+            Vector2D textOffset = new Vector2D(-textSize.X, 0) - new Vector2D(edge / 2); // top-right pivot and offset by background margin aswell
+            Text.Offset = textOffset;
+            TextShadow.Offset = textOffset + new Vector2D(ShadowOffset, -ShadowOffset);
+
+            float bgWidth = (float)Math.Abs(textSize.X) + edge;
+            float bgHeight = (float)Math.Abs(textSize.Y) + edge;
+
+            Background.Width = bgWidth;
+            Background.Height = bgHeight;
+            Background.Offset = new Vector2D(bgWidth * -0.5, bgHeight * -0.5); // make it centered
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
@@ -136,118 +200,124 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Background.BillBoardColor = color;
         }
 
-        void TextAPIDetected()
+        void OpenedToolbarConfig(ListReader<IMyTerminalBlock> blocks)
         {
-            const int SBCapacity = 512;
+            LastSeenBlocks = blocks;
 
-            // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), GUIPosition, Color.White);
-            Background.Visible = false;
-            Background.Blend = BlendType;
-            Background.Options = HudAPIv2.Options.HideHud;
-            Background.Width = 0f;
-            Background.Height = 0f;
-
-            TextShadow = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), GUIPosition, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
-            TextShadow.InitialColor = Color.Black;
-            TextShadow.Visible = false;
-
-            Text = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), GUIPosition, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
-            Text.Visible = false;
-
-            UpdateFromConfig();
-        }
-
-        void UseObjectChanged(IMyUseObject useObject)
-        {
-            LastAimedUseObject = useObject;
-        }
-
-        void GUIScreenAdded(string screenTypeName)
-        {
-            if(!Main.GUIMonitor.InAnyToolbarGUI || !Main.TextAPI.IsEnabled || Text == null)
-                return;
-
-            TargetBlock = null;
-
-            List<IMyTerminalBlock> selectedInTerminal = Main.TerminalInfo.SelectedInTerminal;
-            if(selectedInTerminal.Count > 0 && Main.GUIMonitor.Screens.Contains("MyGuiScreenTerminal")) // HACK: should find a better way to tell
+            if(Main.Config.EventToolbarInfo.Value && Main.TextAPI.IsEnabled && Text != null)
             {
-                TargetBlock = selectedInTerminal[0]; // only first matters, if there's more then it's not going to matter unless I use specifics from them.
+                RenderBox(blocks);
+            }
+        }
+
+        void ClosedToolbarConfig(ListReader<IMyTerminalBlock> blocks)
+        {
+            LastSeenBlocks = ListReader<IMyTerminalBlock>.Empty;
+            TargetBlock = null;
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+
+            if(Text != null)
+            {
+                Text.Visible = false;
+                TextShadow.Visible = false;
+                Background.Visible = false;
+            }
+        }
+
+        void RenderBox(ListReader<IMyTerminalBlock> blocks) // called once
+        {
+            TargetBlock = blocks[0];
+            StringBuilder sb = Text.Message.Clear();
+
+            if(blocks.Count > 1)
+            {
+                sb.Color(HeaderColor).Append("Event Toolbar for ").Append(blocks.Count).Append(" blocks").ResetFormatting().Append('\n');
             }
             else
             {
-                TargetBlock = LastAimedUseObject?.Owner as IMyTerminalBlock;
+                sb.Color(HeaderColor).Append("Event Toolbar for \"").AppendMaxLength(TargetBlock.CustomName, 24).Append("\"").ResetFormatting().Append('\n');
             }
-
-            if(TargetBlock == null)
-                return;
-
-            StringBuilder sb = Text.Message.Clear();
-
-            sb.Color(HeaderColor).Append("Event Toolbar for \"").Append(TargetBlock.CustomName).Append("\"");
-
-            if(Main.Config.ToolbarLabelsHeader.Value)
-            {
-                sb.Color(ModNameColor).Append(" <i>(").Append(BuildInfoMod.ModName).Append(" Mod)");
-            }
-
-            sb.ResetFormatting().Append('\n');
 
             do
             {
                 IMyButtonPanel button = TargetBlock as IMyButtonPanel;
                 if(button != null)
                 {
-                    // show overlay too
-                    SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
+                    sb.Append("Each slot is a button.").Append('\n');
 
-                    sb.Append("Each slot represents a button on the block, in seen order.");
+                    MyButtonPanelDefinition buttonDef = TargetBlock.SlimBlock.BlockDefinition as MyButtonPanelDefinition;
 
-                    string dummyName = LastAimedUseObject?.Dummy?.Name;
-                    if(dummyName != null)
+                    string dummyName = Main.EventToolbarMonitor.LastAimedUseObject?.Dummy?.Name;
+                    BData_ButtonPanel data = Main.LiveDataHandler.Get<BData_ButtonPanel>(buttonDef);
+                    BData_ButtonPanel.ButtonInfo buttonInfo;
+                    if(dummyName != null && data != null && data.ButtonInfoByDummyName.TryGetValue(dummyName, out buttonInfo))
                     {
-                        BData_ButtonPanel data = Main.LiveDataHandler.Get<BData_ButtonPanel>((MyCubeBlockDefinition)TargetBlock.SlimBlock.BlockDefinition);
-                        if(data != null)
+                        sb.Append("Aimed button is ").Color(SlotColor).Append("slot ").Append(buttonInfo.Index + 1).ResetFormatting().Append('\n');
+                    }
+
+                    if(blocks.Count > 1)
+                    {
+                        int buttonCountMin = int.MaxValue;
+                        int buttonCountMax = int.MinValue;
+
+                        for(int i = 0; i < blocks.Count; i++)
                         {
-                            BData_ButtonPanel.ButtonInfo buttonInfo;
-                            if(data.ButtonInfoByDummyName.TryGetValue(dummyName, out buttonInfo))
+                            MyButtonPanelDefinition def = blocks[i].SlimBlock.BlockDefinition as MyButtonPanelDefinition;
+                            if(def != null)
                             {
-                                sb.Append("\nAimed-at button is in ").Color(SlotColor).Append("slot ").Append(buttonInfo.Index + 1);
+                                buttonCountMin = Math.Min(def.ButtonCount, buttonCountMin);
+                                buttonCountMax = Math.Max(def.ButtonCount, buttonCountMax);
                             }
                         }
-                    }
-                    break;
-                }
 
-                IMyRemoteControl rc = TargetBlock as IMyRemoteControl;
-                if(rc != null)
-                {
-                    sb.Append("All these slots will trigger when the selected waypoint is reached.");
+                        if(buttonDef.ButtonCount > buttonCountMin)
+                        {
+                            sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have less buttons, lowest: ").Append(buttonCountMin).Append('\n');
+                        }
+                        else if(buttonDef.ButtonCount < buttonCountMax)
+                        {
+                            sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have more buttons, highest: ").Append(buttonCountMax).Append('\n');
+                        }
+                    }
+
                     break;
                 }
 
                 IMyAirVent vent = TargetBlock as IMyAirVent;
                 if(vent != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when room is filled.\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when room is emptied.");
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when room is filled.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when room is emptied.").Append('\n');
                     break;
                 }
 
                 IMySensorBlock sensor = TargetBlock as IMySensorBlock;
                 if(sensor != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers on first detection entering area.\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when nothing is detected anymore.");
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers on first detection.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when nothing is detected anymore.").Append('\n');
                     break;
                 }
 
                 IMyTargetDummyBlock targetDummy = TargetBlock as IMyTargetDummyBlock;
                 if(targetDummy != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when dummy is hit.\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when dummy is destroyed.");
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when dummy is hit (or destroyed).").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when dummy is destroyed.").Append('\n');
+                    break;
+                }
+
+                IMyRemoteControl rc = TargetBlock as IMyRemoteControl;
+                if(rc != null)
+                {
+                    sb.Append("All slots trigger when waypoint is reached.").Append('\n');
+                    break;
+                }
+
+                IMyTimerBlock timer = TargetBlock as IMyTimerBlock;
+                if(timer != null)
+                {
+                    sb.Append("All slots trigger when timer finishes counting.").Append('\n');
                     break;
                 }
 
@@ -255,53 +325,41 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             while(false);
 
+            if(Main.Config.ToolbarLabelsHeader.Value)
+            {
+                sb.Color(ModNameColor).Append("<i>(").Append(BuildInfoMod.ModName).Append(" Mod)<reset>\n");
+            }
+
+            sb.TrimEndWhitespace();
+
             TextAPI.CopyWithoutColor(sb, TextShadow.Message);
 
-            Vector2D textSize = Text.GetTextLength();
-
-            Vector2D halfEdgeVec = new Vector2D(BackgroundPadding / 2);
-            Vector2D textOffset = new Vector2D(0, -textSize.Y); // bottom-left pivot
-            Text.Offset = textOffset + halfEdgeVec;
-            TextShadow.Offset = textOffset + halfEdgeVec + new Vector2D(ShadowOffset, -ShadowOffset);
-
-            float bgWidth = (float)Math.Abs(textSize.X) + BackgroundPadding;
-            float bgHeight = (float)Math.Abs(textSize.Y) + BackgroundPadding;
-
-            Background.Width = bgWidth;
-            Background.Height = bgHeight;
-            Background.Offset = new Vector2D(bgWidth / 2, bgHeight / 2);
-
-            Vector2D position = GUIPosition + GuiPositionOffset;
-            Background.Origin = position;
-            TextShadow.Origin = position;
-            Text.Origin = position;
+            UpdateScale();
 
             Text.Visible = true;
             TextShadow.Visible = true;
             Background.Visible = true;
-        }
 
-        void GUIScreenRemoved(string screenTypeName)
-        {
-            if(Text != null && !Main.GUIMonitor.InAnyToolbarGUI)
-            {
-                Text.Visible = false;
-                TextShadow.Visible = false;
-                Background.Visible = false;
-
-                TargetBlock = null;
-                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
-            }
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true); // for dragging and overlay
         }
 
         public override void UpdateDraw()
         {
-            if(TargetBlock == null)
+            if(TargetBlock == null) // redundancy
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
                 return;
             }
 
+            #region Draggable box update
+            Vector2D center = Background.Origin + Background.Offset;
+            Vector2D halfExtents = new Vector2D(Background.Width, Background.Height) / 2;
+            BoxDrag.DragHitbox = new BoundingBox2D(center - halfExtents, center + halfExtents);
+            BoxDrag.Position = Text.Origin;
+            BoxDrag.Update();
+            #endregion
+
+            #region Overlays
             IMyButtonPanel button = TargetBlock as IMyButtonPanel;
             if(button != null)
             {
@@ -312,6 +370,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)TargetBlock.SlimBlock.BlockDefinition, TargetBlock.SlimBlock);
                 }
             }
+            #endregion
         }
     }
 }

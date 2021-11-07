@@ -207,6 +207,7 @@
     <Compile Include="Features\Terminal\ResourceStatsCollector.cs" />
     <Compile Include="Features\Terminal\MultiDetailInfo.cs" />
     <Compile Include="Features\Terminal\DetailInfoButtons.cs" />
+    <Compile Include="Features\ToolbarInfo\EventToolbarMonitor.cs" />
     <Compile Include="Features\ToolbarInfo\EventToolbarInfo.cs" />
     <Compile Include="Features\Tooltips\BlockDescriptions.cs" />
     <Compile Include="Features\Tooltips\BlueprintTooltips.cs" />
@@ -389,6 +390,7 @@
     <Compile Include="Systems\DefenseShieldsDetector.cs" />
     <Compile Include="Systems\RichHudFrameworkHandler.cs" />
     <Compile Include="Systems\WeaponCoreAPIHandler.cs" />
+    <Compile Include="Utilities\BoxDragging.cs" />
     <Compile Include="Utilities\Caches.cs" />
     <Compile Include="Utilities\DevProfiler.cs" />
     <Compile Include="Utilities\DevUtils.cs" />

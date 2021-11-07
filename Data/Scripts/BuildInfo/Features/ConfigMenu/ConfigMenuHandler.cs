@@ -36,6 +36,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupTextInfo = new ItemGroup();
         private readonly ItemGroup groupCustomStyling = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
+        private readonly ItemGroup groupEventToolbar = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
         private readonly ItemGroup groupTerminalDetailInfo = new ItemGroup();
@@ -50,6 +51,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupTextInfo.SetInteractable(textModeOn);
             groupCustomStyling.SetInteractable(textModeOn && Main.Config.TextAPICustomStyling.Value);
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
+            //groupEventToolbar.SetInteractable(true);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
             groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
             groupTerminalDetailInfo.SetInteractable(Main.Config.TerminalDetailInfoAdditions.Value);
@@ -139,6 +141,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_Binds = AddCategory("Binds", Category_Mod, header: "Key/button bindings");
             Category_Misc = AddCategory("Misc", Category_Mod, header: "Various other settings");
 
+            #region TextBox
             SimpleEnumCycle(Category_Textbox, null, Main.Config.TextShow, execOnCycle: (v) =>
             {
                 Main.Config.TextShow.Value = v;
@@ -162,11 +165,15 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemAdd_PlaceInfoToggles(Category_PlaceInfo);
             Category_AimInfo = AddCategory("Aim Info", Category_Textbox, header: "Aiming at a block will show these stats:", group: groupTextInfo);
             ItemAdd_AimInfoToggles(Category_AimInfo);
+            #endregion
 
+            #region Overlays
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
+            #endregion
 
+            #region HUD
             SimpleToggle(Category_HUD, null, Main.Config.BlockInfoAdditions);
             SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
             SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
@@ -183,7 +190,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemAdd_ShipInvBarPosition(Category_HUD, groupShipToolInvBar);
             SimplePositionReset(Category_HUD, Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
             SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
+            #endregion
 
+            #region Toolbar
             ItemSlider cockpitEnterTimeSlider = null;
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
             {
@@ -194,7 +203,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarItemNameMode, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarLabelsHeader, groupToolbarLabels);
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarStyleMode, groupToolbarLabels);
+
             AddSpacer(Category_Toolbar);
+
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             groupToolbarLabels.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition),
@@ -202,9 +213,21 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
-            AddSpacer(Category_Toolbar);
-            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
 
+            AddSpacer(Category_Toolbar);
+
+            SimpleToggle(Category_Toolbar, null, Main.Config.EventToolbarInfo, setGroupInteractable: groupEventToolbar);
+            SimpleSlider(Category_Toolbar, null, Main.Config.EventToolbarInfoScale, groupEventToolbar);
+            groupEventToolbar.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.EventToolbarInfoPosition),
+                () => ShowNotify("Event toolbar info box can be moved in menu by holding LMB on it and dragging.", 7000)));
+            SimplePositionReset(Category_Toolbar, Main.Config.EventToolbarInfoPosition, groupEventToolbar);
+
+            AddSpacer(Category_Toolbar);
+
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
+            #endregion
+
+            #region Terminal
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
             new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
@@ -219,10 +242,14 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             AddSpacer(Category_Terminal);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);
+            #endregion
 
+            #region Leak Info
             SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorWorld);
             SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorOverlay);
+            #endregion
 
+            #region Binds
             SimpleBind(Category_Binds, "Menu Bind", Config.Config.MENU_BIND_INPUT_NAME, Main.Config.MenuBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Text Show Bind", Config.Config.TEXT_SHOW_INPUT_NAME, Main.Config.TextShowBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Main.Config.CycleOverlaysBind, groupBinds, groupBinds);
@@ -232,7 +259,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleBind(Category_Binds, "Lock Overlay Bind", Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show Toolbar Info Bind", Config.Config.SHOW_TOOLBAR_INFO_INPUT_NAME, Main.Config.ShowToolbarInfoBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show CubeBuilder Selection Info Bind", Config.Config.SHOW_CB_SELECTION_INFO_INPUT_NAME, Main.Config.ShowCubeBuilderSelectionInfoBind, groupBinds, groupBinds);
+            #endregion
 
+            #region Misc
             SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
@@ -246,6 +275,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 ShowNotify("Config reset to defaults and saved.", 3000, FontsHandler.WhiteSh);
                 RefreshAll();
             });
+            #endregion
 
             ItemButton button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
             button.Interactable = (Log.WorkshopId > 0);
