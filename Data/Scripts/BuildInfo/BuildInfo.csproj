@@ -150,7 +150,9 @@
     <Compile Include="Features\AnalyseShip.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\LiveData\ButtonPanel.cs" />
     <Compile Include="Features\Overlays\LabelRendering.cs" />
+    <Compile Include="Features\Overlays\Specialized\ButtonPanel.cs" />
     <Compile Include="Features\Overlays\Specialized\LaserAntenna.cs" />
     <Compile Include="Features\Overlays\Specialized\TargetDummy.cs" />
     <Compile Include="Features\Overlays\Specialized\Thruster.cs" />

@@ -145,6 +145,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyButtonPanel.Init()
         public const float ButtonPanel_PowerReq = 0.0001f;
 
+        // from MyUseObjectPanelButton + how detectors are found: MyUseObjectsComponent.LoadDetectorsFromModel()
+        public const string ButtonPanel_DummyName = "detector_panel";
+
         // from MySensorBlock
         public static readonly Vector3 Sensor_MinField = new Vector3(0.1f); // MySensorBlock.MIN_RANGE = 0.1f;
         public static Vector3 Sensor_MaxField(float maxRange) => new Vector3(maxRange * 2);

@@ -37,6 +37,8 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             AddType<BData_Collector>(typeof(MyObjectBuilder_Collector));
 
+            AddType<BData_ButtonPanel>(typeof(MyObjectBuilder_ButtonPanel));
+
             AddType<BData_LandingGear>(typeof(MyObjectBuilder_LandingGear));
 
             AddType<BData_Connector>(typeof(MyObjectBuilder_ShipConnector));
