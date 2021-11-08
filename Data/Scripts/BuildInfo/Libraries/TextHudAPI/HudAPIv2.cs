@@ -14,6 +14,10 @@ namespace Draygo.API
 {
     public class HudAPIv2
     {
+        const string DefaultFont = "white";
+        const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
+        const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;
+
         private static HudAPIv2 instance;
         private const long REGISTRATIONID = 573804956;
         private bool registered = false;
@@ -516,7 +520,7 @@ namespace Draygo.API
                 }
             }
             #endregion
-            public EntityMessage(StringBuilder Message, IMyEntity Entity, MatrixD TransformMatrix, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, string Font = "white")
+            public EntityMessage(StringBuilder Message, IMyEntity Entity, MatrixD TransformMatrix, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, string Font = DefaultFont)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.EntityMessage);
@@ -543,7 +547,7 @@ namespace Draygo.API
                 }
 
             }
-            public EntityMessage(StringBuilder Message, IMyEntity Entity, Vector3D LocalPosition, Vector3D Forward, Vector3D Up, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, BlendTypeEnum Blend = BlendTypeEnum.Standard, string Font = "white")
+            public EntityMessage(StringBuilder Message, IMyEntity Entity, Vector3D LocalPosition, Vector3D Forward, Vector3D Up, int TimeToLive = -1, double Scale = 1, TextOrientation Orientation = TextOrientation.ltr, Vector2D? Offset = null, Vector2D? Max = null, BlendTypeEnum Blend = DefaultWorldBlendType, string Font = DefaultFont)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.EntityMessage);
@@ -677,7 +681,7 @@ namespace Draygo.API
             }
             #endregion
 
-            public HUDMessage(StringBuilder Message, Vector2D Origin, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1.0d, bool HideHud = true, bool Shadowing = false, Color? ShadowColor = null, BlendTypeEnum Blend = BlendTypeEnum.SDR, string Font = "white")
+            public HUDMessage(StringBuilder Message, Vector2D Origin, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1.0d, bool HideHud = true, bool Shadowing = false, Color? ShadowColor = null, BlendTypeEnum Blend = DefaultHUDBlendType, string Font = DefaultFont)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.HUDMessage);
@@ -907,7 +911,7 @@ namespace Draygo.API
             }
             #endregion
 
-            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = DefaultHUDBlendType)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.BillBoardHUDMessage);
@@ -939,7 +943,7 @@ namespace Draygo.API
                 }
             }
 
-            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 uvOffset, Vector2 uvSize, float TextureSize, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public BillBoardHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 uvOffset, Vector2 uvSize, float TextureSize, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = DefaultHUDBlendType)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.BillBoardHUDMessage);
@@ -1164,7 +1168,7 @@ namespace Draygo.API
 
 
 
-            public BillBoardTriHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 p0, Vector2 p1, Vector2 p2, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = BlendTypeEnum.SDR)
+            public BillBoardTriHUDMessage(MyStringId Material, Vector2D Origin, Color BillBoardColor, Vector2 p0, Vector2 p1, Vector2 p2, Vector2D? Offset = null, int TimeToLive = -1, double Scale = 1d, float Width = 1f, float Height = 1f, float Rotation = 0, bool HideHud = true, bool Shadowing = false, BlendTypeEnum Blend = DefaultHUDBlendType)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.BillboardTriHUDMessage);
@@ -1305,7 +1309,7 @@ namespace Draygo.API
             #endregion
 
 
-            public SpaceMessage(StringBuilder Message, Vector3D WorldPosition, Vector3D Up, Vector3D Left, double Scale = 1, Vector2D? Offset = null, int TimeToLive = -1, TextOrientation TxtOrientation = TextOrientation.ltr, BlendTypeEnum Blend = BlendTypeEnum.Standard, string Font = "white")
+            public SpaceMessage(StringBuilder Message, Vector3D WorldPosition, Vector3D Up, Vector3D Left, double Scale = 1, Vector2D? Offset = null, int TimeToLive = -1, TextOrientation TxtOrientation = TextOrientation.ltr, BlendTypeEnum Blend = DefaultWorldBlendType, string Font = DefaultFont)
             {
                 instance.RegisterCheck();
                 BackingObject = instance.CreateMessage(MessageTypes.SpaceMessage);
