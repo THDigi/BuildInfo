@@ -355,15 +355,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
         }
 
-        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
-        {
-            if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
-            {
-                BoxDrag.Position = Labels.Origin;
-                BoxDrag.Update();
-            }
-        }
-
         bool ComputeVisible()
         {
             if(!Main.TextAPI.IsEnabled || LabelsMode == ToolbarLabelsMode.Off)
@@ -511,12 +502,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     UpdateRender();
                 }
             }
+
+            #region Draggable box update
+            if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
+            {
+                BoxDrag.Position = Labels.Origin;
+                BoxDrag.Update();
+            }
+            #endregion
         }
 
         void EquipmentMonitor_ControlledChanged(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
         {
             bool update = controlled is IMyShipController;
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, update);
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, update);
 
             UpdateRender();
