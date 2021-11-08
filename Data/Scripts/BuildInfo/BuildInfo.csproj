@@ -151,6 +151,8 @@
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
+    <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
+    <Compile Include="Libraries\TextHudAPI\TextAPIFont.cs" />
     <Compile Include="Features\Overlays\LabelRendering.cs" />
     <Compile Include="Features\Overlays\Specialized\ButtonPanel.cs" />
     <Compile Include="Features\Overlays\Specialized\LaserAntenna.cs" />
@@ -197,7 +199,7 @@
     <Compile Include="Features\Config\TextAlignSetting.cs" />
     <Compile Include="Features\DebugLog.cs" />
     <Compile Include="Features\DebugEvents.cs" />
-    <Compile Include="Features\FontsHandler.cs" />
+    <Compile Include="Features\Fonts\FontsHandler.cs" />
     <Compile Include="Features\HUD\BackpackBar.cs" />
     <Compile Include="Features\HUD\HealthStat.cs" />
     <Compile Include="Features\HUD\TurretControlStat.cs" />

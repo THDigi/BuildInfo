@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             TextSB = new StringBuilder(128);
-            Text = new HudAPIv2.HUDMessage(TextSB, new Vector2D(0, -0.1), Scale: 1, HideHud: true, Shadowing: true, Blend: BlendType.PostPP);
+            Text = new HudAPIv2.HUDMessage(TextSB, new Vector2D(0, -0.1), Scale: 1, HideHud: true, Shadowing: false, Font: FontsHandler.SEOutlined, Blend: BlendType.PostPP);
             Text.Visible = false;
             SetUpdate();
         }

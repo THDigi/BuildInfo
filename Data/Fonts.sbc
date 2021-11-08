@@ -33,6 +33,21 @@
     <Font>
       <Id>
         <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_SEOutlined</SubtypeId>
+      </Id>
+      <Public>false</Public>
+      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
         <SubtypeId>BI_Green</SubtypeId>
       </Id>
       <Public>false</Public>

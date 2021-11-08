@@ -32,7 +32,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
-        const string TextFont = "white";
+        const string TextFont = FontsHandler.SEOutlined;
+        const bool UseShadowMessage = false;
         const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;
         const float BackgroundPadding = 0.03f;
@@ -332,12 +333,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             sb.TrimEndWhitespace();
 
-            TextAPI.CopyWithoutColor(sb, TextShadow.Message);
+            if(UseShadowMessage)
+                TextAPI.CopyWithoutColor(sb, TextShadow.Message);
 
             UpdateScale();
 
             Text.Visible = true;
-            TextShadow.Visible = true;
+            TextShadow.Visible = UseShadowMessage;
             Background.Visible = true;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true); // for dragging and overlay

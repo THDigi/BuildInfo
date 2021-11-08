@@ -43,7 +43,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const float OpacityInMenu = 0.75f;
 
-        const string TextFont = "white";
+        const string TextFont = FontsHandler.SEOutlined;
+        const bool UseShadowMessage = false;
         const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;
         const double BackgroundPadding = 0.03;
@@ -489,11 +490,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bg.Visible = MustBeVisible;
                 }
 
-                Shadows.Visible = MustBeVisible;
+                Shadows.Visible = UseShadowMessage && MustBeVisible;
                 Labels.Visible = MustBeVisible;
 
                 bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
-                ShadowsLine2.Visible = splitMode && MustBeVisible;
+                ShadowsLine2.Visible = UseShadowMessage && splitMode && MustBeVisible;
                 LabelsLine2.Visible = splitMode && MustBeVisible;
 
                 WereVisible = MustBeVisible;
@@ -692,10 +693,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             sb.Length -= 1;
 
-            TextAPI.CopyWithoutColor(sb, Shadows.Message);
+            if(UseShadowMessage)
+            {
+                TextAPI.CopyWithoutColor(sb, Shadows.Message);
 
-            if(splitMode)
-                TextAPI.CopyWithoutColor(sb2, ShadowsLine2.Message);
+                if(splitMode)
+                    TextAPI.CopyWithoutColor(sb2, ShadowsLine2.Message);
+            }
 
             float separator = 0f;
 

@@ -109,7 +109,7 @@ namespace Digi.BuildInfo.Features
 
             if(ProfileText == null)
             {
-                ProfileText = new HudAPIv2.HUDMessage(new StringBuilder(512), new Vector2D(-0.99, 0.98), Scale: 0.8, Font: "BI_ToolbarItem", HideHud: false, Shadowing: true, Blend: BlendType.PostPP);
+                ProfileText = new HudAPIv2.HUDMessage(new StringBuilder(512), new Vector2D(-0.99, 0.98), Scale: 0.8, HideHud: false, Shadowing: false, Font: FontsHandler.SEOutlined, Blend: BlendType.PostPP);
                 ProfileText.Visible = false;
             }
 
@@ -184,7 +184,7 @@ namespace Digi.BuildInfo.Features
             if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
             {
                 if(debugEquipmentMsg == null)
-                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false, Blend: BlendType.PostPP);
+                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(128), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
 
                 debugEquipmentMsg.Message.Clear().Append($"{BuildInfoMod.ModName} Debug - Equipment.Update()\n" +
                     $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +

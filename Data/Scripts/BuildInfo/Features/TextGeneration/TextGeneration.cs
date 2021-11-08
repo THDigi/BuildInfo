@@ -428,9 +428,9 @@ namespace Digi.BuildInfo.Features
         {
             if(bgObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
+                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: false, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
                 bgObject.Visible = false;
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
+                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: false, Font: "BI_SEOutlined", Blend: FG_BLEND_TYPE);
                 textObject.Visible = false;
             }
 

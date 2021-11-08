@@ -580,6 +580,7 @@ namespace Digi.BuildInfo.Features
                     {
                         const double LeftOffset = 0.0183;
                         const string LabelPrefix = "<color=255,255,0>Grinds to: ";
+                        const string TextFont = FontsHandler.SEOutlined;
                         const int NameMaxChars = 24;
                         double textScale = 0.0012 * scaleFOV;
 
@@ -587,7 +588,7 @@ namespace Digi.BuildInfo.Features
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), posWorld, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BlendType);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), posWorld, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BlendType, TextFont);
                             info.Text.Visible = false; // not required when using manual .Draw()
                         }
                         else

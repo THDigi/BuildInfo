@@ -81,6 +81,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public static readonly Vector4 ShadowColor = Color.Black * 0.9f;
 
+        public const string TextFont = FontsHandler.SEOutlined;
+        public const bool UseShadowMessage = false;
+
         public const BlendTypeEnum TextBlendType = BlendTypeEnum.PostPP;
         public const BlendTypeEnum ShadowBlendType = BlendTypeEnum.PostPP;
 
@@ -194,11 +197,13 @@ namespace Digi.BuildInfo.Features.Overlays
                 StringBuilder shadowSB = new StringBuilder(DynamicLabel.Capacity);
                 StringBuilder msgSB = new StringBuilder(DynamicLabel.Capacity);
 
-                labelData.Shadow = new HudAPIv2.SpaceMessage(shadowSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, TextScale, Blend: ShadowBlendType);
-                labelData.Text = new HudAPIv2.SpaceMessage(msgSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, TextScale, Blend: TextBlendType);
+                if(UseShadowMessage)
+                {
+                    labelData.Shadow = new HudAPIv2.SpaceMessage(shadowSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, TextScale, Blend: ShadowBlendType);
+                    labelData.Shadow.Visible = false;
+                }
 
-                // not necessary for text.Draw() to work
-                labelData.Shadow.Visible = false;
+                labelData.Text = new HudAPIv2.SpaceMessage(msgSB, Vector3D.Zero, Vector3D.Up, Vector3D.Left, TextScale, Blend: TextBlendType, Font: TextFont);
                 labelData.Text.Visible = false;
 
                 if(cacheMessage != null)
@@ -216,19 +221,24 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(cacheMessage == null)
             {
-                shadow.Message.Clear().Color(ShadowColor).AppendStringBuilder(DynamicLabel);
+                if(UseShadowMessage)
+                    shadow.Message.Clear().Color(ShadowColor).AppendStringBuilder(DynamicLabel);
+
                 text.Message.Clear().Color(color).AppendStringBuilder(DynamicLabel);
 
                 Vector2D textSize = text.GetTextLength();
                 labelData.UnderlineLength = (float)(TextOffset.X + (textSize.X * TextScale));
             }
 
-            shadow.TxtOrientation = align;
-            shadow.Scale = scale * TextScale;
-            shadow.WorldPosition = shadowPos;
-            shadow.Left = cm.Left;
-            shadow.Up = cm.Up;
-            shadow.Draw(); // this removes the need of having the text visible, also draws text more accurately to my position
+            if(UseShadowMessage)
+            {
+                shadow.TxtOrientation = align;
+                shadow.Scale = scale * TextScale;
+                shadow.WorldPosition = shadowPos;
+                shadow.Left = cm.Left;
+                shadow.Up = cm.Up;
+                shadow.Draw(); // this removes the need of having the text visible, also draws text more accurately to my position
+            }
 
             text.TxtOrientation = align;
             text.Scale = scale * TextScale;
