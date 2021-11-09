@@ -45,6 +45,8 @@ namespace Digi.BuildInfo.Features
 
         public OverrideToolSelectionDraw(BuildInfoMod main) : base(main)
         {
+            UpdateOrder = -490; // for Draw() mainly, to always render first (and therefore, under)
+
             MyEntities.OnEntityCreate += EntityCreated;
             eventHooked = true;
         }

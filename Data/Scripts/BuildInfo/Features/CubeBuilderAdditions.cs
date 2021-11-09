@@ -26,6 +26,7 @@ namespace Digi.BuildInfo.Features
 
         public CubeBuilderAdditions(BuildInfoMod main) : base(main)
         {
+            UpdateOrder = -495; // for Draw() mainly, to always render first (and therefore, under)
         }
 
         public override void RegisterComponent()
