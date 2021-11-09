@@ -5,7 +5,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -97,7 +96,7 @@ namespace Digi.BuildInfo.Features
             {
                 for(int i = 0; i < def.Components.Length; ++i)
                 {
-                    var comp = def.Components[i];
+                    MyCubeBlockDefinition.Component comp = def.Components[i];
 
                     if(ComputerComponentIndex == -1 && comp.Definition.Id == Main.Constants.COMPUTER_COMPONENT_ID)
                     {
@@ -135,14 +134,14 @@ namespace Digi.BuildInfo.Features
             if(Main.GameConfig.HudState == HudState.OFF || Main.EquipmentMonitor.BlockDef == null || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
-            var hudComps = MyHud.BlockInfo?.Components;
+            List<MyHudBlockInfo.ComponentInfo> hudComps = MyHud.BlockInfo?.Components;
             if(hudComps == null || hudComps.Count == 0) // don't show block info additions if the block info isn't visible
                 return;
 
             //if(Main.Config.BlockInfoAdditions.Value)
             {
-                var blockDef = Main.EquipmentMonitor.BlockDef;
-                var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+                MyCubeBlockDefinition blockDef = Main.EquipmentMonitor.BlockDef;
+                MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
                 Vector2 posCompList = Main.DrawUtils.GetHudComponentListStart();
                 int totalComps = blockDef.Components.Length;
@@ -171,12 +170,12 @@ namespace Digi.BuildInfo.Features
                 int critIndex = blockDef.CriticalGroup + scrollIndexOffset;
                 if(critIndex >= 0 && critIndex < totalComps)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
+                    Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
 
-                    var hud = posCompList;
+                    Vector2 hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - critIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
-                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 
@@ -187,12 +186,12 @@ namespace Digi.BuildInfo.Features
                 int compIndex = ComputerComponentIndex + scrollIndexOffset;
                 if(compIndex >= 0 && compIndex < totalComps)
                 {
-                    var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
+                    Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_LINE_HEIGHT * Main.DrawUtils.ScaleFOV);
 
-                    var hud = posCompList;
+                    Vector2 hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - compIndex - 2) + BLOCKINFO_COMPONENT_UNDERLINE_OFFSET;
 
-                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
                     worldPos += camMatrix.Left * size.X + camMatrix.Up * (size.Y * 3); // extra offset to allow for red line to be visible
 
@@ -206,7 +205,7 @@ namespace Digi.BuildInfo.Features
                 // different return item on grind
                 for(int i = (ComponentReplaceInfoCount - 1); i >= 0; --i)
                 {
-                    var info = ComponentReplaceInfo[i];
+                    ComponentInfo info = ComponentReplaceInfo[i];
                     int index = info.Index + scrollIndexOffset;
 
                     if(info.Index >= maxIdx // hide for components scrolled above
@@ -220,10 +219,10 @@ namespace Digi.BuildInfo.Features
                         continue;
                     }
 
-                    var hud = posCompList;
+                    Vector2 hud = posCompList;
                     hud.Y += BLOCKINFO_COMPONENT_HEIGHT * (totalComps - index - 1);
 
-                    var worldPos = Main.DrawUtils.HUDtoWorld(hud);
+                    Vector3D worldPos = Main.DrawUtils.HUDtoWorld(hud);
 
                     if(Main.TextAPI.IsEnabled)
                     {
@@ -247,7 +246,7 @@ namespace Digi.BuildInfo.Features
                             info.Text.Scale = textScale;
                         }
 
-                        var sb = info.Text.Message.Clear();
+                        StringBuilder sb = info.Text.Message.Clear();
                         sb.Append(LabelPrefix);
                         sb.AppendMaxLength(info.Replaced.DisplayNameText, NameMaxChars);
 
@@ -256,7 +255,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        var size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * Main.DrawUtils.ScaleFOV);
+                        Vector2 size = new Vector2(BLOCKINFO_COMPONENT_WIDTH * Main.DrawUtils.ScaleFOV, BLOCKINFO_COMPONENT_HIGHLIGHT_HEIGHT * Main.DrawUtils.ScaleFOV);
 
                         worldPos += camMatrix.Left * size.X + camMatrix.Up * size.Y;
 

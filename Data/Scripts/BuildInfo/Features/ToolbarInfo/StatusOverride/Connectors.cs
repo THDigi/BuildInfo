@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
@@ -10,7 +11,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public Connectors(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_ShipConnector);
+            Type type = typeof(MyObjectBuilder_ShipConnector);
 
             processor.AddStatus(type, LockState, "SwitchLock", "Lock", "Unlock");
 
@@ -19,7 +20,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool LockState(StringBuilder sb, ToolbarItem item)
         {
-            var connector = (IMyShipConnector)item.Block;
+            IMyShipConnector connector = (IMyShipConnector)item.Block;
 
             Processor.AppendSingleStats(sb, item.Block);
 

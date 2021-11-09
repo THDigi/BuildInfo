@@ -14,6 +14,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using VRage.Game.Components;
+using Whiplash.WeaponFramework;
 
 namespace Digi.BuildInfo
 {
@@ -35,6 +36,9 @@ namespace Digi.BuildInfo
         public InputLibHandler InputLibHandler;
         public EquipmentMonitor EquipmentMonitor;
         public WeaponCoreAPIHandler WeaponCoreAPIHandler;
+        public WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
+        public DefenseShieldsDetector DefenseShieldsDetector;
+        public RichHudFrameworkHandler RichHud;
 
         // Features
         public Config Config;
@@ -51,7 +55,7 @@ namespace Digi.BuildInfo
         public ChatCommandHandler ChatCommandHandler;
         public ReloadTracking ReloadTracking;
         public TerminalInfo TerminalInfo;
-        public DetailInfoRefresh DetailInfoRefresh;
+        public DetailInfoButtons DetailInfoButtons;
         public MultiDetailInfo MultiDetailInfo;
         public TextGeneration TextGeneration;
         public LiveDataHandler LiveDataHandler;
@@ -100,6 +104,9 @@ namespace Digi.BuildInfo
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
+            WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
+            DefenseShieldsDetector = new DefenseShieldsDetector(this);
+            RichHud = new RichHudFrameworkHandler(this);
 
             // Features
             Config = new Config(this);
@@ -118,7 +125,7 @@ namespace Digi.BuildInfo
             ChatCommandHandler = new ChatCommandHandler(this);
             ReloadTracking = new ReloadTracking(this);
             TerminalInfo = new TerminalInfo(this);
-            DetailInfoRefresh = new DetailInfoRefresh(this);
+            DetailInfoButtons = new DetailInfoButtons(this);
             MultiDetailInfo = new MultiDetailInfo(this);
             TextGeneration = new TextGeneration(this);
             LiveDataHandler = new LiveDataHandler(this);

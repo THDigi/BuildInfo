@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public bool CheckAndAdd(IMyCubeBlock block)
         {
-            var def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
+            MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
             ComputeUpgrades(block);
             ComputeHas(block);
@@ -89,12 +89,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void ComputeUpgrades(IMyCubeBlock block)
         {
-            var internalBlock = (MyCubeBlock)block;
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
             if(internalBlock.UpgradeValues.Count > 0)
             {
                 Upgrades = new List<string>(internalBlock.UpgradeValues.Count);
 
-                foreach(var upgrade in internalBlock.UpgradeValues.Keys)
+                foreach(string upgrade in internalBlock.UpgradeValues.Keys)
                 {
                     Upgrades.Add(upgrade);
                 }
@@ -115,27 +115,33 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            if(block?.Model == null)
+            {
+                //Log.Error($"Block '{def.Id.ToString()}' has a FatBlock but no Model, this will crash when opening info tab on its grid; I recommend you add a <Model> tag to it, even if it's a single tiny triangle model.", Log.PRINT_MESSAGE);
+                return;
+            }
+
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
             if(dummies.Count == 0)
                 return;
 
-            var colorTerminalOnly = new Color(55, 255, 220);
-            var colorInteractiveAndTerminal = new Color(50, 255, 150);
-            var colorInteractiveOnly = new Color(25, 100, 155);
+            Color colorTerminalOnly = new Color(55, 255, 220);
+            Color colorInteractiveAndTerminal = new Color(50, 255, 150);
+            Color colorInteractiveOnly = new Color(25, 100, 155);
             const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
 
             Interactive = new List<InteractionInfo>(8);
 
-            foreach(var dummy in dummies.Values)
+            foreach(IMyModelDummy dummy in dummies.Values)
             {
                 string name = dummy.Name;
                 if(!name.StartsWith("detector_", CompareType))
                     continue;
 
-                var matrix = dummy.Matrix;
+                Matrix matrix = dummy.Matrix;
                 matrix.Translation += def.ModelOffset;
 
                 int index = 9; // "detector_".Length
@@ -146,7 +152,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 if(detectorPtr.StartsWith("conveyor"))
                 {
-                    var flags = ConveyorFlags.None;
+                    ConveyorFlags flags = ConveyorFlags.None;
 
                     // from MyConveyorLine.GetBlockLinePositions()
                     if(part1.EqualsIgnoreCase("small"))
@@ -284,13 +290,13 @@ namespace Digi.BuildInfo.Features.LiveData
             int sepIndex = text.IndexOf('_', startIndex);
             if(sepIndex > -1)
             {
-                var segment = new StringSegment(text, startIndex, sepIndex - startIndex);
+                StringSegment segment = new StringSegment(text, startIndex, sepIndex - startIndex);
                 startIndex = sepIndex + 1;
                 return segment;
             }
             else
             {
-                var segment = new StringSegment(text, startIndex, text.Length - startIndex);
+                StringSegment segment = new StringSegment(text, startIndex, text.Length - startIndex);
                 startIndex = text.Length;
                 return segment;
             }

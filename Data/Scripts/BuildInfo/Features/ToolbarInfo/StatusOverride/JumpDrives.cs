@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.EntityComponents;
@@ -14,7 +15,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public JumpDrives(ToolbarStatusProcessor processor) : base(processor)
         {
-            var type = typeof(MyObjectBuilder_JumpDrive);
+            Type type = typeof(MyObjectBuilder_JumpDrive);
 
             processor.AddStatus(type, Jump, "Jump");
             processor.AddStatus(type, Recharge, "Recharge", "Recharge_On", "Recharge_Off");
@@ -25,7 +26,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Jump(StringBuilder sb, ToolbarItem item)
         {
-            var jd = (IMyJumpDrive)item.Block;
+            IMyJumpDrive jd = (IMyJumpDrive)item.Block;
 
             float countdown = BuildInfoMod.Instance.JumpDriveMonitor.GetJumpCountdown(jd.CubeGrid.EntityId);
             if(countdown > 0)
@@ -96,7 +97,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Recharge(StringBuilder sb, ToolbarItem item)
         {
-            var jd = (IMyJumpDrive)item.Block;
+            IMyJumpDrive jd = (IMyJumpDrive)item.Block;
 
             bool recharge = jd.GetValue<bool>("Recharge");
             sb.Append("Chrg:").Append(recharge ? "On" : "Off").Append('\n');
@@ -110,7 +111,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
             sb.Append(filledPercent).Append("% ");
 
-            var sink = jd.Components.Get<MyResourceSinkComponent>();
+            MyResourceSinkComponent sink = jd.Components.Get<MyResourceSinkComponent>();
             if(sink != null)
             {
                 const float RatioOfMaxForDoubleArrows = 0.9f;
@@ -129,12 +130,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         StringBuilder tempSb = new StringBuilder(32);
         bool JumpDistance(StringBuilder sb, ToolbarItem item)
         {
-            var jd = (IMyJumpDrive)item.Block;
+            IMyJumpDrive jd = (IMyJumpDrive)item.Block;
 
             if(Processor.AnimFlip)
             {
                 // HACK: JumpDistance slider is disabled if a GPS target is selected.
-                var prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
+                IMyTerminalControlSlider prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
                 if(prop?.Enabled != null && !prop.Enabled.Invoke(jd))
                 {
                     sb.Append("GPS!\n");
@@ -196,7 +197,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                 averageFilled += (jd.CurrentStoredPower / jd.MaxStoredPower);
 
-                var sink = jd.Components.Get<MyResourceSinkComponent>();
+                MyResourceSinkComponent sink = jd.Components.Get<MyResourceSinkComponent>();
                 if(sink != null)
                 {
                     input += sink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);

@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.VanillaData
         {
             if(def.BuildProgressModels != null && def.BuildProgressModels.Length != 0)
             {
-                var progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
+                MyCubeBlockDefinition.BuildProgressModel progressModel = def.BuildProgressModels[def.BuildProgressModels.Length - 1];
 
                 if(buildLevelRatio < progressModel.BuildRatioUpperBound)
                     return AirTightMode.NOT_SEALED;
@@ -38,14 +38,14 @@ namespace Digi.BuildInfo.VanillaData
 
         public static bool IsAirtightBetweenPositions(IMyCubeGrid grid, Vector3I startPos, Vector3I endPos)
         {
-            var b1 = grid.GetCubeBlock(startPos);
-            var b2 = grid.GetCubeBlock(endPos);
+            IMySlimBlock b1 = grid.GetCubeBlock(startPos);
+            IMySlimBlock b2 = grid.GetCubeBlock(endPos);
 
             if(b1 == b2)
             {
                 if(b1 != null)
                 {
-                    var def = b1.BlockDefinition as MyCubeBlockDefinition;
+                    MyCubeBlockDefinition def = b1.BlockDefinition as MyCubeBlockDefinition;
 
                     if(def != null)
                         return (IsAirtightFromDefinition(def, b1.BuildLevelRatio) == AirTightMode.SEALED);
@@ -67,11 +67,11 @@ namespace Digi.BuildInfo.VanillaData
 
         private static bool IsAirtightBlock(IMySlimBlock block, Vector3I pos, Vector3 normal)
         {
-            var def = block.BlockDefinition as MyCubeBlockDefinition;
+            MyCubeBlockDefinition def = block.BlockDefinition as MyCubeBlockDefinition;
             if(def == null)
                 return false;
 
-            var airtight = IsAirtightFromDefinition(def, block.BuildLevelRatio);
+            AirTightMode airtight = IsAirtightFromDefinition(def, block.BuildLevelRatio);
             if(airtight != AirTightMode.USE_MOUNTS)
                 return (airtight == AirTightMode.SEALED);
 
@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.VanillaData
             Vector3I cell = Vector3I.Round(Vector3.Transform(position, matrix) + def.Center);
             Vector3I side = Vector3I.Round(Vector3.Transform(normal, matrix));
 
-            var pressurized = def.IsCubePressurized[cell][side];
+            MyCubeBlockDefinition.MyCubePressurizationMark pressurized = def.IsCubePressurized[cell][side];
 
             if(pressurized == MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways)
                 return true;
@@ -103,7 +103,7 @@ namespace Digi.BuildInfo.VanillaData
 
         public static bool IsDoorAirtight(MyCubeBlockDefinition def, ref Vector3I normalLocal, bool fullyClosed)
         {
-            var isAirTight = IsAirtightFromDefinition(def, 1f);
+            AirTightMode isAirTight = IsAirtightFromDefinition(def, 1f);
 
             if(isAirTight != AirTightMode.USE_MOUNTS)
                 return (isAirTight == AirTightMode.SEALED);
@@ -125,7 +125,7 @@ namespace Digi.BuildInfo.VanillaData
             {
                 if(fullyClosed)
                 {
-                    var mountPoints = def.MountPoints;
+                    MyCubeBlockDefinition.MountPoint[] mountPoints = def.MountPoints;
 
                     for(int i = 0; i < mountPoints.Length; i++)
                     {

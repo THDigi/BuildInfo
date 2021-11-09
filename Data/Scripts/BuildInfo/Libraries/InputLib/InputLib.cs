@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Digi.Input.Devices;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -10,6 +11,7 @@ using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
+using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.Input
 {
@@ -35,7 +37,7 @@ namespace Digi.Input
             public static Combination Create(string displayName, string combinationString, List<string> invalidInputs = null)
             {
                 string error;
-                var combination = Create(displayName, combinationString, out error, invalidInputs);
+                Combination combination = Create(displayName, combinationString, out error, invalidInputs);
 
                 if(error != null)
                     throw new Exception(error);
@@ -64,10 +66,10 @@ namespace Digi.Input
 
                 string[] inputStrings = combinationString.ToLowerInvariant().Split(InputLib.instance.CHAR_ARRAY, StringSplitOptions.RemoveEmptyEntries);
 
-                var str = new StringBuilder();
-                var combInputs = new List<InputBase>();
+                StringBuilder str = new StringBuilder();
+                List<InputBase> combInputs = new List<InputBase>();
 
-                foreach(var inputId in inputStrings)
+                foreach(string inputId in inputStrings)
                 {
                     InputBase input;
 
@@ -94,7 +96,7 @@ namespace Digi.Input
                 if(combInputs.Count == 0)
                     combInputs = null;
 
-                var combination = new Combination(displayName, combInputs, str.ToString());
+                Combination combination = new Combination(displayName, combInputs, str.ToString());
 
                 error = null;
                 return combination;
@@ -124,7 +126,7 @@ namespace Digi.Input
                 if(inputs == null)
                     return false;
 
-                foreach(var input in inputs)
+                foreach(InputBase input in inputs)
                 {
                     if(!input.IsAssigned())
                         return false;
@@ -141,7 +143,7 @@ namespace Digi.Input
                 if(inputs == null)
                     return false;
 
-                foreach(var input in inputs)
+                foreach(InputBase input in inputs)
                 {
                     if(!input.IsPressed(contextId))
                         return false;
@@ -159,9 +161,9 @@ namespace Digi.Input
                 if(inputs == null)
                     return false;
 
-                var key = new InputReleaseKey(this, contextId, InputLib.instance.tick);
+                InputReleaseKey key = new InputReleaseKey(this, contextId, InputLib.instance.tick);
 
-                foreach(var irk in InputLib.instance.pressedCombinations)
+                foreach(InputReleaseKey irk in InputLib.instance.pressedCombinations)
                 {
                     if(irk.Equals(key))
                     {
@@ -187,7 +189,7 @@ namespace Digi.Input
             /// <param name="specialChars">Wether to add special characters like the xbox character-images to the string or to use regular characters.</param>
             public string GetBinds(ControlContext contextId = ControlContext.CHARACTER, bool specialChars = true)
             {
-                var str = new StringBuilder();
+                StringBuilder str = new StringBuilder();
                 GetBinds(str, contextId, specialChars);
                 return str.ToString();
             }
@@ -211,7 +213,7 @@ namespace Digi.Input
 
                 bool first = true;
 
-                foreach(var input in inputs)
+                foreach(InputBase input in inputs)
                 {
                     if(!first)
                         output.Append(InputLib.INPUT_PRINT_SEPARATOR);
@@ -247,11 +249,11 @@ namespace Digi.Input
                     return false;
 
                 // TODO: improvements?
-                foreach(var c1input in c1.inputs)
+                foreach(InputBase c1input in c1.inputs)
                 {
                     bool found = false;
 
-                    foreach(var c2input in c2.inputs)
+                    foreach(InputBase c2input in c2.inputs)
                     {
                         if(c1input.Id == c2input.Id)
                         {
@@ -630,15 +632,15 @@ namespace Digi.Input
                 return ControlContext.GUI;
             }
 
-            var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+            MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
             if(def != null && MyCubeBuilder.Static.IsActivated)
             {
                 return ControlContext.BUILD;
             }
 
-            var controlled = MyAPIGateway.Session?.ControlledObject;
-            var character = controlled as IMyCharacter;
+            IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
+            IMyCharacter character = controlled as IMyCharacter;
 
             if(character != null)
             {
@@ -684,31 +686,31 @@ namespace Digi.Input
 
         public static string GetInputDisplayName(MyKeys key)
         {
-            var input = instance.keyToInput.GetValueOrDefault(key, null);
+            InputBase input = instance.keyToInput.GetValueOrDefault(key, null);
             return input?.GetDisplayName() ?? null;
         }
 
         public static string GetInputDisplayName(MyMouseButtonsEnum button)
         {
-            var input = instance.mouseButtonToInput.GetValueOrDefault(button, null);
+            InputBase input = instance.mouseButtonToInput.GetValueOrDefault(button, null);
             return input?.GetDisplayName() ?? null;
         }
 
         public static string GetInputDisplayName(MyJoystickAxesEnum axis, bool specialChars = true)
         {
-            var input = instance.gamepadAxisToInput.GetValueOrDefault(axis, null);
+            InputBase input = instance.gamepadAxisToInput.GetValueOrDefault(axis, null);
             return input?.GetDisplayName(specialChars) ?? null;
         }
 
         public static string GetInputDisplayName(MyJoystickButtonsEnum button, bool specialChars = true)
         {
-            var input = instance.gamepadButtonToInput.GetValueOrDefault(button, null);
+            InputBase input = instance.gamepadButtonToInput.GetValueOrDefault(button, null);
             return input?.GetDisplayName(specialChars) ?? null;
         }
 
         public static string GetInputDisplayName(ControlContext contextId, MyStringId controlId, bool specialChars = true)
         {
-            var bind = instance.gamepadBindings.GetControl(contextId, controlId);
+            GamepadBindings.IControl bind = instance.gamepadBindings.GetControl(contextId, controlId);
 
             if(bind == null)
                 return null;
@@ -718,12 +720,12 @@ namespace Digi.Input
 
         public static bool GetGameControlPressed(ControlContext contextId, MyStringId controlId)
         {
-            var control = MyAPIGateway.Input.GetGameControl(controlId);
+            VRage.ModAPI.IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
 
             if(control.IsPressed())
                 return true;
 
-            var bind = instance.gamepadBindings.GetControl(contextId, controlId);
+            GamepadBindings.IControl bind = instance.gamepadBindings.GetControl(contextId, controlId);
 
             if(bind == null)
                 return false;
@@ -733,12 +735,12 @@ namespace Digi.Input
 
         public static bool GetGameControlJustPressed(ControlContext contextId, MyStringId controlId)
         {
-            var control = MyAPIGateway.Input.GetGameControl(controlId);
+            VRage.ModAPI.IMyControl control = MyAPIGateway.Input.GetGameControl(controlId);
 
             if(control.IsNewPressed())
                 return true;
 
-            var bind = instance.gamepadBindings.GetControl(contextId, controlId);
+            GamepadBindings.IControl bind = instance.gamepadBindings.GetControl(contextId, controlId);
 
             if(bind == null)
                 return false;
@@ -748,7 +750,7 @@ namespace Digi.Input
 
         public static Vector3 GetRotationInput()
         {
-            var rot = MyAPIGateway.Input.GetRotation();
+            Vector2 rot = MyAPIGateway.Input.GetRotation();
             return new Vector3(rot.X, rot.Y, MyAPIGateway.Input.GetRoll());
         }
 
@@ -765,7 +767,7 @@ namespace Digi.Input
             str.AppendLine().Append(commentPrefix).Append(" The available inputs are listed below:");
             str.AppendLine().Append(commentPrefix);
 
-            var cacheList = new List<InputBase>();
+            List<InputBase> cacheList = new List<InputBase>();
             AppendInputTypes(str, commentPrefix, cacheList, InputTypeEnum.CUSTOM, "Custom inputs (mod-added)", true);
             AppendInputTypes(str, commentPrefix, cacheList, InputTypeEnum.KEY, "Keys");
             AppendInputTypes(str, commentPrefix, cacheList, InputTypeEnum.MOUSE, "Mouse buttons/axes");
@@ -776,7 +778,7 @@ namespace Digi.Input
         private static void AppendInputTypes(StringBuilder str, string commentPrefix, List<InputBase> list, InputTypeEnum type, string title, bool sortAlphabetically = false)
         {
             list.Clear();
-            foreach(var input in instance.inputs.Values)
+            foreach(InputBase input in instance.inputs.Values)
             {
                 if(input.Type != type)
                     continue;
@@ -811,7 +813,7 @@ namespace Digi.Input
                     str.AppendLine().Append(commentPrefix).Append(LINE_START);
                 }
 
-                var input = list[index];
+                InputBase input = list[index];
 
                 str.Append(input.Id).Append(' ', Math.Max(COLUMN_WIDTH - input.Id.Length, 0));
                 index += skipCount;
@@ -833,7 +835,7 @@ namespace Digi.Input
             if(displayName == null)
                 displayName = GetFirstUpper(id);
 
-            var input = new InputKey(key, id, displayName);
+            InputKey input = new InputKey(key, id, displayName);
             keyToInput.Add(key, input);
             inputs.Add(id, input);
         }
@@ -843,7 +845,7 @@ namespace Digi.Input
             if(displayName == null)
                 displayName = GetFirstUpperIgnorePrefix(id);
 
-            var input = new InputMouseButton(button, id, displayName);
+            InputMouseButton input = new InputMouseButton(button, id, displayName);
             mouseButtonToInput.Add(button, input);
             inputs.Add(id, input);
         }
@@ -853,7 +855,7 @@ namespace Digi.Input
             if(displayName == null)
                 displayName = GetFirstUpperIgnorePrefix(id);
 
-            var input = new InputGamepadButton(button, id, displayName, printChar);
+            InputGamepadButton input = new InputGamepadButton(button, id, displayName, printChar);
             gamepadButtonToInput.Add(button, input);
             inputs.Add(id, input);
         }
@@ -863,7 +865,7 @@ namespace Digi.Input
             if(displayName == null)
                 displayName = GetFirstUpperIgnorePrefix(id);
 
-            var input = new InputGamepadAxis(axis, id, displayName, printChar);
+            InputGamepadAxis input = new InputGamepadAxis(axis, id, displayName, printChar);
             gamepadAxisToInput.Add(axis, input);
             inputs.Add(id, input);
         }
@@ -876,7 +878,7 @@ namespace Digi.Input
             if(displayName == null)
                 displayName = GetFirstUpperIgnorePrefix(id);
 
-            var input = new InputGameControl(controlId, id, displayName);
+            InputGameControl input = new InputGameControl(controlId, id, displayName);
             gameControlToInput.Add(controlId, input);
             inputs.Add(id, input);
         }
@@ -910,7 +912,7 @@ namespace Digi.Input
             output.AppendLine("Dumping binds...");
 
             // pasted from MyControlsSpace
-            var controlNames = new List<MyStringId>
+            List<MyStringId> controlNames = new List<MyStringId>
             {
                 MyControlsSpace.FORWARD,
                 MyControlsSpace.BACKWARD,
@@ -998,8 +1000,8 @@ namespace Digi.Input
                 MyControlsSpace.COPY_PASTE_ACTION
             };
 
-            var binds = new Dictionary<string, List<MyStringId>>();
-            var invalidBinds = new Dictionary<string, List<MyStringId>>();
+            Dictionary<string, List<MyStringId>> binds = new Dictionary<string, List<MyStringId>>();
+            Dictionary<string, List<MyStringId>> invalidBinds = new Dictionary<string, List<MyStringId>>();
             Dictionary<string, List<MyStringId>> addTo;
 
             foreach(MyKeys key in Enum.GetValues(typeof(MyKeys)))
@@ -1033,9 +1035,9 @@ namespace Digi.Input
                 addTo.Add("(mouse) " + button.ToString(), new List<MyStringId>());
             }
 
-            foreach(var controlName in controlNames)
+            foreach(MyStringId controlName in controlNames)
             {
-                var control = MyAPIGateway.Input.GetGameControl(controlName);
+                VRage.ModAPI.IMyControl control = MyAPIGateway.Input.GetGameControl(controlName);
 
                 if(control == null)
                 {
@@ -1074,17 +1076,17 @@ namespace Digi.Input
                 }
             }
 
-            var bindsList = binds.ToList();
-            var invalidBindsList = invalidBinds.ToList();
+            List<KeyValuePair<string, List<MyStringId>>> bindsList = binds.ToList();
+            List<KeyValuePair<string, List<MyStringId>>> invalidBindsList = invalidBinds.ToList();
 
             bindsList.Sort((x, y) =>
             {
-                var comp = x.Value.Count.CompareTo(y.Value.Count);
+                int comp = x.Value.Count.CompareTo(y.Value.Count);
                 return (comp == 0 ? x.Key.CompareTo(y.Key) : comp);
             });
             invalidBindsList.Sort((x, y) =>
             {
-                var comp = x.Value.Count.CompareTo(y.Value.Count);
+                int comp = x.Value.Count.CompareTo(y.Value.Count);
                 return (comp == 0 ? x.Key.CompareTo(y.Key) : comp);
             });
 
@@ -1095,7 +1097,7 @@ namespace Digi.Input
             output.AppendLine();
             output.AppendLine("Binds:");
 
-            foreach(var kv in bindsList)
+            foreach(KeyValuePair<string, List<MyStringId>> kv in bindsList)
             {
                 output.AppendLine($"    {kv.Key} => {string.Join(", ", kv.Value)}");
             }
@@ -1104,7 +1106,7 @@ namespace Digi.Input
             output.AppendLine();
             output.AppendLine("Invalid binds:");
 
-            foreach(var kv in invalidBindsList)
+            foreach(KeyValuePair<string, List<MyStringId>> kv in invalidBindsList)
             {
                 output.AppendLine($"    {kv.Key} => {string.Join(", ", kv.Value)}");
             }

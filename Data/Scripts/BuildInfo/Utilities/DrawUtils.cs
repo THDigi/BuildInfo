@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
+using VRage.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Utilities
@@ -44,12 +45,12 @@ namespace Digi.BuildInfo.Utilities
             {
                 if(_viewProjInvCompute)
                 {
-                    var cam = MyAPIGateway.Session.Camera;
+                    IMyCamera cam = MyAPIGateway.Session.Camera;
 
                     // NOTE: ProjectionMatrix needs recomputing because camera's m_fovSpring is set after ProjectionMatrix is computed; see MyCamera.Update(float updateStepTime) and MyCamera.FovWithZoom
-                    var aspectRatio = cam.ViewportSize.X / cam.ViewportSize.Y;
-                    var safeNear = Math.Min(4f, cam.NearPlaneDistance); // MyCamera.GetSafeNear()
-                    var projectionMatrix = MatrixD.CreatePerspectiveFieldOfView(cam.FovWithZoom, aspectRatio, safeNear, cam.FarPlaneDistance);
+                    float aspectRatio = cam.ViewportSize.X / cam.ViewportSize.Y;
+                    float safeNear = Math.Min(4f, cam.NearPlaneDistance); // MyCamera.GetSafeNear()
+                    MatrixD projectionMatrix = MatrixD.CreatePerspectiveFieldOfView(cam.FovWithZoom, aspectRatio, safeNear, cam.FarPlaneDistance);
                     _viewProjInvCache = MatrixD.Invert(cam.ViewMatrix * projectionMatrix);
                     _viewProjInvCompute = false;
                 }
@@ -68,7 +69,7 @@ namespace Digi.BuildInfo.Utilities
             {
                 if(_scaleFovCompute)
                 {
-                    var cam = MyAPIGateway.Session.Camera;
+                    IMyCamera cam = MyAPIGateway.Session.Camera;
                     _scaleFovCache = (float)Math.Tan(cam.FovWithZoom * 0.5);
                     _scaleFovCompute = false;
                 }
@@ -86,7 +87,7 @@ namespace Digi.BuildInfo.Utilities
             double hudY = (1 - 2.0 * hud.Y);
 
             // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
-            var matrix = ViewProjectionInv;
+            MatrixD matrix = ViewProjectionInv;
             double x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
             double y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
             double z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
@@ -103,7 +104,7 @@ namespace Digi.BuildInfo.Utilities
             double hudY = hud.Y;
 
             // Vector4D.Transform(new Vector4D(hudX, hudY, 0, 1), ref ViewProjectionInv, out ...)
-            var matrix = ViewProjectionInv;
+            MatrixD matrix = ViewProjectionInv;
             double x = hudX * matrix.M11 + hudY * matrix.M21 + /* 0 * matrix.M31 + 1 * */ matrix.M41;
             double y = hudX * matrix.M12 + hudY * matrix.M22 + /* 0 * matrix.M32 + 1 * */ matrix.M42;
             double z = hudX * matrix.M13 + hudY * matrix.M23 + /* 0 * matrix.M33 + 1 * */ matrix.M43;
@@ -113,7 +114,7 @@ namespace Digi.BuildInfo.Utilities
 
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
-            var size = Main.Constants.BLOCKINFO_SIZE;
+            Vector2 size = Main.Constants.BLOCKINFO_SIZE;
             size.Y *= Ymultiplier;
             size.Y += Constants.BLOCKINFO_TEXT_PADDING;
             size *= ScaleFOV;

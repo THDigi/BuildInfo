@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public void SetInteractable(bool set)
         {
-            foreach(var e in Items)
+            foreach(IItem e in Items)
             {
                 e.Interactable = set;
             }
@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public void Update()
         {
-            foreach(var e in Items)
+            foreach(IItem e in Items)
             {
                 e.Update();
             }

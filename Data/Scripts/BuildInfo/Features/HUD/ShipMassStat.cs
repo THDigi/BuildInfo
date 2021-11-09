@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.ComponentLib;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -49,7 +50,7 @@ namespace Digi.BuildInfo.Features.HUD
 
             try
             {
-                var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
                 if(controlled == null)
                 {
                     CurrentValue = 0f;
@@ -57,9 +58,9 @@ namespace Digi.BuildInfo.Features.HUD
                     return;
                 }
 
-                var Main = BuildInfoMod.Instance;
+                BuildInfoMod Main = BuildInfoMod.Instance;
                 int tick = Main.Tick;
-                var ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
+                MyCubeGrid ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
 
                 if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
                 {
@@ -102,9 +103,9 @@ namespace Digi.BuildInfo.Features.HUD
                         else
                         {
                             // remove pilot's inventory mass
-                            foreach(var block in g.OccupiedBlocks)
+                            foreach(MyCockpit block in g.OccupiedBlocks)
                             {
-                                var inv = block.Pilot?.GetInventory(0);
+                                MyInventory inv = block.Pilot?.GetInventory(0);
                                 if(inv != null)
                                     mass -= (float)inv.CurrentMass;
                             }
@@ -150,7 +151,7 @@ namespace Digi.BuildInfo.Features.HUD
 
                 if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
                 {
-                    var controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                    IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
                     if(controlled != null)
                     {
                         CurrentValue = (controlled.CubeGrid.IsStatic ? 1 : 0);

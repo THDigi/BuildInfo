@@ -57,9 +57,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var value = Getter();
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
+            float value = Getter();
+            string titleColor = (Item.Interactable ? "" : "<color=gray>");
+            string valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
             Item.Text = $"{titleColor}{Title}: {valueColor}{Format.Invoke(value)} <color=gray>[default:{Format.Invoke(DefaultValue)}]";
         }
 
@@ -67,7 +67,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                var value = PercentToRange(Min, Max, percent, Rounding);
+                float value = PercentToRange(Min, Max, percent, Rounding);
                 Setter?.Invoke(value);
 
                 Item.InitialPercent = ValueToPercent(Min, Max, Getter());
@@ -84,7 +84,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                var value = PercentToRange(Min, Max, percent, Rounding);
+                float value = PercentToRange(Min, Max, percent, Rounding);
                 Sliding?.Invoke(value);
                 return $"Default: {Format.Invoke(DefaultValue)} | Current: {Format.Invoke(value)}";
             }
@@ -100,7 +100,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                var value = PercentToRange(Min, Max, Item.InitialPercent, Rounding);
+                float value = PercentToRange(Min, Max, Item.InitialPercent, Rounding);
                 Cancelled?.Invoke(value);
             }
             catch(Exception e)
@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
             else if(round > 0)
             {
-                var mul = Math.Pow(10, round);
+                double mul = Math.Pow(10, round);
                 value = (float)Math.Round(((value * mul) / mul), round);
             }
 

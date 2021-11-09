@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             UpdatePBExceptionPrefixes();
 
-            var type = typeof(MyObjectBuilder_MyProgrammableBlock);
+            Type type = typeof(MyObjectBuilder_MyProgrammableBlock);
 
             processor.AddStatus(type, Run, "Run", "RunWithDefaultArgument");
 
@@ -39,7 +39,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return true;
             }
 
-            var pb = (IMyProgrammableBlock)item.Block;
+            IMyProgrammableBlock pb = (IMyProgrammableBlock)item.Block;
 
             if(Processor.AnimFlip && !pb.Enabled)
             {
@@ -105,7 +105,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                         for(int i = 0; i < detailInfo.Length; ++i)
                         {
-                            var chr = detailInfo[i];
+                            char chr = detailInfo[i];
                             if(chr == '\n')
                             {
                                 width = 0;

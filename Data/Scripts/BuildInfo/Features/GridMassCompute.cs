@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features
         {
             if(tick % MassDataCheckTicks == 0 && Grids.Count > 0)
             {
-                foreach(var kv in Grids)
+                foreach(KeyValuePair<IMyCubeGrid, MassData> kv in Grids)
                 {
                     int expiresAt = kv.Value.LastReadAtTick + MassDataExpireTicks;
                     if(expiresAt <= tick)
@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features
 
                 if(KeysToRemove.Count > 0)
                 {
-                    foreach(var key in KeysToRemove)
+                    foreach(IMyCubeGrid key in KeysToRemove)
                     {
                         RemoveEntry(key);
                     }
@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Features
 
         public float GetGridMass(IMyCubeGrid grid)
         {
-            var internalGrid = (MyCubeGrid)grid;
+            MyCubeGrid internalGrid = (MyCubeGrid)grid;
             float mass = internalGrid.Mass;
             if(mass > 0)
                 return mass;
@@ -90,7 +90,7 @@ namespace Digi.BuildInfo.Features
 
                 grid.OnMarkForClose -= GridMarkedForClose;
 
-                var data = Grids.GetValueOrDefault(grid, null);
+                MassData data = Grids.GetValueOrDefault(grid, null);
                 if(data != null)
                 {
                     Grids.Remove(grid);
@@ -137,22 +137,22 @@ namespace Digi.BuildInfo.Features
             Grid.OnBlockAdded += BlockAdded;
             Grid.OnBlockRemoved += BlockRemoved;
 
-            var internalGrid = (MyCubeGrid)Grid;
+            MyCubeGrid internalGrid = (MyCubeGrid)Grid;
             float mass = 0f;
 
             foreach(IMySlimBlock slimBlock in internalGrid.GetBlocks())
             {
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
-                var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
-                var fatBlock = slimBlock.FatBlock;
+                IMyCubeBlock fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
                 {
                     if(fatBlock.InventoryCount > 0)
                     {
                         for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
                         {
-                            var inv = (MyInventory)fatBlock.GetInventory(i);
+                            MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
                             if(inv != null)
                                 inv.InventoryContentChanged += InventoryContentChanged;
                         }
@@ -183,11 +183,11 @@ namespace Digi.BuildInfo.Features
 
             if(!Grid.MarkedForClose)
             {
-                foreach(var fatBlock in BlocksWithInventory)
+                foreach(IMyCubeBlock fatBlock in BlocksWithInventory)
                 {
                     for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
                     {
-                        var inv = (MyInventory)fatBlock.GetInventory(i);
+                        MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
                         if(inv != null)
                             inv.InventoryContentChanged -= InventoryContentChanged;
                     }
@@ -210,11 +210,11 @@ namespace Digi.BuildInfo.Features
                 InventoryTotalMass = 0;
                 float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
 
-                foreach(var block in BlocksWithInventory)
+                foreach(IMyCubeBlock block in BlocksWithInventory)
                 {
                     for(int i = (block.InventoryCount - 1); i >= 0; --i)
                     {
-                        var inv = block.GetInventory(i);
+                        IMyInventory inv = block.GetInventory(i);
                         if(inv != null)
                             InventoryTotalMass += (float)inv.CurrentMass * cargoMassMultiplier;
                     }
@@ -223,12 +223,12 @@ namespace Digi.BuildInfo.Features
 
             float mass = BlockBaseMass + InventoryTotalMass;
 
-            var internalGrid = (MyCubeGrid)Grid;
+            MyCubeGrid internalGrid = (MyCubeGrid)Grid;
             if(internalGrid.OccupiedBlocks.Count > 0)
             {
-                foreach(var seat in internalGrid.OccupiedBlocks)
+                foreach(MyCockpit seat in internalGrid.OccupiedBlocks)
                 {
-                    var pilot = seat?.Pilot as IMyCharacter;
+                    IMyCharacter pilot = seat?.Pilot as IMyCharacter;
                     if(pilot != null)
                     {
                         // character inventory mass seems to not be added to grid physical mass
@@ -245,9 +245,9 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
-                var fatBlock = slimBlock.FatBlock;
+                IMyCubeBlock fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
                 {
                     if(fatBlock.InventoryCount > 0)
@@ -256,7 +256,7 @@ namespace Digi.BuildInfo.Features
 
                         for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
                         {
-                            var inv = (MyInventory)fatBlock.GetInventory(i);
+                            MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
                             if(inv != null)
                             {
                                 inv.InventoryContentChanged += InventoryContentChanged;
@@ -288,9 +288,9 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                var def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
+                MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
-                var fatBlock = slimBlock.FatBlock;
+                IMyCubeBlock fatBlock = slimBlock.FatBlock;
                 if(fatBlock != null)
                 {
                     if(fatBlock.InventoryCount > 0)
@@ -299,7 +299,7 @@ namespace Digi.BuildInfo.Features
 
                         for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
                         {
-                            var inv = (MyInventory)fatBlock.GetInventory(i);
+                            MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
                             if(inv != null)
                             {
                                 inv.InventoryContentChanged -= InventoryContentChanged;

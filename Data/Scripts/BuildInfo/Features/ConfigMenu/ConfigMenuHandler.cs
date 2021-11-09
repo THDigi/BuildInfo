@@ -4,6 +4,8 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
+using RichHudFramework.UI;
+using RichHudFramework.UI.Client;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -71,16 +73,18 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public ConfigMenuHandler(BuildInfoMod main) : base(main)
         {
+            Main.TextAPI.Detected += TextAPI_Detected;
+            Main.RichHud.Initialized += RichHud_Initialized;
         }
 
         public override void RegisterComponent()
         {
-            Main.TextAPI.Detected += TextAPI_Detected;
         }
 
         public override void UnregisterComponent()
         {
             Main.TextAPI.Detected -= TextAPI_Detected;
+            Main.RichHud.Initialized -= RichHud_Initialized;
             Main.Config.Handler.SettingsLoaded -= Handler_SettingsLoaded;
         }
 
@@ -97,8 +101,25 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void TextAPI_Detected()
+        void RichHud_Initialized()
         {
+            Log.Info("RichHUD detected, creating menu.");
+
+            RichHudTerminal.Root.Enabled = true;
+
+            RichHudTerminal.Root.Add(new TextPage()
+            {
+                Name = "Settings?",
+                SubHeaderText = "",
+                HeaderText = BuildInfoMod.MOD_NAME + " Settings",
+                Text = new RichText("Open chat and press F2 to open TextAPI's mod config menu, you should see on the left a \"Mod Settings\" button."),
+            });
+        }
+
+        void TextAPI_Detected()
+        {
+            Log.Info($"TextAPI detected, creating menu.");
+
             Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", () =>
@@ -155,7 +176,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemSlider cockpitEnterTimeSlider = null;
             SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
             {
-                var ve = (ToolbarLabelsMode)v;
+                ToolbarLabelsMode ve = (ToolbarLabelsMode)v;
                 cockpitEnterTimeSlider.Interactable = (ve == ToolbarLabelsMode.ShowOnPress || ve == ToolbarLabelsMode.HudHints);
             });
             cockpitEnterTimeSlider = SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels, dialogTitle: "Shown for this many seconds if not always visible.");
@@ -175,10 +196,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
-            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalRefreshInfoPosition),
-                () => ShowNotify("'Refresh Detail Info' button can always be moved in terminal by holding RMB on it.", 7000));
-            SimplePositionReset(Category_Terminal, Main.Config.TerminalRefreshInfoPosition);
-            SimpleSlider(Category_Terminal, null, Main.Config.TerminalRefreshInfoScale);
+            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
+                () => ShowNotify("Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", 7000));
+            SimplePositionReset(Category_Terminal, Main.Config.TerminalButtonsPosition);
+            SimpleSlider(Category_Terminal, null, Main.Config.TerminalButtonsScale);
 
             new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
                 () => ShowNotify("Multi-select info is always movable with RMB on the vertical line.", 7000));
@@ -214,7 +235,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 RefreshAll();
             });
 
-            var button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
+            ItemButton button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
             button.Interactable = (Log.WorkshopId > 0);
 
             // set initial interactable states
@@ -230,7 +251,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_TextShow(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Show",
+            ItemToggle item = new ItemToggle(category, "Show",
                 getter: () => Main.Config.TextShow.Value,
                 setter: (v) =>
                 {
@@ -246,7 +267,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
         {
-            var item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Main.Config.TextAPIBackgroundOpacity.Max, defaultValue: Main.Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
+            ItemSlider item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Main.Config.TextAPIBackgroundOpacity.Max, defaultValue: Main.Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
                 getter: () => Main.Config.TextAPIBackgroundOpacity.Value,
                 setter: (val) =>
                 {
@@ -274,7 +295,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_CustomStyling(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Custom Styling",
+            ItemToggle item = new ItemToggle(category, "Custom Styling",
                 getter: () => Main.Config.TextAPICustomStyling.Value,
                 setter: (v) =>
                 {
@@ -290,7 +311,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_ScreenPosition(MenuCategoryBase category)
         {
-            var item = new ItemBoxMove(category, "Screen Position", min: Main.Config.TextAPIScreenPosition.Min, max: Main.Config.TextAPIScreenPosition.Max, defaultValue: Main.Config.TextAPIScreenPosition.DefaultValue, rounding: 4,
+            ItemBoxMove item = new ItemBoxMove(category, "Screen Position", min: Main.Config.TextAPIScreenPosition.Min, max: Main.Config.TextAPIScreenPosition.Max, defaultValue: Main.Config.TextAPIScreenPosition.DefaultValue, rounding: 4,
                 getter: () => Main.Config.TextAPIScreenPosition.Value,
                 setter: (pos) =>
                 {
@@ -319,8 +340,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_TextInfoScale(MenuCategoryBase category, ItemGroup group = null)
         {
-            var setting = Main.Config.TextAPIScale;
-            var item = new ItemSlider(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+            FloatSetting setting = Main.Config.TextAPIScale;
+            ItemSlider item = new ItemSlider(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
                 getter: () => setting.Value,
                 setter: (val) =>
                 {
@@ -344,11 +365,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_HorizontalAlign(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Horizontal Anchor",
+            ItemToggle item = new ItemToggle(category, "Horizontal Anchor",
                 getter: () => Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right),
                 setter: (v) =>
                 {
-                    var set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right);
+                    bool set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Right);
                     Main.Config.TextAPIAlign.Set(TextAlignFlags.Right, set);
                     Main.Config.TextAPIAlign.Set(TextAlignFlags.Left, !set);
                     UpdateTextBox(drawTicks: TOGGLE_FORCEDRAWTICKS);
@@ -365,11 +386,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_VerticalAlign(MenuCategoryBase category)
         {
-            var item = new ItemToggle(category, "Vertical Anchor",
+            ItemToggle item = new ItemToggle(category, "Vertical Anchor",
                 getter: () => Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom),
                 setter: (v) =>
                 {
-                    var set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom);
+                    bool set = !Main.Config.TextAPIAlign.IsSet(TextAlignFlags.Bottom);
                     Main.Config.TextAPIAlign.Set(TextAlignFlags.Bottom, set);
                     Main.Config.TextAPIAlign.Set(TextAlignFlags.Top, !set);
                     UpdateTextBox(drawTicks: TOGGLE_FORCEDRAWTICKS);
@@ -386,7 +407,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_PlaceInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Main.Config.PlaceInfo,
+            ItemFlags<PlaceInfoFlags> item = new ItemFlags<PlaceInfoFlags>(category, "Toggle All", Main.Config.PlaceInfo,
                 onValueSet: (flag, set) => UpdateTextBox(redraw: false)
             );
 
@@ -396,7 +417,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_AimInfoToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Main.Config.AimInfo,
+            ItemFlags<AimInfoFlags> item = new ItemFlags<AimInfoFlags>(category, "Toggle All", Main.Config.AimInfo,
                 onValueSet: (flag, set) => UpdateTextBox(redraw: false)
             );
 
@@ -406,7 +427,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_OverlayLabelToggles(MenuCategoryBase category)
         {
-            var item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Main.Config.OverlayLabels,
+            ItemFlags<OverlayLabelsFlags> item = new ItemFlags<OverlayLabelsFlags>(category, "Toggle All Labels", Main.Config.OverlayLabels,
                 onValueSet: (flag, set) =>
                 {
                     groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
@@ -419,9 +440,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_ShipInvBarPosition(MenuCategoryBase category, ItemGroup group = null)
         {
-            var setting = Main.Config.ShipToolInvBarPosition;
+            Vector2DSetting setting = Main.Config.ShipToolInvBarPosition;
 
-            var item = new ItemBoxMove(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
+            ItemBoxMove item = new ItemBoxMove(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
                 getter: () => setting.Value,
                 selected: (pos) =>
                 {
@@ -477,7 +498,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_ToolbarLabelsPos(MenuCategoryBase category, Vector2DSetting setting, ItemGroup group = null)
         {
-            var item = new ItemBoxMove(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
+            ItemBoxMove item = new ItemBoxMove(category, GetLabelFromSetting(null, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 4,
                 getter: () => setting.Value,
                 selected: (pos) =>
                 {
@@ -550,7 +571,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private MenuCategoryBase AddCategory(string name, MenuCategoryBase parent, string header = null, ItemGroup group = null)
         {
-            var item = new ItemSubMenu(parent, name, header);
+            ItemSubMenu item = new ItemSubMenu(parent, name, header);
             group?.Add(item);
             return item.Item;
         }
@@ -562,7 +583,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimplePositionReset(MenuCategoryBase category, Vector2DSetting setting, ItemGroup group = null)
         {
-            var item = new ItemButton(category, GetLabelFromSetting(null, setting) + " Reset", () =>
+            ItemButton item = new ItemButton(category, GetLabelFromSetting(null, setting) + " Reset", () =>
             {
                 setting.ResetToDefault();
                 Main.Config.Save();
@@ -576,7 +597,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleColor(MenuCategoryBase category, string label, ColorSetting setting, bool useAlpha = false, ItemGroup group = null)
         {
-            var item = new ItemColor(category, GetLabelFromSetting(label, setting), setting,
+            ItemColor item = new ItemColor(category, GetLabelFromSetting(label, setting), setting,
                 apply: () => UpdateTextBox(redraw: false),
                 preview: () => UpdateTextBox(save: false, redraw: false),
                 useAlpha: useAlpha);
@@ -587,7 +608,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null)
         {
-            var item = new ItemToggle(category, GetLabelFromSetting(label, setting),
+            ItemToggle item = new ItemToggle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
                 setter: (v) =>
                 {
@@ -603,7 +624,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleDualSlider(MenuCategoryBase category, string label, Vector2DSetting setting, ItemGroup group = null, string dialogTitle = null)
         {
-            var itemForX = new ItemSlider(category, GetLabelFromSetting(label, setting) + " X", min: (float)setting.Min.X, max: (float)setting.Max.X, defaultValue: (float)setting.DefaultValue.X, rounding: 2,
+            ItemSlider itemForX = new ItemSlider(category, GetLabelFromSetting(label, setting) + " X", min: (float)setting.Min.X, max: (float)setting.Max.X, defaultValue: (float)setting.DefaultValue.X, rounding: 2,
                 getter: () => (float)setting.Value.X,
                 setter: (val) =>
                 {
@@ -620,7 +641,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 },
                 dialogTitle: dialogTitle);
 
-            var itemForY = new ItemSlider(category, GetLabelFromSetting(label, setting) + " Y", min: (float)setting.Min.Y, max: (float)setting.Max.Y, defaultValue: (float)setting.DefaultValue.Y, rounding: 2,
+            ItemSlider itemForY = new ItemSlider(category, GetLabelFromSetting(label, setting) + " Y", min: (float)setting.Min.Y, max: (float)setting.Max.Y, defaultValue: (float)setting.DefaultValue.Y, rounding: 2,
                 getter: () => (float)setting.Value.Y,
                 setter: (val) =>
                 {
@@ -645,7 +666,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private ItemSlider SimpleSlider(MenuCategoryBase category, string label, FloatSetting setting, ItemGroup group = null, string dialogTitle = null)
         {
-            var item = new ItemSlider(category, GetLabelFromSetting(label, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+            ItemSlider item = new ItemSlider(category, GetLabelFromSetting(label, setting), min: setting.Min, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
                 getter: () => setting.Value,
                 sliding: (val) =>
                 {
@@ -671,7 +692,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleBind(MenuCategoryBase category, string label, string inputName, InputCombinationSetting setting, ItemGroup group = null, ItemGroup updateGroupOnSet = null)
         {
-            var item = new ItemInput(category, GetLabelFromSetting(label, setting), inputName,
+            ItemInput item = new ItemInput(category, GetLabelFromSetting(label, setting), inputName,
                 getter: () => setting.Value,
                 setter: (combination) =>
                 {
@@ -715,7 +736,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void SimpleEnumCycle(MenuCategoryBase category, string label, Type enumType, IntegerSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0, Action<int> execOnCycle = null)
         {
-            var item = new ItemEnumCycle(category, GetLabelFromSetting(label, setting),
+            ItemEnumCycle item = new ItemEnumCycle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
                 setter: (v) =>
                 {

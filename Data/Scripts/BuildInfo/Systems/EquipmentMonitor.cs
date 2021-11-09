@@ -17,6 +17,8 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
+using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
@@ -162,9 +164,9 @@ namespace Digi.BuildInfo.Systems
 
         public override void UpdateAfterSim(int tick)
         {
-            var controlled = MyAPIGateway.Session.ControlledObject;
-            var shipController = controlled as IMyShipController;
-            var character = (shipController == null ? controlled as IMyCharacter : null);
+            IMyControllableEntity controlled = MyAPIGateway.Session.ControlledObject;
+            IMyShipController shipController = controlled as IMyShipController;
+            IMyCharacter character = (shipController == null ? controlled as IMyCharacter : null);
 
             bool controllerChanged = CheckControlledEntity(controlled, shipController, character);
 
@@ -192,7 +194,7 @@ namespace Digi.BuildInfo.Systems
 
             if(IsBuildTool && !IsCockpitBuildMode)
             {
-                var shipCasterComp = shipController.Components.Get<MyCasterComponent>(); // caster comp is added to ship controller by ship tools when character takes control
+                MyCasterComponent shipCasterComp = shipController.Components.Get<MyCasterComponent>(); // caster comp is added to ship controller by ship tools when character takes control
                 SetBlock(null, shipCasterComp?.HitBlock as IMySlimBlock);
             }
         }
@@ -204,7 +206,7 @@ namespace Digi.BuildInfo.Systems
             if(!IsCubeBuilder && !IsBuildTool)
                 return; // no tool equipped, nothing to update; block gets nullified on tool change
 
-            var equippedDef = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+            MyCubeBlockDefinition equippedDef = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
             if(IsCubeBuilder && equippedDef != null)
             {
@@ -212,7 +214,7 @@ namespace Digi.BuildInfo.Systems
                 return;
             }
 
-            var aimBlock = handToolCasterComp?.HitBlock as IMySlimBlock;
+            IMySlimBlock aimBlock = handToolCasterComp?.HitBlock as IMySlimBlock;
 
             if(!Main.Config.SelectAllProjectedBlocks.Value)
             {
@@ -286,11 +288,11 @@ namespace Digi.BuildInfo.Systems
             if(handToolCasterComp == null || HandTool?.PhysicalItemDefinition == null)
                 return false;
 
-            var weaponPosition = character?.Components?.Get<MyCharacterWeaponPositionComponent>();
+            MyCharacterWeaponPositionComponent weaponPosition = character?.Components?.Get<MyCharacterWeaponPositionComponent>();
             if(weaponPosition == null)
                 return false;
 
-            var handItemDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
+            MyEngineerToolBaseDefinition handItemDef = MyDefinitionManager.Static.TryGetHandItemForPhysicalItem(HandTool.PhysicalItemDefinition.Id) as MyEngineerToolBaseDefinition;
 
             float reachDistance = Hardcoded.EngineerToolBase_DefaultReachDistance * (handItemDef == null ? 1f : handItemDef.DistanceMultiplier);
 
@@ -380,7 +382,7 @@ namespace Digi.BuildInfo.Systems
                 return;
             }
 
-            var internalController = (MyShipController)shipController;
+            MyShipController internalController = (MyShipController)shipController;
 
             if(internalController.BuildingMode)
             {
@@ -424,7 +426,7 @@ namespace Digi.BuildInfo.Systems
 
                     if(!check)
                     {
-                        var controlSlots = Main.Constants.CONTROL_SLOTS;
+                        MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
 
                         // intentionally skipping SLOT0
                         for(int i = 1; i < controlSlots.Length; ++i)
@@ -484,7 +486,7 @@ namespace Digi.BuildInfo.Systems
 
             // FIXME: components can't detect selected tool if world starts with a selected tool (it is set, just components aren't aware)
 
-            var selectedToolId = ShipControllerOB.SelectedGunId;
+            SerializableDefinitionId? selectedToolId = ShipControllerOB.SelectedGunId;
             if(selectedToolId.HasValue)
             {
                 SetTool(selectedToolId.Value);
@@ -508,7 +510,7 @@ namespace Digi.BuildInfo.Systems
 
             if(toolEnt != null)
             {
-                var casterComp = toolEnt.Components.Get<MyCasterComponent>();
+                MyCasterComponent casterComp = toolEnt.Components.Get<MyCasterComponent>();
 
                 SetTool(toolEnt, casterComp);
                 SetBlock(null); // tool changed, reset selected block
@@ -524,8 +526,8 @@ namespace Digi.BuildInfo.Systems
         /// </summary>
         private void SetTool(IMyEntity handEntity, MyCasterComponent casterComp = null, MyShipController shipController = null)
         {
-            var defId = default(MyDefinitionId);
-            var cockpitBuildMode = (shipController != null && shipController.BuildingMode);
+            MyDefinitionId defId = default(MyDefinitionId);
+            bool cockpitBuildMode = (shipController != null && shipController.BuildingMode);
 
             if(cockpitBuildMode)
             {
@@ -533,7 +535,7 @@ namespace Digi.BuildInfo.Systems
             }
             else
             {
-                var tool = (handEntity as IMyHandheldGunObject<MyDeviceBase>);
+                IMyHandheldGunObject<MyDeviceBase> tool = (handEntity as IMyHandheldGunObject<MyDeviceBase>);
 
                 if(tool != null)
                     defId = tool.DefinitionId;
@@ -589,7 +591,7 @@ namespace Digi.BuildInfo.Systems
 
             if(block != null)
             {
-                var internalGrid = (MyCubeGrid)block.CubeGrid;
+                MyCubeGrid internalGrid = (MyCubeGrid)block.CubeGrid;
                 AimedProjectedBy = internalGrid?.Projector;
                 if(AimedProjectedBy != null)
                     NearbyProjector = AimedProjectedBy;
@@ -609,7 +611,7 @@ namespace Digi.BuildInfo.Systems
 
                 for(int i = 0; i < Entities.Count; i++)
                 {
-                    var grid = Entities[i] as MyCubeGrid;
+                    MyCubeGrid grid = Entities[i] as MyCubeGrid;
                     if(grid == null || grid.Projector == null || grid.Projector.CubeGrid != block.CubeGrid)
                         continue;
 

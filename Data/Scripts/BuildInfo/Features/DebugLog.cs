@@ -60,7 +60,7 @@ namespace Digi.BuildInfo.Features
             if(!BuildInfoMod.IsDevMod)
                 return;
 
-            var debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
+            Queue<LogMsg> debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
             debugMsgs?.Clear();
             PrintHUD(caller, "(log cleared)");
         }
@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features
             if(!BuildInfoMod.IsDevMod)
                 return;
 
-            var debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
+            Queue<LogMsg> debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
             if(debugMsgs == null)
                 BuildInfoMod.Instance.DebugLog.LogList = debugMsgs = new Queue<LogMsg>(MaxMessages);
 
@@ -100,9 +100,9 @@ namespace Digi.BuildInfo.Features
                 return;
 
             Text.Visible = true;
-            var sb = Text.Message.Clear();
+            StringBuilder sb = Text.Message.Clear();
 
-            foreach(var line in LogList)
+            foreach(LogMsg line in LogList)
             {
                 sb.Color(new Color(55, 200, 155)).Append(line.CallerName).Append(": ").Color(Color.White).Append(line.Message).Append('\n');
             }

@@ -5,6 +5,7 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using VRage.Game.Entity;
 using static Digi.BuildInfo.Features.ToolbarInfo.ToolbarStatusProcessor;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -25,13 +26,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Refill(StringBuilder sb, ToolbarItem item)
         {
-            var tank = (IMyGasTank)item.Block;
+            IMyGasTank tank = (IMyGasTank)item.Block;
 
             bool canFill = false;
 
             if(tank.IsWorking)
             {
-                var tankDef = (MyGasTankDefinition)tank.SlimBlock.BlockDefinition;
+                MyGasTankDefinition tankDef = (MyGasTankDefinition)tank.SlimBlock.BlockDefinition;
                 canFill = !(!MyAPIGateway.Session.SessionSettings.EnableOxygen && tankDef.StoredGasId == MyResourceDistributorComponent.OxygenId);
             }
 
@@ -39,12 +40,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(canFill)
             {
-                var inv = tank.GetInventory(0) as MyInventory;
+                MyInventory inv = tank.GetInventory(0) as MyInventory;
                 if(inv != null)
                 {
-                    foreach(var physItem in inv.GetItems())
+                    foreach(MyPhysicalInventoryItem physItem in inv.GetItems())
                     {
-                        var containerOB = physItem.Content as MyObjectBuilder_GasContainerObject;
+                        MyObjectBuilder_GasContainerObject containerOB = physItem.Content as MyObjectBuilder_GasContainerObject;
                         if(containerOB != null && containerOB.GasLevel < 1f)
                             itemsToFill++;
                     }

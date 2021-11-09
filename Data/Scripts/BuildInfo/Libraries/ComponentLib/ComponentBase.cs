@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Digi.ComponentLib
+﻿namespace Digi.ComponentLib
 {
     public abstract class ComponentBase<TModBase> : IComponent where TModBase : IModBase
     {

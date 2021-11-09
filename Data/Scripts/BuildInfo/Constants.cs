@@ -6,7 +6,9 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage;
+using VRage.Collections;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -33,7 +35,7 @@ namespace Digi.BuildInfo
 
         public static bool EXPORT_VANILLA_BLOCKS = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
 
-        public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK because the OB itself is not whitelisted
+        public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
 
         public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
         {
@@ -115,13 +117,13 @@ namespace Digi.BuildInfo
         public override void UpdateAfterSim(int tick)
         {
             // HACK: because it can be null in MP: https://support.keenswh.com/spaceengineers/pc/topic/01-190-101modapi-myapigateway-session-player-is-null-for-first-3-ticks-for-mp-clients
-            var localPlayer = MyAPIGateway.Session?.Player;
+            IMyPlayer localPlayer = MyAPIGateway.Session?.Player;
             if(localPlayer != null)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
 
                 // HACK: only way to get currency short name is by getting it from a player or faction's balance string...
-                var balanceText = localPlayer.GetBalanceShortString();
+                string balanceText = localPlayer.GetBalanceShortString();
                 if(balanceText != null)
                 {
                     string[] parts = balanceText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -131,38 +133,38 @@ namespace Digi.BuildInfo
         }
 
         #region Resource group priorities
-        public int resourceSinkGroups = 0;
-        public int resourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> resourceGroupPriority
+        public int ResourceSinkGroups = 0;
+        public int ResourceSourceGroups = 0;
+        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority
                   = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
 
         private void ComputeResourceGroups()
         {
-            resourceGroupPriority.Clear();
-            resourceSourceGroups = 0;
-            resourceSinkGroups = 0;
+            ResourceGroupPriority.Clear();
+            ResourceSourceGroups = 0;
+            ResourceSinkGroups = 0;
 
             // from MyResourceDistributorComponent.InitializeMappings()
-            var groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
-            var orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
+            ListReader<MyResourceDistributionGroupDefinition> groupDefs = MyDefinitionManager.Static.GetDefinitionsOfType<MyResourceDistributionGroupDefinition>();
+            IOrderedEnumerable<MyResourceDistributionGroupDefinition> orderedGroupsEnumerable = groupDefs.OrderBy((def) => def.Priority);
 
             // compact priorities into an ordered number.
-            foreach(var group in orderedGroupsEnumerable)
+            foreach(MyResourceDistributionGroupDefinition group in orderedGroupsEnumerable)
             {
                 int priority = 0;
 
                 if(group.IsSource)
                 {
-                    resourceSourceGroups++;
-                    priority = resourceSourceGroups;
+                    ResourceSourceGroups++;
+                    priority = ResourceSourceGroups;
                 }
                 else
                 {
-                    resourceSinkGroups++;
-                    priority = resourceSinkGroups;
+                    ResourceSinkGroups++;
+                    priority = ResourceSinkGroups;
                 }
 
-                resourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData(group, priority));
+                ResourceGroupPriority.Add(group.Id.SubtypeId, new ResourceGroupData(group, priority));
             }
         }
 

@@ -42,8 +42,8 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            var controlled = MyAPIGateway.Session?.ControlledObject as InternalControllableEntity;
-            var controlledEnt = controlled?.Entity;
+            InternalControllableEntity controlled = MyAPIGateway.Session?.ControlledObject as InternalControllableEntity;
+            MyEntity controlledEnt = controlled?.Entity;
 
             if(controlledEnt == null)
             {
@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Features
             if(controlledEnt == null)
                 return;
 
-            var relativeEnt = controlled.RelativeDampeningEntity;
+            MyEntity relativeEnt = controlled.RelativeDampeningEntity;
             long relativeEntId = (relativeEnt == null || relativeEnt.MarkedForClose ? 0 : relativeEnt.EntityId);
 
             if(relativeEntId == prevRelativeEntId)
@@ -103,7 +103,7 @@ namespace Digi.BuildInfo.Features
                 // escape [ and ] by adding another
                 for(int i = startIndex; i < sb.Length; ++i)
                 {
-                    var c = sb[i];
+                    char c = sb[i];
                     if(c == '[')
                     {
                         sb.Insert(i, '[');
@@ -128,15 +128,15 @@ namespace Digi.BuildInfo.Features
 
         static StringBuilder AppendEntityName(MyEntity ent, StringBuilder sb)
         {
-            var targetGrid = ent as IMyCubeGrid;
+            IMyCubeGrid targetGrid = ent as IMyCubeGrid;
             if(targetGrid != null)
                 return sb.Append(targetGrid.CustomName);
 
-            var targetChar = ent as IMyCharacter;
+            IMyCharacter targetChar = ent as IMyCharacter;
             if(targetChar != null)
                 return sb.Append(targetChar.DisplayName);
 
-            var targetFloatingObj = ent as MyFloatingObject;
+            MyFloatingObject targetFloatingObj = ent as MyFloatingObject;
             if(targetFloatingObj != null)
                 return sb.Append("Floating ").Append(targetFloatingObj.ItemDefinition.DisplayNameText);
 

@@ -74,18 +74,18 @@ namespace Digi.BuildInfo.Features
 
         void CreateProjectorButton()
         {
-            var c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildInfo.ShowBlueprintMods");
+            IMyTerminalControlButton c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildInfo.ShowBlueprintMods");
             c.Title = MyStringId.GetOrCompute("Show Blueprint Mods");
             c.Tooltip = MyStringId.GetOrCompute("Shows DLCs and mods used by the projected blueprint.");
             c.SupportsMultipleBlocks = false;
             c.Enabled = (block) =>
             {
-                var projector = (IMyProjector)block;
+                IMyProjector projector = (IMyProjector)block;
                 return (projector.ProjectedGrid != null);
             };
             c.Action = (block) =>
             {
-                var projector = (IMyProjector)block;
+                IMyProjector projector = (IMyProjector)block;
                 if(projector.ProjectedGrid != null)
                     Analyse(projector.ProjectedGrid);
             };
@@ -94,13 +94,13 @@ namespace Digi.BuildInfo.Features
 
         void GetArmorSkinDefinitions()
         {
-            foreach(var assetDef in MyDefinitionManager.Static.GetAssetModifierDefinitions())
+            foreach(MyAssetModifierDefinition assetDef in MyDefinitionManager.Static.GetAssetModifierDefinitions())
             {
                 if(assetDef.Id.SubtypeName.EndsWith("_Armor"))
                 {
                     if(assetDef.DLCs != null && assetDef.DLCs.Length != 0)
                     {
-                        foreach(var dlc in assetDef.DLCs)
+                        foreach(string dlc in assetDef.DLCs)
                         {
                             ArmorSkinDLC.Add(assetDef.Id.SubtypeId, dlc);
                         }
@@ -130,11 +130,11 @@ namespace Digi.BuildInfo.Features
 
                 grids = Caches.GetGrids(mainGrid, GridLinkTypeEnum.Mechanical);
 
-                foreach(var grid in grids)
+                foreach(IMyCubeGrid grid in grids)
                 {
                     if(grid.BigOwners != null && grid.BigOwners.Count > 0)
                     {
-                        foreach(var owner in grid.BigOwners)
+                        foreach(long owner in grid.BigOwners)
                         {
                             if(MyAPIGateway.Session.Player.GetRelationTo(owner) == MyRelationsBetweenPlayerAndBlock.Enemies)
                             {
@@ -164,14 +164,14 @@ namespace Digi.BuildInfo.Features
             {
                 foreach(IMySlimBlock block in grid.GetBlocks())
                 {
-                    var def = (MyCubeBlockDefinition)block.BlockDefinition;
+                    MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
 
                     if(block.SkinSubtypeId != MyStringHash.NullOrEmpty)
                     {
                         string dlc;
                         if(ArmorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
                         {
-                            var objects = DLCs.GetOrAdd(dlc);
+                            Objects objects = DLCs.GetOrAdd(dlc);
                             objects.SkinnedBlocks++;
                         }
                         else
@@ -179,7 +179,7 @@ namespace Digi.BuildInfo.Features
                             ModId modId;
                             if(ArmorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
                             {
-                                var objects = Mods.GetOrAdd(modId);
+                                Objects objects = Mods.GetOrAdd(modId);
                                 objects.SkinnedBlocks++;
                             }
                         }
@@ -187,28 +187,28 @@ namespace Digi.BuildInfo.Features
 
                     if(def.DLCs != null && def.DLCs.Length != 0)
                     {
-                        foreach(var dlc in def.DLCs)
+                        foreach(string dlc in def.DLCs)
                         {
-                            var objects = DLCs.GetOrAdd(dlc);
+                            Objects objects = DLCs.GetOrAdd(dlc);
                             objects.Blocks++;
                         }
                     }
 
                     if(!def.Context.IsBaseGame)
                     {
-                        var modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
+                        ModId modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
 
                         if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
                         {
                             if(!Mods.ContainsKey(modId))
                             {
-                                var objects = ModsChangingVanilla.GetOrAdd(modId);
+                                Objects objects = ModsChangingVanilla.GetOrAdd(modId);
                                 objects.Blocks++;
                             }
                         }
                         else
                         {
-                            var objects = Mods.GetOrAdd(modId);
+                            Objects objects = Mods.GetOrAdd(modId);
                             objects.Blocks++;
                         }
                     }
@@ -227,10 +227,10 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                foreach(var kv in DLCs)
+                foreach(KeyValuePair<string, Objects> kv in DLCs)
                 {
-                    var dlcId = kv.Key;
-                    var objects = kv.Value;
+                    string dlcId = kv.Key;
+                    Objects objects = kv.Value;
 
                     string displayName = dlcId;
                     MyDLCs.MyDLC dlc;
@@ -255,10 +255,10 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                foreach(var kv in Mods)
+                foreach(KeyValuePair<ModId, Objects> kv in Mods)
                 {
-                    var modId = kv.Key;
-                    var objects = kv.Value;
+                    ModId modId = kv.Key;
+                    Objects objects = kv.Value;
 
                     SB.Append("- ");
                     if(modId.Item1 != 0)
@@ -280,10 +280,10 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                foreach(var kv in ModsChangingVanilla)
+                foreach(KeyValuePair<ModId, Objects> kv in ModsChangingVanilla)
                 {
-                    var modId = kv.Key;
-                    var objects = kv.Value;
+                    ModId modId = kv.Key;
+                    Objects objects = kv.Value;
 
                     SB.Append("- ");
                     if(modId.Item1 != 0)

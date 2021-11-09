@@ -10,6 +10,7 @@ using Digi.Input;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.ModAPI;
 using VRageMath;
 using static Digi.Input.InputLib;
 
@@ -21,7 +22,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 8;
+        public const int ConfigVersion = 9;
 
         public BoolSetting Killswitch;
 
@@ -65,8 +66,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting TerminalDetailInfoAdditions;
         public BoolSetting TerminalDetailInfoHeader;
-        public Vector2DSetting TerminalRefreshInfoPosition;
-        public FloatSetting TerminalRefreshInfoScale;
+        public Vector2DSetting TerminalButtonsPosition;
+        public FloatSetting TerminalButtonsScale;
         public Vector2DSetting TerminalMultiDetailedInfoPosition;
 
         public BoolSetting TextAPICustomStyling;
@@ -139,7 +140,7 @@ namespace Digi.BuildInfo.Features.Config
         {
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
 
-            foreach(var setting in Handler.Settings.Values)
+            foreach(ISetting setting in Handler.Settings.Values)
             {
                 setting.TriggerValueSetEvent();
             }
@@ -149,8 +150,8 @@ namespace Digi.BuildInfo.Features.Config
         {
             if(MenuBind.Value.CombinationString.Equals("c.VoxelHandSettings", StringComparison.OrdinalIgnoreCase))
             {
-                var voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS).GetKeyboardControl();
-                var terminalInventoryKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL).GetKeyboardControl();
+                MyKeys voxelHandSettingsKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS).GetKeyboardControl();
+                MyKeys terminalInventoryKey = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL).GetKeyboardControl();
 
                 if(voxelHandSettingsKey != MyKeys.None && voxelHandSettingsKey == terminalInventoryKey)
                 {
@@ -165,7 +166,7 @@ namespace Digi.BuildInfo.Features.Config
 
         void ConfigVersionTweaks()
         {
-            var cfgv = Handler.ConfigVersion.Value;
+            int cfgv = Handler.ConfigVersion.Value;
             if(cfgv <= 0 || cfgv >= ConfigVersion)
                 return;
 
@@ -173,8 +174,8 @@ namespace Digi.BuildInfo.Features.Config
             {
                 // check if existing mod users have the VoxelHandSettings key not colliding and keep using that
 
-                var voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
-                var terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
+                IMyControl voxelHandSettingsControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.VOXEL_HAND_SETTINGS);
+                IMyControl terminalInventoryControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.TERMINAL);
 
                 // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
                 if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
@@ -204,7 +205,7 @@ namespace Digi.BuildInfo.Features.Config
                 // old defaults were in the wrong value ranges, convert values to new space.
                 // e.g. 0.5, 0.84 => 0.0, -0.68
 
-                var oldVec = ShipToolInvBarPosition.Value;
+                Vector2D oldVec = ShipToolInvBarPosition.Value;
                 ShipToolInvBarPosition.Value = new Vector2D((oldVec.X * 2) - 1, 1 - (oldVec.Y * 2));
 
                 Log.Info($"NOTE: Value for '{ShipToolInvBarPosition.Name}' was changed into a different space (the proper one), your setting was automatically calculated into it so no changes are necessary.");
@@ -237,13 +238,23 @@ namespace Digi.BuildInfo.Features.Config
                     Log.Info($"NOTE: '{LeakParticleColorOverlay.Name}' is the previous default (255, 255, 0), resetting to new default ({LeakParticleColorOverlay.Value.R.ToString()}, {LeakParticleColorOverlay.Value.G.ToString()}, {LeakParticleColorOverlay.Value.B.ToString()}).");
                 }
             }
+
+            if(cfgv <= 8)
+            {
+                if(TerminalButtonsPosition.Value == new Vector2D(0.715, -0.986))
+                {
+                    TerminalButtonsPosition.ResetToDefault();
+
+                    Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.715, -0.986), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
+                }
+            }
         }
 
         private void InitSettings()
         {
             Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MAIN_COMMAND} reload");
 
-            var sb = new StringBuilder(8000);
+            StringBuilder sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);
             Handler.FooterComments.Add(sb.ToString());
 
@@ -384,12 +395,14 @@ namespace Digi.BuildInfo.Features.Config
             TerminalDetailInfoHeader = new BoolSetting(Handler, "Terminal: Detail Info Header", true,
                 "Adds a \"--- (BuildInfo | /bi) ---\" before this mod's detail info additions to more easily identify them.");
 
-            TerminalRefreshInfoPosition = new Vector2DSetting(Handler, "Terminal: Refresh Info Button Position", new Vector2D(0.715, -0.986), -Vector2D.One, Vector2D.One,
-                "HUD position of the Refresh Info button in the terminal.",
+            TerminalButtonsPosition = new Vector2DSetting(Handler, "Terminal: Detail Info Buttons Position", new Vector2D(0.731, -0.988), -Vector2D.One, Vector2D.One,
+                "UI position of the Refresh and Copy buttons in the terminal.",
                 "Can also be moved in the menu by holding right mouse button on it.");
+            TerminalButtonsPosition.AddCompatibilityNames("Terminal: Refresh Info Button Position");
 
-            TerminalRefreshInfoScale = new FloatSetting(Handler, "Terminal: Refresh Info Button Scale", 1f, 0.01f, 3f,
-                "Scale offset for the Refresh Info button in the terminal.");
+            TerminalButtonsScale = new FloatSetting(Handler, "Terminal: Detail Info Buttons Scale", 1f, 0.01f, 3f,
+                "Scale offset for the Refresh and Copy buttons in the terminal.");
+            TerminalButtonsScale.AddCompatibilityNames("Terminal: Refresh Info Button Scale");
 
             TerminalMultiDetailedInfoPosition = new Vector2DSetting(Handler, "Terminal: Multi-Detailed-Info Position", new Vector2D(0.253, -0.16), -Vector2D.One, Vector2D.One,
                 "This mod shows info on multiple blocks selected in terminal, this setting changes its position on the GUI.",
@@ -500,7 +513,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Pick what labels can be shown for overlays.",
                 "Not yet fully expanded to include detailed settings, just axes and eveything else for now.");
 
-            var lookaroundControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.LOOKAROUND);
+            IMyControl lookaroundControl = MyAPIGateway.Input.GetGameControl(MyControlsSpace.LOOKAROUND);
             string lookaroundBind = "(unbound)";
             if(lookaroundControl.GetKeyboardControl() != MyKeys.None)
                 lookaroundBind = MyAPIGateway.Input.GetKeyName(lookaroundControl.GetKeyboardControl());
@@ -582,7 +595,7 @@ namespace Digi.BuildInfo.Features.Config
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
             #endregion
 
-            ModVersion = new IntegerSetting(Handler, "Mod Version", 0, 0, int.MaxValue,
+            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.MOD_VERSION, 0, int.MaxValue,
                 "Latest version loaded for notifying you of notable changes.",
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;

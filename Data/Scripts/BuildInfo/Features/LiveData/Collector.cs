@@ -1,4 +1,5 @@
-﻿using Digi.BuildInfo.Utilities;
+﻿using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -11,12 +12,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
             // HACK: behavior from MyCollector.LoadDummies()
-            foreach(var dummy in dummies)
+            foreach(KeyValuePair<string, IMyModelDummy> dummy in dummies)
             {
                 if(dummy.Key.ContainsIgnoreCase("collector"))
                 {
@@ -26,10 +27,10 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     // from GetBoxFromMatrix()
                     //MatrixD matrix = Matrix.Normalize(dummyMatrix) * block.WorldMatrix;
-                    //var orientation = Quaternion.CreateFromRotationMatrix(matrix);
-                    //var halfExtents = Vector3.Abs(dummyMatrix.Scale) / 2f;
+                    //Quaternion orientation = Quaternion.CreateFromRotationMatrix(matrix);
+                    //Vector3 halfExtents = Vector3.Abs(dummyMatrix.Scale) / 2f;
                     //halfExtents = new Vector3(halfExtents.X, halfExtents.Y, halfExtents.Z);
-                    //var position = matrix.Translation;
+                    //Vector3D position = matrix.Translation;
 
                     break;
                 }

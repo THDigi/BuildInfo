@@ -25,14 +25,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Attached(StringBuilder sb, ToolbarItem item)
         {
-            var piston = (IMyPistonBase)item.Block;
+            IMyPistonBase piston = (IMyPistonBase)item.Block;
             sb.Append(piston.IsAttached ? "Atached" : "Detached");
             return true;
         }
 
         bool Reverse(StringBuilder sb, ToolbarItem item)
         {
-            var piston = (IMyPistonBase)item.Block;
+            IMyPistonBase piston = (IMyPistonBase)item.Block;
             float min = piston.MinLimit;
             float max = piston.MaxLimit;
             float travelRatio = (piston.CurrentPosition - min) / (max - min);

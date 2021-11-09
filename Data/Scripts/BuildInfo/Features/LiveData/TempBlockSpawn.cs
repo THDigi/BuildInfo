@@ -29,12 +29,12 @@ namespace Digi.BuildInfo.Features.LiveData
             DeleteGrid = deleteGridOnSpawn;
             Callback = callback;
 
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            var spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3D spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
-            var blockOB = CreateBlockOB(def.Id);
+            MyObjectBuilder_CubeBlock blockOB = CreateBlockOB(def.Id);
 
-            var gridOB = new MyObjectBuilder_CubeGrid()
+            MyObjectBuilder_CubeGrid gridOB = new MyObjectBuilder_CubeGrid()
             {
                 CreatePhysics = false,
                 GridSizeEnum = def.CubeSize,
@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features.LiveData
             // not really required for a single grid.
             //MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
 
-            var grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
+            MyCubeGrid grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
             grid.IsPreview = true;
             grid.Save = false;
             grid.Flags = EntityFlags.None;
@@ -61,28 +61,28 @@ namespace Digi.BuildInfo.Features.LiveData
 
         MyObjectBuilder_CubeBlock CreateBlockOB(MyDefinitionId defId)
         {
-            var blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(defId);
+            MyObjectBuilder_CubeBlock blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(defId);
 
             blockObj.EntityId = 0;
             blockObj.Min = Vector3I.Zero;
 
 #if false
             // NOTE these types do not check if their fields are null in their Remap() method.
-            var timer = blockObj as MyObjectBuilder_TimerBlock;
+            MyObjectBuilder_TimerBlock timer = blockObj as MyObjectBuilder_TimerBlock;
             if(timer != null)
             {
                 timer.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
 
-            var button = blockObj as MyObjectBuilder_ButtonPanel;
+            MyObjectBuilder_ButtonPanel button = blockObj as MyObjectBuilder_ButtonPanel;
             if(button != null)
             {
                 button.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
                 return blockObj;
             }
 
-            var sensor = blockObj as MyObjectBuilder_SensorBlock;
+            MyObjectBuilder_SensorBlock sensor = blockObj as MyObjectBuilder_SensorBlock;
             if(sensor != null)
             {
                 sensor.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
@@ -90,7 +90,7 @@ namespace Digi.BuildInfo.Features.LiveData
             }
 
             // prohibited...
-            //var targetDummy = blockObj as MyObjectBuilder_TargetDummyBlock;
+            //MyObjectBuilder_TargetDummyBlock targetDummy = blockObj as MyObjectBuilder_TargetDummyBlock;
             //if(targetDummy != null)
             //{
             //    targetDummy.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
@@ -103,14 +103,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
         void SpawnCompleted(IMyEntity ent)
         {
-            var grid = ent as IMyCubeGrid;
+            IMyCubeGrid grid = ent as IMyCubeGrid;
 
             try
             {
-                var block = grid?.GetCubeBlock(Vector3I.Zero);
+                IMySlimBlock block = grid?.GetCubeBlock(Vector3I.Zero);
                 if(block == null)
                 {
-                    var mod = BlockDef.Context.GetModItem();
+                    MyObjectBuilder_Checkpoint.ModItem mod = BlockDef.Context.GetModItem();
                     Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"}; mod={mod.FriendlyName} ({mod.PublishedServiceName}:{mod.PublishedFileId.ToString()})");
                     return;
                 }

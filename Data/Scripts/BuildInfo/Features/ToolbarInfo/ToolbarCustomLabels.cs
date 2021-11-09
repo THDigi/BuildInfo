@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void Block_OnMarkForClose(IMyEntity ent)
         {
-            var block = (IMyTerminalBlock)ent;
+            IMyTerminalBlock block = (IMyTerminalBlock)ent;
             block.OnMarkForClose -= Block_OnMarkForClose;
             BlockData.Remove(block.EntityId);
         }
@@ -176,10 +176,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             // refresh slot labels
-            var slots = Main.ToolbarMonitor.Slots;
+            ToolbarItem[] slots = Main.ToolbarMonitor.Slots;
             for(int index = slots.Length - 1; index >= 0; index--)
             {
-                var slot = slots[index];
+                ToolbarItem slot = slots[index];
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
         }

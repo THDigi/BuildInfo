@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features
         {
             // Reminder: this can get called multiple times for same block, like for grid merging/splitting.
 
-            var pb = slim?.FatBlock as IMyProgrammableBlock;
+            IMyProgrammableBlock pb = slim?.FatBlock as IMyProgrammableBlock;
             if(pb != null && EventHookedPBs.Add(pb.EntityId))
             {
                 pb.OnMarkForClose += PBMarkedForClose;
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                var pb = (IMyProgrammableBlock)tb;
+                IMyProgrammableBlock pb = (IMyProgrammableBlock)tb;
                 if(pb.HasLocalPlayerAccess())
                 {
                     MonitorPB(pb);
@@ -86,7 +86,7 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                var pb = (IMyProgrammableBlock)ent;
+                IMyProgrammableBlock pb = (IMyProgrammableBlock)ent;
                 pb.OnMarkForClose -= PBMarkedForClose;
                 pb.OwnershipChanged -= PBOwnershipChanged;
                 EventHookedPBs.Remove(pb.EntityId);
@@ -122,7 +122,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            foreach(var pb in MonitorPBs)
+            foreach(IMyProgrammableBlock pb in MonitorPBs)
             {
                 if(pb.MarkedForClose)
                     continue; // skip deleted/destroyed/un-streamed PBs, gets removed elsewhere

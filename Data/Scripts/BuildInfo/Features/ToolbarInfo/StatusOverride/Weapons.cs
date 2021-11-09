@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            var gun = (IMyGunObject<MyGunBase>)item.Block;
+            IMyGunObject<MyGunBase> gun = (IMyGunObject<MyGunBase>)item.Block;
             int ammo = gun.GunBase.GetTotalAmmunitionAmount();
             if(ammo <= gun.GunBase.CurrentAmmo)
                 ammo = gun.GunBase.CurrentAmmo + gun.GunBase.GetInventoryAmmoMagazinesCount() * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
@@ -55,7 +55,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return true;
             }
 
-            var weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
+            ReloadTracker.TrackedWeapon weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
             if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
             {
                 float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
@@ -88,7 +88,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int leastAmmo = int.MaxValue;
             int mostAmmo = 0;
 
-            var weaponLookup = BuildInfoMod.Instance.ReloadTracking.WeaponLookup;
+            Dictionary<long, ReloadTracker.TrackedWeapon> weaponLookup = BuildInfoMod.Instance.ReloadTracking.WeaponLookup;
 
             foreach(IMyUserControllableGun gunBlock in groupData.Blocks)
             {
@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(!isShootOnce && gunBlock.GetValue<bool>("Shoot"))
                     firing++;
 
-                var gun = (IMyGunObject<MyGunBase>)gunBlock;
+                IMyGunObject<MyGunBase> gun = (IMyGunObject<MyGunBase>)gunBlock;
                 int ammo = gun.GunBase.GetTotalAmmunitionAmount();
                 if(ammo <= gun.GunBase.CurrentAmmo) // can be 0 when was not shot or be only loaded ammo, neither are great
                     ammo = gun.GunBase.CurrentAmmo + gun.GunBase.GetInventoryAmmoMagazinesCount() * gun.GunBase.CurrentAmmoMagazineDefinition.Capacity;
@@ -122,7 +122,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
                 else
                 {
-                    var weaponInfo = weaponLookup.GetValueOrDefault(gunBlock.EntityId, null);
+                    ReloadTracker.TrackedWeapon weaponInfo = weaponLookup.GetValueOrDefault(gunBlock.EntityId, null);
                     if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
                     {
                         reloading++;

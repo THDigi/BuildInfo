@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void Setup(bool generate)
         {
-            foreach(var blockDef in Main.Caches.BlockDefs)
+            foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
             {
                 HandleDescription(blockDef, generate);
             }

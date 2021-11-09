@@ -16,18 +16,18 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            var antennaDef = Main.EquipmentMonitor.BlockDef as MyLaserAntennaDefinition;
+            MyLaserAntennaDefinition antennaDef = Main.EquipmentMonitor.BlockDef as MyLaserAntennaDefinition;
             if(antennaDef != null)
             {
                 if(args != null && args.Count > 0)
                 {
-                    var kmStr = args.Get(0);
+                    string kmStr = args.Get(0);
                     float km;
 
                     if(float.TryParse(kmStr, out km) && km > 0)
                     {
-                        var meters = (km * 1000);
-                        var megaWatts = Hardcoded.LaserAntenna_PowerUsage(antennaDef, meters);
+                        float meters = (km * 1000);
+                        float megaWatts = Hardcoded.LaserAntenna_PowerUsage(antennaDef, meters);
 
                         sb.Clear();
                         sb.PowerFormat(megaWatts).Append(" at ").DistanceFormat(meters).Append(" for ").Append(antennaDef.DisplayNameText).Append(antennaDef.CubeSize == MyCubeSize.Large ? " (large grid)" : " (small grid)");

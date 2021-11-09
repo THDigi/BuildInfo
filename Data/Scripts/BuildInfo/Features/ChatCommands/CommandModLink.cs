@@ -16,11 +16,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 if(!Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                 {
-                    var id = Main.EquipmentMonitor.BlockDef.Context.GetWorkshopID();
+                    ulong id = Main.EquipmentMonitor.BlockDef.Context.GetWorkshopID();
 
                     if(id > 0)
                     {
-                        var link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
+                        string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
 
                         MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
 

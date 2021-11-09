@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage;
@@ -64,7 +65,7 @@ namespace Digi.BuildInfo.Features.HUD
                     return;
                 }
 
-                var controlled = (enabled ? MyAPIGateway.Session.ControlledObject as IMyTerminalBlock : null);
+                IMyTerminalBlock controlled = (enabled ? MyAPIGateway.Session.ControlledObject as IMyTerminalBlock : null);
                 if(controlled != null)
                 {
                     if(!WasInShip || BuildInfoMod.Instance.Tick % UpdateFrequencyTicks == 0)
@@ -77,21 +78,21 @@ namespace Digi.BuildInfo.Features.HUD
                         float currentTotal = 0;
                         float maxTotal = 0;
 
-                        var gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(controlled.CubeGrid);
+                        IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(controlled.CubeGrid);
                         if(gts == null)
                             return;
 
-                        var blocks = BuildInfoMod.Instance.ShipToolInventoryBar.Blocks;
+                        List<IMyTerminalBlock> blocks = BuildInfoMod.Instance.ShipToolInventoryBar.Blocks;
                         blocks.Clear();
 
-                        var group = gts.GetBlockGroupWithName(GroupName);
+                        IMyBlockGroup group = gts.GetBlockGroupWithName(GroupName);
                         UsingGroup = (group != null);
                         if(UsingGroup)
                             group.GetBlocks(blocks);
                         else
                             gts.GetBlocksOfType<IMyCargoContainer>(blocks);
 
-                        foreach(var block in blocks)
+                        foreach(IMyTerminalBlock block in blocks)
                         {
                             //if(!UsingGroup && !(block is IMyCargoContainer || block is IMyShipConnector || block is IMyCollector))
                             //    continue;
@@ -103,7 +104,7 @@ namespace Digi.BuildInfo.Features.HUD
 
                             for(int i = 0; i < block.InventoryCount; i++)
                             {
-                                var inv = block.GetInventory(i);
+                                IMyInventory inv = block.GetInventory(i);
                                 currentTotal += (float)inv.CurrentVolume * 1000; // add as liters
                                 maxTotal += (float)inv.MaxVolume * 1000;
                             }

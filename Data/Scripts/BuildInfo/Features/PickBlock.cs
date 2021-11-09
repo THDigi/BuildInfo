@@ -4,6 +4,7 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 
 namespace Digi.BuildInfo.Features
 {
@@ -108,12 +109,12 @@ namespace Digi.BuildInfo.Features
                 }
 
                 int slot = 0;
-                var controlSlots = Main.Constants.CONTROL_SLOTS;
+                MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
 
                 // intentionally skipping 0
                 for(int i = 1; i < controlSlots.Length; ++i)
                 {
-                    var controlId = controlSlots[i];
+                    MyStringId controlId = controlSlots[i];
 
                     if(MyAPIGateway.Input.IsNewGameControlPressed(controlId))
                     {

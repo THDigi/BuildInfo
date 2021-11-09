@@ -1,6 +1,7 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
 using Digi.Input;
+using Digi.Input.Devices;
 using Sandbox.ModAPI;
 using VRage.Input;
 using VRageMath;
@@ -38,9 +39,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var value = Getter();
-            var titleColored = (Item.Interactable ? Title : "<color=gray>" + Title);
-            var valueColored = (Item.Interactable ? Utils.ColorTag(ValueColor, value.ToString()) : value.ToString());
+            Combination value = Getter();
+            string titleColored = (Item.Interactable ? Title : "<color=gray>" + Title);
+            string valueColored = (Item.Interactable ? Utils.ColorTag(ValueColor, value.ToString()) : value.ToString());
             Item.Text = $"{titleColored}: {valueColored}{(Combination.CombinationEqual(DefaultValue, value) ? " <color=gray>[default]" : "")}";
         }
 
@@ -48,7 +49,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                var combination = GetCombination(InputName, key, alt, ctrl, shift);
+                Combination combination = GetCombination(InputName, key, alt, ctrl, shift);
 
                 if(combination != null)
                 {
@@ -69,7 +70,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 return Combination.Create(inputName, null);
             }
 
-            var input = InputLib.GetInput(key);
+            InputKey input = InputLib.GetInput(key);
 
             if(input == null)
             {
@@ -80,7 +81,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             string error;
             string combinationString = (alt ? "alt " : "") + (ctrl ? "ctrl " : "") + (shift ? "shift " : "") + input.Id;
 
-            var combination = Combination.Create(inputName, combinationString, out error);
+            Combination combination = Combination.Create(inputName, combinationString, out error);
 
             if(error != null)
             {

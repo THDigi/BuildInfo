@@ -35,9 +35,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            var isOn = Getter();
-            var titleColor = (Item.Interactable ? "" : "<color=gray>");
-            var value = (isOn ? Utils.ColorTag(Item.Interactable ? ColorOn : Color.Gray, OnText) : Utils.ColorTag(Item.Interactable ? ColorOff : Color.Gray, OffText));
+            bool isOn = Getter();
+            string titleColor = (Item.Interactable ? "" : "<color=gray>");
+            string value = (isOn ? Utils.ColorTag(Item.Interactable ? ColorOn : Color.Gray, OnText) : Utils.ColorTag(Item.Interactable ? ColorOff : Color.Gray, OffText));
             Item.Text = $"{titleColor}{Title}: {value}{(DefaultValue == isOn ? " <color=gray>[default]" : "")}";
         }
 

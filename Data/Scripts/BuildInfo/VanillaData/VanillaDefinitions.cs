@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.ComponentLib;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -12,6 +14,8 @@ namespace Digi.BuildInfo.VanillaData
     public class VanillaDefinitions : ModComponent
     {
         public readonly HashSet<MyDefinitionId> Definitions = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
+
+        int WarnAtTick = 0;
 
         public VanillaDefinitions(BuildInfoMod main) : base(main)
         {
@@ -39,23 +43,38 @@ namespace Digi.BuildInfo.VanillaData
 
             bool needsRegen = false;
 
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
-                var blockDef = def as MyCubeBlockDefinition;
+                MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef == null)
                     continue;
 
                 if(blockDef.Context.IsBaseGame && !Definitions.Contains(blockDef.Id))
                 {
-                    // FIXME: needs to be visible ingame, but is not...
-                    Log.Info($"WARNING: {blockDef.Id.ToString()} is vanilla but not in hardcoded list, needs update!", Log.PRINT_MESSAGE);
                     needsRegen = true;
+                    break;
                 }
             }
 
             if(needsRegen)
             {
                 ExtractVanillaBlocks();
+
+                if(BuildInfoMod.IsDevMod)
+                {
+                    WarnAtTick = Constants.TICKS_PER_SECOND * 3;
+                    SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+                }
+            }
+        }
+
+        public override void UpdateAfterSim(int tick)
+        {
+            if(WarnAtTick > 0 && tick >= WarnAtTick)
+            {
+                WarnAtTick = 0;
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+                Log.Info($"WARNING: some undeclared vanilla blocks detected! exported updated list.", Log.PRINT_MESSAGE);
             }
         }
 
@@ -67,16 +86,16 @@ namespace Digi.BuildInfo.VanillaData
 
             sb.Append("// Auto-generated vanilla definitions from SE v").Append(MyAPIGateway.Session.Version.ToString()).NewLine();
 
-            foreach(var def in MyDefinitionManager.Static.GetAllDefinitions())
+            foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
-                var blockDef = def as MyCubeBlockDefinition;
+                MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null && blockDef.Context.IsBaseGame)
                 {
                     sb.Append(nameof(Definitions)).Append(".Add(new MyDefinitionId(typeof(").Append(blockDef.Id.TypeId.ToString()).Append("), \"").Append(blockDef.Id.SubtypeName).Append("\"));").AppendLine();
                 }
             }
 
-            using(var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(VanillaDefinitions)))
+            using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(FileName, typeof(VanillaDefinitions)))
             {
                 writer.Write(sb.ToString());
             }
@@ -86,7 +105,7 @@ namespace Digi.BuildInfo.VanillaData
 
         void DefineVanillaBlocks()
         {
-            // Auto-generated vanilla definitions from SE v1.198.31
+            // Auto-generated vanilla definitions from SE v1.199.25
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRailStraight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere1), "DebugSphereLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere2), "DebugSphereLarge"));
@@ -198,12 +217,76 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallBlockArmorSlopedCornerTip"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeBlockHeavyArmorSlopedCornerTip"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallBlockHeavyArmorSlopedCornerTip"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorSlopedSidePanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorSlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorHalfPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorQuarterPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedPanelTipLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideBasePanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideTipPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideBasePanelLightInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideTipPanelLightInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorHalfSlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedPanelLightRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedTipPanelLightRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedPanelLightLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedTipPanelLightLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorSlopedSidePanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorSlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorHalfPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorQuarterPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedPanelTipHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideBasePanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideTipPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideBasePanelHeavyInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1SlopedSideTipPanelHeavyInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmorHalfSlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedPanelHeavyRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedTipPanelHeavyRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedPanelHeavyLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeArmor2x1HalfSlopedTipPanelHeavyLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorSlopedSidePanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorSlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorHalfPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorQuarterPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedPanelTipLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideBasePanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideTipPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideBasePanelLightInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideTipPanelLightInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorHalfSlopedPanelLight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedPanelLightRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedTipPanelLightRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedPanelLightLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedTipPanelLightLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorSlopedSidePanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorSlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorHalfPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorQuarterPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedPanelTipHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideBasePanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideTipPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideBasePanelHeavyInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1SlopedSideTipPanelHeavyInv"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmorHalfSlopedPanelHeavy"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedPanelHeavyRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedTipPanelHeavyRight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedPanelHeavyLeft"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallArmor2x1HalfSlopedTipPanelHeavyLeft"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MyProgrammableBlock), "SmallProgrammableBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Projector), "LargeProjector"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Projector), "SmallProjector"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "SmallBlockSensor"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "LargeBlockSensor"));
-            Definitions.Add(MyDefinitionId.Parse("MyObjectBuilder_TargetDummyBlock/TargetDummy")); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
+            Definitions.Add(new MyDefinitionId(Constants.TargetDummyType, "TargetDummy"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "SmallBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "LargeBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "ButtonPanelLarge"));
@@ -328,6 +411,46 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_VirtualMass), "VirtualMassSmall"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SpaceBall), "SpaceBallLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SpaceBall), "SpaceBallSmall"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "LargeBlockMagneticPlate"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "SmallBlockMagneticPlate"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "LargeBlockLargeIndustrialContainer"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "VerticalButtonPanelLarge"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeSeamless"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeCorner"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Conveyor), "LargeBlockConveyorPipeJunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Conveyor), "LargeBlockConveyorPipeIntersection"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeFlange"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeEnd"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OxygenTank), "LargeHydrogenTankIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Assembler), "LargeAssemblerIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "LargeRefineryIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeBlockCylindricalColumn"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallBlockCylindricalColumn"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorSorter), "LargeBlockConveyorSorterIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockSlope"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockRound"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockSlope2x1Base"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockSlope2x1Tip"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockHalf"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockHalfSlope"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockEnd"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockJunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeGridBeamBlockTJunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockSlope"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockRound"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockSlope2x1Base"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockSlope2x1Tip"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockHalf"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockHalfSlope"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockEnd"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockJunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallGridBeamBlockTJunction"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "LargeBlockLargeHydrogenThrustIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "LargeBlockSmallHydrogenThrustIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "SmallBlockLargeHydrogenThrustIndustrial"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "SmallBlockSmallHydrogenThrustIndustrial"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Passage), ""));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Passage2"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "Passage2Wall"));
@@ -614,11 +737,14 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_OreDetector), "SmallBlockOreDetector"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "LargeBlockLandingGear"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "SmallBlockLandingGear"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "LargeBlockSmallMagneticPlate"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "SmallBlockSmallMagneticPlate"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_JumpDrive), "LargeJumpDrive"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CameraBlock), "SmallCameraBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CameraBlock), "LargeCameraBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MergeBlock), "LargeShipMergeBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MergeBlock), "SmallShipMergeBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MergeBlock), "SmallShipSmallMergeBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Parachute), "LgParachute"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Parachute), "SmParachute"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "LargeBlockWeaponRack"));

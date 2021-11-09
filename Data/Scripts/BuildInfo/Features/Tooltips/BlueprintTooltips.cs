@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void Setup(bool generate)
         {
-            foreach(var bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
+            foreach(MyBlueprintDefinitionBase bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
                 HandleTooltip(bpBaseDef, generate);
             }
@@ -138,13 +138,13 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             const int MaxWidth = 70;
 
-            var compositeBp = bpBaseDef as MyCompositeBlueprintDefinition;
+            MyCompositeBlueprintDefinition compositeBp = bpBaseDef as MyCompositeBlueprintDefinition;
             if(compositeBp != null)
             {
                 MyDefinitionId id;
                 if(MyDefinitionId.TryParse("MyObjectBuilder_" + bpBaseDef.Id.SubtypeName, out id))
                 {
-                    var def = MyDefinitionManager.Static.GetDefinition(id);
+                    MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(id);
                     if(def != null)
                     {
                         string desc = def.DescriptionText;
@@ -154,10 +154,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                         }
                     }
                 }
+
                 return;
             }
 
-            var resultDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id);
+            MyDefinitionBase resultDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id);
             if(resultDef != null)
             {
                 bool appendedDescription = false;
@@ -168,12 +169,15 @@ namespace Digi.BuildInfo.Features.Tooltips
                     appendedDescription = true;
                 }
 
-                var physDef = resultDef as MyPhysicalItemDefinition;
+                MyPhysicalItemDefinition physDef = resultDef as MyPhysicalItemDefinition;
                 if(physDef != null)
                 {
                     /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
-                    var tooltip = physDef.ExtraInventoryTooltipLine?.ToString();
-                    if(!string.IsNullOrWhiteSpace(tooltip))
+                    string tooltip = physDef.ExtraInventoryTooltipLine?.ToString();
+                    string bpTooltip = bpBaseDef.DisplayNameText;
+
+                    // don't add this if another mod already did
+                    if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
                     {
                         s.TrimEndWhitespace().Append(appendedDescription ? "\n" : "\n\n").AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append("\n");
                     }
@@ -185,11 +189,11 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void TooltipPhysItemResult(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
-            var physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
+            MyPhysicalItemDefinition physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
             if(physDef == null)
                 return;
 
-            var it = Main.ItemTooltips;
+            ItemTooltips it = Main.ItemTooltips;
             it.TooltipBottle(s, physDef, true);
             it.TooltipTool(s, physDef, true);
             it.TooltipWeapon(s, physDef, true);

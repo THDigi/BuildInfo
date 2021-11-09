@@ -38,17 +38,17 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            var thrust = (IMyThrust)block;
-            var thrustDef = (MyThrustDefinition)def;
-            var thrustMatrix = thrust.WorldMatrix;
-            var invMatrix = block.WorldMatrixInvScaled;
+            IMyThrust thrust = (IMyThrust)block;
+            MyThrustDefinition thrustDef = (MyThrustDefinition)def;
+            MatrixD thrustMatrix = thrust.WorldMatrix;
+            MatrixD invMatrix = block.WorldMatrixInvScaled;
 
             // HACK data copied from MyThrust
 
             // ThrustLengthRand = CurrentStrength * 10f * MyUtils.GetRandomFloat(0.6f, 1f) * BlockDefinition.FlameLengthScale;
-            var thrustMaxLength = 10f * thrustDef.FlameLengthScale;
+            float thrustMaxLength = 10f * thrustDef.FlameLengthScale;
 
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             Flames.Clear();
             LongestFlame = 0;
@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             thrust.Model.GetDummies(dummies);
 
-            foreach(var dummy in dummies.Values)
+            foreach(IMyModelDummy dummy in dummies.Values)
             {
                 if(dummy.Name.StartsWith("thruster_flame", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -80,10 +80,10 @@ namespace Digi.BuildInfo.Features.LiveData
                     float capsuleEdgesLength = flameLength + capsuleRadius * 2;
 
                     Vector3 blockHalfSize = def.Size * (0.5f * MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
-                    var blockBB = new BoundingBox(-blockHalfSize, blockHalfSize);
+                    BoundingBox blockBB = new BoundingBox(-blockHalfSize, blockHalfSize);
 
                     const float RayStartDistance = 1000; // arbitrary large value
-                    var ray = new Ray(capsuleEdgeStart + direction * RayStartDistance, -direction);
+                    Ray ray = new Ray(capsuleEdgeStart + direction * RayStartDistance, -direction);
                     float? hitDist = blockBB.Intersects(ray);
 
                     float pastEdge = 0;

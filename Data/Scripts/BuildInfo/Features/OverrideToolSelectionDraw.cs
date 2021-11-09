@@ -17,6 +17,20 @@ using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
+    public class BlockSelectInfo
+    {
+        public BoundingBoxD? ModelBB = null;
+        public MatrixD ModelMatrix;
+
+        public BoundingBoxD Boundaries;
+        public MatrixD BlockMatrix;
+
+        public void ClearCaches()
+        {
+            ModelBB = null;
+        }
+    }
+
     public class OverrideToolSelectionDraw : ModComponent
     {
         readonly MyStringId SelectionLineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
@@ -25,12 +39,14 @@ namespace Digi.BuildInfo.Features
 
         bool eventHooked;
 
+        BlockSelectInfo BlockSelectInfo = new BlockSelectInfo();
         Vector4? ColorCache = null;
-        BoundingBoxD? LocalBBCache = null;
         readonly Vector3D[] Corners = new Vector3D[8];
 
         public OverrideToolSelectionDraw(BuildInfoMod main) : base(main)
         {
+            UpdateOrder = -490; // for Draw() mainly, to always render first (and therefore, under)
+
             MyEntities.OnEntityCreate += EntityCreated;
             eventHooked = true;
         }
@@ -88,7 +104,7 @@ namespace Digi.BuildInfo.Features
         void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
             ColorCache = null;
-            LocalBBCache = null;
+            BlockSelectInfo.ClearCaches();
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (block != null && Main.Config.OverrideToolSelectionDraw.Value));
         }
 
@@ -162,28 +178,47 @@ namespace Digi.BuildInfo.Features
                 color = ColorCache.Value;
             }
 
-            MatrixD worldMatrix;
-            BoundingBoxD localBB;
-            GetBlockLocalBB(aimedBlock, ref LocalBBCache, out localBB, out worldMatrix);
-
-            localBB.Inflate((grid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03));
             float lineWidth = (grid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
+            double inflate = (grid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03);
 
-            DrawSelection(ref worldMatrix, ref localBB, color, lineWidth);
+            GetBlockModelBB(aimedBlock, BlockSelectInfo, inflate);
+
+            if(BlockSelectInfo.ModelBB.HasValue)
+                DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB.Value, color, lineWidth);
+            else
+                DrawSelection(BlockSelectInfo.BlockMatrix, BlockSelectInfo.Boundaries, color, lineWidth);
             #endregion
         }
 
-        public void GetBlockLocalBB(IMySlimBlock block, ref BoundingBoxD? cache, out BoundingBoxD localBB, out MatrixD worldMatrix)
+        /// <summary>
+        /// Fills given <see cref="BlockSelectInfo"/> object with data.
+        /// Also only updates model BB 4 times a second if same object is fed.
+        /// <paramref name="inflate"/> is used to inflate the bb once, because modelBB is cached doing it outside would increase it in size every frame.
+        /// </summary>
+        public void GetBlockModelBB(IMySlimBlock block, BlockSelectInfo fillData, double inflate = 0)
         {
             MyCubeBlock fatBlock = block.FatBlock as MyCubeBlock;
-            if(fatBlock != null)
-            {
-                worldMatrix = fatBlock.PositionComp.WorldMatrixRef;
+            MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+            MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
 
-                if(!cache.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
+            Vector3 halfSize = def.Size * grid.GridSizeHalf;
+            fillData.Boundaries = new BoundingBoxD(-halfSize, halfSize);
+            if(inflate != 0)
+                fillData.Boundaries.Inflate(inflate);
+
+            Matrix localMatrix;
+            block.Orientation.GetMatrix(out localMatrix);
+            localMatrix.Translation = (block.Max + block.Min) * grid.GridSizeHalf; // local block float-center
+            fillData.BlockMatrix = localMatrix * grid.WorldMatrix;
+
+            if(fatBlock != null && def.BlockTopology == MyBlockTopology.TriangleMesh)
+            {
+                fillData.ModelMatrix = fatBlock.PositionComp.WorldMatrixRef;
+
+                if(!fillData.ModelBB.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
                 {
                     BoundingBox localAABB = fatBlock.PositionComp.LocalAABB;
-                    localBB = new BoundingBoxD(localAABB.Min, localAABB.Max);
+                    BoundingBoxD modelBB = new BoundingBoxD(localAABB.Min, localAABB.Max);
 
                     #region Subpart localBB inclusion
                     if(fatBlock.Subparts != null)
@@ -198,7 +233,7 @@ namespace Digi.BuildInfo.Features
                             for(int i = 0; i < Corners.Length; i++)
                             {
                                 Vector3D corner = Corners[i];
-                                localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
+                                modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                             }
 
                             if(s1.Subparts != null)
@@ -210,7 +245,7 @@ namespace Digi.BuildInfo.Features
                                     for(int i = 0; i < Corners.Length; i++)
                                     {
                                         Vector3D corner = Corners[i];
-                                        localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
+                                        modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                     }
 
                                     if(s2.Subparts != null)
@@ -222,7 +257,7 @@ namespace Digi.BuildInfo.Features
                                             for(int i = 0; i < Corners.Length; i++)
                                             {
                                                 Vector3D corner = Corners[i];
-                                                localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
+                                                modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                             }
 
                                             if(s3.Subparts != null)
@@ -234,7 +269,7 @@ namespace Digi.BuildInfo.Features
                                                     for(int i = 0; i < Corners.Length; i++)
                                                     {
                                                         Vector3D corner = Corners[i];
-                                                        localBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
+                                                        modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                                     }
                                                 }
                                         }
@@ -243,29 +278,15 @@ namespace Digi.BuildInfo.Features
                     }
                     #endregion
 
-                    cache = localBB;
-                }
-                else
-                {
-                    localBB = cache.Value;
-                }
-            }
-            else
-            {
-                MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
-                MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+                    if(inflate != 0)
+                        modelBB.Inflate(inflate);
 
-                Matrix localMatrix;
-                block.Orientation.GetMatrix(out localMatrix);
-                localMatrix.Translation = new Vector3(block.Position) * grid.GridSize;
-                worldMatrix = localMatrix * grid.WorldMatrix;
-
-                Vector3 halfSize = def.Size * grid.GridSizeHalf;
-                localBB = new BoundingBoxD(-halfSize, halfSize);
+                    fillData.ModelBB = modelBB;
+                }
             }
         }
 
-        public void DrawSelection(ref MatrixD worldMatrix, ref BoundingBoxD localBB, Color color, float lineWidth)
+        public void DrawSelection(MatrixD worldMatrix, BoundingBoxD localBB, Color color, float lineWidth)
         {
             #region Selection lines
             const float LineLength = 2f; // directions are half-long

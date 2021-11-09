@@ -94,35 +94,35 @@ namespace Digi.BuildInfo.Features
         // draw ship relative direction indicator
         public override void UpdateDraw()
         {
-            var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
+            IMyLargeTurretBase turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
             if(turret == null)
                 return;
 
-            var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+            IMyCockpit cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
             if(cockpit == null)
                 return;
 
             if(!cockpit.IsSameConstructAs(turret))
                 return; // different ships
 
-            var camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
-            var pos = Main.DrawUtils.TextAPIHUDtoWorld(new Vector2D(0, -0.5));
+            Vector3D pos = Main.DrawUtils.TextAPIHUDtoWorld(new Vector2D(0, -0.5));
 
-            var scaleFOV = Main.DrawUtils.ScaleFOV;
-            var length = 0.01f * scaleFOV;
-            var thick = 0.0002f * scaleFOV;
+            float scaleFOV = Main.DrawUtils.ScaleFOV;
+            float length = 0.01f * scaleFOV;
+            float thick = 0.0002f * scaleFOV;
 
-            var screenToPosDir = Vector3D.Normalize(pos - camMatrix.Translation);
-            var angle = Math.Acos(Vector3D.Dot(screenToPosDir, camMatrix.Forward));
-            var shipForwardScreen = Vector3D.TransformNormal(cockpit.WorldMatrix.Forward, MatrixD.CreateFromAxisAngle(camMatrix.Right, -angle));
+            Vector3D screenToPosDir = Vector3D.Normalize(pos - camMatrix.Translation);
+            double angle = Math.Acos(Vector3D.Dot(screenToPosDir, camMatrix.Forward));
+            Vector3D shipForwardScreen = Vector3D.TransformNormal(cockpit.WorldMatrix.Forward, MatrixD.CreateFromAxisAngle(camMatrix.Right, -angle));
 
-            var dirDot = Vector3D.Dot(camMatrix.Forward, shipForwardScreen);
-            var color = Color.Lerp(Color.Red, Color.Lime, (float)((1 + dirDot) / 2));
+            double dirDot = Vector3D.Dot(camMatrix.Forward, shipForwardScreen);
+            Color color = Color.Lerp(Color.Red, Color.Lime, (float)((1 + dirDot) / 2));
 
             MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, pos, shipForwardScreen, length, thick, BlendTypeEnum.PostPP);
 
-            var radius = 0.0005f * scaleFOV;
+            float radius = 0.0005f * scaleFOV;
             MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);
         }
 
@@ -131,7 +131,7 @@ namespace Digi.BuildInfo.Features
             if(tick % SKIP_TICKS != 0)
                 return;
 
-            var turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
+            IMyLargeTurretBase turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
             if(turret != null)
             {
                 if(prevTurret != turret)
@@ -159,7 +159,7 @@ namespace Digi.BuildInfo.Features
 
                     // TODO: add or not?
                     // NOTE: if add, must draw a crosshair... and must set these on all turrets beforehand to avoid the flashing
-                    //var def = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
+                    //MyLargeTurretBaseDefinition def = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
                     //string overlay = def.OverlayTexture;
                     //def.OverlayTexture = null;
                     //turret.OnAssumeControl(null);
@@ -186,8 +186,8 @@ namespace Digi.BuildInfo.Features
             if(weaponDef == null)
                 return;
 
-            var gun = turret as IMyGunObject<MyGunBase>;
-            var magDef = gun?.GunBase?.CurrentAmmoMagazineDefinition;
+            IMyGunObject<MyGunBase> gun = turret as IMyGunObject<MyGunBase>;
+            MyAmmoMagazineDefinition magDef = gun?.GunBase?.CurrentAmmoMagazineDefinition;
             if(gun?.GunBase == null || magDef == null || !gun.GunBase.HasAmmoMagazines)
                 return;
 
@@ -203,7 +203,7 @@ namespace Digi.BuildInfo.Features
             }
 
             int maxMags = 0;
-            var inv = turret.GetInventory();
+            IMyInventory inv = turret.GetInventory();
             if(inv != null)
             {
                 double invCap = (double)inv.MaxVolume + 0.0001f; // HACK: ensure items that fit perfectly get detected
@@ -338,12 +338,12 @@ namespace Digi.BuildInfo.Features
                 if(hasMultipleMags)
                     hudSB.Color(Main.TextGeneration.COLOR_UNIMPORTANT);
 
-                foreach(var otherMagId in weaponDef.AmmoMagazinesId)
+                foreach(MyDefinitionId otherMagId in weaponDef.AmmoMagazinesId)
                 {
                     if(otherMagId == magDef.Id)
                         continue;
 
-                    var otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                    MyAmmoMagazineDefinition otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
                     if(otherMagDef != null)
                         hudSB.Append("   ").Append(otherMagDef.DisplayNameText).NewLine();
                 }
@@ -351,7 +351,7 @@ namespace Digi.BuildInfo.Features
                 //hudSB.ResetFormatting();
 
 #if false // TODO: toggleable between showing vanilla HUD and showing this?
-                //var grid = turret.CubeGrid;
+                //IMyCubeGrid grid = turret.CubeGrid;
 
                 //if(!grid.IsStatic)
                 //{
@@ -359,11 +359,11 @@ namespace Digi.BuildInfo.Features
 
                 //    sb.Append("Ship speed: ").SpeedFormat(grid.Physics.LinearVelocity.Length()).NewLine();
 
-                //    var cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
+                //    IMyCockpit cockpit = MyAPIGateway.Session.Player?.Character?.Parent as IMyCockpit;
 
                 //    if(cockpit != null && cockpit.IsSameConstructAs(turret))
                 //    {
-                //        var internalCockpit = (MyCockpit)cockpit;
+                //        MyCockpit internalCockpit = (MyCockpit)cockpit;
 
                 //        sb.Append("Dampeners: ");
 

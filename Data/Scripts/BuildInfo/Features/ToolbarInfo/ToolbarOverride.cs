@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void BlockAdded(IMySlimBlock slimBlock)
         {
-            var block = slimBlock.FatBlock as IMyTerminalBlock;
+            IMyTerminalBlock block = slimBlock.FatBlock as IMyTerminalBlock;
             if(block == null)
                 return;
 
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             while(QueuedTypes.Count > 0 && QueuedTypes.Peek().ReadAtTick <= tick)
             {
-                var data = QueuedTypes.Dequeue();
+                QueuedActionGet data = QueuedTypes.Dequeue();
 
                 // no remove from CheckedType, any new real-time-added actions should be caught by the CustomActionGetter... unless it's only used in a group.
 
@@ -91,8 +91,26 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectActionFunc);
             }
 
-            if(RehookForSeconds == 0 && QueuedTypes.Count == 0)
+            if(RehookForSeconds <= 0 && QueuedTypes.Count <= 0)
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+            // TODO: make custom icons toggleable
+            // needs a way to refresh toolbar...
+            //if(MyAPIGateway.Input.IsNewKeyPressed(VRage.Input.MyKeys.L) && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            //{
+            //    foreach(ActionWrapper wrapper in ActionWrappers.Values)
+            //    {
+            //        if(wrapper.CustomIcon == null)
+            //            continue;
+            //
+            //        if(wrapper.Action.Icon == wrapper.CustomIcon)
+            //            wrapper.Action.Icon = wrapper.OriginalIcon;
+            //        else
+            //            wrapper.Action.Icon = wrapper.CustomIcon;
+            //    }
+            //
+            //    MyAPIGateway.Utilities.ShowNotification("Toggled action icons", 2000, "Debug");
+            //}
         }
 
         void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
@@ -106,11 +124,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         bool CollectAction(ITerminalAction a)
         {
-            var action = (IMyTerminalAction)a;
+            IMyTerminalAction action = (IMyTerminalAction)a;
 
             if(!ActionWrappers.ContainsKey(action))
             {
-                ActionWrappers.Add(action, new ActionWrapper(action));
+                ActionWrapper wrapper = new ActionWrapper(action);
+                ActionWrappers.Add(action, wrapper);
 
                 // TODO: add a way to revert icons... and maybe an option to remove them entirely?
 
@@ -119,8 +138,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     // HACK: giving an icon for some iconless actions
                     switch(action.Id)
                     {
-                        case "Attach": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
-                        case "Detach": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
+                        case "Attach": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds"); break;
+                        case "Detach": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); break;
                         default: Log.Info($"Warning: Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
                     }
                 }
@@ -129,49 +148,51 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     // affect mods too
                     if(action.Id.StartsWith("Increase"))
                     {
-                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Add.png");
+                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds");
                         return false;
                     }
 
                     if(action.Id.StartsWith("Decrease"))
                     {
-                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.png");
+                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.dds");
                         return false;
                     }
 
                     if(action.Id.StartsWith("Reset"))
                     {
-                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reset.png");
+                        action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
                         return false;
                     }
 
                     // TODO: make this feature optional
-                    // HACK: replace some icons with more descriptive/unique ones
+                    // TODO: get rid of PNGs!
+                    // HACK: replaces some icons with more descriptive/unique ones
                     switch(action.Id)
                     {
-                        case "OnOff_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TurnOn.png"); break;
-                        case "OnOff_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TurnOff.png"); break;
-                        case "OnOff":
-                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleEnabled.png"); break;
+                        case "OnOff_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TurnOn.dds"); break;
+                        case "OnOff_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TurnOff.dds"); break;
+                        case "OnOff": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleEnabled.dds"); break;
 
                         case "ShowOnHUD": action.Icon = @"Textures\GUI\Icons\Actions\SmallShipToggle.dds"; break;
                         case "ShowOnHUD_On": action.Icon = @"Textures\GUI\Icons\Actions\SmallShipSwitchOn.dds"; break;
                         case "ShowOnHUD_Off": action.Icon = @"Textures\GUI\Icons\Actions\SmallShipSwitchOff.dds"; break;
 
                         // matches connector and landing gear
-                        case "SwitchLock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleAttach.png"); break;
-                        case "Unlock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
-                        case "Lock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.png"); break;
-                        case "Autolock": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleConnectors.png"; break;
+                        case "SwitchLock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleAttach.dds"); break;
+                        case "Unlock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); break;
+                        case "Lock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds"); break;
+                        case "Autolock": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ToggleAttach.dds"); break; // TODO: more unique icon?
+
+                        case "PowerTransferOverride": action.Icon = @"Textures\GUI\Icons\HUD 2017\EnergyIcon.png"; break;
 
                         case "Trading": action.Icon = @"Textures\GUI\Icons\HUD 2017\MultiBlockBuilding.png"; break;
                         case "CollectAll": action.Icon = @"Textures\GUI\Icons\HUD 2017\MoveFurther.png"; break;
                         case "ThrowOut": action.Icon = @"Textures\GUI\Icons\HUD 2017\MoveCloser.png"; break;
 
-                        case "Detonate": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detonate.png"); break;
-                        case "Safety": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
-                        case "StartCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\StartWarhead.png"); break;
-                        case "StopCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.png"); break;
+                        case "Detonate": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detonate.dds"); break;
+                        case "Safety": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); break;
+                        case "StartCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\StartWarhead.dds"); break;
+                        case "StopCountdown": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.dds"); break;
 
                         case "PlaySound": action.Icon = @"Textures\GUI\Icons\HUD 2017\GridBroadcastingOn.png"; break;
                         case "StopSound": action.Icon = @"Textures\GUI\Icons\HUD 2017\GridBroadcastingOff.png"; break;
@@ -184,7 +205,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "Shoot":
                         case "Shoot_On":
                         case "Shoot_Off":
-                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Shoot.png"); break;
+                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Shoot.dds"); break;
 
                         case "EnableIdleMovement":
                         case "EnableIdleMovement_On":
@@ -194,20 +215,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "Run":
                         case "RunWithDefaultArgument":
                         case "Start":
-                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Start.png"); break;
+                            action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Start.dds"); break;
 
-                        case "Stop": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.png"); break;
-                        case "TriggerNow": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.png"); break;
+                        case "Stop": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Stop.dds"); break;
+                        case "TriggerNow": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.dds"); break;
                         case "Silent": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleBroadcasting.png"; break;
 
                         // applies to doors and parachute
-                        case "Open": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.png"); break;
-                        case "Open_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Open.png"); break;
-                        case "Open_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Close.png"); break;
+                        case "Open": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.dds"); break;
+                        case "Open_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Open.dds"); break;
+                        case "Open_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Close.dds"); break;
                         case "AnyoneCanUse": action.Icon = @"Textures\GUI\Icons\Actions\CharacterToggle.dds"; break;
-                        case "AutoDeploy": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
+                        case "AutoDeploy": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.dds"); break;
 
-                        case "UseConveyor": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ConveyorToggle.png"); break;
+                        case "UseConveyor": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\ConveyorToggle.dds"); break;
 
                         case "helpOthers": action.Icon = @"Textures\GUI\Icons\HUD 2017\PlayerList.png"; break;
 
@@ -215,12 +236,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "HingeLock":
                             action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Lock.png"); break;
 
-                        // matches rotors and pistons
-                        case "ShareInertiaTensor": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Inertia.png"); break;
-                        case "Reverse": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.png"); break;
+                        case "AddRotorTopPart":
+                        case "AddSmallRotorTopPart":
+                        case "AddHingeTopPart":
+                        case "AddSmallHingeTopPart":
+                        case "Add Top Part":
+                            action.Icon = @"Textures\GUI\Icons\HUD 2017\plus.png";
+                            break;
 
-                        case "Extend": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Add.png"); break;
-                        case "Retract": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.png"); break;
+                        case "Force weld": action.Icon = @"Textures\GUI\Icons\WeaponWelder.dds"; break;
+
+                        // matches rotors and pistons
+                        case "ShareInertiaTensor": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Inertia.dds"); break;
+                        case "Reverse": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.dds"); break;
+
+                        case "Extend": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds"); break;
+                        case "Retract": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.dds"); break;
 
                         case "Steering": action.Icon = @"Textures\GUI\Icons\HUD 2017\RadialMenu.png"; break;
                         case "Propulsion": action.Icon = @"Textures\GUI\Icons\HUD 2017\Jetpack.png"; break;
@@ -229,7 +260,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "InvertPropulsion": action.Icon = @"Textures\GUI\Icons\Actions\Reset.dds"; break;
                         case "Braking":
                             action.Icon = @"Textures\GUI\Icons\Actions\NeutralToggle.dds";
-                            action.Name.Clear().Append("Can Brake On/Off"); // sometimes an action is so misleading that it must be renamed
+                            action.Name.Clear().Append("Can Brake On/Off"); // sometimes an action name is so misleading that it must be renamed
                             break;
 
                         // matches gas generator and gas tank
@@ -246,19 +277,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "Depressurize_Off":
                             action.Icon = @"Textures\GUI\Icons\HUD 2017\SpawnMenu.png"; break;
 
-                        case "Jump": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Jump.png"); break;
+                        case "Jump": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Jump.dds"); break;
 
                         // matches jumpdrive and battery
-                        case "Recharge": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOn.png"); break;
-                        case "Recharge_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOn.png"); break;
-                        case "Recharge_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOff.png"); break;
+                        case "Recharge": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOn.dds"); break;
+                        case "Recharge_On": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOn.dds"); break;
+                        case "Recharge_Off": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\RechargeOff.dds"); break;
 
-                        case "Discharge": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.png"); break;
-                        case "Auto": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.png"); break;
+                        case "Discharge": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); break;
+                        case "Auto": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.dds"); break;
 
-                        case "DrainAll": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Close.png"); break;
+                        case "DrainAll": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\Close.dds"); break;
 
-                        case "Override": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.png"); break;
+                        case "Override": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\TriggerNow.dds"); break;
 
                         case "MainRemoteControl": action.Icon = @"Textures\GUI\Icons\HUD 2017\PlayerHelmetOn.png"; break;
 
@@ -274,13 +305,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "DockingMode_On": action.Icon = @"Textures\GUI\Icons\Actions\StationSwitchOn.dds"; break;
                         case "DockingMode_Off": action.Icon = @"Textures\GUI\Icons\Actions\StationSwitchOff.dds"; break;
 
-                        //case "Forward": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-                        //case "Backward": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-                        //case "Left": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-                        //case "Right": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-                        //case "Up": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-                        //case "Down": action.Icon = Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.png"); break;
-
                         case "MainCockpit": action.Icon = @"Textures\GUI\Icons\HUD 2017\PlayerHelmetOn.png"; break;
                         case "HorizonIndicator": action.Icon = @"Textures\GUI\Icons\HUD 2017\ToggleHud.png"; break;
 
@@ -290,6 +314,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "ControlWheels": action.Icon = @"Textures\GUI\Icons\HUD 2017\RadialMenu.png"; break;
                         case "ControlGyros": action.Icon = @"Textures\GUI\Icons\HUD 2017\RotationPlane.png"; break;
                         case "ControlThrusters": action.Icon = @"Textures\GUI\Icons\HUD 2017\Jetpack.png"; break;
+
+                        case "Park": action.Icon = @"Textures\GUI\Icons\HUD 2017\HandbrakeCenter.png"; break;
+
+                        case "EnableParking": action.Icon = @"Textures\GUI\Icons\HUD 2017\HandbrakeCenter.png"; break;
 
                         case "slaveMode": action.Icon = @"Textures\GUI\Icons\HUD 2017\MultiBlockBuilding.png"; break;
 
@@ -301,12 +329,91 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         case "BroadcastUsingAntennas": // ore detector
                         case "EnableBroadCast": // antenna and space ball
                             action.Icon = @"Textures\GUI\Icons\HUD 2017\SignalMode.png"; break;
+
                         case "ShowShipName": action.Icon = @"Textures\GUI\Icons\HUD 2017\AdminMenu.png"; break;
 
                         case "KeepProjection": action.Icon = @"Textures\GUI\Icons\HUD 2017\PasteGrid.png"; break;
                         case "SpawnProjection": action.Icon = @"Textures\GUI\Icons\HUD 2017\PlacementMode.png"; break;
+
+                        // TODO: unchanged icons
+                        case "Forward":
+                        case "Backward":
+                        case "Left":
+                        case "Right":
+                        case "Up":
+                        case "Down":
+                            break;
+
+                        case "PreserveAspectRatio":
+                            break;
+
+                        case "Detect Players":
+                        case "Detect Players_On":
+                        case "Detect Players_Off":
+                        case "Detect Floating Objects":
+                        case "Detect Floating Objects_On":
+                        case "Detect Floating Objects_Off":
+                        case "Detect Small Ships":
+                        case "Detect Small Ships_On":
+                        case "Detect Small Ships_Off":
+                        case "Detect Large Ships":
+                        case "Detect Large Ships_On":
+                        case "Detect Large Ships_Off":
+                        case "Detect Stations":
+                        case "Detect Stations_On":
+                        case "Detect Stations_Off":
+                        case "Detect Subgrids":
+                        case "Detect Subgrids_On":
+                        case "Detect Subgrids_Off":
+                        case "Detect Asteroids":
+                        case "Detect Asteroids_On":
+                        case "Detect Asteroids_Off":
+                        case "Detect Owner":
+                        case "Detect Owner_On":
+                        case "Detect Owner_Off":
+                        case "Detect Friendly":
+                        case "Detect Friendly_On":
+                        case "Detect Friendly_Off":
+                        case "Detect Neutral":
+                        case "Detect Neutral_On":
+                        case "Detect Neutral_Off":
+                        case "Detect Enemy":
+                        case "Detect Enemy_On":
+                        case "Detect Enemy_Off":
+                            break;
+
+                        case "TargetMeteors":
+                        case "TargetMeteors_On":
+                        case "TargetMeteors_Off":
+                        case "TargetMissiles":
+                        case "TargetMissiles_On":
+                        case "TargetMissiles_Off":
+                        case "TargetSmallShips":
+                        case "TargetSmallShips_On":
+                        case "TargetSmallShips_Off":
+                        case "TargetLargeShips":
+                        case "TargetLargeShips_On":
+                        case "TargetLargeShips_Off":
+                        case "TargetCharacters":
+                        case "TargetCharacters_On":
+                        case "TargetCharacters_Off":
+                        case "TargetStations":
+                        case "TargetStations_On":
+                        case "TargetStations_Off":
+                        case "TargetNeutrals":
+                        case "TargetNeutrals_On":
+                        case "TargetNeutrals_Off":
+                            break;
+
+                        default:
+                            if(BuildInfoMod.IsDevMod)
+                                Log.Info($"Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
+                            break;
                     }
                 }
+
+                if(!string.IsNullOrEmpty(action.Icon))
+                    wrapper.CustomIcon = action.Icon;
             }
 
             return false; // null list, never add to it.

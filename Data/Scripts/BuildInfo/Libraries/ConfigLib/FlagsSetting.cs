@@ -15,7 +15,7 @@ namespace Digi.ConfigLib
         public override void ReadValue(string valueString, out string error)
         {
             error = null;
-            var switchIndex = valueString.IndexOf('-');
+            int switchIndex = valueString.IndexOf('-');
             bool set = false;
 
             if(switchIndex == -1)
@@ -30,14 +30,14 @@ namespace Digi.ConfigLib
                 return;
             }
 
-            var name = valueString.Substring(switchIndex + 1).Trim();
-            var names = Enum.GetNames(typeof(TFlags));
+            string name = valueString.Substring(switchIndex + 1).Trim();
+            string[] names = Enum.GetNames(typeof(TFlags));
 
             for(int i = 0; i < names.Length; ++i)
             {
                 if(names[i] == name)
                 {
-                    var values = (int[])Enum.GetValues(typeof(TFlags));
+                    int[] values = (int[])Enum.GetValues(typeof(TFlags));
 
                     if(set)
                         Value = Value | values[i];
@@ -67,18 +67,18 @@ namespace Digi.ConfigLib
 
             output.Append(Name).Append(' ').Append(ConfigHandler.VALUE_SEPARATOR).AppendLine();
 
-            var values = (int[])Enum.GetValues(typeof(TFlags));
-            var names = Enum.GetNames(typeof(TFlags));
-            var value = Convert.ToInt32(Value);
+            int[] values = (int[])Enum.GetValues(typeof(TFlags));
+            string[] names = Enum.GetNames(typeof(TFlags));
+            int value = Convert.ToInt32(Value);
 
             for(int i = 0; i < names.Length; ++i)
             {
-                var name = names[i];
+                string name = names[i];
 
                 if(name == "None" || name == "All")
                     continue;
 
-                var set = (value & values[i]) != 0;
+                bool set = (value & values[i]) != 0;
                 output.Append(ConfigHandler.MULTILINE_PREFIX).Append("    ").Append(set ? '+' : '-').Append(' ').Append(name).AppendLine();
             }
         }

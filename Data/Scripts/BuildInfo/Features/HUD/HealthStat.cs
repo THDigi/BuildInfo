@@ -1,5 +1,6 @@
 ﻿using Sandbox.Game.Components;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.HUD
 {
@@ -11,11 +12,11 @@ namespace Digi.BuildInfo.Features.HUD
 
         protected override void Update(int tick, bool enabled)
         {
-            var chr = MyAPIGateway.Session?.Player?.Character;
+            IMyCharacter chr = MyAPIGateway.Session?.Player?.Character;
             if(chr == null)
                 return;
 
-            var statComp = chr.Components.Get<MyEntityStatComponent>() as MyCharacterStatComponent;
+            MyCharacterStatComponent statComp = chr.Components.Get<MyEntityStatComponent>() as MyCharacterStatComponent;
             if(statComp == null)
                 return;
 

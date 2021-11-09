@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 if(args != null && args.Count > 0)
                 {
-                    var slotStr = args.Get(0);
+                    string slotStr = args.Get(0);
                     int slot;
 
                     if(int.TryParse(slotStr, out slot) && slot >= 1 && slot <= 9)

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -13,7 +14,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             if(BuildInfoMod.IsDevMod)
             {
-                var sb = new StringBuilder(128);
+                StringBuilder sb = new StringBuilder(128);
 
                 for(int i = 0; i < args.Count; i++)
                 {
@@ -23,8 +24,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 if(sb.Length > 0)
                     sb.Length -= 1; // remove last space
 
-                var size = Main.TextAPI.GetStringSize(sb);
-                var spaceSize = Main.TextAPI.GetStringSize(new StringBuilder(" ")); // TODO: cache result?
+                Vector2D size = Main.TextAPI.GetStringSize(sb);
+                Vector2D spaceSize = Main.TextAPI.GetStringSize(new StringBuilder(" ")); // TODO: cache result?
 
                 double spacesWidth = size.X / spaceSize.X;
 

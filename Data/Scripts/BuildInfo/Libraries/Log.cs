@@ -194,6 +194,8 @@ namespace Digi
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Info(string message, string printText = null, int printTimeMs = DEFAULT_TIME_INFO)
         {
+            // FIXME: using printText before update starts would make player miss the text
+
             EnsureHandlerCreated();
             handler.Info(message, printText, printTimeMs);
         }
@@ -210,7 +212,7 @@ namespace Digi
 
             if(task.Exceptions != null && task.Exceptions.Length > 0)
             {
-                foreach(var e in task.Exceptions)
+                foreach(Exception e in task.Exceptions)
                 {
                     Error($"Error in {taskName} thread!\n{e}");
                 }
@@ -318,7 +320,7 @@ namespace Digi
 
                 Info($"--- pre-init messages ---");
 
-                foreach(var msg in preInitMessages)
+                foreach(string msg in preInitMessages)
                 {
                     Info(msg);
                 }
@@ -330,11 +332,11 @@ namespace Digi
 
             private void InitMessage()
             {
-                var worldsettings = MyAPIGateway.Session.SessionSettings;
+                MyObjectBuilder_SessionSettings worldsettings = MyAPIGateway.Session.SessionSettings;
 
                 sb.Clear();
                 sb.Append("Initialized; ").Append(DateTime.Now.ToString("yyyy MMMM dd (dddd) HH:mm:ss")).Append("; GameVersion=").Append(MyAPIGateway.Session.Version.ToString());
-                sb.Append("\nModWorkshopId=").Append(WorkshopId).Append("; ModName=").Append(modName);
+                sb.Append("\nModWorkshopId=").Append(WorkshopId).Append("; ModName=").Append(modName).Append("; ModService=").Append(sessionComp.ModContext.ModServiceName);
                 sb.Append("\nGameMode=").Append(worldsettings.GameMode.ToString()).Append("; OnlineMode=").Append(worldsettings.OnlineMode.ToString());
                 sb.Append("\nServer=").Append(MyAPIGateway.Session.IsServer).Append("; DS=").Append(MyAPIGateway.Utilities.IsDedicated);
                 sb.Append("\nDefined=");
@@ -479,7 +481,7 @@ namespace Digi
                 try
                 {
                     sb.Clear();
-                    sb.Append(DateTime.Now.ToString("[HH:mm:ss] "));
+                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(MyAPIGateway.Session.GameplayFrameCounter % 60).Append("] ");
 
                     if(writer == null)
                         sb.Append("(PRE-INIT) ");
@@ -519,7 +521,7 @@ namespace Digi
             private ulong GetWorkshopID(string modId)
             {
                 // NOTE: workaround for MyModContext not having the actual workshop ID number.
-                foreach(var mod in MyAPIGateway.Session.Mods)
+                foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
                 {
                     if(mod.Name == modId)
                         return mod.PublishedFileId;

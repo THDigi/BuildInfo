@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         /// <summary>
         /// Gets argument at specified index.
-        /// Index affected by <see cref="IndexOffset"/>.
+        /// Start from 0, index is automatically adjusted by <see cref="IndexOffset"/>.
         /// </summary>
         public string Get(int index)
         {

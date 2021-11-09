@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -21,10 +21,10 @@ namespace Digi.BuildInfo.VanillaData
     /// </summary>
     public static class Hardcoded
     {
-        public const float GAME_EARTH_GRAVITY = 9.81f;
+        public const float EarthGravity = 9.81f;
 
         // from MyGridConveyorSystem
-        public const float Conveyors_PowerReqPerGrid = 0.0000001f; /// <see cref="Features.ChatCommands.CommandHelp.Footer"/>
+        public const float Conveyors_PowerReqPerGrid = 0.000001f; // HACK: CONVEYOR_SYSTEM_CONSUMPTION is 1E-07f (0.1W) but ingame it's 1W... so I dunno.
         public const string Conveyors_PowerGroup = "Conveyors";
 
         // from MyGridConveyorSystem.NeedsLargeTube()
@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.VanillaData
         // from MyShipConnector
         public static float ShipConnector_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (def.Size * gridSize * 0.8f).Volume;
         }
 
@@ -76,7 +76,7 @@ namespace Digi.BuildInfo.VanillaData
         public static readonly MyObjectBuilderType ShipDrill_InventoryConstraint = typeof(MyObjectBuilder_Ore);
         public static float ShipDrill_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return def.Size.X * def.Size.Y * def.Size.Z * gridSize * gridSize * gridSize * 0.5f;
         }
         public const float ShipDrill_VoxelVisualAdd = 0.6f; // based on visual tests
@@ -91,7 +91,7 @@ namespace Digi.BuildInfo.VanillaData
         public const string ShipTool_PowerGroup = "Defense";
         public static float ShipTool_InventoryVolume(MyCubeBlockDefinition def)
         {
-            var gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float gridSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             return (float)def.Size.X * gridSize * (float)def.Size.Y * gridSize * (float)def.Size.Z * gridSize * 0.5f;
         }
         public const float ShipTool_ReachDistance = 4.5f; // MyShipToolBase.DEFAULT_REACH_DISTANCE
@@ -122,11 +122,11 @@ namespace Digi.BuildInfo.VanillaData
         /// </summary>
         public static float ShipGrinderImpulseForce(IMyCubeGrid sourceGrid, IMySlimBlock targetBlock)
         {
-            var targetGrid = targetBlock.CubeGrid;
+            IMyCubeGrid targetGrid = targetBlock.CubeGrid;
 
             if(MyAPIGateway.Session.SessionSettings.EnableToolShake && targetGrid.Physics != null && !targetGrid.Physics.IsStatic)
             {
-                var f = 1.73205078f; // MyUtils.GetRandomVector3()'s max length
+                float f = 1.73205078f; // MyUtils.GetRandomVector3()'s max length
                 return (f * sourceGrid.GridSize * 500f);
             }
 
@@ -169,9 +169,9 @@ namespace Digi.BuildInfo.VanillaData
             openTime = 0;
             closeTime = 0;
 
-            foreach(var seq in advDoor.OpeningSequence)
+            foreach(MyObjectBuilder_AdvancedDoorDefinition.Opening seq in advDoor.OpeningSequence)
             {
-                var moveTime = (seq.MaxOpen / seq.Speed);
+                float moveTime = (seq.MaxOpen / seq.Speed);
 
                 openTime = Math.Max(openTime, seq.OpenDelay + moveTime);
                 closeTime = Math.Max(closeTime, seq.CloseDelay + moveTime);
@@ -257,7 +257,7 @@ namespace Digi.BuildInfo.VanillaData
         {
             float currentVolume = (float)(Math.Pow(radius, def.ConsumptionPower) * Math.PI * 0.75);
             float defaultVolume = (float)(Math.Pow(100, def.ConsumptionPower) * Math.PI * 0.75);
-            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / GAME_EARTH_GRAVITY);
+            return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / EarthGravity);
         }
 
         public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
@@ -295,8 +295,8 @@ namespace Digi.BuildInfo.VanillaData
 
         public static ThrustInfo Thrust_GetUsage(IMyThrust thrust)
         {
-            var thrustInternal = (MyThrust)thrust;
-            var def = thrustInternal.BlockDefinition;
+            MyThrust thrustInternal = (MyThrust)thrust;
+            MyThrustDefinition def = thrustInternal.BlockDefinition;
 
             float currentPowerUsage = 0;
             if(thrust.IsWorking)
@@ -313,8 +313,8 @@ namespace Digi.BuildInfo.VanillaData
 
             // HACK: ConsumptionFactorPerG is NOT per g. Game gives gravity multiplier (g) to method, not acceleration. See MyEntityThrustComponent.RecomputeTypeThrustParameters()
             // remove thge last ' / Hardcoded.GAME_EARTH_GRAVITY' when it's fixed.
-            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
-            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY / Hardcoded.GAME_EARTH_GRAVITY);
+            float consumptionMultiplier = 1f + def.ConsumptionFactorPerG * (gravityLength / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
+            float earthConsumptionMultipler = 1f + def.ConsumptionFactorPerG * (Hardcoded.EarthGravity / Hardcoded.EarthGravity / Hardcoded.EarthGravity);
 
             if(thrustInternal.FuelDefinition != null && thrustInternal.FuelDefinition.Id != MyResourceDistributorComponent.ElectricityId)
             {
@@ -362,25 +362,63 @@ namespace Digi.BuildInfo.VanillaData
             float chuteArea = MathHelper.Pi * chuteSize * chuteSize;
             float realAirDensity = (atmosphere * 1.225f);
 
-            maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / GAME_EARTH_GRAVITY;
+            maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / EarthGravity;
         }
 
-        // from MyTextPanelComponent.GetTextureResolutionForAspectRatio()
-        public static Vector2I TextSurface_GetResolution(int width, int height, int textureSize)
-        {
-            if(width == height)
-                return new Vector2I(textureSize, textureSize);
+        // from where MyMultiTextPanelComponent.Init() is being called
+        public const float TextSurfaceMaxRenderDistance = 120f;
 
-            if(width > height)
+        // from where VRage.Network.DistanceRadiusAttribute is being used
+        public const float TextSurfaceMaxSyncDistance = 32f;
+
+        public struct TextSurfaceInfo
+        {
+            public readonly Vector2I TextureSize;
+            public readonly Vector2 AspectRatio;
+            public readonly Vector2 SurfaceSize;
+
+            public TextSurfaceInfo(Vector2I textureSize, Vector2 aspectRatio, Vector2 surfaceSize)
+            {
+                TextureSize = textureSize;
+                AspectRatio = aspectRatio;
+                SurfaceSize = surfaceSize;
+            }
+        }
+
+        public static TextSurfaceInfo TextSurface_GetInfo(int width, int height, int textureResolution)
+        {
+            // from MyTextPanelComponent.GetTextureResolutionForAspectRatio()
+            Vector2I textureRes;
+            if(width == height)
+            {
+                textureRes = new Vector2I(textureResolution, textureResolution);
+            }
+            else if(width > height)
             {
                 int n = MathHelper.Pow2(MathHelper.Log2(width / height));
-                return new Vector2I(textureSize * n, textureSize);
+                textureRes = new Vector2I(textureResolution * n, textureResolution);
             }
             else
             {
                 int n = MathHelper.Pow2(MathHelper.Log2(height / width));
-                return new Vector2I(textureSize, textureSize * n);
+                textureRes = new Vector2I(textureResolution, textureResolution * n);
             }
+
+            // from MyTextPanelComponent.ctor()
+            Vector2 aspectRatio;
+            if(width > height)
+                aspectRatio = new Vector2(1f, 1f * (float)height / (float)width);
+            else
+                aspectRatio = new Vector2(1f * (float)width / (float)height, 1f);
+
+            // from MyRenderComponentScreenAreas.CalcAspectFactor()
+            Vector2 aspectFactor;
+            if(textureRes.X > textureRes.Y)
+                aspectFactor = aspectRatio * new Vector2(1f, textureRes.X / textureRes.Y);
+            else
+                aspectFactor = aspectRatio * new Vector2(textureRes.Y / textureRes.X, 1f);
+
+            return new TextSurfaceInfo(textureRes, aspectRatio, textureRes * aspectFactor);
         }
 
         // from MyEntityThrustComponent
@@ -398,7 +436,7 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyGridJumpDriveSystem.Jump()
         public const float JumpDriveJumpDelay = 10f;
-        
+
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         public enum MountPointMask : byte
         {

@@ -25,15 +25,15 @@ namespace Digi.BuildInfo.Systems
         /// </summary>
         public readonly List<string> Screens = new List<string>();
 
-        readonly bool Debug = false;
+        readonly bool LogEvents = false;
 
         public GUIMonitor(BuildInfoMod main) : base(main)
         {
-            if(BuildInfoMod.IsDevMod)
-            {
-                Debug = true;
-                UpdateMethods = ComponentLib.UpdateFlags.UPDATE_AFTER_SIM;
-            }
+            //if(BuildInfoMod.IsDevMod)
+            //{
+            //    LogEvents = true;
+            //    UpdateMethods = ComponentLib.UpdateFlags.UPDATE_AFTER_SIM;
+            //}
         }
 
         public override void RegisterComponent()
@@ -66,7 +66,7 @@ namespace Digi.BuildInfo.Systems
                     InAnyDialogBox = true;
                 }
 
-                if(Debug)
+                if(LogEvents)
                     DebugLog.PrintHUD(this, $"GUI Added: {name}; screens={string.Join("/", Screens)}", log: true);
             }
             catch(Exception e)
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Systems
             {
                 string name = obj.GetType().Name;
 
-                if(BuildInfoMod.IsDevMod && name != "MyGuiScreenLoading" && (Screens.Count == 0 || Screens[Screens.Count - 1] != name))
+                if(LogEvents && name != "MyGuiScreenLoading" && (Screens.Count == 0 || Screens[Screens.Count - 1] != name))
                 {
                     Log.Error($"{GetType().Name}: Other screen ({name}) got removed before the last one! list={string.Join("/", Screens)}");
                 }
@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Systems
                     InAnyDialogBox = false;
                 }
 
-                if(Debug)
+                if(LogEvents)
                     DebugLog.PrintHUD(this, $"GUI Removed: {name}; screens={string.Join("/", Screens)}", log: true);
             }
             catch(Exception e)

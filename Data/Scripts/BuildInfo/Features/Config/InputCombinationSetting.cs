@@ -13,7 +13,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public override void ReadValue(string valueString, out string error)
         {
-            var combination = Combination.Create(Name, valueString, out error);
+            Combination combination = Combination.Create(Name, valueString, out error);
             if(combination != null)
                 Value = combination;
             else if(error == null)

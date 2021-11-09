@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -9,6 +10,7 @@ using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
+using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
@@ -154,12 +156,12 @@ namespace Digi.BuildInfo.Features
         #region Converted vanilla code
         private void LoadDummies()
         {
-            var dummies = BuildInfoMod.Instance.Caches.Dummies;
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
             block.Model.GetDummies(dummies);
 
-            foreach(var kv in dummies)
+            foreach(KeyValuePair<string, IMyModelDummy> kv in dummies)
             {
                 if(kv.Key.ContainsIgnoreCase("merge"))
                 {
@@ -178,7 +180,7 @@ namespace Digi.BuildInfo.Features
 
         private void Update10()
         {
-            var data = new MergeData();
+            MergeData data = new MergeData();
             CalculateMergeData(ref data);
 
             if(data.PositionOk && data.AxisOk && data.RotationOk)
@@ -187,7 +189,7 @@ namespace Digi.BuildInfo.Features
                 {
                     frameCounter = 0;
 
-                    var other = block.Other;
+                    IMyShipMergeBlock other = block.Other;
                     Vector3I gridOffset = CalculateOtherGridOffset(block);
                     Vector3I gridOffset2 = CalculateOtherGridOffset(other);
 
@@ -206,7 +208,7 @@ namespace Digi.BuildInfo.Features
 
         private void CalculateMergeData(ref MergeData data)
         {
-            var other = block.Other;
+            IMyShipMergeBlock other = block.Other;
 
             float num = (def != null) ? def.Strength : 0.1f;
 
@@ -228,7 +230,7 @@ namespace Digi.BuildInfo.Features
             Vector3 vector = other.PositionComp.GetPosition() - block.PositionComp.GetPosition();
             Vector3 value = block.WorldMatrix.GetDirectionVector(forward);
 
-            var otherRight = other.WorldMatrix.GetClosestDirection(block.WorldMatrix.GetDirectionVector(right));
+            Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(block.WorldMatrix.GetDirectionVector(right));
 
             data.Distance = vector.Length();
             data.PositionOk = (data.Distance < block.CubeGrid.GridSize + 0.17f);
@@ -240,9 +242,9 @@ namespace Digi.BuildInfo.Features
 
         private static Vector3I CalculateOtherGridOffset(IMyShipMergeBlock b)
         {
-            var blockLogic = b.GameLogic.GetAs<MergeBlock>();
-            var other = b.Other;
-            var otherLogic = other.GameLogic.GetAs<MergeBlock>();
+            MergeBlock blockLogic = b.GameLogic.GetAs<MergeBlock>();
+            IMyShipMergeBlock other = b.Other;
+            MergeBlock otherLogic = other.GameLogic.GetAs<MergeBlock>();
 
             Vector3 value = ConstraintPositionInGridSpace(b, blockLogic.forward) / b.CubeGrid.GridSize;
             Vector3 vector = -ConstraintPositionInGridSpace(other, blockLogic.forward) / other.CubeGrid.GridSize;

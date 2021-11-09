@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
@@ -27,7 +28,7 @@ namespace Digi.Input.Devices
             // using kb/m or it's unassigned for gamepad/joystick
             if(bind == null)
             {
-                var control = MyAPIGateway.Input.GetGameControl(ControlId);
+                IMyControl control = MyAPIGateway.Input.GetGameControl(ControlId);
 
                 if(control.GetMouseControl() != MyMouseButtonsEnum.None)
                 {
@@ -51,7 +52,7 @@ namespace Digi.Input.Devices
 
         public override bool IsAssigned(ControlContext contextId = ControlContext.CHARACTER)
         {
-            var control = MyAPIGateway.Input.GetGameControl(ControlId);
+            IMyControl control = MyAPIGateway.Input.GetGameControl(ControlId);
 
             return (control.GetKeyboardControl() != MyKeys.None
                  || control.GetSecondKeyboardControl() != MyKeys.None
@@ -77,7 +78,7 @@ namespace Digi.Input.Devices
 
         public override bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            var input = InputLib.GetMovementInput();
+            Vector3 input = InputLib.GetMovementInput();
             return !Vector3.IsZero(input);
         }
 
@@ -95,7 +96,7 @@ namespace Digi.Input.Devices
 
         public override bool IsPressed(ControlContext contextId = ControlContext.CHARACTER)
         {
-            var input = InputLib.GetRotationInput();
+            Vector3 input = InputLib.GetRotationInput();
             return !Vector3.IsZero(input);
         }
 
