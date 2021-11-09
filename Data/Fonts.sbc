@@ -11,13 +11,11 @@
         <SubtypeId>Blue</SubtypeId>
       </Id>
       <ColorMask>
-        <X>255</X>
-        <Y>255</Y>
-        <Z>255</Z>
+        <X>220</X>
+        <Y>244</Y>
+        <Z>252</Z>
       </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
+      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
       <LanguageSpecificDefinitions>
         <LanguageDefinition Language="ChineseChina">
           <Resources>
