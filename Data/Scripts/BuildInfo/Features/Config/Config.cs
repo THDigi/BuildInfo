@@ -63,6 +63,7 @@ namespace Digi.BuildInfo.Features.Config
         public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
         public Vector2DSetting ToolbarLabelsOffsetForInvBar;
+
         public BoolSetting ToolbarActionStatus;
 
         public BoolSetting EventToolbarInfo;
@@ -260,7 +261,7 @@ namespace Digi.BuildInfo.Features.Config
 
         private void InitSettings()
         {
-            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MAIN_COMMAND} reload");
+            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MainCommandPrefix} reload");
 
             StringBuilder sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);
@@ -502,7 +503,7 @@ namespace Digi.BuildInfo.Features.Config
             ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
-                "This is independent of the ToolbarLabels feature."
+                "This is independent of the ToolbarInfo or EventToolbar features."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
 

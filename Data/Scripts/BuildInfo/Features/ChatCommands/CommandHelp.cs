@@ -48,7 +48,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Custom labels for toolbar slots per cockpit" + SegmentSuffix +
-            "\n  Using a cockpit's CustomData you can set custom label per slot using ini format." +
+            "\n  Easiest to use '" + ChatCommandHandler.MainCommandPrefix + " {0}' chat command which will set CustomData accordingly." +
+            "\n" +
+            "\n  Or you can do it manually:" +
+            "\n  Cockpit's CustomData can be used to set a custom label per slot, using ini format." +
             "\n  This can be added anywhere in CustomData, but it must be in this order:" +
             "\n [Toolbar]" +
             "\n page-slot = label" +
@@ -143,16 +146,16 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             sb.NewLine();
 
-            sb.Append(Footer);
+            sb.AppendFormat(Footer, Main.ChatCommandHandler.CommandToolbarCustomLabel.MainAlias);
 
             MyAPIGateway.Utilities.ShowMissionScreen($"{BuildInfoMod.ModName} help", null, null, sb.ToString(), null, "Close");
         }
 
         public override void PrintHelp(StringBuilder sb)
         {
-            sb.Append(ChatCommandHandler.HELP_ALT).NewLine();
-            sb.Append(ChatCommandHandler.MAIN_COMMAND).NewLine();
-            sb.Append(ChatCommandHandler.MAIN_COMMAND).Append(" help").NewLine();
+            sb.Append(ChatCommandHandler.HelpAlternative).NewLine();
+            sb.Append(ChatCommandHandler.MainCommandPrefix).NewLine();
+            sb.Append(ChatCommandHandler.MainCommandPrefix).Append(" help").NewLine();
             sb.Append("  Shows this window.").NewLine();
         }
     }

@@ -13,7 +13,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public Command(params string[] commands)
         {
             Aliases = commands;
-            MainAlias = ChatCommandHandler.MAIN_COMMAND + " " + Aliases[0];
+            MainAlias = ChatCommandHandler.MainCommandPrefix + " " + Aliases[0];
             Main.ChatCommandHandler.AddCommand(this);
         }
 

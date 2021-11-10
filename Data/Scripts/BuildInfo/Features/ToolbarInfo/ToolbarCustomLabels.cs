@@ -125,6 +125,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return;
             }
 
+            IniKeys.Clear();
             IniParser.GetKeys(IniSection, IniKeys);
             if(IniKeys.Count > 0)
             {
@@ -182,6 +183,44 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 ToolbarItem slot = slots[index];
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
             }
+        }
+
+        /// <summary>
+        /// Sets or clears the slot (1~9)'s custom label for the currently used ship controller and its current page.
+        /// Returns null if succeded, otherwise returns the reason it failed.
+        /// </summary>
+        public string SetSlotLabel(int slot, string label = null)
+        {
+            if(slot < 1 || slot > 9)
+                return "slot not between 1 and 9";
+
+            IMyShipController shipCtrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            if(shipCtrl == null)
+                return "not controlling a cockpit/RC";
+
+            IniParser.Clear();
+
+            // need to parse the entire thing
+            if(!IniParser.TryParse(shipCtrl.CustomData))
+                return "failed to parse CustomData";
+
+            string key = $"{Main.ToolbarMonitor.ToolbarPage + 1}-{slot}";
+            if(label != null)
+                IniParser.Set(IniSection, key, label);
+            else
+                IniParser.Set(IniSection, key, null);
+
+            IniKeys.Clear();
+            IniParser.GetKeys(IniSection, IniKeys);
+
+            if(IniKeys.Count == 0)
+                IniParser.DeleteSection(IniSection);
+            else
+                IniParser.SetSectionComment(IniSection, " Custom toolbar slot labels, used by BuildInfo mod.");
+
+            shipCtrl.CustomData = IniParser.ToString();
+            IniKeys.Clear();
+            return null;
         }
 
         void RefreshDetailInfo(IMyTerminalBlock block)
