@@ -4,6 +4,8 @@ namespace Digi.BuildInfo.Features.Fonts
 {
     public class TextAPIFont_SEOutlined : TextAPIFont
     {
+        // HACK: altered height to 32 from 37 so that it fits better with the built-in textAPI font (which is 30 height)
+
         protected override string FontName { get; } = "BI_SEOutlined";
         protected override string FontXML { get; } = @"<?xml version=""1.0"" encoding=""UTF-8"" ?>
 <font
@@ -11,7 +13,7 @@ namespace Digi.BuildInfo.Features.Fonts
 	xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
 	xsi:schemaLocation=""http://xna.microsoft.com/bitmapfont bitmapfont.xsd""
 
-	name=""FontDataPA"" base=""30"" height=""37""
+	name=""FontDataPA"" base=""30"" height=""32""
 	face=""Space Engineers"" size=""23""
 	>
   <bitmaps>
