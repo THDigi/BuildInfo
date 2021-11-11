@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
-using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Draygo.API;
-using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
-using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
@@ -49,8 +47,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             TextSB = new StringBuilder(128);
-            Text = new HudAPIv2.HUDMessage(TextSB, new Vector2D(0, -0.1), Scale: 1, HideHud: true, Shadowing: false, Font: FontsHandler.SEOutlined, Blend: BlendType.PostPP);
-            Text.Visible = false;
+            Text = TextAPI.CreateHUDText(TextSB, new Vector2D(0, -0.1));
             SetUpdate();
         }
 

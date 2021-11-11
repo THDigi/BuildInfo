@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
@@ -12,26 +13,26 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
     public class MultiDetailInfo : ModComponent
     {
-        readonly BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
+        const string TextFont = FontsHandler.SEOutlined;
+        const bool UseShadowMessage = false;
+
+        public readonly StringBuilder InfoText = new StringBuilder(512);
 
         bool RefreshNext;
-        public HudAPIv2.HUDMessage Text;
-        public HudAPIv2.HUDMessage TextShadow;
-
+        TextAPI.TextPackage Label;
+        TextAPI.TextPackage Hint;
         HudAPIv2.BillBoardHUDMessage MoveIcon;
-        Vector2D? DragOffset;
-        bool IconHovered;
 
-        HudAPIv2.HUDMessage Hint;
+        BoxDragging Drag;
 
         delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId);
         readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>();
@@ -46,6 +47,31 @@ namespace Digi.BuildInfo.Features.Terminal
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
             Main.TerminalInfo.SelectedChanged += TerminalSelectedChanged;
 
+            Drag = new BoxDragging(MyMouseButtonsEnum.Right);
+            Drag.BoxSelected += () => MoveIcon.BillBoardColor = Color.Lime;
+            Drag.BoxDeselected += () => MoveIcon.BillBoardColor = Color.White;
+            Drag.Dragging += (newPos) =>
+            {
+                Main.Config.TerminalMultiDetailedInfoPosition.Value = newPos;
+
+                // TODO: scale setting?
+                //int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                //if(scroll != 0)
+                //{
+                //    ConfigLib.FloatSetting setting = Main.Config.TerminalMultiDetailedInfoScale???;
+                //    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
+                //    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
+                //    setting.Value = (float)Math.Round(scale, 3);
+                //}
+
+                RefreshPositions();
+            };
+            Drag.FinishedDragging += (finalPos) =>
+            {
+                Main.Config.Save();
+                Main.ConfigMenuHandler.RefreshAll();
+            };
+
             SetupPerTypeFormatters();
         }
 
@@ -56,25 +82,31 @@ namespace Digi.BuildInfo.Features.Terminal
 
             Main.Config.Handler.SettingsLoaded -= RefreshPositions;
             Main.TerminalInfo.SelectedChanged -= TerminalSelectedChanged;
+
+            Drag = null;
         }
 
         void RefreshPositions()
         {
-            if(Text == null)
+            if(Label == null)
                 return;
 
             Vector2D pos = Main.Config.TerminalMultiDetailedInfoPosition.Value;
             const float scale = 1f;
+            float textScale = scale * 1.3f;
 
-            float iconHeight = 0.55f;
+            float iconHeight = 0.4f;
             float iconWidth = (float)(0.0025 / Main.GameConfig.AspectRatio);
 
-            Text.Scale = scale * 1.3f;
-            Text.Origin = pos;
+            Label.Text.Scale = textScale;
+            Label.Text.Origin = pos;
 
-            TextShadow.Scale = Text.Scale;
-            TextShadow.Origin = pos;
-            TextShadow.Offset = Text.Offset + new Vector2D(0.002, -0.002) * TextShadow.Scale;
+            if(Label.Shadow != null)
+            {
+                Label.Shadow.Scale = textScale;
+                Label.Shadow.Origin = pos;
+                Label.Shadow.Offset = Label.Text.Offset + new Vector2D(0.002, -0.002) * textScale;
+            }
 
             MoveIcon.Scale = scale;
             MoveIcon.Origin = pos;
@@ -90,13 +122,6 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public override void UpdateDraw()
         {
-            if(DragOffset.HasValue && MyAPIGateway.Input.IsNewRightMouseReleased())
-            {
-                DragOffset = null;
-                Main.Config.Save();
-                Main.ConfigMenuHandler.RefreshAll();
-            }
-
             int selectedNum = Main.TerminalInfo.SelectedInTerminal.Count;
             if(selectedNum <= 1
             || !Main.TextAPI.IsEnabled
@@ -106,32 +131,25 @@ namespace Digi.BuildInfo.Features.Terminal
             || MyAPIGateway.Gui.ActiveGamePlayScreen != "MyGuiScreenTerminal")
                 return;
 
-            if(Text == null)
+            if(Label == null)
             {
-                StringBuilder sharedSB = new StringBuilder(512);
+                Label = new TextAPI.TextPackage(InfoText);
 
-                Text = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
-                Text.Visible = false;
+                MoveIcon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, hideWithHud: false);
 
-                TextShadow = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
-                TextShadow.InitialColor = Color.Black;
-                TextShadow.Visible = false;
-
-                MoveIcon = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Vector2D.Zero, Color.White, HideHud: false, Shadowing: false, Blend: BlendType);
-                MoveIcon.Visible = false;
-
-                StringBuilder hintSB = new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo.");
-                Hint = new HudAPIv2.HUDMessage(hintSB, new Vector2D(0, -0.98), Scale: 0.6f, HideHud: false, Shadowing: true, Blend: BlendType);
-                Hint.Visible = false;
-                Vector2D hintTextSize = Hint.GetTextLength();
-                Hint.Offset = new Vector2D(hintTextSize.X / -2, 0);
+                Hint = new TextAPI.TextPackage(new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo."));
+                Hint.Text.Origin = new Vector2D(0, -0.98);
+                Hint.Text.Scale = 0.6f;
+                Hint.Text.Options &= ~HudAPIv2.Options.HideHud;
+                Vector2D hintTextSize = Hint.Text.GetTextLength();
+                Hint.Text.Offset = new Vector2D(hintTextSize.X / -2, 0);
 
                 RefreshPositions();
             }
 
             if(Main.GameConfig.UIBackgroundOpacity >= 0.9f && Main.Config.TerminalMultiDetailedInfoPosition.Value == Main.Config.TerminalMultiDetailedInfoPosition.DefaultValue)
             {
-                Hint.Draw();
+                Hint.Text.Draw();
             }
 
             int skipEveryTicks;
@@ -150,50 +168,14 @@ namespace Digi.BuildInfo.Features.Terminal
                 UpdateText();
             }
 
-            Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
-            Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
-            Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
-
             Vector2D center = MoveIcon.Origin + MoveIcon.Offset;
             Vector2D halfSize = new Vector2D(0.02, MoveIcon.Height) / 2;
-            BoundingBox2D bb = new BoundingBox2D(center - halfSize, center + halfSize);
+            Drag.DragHitbox = new BoundingBox2D(center - halfSize, center + halfSize);
+            Drag.Position = Label.Text.Origin;
+            Drag.Update();
 
-            if(bb.Contains(mouseOnScreen) == ContainmentType.Contains)
-            {
-                if(!IconHovered)
-                {
-                    IconHovered = true;
-                    MoveIcon.BillBoardColor = Color.Lime;
-                }
-
-                if(MyAPIGateway.Input.IsNewRightMousePressed())
-                {
-                    DragOffset = Text.Origin - mouseOnScreen;
-                }
-            }
-            else
-            {
-                if(IconHovered)
-                {
-                    IconHovered = false;
-                    MoveIcon.BillBoardColor = Color.White;
-                }
-            }
-
-            if(DragOffset.HasValue && MyAPIGateway.Input.IsRightMousePressed())
-            {
-                const int Rounding = 4;
-
-                Vector2D newPos = mouseOnScreen + DragOffset.Value;
-                newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
-                newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
-
-                Main.Config.TerminalMultiDetailedInfoPosition.Value = newPos;
-                RefreshPositions();
-            }
-
-            TextShadow.Draw();
-            Text.Draw();
+            Label.Shadow?.Draw();
+            Label.Text.Draw();
             MoveIcon.Draw();
         }
 
@@ -339,7 +321,8 @@ namespace Digi.BuildInfo.Features.Terminal
             #endregion Block compute loop
 
             // NOTE: the same SB is used by both the text and the shadow, therefore it can't use colors.
-            StringBuilder info = Text.Message.Clear();
+            // NOTE: this SB is also used on the copy detail info feature, if adding colors, must strip them there.
+            StringBuilder info = InfoText.Clear();
 
             info.Append("--- ").Append(totalBlocks).Append("x ");
 

@@ -38,7 +38,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
         Vector2D PosInGUI = new Vector2D(0.5, -0.5);
 
-        const BlendType TextBlendType = BlendType.PostPP;
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const float OpacityInMenu = 0.75f;
@@ -75,11 +74,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         HudAPIv2.BillBoardHUDMessage CornerBotomLeft;
         HudAPIv2.BillBoardHUDMessage BackgroundTop;
         HudAPIv2.BillBoardHUDMessage CornerTopRight;
-        HudAPIv2.HUDMessage Shadows;
-        HudAPIv2.HUDMessage Labels;
-        HudAPIv2.HUDMessage ShadowsLine2;
-        HudAPIv2.HUDMessage LabelsLine2;
         List<HudAPIv2.BillBoardHUDMessage> Backgrounds;
+
+        TextAPI.TextPackage List;
+        TextAPI.TextPackage ListColumn2;
 
         public ToolbarLabelRender(BuildInfoMod main) : base(main)
         {
@@ -188,12 +186,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             WasInToolbarConfig = null; // force origin refresh
 
-            if(Labels != null)
+            if(List != null)
             {
-                Shadows.Scale = Scale;
-                ShadowsLine2.Scale = Scale;
-                Labels.Scale = Scale;
-                LabelsLine2.Scale = Scale;
+                List.Scale = Scale;
+                ListColumn2.Scale = Scale;
+
                 UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
                 UpdateTextOpacity(1f);
             }
@@ -222,10 +219,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 bg.Origin = bottomLeftPos;
             }
 
-            Shadows.Origin = bottomLeftPos;
-            ShadowsLine2.Origin = bottomLeftPos;
-            Labels.Origin = bottomLeftPos;
-            LabelsLine2.Origin = bottomLeftPos;
+            List.Position = bottomLeftPos;
+            ListColumn2.Position = bottomLeftPos;
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
@@ -249,13 +244,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             Color whiteFade = Color.White * opacity;
 
-            Labels.InitialColor = whiteFade;
-            LabelsLine2.InitialColor = whiteFade;
+            List.Text.InitialColor = whiteFade;
+            ListColumn2.Text.InitialColor = whiteFade;
 
-            Color blackFade = Color.Black * opacity;
+            if(List.Shadow != null)
+            {
+                Color blackFade = Color.Black * opacity;
 
-            Shadows.InitialColor = blackFade;
-            ShadowsLine2.InitialColor = blackFade;
+                List.Shadow.InitialColor = blackFade;
+                ListColumn2.Shadow.InitialColor = blackFade;
+            }
 
             TextOpacity = opacity;
 
@@ -284,45 +282,44 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Backgrounds = new List<HudAPIv2.BillBoardHUDMessage>(6);
 
+            MyStringId squareMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+            MyStringId cornerMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Corner");
+
             // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            Background = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(Background);
 
-            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            BackgroundTop = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(BackgroundTop);
 
-            CornerTopRight = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
-            CornerTopRight.Rotation = MathHelper.Pi;
+            CornerTopRight = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
+            CornerTopRight.Rotation = MathHelper.ToRadians(180);
             Backgrounds.Add(CornerTopRight);
 
-            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            BackgroundBottom = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(BackgroundBottom);
 
-            CornerBotomLeft = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
+            CornerBotomLeft = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(CornerBotomLeft);
 
             foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
-                bg.Visible = false;
-                bg.Blend = TextBlendType;
-                bg.Options = HudAPIv2.Options.HideHud;
+                //bg.Visible = false;
+                //bg.Blend = BlendType.PostPP;
+                //bg.Options = HudAPIv2.Options.HideHud;
                 bg.Width = 0f;
                 bg.Height = 0f;
             }
 
-            Shadows = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            Shadows.InitialColor = Color.Black;
-            Shadows.Visible = false;
+            List = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
+            ListColumn2 = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
 
-            ShadowsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            ShadowsLine2.InitialColor = Color.Black;
-            ShadowsLine2.Visible = false;
+            List.Text.Font = TextFont;
 
-            Labels = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            Labels.Visible = false;
-
-            LabelsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            LabelsLine2.Visible = false;
+            if(List.Shadow != null)
+            {
+                List.Shadow.Font = TextFont;
+            }
 
             WereVisible = null;
 
@@ -481,12 +478,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bg.Visible = MustBeVisible;
                 }
 
-                Shadows.Visible = UseShadowMessage && MustBeVisible;
-                Labels.Visible = MustBeVisible;
+                List.Visible = MustBeVisible;
 
-                bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
-                ShadowsLine2.Visible = UseShadowMessage && splitMode && MustBeVisible;
-                LabelsLine2.Visible = splitMode && MustBeVisible;
+                // forced single list in toolbar config GUI
+                ListColumn2.Visible = MustBeVisible && !InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns;
 
                 WereVisible = MustBeVisible;
 
@@ -506,7 +501,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             #region Draggable box update
             if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
             {
-                BoxDrag.Position = Labels.Origin;
+                BoxDrag.Position = List.Text.Origin;
                 BoxDrag.Update();
             }
             #endregion
@@ -522,7 +517,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateRender()
         {
-            if(Labels == null || !MustBeVisible)
+            if(List == null || !MustBeVisible)
                 return;
 
             int tick = Main.Tick;
@@ -560,19 +555,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             //        return;
             //}
 
-            double topLinesWidth = 0;
+            double firstLineWidth = 0;
 
             float opacity = TextOpacity;
 
-            StringBuilder sb = Labels.Message.Clear();
+            StringBuilder sb = List.Text.Message.Clear();
             StringBuilder sb2 = null;
-
             bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
-
             if(splitMode)
-            {
-                sb2 = LabelsLine2.Message.Clear();
-            }
+                sb2 = ListColumn2.Text.Message.Clear();
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
@@ -677,7 +668,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(i == 1)
                 {
-                    topLinesWidth = Labels.GetTextLength().X;
+                    firstLineWidth = List.Text.GetTextLength().X;
                 }
 
                 sb.NewLine();
@@ -686,22 +677,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // remove last new line
             if(splitMode)
             {
-                sb = Labels.Message;
+                sb = List.Text.Message;
                 sb2.Length -= 1;
             }
             sb.Length -= 1;
 
             if(UseShadowMessage)
             {
-                TextAPI.CopyWithoutColor(sb, Shadows.Message);
+                TextAPI.CopyWithoutColor(sb, List.Shadow.Message);
 
                 if(splitMode)
-                    TextAPI.CopyWithoutColor(sb2, ShadowsLine2.Message);
+                    TextAPI.CopyWithoutColor(sb2, ListColumn2.Shadow.Message);
             }
 
             float separator = 0f;
 
-            Vector2D labelsTextSize = Labels.GetTextLength();
+            Vector2D labelsTextSize = List.Text.GetTextLength();
             Vector2D labelsLine2TextSize = Vector2D.Zero;
             Vector2D textSize;
 
@@ -710,7 +701,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 labelsTextSize.X = Math.Max(labelsTextSize.X, SplitModeLeftSideMinWidth);
 
                 separator = (0.015f * Scale);
-                labelsLine2TextSize = LabelsLine2.GetTextLength();
+                labelsLine2TextSize = ListColumn2.Text.GetTextLength();
                 textSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
             }
             else
@@ -729,14 +720,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Vector2D shadowOffset = new Vector2D(ShadowOffset, -ShadowOffset);
 
             Vector2D textOffset = new Vector2D(0, -textSize.Y); // bottom-left pivot
-            Labels.Offset = textOffset + halfEdgeVec;
-            Shadows.Offset = textOffset + halfEdgeVec + shadowOffset;
+            List.Text.Offset = textOffset + halfEdgeVec;
+
+            if(UseShadowMessage)
+                List.Shadow.Offset = textOffset + halfEdgeVec + shadowOffset;
 
             if(splitMode)
             {
                 Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -textSize.Y);
-                LabelsLine2.Offset = l2offset + halfEdgeVec;
-                ShadowsLine2.Offset = l2offset + halfEdgeVec + shadowOffset;
+                ListColumn2.Text.Offset = l2offset + halfEdgeVec;
+
+                if(UseShadowMessage)
+                    ListColumn2.Shadow.Offset = l2offset + halfEdgeVec + shadowOffset;
             }
 
             BackgroundBottom.Width = bgWidth - cornerWidth;
@@ -763,7 +758,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Background.Offset = textOffset + (textSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
 
             // update draggable box
-            Vector2D center = Labels.Origin;
+            Vector2D center = List.Text.Origin;
             BoundingBox2D box = new BoundingBox2D(center, center + new Vector2D(bgWidth, bgHeight));
             BoxDrag.DragHitbox = box;
         }

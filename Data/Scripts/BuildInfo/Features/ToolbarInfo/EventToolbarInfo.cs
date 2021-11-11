@@ -6,7 +6,6 @@ using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
-using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
@@ -40,9 +39,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         double GUIScale;
 
-        HudAPIv2.BillBoardHUDMessage Background;
-        HudAPIv2.HUDMessage TextShadow;
-        HudAPIv2.HUDMessage Text;
+        TextAPI.TextPackage Label;
 
         IMyTerminalBlock TargetBlock;
         ListReader<IMyTerminalBlock> LastSeenBlocks = ListReader<IMyTerminalBlock>.Empty; // required or NRE's on Count
@@ -112,22 +109,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void TextAPIDetected()
         {
-            const int SBCapacity = 256;
-
-            // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), BoxDrag.Position, Color.White);
-            Background.Visible = false;
-            Background.Blend = BlendType;
-            Background.Options = HudAPIv2.Options.HideHud;
-            Background.Width = 0f;
-            Background.Height = 0f;
-
-            TextShadow = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), BoxDrag.Position, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
-            TextShadow.InitialColor = Color.Black;
-            TextShadow.Visible = false;
-
-            Text = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), BoxDrag.Position, HideHud: true, Scale: GUIScale, Font: TextFont, Blend: BlendType);
-            Text.Visible = false;
+            Label = new TextAPI.TextPackage(256, useShadow: UseShadowMessage, backgroundTexture: MyStringId.GetOrCompute("BuildInfo_UI_Square"));
+            Label.Font = TextFont;
+            Label.Scale = GUIScale;
+            Label.Background.Width = 0f;
+            Label.Background.Height = 0f;
 
             UpdateFromConfig();
 
@@ -152,10 +138,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             GUIScale = (float)(TextScaleMultiplier * Main.Config.EventToolbarInfoScale.Value);
 
-            if(Text != null)
+            if(Label != null)
             {
-                TextShadow.Scale = GUIScale;
-                Text.Scale = GUIScale;
+                Label.Scale = GUIScale;
+
                 UpdateBgOpacity(BackgroundOpacity);
                 UpdateBoxPosition();
                 UpdateScale();
@@ -164,48 +150,46 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateBoxPosition()
         {
-            if(Text != null)
+            if(Label != null)
             {
-                Vector2D position = Main.Config.EventToolbarInfoPosition.Value;
-                Text.Origin = position;
-                TextShadow.Origin = position;
-                Background.Origin = position;
+                Label.Position = Main.Config.EventToolbarInfoPosition.Value;
             }
         }
 
         void UpdateScale()
         {
-            Vector2D textSize = Text.GetTextLength();
+            Vector2D textSize = Label.Text.GetTextLength();
 
             float edge = (float)(BackgroundPadding * GUIScale);
             Vector2D textOffset = new Vector2D(-textSize.X, 0) - new Vector2D(edge / 2); // top-right pivot and offset by background margin aswell
-            Text.Offset = textOffset;
-            TextShadow.Offset = textOffset + new Vector2D(ShadowOffset, -ShadowOffset);
+            Label.Text.Offset = textOffset;
+            if(Label.Shadow != null)
+                Label.Shadow.Offset = textOffset + new Vector2D(ShadowOffset, -ShadowOffset);
 
             float bgWidth = (float)Math.Abs(textSize.X) + edge;
             float bgHeight = (float)Math.Abs(textSize.Y) + edge;
 
-            Background.Width = bgWidth;
-            Background.Height = bgHeight;
-            Background.Offset = new Vector2D(bgWidth * -0.5, bgHeight * -0.5); // make it centered
+            Label.Background.Width = bgWidth;
+            Label.Background.Height = bgHeight;
+            Label.Background.Offset = new Vector2D(bgWidth * -0.5, bgHeight * -0.5); // make it centered
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
         {
-            if(Background == null)
+            if(Label == null)
                 return;
 
             Color color = (colorOverride ?? BackgroundColor);
             Utils.FadeColorHUD(ref color, opacity);
 
-            Background.BillBoardColor = color;
+            Label.Background.BillBoardColor = color;
         }
 
         void OpenedToolbarConfig(ListReader<IMyTerminalBlock> blocks)
         {
             LastSeenBlocks = blocks;
 
-            if(Main.Config.EventToolbarInfo.Value && Main.TextAPI.IsEnabled && Text != null)
+            if(Main.Config.EventToolbarInfo.Value && Main.TextAPI.IsEnabled && Label != null)
             {
                 RenderBox(blocks);
             }
@@ -217,18 +201,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             TargetBlock = null;
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
 
-            if(Text != null)
+            if(Label != null)
             {
-                Text.Visible = false;
-                TextShadow.Visible = false;
-                Background.Visible = false;
+                Label.Visible = false;
             }
         }
 
         void RenderBox(ListReader<IMyTerminalBlock> blocks) // called once
         {
             TargetBlock = blocks[0];
-            StringBuilder sb = Text.Message.Clear();
+            StringBuilder sb = Label.Text.Message.Clear();
 
             if(blocks.Count > 1)
             {
@@ -334,13 +316,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             sb.TrimEndWhitespace();
 
             if(UseShadowMessage)
-                TextAPI.CopyWithoutColor(sb, TextShadow.Message);
+                TextAPI.CopyWithoutColor(sb, Label.Shadow.Message);
 
             UpdateScale();
 
-            Text.Visible = true;
-            TextShadow.Visible = UseShadowMessage;
-            Background.Visible = true;
+            Label.Visible = true;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true); // for dragging and overlay
         }
@@ -354,10 +334,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
 
             #region Draggable box update
-            Vector2D center = Background.Origin + Background.Offset;
-            Vector2D halfExtents = new Vector2D(Background.Width, Background.Height) / 2;
+            Vector2D center = Label.Background.Origin + Label.Background.Offset;
+            Vector2D halfExtents = new Vector2D(Label.Background.Width, Label.Background.Height) / 2;
             BoxDrag.DragHitbox = new BoundingBox2D(center - halfExtents, center + halfExtents);
-            BoxDrag.Position = Text.Origin;
+            BoxDrag.Position = Label.Text.Origin;
             BoxDrag.Update();
             #endregion
 

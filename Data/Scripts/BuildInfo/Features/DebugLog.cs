@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
@@ -89,8 +90,7 @@ namespace Digi.BuildInfo.Features
 
         void TextAPIDetected()
         {
-            Text = new HudAPIv2.HUDMessage(new StringBuilder(128 * MaxMessages), new Vector2D(-0.98, 0.98), Scale: TextScale, HideHud: false, Shadowing: true, Blend: BlendType.PostPP);
-            Text.Visible = false;
+            Text = TextAPI.CreateHUDText(new StringBuilder(128 * MaxMessages), new Vector2D(-0.98, 0.98), scale: TextScale, hideWithHud: false);
             UpdateText();
         }
 

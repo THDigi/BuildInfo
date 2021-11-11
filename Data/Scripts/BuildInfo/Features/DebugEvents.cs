@@ -109,8 +109,7 @@ namespace Digi.BuildInfo.Features
 
             if(ProfileText == null)
             {
-                ProfileText = new HudAPIv2.HUDMessage(new StringBuilder(512), new Vector2D(-0.99, 0.98), Scale: 0.8, HideHud: false, Shadowing: false, Font: FontsHandler.SEOutlined, Blend: BlendType.PostPP);
-                ProfileText.Visible = false;
+                ProfileText = TextAPI.CreateHUDText(new StringBuilder(512), new Vector2D(-0.99, 0.98), scale: 0.8, hideWithHud: false);
             }
 
             StringBuilder sb = ProfileText.Message.Clear();
@@ -173,29 +172,31 @@ namespace Digi.BuildInfo.Features
             if(newValue)
                 Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
 
-            if(debugEquipmentMsg != null)
-                debugEquipmentMsg.Visible = newValue;
+            if(DebugEquipmentMsg != null)
+                DebugEquipmentMsg.Visible = newValue;
         }
 
-        HudAPIv2.HUDMessage debugEquipmentMsg;
+        HudAPIv2.HUDMessage DebugEquipmentMsg;
 
         void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
             if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
             {
-                if(debugEquipmentMsg == null)
-                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(128), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
+                if(DebugEquipmentMsg == null)
+                    DebugEquipmentMsg = TextAPI.CreateHUDText(new StringBuilder(128), new Vector2D(-0.2f, 0.98f), scale: 0.75, hideWithHud: false);
 
-                debugEquipmentMsg.Message.Clear().Append($"{BuildInfoMod.ModName} Debug - Equipment.Update()\n" +
-                    $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
-                    $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
-                    $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
+                StringBuilder sb = DebugEquipmentMsg.Message.Clear();
 
-                debugEquipmentMsg.Visible = true;
+                sb.Append(BuildInfoMod.ModName).Append(" Debug - Equipment.Update()\n");
+                sb.Append(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other")).NewCleanLine();
+                sb.Append("tool=").Color(Color.Yellow).Append(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString()).NewCleanLine();
+                sb.Append("block=").Color(Color.Yellow).Append(Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE").NewCleanLine();
+
+                DebugEquipmentMsg.Visible = true;
             }
-            else if(debugEquipmentMsg != null)
+            else if(DebugEquipmentMsg != null)
             {
-                debugEquipmentMsg.Visible = false;
+                DebugEquipmentMsg.Visible = false;
             }
 
             //if(character != null && MyAPIGateway.Input.IsAnyShiftKeyPressed())

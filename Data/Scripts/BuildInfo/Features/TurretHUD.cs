@@ -5,7 +5,6 @@ using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
-using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
@@ -20,38 +19,34 @@ namespace Digi.BuildInfo.Features
 {
     public class TurretHUD : ModComponent
     {
-        private readonly Vector2D AmmoTextPosition = new Vector2D(0.4, 0.01);
-        private const double AmmoTextScale = 1.2;
+        readonly Vector2D AmmoTextPosition = new Vector2D(0.4, 0.01);
+        const double AmmoTextScale = 1.2;
 
-        private readonly Vector2D HudTextPosition = new Vector2D(0.4, -0.01);
-        private const double HudTextScale = 0.8;
+        readonly Vector2D HudTextPosition = new Vector2D(0.4, -0.01);
+        const double HudTextScale = 0.8;
 
-        private readonly Vector2D ShadowOffset = new Vector2D(0.002, -0.002);
+        readonly Vector2D ShadowOffset = new Vector2D(0.002, -0.002);
 
-        private const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
+        const bool UseShadowMessage = false;
+        const string TextFont = FontsHandler.SEOutlined;
 
-        private IMyLargeTurretBase prevTurret;
-        private MyWeaponBlockDefinition weaponBlockDef;
-        private MyWeaponDefinition weaponDef;
-        private TrackedWeapon weaponTracker;
-        private bool weaponCoreBlock;
+        const int SkipTicks = 6; // ticks between text updates, min value 1.
 
-        private bool visible = false;
-        private IMyHudNotification notify;
-        private StringBuilder notifySB;
+        IMyLargeTurretBase prevTurret;
+        MyWeaponBlockDefinition weaponBlockDef;
+        MyWeaponDefinition weaponDef;
+        TrackedWeapon weaponTracker;
+        bool weaponCoreBlock;
 
-        private HudAPIv2.HUDMessage ammoText;
-        private HudAPIv2.HUDMessage ammoShadow;
-        private StringBuilder ammoSB;
-        private StringBuilder ammoShadowSB;
+        bool visible = false;
+        IMyHudNotification notify;
+        StringBuilder notifySB;
 
-        private HudAPIv2.HUDMessage hudText;
-        private HudAPIv2.HUDMessage hudShadow;
-        private StringBuilder hudSB;
-        private StringBuilder hudShadowSB;
+        TextAPI.TextPackage AmmoText;
+        TextAPI.TextPackage HudText;
 
-        private readonly MyStringId MATERIAL_SQUARE = MyStringId.GetOrCompute("Square");
-        private readonly MyStringId MATERIAL_DOT = MyStringId.GetOrCompute("WhiteDot");
+        readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("Square");
+        readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
 
         public TurretHUD(BuildInfoMod main) : base(main)
         {
@@ -120,15 +115,15 @@ namespace Digi.BuildInfo.Features
             double dirDot = Vector3D.Dot(camMatrix.Forward, shipForwardScreen);
             Color color = Color.Lerp(Color.Red, Color.Lime, (float)((1 + dirDot) / 2));
 
-            MyTransparentGeometry.AddLineBillboard(MATERIAL_SQUARE, color, pos, (Vector3)shipForwardScreen, length, thick, BlendTypeEnum.PostPP);
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, pos, (Vector3)shipForwardScreen, length, thick, BlendTypeEnum.PostPP);
 
             float radius = 0.0005f * scaleFOV;
-            MyTransparentGeometry.AddPointBillboard(MATERIAL_DOT, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);
+            MyTransparentGeometry.AddPointBillboard(MaterialDot, color, pos, radius, 0, blendType: BlendTypeEnum.PostPP);
         }
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick % SKIP_TICKS != 0)
+            if(tick % SkipTicks != 0)
                 return;
 
             IMyLargeTurretBase turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
@@ -213,13 +208,17 @@ namespace Digi.BuildInfo.Features
             if(Main.TextAPI.IsEnabled)
             {
                 #region Simple ammo indicator
-                if(ammoSB == null)
+                if(AmmoText == null)
                 {
-                    ammoSB = new StringBuilder(256);
-                    ammoShadowSB = new StringBuilder(256);
+                    AmmoText = new TextAPI.TextPackage(256, useShadow: UseShadowMessage);
+                    AmmoText.Font = TextFont;
+                    AmmoText.Position = AmmoTextPosition;
+                    AmmoText.Scale = AmmoTextScale;
+
+                    notify?.Hide();
                 }
 
-                ammoSB.Clear();
+                StringBuilder ammoSB = AmmoText.TextStringBuilder.Clear();
 
                 if(totalAmmo == 0)
                 {
@@ -266,17 +265,19 @@ namespace Digi.BuildInfo.Features
                     ammoSB.Number(totalAmmo);
                 }
 
-                TextAPI.CopyWithoutColor(ammoSB, ammoShadowSB);
+                if(UseShadowMessage)
+                    TextAPI.CopyWithoutColor(AmmoText.TextStringBuilder, AmmoText.ShadowStringBuilder);
                 #endregion
 
                 #region Other text
-                if(hudSB == null)
+                if(HudText == null)
                 {
-                    hudSB = new StringBuilder(256);
-                    hudShadowSB = new StringBuilder(256);
+                    HudText = new TextAPI.TextPackage(256, useShadow: UseShadowMessage);
+                    HudText.Position = HudTextPosition;
+                    HudText.Scale = HudTextScale;
                 }
 
-                hudSB.Clear();
+                StringBuilder hudSB = HudText.TextStringBuilder.Clear();
 
                 // only show inventory if weapon can be reloaded, otherwise total ammo is shown above
                 if(weaponTracker != null)
@@ -384,7 +385,8 @@ namespace Digi.BuildInfo.Features
                 //}
 #endif
 
-                TextAPI.CopyWithoutColor(hudSB, hudShadowSB);
+                if(UseShadowMessage)
+                    TextAPI.CopyWithoutColor(HudText.TextStringBuilder, HudText.ShadowStringBuilder);
                 #endregion
             }
             else
@@ -417,30 +419,15 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.TextAPI.IsEnabled)
             {
-                if(hudSB == null)
+                if(AmmoText == null)
                     return;
 
-                if(hudText == null)
-                {
-                    ammoShadow = new HudAPIv2.HUDMessage(ammoShadowSB, AmmoTextPosition, HideHud: true, Scale: AmmoTextScale, Blend: BlendTypeEnum.PostPP);
-                    ammoShadow.InitialColor = Color.Black;
-                    ammoShadow.Offset = ShadowOffset;
-
-                    ammoText = new HudAPIv2.HUDMessage(ammoSB, AmmoTextPosition, HideHud: true, Scale: AmmoTextScale, Blend: BlendTypeEnum.PostPP);
-
-                    hudShadow = new HudAPIv2.HUDMessage(hudShadowSB, HudTextPosition, HideHud: true, Scale: HudTextScale, Blend: BlendTypeEnum.PostPP);
-                    hudShadow.InitialColor = Color.Black;
-                    hudShadow.Offset = ShadowOffset;
-
-                    hudText = new HudAPIv2.HUDMessage(hudSB, HudTextPosition, HideHud: true, Scale: HudTextScale, Blend: BlendTypeEnum.PostPP);
-
-                    notify?.Hide();
-                }
-
-                Vector2D ammoTextLen = ammoText.GetTextLength();
+                Vector2D ammoTextLen = AmmoText.Text.GetTextLength();
                 Vector2D ammoTextOffset = new Vector2D(0, -ammoTextLen.Y); // pivot left-bottom
-                ammoText.Offset = ammoTextOffset;
-                ammoShadow.Offset = ammoTextOffset + ShadowOffset;
+                AmmoText.Text.Offset = ammoTextOffset;
+
+                if(UseShadowMessage)
+                    AmmoText.Shadow.Offset = ammoTextOffset + ShadowOffset;
 
                 // no more pivot as the ammo is moved above this text
                 //Vector2D hudTextLen = hudText.GetTextLength();
@@ -451,12 +438,8 @@ namespace Digi.BuildInfo.Features
                 if(!visible)
                 {
                     visible = true;
-
-                    ammoText.Visible = true;
-                    ammoShadow.Visible = true;
-
-                    hudText.Visible = true;
-                    hudShadow.Visible = true;
+                    AmmoText.Visible = true;
+                    HudText.Visible = true;
                 }
             }
             else
@@ -488,13 +471,10 @@ namespace Digi.BuildInfo.Features
             prevTurret = null;
             weaponTracker = null;
 
-            if(hudText != null)
+            if(AmmoText != null)
             {
-                ammoText.Visible = false;
-                ammoShadow.Visible = false;
-
-                hudText.Visible = false;
-                hudShadow.Visible = false;
+                AmmoText.Visible = false;
+                HudText.Visible = false;
             }
 
             if(notify != null)

@@ -10,11 +10,9 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
-using Draygo.API;
 using ObjectBuilders.SafeZone;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -49,8 +47,7 @@ namespace Digi.BuildInfo.Features
         #region Constants
         private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
-        private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
-        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.PostPP;
+        private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
         private readonly Color BG_COLOR = new Color(41, 54, 62);
         private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
@@ -122,8 +119,7 @@ namespace Digi.BuildInfo.Features
         private int lines;
         private int forceDrawTicks = 0;
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
-        private HudAPIv2.HUDMessage textObject = null;
-        private HudAPIv2.BillBoardHUDMessage bgObject = null;
+        private TextAPI.TextPackage textObject;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
@@ -241,8 +237,13 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown && textObject != null)
             {
-                bgObject.Draw();
-                textObject.Draw();
+                if(textObject.Background != null)
+                    textObject.Background.Draw();
+
+                if(textObject.Shadow != null)
+                    textObject.Shadow.Draw();
+
+                textObject.Text.Draw();
             }
             else
             {
@@ -426,19 +427,18 @@ namespace Digi.BuildInfo.Features
 
         private Vector2D UpdateTextAPIvisuals(StringBuilder textSB, Vector2D textSize = default(Vector2D))
         {
-            if(bgObject == null)
+            if(textObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: false, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
-                bgObject.Visible = false;
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: false, Font: "BI_SEOutlined", Blend: FG_BLEND_TYPE);
-                textObject.Visible = false;
+                textObject = new TextAPI.TextPackage(TEXTAPI_TEXT_LENGTH, backgroundTexture: BG_MATERIAL);
+                textObject.HideWithHUD = !Main.Config.TextAlwaysVisible.Value;
+                textObject.Scale = Main.Config.TextAPIScale.Value;
             }
 
             //bgObject.Visible = true;
             //textObject.Visible = true;
 
             #region Update text and count lines
-            StringBuilder msg = textObject.Message;
+            StringBuilder msg = textObject.Text.Message;
             msg.Clear().EnsureCapacity(msg.Length + textSB.Length);
             lines = 0;
 
@@ -452,7 +452,7 @@ namespace Digi.BuildInfo.Features
                     lines++;
             }
 
-            textObject.Flush();
+            textObject.Text.Flush();
             #endregion Update text and count lines
 
             Vector2D textPos = Vector2D.Zero;
@@ -460,7 +460,7 @@ namespace Digi.BuildInfo.Features
 
             // calculate text size if it wasn't inputted
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
-                textSize = textObject.GetTextLength();
+                textSize = textObject.Text.GetTextLength();
 
             if(Main.QuickMenu.Shown) // in the menu
             {
@@ -515,8 +515,8 @@ namespace Digi.BuildInfo.Features
                 textOffset = new Vector2D(0, 0); // top-left pivot
             }
 
-            textObject.Origin = textPos;
-            textObject.Offset = textOffset;
+            textObject.Text.Origin = textPos;
+            textObject.Text.Offset = textOffset;
 
 #if false // disabled blockinfo-attached GUI
             if(showMenu || selectedBlock == null)
@@ -538,11 +538,11 @@ namespace Digi.BuildInfo.Features
 
                 float edge = BG_EDGE * Main.Config.TextAPIScale.Value;
 
-                bgObject.BillBoardColor = color;
-                bgObject.Origin = textPos;
-                bgObject.Width = (float)Math.Abs(textSize.X) + edge;
-                bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
-                bgObject.Offset = textOffset + (textSize / 2);
+                textObject.Background.BillBoardColor = color;
+                textObject.Background.Origin = textPos;
+                textObject.Background.Width = (float)Math.Abs(textSize.X) + edge;
+                textObject.Background.Height = (float)Math.Abs(textSize.Y) + edge;
+                textObject.Background.Offset = textOffset + (textSize / 2);
             }
 
             textShown = true;
@@ -4376,17 +4376,7 @@ namespace Digi.BuildInfo.Features
             if(textObject != null)
             {
                 textObject.Scale = Main.Config.TextAPIScale.Value;
-
-                if(Main.Config.TextAlwaysVisible.Value)
-                {
-                    textObject.Options &= ~HudAPIv2.Options.HideHud;
-                    bgObject.Options &= ~HudAPIv2.Options.HideHud;
-                }
-                else
-                {
-                    textObject.Options |= HudAPIv2.Options.HideHud;
-                    bgObject.Options |= HudAPIv2.Options.HideHud;
-                }
+                textObject.HideWithHUD = !Main.Config.TextAlwaysVisible.Value;
             }
 
             if(redraw)
