@@ -41,11 +41,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             IMyProgrammableBlock pb = (IMyProgrammableBlock)item.Block;
 
-            if(Processor.AnimFlip && !pb.Enabled)
-            {
-                Processor.AppendSingleStats(sb, item.Block);
-            }
-            else
+            if(!Processor.AppendSingleStats(sb, item.Block))
             {
                 if(string.IsNullOrEmpty(pb.ProgramData))
                 {

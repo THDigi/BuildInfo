@@ -39,7 +39,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Processor.AppendSingleStats(sb, item.Block);
 
-            if(!Processor.AnimFlip && piston.Velocity == 0)
+            if(piston.Velocity == 0)
                 sb.Append("No Vel\n");
 
             sb.Append((int)(travelRatio * 100)).Append("%");
@@ -105,9 +105,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 travelAverage += travelRatio;
             }
 
-            Processor.AppendGroupStats(sb, broken, off);
+            bool shownWarnings = Processor.AppendGroupStats(sb, broken, off);
 
-            if(!Processor.AnimFlip && !allCanMove)
+            if(!shownWarnings && !allCanMove)
                 sb.Append("No Vel\n");
 
             if(travelAverage > 0)
