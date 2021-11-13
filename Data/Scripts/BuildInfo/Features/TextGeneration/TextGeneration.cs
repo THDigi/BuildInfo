@@ -1653,25 +1653,28 @@ namespace Digi.BuildInfo.Features
                     int conveyors = (data.ConveyorPorts?.Count ?? 0);
                     int interactiveConveyors = (data.InteractableConveyorPorts?.Count ?? 0);
 
-                    AddLine();
-
+                    bool hasCustomLogic = false; // (data.Has & BlockHas.CustomLogic) != 0;
+                    bool hasTerminal = (data.Has & BlockHas.Terminal) != 0;
+                    bool hasPhysicalTerminal = (data.Has & BlockHas.PhysicalTerminalAccess) != 0;
                     bool hasConveyorPorts = (data.Has & BlockHas.ConveyorSupport) != 0 && (conveyors > 0 || interactiveConveyors > 0);
-                    if(hasConveyorPorts)
-                    {
-                        GetLine().Color(COLOR_CONVEYORPORTS).Label("Conveyor ports").Append(conveyors + interactiveConveyors).ResetFormatting().Separator(); // separator because next thing shows up regardless
-                    }
-
                     //bool hasInventory = (data.Has & BlockHas.Inventory) != 0;
 
-                    if((data.Has & BlockHas.Terminal) != 0)
-                        GetLine().Color(COLOR_GOOD).Append("Terminal").ResetFormatting();
-                    else
-                        GetLine().Append("No terminal");
+                    StringBuilder line = AddLine();
 
-                    if((data.Has & BlockHas.TerminalAndInventoryAccess) != 0)
-                        GetLine().Separator().Color(COLOR_GOOD).Append("Terminal/inventory access");
+                    if(hasTerminal)
+                        line.Append("Terminal");
                     else
-                        GetLine().Separator().Color(COLOR_WARNING).Append("No terminal/inventory access");
+                        line.Append("No terminal");
+
+                    if(hasPhysicalTerminal)
+                        line.Separator().Color(COLOR_GOOD).Append("Physical terminal");
+                    else if(!hasCustomLogic)
+                        line.Separator().Color(hasTerminal ? COLOR_WARNING : COLOR_NORMAL).Append("No physical terminal");
+
+                    if(hasConveyorPorts)
+                    {
+                        line.Separator().Color(COLOR_CONVEYORPORTS).Label("Conveyor ports").Append(conveyors + interactiveConveyors).ResetFormatting();
+                    }
 
                     // HACK: weird conveyor support mention
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
@@ -1679,6 +1682,11 @@ namespace Digi.BuildInfo.Features
                         if(hasConveyorPorts && def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
                             AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
                     }
+
+                    //if(hasCustomLogic)
+                    //{
+                    //    AddLine().Append("NOTE: Block has custom logic from a mod, its behavior could be different or could not.");
+                    //}
                 }
             }
             #endregion Conveyor/interactibles count
@@ -4121,7 +4129,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().PowerFormat(mw);
 
-                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(mw > 0 && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
                     GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }

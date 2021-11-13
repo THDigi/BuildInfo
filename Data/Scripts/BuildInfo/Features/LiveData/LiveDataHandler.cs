@@ -24,6 +24,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         readonly Cache DefaultCache = new Cache();
 
+        readonly BData_Base SlimBlockData = new BData_Base();
+
         public class Cache
         {
             public BData_Base Data;
@@ -74,6 +76,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public T Get<T>(MyCubeBlockDefinition def, Cache cache = null) where T : BData_Base
         {
+            if(typeof(T) == typeof(BData_Base) && string.IsNullOrEmpty(def.Model))
+                return (T)SlimBlockData;
+
             T data = null;
 
             if(cache == null)

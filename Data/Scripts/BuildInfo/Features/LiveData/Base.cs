@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
+using Sandbox.Game.Components;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.Components;
+using VRage.Game.Entity.UseObject;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRageMath;
@@ -68,18 +71,21 @@ namespace Digi.BuildInfo.Features.LiveData
         /// <summary>
         /// Block model has interactive access to terminal/inventory
         /// </summary>
-        TerminalAndInventoryAccess = (1 << 3),
+        PhysicalTerminalAccess = (1 << 3),
 
         /// <summary>
         /// Block has detector_ownership in the model which enables ownership support (but rather buggy, especially if it's not present in construction model).
         /// </summary>
         OwnershipDetector = (1 << 4),
+
+        /// <summary>
+        /// Block has custom useobjects or custom gamelogic.
+        /// </summary>
+        //CustomLogic = (1 << 5),
     }
 
     public class BData_Base
     {
-        //public List<MyTuple<string, Matrix>> Dummies;
-
         public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
         public List<ConveyorInfo> InteractableConveyorPorts;
@@ -98,6 +104,7 @@ namespace Digi.BuildInfo.Features.LiveData
             ComputeUpgrades(block);
             ComputeHas(block);
             ComputeDummies(block, def);
+            //ComputeUseObjects(block, def);
 
             bool isValid = IsValid(block, def);
 
@@ -204,7 +211,7 @@ namespace Digi.BuildInfo.Features.LiveData
                             InteractableConveyorPorts = new List<ConveyorInfo>();
 
                         InteractableConveyorPorts.Add(new ConveyorInfo(matrix, flags));
-                        Has |= BlockHas.TerminalAndInventoryAccess;
+                        Has |= BlockHas.PhysicalTerminalAccess;
                     }
                 }
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
@@ -222,7 +229,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     else
                         Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
 
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("inventory")
                      || detectorType.EqualsIgnoreCase("vendingMachine") // excluding vendingMachineBuy/vendingMachineNext/vendingMachinePrevious; clicking this one just opens terminal
@@ -238,27 +245,27 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("door"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("block")) // medical room/survival kit heal
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Recharge\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("contract"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Contracts\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("store"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Store\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("ATM"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Transactions\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 // from here only interactive things that can't open terminal
                 else if(detectorType.EqualsIgnoreCase("cockpit")
@@ -308,6 +315,58 @@ namespace Digi.BuildInfo.Features.LiveData
             }
 
             dummies.Clear();
+        }
+
+        void ComputeUseObjects(IMyCubeBlock block, MyCubeBlockDefinition def)
+        {
+#if false
+            // block has 2+ gamelogic components
+            if(block.GameLogic is MyCompositeGameLogicComponent)
+            {
+                Has |= BlockHas.CustomLogic;
+                return;
+            }
+
+            if(block.GameLogic != null)
+            {
+                // HACK: not very reliable but it'll do
+                string classFullName = block.GameLogic.GetType().FullName;
+                bool vanillaUseObject = classFullName.StartsWith("SpaceEngineers.") || classFullName.StartsWith("Sandbox.") || classFullName.StartsWith("VRage.");
+
+                if(!vanillaUseObject)
+                {
+                    Has |= BlockHas.CustomLogic;
+                    return;
+                }
+            }
+
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
+            MyUseObjectsComponentBase comp = internalBlock.UseObjectsComponent;
+            if(comp != null)
+            {
+                List<IMyUseObject> useObjects = BuildInfoMod.Instance.Caches.UseObjects;
+                useObjects.Clear();
+                comp.GetInteractiveObjects(useObjects);
+
+                if(useObjects.Count > 0)
+                {
+                    foreach(IMyUseObject useObject in useObjects)
+                    {
+                        // HACK: not very reliable but it'll do
+                        string classFullName = useObject.GetType().FullName;
+                        bool vanillaUseObject = classFullName.StartsWith("SpaceEngineers.") || classFullName.StartsWith("Sandbox.") || classFullName.StartsWith("VRage.");
+
+                        if(!vanillaUseObject)
+                        {
+                            Has |= BlockHas.CustomLogic;
+                            break;
+                        }
+                    }
+
+                    useObjects.Clear();
+                }
+            }
+#endif
         }
 
         static StringSegment GetNextSection(string text, ref int startIndex)

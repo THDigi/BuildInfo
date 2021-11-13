@@ -4,6 +4,7 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.Entity.UseObject;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
@@ -13,6 +14,7 @@ namespace Digi.BuildInfo.Utilities
     public class Caches : ModComponent
     {
         public readonly Dictionary<string, IMyModelDummy> Dummies = new Dictionary<string, IMyModelDummy>();
+        public readonly List<IMyUseObject> UseObjects = new List<IMyUseObject>();
         public readonly HashSet<Vector3I> Vector3ISet = new HashSet<Vector3I>(Vector3I.Comparer);
         public readonly StringBuilder WordWrapTempSB = new StringBuilder(512);
         public readonly StringBuilder StatusTempSB = new StringBuilder(512);
