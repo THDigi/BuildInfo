@@ -358,7 +358,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             }
                             else if(BuildInfoMod.IsDevMod)
                             {
-                                Log.Error($"{(item.GroupName == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
+                                Log.Error($"[DEV] {(item.GroupName == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
                             }
 
                             sb.AppendStringBuilder(StatusSB);

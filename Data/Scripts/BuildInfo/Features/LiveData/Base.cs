@@ -266,26 +266,28 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Entrance", colorInteractiveOnly));
                 }
-                //else if(detectorType.EqualsIgnoreCase("wardrobe")
-                //     || detectorType.EqualsIgnoreCase("ladder")
-                //     || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
-                //     || detectorType.EqualsIgnoreCase("panel") // button panel
-                //     || detectorType.EqualsIgnoreCase("jukeboxNext")
-                //     || detectorType.EqualsIgnoreCase("jukeboxPrevious")
-                //     || detectorType.EqualsIgnoreCase("jukeboxPause")
-                //     || detectorType.EqualsIgnoreCase("vendingMachineBuy")
-                //     || detectorType.EqualsIgnoreCase("vendingMachineNext")
-                //     || detectorType.EqualsIgnoreCase("vendingMachinePrevious"))
-                //{
-                //    Interactive.Add(new InteractionInfo(matrix, "Stuff...", colorInteractiveOnly));
-                //}
-                //else
-                //{
-                //    if(Dummies == null)
-                //        Dummies = new List<MyTuple<string, Matrix>>();
-                //
-                //    Dummies.Add(new MyTuple<string, Matrix>(dummy.Name, matrix));
-                //}
+                else if(detectorType.EqualsIgnoreCase("wardrobe")
+                     || detectorType.EqualsIgnoreCase("ladder")
+                     || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
+                     || detectorType.EqualsIgnoreCase("jukeboxNext")
+                     || detectorType.EqualsIgnoreCase("jukeboxPrevious")
+                     || detectorType.EqualsIgnoreCase("jukeboxPause")
+                     || detectorType.EqualsIgnoreCase("vendingMachineBuy")
+                     || detectorType.EqualsIgnoreCase("vendingMachineNext")
+                     || detectorType.EqualsIgnoreCase("vendingMachinePrevious")
+                     || detectorType.EqualsIgnoreCase("connector")
+                     || detectorType.EqualsIgnoreCase("shiptool")
+                     || detectorType.EqualsIgnoreCase("merge")
+                     || detectorType.EqualsIgnoreCase("collector")
+                     || detectorType.EqualsIgnoreCase("ladder")
+                     || detectorPtr.StartsWithCaseInsensitive("panel_button"))
+                {
+                    // nothing, just ignoring known dummies so I can find new ones
+                }
+                else if(BuildInfoMod.IsDevMod)
+                {
+                    Log.Info($"[DEV] Model for {def.Id.ToString()} has unknown dummy '{name}'.");
+                }
             }
 
             if(ConveyorPorts != null)

@@ -161,7 +161,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(constraint.Description != vanillaTooltip)
             {
                 if(BuildInfoMod.IsDevMod)
-                    Log.Info($"Tooltips.Inventories: '{def.Id}' has customized {(input ? "input" : "output")} tooltip, ignoring. Tooltip: '{constraint.Description}'");
+                    Log.Info($"[DEV] Tooltips.Inventories: '{def.Id}' has customized {(input ? "input" : "output")} tooltip, ignoring. Tooltip: '{constraint.Description}'");
 
                 return;
             }
@@ -242,7 +242,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(types.Count == 0)
             {
                 if(BuildInfoMod.IsDevMod)
-                    Log.Info($"Tooltips.Inventories: '{def.Id}' has no types, ignoring. icon='{constraint.Icon}'");
+                    Log.Info($"[DEV] Tooltips.Inventories: '{def.Id}' has no types, ignoring. icon='{constraint.Icon}'");
 
                 return;
             }

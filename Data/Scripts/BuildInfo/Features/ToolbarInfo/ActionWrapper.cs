@@ -214,7 +214,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(setting != null)
                 mode = setting.ValueEnum;
             else if(BuildInfoMod.IsDevMod)
-                Log.Error($"Config is null in {GetType().Name}.{nameof(UpdateIcon)} for actionId={Action.Id}; icon={OriginalIcon}");
+                Log.Error($"[DEV] Config is null in {GetType().Name}.{nameof(UpdateIcon)} for actionId={Action.Id}; icon={OriginalIcon}");
 
             switch(mode)
             {
@@ -234,7 +234,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     case "Attach": return Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds");
                     case "Detach": return Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds");
 
-                    default: Log.Info($"Warning: Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
+                    default: Log.Info($"Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
                 }
 
                 return null;
@@ -258,7 +258,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 default:
                     if(BuildInfoMod.IsDevMod)
-                        Log.Info($"Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
+                        Log.Info($"[DEV] Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
                     return null;
 
                 case "OnOff_On": return Utils.GetModFullPath(@"Textures\ActionIcons\TurnOn.dds");
