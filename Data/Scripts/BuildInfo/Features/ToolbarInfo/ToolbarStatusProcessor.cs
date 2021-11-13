@@ -288,7 +288,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     {
                         StatusSB.Clear();
 
-                        if(item.GroupName == null)
+                        if(item.GroupId == null)
                         {
                             StatusDel func = StatusOverrides.GetValueOrDefault(item.Block.BlockDefinition.TypeId, null)?.GetValueOrDefault(item.ActionId, null);
                             if(func != null)
@@ -305,7 +305,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         {
                             GroupDataToken.Grid = item.Block.CubeGrid;
                             GroupDataToken.Group = item.Group;
-                            GroupDataToken.GroupName = item.GroupName;
+                            GroupDataToken.GroupName = item.GroupId;
 
                             try
                             {
@@ -358,7 +358,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             }
                             else if(BuildInfoMod.IsDevMod)
                             {
-                                Log.Error($"[DEV] {(item.GroupName == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
+                                Log.Error($"[DEV] {(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
                             }
 
                             sb.AppendStringBuilder(StatusSB);
@@ -366,7 +366,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     }
                     catch(Exception e)
                     {
-                        Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupName}\n{e.ToString()}");
+                        Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupId}\n{e.ToString()}");
                         sb.Clear().Append("ERROR!\nSeeMod\nLog");
                         overrideStatus = true;
                     }

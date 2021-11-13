@@ -9,6 +9,7 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
 using VRage.Utils;
@@ -21,18 +22,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public readonly int Index;
         public readonly StringBuilder StatusSB = new StringBuilder(64);
 
+        public string OriginalName;
+        public string DisplayName;
+        public string CustomLabel;
+
         public ActionWrapper ActionWrapper;
         public string ActionId;
         public string ActionName;
 
-        public string GroupName;
+        public string GroupId;
         public IMyBlockGroup Group;
-
-        public string CustomLabel;
 
         public long BlockEntId;
         public IMyTerminalBlock Block;
-        public string Name;
 
         public string PBArgument;
 
@@ -144,11 +146,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 ToolbarItem slot = Slots[index];
                 slot.BlockEntId = 0;
                 slot.Block = null;
-                slot.Name = null;
+                slot.OriginalName = null;
+                slot.DisplayName = null;
                 slot.ActionWrapper = null;
                 slot.ActionId = null;
                 slot.ActionName = null;
-                slot.GroupName = null;
+                slot.GroupId = null;
                 slot.Group = null;
                 slot.PBArgument = null;
                 slot.SlotOB = default(MyObjectBuilder_Toolbar.Slot);
@@ -257,7 +260,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             }
                         }
 
-                        slotData.GroupName = groupItem.GroupName;
+                        slotData.GroupId = groupItem.GroupName;
+                        slotData.OriginalName = groupItem.GroupName;
                     }
                     else
                     {
@@ -292,7 +296,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(itemDef.DefinitionId);
                         if(def != null)
                         {
-                            slotData.Name = def.DisplayNameText;
+                            slotData.OriginalName = def.DisplayNameText;
+                            slotData.DisplayName = slotData.CustomLabel ?? slotData.OriginalName;
                         }
                     }
                 }
@@ -465,6 +470,94 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             PagePerCockpit.Remove(ent.EntityId);
             GamepadPagePerCockpit.Remove(ent.EntityId);
+        }
+
+        readonly HashSet<string> Tags = new HashSet<string>();
+
+        public string ComputeShortName(string name, IMyCubeGrid grid)
+        {
+            if(name == null || grid == null)
+                return name;
+
+            const int MinSizeTag = 2;
+
+            #region remove grid name prefix from the block names
+            string gridName = grid.CustomName;
+            if(!string.IsNullOrWhiteSpace(gridName) && name.Length > gridName.Length && gridName.Length >= MinSizeTag && name.StartsWith(gridName))
+            {
+                // find first letter/number after the grid name, assuming there's some kind of separator.
+                const int MaxSizeSeparator = 4; // let's say a " -- " separator as worst case
+                for(int i = gridName.Length; i < Math.Min(gridName.Length + MaxSizeSeparator, name.Length); i++)
+                {
+                    char c = name[i];
+                    if(char.IsLetterOrDigit(c))
+                    {
+                        return name.Substring(i);
+                    }
+                }
+
+                // otherwise just find first non-whitespace character
+                for(int i = gridName.Length; i < name.Length; i++)
+                {
+                    char c = name[i];
+                    if(!char.IsWhiteSpace(c))
+                    {
+                        return name.Substring(i);
+                    }
+                }
+            }
+            #endregion
+
+            #region find a prefix pattern on all slots
+            Tags.Clear();
+
+            const int MinNameForTag = 5;
+            const int MinFinalLength = 5;
+
+            // find similar prefixes in other slot names
+            for(int slotIdx = 0; slotIdx < HighestIndexUsed; slotIdx++)
+            {
+                ToolbarItem slot = Slots[slotIdx];
+                string slotName = slot.OriginalName;
+                if(string.IsNullOrWhiteSpace(slotName) || slotName.Length < MinNameForTag)
+                    continue;
+
+                if(slotName == name)
+                    continue;
+
+                int shortestLen = Math.Min(name.Length, slotName.Length);
+                for(int i = 0; i < shortestLen; i++)
+                {
+                    if(name[i] != slotName[i])
+                    {
+                        if(i >= MinSizeTag)
+                            Tags.Add(name.Substring(0, i));
+
+                        break;
+                    }
+                }
+            }
+
+            string modifiedName = null;
+
+            foreach(string tag in Tags)
+            {
+                char lastTagChar = tag[tag.Length - 1];
+                if(char.IsWhiteSpace(lastTagChar) || char.IsSymbol(lastTagChar))
+                {
+                    int finalLength = name.Length - tag.Length;
+                    if(finalLength >= MinFinalLength)
+                    {
+                        modifiedName = name.Substring(tag.Length);
+                        break;
+                    }
+                }
+            }
+
+            name = modifiedName ?? name;
+            #endregion
+
+            return name;
         }
     }
 }

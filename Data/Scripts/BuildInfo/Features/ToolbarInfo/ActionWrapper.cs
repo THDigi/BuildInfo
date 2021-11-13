@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage;
 using VRage.Game.ModAPI;
+using VRage.Utils;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {
@@ -32,37 +36,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Action.Writer = CustomWriter;
 
-            // HACK: sometimes an action name is so badly named that it needs changing in the game too...
-            if(action.Id == "Braking")
-                action.Name.Clear().Append("Can Brake On/Off");
-
-            switch(Action.Id)
-            {
-                default: DisplayName = Action.Name.ToString(); break;
-
-                    // TODO: rename some actions for toolbar info?
-                    //case "OnOff": DisplayName = "On/Off"; break;
-                    //case "OnOff_On": DisplayName = "Turn On"; break;
-                    //case "OnOff_Off": DisplayName = "Turn Off"; break;
-
-                    //case "ShowOnHUD": DisplayName = "Toggle on HUD"; break;
-                    //case "ShowOnHUD_On": DisplayName = "Show on HUD"; break;
-                    //case "ShowOnHUD_Off": DisplayName = "Hide from HUD"; break;
-
-                    //case "Shoot": DisplayName = "Shoot On/Off"; break;
-                    //case "Shoot_On": DisplayName = "Start shooting"; break;
-                    //case "Shoot_Off": DisplayName = "Stop shooting"; break;
-
-                    //case "Open": DisplayName = "Open/Close"; break;
-                    //case "Open_On": DisplayName = "Open"; break;
-                    //case "Open_Off": DisplayName = "Close"; break;
-
-                    //case "AutoDeploy": DisplayName = "Toggle Auto-Deploy"; break;
-
-                    //case "UseConveyor": DisplayName = "Toggle Use Conveyor"; break;
-
-                    //case "RunWithDefaultArgument": DisplayName = "Run (no args)"; break;
-            }
+            EditActionName(action);
+            DisplayName = Action.Name.ToString();
         }
 
         void NewWriter(IMyTerminalBlock block, StringBuilder sb)
@@ -119,71 +94,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(toolbarItem.ActionWrapper == null)
                 {
                     toolbarItem.ActionWrapper = this;
-                    toolbarItem.ActionName = DisplayName;
                     toolbarItem.Block = block;
-
-                    if(toolbarItem.CustomLabel == null)
-                        toolbarItem.Name = block.CustomName;
-                    else
-                        toolbarItem.Name = "<ERROR Should See CustomLabel>"; // required non-null to simplify checks in other classes
+                    toolbarItem.OriginalName = toolbarItem.CustomLabel ?? toolbarItem.GroupId ?? block.CustomName;
+                    toolbarItem.ActionName = GetCustomActionName(Action, block) ?? DisplayName;
 
                     if(ToolbarMonitor.DebugLogging)
-                        Log.Info($" ^-- filled data for slot #{toolbarItem.Index.ToString()}; name={toolbarItem.Name}");
-
-                    // customized action names depending on block+action.
-
-                    if(block is IMyShipGrinder)
-                    {
-                        switch(Action.Id)
-                        {
-                            case "OnOff": toolbarItem.ActionName = "Grind On/Off"; break;
-                            case "OnOff_On": toolbarItem.ActionName = "Start grinding"; break;
-                            case "OnOff_Off": toolbarItem.ActionName = "Stop grinding"; break;
-                        }
-                    }
-
-                    if(block is IMyShipWelder)
-                    {
-                        switch(Action.Id)
-                        {
-                            case "OnOff": toolbarItem.ActionName = "Weld On/Off"; break;
-                            case "OnOff_On": toolbarItem.ActionName = "Start welding"; break;
-                            case "OnOff_Off": toolbarItem.ActionName = "Stop welding"; break;
-                        }
-                    }
-
-                    if(block is IMyShipDrill)
-                    {
-                        switch(Action.Id)
-                        {
-                            case "OnOff": toolbarItem.ActionName = "Drill On/Off"; break;
-                            case "OnOff_On": toolbarItem.ActionName = "Start drilling"; break;
-                            case "OnOff_Off": toolbarItem.ActionName = "Stop drilling"; break;
-                        }
-                    }
-
-                    if(block is IMyRemoteControl)
-                    {
-                        switch(Action.Id)
-                        {
-                            case "Forward": toolbarItem.ActionName = "Set Direction Forward"; break;
-                            case "Backward": toolbarItem.ActionName = "Set Direction Backward"; break;
-                            case "Left": toolbarItem.ActionName = "Set Direction Left"; break;
-                            case "Right": toolbarItem.ActionName = "Set Direction Right"; break;
-                            case "Up": toolbarItem.ActionName = "Set Direction Up"; break;
-                            case "Down": toolbarItem.ActionName = "Set Direction Down"; break;
-                        }
-                    }
-
-                    //if(block is IMyParachute)
-                    //{
-                    //    switch(Action.Id)
-                    //    {
-                    //        case "Open": toolbarItem.ActionName = "Deploy/Close"; break;
-                    //        case "Open_On": toolbarItem.ActionName = "Deploy"; break;
-                    //        case "Open_Off": toolbarItem.ActionName = "Close"; break;
-                    //    }
-                    //}
+                        Log.Info($" ^-- filled data for slot #{toolbarItem.Index.ToString()}; name={toolbarItem.OriginalName}");
                 }
 
                 sb.AppendStringBuilder(toolbarItem.StatusSB);
@@ -222,6 +138,137 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case ActionIconsMode.Original: Action.Icon = OriginalIcon; break;
                 case ActionIconsMode.Custom: Action.Icon = CustomIcon; break;
             }
+        }
+
+        static string GetDirectionTranslated(string direction)
+        {
+            switch(direction)
+            {
+                case "Forward": return MyTexts.GetString("Thrust_Forward");
+                case "Backward": return MyTexts.GetString("Thrust_Back");
+                case "Left": return MyTexts.GetString("Thrust_Left");
+                case "Right": return MyTexts.GetString("Thrust_Right");
+                case "Up": return MyTexts.GetString("Thrust_Up");
+                case "Down": return MyTexts.GetString("Thrust_Down");
+                default: return direction;
+            }
+        }
+
+        // HACK: edit the action's name everywhere, for the cases where the original name is so bad...
+        static void EditActionName(IMyTerminalAction action)
+        {
+            switch(action.Id)
+            {
+                case "Braking":
+                    action.Name.Clear().Append("Can Brake On/Off");
+                    break;
+
+                case "Forward":
+                case "Backward":
+                case "Left":
+                case "Right":
+                case "Up":
+                case "Down":
+                {
+                    string label = MyTexts.GetString("BlockPropertyTitle_ForwardDirection") ?? "Forward Direction";
+                    string dirName = GetDirectionTranslated(action.Id);
+
+                    StringBuilder sb = action.Name.Clear();
+                    sb.EnsureCapacity(label.Length + 2 + dirName.Length);
+                    sb.Append(label).Append(": ").Append(dirName);
+                    break;
+                }
+            }
+        }
+
+        // only used to rename actions in toolbar info box, does not change the action itself.
+        static string GetCustomActionName(IMyTerminalAction action, IMyTerminalBlock block)
+        {
+            if(block is IMyRemoteControl)
+            {
+                switch(action.Id)
+                {
+                    case "Forward":
+                    case "Backward":
+                    case "Left":
+                    case "Right":
+                    case "Up":
+                    case "Down":
+                    {
+                        string label = MyTexts.GetString("BlockPropertyTitle_ForwardDirection") ?? "Forward Direction";
+                        string dirName = GetDirectionTranslated(action.Id);
+                        return $"{label}: {dirName}";
+                    }
+                }
+            }
+
+            if(block is IMyShipGrinder)
+            {
+                switch(action.Id)
+                {
+                    case "OnOff": return "Grind On/Off";
+                    case "OnOff_On": return "Start grinding";
+                    case "OnOff_Off": return "Stop grinding";
+                }
+            }
+
+            if(block is IMyShipWelder)
+            {
+                switch(action.Id)
+                {
+                    case "OnOff": return "Weld On/Off";
+                    case "OnOff_On": return "Start welding";
+                    case "OnOff_Off": return "Stop welding";
+                }
+            }
+
+            if(block is IMyShipDrill)
+            {
+                switch(action.Id)
+                {
+                    case "OnOff": return "Drill On/Off";
+                    case "OnOff_On": return "Start drilling";
+                    case "OnOff_Off": return "Stop drilling";
+                }
+            }
+
+            //if(block is IMyParachute)
+            //{
+            //    switch(action.Id)
+            //    {
+            //        case "Open": return "Toggle Deploy";
+            //        case "Open_On": return "Deploy";
+            //        case "Open_Off": return "Close";
+            //    }
+            //}
+
+            // applies to all blocks
+            //switch(action.Id)
+            //{
+            //    case "OnOff": return "On/Off";
+            //    case "OnOff_On": return "Turn On";
+            //    case "OnOff_Off": return "Turn Off";
+
+            //    case "ShowOnHUD": return "Show/Hide on HUD";
+            //    case "ShowOnHUD_On": return "Show on HUD";
+            //    case "ShowOnHUD_Off": return "Hide from HUD";
+
+            //    case "Shoot": return "Toggle Shoot";
+            //    case "Shoot_On": return "Start shooting";
+            //    case "Shoot_Off": return "Stop shooting";
+
+            //    case "Open": return "Toggle Open";
+            //    case "Open_On": return "Open";
+            //    case "Open_Off": return "Close";
+
+            //    case "AutoDeploy": return "Toggle Auto-Deploy";
+
+            //    case "UseConveyor": return "Toggle Use Conveyor";
+
+            //    case "RunWithDefaultArgument": return "Run (no args)";
+            //}
+
+            return null;
         }
 
         static string GetCustomActionIcon(IMyTerminalAction action)

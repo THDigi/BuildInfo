@@ -577,7 +577,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 int index = startIndex + i;
                 ToolbarItem item = slots[index];
-                if(item.Name == null)
+
+                // process display name after all slots have been computed
+                if(item.DisplayName == null && item.OriginalName != null && item.Block != null)
+                {
+                    item.DisplayName = Main.ToolbarMonitor.ComputeShortName(item.OriginalName, item.Block?.CubeGrid);
+                }
+
+                if(item.DisplayName == null)
                     sb.ColorA(Color.Gray * opacity);
 
                 if(gamepadHUD)
@@ -585,7 +592,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 else
                     sb.Append(i + 1).Append(". ");
 
-                if(item.Name == null)
+                if(item.DisplayName == null)
                 {
                     sb.Append("—").NewCleanLine();
                     continue;
@@ -600,49 +607,30 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     else
                     {
                         if(NamesMode == ToolbarNameMode.AlwaysShow
-                        || (NamesMode == ToolbarNameMode.GroupsOnly && item.GroupName != null)
+                        || (NamesMode == ToolbarNameMode.GroupsOnly && item.GroupId != null)
                         || (NamesMode == ToolbarNameMode.InMenuOnly && InToolbarConfig))
                         {
-                            if(item.GroupName != null)
+                            if(item.GroupId != null)
                                 sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
 
                             int maxNameLength = (item.PBArgument != null ? MaxBlockNameLengthIfPbArg : MaxBlockNameLength);
-                            string blockName = item.GroupName ?? item.Name;
-                            int blockNameLen = blockName.Length;
-                            if(blockNameLen > maxNameLength)
-                                sb.Append("...").Append(blockName, blockNameLen - maxNameLength, maxNameLength);
-                            else
-                                sb.Append(blockName);
+                            sb.AppendMaxLength(item.DisplayName, maxNameLength).ResetFormatting();
 
-                            if(item.GroupName != null)
-                                sb.Append('*'); // .ResetFormatting();
+                            if(item.GroupId != null)
+                                sb.Append('*');
 
                             sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
                         }
 
-                        string actionName = item.ActionName;
-                        int actionNameLen = actionName.Length;
-                        if(actionNameLen > MaxActionNameLength)
-                            sb.Append(actionName, 0, MaxActionNameLength).Append("...");
-                        else
-                            sb.Append(actionName);
+                        sb.AppendMaxLength(item.ActionName, MaxActionNameLength);
 
                         if(item.PBArgument != null)
                         {
-                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity);
-
-                            string arg = item.PBArgument;
-                            int argLen = arg.Length;
-                            if(argLen > MaxArgLength)
-                                sb.Append(arg, 0, MaxArgLength).Append("...");
-                            else
-                                sb.Append(arg);
-
-                            sb.ResetFormatting();
+                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity).AppendMaxLength(item.PBArgument, MaxArgLength).ResetFormatting();
                         }
                     }
                 }
-                else if(item.Name != null)
+                else if(item.DisplayName != null)
                 {
                     bool isWeaponSlot = (item.SlotOB.Data is MyObjectBuilder_ToolbarItemWeapon);
 
@@ -652,18 +640,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         sb.ColorA(new Color(200, 210, 215) * opacity);
 
                     if(item.SlotOB.Data is MyObjectBuilder_ToolbarItemEmote || item.SlotOB.Data is MyObjectBuilder_ToolbarItemAnimation)
-                    {
                         sb.Append("Emote - ");
-                    }
 
-                    string name = item.CustomLabel ?? item.Name;
-                    int nameLen = name.Length;
-                    if(nameLen > MaxBlockNameLength)
-                        sb.Append("...").Append(name, nameLen - MaxBlockNameLength, MaxBlockNameLength);
-                    else
-                        sb.Append(name);
-
-                    sb.ResetFormatting();
+                    sb.AppendMaxLength(item.DisplayName, MaxBlockNameLength).ResetFormatting();
                 }
 
                 if(i == 1)
