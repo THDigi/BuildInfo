@@ -60,6 +60,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public const string CustomStatusTag = "c";
         public const int CustomTagPrefixSpaces = 8;
+        public const int CustomTagPrefixSpacesNoActionIcons = 13;
 
         public bool AnimFlip { get; private set; }
 
@@ -347,7 +348,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                             if(emptyLines > 0)
                             {
-                                sb.Append(' ', CustomTagPrefixSpaces).Append(CustomStatusTag).Append('\n', TotalLines - lines);
+                                if(Main.Config.ToolbarActionIcons.ValueEnum == Config.ActionIconsMode.Hidden)
+                                    sb.Append(' ', CustomTagPrefixSpacesNoActionIcons);
+                                else
+                                    sb.Append(' ', CustomTagPrefixSpaces);
+
+                                sb.Append(CustomStatusTag);
+                                sb.Append('\n', TotalLines - lines);
                             }
                             else if(BuildInfoMod.IsDevMod)
                             {

@@ -99,4 +99,11 @@ namespace Digi.BuildInfo.Features.Config
         SingleList = 0,
         TwoColumns = 1,
     }
+
+    public enum ActionIconsMode
+    {
+        Original = 0,
+        Custom = 1,
+        Hidden = 2,
+    }
 }

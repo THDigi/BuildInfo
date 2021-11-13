@@ -65,6 +65,7 @@ namespace Digi.BuildInfo.Features.Config
         public Vector2DSetting ToolbarLabelsOffsetForInvBar;
 
         public BoolSetting ToolbarActionStatus;
+        public EnumSetting<ActionIconsMode> ToolbarActionIcons;
 
         public BoolSetting EventToolbarInfo;
         public Vector2DSetting EventToolbarInfoPosition;
@@ -506,6 +507,17 @@ namespace Digi.BuildInfo.Features.Config
                 "This is independent of the ToolbarInfo or EventToolbar features."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
+
+            ToolbarActionIcons = new EnumSetting<ActionIconsMode>(Handler, "Toolbar: Action Icons", ActionIconsMode.Custom, new string[]
+            {
+                "The blocks in toolbars with actions (on/off, run, etc) have little icons top-right of the block icon to indicate the icon.",
+                "These icons are often very generic and sometimes misleading, this setting aims to fix that to better recognize different actions.",
+                "NOTE: changing this during gameplay does not refresh them right away, a world rejoin would be required for that.",
+                "This is independent of the ToolbarInfo or EventToolbar features."
+            });
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Custom, "override with new distinct icons.");
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Hidden, "hides all action icons.");
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Original, "doesn't touch the action icons.");
 
             EventToolbarInfo = new BoolSetting(Handler, "Toolbar: EventToolbarInfo", true,
                 "Blocks that have an event toolbar (like sensors, airvents, etc) don't have any representation on what the slots do.",

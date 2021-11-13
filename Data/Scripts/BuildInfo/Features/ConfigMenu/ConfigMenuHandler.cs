@@ -225,6 +225,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             AddSpacer(Category_Toolbar);
 
             SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarActionIcons, execOnCycle: (v) => MyAPIGateway.Utilities.ShowNotification($"NOTE: Toolbar action icons can't be refreshed in real time, you'll need to rejoin world.", 3000, FontsHandler.YellowSh));
             #endregion
 
             #region Terminal
@@ -632,7 +633,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null)
+        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, Action<bool> callOnSet = null)
         {
             ItemToggle item = new ItemToggle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
@@ -641,6 +642,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     setting.Value = v;
                     UpdateTextBox(redraw: false);
                     setGroupInteractable?.SetInteractable(setting.Value);
+                    callOnSet?.Invoke(v);
                 },
                 defaultValue: setting.DefaultValue);
 
