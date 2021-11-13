@@ -244,7 +244,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!action.Icon.StartsWith(@"Textures\GUI\Icons\Actions\", StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            // affect multiple actions
+            #region replace by id prefix
             if(action.Id.StartsWith("Increase"))
                 return Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds");
 
@@ -253,14 +253,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(action.Id.StartsWith("Reset"))
                 return Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
+            #endregion
 
+            #region replace by action id
             switch(action.Id)
             {
-                default:
-                    if(BuildInfoMod.IsDevMod)
-                        Log.Info($"[DEV] Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
-                    return null;
-
                 case "OnOff_On": return Utils.GetModFullPath(@"Textures\ActionIcons\TurnOn.dds");
                 case "OnOff_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TurnOff.dds");
                 case "OnOff": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleEnabled.dds");
@@ -498,6 +495,38 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Down":
                     return null;
             }
+            #endregion
+
+            #region replace by icon path
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Decrease.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Reset.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Reverse.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Reverse.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Toggle.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\GenericToggle.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SwitchOn.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\GenericOn.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SwitchOff.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\GenericOff.dds");
+            #endregion
+
+            if(BuildInfoMod.IsDevMod)
+                Log.Info($"[DEV] Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
+
+            return null;
         }
     }
 }
