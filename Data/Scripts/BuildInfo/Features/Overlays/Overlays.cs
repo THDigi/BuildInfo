@@ -136,11 +136,16 @@ namespace Digi.BuildInfo.Features.Overlays
                 Vector4 color = new Vector4(2f, 0, 0, 0.1f); // above 1 color creates bloom
 
                 MyShipControllerDefinition shipCtrlDef = (MyShipControllerDefinition)shipController.SlimBlock.BlockDefinition;
-                MatrixD m = shipController.WorldMatrix;
-                m.Translation = Vector3D.Transform(shipCtrlDef.RaycastOffset, m);
 
-                MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, color, m.Translation, (Vector3)m.Forward, ReachDistance, 0.005f, blendType: BlendType);
-                MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, color, m.Translation + m.Forward * ReachDistance, 0.015f, 0f, blendType: BlendType);
+                // only show laser when it's offset from view
+                if(!Vector3.IsZero(shipCtrlDef.RaycastOffset, 0.01f))
+                {
+                    MatrixD m = shipController.WorldMatrix;
+                    m.Translation = Vector3D.Transform(shipCtrlDef.RaycastOffset, m);
+
+                    MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, color, m.Translation, (Vector3)m.Forward, ReachDistance, 0.005f, blendType: BlendType);
+                    MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, color, m.Translation + m.Forward * ReachDistance, 0.015f, 0f, blendType: BlendType);
+                }
             }
         }
 
