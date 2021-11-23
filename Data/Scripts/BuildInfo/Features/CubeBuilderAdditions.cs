@@ -127,13 +127,11 @@ namespace Digi.BuildInfo.Features
             }
 
             // TODO: compute mirrored selections too?
-            // TODO: expand selection (preferably white) when holding ctrl or shift to show what will be painted?
-            // TODO: include area-paint info in message?
 
             if(showMessage && !Main.IsPaused)
             {
                 string name = null;
-                IMyTerminalBlock tb = aimedBlock?.FatBlock as IMyTerminalBlock;
+                IMyTerminalBlock tb = aimedBlock.FatBlock as IMyTerminalBlock;
 
                 if(tb != null)
                     name = tb.CustomName;
@@ -161,8 +159,9 @@ namespace Digi.BuildInfo.Features
             {
                 MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
 
-                float lineWidth = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
-                double inflate = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03);
+                bool isLarge = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+                float lineWidth = (isLarge ? 0.02f : 0.016f);
+                double inflate = (isLarge ? 0.1 : 0.03);
 
                 Main.OverrideToolSelectionDraw.GetBlockModelBB(aimedBlock, BlockSelectInfo, inflate);
 
