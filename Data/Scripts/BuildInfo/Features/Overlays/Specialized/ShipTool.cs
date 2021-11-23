@@ -11,7 +11,10 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class ShipTool : SpecializedOverlayBase
     {
         static Color Color = Color.Lime;
-        static Color ColorFace = Color * OverlayAlpha;
+        static Color ColorLines = Color * LaserOverlayAlpha;
+
+        const int LineEveryDeg = RoundedQualityLow;
+        const float LineThickness = 0.03f;
 
         public ShipTool(SpecializedOverlays processor) : base(processor)
         {
@@ -25,15 +28,12 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
-            const int wireDivRatio = 20;
-            const float lineThickness = 0.03f;
-
             MyShipToolDefinition toolDef = (MyShipToolDefinition)def;
             Vector3 sensorCenter = data.DummyMatrix.Translation + data.DummyMatrix.Forward * toolDef.SensorOffset;
             drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
             float radius = toolDef.SensorRadius;
 
-            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref ColorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: MaterialLaser, blendType: BlendType);
+            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
 
             if(drawInstance.LabelRender.CanDrawLabel())
             {

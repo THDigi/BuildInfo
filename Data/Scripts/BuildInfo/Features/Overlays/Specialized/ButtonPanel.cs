@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class ButtonPanel : SpecializedOverlayBase
     {
         Color Color = new Color(20, 255, 100);
-        Color ColorFace = new Color(20, 255, 100) * OverlayAlpha;
+        Color ColorLines = new Color(20, 255, 100) * SolidOverlayAlpha;
 
         public ButtonPanel(SpecializedOverlays processor) : base(processor)
         {
@@ -31,7 +31,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 {
                     MatrixD matrix = buttonInfo.LocalMatrix * drawMatrix;
 
-                    MySimpleObjectDraw.DrawTransparentBox(ref matrix, ref OverlayDrawInstance.UnitBB, ref ColorFace, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.01f, lineMaterial: MaterialLaser, blendType: BlendType);
+                    MySimpleObjectDraw.DrawTransparentBox(ref matrix, ref OverlayDrawInstance.UnitBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.01f, lineMaterial: MaterialLaser, blendType: BlendType);
 
                     if(drawLabel)
                     {

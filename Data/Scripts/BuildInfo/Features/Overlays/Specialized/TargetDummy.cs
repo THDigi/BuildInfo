@@ -11,8 +11,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class TargetDummy : SpecializedOverlayBase
     {
-        Color ColorCrit = new Color(255, 180, 55);
-        Color ColorLimb = new Color(55, 100, 155);
+        Vector4 ColorCrit = new Color(255, 180, 55);
+        Vector4 ColorLimb = new Color(55, 100, 155);
+        const float PointRadius = 0.05f;
 
         public TargetDummy(SpecializedOverlays processor) : base(processor)
         {
@@ -39,9 +40,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     BData_TargetDummy.SubpartInfo subpartInfo = kv.Value;
                     MatrixD matrix = subpartInfo.LocalMatrix * drawMatrix;
 
-                    Color color = (subpartInfo.IsCritical ? ColorCrit : ColorLimb);
-
-                    MyTransparentGeometry.AddPointBillboard(MaterialDot, color, matrix.Translation, 0.05f, 0, blendType: BlendType);
+                    Vector4 color = (subpartInfo.IsCritical ? ColorCrit : ColorLimb);
+                    MyTransparentGeometry.AddPointBillboard(MaterialDot, color, matrix.Translation, PointRadius, 0, blendType: BlendType);
 
                     if(drawLabel)
                     {

@@ -20,15 +20,18 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class Weapon : SpecializedOverlayBase
     {
         Color ColorAccuracy = new Color(255, 155, 0);
+        const float AccLineThick = 0.01f;
+        const int AccuracyConeLinePerDeg = RoundedQualityMed;
 
         Vector4 ColorBarrel = Vector4.One; // white
         Vector4 ColorFlash = new Vector4(10, 10, 10, 1); // just like hand rifle
 
-        Color ColorPitch = (Color.Red * 0.3f).ToVector4();
+        Color ColorPitch = (Color.Red * SolidOverlayAlpha).ToVector4();
         Vector4 ColorPitchLine = Color.Red.ToVector4();
-
-        Color ColorYaw = (Color.Lime * 0.25f).ToVector4();
+        Color ColorYaw = (Color.Lime * SolidOverlayAlpha).ToVector4();
         Vector4 ColorYawLine = Color.Lime.ToVector4();
+        const int LimitsLineEveryDegrees = RoundedQualityHigh;
+        const float LimitsLineThick = 0.03f;
 
         Color ColorCamera = new Color(55, 155, 255);
 
@@ -98,9 +101,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MuzzleData md = data.Muzzles[0];
                 MatrixD accMatrix = (muzzleEntity != null ? md.MatrixForSubpart : md.MatrixForBlock) * barrelMatrix;
 
-                const float AccLineThick = 0.01f;
-                const int ConeWireDivideRatio = 36;
-
                 float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
                 float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
                 float projectileMaxTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Max;
@@ -110,7 +110,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 {
                     float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
                     float radiusAtMaxRange = tanShotAngle * projectileMaxTravel;
-                    Utils.DrawTransparentCone(ref accMatrix, radiusAtMaxRange, projectileMaxTravel, ref ColorAccuracy, MySimpleObjectRasterizer.Solid, ConeWireDivideRatio, lineThickness: AccLineThick, material: MaterialSquare, blendType: BlendType);
+                    Utils.DrawTransparentCone(ref accMatrix, radiusAtMaxRange, projectileMaxTravel, ref ColorAccuracy, MySimpleObjectRasterizer.Solid, (360 / AccuracyConeLinePerDeg), lineThickness: AccLineThick, material: MaterialSquare, blendType: BlendType);
 
                     //var colorAtMinRange = Color.Lime.ToVector4();
                     //var radiusAtMinRange = tanShotAngle * projectileMinTravel;
@@ -166,8 +166,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             bool isTurret = (turretDef != null && data.Turret != null);
             if(isTurret)
             {
-                const int LineEveryDegrees = 15;
-                const float lineThick = 0.03f;
                 float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
 
                 int minPitch = turretDef.MinElevationDegrees; // this one is actually not capped in game for whatever reason
@@ -198,8 +196,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                     Vector3D firstOuterRimVec, lastOuterRimVec;
                     drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                        ref pitchMatrix, radius, minPitch, maxPitch, LineEveryDegrees,
-                        ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, lineThick, BlendType);
+                        ref pitchMatrix, radius, minPitch, maxPitch, LimitsLineEveryDegrees,
+                        ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
 
                     if(canDrawLabel)
                     {
@@ -216,8 +214,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                     Vector3D firstOuterRimVec, lastOuterRimVec;
                     drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                        ref yawMatrix, radius, minYaw, maxYaw, LineEveryDegrees,
-                        ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, lineThick, BlendType);
+                        ref yawMatrix, radius, minYaw, maxYaw, LimitsLineEveryDegrees,
+                        ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
 
                     if(canDrawLabel)
                     {

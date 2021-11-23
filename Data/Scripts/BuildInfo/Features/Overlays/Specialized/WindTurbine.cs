@@ -14,9 +14,11 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
         static readonly Color MaxColor = Color.YellowGreen;
         static readonly Vector4 MinLineColorVec = MinColor.ToVector4();
         static readonly Vector4 MaxLineColorVec = MaxColor.ToVector4();
-        static readonly Vector4 MinColorVec = (MinColor * 0.45f).ToVector4();
-        static readonly Vector4 MaxColorVec = (MaxColor * 0.45f).ToVector4();
+        static readonly Vector4 MinColorVec = (MinColor * SolidOverlayAlpha).ToVector4();
+        static readonly Vector4 MaxColorVec = (MaxColor * SolidOverlayAlpha).ToVector4();
         static readonly Vector4 TriangleColor = MinColorVec.ToLinearRGB(); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
+
+        const int LineEveryDeg = RoundedQualityHigh;
 
         public WindTurbine(SpecializedOverlays processor) : base(processor)
         {
@@ -47,7 +49,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             Vector3D previous = Vector3D.Zero;
             Vector3D previousInner = Vector3D.Zero;
 
-            const int wireDivideRatio = 360 / 5;
+            const int wireDivideRatio = 360 / LineEveryDeg;
             const float stepDeg = 360f / wireDivideRatio;
 
             for(int i = 0; i <= wireDivideRatio; i++)

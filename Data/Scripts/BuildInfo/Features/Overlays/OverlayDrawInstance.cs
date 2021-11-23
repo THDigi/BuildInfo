@@ -682,7 +682,7 @@ namespace Digi.BuildInfo.Features.Overlays
            Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
            BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
-            const int wireDivRatio = (360 / 5); // quality
+            int wireDivRatio = (360 / lineEveryDegrees); // quality
 
             Vector3D center = worldMatrix.Translation;
             Vector3D normal = worldMatrix.Forward;

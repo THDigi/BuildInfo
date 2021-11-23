@@ -12,7 +12,10 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class Thruster : SpecializedOverlayBase
     {
         static Color Color = Color.Red;
-        static Color ColorFace = Color;
+        static Color ColorLines = Color * LaserOverlayAlpha;
+
+        const int LineEveryDeg = RoundedQualityLow;
+        const float LineThickness = 0.02f;
 
         public Thruster(SpecializedOverlays processor) : base(processor)
         {
@@ -25,8 +28,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
-            const int wireDivideRatio = 20;
-            const float lineThickness = 0.02f;
             MatrixD capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
             bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
@@ -36,7 +37,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
 
                 float paddedRadius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
-                Utils.DrawTransparentCapsule(ref capsuleMatrix, paddedRadius, flame.CapsuleLength, ref ColorFace, MySimpleObjectRasterizer.Wireframe, wireDivideRatio, lineThickness: lineThickness, material: MaterialLaser, blendType: BlendType);
+                Utils.DrawTransparentCapsule(ref capsuleMatrix, paddedRadius, flame.CapsuleLength, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
 
                 if(drawLabel)
                 {

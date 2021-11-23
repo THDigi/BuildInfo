@@ -8,9 +8,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class ConveyorSorter : SpecializedOverlayBase
     {
-        Color Color = new Color(20, 255, 100);
-        Color ColorFace = new Color(20, 255, 100) * OverlayAlpha;
-
         public ConveyorSorter(SpecializedOverlays processor) : base(processor)
         {
             //Add(typeof(MyObjectBuilder_ConveyorSorter)); // also used by WeaponCore

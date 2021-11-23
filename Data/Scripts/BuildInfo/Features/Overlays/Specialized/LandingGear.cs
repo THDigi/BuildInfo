@@ -10,7 +10,10 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class LandingGear : SpecializedOverlayBase
     {
         static Color Color = new Color(20, 255, 155);
-        static Color ColorFace = Color * OverlayAlpha;
+        static Color ColorLines = Color * LaserOverlayAlpha;
+
+        const int SubdivideBox = 1;
+        const float LineWidth = 0.03f;
 
         public LandingGear(SpecializedOverlays processor) : base(processor)
         {
@@ -32,7 +35,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 m.Translation = obb.Center;
                 m *= drawMatrix;
 
-                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref ColorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: MaterialLaser, blendType: BlendType);
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (1 + SubdivideBox), LineWidth, MaterialSquare, MaterialLaser, blendType: BlendType);
 
                 if(drawLabel)
                 {

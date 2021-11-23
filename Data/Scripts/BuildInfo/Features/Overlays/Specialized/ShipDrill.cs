@@ -12,13 +12,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class ShipDrill : SpecializedOverlayBase
     {
         static Color ColorSensorText = Color.Gray;
-        static Color ColorSensorFace = ColorSensorText * OverlayAlpha;
+        static Color ColorSensorLines = ColorSensorText * LaserOverlayAlpha;
 
         static Color ColorMineText = Color.Lime;
-        static Color ColorMineFace = ColorMineText * OverlayAlpha;
+        static Color ColorMineLines = ColorMineText * LaserOverlayAlpha;
 
         static Color ColorCarveText = Color.Red;
-        static Color ColorCarveFace = ColorCarveText * OverlayAlpha;
+        static Color ColorCarveLines = ColorCarveText * LaserOverlayAlpha;
+
+        const int LineEveryDeg = RoundedQualityLow;
+        float LineThickness = 0.03f;
 
         public ShipDrill(SpecializedOverlays processor) : base(processor)
         {
@@ -31,15 +34,13 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(drill == null)
                 return;
 
-            const int wireDivRatio = 20;
-            float lineThickness = 0.03f;
             bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
             #region Mining
             MatrixD mineMatrix = drawMatrix;
             mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
             float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
-            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref ColorMineFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: MaterialLaser, blendType: BlendType);
+            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref ColorMineLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
 
             if(drawLabel)
             {
@@ -52,7 +53,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             #region Carving
             MatrixD carveMatrix = mineMatrix;
             float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
-            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref ColorCarveFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: MaterialLaser, blendType: BlendType);
+            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref ColorCarveLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
 
             if(drawLabel)
             {
@@ -69,7 +70,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
             {
-                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref ColorSensorFace, MySimpleObjectRasterizer.Wireframe, wireDivRatio, lineThickness: lineThickness, material: MaterialLaser, blendType: BlendType);
+                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref ColorSensorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
             }
 
             if(drawLabel)

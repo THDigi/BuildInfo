@@ -13,11 +13,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class LaserAntenna : SpecializedOverlayBase
     {
-        Vector4 ColorPitch = (Color.Red * OverlayAlpha).ToVector4();
-        Vector4 ColorPitchLine = Color.Red.ToVector4();
+        Vector4 ColorPitch = (Color.Red * SolidOverlayAlpha).ToVector4();
+        Vector4 ColorPitchLine = (Color.Red * LaserOverlayAlpha).ToVector4();
+        Vector4 ColorYaw = (Color.Lime * SolidOverlayAlpha).ToVector4();
+        Vector4 ColorYawLine = (Color.Lime * LaserOverlayAlpha).ToVector4();
+        const int LimitsLineEveryDegrees = RoundedQualityHigh;
+        const float LimitsLineThick = 0.03f;
 
-        Vector4 ColorYaw = (Color.Lime * OverlayAlpha).ToVector4();
-        Vector4 ColorYawLine = Color.Lime.ToVector4();
+        Vector4 ColorLaser = (new Color(255, 155, 0) * 1f).ToVector4();
+        const float LaserThick = 0.02f;
+        const float LaserLength = 15f;
 
         public LaserAntenna(SpecializedOverlays processor) : base(processor)
         {
@@ -36,11 +41,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
 
-            const float LaserThick = 0.02f;
-            const float LaserLength = 15f;
-
-            const int LineEveryDegrees = 15;
-            const float LineThick = 0.03f;
             float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
 
             int minPitch = Math.Max(antennaDef.MinElevationDegrees, -90);
@@ -72,13 +72,12 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
 
                 // laser visualization
-                Color laserColor = new Color(255, 155, 0);
-                MyTransparentGeometry.AddLineBillboard(MaterialGradient, laserColor, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, BlendType);
+                MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLaser, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, BlendType);
 
                 if(canDrawLabel)
                 {
                     Vector3D labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
-                    drawInstance.LabelRender.DrawLineLabel(LabelType.Laser, labelPos, pitchMatrix.Up, laserColor, "Laser");
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.Laser, labelPos, pitchMatrix.Up, ColorLaser, "Laser");
                 }
 
                 // only yaw rotation but for cylinder
@@ -86,8 +85,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 Vector3D firstOuterRimVec, lastOuterRimVec;
                 drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                    ref pitchMatrix, radius, minPitch, maxPitch, LineEveryDegrees,
-                    ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LineThick, BlendType);
+                    ref pitchMatrix, radius, minPitch, maxPitch, LimitsLineEveryDegrees,
+                    ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
 
                 if(canDrawLabel)
                 {
@@ -103,8 +102,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 Vector3D firstOuterRimVec, lastOuterRimVec;
                 drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                    ref yawMatrix, radius, minYaw, maxYaw, LineEveryDegrees,
-                    ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LineThick, BlendType);
+                    ref yawMatrix, radius, minYaw, maxYaw, LimitsLineEveryDegrees,
+                    ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
 
                 if(canDrawLabel)
                 {

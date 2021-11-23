@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
     public class Collector : SpecializedOverlayBase
     {
         Color Color = new Color(20, 255, 100);
-        Color ColorFace = new Color(20, 255, 100) * OverlayAlpha;
+        Color ColorLines = new Color(20, 255, 100) * LaserOverlayAlpha;
 
         public Collector(SpecializedOverlays processor) : base(processor)
         {
@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             MatrixD m = data.boxLocalMatrix * drawMatrix;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref m, ref OverlayDrawInstance.UnitBB, ref ColorFace, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: MaterialLaser, blendType: BlendType);
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref OverlayDrawInstance.UnitBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: MaterialLaser, blendType: BlendType);
 
             if(drawInstance.LabelRender.CanDrawLabel())
             {
