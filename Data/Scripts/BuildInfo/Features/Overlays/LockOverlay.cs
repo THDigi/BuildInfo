@@ -45,22 +45,24 @@ namespace Digi.BuildInfo.Features.Overlays
             if(paused || inMenu)
                 return;
 
-            if(LockedOnBlock != null)
-            {
-                if(Main.Config.LockOverlayBind.Value.IsJustPressed())
-                    SetLockOnBlock(null);
-            }
-            else
+            if(Main.Config.LockOverlayBind.Value.IsJustPressed())
             {
                 EquipmentMonitor eq = Main.EquipmentMonitor;
-                if((eq.IsCubeBuilder || eq.IsAnyWelder || eq.IsAnyGrinder) && Main.Config.LockOverlayBind.Value.IsJustPressed())
+                IMySlimBlock aimed = eq.AimedBlock ?? eq.BuilderAimedBlock;
+                if(aimed != null && (eq.IsCubeBuilder || eq.IsAnyWelder || eq.IsAnyGrinder))
                 {
-                    IMySlimBlock aimed = eq.AimedBlock ?? eq.BuilderAimedBlock;
-
-                    if(aimed == null)
-                        SetNotification("Aim at a block with welder/grinder/builder first.", 2000, FontsHandler.RedSh);
+                    SetLockOnBlock(aimed);
+                }
+                else // not aiming at any block
+                {
+                    if(LockedOnBlock != null)
+                    {
+                        SetLockOnBlock(null);
+                    }
                     else
-                        SetLockOnBlock(aimed);
+                    {
+                        SetNotification("Aim at a block with welder/grinder/builder first.", 2000, FontsHandler.RedSh);
+                    }
                 }
             }
         }
