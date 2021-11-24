@@ -7,6 +7,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
@@ -243,6 +244,9 @@ namespace Digi.BuildInfo.Features
             if(freezeGizmoNotification == null)
                 freezeGizmoNotification = MyAPIGateway.Utilities.CreateNotification("");
 
+            if(!value)
+                Main.TextGeneration.LastGizmoPosition = null;
+
             freezeGizmoNotification.Hide(); // required since SE v1.194
 
             if(!Main.EquipmentMonitor.IsCubeBuilder)
@@ -263,7 +267,11 @@ namespace Digi.BuildInfo.Features
                 freezeGizmoNotification.Font = FontsHandler.WhiteSh;
 
                 if(value) // store the frozen position to check distance for auto-unfreeze
-                    MyCubeBuilder.Static.GetAddPosition(out Main.TextGeneration.lastGizmoPosition);
+                {
+                    Vector3D addPos;
+                    MyCubeBuilder.Static.GetAddPosition(out addPos);
+                    Main.TextGeneration.LastGizmoPosition = addPos;
+                }
             }
 
             if(showNotification)

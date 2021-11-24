@@ -108,7 +108,7 @@ namespace Digi.BuildInfo.Features
         private bool aimInfoNeedsUpdate = false;
         private GridSplitType willSplitGrid;
         private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
-        public Vector3D lastGizmoPosition;
+        public Vector3D? LastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
 
         private int gridMassComputeCooldown;
@@ -261,7 +261,7 @@ namespace Digi.BuildInfo.Features
                 LastDefId = default(MyDefinitionId);
 
             // turn off frozen block preview if camera is too far away from it
-            if(MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, lastGizmoPosition) > FREEZE_MAX_DISTANCE_SQ)
+            if(LastGizmoPosition.HasValue && MyAPIGateway.CubeBuilder.FreezeGizmo && Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, LastGizmoPosition.Value) > FREEZE_MAX_DISTANCE_SQ)
             {
                 Main.QuickMenu.SetFreezePlacement(false);
             }
