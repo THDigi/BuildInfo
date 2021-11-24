@@ -207,6 +207,13 @@ namespace Digi.BuildInfo.Systems
             if(!IsCubeBuilder)
                 return null;
 
+            // fixes FreezeGizmo causing GetAddAndRemovePositions() to throw "Nullable must have a value" in MyBlockBuilderBase.GetIntersectedBlockData().
+            if(!MyCubeBuilder.Static.HitInfo.HasValue)
+                return null;
+
+            //if(MyCubeBuilder.Static.FreezeGizmo)
+            //    return null;
+
             MyCubeGrid aimedGrid = MyCubeBuilder.Static.FindClosestGrid();
             MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
             if(def == null || aimedGrid == null || def.CubeSize != aimedGrid.GridSizeEnum)
