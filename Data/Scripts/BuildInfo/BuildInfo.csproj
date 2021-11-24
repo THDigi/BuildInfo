@@ -153,6 +153,8 @@
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
     <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
+    <Compile Include="Features\LiveData\Piston.cs" />
+    <Compile Include="Features\Overlays\Specialized\Piston.cs" />
     <Compile Include="Libraries\TextHudAPI\TextAPIFont.cs" />
     <Compile Include="Features\Overlays\LabelRendering.cs" />
     <Compile Include="Features\Overlays\Specialized\ButtonPanel.cs" />

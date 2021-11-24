@@ -113,6 +113,9 @@ namespace Digi.BuildInfo.Features.Overlays
                 #region compute drawMatrix
                 if(block != null)
                 {
+                    //drawMatrix = Utils.GetBlockCenteredWorldMatrix(block);
+                    // ^ inlined v
+
                     Matrix m;
                     Vector3D center;
                     block.Orientation.GetMatrix(out m);

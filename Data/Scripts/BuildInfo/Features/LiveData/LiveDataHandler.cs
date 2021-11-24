@@ -37,6 +37,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public LiveDataHandler(BuildInfoMod main) : base(main)
         {
+            // TODO move this into each class
             AddType<BData_Collector>(typeof(MyObjectBuilder_Collector));
 
             AddType<BData_ButtonPanel>(typeof(MyObjectBuilder_ButtonPanel));
@@ -47,6 +48,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipWelder));
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipGrinder));
+
+            AddType<BData_Piston>(typeof(MyObjectBuilder_PistonBase));
+            AddType<BData_Piston>(typeof(MyObjectBuilder_ExtendedPistonBase));
 
             AddType<BData_Thrust>(typeof(MyObjectBuilder_Thrust));
 

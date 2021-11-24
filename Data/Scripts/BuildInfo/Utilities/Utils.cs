@@ -85,6 +85,38 @@ namespace Digi.BuildInfo.Utilities
             return a - (b * (a.Dot(b) / b.LengthSquared()));
         }
 
+        public static MatrixD GetBlockCenteredWorldMatrix(IMySlimBlock block)
+        {
+            Matrix m;
+            Vector3D center;
+            block.Orientation.GetMatrix(out m);
+            block.ComputeWorldCenter(out center);
+
+            MatrixD wm = m * block.CubeGrid.WorldMatrix;
+            wm.Translation = center;
+            return wm;
+        }
+
+        public static IMyModelDummy GetDummy(IMyModel model, string name)
+        {
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
+            try
+            {
+                if(dummies.Count > 0)
+                {
+                    Log.Error("Dummies list already had some values in it!");
+                    dummies = new Dictionary<string, IMyModelDummy>();
+                }
+
+                model.GetDummies(dummies);
+                return dummies.GetValueOrDefault(name);
+            }
+            finally
+            {
+                dummies.Clear();
+            }
+        }
+
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.
@@ -418,8 +450,8 @@ namespace Digi.BuildInfo.Utilities
                 quad.Point2.X = cos;
                 quad.Point2.Z = sin;
 
-                quad.Point0.Y = 0f - halfHeight;
-                quad.Point1.Y = 0f - halfHeight;
+                quad.Point0.Y = -halfHeight;
+                quad.Point1.Y = -halfHeight;
                 quad.Point2.Y = halfHeight;
                 quad.Point3.Y = halfHeight;
 
@@ -440,6 +472,101 @@ namespace Digi.BuildInfo.Utilities
                 }
             }
             #endregion
+        }
+
+        public static void DrawTransparentCylinder(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId faceMaterial, MyStringId lineMaterial, float lineThickness = -1, int customViewProjection = -1, bool drawCaps = true, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
+            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+
+            Vector4 triangleColor = (drawCaps ? color.ToVector4().ToLinearRGB() : color.ToVector4()); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
+
+            Vector3D center = worldMatrix.Translation;
+            Vector3 normal = (Vector3)worldMatrix.Up;
+
+            double halfHeight = height * 0.5;
+            MyQuadD quad;
+
+            Vector3D topDir = worldMatrix.Up * halfHeight;
+            Vector3D centerTop = center + topDir;
+            Vector3D centerBottom = center - topDir;
+
+            double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
+            double angle = 0f;
+
+            Vector2 uv0 = new Vector2(0, 0.5f);
+            Vector2 uv1 = new Vector2(1, 0);
+            Vector2 uv2 = new Vector2(1, 1);
+
+            for(int k = 0; k < wireDivideRatio; k++)
+            {
+                angle = k * wireDivAngle;
+                double cos = (radius * Math.Cos(angle));
+                double sin = (radius * Math.Sin(angle));
+                quad.Point0.X = cos;
+                quad.Point0.Z = sin;
+                quad.Point3.X = cos;
+                quad.Point3.Z = sin;
+
+                angle = (k + 1) * wireDivAngle;
+                cos = (radius * Math.Cos(angle));
+                sin = (radius * Math.Sin(angle));
+                quad.Point1.X = cos;
+                quad.Point1.Z = sin;
+                quad.Point2.X = cos;
+                quad.Point2.Z = sin;
+
+                quad.Point0.Y = -halfHeight;
+                quad.Point1.Y = -halfHeight;
+                quad.Point2.Y = halfHeight;
+                quad.Point3.Y = halfHeight;
+
+                quad.Point0 = Vector3D.Transform(quad.Point0, worldMatrix);
+                quad.Point1 = Vector3D.Transform(quad.Point1, worldMatrix);
+                quad.Point2 = Vector3D.Transform(quad.Point2, worldMatrix);
+                quad.Point3 = Vector3D.Transform(quad.Point3, worldMatrix);
+
+                if(drawWireframe)
+                {
+                    // circle bottom
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+
+                    // vertical
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+
+                    // circle top
+                    MyTransparentGeometry.AddLineBillboard(lineMaterial, color, quad.Point3, (Vector3)(quad.Point2 - quad.Point3), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    MyTransparentGeometry.AddQuad(faceMaterial, ref quad, color, ref center, customViewProjection, blendType);
+                }
+
+                if(drawCaps)
+                {
+                    if(drawSolid)
+                    {
+                        // bottom cap
+                        MyTransparentGeometry.AddTriangleBillboard(centerBottom, quad.Point0, quad.Point1, normal, normal, normal, uv0, uv1, uv2, faceMaterial, 0, center, triangleColor, blendType);
+
+                        // top cap
+                        MyTransparentGeometry.AddTriangleBillboard(centerTop, quad.Point2, quad.Point3, normal, normal, normal, uv0, uv1, uv2, faceMaterial, 0, center, triangleColor, blendType);
+                    }
+
+                    if(drawWireframe)
+                    {
+                        // bottom
+                        MyTransparentGeometry.AddLineBillboard(lineMaterial, color, quad.Point0, (Vector3)(centerBottom - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+
+                        // top
+                        MyTransparentGeometry.AddLineBillboard(lineMaterial, color, quad.Point3, (Vector3)(centerTop - quad.Point3), 1f, lineThickness, blendType, customViewProjection);
+                    }
+                }
+            }
         }
 
         /// <summary>
