@@ -1019,11 +1019,51 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_InputPower(Sink);
 
+            IMyPistonBase piston = block as IMyPistonBase;
+            if(piston == null)
+                return;
+
+            MyPistonBaseDefinition def = block.SlimBlock.BlockDefinition as MyPistonBaseDefinition;
+            if(def == null)
+                return;
+
+            BData_Piston data = Main.LiveDataHandler.Get<BData_Piston>(def);
+            if(data != null)
+            {
+                MatrixD topMatrix = data.TopLocalMatrix * Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
+
+                float minAligned = GetNearestGridAligndLimit(block, topMatrix, def.Minimum, piston.MinLimit);
+                float maxAligned = GetNearestGridAligndLimit(block, topMatrix, def.Minimum, piston.MaxLimit);
+
+                info.Append("Nearest grid-aligned limits:\n");
+                info.Append("  Min: ").DistanceFormat(minAligned, 5).Append('\n');
+                info.Append("  Max: ").DistanceFormat(maxAligned, 5).Append('\n');
+            }
+
             if(Main.Config.InternalInfo.Value)
             {
-                IMyPistonBase piston = (IMyPistonBase)block;
                 info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).Append('\n');
             }
+        }
+
+        static float GetNearestGridAligndLimit(IMyTerminalBlock block, MatrixD topMatrix, float minLimit, float limit)
+        {
+            float nearest = 0;
+            float offset = 0;
+            Vector3D startVec = topMatrix.Translation + topMatrix.Up * minLimit;
+
+            do
+            {
+                Vector3D limitVec = topMatrix.Translation + topMatrix.Up * (limit + offset);
+                Vector3D alignedVec = block.CubeGrid.GridIntegerToWorld(block.CubeGrid.WorldToGridInteger(limitVec));
+
+                nearest = (float)Vector3D.Dot(topMatrix.Up, (alignedVec - startVec));
+
+                offset += block.CubeGrid.GridSize;
+            }
+            while(nearest < 0);
+
+            return nearest;
         }
 
         void Format_AirVent(IMyTerminalBlock block, StringBuilder info)
