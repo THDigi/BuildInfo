@@ -176,14 +176,18 @@ namespace Digi.BuildInfo.Features.Overlays
                 #region draw ModelOffset indicator
                 if(Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
                 {
-                    const float OffsetLineThickness = 0.005f;
-                    const float OffsetPointThickness = 0.05f;
                     Color color = new Color(255, 0, 255);
 
-                    Vector3D start = drawMatrix.Translation;
-                    Vector3 dir = Vector3.TransformNormal(def.ModelOffset, drawMatrix);
+                    MatrixD closeMatrix = drawMatrix;
+                    float depthMul = ConvertToAlwaysOnTop(ref closeMatrix);
 
-                    Vector3D offset = camMatrix.Right * LabelRendering.ShadowOffset.X + camMatrix.Up * LabelRendering.ShadowOffset.Y;
+                    float OffsetLineThickness = 0.005f * depthMul;
+                    float OffsetPointThickness = 0.05f * depthMul;
+
+                    Vector3D start = closeMatrix.Translation;
+                    Vector3 dir = Vector3.TransformNormal(def.ModelOffset, closeMatrix);
+
+                    Vector3D offset = (camMatrix.Right * LabelRendering.ShadowOffset.X + camMatrix.Up * LabelRendering.ShadowOffset.Y) * depthMul;
 
                     MyTransparentGeometry.AddLineBillboard(MaterialSquare, LabelRendering.ShadowColor, start + offset, dir, 1f, OffsetLineThickness, LabelRendering.ShadowBlendType);
                     MyTransparentGeometry.AddLineBillboard(MaterialSquare, color, start, dir, 1f, OffsetLineThickness, blendType: LabelRendering.TextBlendType);
@@ -192,7 +196,10 @@ namespace Digi.BuildInfo.Features.Overlays
                     MyTransparentGeometry.AddPointBillboard(MaterialDot, color, start + dir, OffsetPointThickness, 0, blendType: LabelRendering.TextBlendType);
 
                     if(LabelRender.CanDrawLabel())
+                    {
+                        dir = Vector3.TransformNormal(def.ModelOffset, drawMatrix);
                         LabelRender.DrawLineLabel(LabelType.ModelOffset, drawMatrix.Translation + dir, dir, color, "Center", 0);
+                    }
                 }
                 #endregion
 
@@ -204,7 +211,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     matrix.Translation = Vector3D.Zero; // (def.Center - (def.Size * 0.5f));
                     matrix = matrix * drawMatrix;
 
-                    bool alwaysOnTop = (mode == Overlays.ModeEnum.Ports);
+                    bool alwaysOnTop = true; // (mode == Overlays.ModeEnum.Ports);
 
                     if(Main.TextAPI.IsEnabled)
                     {
