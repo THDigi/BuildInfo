@@ -99,6 +99,12 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateDraw()
         {
+            if(!Main.ComponentsRegistered) throw new Exception("Mod did not finish registering yet!");
+            if(MyAPIGateway.Input == null) throw new Exception("MyAPiGateway.Input is null!");
+            if(Main.EquipmentMonitor == null) throw new Exception("Main.EquipmentMonitor is null!");
+            if(Main.GameConfig == null) throw new Exception("Main.GameConfig is null!");
+            if(Main.Config == null) throw new Exception("Main.Config is null!");
+
             // ignore drag-to-build/drag-to-remove
             if(MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION) || MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.SECONDARY_TOOL_ACTION))
                 return;
@@ -108,68 +114,92 @@ namespace Digi.BuildInfo.Features
                 return;
 
             bool showMessage = false;
-            if(!Main.IsPaused && Main.GameConfig.HudState != HudState.OFF)
+            try
             {
-                CubeBuilderSelectionInfo mode = Main.Config.CubeBuilderSelectionInfoMode.ValueEnum;
-
-                if(mode == CubeBuilderSelectionInfo.AlwaysOn)
-                    showMessage = true;
-
-                if(mode == CubeBuilderSelectionInfo.HudHints && Main.GameConfig.HudState == HudState.HINTS)
-                    showMessage = true;
-
-                if(mode == CubeBuilderSelectionInfo.HudHints || mode == CubeBuilderSelectionInfo.ShowOnPress)
+                if(!Main.IsPaused && Main.GameConfig.HudState != HudState.OFF)
                 {
-                    ControlContext context = (MyAPIGateway.Session.ControlledObject is IMyCharacter ? ControlContext.CHARACTER : ControlContext.VEHICLE);
-                    if(Main.Config.ShowCubeBuilderSelectionInfoBind.Value.IsPressed(context))
+                    CubeBuilderSelectionInfo mode = Main.Config.CubeBuilderSelectionInfoMode.ValueEnum;
+
+                    if(mode == CubeBuilderSelectionInfo.AlwaysOn)
                         showMessage = true;
+
+                    if(mode == CubeBuilderSelectionInfo.HudHints && Main.GameConfig.HudState == HudState.HINTS)
+                        showMessage = true;
+
+                    if(mode == CubeBuilderSelectionInfo.HudHints || mode == CubeBuilderSelectionInfo.ShowOnPress)
+                    {
+                        ControlContext context = (MyAPIGateway.Session.ControlledObject is IMyCharacter ? ControlContext.CHARACTER : ControlContext.VEHICLE);
+                        if(Main.Config.ShowCubeBuilderSelectionInfoBind.Value.IsPressed(context))
+                            showMessage = true;
+                    }
                 }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@ComputeShowMessage");
+                Log.Error(e);
             }
 
             // TODO: compute mirrored selections too?
 
-            if(showMessage && !Main.IsPaused)
+            try
             {
-                string name = null;
-                IMyTerminalBlock tb = aimedBlock.FatBlock as IMyTerminalBlock;
-
-                if(tb != null)
-                    name = tb.CustomName;
-
-                if(string.IsNullOrWhiteSpace(name))
-                    name = aimedBlock.BlockDefinition.DisplayNameText;
-
-                if(MyAPIGateway.Input.IsJoystickLastUsed)
+                if(showMessage && !Main.IsPaused)
                 {
-                    if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
-                        ShowText($"Selected for paint: [{name}]");
-                    else if(Utils.CreativeToolsEnabled)
-                        ShowText($"Selected for remove: [{name}]");
-                }
-                else
-                {
-                    if(Utils.CreativeToolsEnabled)
-                        ShowText($"Selected for paint/remove: [{name}]");
+                    string name = null;
+                    IMyTerminalBlock tb = aimedBlock.FatBlock as IMyTerminalBlock;
+
+                    if(tb != null)
+                        name = tb.CustomName;
+
+                    if(string.IsNullOrWhiteSpace(name))
+                        name = aimedBlock.BlockDefinition.DisplayNameText;
+
+                    if(MyAPIGateway.Input.IsJoystickLastUsed)
+                    {
+                        if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
+                            ShowText($"Selected for paint: [{name}]");
+                        else if(Utils.CreativeToolsEnabled)
+                            ShowText($"Selected for remove: [{name}]");
+                    }
                     else
-                        ShowText($"Selected for paint: [{name}]");
+                    {
+                        if(Utils.CreativeToolsEnabled)
+                            ShowText($"Selected for paint/remove: [{name}]");
+                        else
+                            ShowText($"Selected for paint: [{name}]");
+                    }
                 }
             }
-
-            if(Main.Config.OverrideToolSelectionDraw.Value)
+            catch(Exception e)
             {
-                MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@HudMessage");
+                Log.Error(e);
+            }
 
-                bool isLarge = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large);
-                float lineWidth = (isLarge ? 0.02f : 0.016f);
-                double inflate = (isLarge ? 0.1 : 0.03);
+            try
+            {
+                if(Main.Config.OverrideToolSelectionDraw.Value)
+                {
+                    MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
 
-                Main.OverrideToolSelectionDraw.GetBlockModelBB(aimedBlock, BlockSelectInfo, inflate);
+                    bool isLarge = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+                    float lineWidth = (isLarge ? 0.02f : 0.016f);
+                    double inflate = (isLarge ? 0.1 : 0.03);
 
-                if(BlockSelectInfo.ModelBB.HasValue)
-                    Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB.Value, new Color(255, 200, 55), lineWidth);
+                    Main.OverrideToolSelectionDraw.GetBlockModelBB(aimedBlock, BlockSelectInfo, inflate);
 
-                // always draw boundary when using cubebuilder
-                Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.BlockMatrix, BlockSelectInfo.Boundaries, new Color(100, 155, 255), lineWidth);
+                    if(BlockSelectInfo.ModelBB.HasValue)
+                        Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB.Value, new Color(255, 200, 55), lineWidth);
+
+                    // always draw boundary when using cubebuilder
+                    Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.BlockMatrix, BlockSelectInfo.Boundaries, new Color(100, 155, 255), lineWidth);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@OverrideToolSelectionDraw");
+                Log.Error(e);
             }
         }
 
