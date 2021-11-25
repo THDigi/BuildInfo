@@ -1791,18 +1791,17 @@ namespace Digi.BuildInfo.Features
             else if(def is MyAdvancedDoorDefinition)
                 grindRatio *= Hardcoded.AdvDoor_Closed_DisassembleRatioMultiplier;
 
-            string padding = (part ? (Main.TextAPI.IsEnabled ? "        | " : "       | ") : "");
-
+            string partPrefix = string.Empty;
             if(part)
+            {
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Label("Part").Append(def.DisplayNameText);
+                partPrefix = (Main.TextAPI.IsEnabled ? "<color=55,255,155>        | <reset>" : "       | ");
+            }
 
             #region Mass/size/build time/deconstruct time/no models
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
             {
-                AddLine();
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding);
+                AddLine().Append(partPrefix);
 
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
                 GetLine().Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator()
@@ -1819,12 +1818,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
-                AddLine();
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding).ResetFormatting();
-
-                GetLine().Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
+                AddLine().Append(partPrefix).Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
                 if(deformable)
                     GetLine().Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
@@ -1851,13 +1845,13 @@ namespace Digi.BuildInfo.Features
                 if(inv != null)
                     charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
 
-                AddLine().Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
+                AddLine().Append(partPrefix).Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(!def.IsStandAlone || !def.HasPhysics)
-                    AddLine();
+                    AddLine().Append(partPrefix);
 
                 if(!def.HasPhysics)
                 {
@@ -1876,10 +1870,7 @@ namespace Digi.BuildInfo.Features
             #region Airtightness
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
             {
-                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh)));
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding);
+                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh))).Append(partPrefix);
 
                 bool isDoor = (def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition);
                 bool sealsOnClose = false;
