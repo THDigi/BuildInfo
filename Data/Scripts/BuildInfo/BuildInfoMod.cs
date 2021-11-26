@@ -87,6 +87,7 @@ namespace Digi.BuildInfo
         public readonly EventToolbarInfo EventToolbarInfo;
         public readonly GridMassCompute GridMassCompute;
         public readonly PBMonitor PBMonitor;
+        public readonly TopPartColor TopPartColor;
         public readonly InterModAPI InterModAPI;
         public readonly DebugEvents DebugEvents;
         public readonly DebugLog DebugLog;
@@ -161,6 +162,7 @@ namespace Digi.BuildInfo
             EventToolbarInfo = new EventToolbarInfo(this);
             GridMassCompute = new GridMassCompute(this);
             PBMonitor = new PBMonitor(this);
+            TopPartColor = new TopPartColor(this);
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);

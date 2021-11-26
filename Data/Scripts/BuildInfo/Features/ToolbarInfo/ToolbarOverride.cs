@@ -15,6 +15,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     public class ToolbarOverride : ModComponent
     {
         public readonly Dictionary<IMyTerminalAction, ActionWrapper> ActionWrappers = new Dictionary<IMyTerminalAction, ActionWrapper>(16);
+
+        public event Action<ActionWrapper> ActionCollected;
+
         readonly Func<ITerminalAction, bool> CollectActionFunc;
         readonly Queue<QueuedActionGet> QueuedTypes = new Queue<QueuedActionGet>();
         HashSet<Type> CheckedTypes = new HashSet<Type>();
@@ -134,6 +137,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ActionWrapper wrapper = new ActionWrapper(action);
                 ActionWrappers.Add(action, wrapper);
+
+                ActionCollected?.Invoke(wrapper);
             }
 
             return false; // null list, never add to it.
