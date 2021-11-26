@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
-using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
@@ -17,7 +16,7 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             bool success = false;
 
-            // from MyPistonBase.LoadSubparts()
+            // from MyPistonBase.LoadSubparts() and MyPistonBase.GetTopGridMatrix()
             MyCubeBlock blockInternal = (MyCubeBlock)block;
             MyEntitySubpart subpart1 = blockInternal.Subparts?.GetValueOrDefault("PistonSubpart1");
             MyEntitySubpart subpart2 = subpart1?.Subparts?.GetValueOrDefault("PistonSubpart2");
@@ -33,6 +32,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 MatrixD subpartWM = subpart3.WorldMatrix;
                 subpartWM.Translation = Vector3D.Transform(topLocalPos, subpartWM);
                 TopLocalMatrix = subpartWM * blockCenteredMatrixInv;
+                success = true;
             }
 
             return base.IsValid(block, def) || success;

@@ -470,6 +470,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyGridJumpDriveSystem @ void Jump(Vector3D jumpTarget, long userId)
         public const float JumpDriveJumpDelay = 10f;
 
+        // from MyBlockBuilderRenderData.Transparency
+        public const float CubeBuilderTransparency = 0.25f;
+
         // from MyUseObjectsComponent.CreateInteractiveObject()
         public static bool DetectorIsOpenCloseDoor(string detectorName, IMyEntity entity)
         {

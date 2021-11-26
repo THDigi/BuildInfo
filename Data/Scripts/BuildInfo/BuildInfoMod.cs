@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.Terminal;
@@ -51,6 +52,7 @@ namespace Digi.BuildInfo
         public readonly Overlays Overlays;
         public readonly SpecializedOverlays SpecializedOverlays;
         public readonly LockOverlay LockOverlay;
+        public readonly ModelPreview ModelPreview;
         public readonly PickBlock PickBlock;
         public readonly QuickMenu QuickMenu;
         public readonly AnalyseShip AnalyseShip;
@@ -124,6 +126,7 @@ namespace Digi.BuildInfo
             Overlays = new Overlays(this);
             SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);
+            ModelPreview = new ModelPreview(this);
             LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);

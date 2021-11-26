@@ -19,6 +19,8 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
+        public event Action<Type, BData_Base> DataGenerated;
+
         Type ConveyorEndpointInterface = null;
         Type ConveyorSegmentInterface = null;
 
@@ -37,7 +39,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public LiveDataHandler(BuildInfoMod main) : base(main)
         {
-            // TODO move this into each class
             AddType<BData_Collector>(typeof(MyObjectBuilder_Collector));
 
             AddType<BData_ButtonPanel>(typeof(MyObjectBuilder_ButtonPanel));
@@ -51,6 +52,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Piston>(typeof(MyObjectBuilder_PistonBase));
             AddType<BData_Piston>(typeof(MyObjectBuilder_ExtendedPistonBase));
+
+            AddType<BData_Motor>(typeof(MyObjectBuilder_MotorStator));
+            AddType<BData_Motor>(typeof(MyObjectBuilder_MotorAdvancedStator));
+
+            AddType<BData_Suspension>(typeof(MyObjectBuilder_MotorSuspension));
+
+            AddType<BData_Wheel>(typeof(MyObjectBuilder_RealWheel));
+            AddType<BData_Wheel>(typeof(MyObjectBuilder_Wheel));
 
             AddType<BData_Thrust>(typeof(MyObjectBuilder_Thrust));
 
@@ -141,6 +150,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 // instance special type if available, otherwise the base one.
                 BData_Base data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
                 success = data.CheckAndAdd(block);
+
+                if(success)
+                    DataGenerated?.Invoke(defId.TypeId, data);
             }
 
             if(success && Main.TextGeneration != null)

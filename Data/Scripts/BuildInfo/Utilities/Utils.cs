@@ -117,6 +117,18 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
+        public static Dictionary<string, IMyModelDummy> GetDummies(IMyModel model)
+        {
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
+            if(dummies.Count > 0)
+            {
+                Log.Error("Dummies list already had some values in it!");
+                dummies = new Dictionary<string, IMyModelDummy>();
+            }
+            model.GetDummies(dummies);
+            return dummies;
+        }
+
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.

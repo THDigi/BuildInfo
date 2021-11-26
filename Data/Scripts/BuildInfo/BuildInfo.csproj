@@ -153,7 +153,15 @@
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
     <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
+    <Compile Include="Features\LiveData\Wheel.cs" />
+    <Compile Include="Features\LiveData\Motor.cs" />
+    <Compile Include="Features\LiveData\Suspension.cs" />
     <Compile Include="Features\LiveData\Piston.cs" />
+    <Compile Include="Features\ModelPreview\Blocks\Piston.cs" />
+    <Compile Include="Features\ModelPreview\Blocks\Suspension.cs" />
+    <Compile Include="Features\ModelPreview\Blocks\Motor.cs" />
+    <Compile Include="Features\ModelPreview\Blocks\PreviewBase.cs" />
+    <Compile Include="Features\ModelPreview\ModelPreview.cs" />
     <Compile Include="Features\Overlays\Specialized\Piston.cs" />
     <Compile Include="Libraries\TextHudAPI\TextAPIFont.cs" />
     <Compile Include="Features\Overlays\LabelRendering.cs" />
