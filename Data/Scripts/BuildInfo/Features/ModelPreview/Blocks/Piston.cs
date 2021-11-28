@@ -11,27 +11,27 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         MyPistonBaseDefinition PistonDef;
         BData_Piston Data;
 
-        protected override void Initialized()
+        protected override bool Initialized()
         {
-            base.Initialized();
-
+            bool baseReturn = base.Initialized();
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Piston>(BlockDef);
             PistonDef = BlockDef as MyPistonBaseDefinition;
             if(Data == null || PistonDef == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(PistonDef.TopPart);
             if(blockPair == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
             if(topDef == null)
-                return;
+                return baseReturn;
 
             TopPart = new PreviewEntityWrapper(topDef.Model);
             Valid = (TopPart != null);
+            return baseReturn || Valid;
         }
 
         protected override void Disposed()

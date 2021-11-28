@@ -5,12 +5,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public class InteriorTurret : MultiSubpartBase
     {
-        protected override void Initialized()
+        protected override bool Initialized()
         {
-            base.Initialized();
-
-            if(!HasParts)
-                return;
+            if(!base.Initialized())
+                return false;
 
             // find yaw and pitch subparts and rotate them properly
             foreach(PreviewEntityWrapper part in Parts)
@@ -34,6 +32,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                     break;
                 }
             }
+
+            return true;
         }
     }
 }

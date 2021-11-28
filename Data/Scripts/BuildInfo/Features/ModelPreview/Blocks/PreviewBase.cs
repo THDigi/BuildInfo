@@ -23,10 +23,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Main = BuildInfoMod.Instance;
         }
 
-        public void Setup(MyCubeBlockDefinition def)
+        public bool Setup(MyCubeBlockDefinition def)
         {
             BlockDef = def;
-            Initialized();
+            return Initialized();
         }
 
         public void Dispose()
@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             }
         }
 
-        protected abstract void Initialized();
+        protected abstract bool Initialized();
 
         protected abstract void Disposed();
 

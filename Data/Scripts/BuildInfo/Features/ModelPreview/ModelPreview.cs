@@ -54,14 +54,6 @@ namespace Digi.BuildInfo.Features.ModelPreview
         void RegisterType<T>(MyObjectBuilderType blockType) where T : PreviewInstanceBase, new() => PreviewFactory.Add(blockType, Instance<T>);
         static T Instance<T>() where T : PreviewInstanceBase, new() => new T();
 
-        void ConfigValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
-        {
-            if(newValue)
-                EquippedBlockChanged(Main.EquipmentMonitor?.BlockDef, Main.EquipmentMonitor?.AimedBlock);
-            else
-                EquippedBlockChanged(null, null);
-        }
-
         void EquippedBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             CurrentPreview?.Dispose();
@@ -71,31 +63,37 @@ namespace Digi.BuildInfo.Features.ModelPreview
             {
                 Func<PreviewInstanceBase> factory = PreviewFactory.GetValueOrDefault(def.Id.TypeId);
                 if(factory != null)
-                {
                     CurrentPreview = factory.Invoke();
-                    CurrentPreview.Setup(def);
-                }
                 else // if no specific type declared, use the fallback one
-                {
                     CurrentPreview = FallbackPreview;
-                    CurrentPreview.Setup(def);
+
+                if(!CurrentPreview.Setup(def))
+                {
+                    CurrentPreview.Dispose();
+                    CurrentPreview = null;
                 }
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CurrentPreview != null);
         }
 
+        void ConfigValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            if(newValue)
+                EquippedBlockChanged(Main.EquipmentMonitor?.BlockDef, Main.EquipmentMonitor?.AimedBlock);
+            else
+                EquippedBlockChanged(null, null);
+        }
+
         void LiveDataGenerated(Type type, BData_Base data)
         {
-            MyCubeBlockDefinition previewDef = CurrentPreview?.BlockDef;
-            if(previewDef != null)
+            MyCubeBlockDefinition heldDef = Main.EquipmentMonitor.BlockDef;
+            if(heldDef == null || !Main.EquipmentMonitor.IsCubeBuilder)
+                return;
+
+            if(heldDef.Id.TypeId == type || (heldDef is MyMotorSuspensionDefinition && data is BData_Wheel)) // HACK: catch wheel spawn... needs a better system.
             {
-                if((previewDef.Id.TypeId == type)
-                || (previewDef is MyMotorSuspensionDefinition && data is BData_Wheel)) // to catch wheel spawn... needs a better system.
-                {
-                    CurrentPreview.Dispose();
-                    CurrentPreview.Setup(previewDef);
-                }
+                EquippedBlockChanged(heldDef, null);
             }
         }
 

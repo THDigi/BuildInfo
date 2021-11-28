@@ -11,27 +11,27 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         MyMotorStatorDefinition MotorDef;
         BData_Motor Data;
 
-        protected override void Initialized()
+        protected override bool Initialized()
         {
-            base.Initialized();
-
+            bool baseReturn = base.Initialized();
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Motor>(BlockDef);
             MotorDef = BlockDef as MyMotorStatorDefinition;
             if(Data == null || MotorDef == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(MotorDef.TopPart);
             if(blockPair == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
             if(topDef == null)
-                return;
+                return baseReturn;
 
             TopPart = new PreviewEntityWrapper(topDef.Model);
             Valid = (TopPart != null);
+            return baseReturn || Valid;
         }
 
         protected override void Disposed()

@@ -11,14 +11,27 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         protected List<PreviewEntityWrapper> Parts;
         protected bool HideRootSubparts = true;
 
-        protected override void Initialized()
+        protected override bool Initialized()
         {
             HasParts = false;
             BaseData = Main.LiveDataHandler.Get<BData_Base>(BlockDef);
             if(BaseData == null || BaseData.Subparts == null || BaseData.Subparts.Count == 0)
-                return;
+                return false;
 
-            // only first layer, the next layers are automatically spawned by the game.
+            bool hasLayeredSubparts = false;
+            foreach(SubpartInfo info in BaseData.Subparts)
+            {
+                if(info.Subparts != null && info.Subparts.Count > 0)
+                {
+                    hasLayeredSubparts = true;
+                    break;
+                }
+            }
+
+            if(!hasLayeredSubparts)
+                return false;
+
+            // spawn only first layer, the next layers are automatically spawned by the game.
             Parts = new List<PreviewEntityWrapper>(BaseData.Subparts.Count);
             foreach(SubpartInfo info in BaseData.Subparts)
             {
@@ -26,6 +39,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             }
 
             HasParts = true;
+            return true;
         }
 
         protected override void Disposed()

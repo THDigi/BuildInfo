@@ -20,32 +20,32 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         static readonly float DefaultHeight = -9999; // new MyObjectBuilder_MotorSuspension().Height;
 
-        protected override void Initialized()
+        protected override bool Initialized()
         {
-            base.Initialized();
-
+            bool baseReturn = base.Initialized();
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Suspension>(BlockDef);
             SuspensionDef = BlockDef as MyMotorSuspensionDefinition;
             if(Data == null || SuspensionDef == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(SuspensionDef.TopPart);
             if(blockPair == null)
-                return;
+                return baseReturn;
 
             MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
             if(topDef == null)
-                return;
+                return baseReturn;
 
             WheelData = Main.LiveDataHandler.Get<BData_Wheel>(topDef);
             if(WheelData == null)
-                return;
+                return baseReturn;
 
             WheelPart = new PreviewEntityWrapper(topDef.Model);
             Valid = (WheelPart != null);
             RaycastOffset = 0;
+            return baseReturn || Valid;
         }
 
         protected override void Disposed()
