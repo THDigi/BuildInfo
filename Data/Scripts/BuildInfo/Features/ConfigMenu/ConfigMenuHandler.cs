@@ -178,6 +178,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
             SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
             SimpleToggle(Category_HUD, null, Main.Config.OverrideToolSelectionDraw);
+            SimpleToggle(Category_HUD, null, Main.Config.CubeBuilderDrawSubparts);
             SimpleEnumCycle(Category_HUD, null, Main.Config.CubeBuilderSelectionInfoMode);
             SimpleToggle(Category_HUD, null, Main.Config.UnderCrosshairMessages);
             AddSpacer(Category_HUD);

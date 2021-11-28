@@ -4,15 +4,17 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
-    public class Motor : PreviewInstanceBase
+    public class Motor : MultiSubpartBase
     {
         bool Valid;
-        PreviewEntityWrapper PreviewEntity;
+        PreviewEntityWrapper TopPart;
         MyMotorStatorDefinition MotorDef;
         BData_Motor Data;
 
         protected override void Initialized()
         {
+            base.Initialized();
+
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Motor>(BlockDef);
@@ -28,14 +30,16 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(topDef == null)
                 return;
 
-            PreviewEntity = new PreviewEntityWrapper(topDef.Model);
-            Valid = (PreviewEntity != null);
+            TopPart = new PreviewEntityWrapper(topDef.Model);
+            Valid = (TopPart != null);
         }
 
         protected override void Disposed()
         {
-            PreviewEntity?.Close();
-            PreviewEntity = null;
+            base.Disposed();
+
+            TopPart?.Close();
+            TopPart = null;
 
             MotorDef = null;
             Data = null;
@@ -43,6 +47,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public override void Update(ref MatrixD drawMatrix)
         {
+            base.Update(ref drawMatrix);
+
             if(!Valid)
                 return;
 
@@ -57,7 +63,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, displacement);
 
-            PreviewEntity.Update(ref topMatrix);
+            TopPart.Update(ref topMatrix);
         }
     }
 }

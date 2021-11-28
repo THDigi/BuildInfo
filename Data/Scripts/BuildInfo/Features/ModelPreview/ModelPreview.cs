@@ -6,9 +6,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
 
@@ -20,6 +18,9 @@ namespace Digi.BuildInfo.Features.ModelPreview
 
         PreviewInstanceBase CurrentPreview;
 
+        // used by all other blocks that don't have a specific preview class registered.
+        readonly MultiSubpartBase FallbackPreview = new MultiSubpartBase();
+
         public ModelPreview(BuildInfoMod main) : base(main)
         {
             RegisterType<Motor>(typeof(MyObjectBuilder_MotorStator));
@@ -29,12 +30,15 @@ namespace Digi.BuildInfo.Features.ModelPreview
 
             RegisterType<Piston>(typeof(MyObjectBuilder_ExtendedPistonBase));
             RegisterType<Piston>(typeof(MyObjectBuilder_PistonBase));
+
+            RegisterType<InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
         }
 
         public override void RegisterComponent()
         {
+            Main.Config.CubeBuilderDrawSubparts.ValueAssigned += ConfigValueAssigned;
             Main.EquipmentMonitor.BlockChanged += EquippedBlockChanged;
-            Main.LiveDataHandler.DataGenerated += LiveDataHandler_DataGenerated;
+            Main.LiveDataHandler.DataGenerated += LiveDataGenerated;
         }
 
         public override void UnregisterComponent()
@@ -42,19 +46,28 @@ namespace Digi.BuildInfo.Features.ModelPreview
             if(!Main.ComponentsRegistered)
                 return;
 
+            Main.Config.CubeBuilderDrawSubparts.ValueAssigned -= ConfigValueAssigned;
             Main.EquipmentMonitor.BlockChanged -= EquippedBlockChanged;
-            Main.LiveDataHandler.DataGenerated -= LiveDataHandler_DataGenerated;
+            Main.LiveDataHandler.DataGenerated -= LiveDataGenerated;
         }
 
         void RegisterType<T>(MyObjectBuilderType blockType) where T : PreviewInstanceBase, new() => PreviewFactory.Add(blockType, Instance<T>);
         static T Instance<T>() where T : PreviewInstanceBase, new() => new T();
+
+        void ConfigValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            if(newValue)
+                EquippedBlockChanged(Main.EquipmentMonitor?.BlockDef, Main.EquipmentMonitor?.AimedBlock);
+            else
+                EquippedBlockChanged(null, null);
+        }
 
         void EquippedBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             CurrentPreview?.Dispose();
             CurrentPreview = null;
 
-            if(Main.EquipmentMonitor.IsCubeBuilder && def != null)
+            if(def != null && Main.Config.CubeBuilderDrawSubparts.Value && Main.EquipmentMonitor.IsCubeBuilder)
             {
                 Func<PreviewInstanceBase> factory = PreviewFactory.GetValueOrDefault(def.Id.TypeId);
                 if(factory != null)
@@ -62,12 +75,17 @@ namespace Digi.BuildInfo.Features.ModelPreview
                     CurrentPreview = factory.Invoke();
                     CurrentPreview.Setup(def);
                 }
+                else // if no specific type declared, use the fallback one
+                {
+                    CurrentPreview = FallbackPreview;
+                    CurrentPreview.Setup(def);
+                }
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CurrentPreview != null);
         }
 
-        void LiveDataHandler_DataGenerated(Type type, BData_Base data)
+        void LiveDataGenerated(Type type, BData_Base data)
         {
             MyCubeBlockDefinition previewDef = CurrentPreview?.BlockDef;
             if(previewDef != null)
@@ -86,41 +104,9 @@ namespace Digi.BuildInfo.Features.ModelPreview
             if(CurrentPreview == null)
                 return;
 
-            MyCubeBlockDefinition heldBlockDef = Main.EquipmentMonitor.BlockDef;
-            if(heldBlockDef == null)
+            MatrixD drawMatrix;
+            if(!Utils.GetEquippedBlockMatrix(out drawMatrix))
                 return;
-
-            // TODO: find a solution to this erroring sometimes (which is not going to be an issue in asyncdraw event)
-            // TODO: unify getter for this and overlays
-            MyOrientedBoundingBoxD box = MyCubeBuilder.Static.GetBuildBoundingBox();
-
-            MatrixD drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
-
-            if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
-            {
-                IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
-                if(hitEnt is IMyVoxelBase)
-                {
-                    drawMatrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
-                }
-                else if(hitEnt is IMyCubeGrid)
-                {
-                    drawMatrix.Translation = box.Center;
-                }
-                else
-                {
-                    drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
-                }
-            }
-            else
-            {
-                //drawMatrix.Translation = box.Center;
-
-                // fix for jittery overlays when aiming at a grid.
-                Vector3D addPosition;
-                MyCubeBuilder.Static.GetAddPosition(out addPosition);
-                drawMatrix.Translation = addPosition;
-            }
 
             CurrentPreview.Update(ref drawMatrix);
         }

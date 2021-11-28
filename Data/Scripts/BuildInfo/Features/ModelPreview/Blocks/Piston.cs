@@ -4,15 +4,17 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
-    public class Piston : PreviewInstanceBase
+    public class Piston : MultiSubpartBase
     {
         bool Valid;
-        PreviewEntityWrapper PreviewEntity;
+        PreviewEntityWrapper TopPart;
         MyPistonBaseDefinition PistonDef;
         BData_Piston Data;
 
         protected override void Initialized()
         {
+            base.Initialized();
+
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Piston>(BlockDef);
@@ -28,14 +30,16 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(topDef == null)
                 return;
 
-            PreviewEntity = new PreviewEntityWrapper(topDef.Model);
-            Valid = (PreviewEntity != null);
+            TopPart = new PreviewEntityWrapper(topDef.Model);
+            Valid = (TopPart != null);
         }
 
         protected override void Disposed()
         {
-            PreviewEntity?.Close();
-            PreviewEntity = null;
+            base.Disposed();
+
+            TopPart?.Close();
+            TopPart = null;
 
             PistonDef = null;
             Data = null;
@@ -43,14 +47,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public override void Update(ref MatrixD drawMatrix)
         {
+            base.Update(ref drawMatrix);
+
             if(!Valid)
                 return;
 
-            // TODO draw other subparts too?
-
             MatrixD topMatrix = Data.TopLocalMatrix * drawMatrix;
 
-            PreviewEntity.Update(ref topMatrix);
+            TopPart.Update(ref topMatrix);
         }
     }
 }

@@ -97,6 +97,45 @@ namespace Digi.BuildInfo.Utilities
             return wm;
         }
 
+        public static bool GetEquippedBlockMatrix(out MatrixD matrix)
+        {
+            matrix = MatrixD.Identity;
+
+            if(MyCubeBuilder.Static == null || !MyCubeBuilder.Static.IsActivated)
+                return false;
+
+            MyOrientedBoundingBoxD box = MyCubeBuilder.Static.GetBuildBoundingBox();
+            matrix = MatrixD.CreateFromQuaternion(box.Orientation);
+
+            if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
+            {
+                IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
+                if(hitEnt == null)
+                {
+                    matrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
+                }
+                else if(hitEnt is IMyVoxelBase)
+                {
+                    matrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
+                }
+                else // if(hitEnt is IMyCubeGrid)
+                {
+                    matrix.Translation = box.Center;
+                }
+            }
+            else
+            {
+                //drawMatrix.Translation = box.Center;
+
+                // fix for jittery overlays when aiming at a grid.
+                Vector3D addPosition;
+                MyCubeBuilder.Static.GetAddPosition(out addPosition);
+                matrix.Translation = addPosition;
+            }
+
+            return true;
+        }
+
         public static IMyModelDummy GetDummy(IMyModel model, string name)
         {
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;

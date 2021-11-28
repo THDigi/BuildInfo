@@ -108,70 +108,17 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 Overlays.ModeEnum mode = Overlays.OverlayMode;
                 MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-                MatrixD drawMatrix;
 
-                #region compute drawMatrix
+                MatrixD drawMatrix;
                 if(block != null)
                 {
-                    //drawMatrix = Utils.GetBlockCenteredWorldMatrix(block);
-                    // ^ inlined v
-
-                    Matrix m;
-                    Vector3D center;
-                    block.Orientation.GetMatrix(out m);
-                    block.ComputeWorldCenter(out center);
-
-                    drawMatrix = m * block.CubeGrid.WorldMatrix;
-                    drawMatrix.Translation = center;
+                    drawMatrix = Utils.GetBlockCenteredWorldMatrix(block);
                 }
-                else // NOTE: assuming cubebuilder
+                else // assuming cubebuilder
                 {
-                    MyOrientedBoundingBoxD box;
-
-                    // HACK: very rare errors from thread concurrency with game's parallel Draw()...
-                    #region Getting box safely
-                    bool error = false;
-                    try
-                    {
-                        box = MyCubeBuilder.Static.GetBuildBoundingBox();
-                    }
-                    catch(Exception e)
-                    {
-                        if(++ConsecutiveErrors > 10 || !PrevOBB.HasValue)
-                            throw e;
-
-                        box = PrevOBB.Value;
-                        error = true;
-                    }
-
-                    if(!error)
-                    {
-                        ConsecutiveErrors = 0;
-                        PrevOBB = box;
-                    }
-                    #endregion
-
-                    drawMatrix = MatrixD.CreateFromQuaternion(box.Orientation);
-
-                    if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
-                    {
-                        IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
-                        if(hitEnt != null && hitEnt is IMyVoxelBase)
-                            drawMatrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
-                        else
-                            drawMatrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
-                    }
-                    else
-                    {
-                        //drawMatrix.Translation = box.Center;
-
-                        // potential fix for jittery overlays when aiming at a grid.
-                        Vector3D addPosition;
-                        MyCubeBuilder.Static.GetAddPosition(out addPosition);
-                        drawMatrix.Translation = addPosition;
-                    }
+                    if(!Utils.GetEquippedBlockMatrix(out drawMatrix))
+                        return;
                 }
-                #endregion
 
                 #region draw ModelOffset indicator
                 if(Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)

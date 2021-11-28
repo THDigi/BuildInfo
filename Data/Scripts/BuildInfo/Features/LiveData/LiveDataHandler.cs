@@ -147,9 +147,18 @@ namespace Digi.BuildInfo.Features.LiveData
             MyCubeBlock internalBlock = (MyCubeBlock)block;
             if(internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
             {
-                // instance special type if available, otherwise the base one.
-                BData_Base data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
-                success = data.CheckAndAdd(block);
+                BData_Base data = null;
+                try
+                {
+                    // instance special type if available, otherwise the base one.
+                    data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
+                    success = data.CheckAndAdd(block);
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error in BData for {defId.ToString()} :: {e.Message}\n{e.StackTrace}");
+                    success = false;
+                }
 
                 if(success)
                     DataGenerated?.Invoke(defId.TypeId, data);

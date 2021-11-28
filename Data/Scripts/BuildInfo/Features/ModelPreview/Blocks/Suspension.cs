@@ -1,4 +1,5 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -7,10 +8,10 @@ using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
-    public class Suspension : PreviewInstanceBase
+    public class Suspension : MultiSubpartBase
     {
         bool Valid;
-        PreviewEntityWrapper PreviewEntity;
+        PreviewEntityWrapper WheelPart;
         MyMotorSuspensionDefinition SuspensionDef;
         BData_Suspension Data;
         BData_Wheel WheelData;
@@ -21,6 +22,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         protected override void Initialized()
         {
+            base.Initialized();
+
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Suspension>(BlockDef);
@@ -40,15 +43,17 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(WheelData == null)
                 return;
 
-            PreviewEntity = new PreviewEntityWrapper(topDef.Model);
-            Valid = (PreviewEntity != null);
+            WheelPart = new PreviewEntityWrapper(topDef.Model);
+            Valid = (WheelPart != null);
             RaycastOffset = 0;
         }
 
         protected override void Disposed()
         {
-            PreviewEntity?.Close();
-            PreviewEntity = null;
+            base.Disposed();
+
+            WheelPart?.Close();
+            WheelPart = null;
 
             SuspensionDef = null;
             Data = null;
@@ -56,6 +61,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public override void Update(ref MatrixD drawMatrix)
         {
+            base.Update(ref drawMatrix);
+
             if(!Valid)
                 return;
 
@@ -106,7 +113,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             //topMatrix.Translation = pos; 
             //Angle += MathHelper.Pi / 90; // 2deg/tick
 
-            PreviewEntity.Update(ref topMatrix);
+            // custom transparency so you can see through the wheel.
+            WheelPart.Update(ref topMatrix, customTransparency: Hardcoded.CubeBuilderTransparency * 2f);
         }
     }
 }

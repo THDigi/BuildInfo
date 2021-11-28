@@ -36,6 +36,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ScrollableComponentsList;
         public BoolSetting SelectAllProjectedBlocks;
         public BoolSetting OverrideToolSelectionDraw;
+        public BoolSetting CubeBuilderDrawSubparts;
         public EnumSetting<CubeBuilderSelectionInfo> CubeBuilderSelectionInfoMode;
         public BoolSetting UnderCrosshairMessages;
 
@@ -351,6 +352,13 @@ namespace Digi.BuildInfo.Features.Config
                 "Replaces block selection with a model-shrink-wrapped-box and a bit thicker, for welder and grinder.",
                 "For example, a large-grid camera block would show selection over the camera model itself, instead of the entire grid cell.",
                 "CubeBuilder's block selection for paint/removal is affected, but the box around your ghost block is not (because it's inaccessible).");
+
+            CubeBuilderDrawSubparts = new BoolSetting(Handler, "HUD: CubeBuilder Draw Subparts", true,
+                "Game by default only draws the first layer of subparts when holding the block.",
+                "This setting draws the other layers as well as top-part/wheel for rotor/piston/hinge/suspension.",
+                "Additionally:",
+                "- Suspension wheel 'collides' with world so you can see how much it can travel in the frame.",
+                "- Interior turret has whacky rotations on subparts, the existing one I can't do anything about but the ones I spawn I can rotate properly.");
 
             CubeBuilderSelectionInfoMode = new EnumSetting<CubeBuilderSelectionInfo>(Handler, "HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
             {

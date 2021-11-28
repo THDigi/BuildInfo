@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game.Components;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.Components;
+using VRage.Game.Entity;
 using VRage.Game.Entity.UseObject;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame.Utilities;
@@ -45,6 +47,20 @@ namespace Digi.BuildInfo.Features.LiveData
             LocalMatrix = localMatrix;
             Name = name;
             Color = color;
+        }
+    }
+
+    public struct SubpartInfo
+    {
+        public readonly Matrix LocalMatrix;
+        public readonly string Model;
+        public readonly List<SubpartInfo> Subparts;
+
+        public SubpartInfo(Matrix localMatrix, string model, List<SubpartInfo> subparts)
+        {
+            LocalMatrix = localMatrix;
+            Model = model;
+            Subparts = subparts;
         }
     }
 
@@ -92,6 +108,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public List<InteractionInfo> Interactive;
         public List<Matrix> UpgradePorts;
         public List<string> Upgrades;
+        public List<SubpartInfo> Subparts;
 
         public BData_Base()
         {
@@ -101,6 +118,7 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
+            ComputeSubparts(block);
             ComputeUpgrades(block);
             ComputeHas(block);
             ComputeDummies(block, def);
@@ -127,6 +145,50 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     Upgrades.Add(upgrade);
                 }
+            }
+        }
+
+        void ComputeSubparts(IMyCubeBlock block)
+        {
+            MyEntity ent = (MyEntity)block;
+
+            if(ent.Subparts != null && ent.Subparts.Count > 0)
+            {
+                Subparts = new List<SubpartInfo>(ent.Subparts.Count);
+                RecursiveSubpartScan(ent, Subparts);
+            }
+        }
+
+        void RecursiveSubpartScan(MyEntity entity, List<SubpartInfo> addTo)
+        {
+            // HACK: make the first layer of subparts be relative to centered block matrix, not ModelOffset'd one
+            MatrixD? transform = null;
+            IMyCubeBlock block = entity as IMyCubeBlock;
+            if(block != null)
+                transform = MatrixD.Invert(Utils.GetBlockCenteredWorldMatrix(block.SlimBlock));
+
+            foreach(MyEntitySubpart subpart in entity.Subparts.Values)
+            {
+                IMyModel model = (IMyModel)subpart.Model;
+
+                Matrix localMatrix;
+                if(transform.HasValue)
+                    localMatrix = (Matrix)(subpart.PositionComp.WorldMatrixRef * transform.Value);
+                else
+                    localMatrix = subpart.PositionComp.LocalMatrixRef;
+
+                SubpartInfo info;
+                if(subpart.Subparts != null && subpart.Subparts.Count > 0)
+                {
+                    info = new SubpartInfo(localMatrix, model.AssetName, new List<SubpartInfo>(subpart.Subparts.Count));
+                    RecursiveSubpartScan(subpart, info.Subparts);
+                }
+                else
+                {
+                    info = new SubpartInfo(localMatrix, model.AssetName, null);
+                }
+
+                addTo.Add(info);
             }
         }
 
