@@ -42,7 +42,7 @@ namespace Digi.ComponentLib
                 return;
             }
 
-            main = new BuildInfo.BuildInfoMod(this);
+            ModBase = new BuildInfo.BuildInfoMod(this);
         }
 
         bool CheckKilled()
