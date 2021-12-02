@@ -8,6 +8,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
@@ -36,8 +37,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Entity.DisplayName = $"BuildInfo_PreviewModel:{Path.GetFileName(modelFullPath)}";
             Entity.Render.EnableColorMaskHsv = true;
             Entity.Render.CastShadows = false;
-            MyEntities.Add(Entity, true);
-            Entity.RemoveFromGamePruningStructure();
+            //Entity.Render.RemoveRenderObjects();
+            //Entity.Render.AddRenderObjects();
 
             if(Entity.Subparts != null && Entity.Subparts.Count > 0)
             {
@@ -45,10 +46,17 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 AllSubparts = new List<MyEntitySubpart>();
                 RecursiveSubpartInit(Entity, AllSubparts);
             }
+
+            // add last to allow all subparts to get shadows off and all that stuff
+            Entity.Flags &= ~EntityFlags.IsGamePrunningStructureObject;
+            Entity.Flags |= EntityFlags.IsNotGamePrunningStructureObject;
+            MyEntities.Add(Entity, true);
+            Entity.RemoveFromGamePruningStructure();
         }
 
         public void Close()
         {
+            AllSubparts?.Clear();
             Entity.Close(); // should close its subparts too
         }
 
@@ -58,10 +66,12 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             {
                 addTo.Add(subpart);
 
-                subpart.Render.EnableColorMaskHsv = true;
-                subpart.Render.CastShadows = false;
                 subpart.SyncFlag = false;
                 subpart.IsPreview = true;
+                subpart.Render.EnableColorMaskHsv = true;
+                subpart.Render.CastShadows = false;
+                //subpart.Render.RemoveRenderObjects();
+                //subpart.Render.AddRenderObjects();
 
                 if(subpart.Subparts != null)
                     RecursiveSubpartInit(subpart, addTo);
@@ -130,18 +140,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 // color and skin seems to automatically propagate to subparts
             }
             #endregion
-
-            if(Entity.Render.CastShadows)
-                Entity.Render.CastShadows = false;
-
-            // FIXME: doesn't turn off shadows on subparts...
-            if(AllSubparts != null)
-            {
-                foreach(MyEntitySubpart subpart in AllSubparts)
-                {
-                    subpart.Render.CastShadows = false;
-                }
-            }
 
             Entity.PositionComp.SetWorldMatrix(ref matrix);
         }
