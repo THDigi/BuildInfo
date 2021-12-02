@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
                 return false; // ignore weaponcore blocks
 
             bool valid = true;

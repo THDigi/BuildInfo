@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CoreSystems.Api;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
@@ -12,7 +13,6 @@ using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
-using WeaponCore.Api;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features.Overlays.Specialized
@@ -49,8 +49,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
         public override void Draw(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> wcDefs;
+            if(Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
                 //ConveyorSorter.DrawWeaponCoreWeapon(ref drawMatrix, drawInstance, def, block, wcDefs);
                 return;

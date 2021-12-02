@@ -33,7 +33,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
-            if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
                 return false;
 
             if(!Processor.AppendSingleStats(sb, item.Block))
@@ -93,7 +93,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyUserControllableGun gunBlock in groupData.Blocks)
             {
-                if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
+                if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
                     continue;
 
                 if(!gunBlock.IsFunctional)

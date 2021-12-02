@@ -1,33 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using CoreSystems.Api;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.ObjectBuilders;
-using WeaponCore.Api;
 
 namespace Digi.BuildInfo.Systems
 {
-    public class WeaponCoreAPIHandler : ModComponent
+    public class CoreSystemsAPIHandler : ModComponent
     {
         /// <summary>
         /// If WeaponCore was detected and replied.
         /// </summary>
         public bool IsRunning = false;
 
-        public WcApi API { get; private set; }
+        public const string APIName = "CoreSystems";
 
-        public readonly Dictionary<MyDefinitionId, List<WcApiDef.WeaponDefinition>> Weapons = new Dictionary<MyDefinitionId, List<WcApiDef.WeaponDefinition>>(MyDefinitionId.Comparer);
+        public CoreSystemsAPI API { get; private set; }
 
-        public WeaponCoreAPIHandler(BuildInfoMod main) : base(main)
+        public readonly Dictionary<MyDefinitionId, List<CoreSystemsDef.WeaponDefinition>> Weapons = new Dictionary<MyDefinitionId, List<CoreSystemsDef.WeaponDefinition>>(MyDefinitionId.Comparer);
+
+        public readonly Dictionary<string, CoreSystemsDef.ArmorDefinition> Armor = new Dictionary<string, CoreSystemsDef.ArmorDefinition>();
+
+        public CoreSystemsAPIHandler(BuildInfoMod main) : base(main)
         {
         }
 
         public override void RegisterComponent()
         {
-            API = new WcApi();
+            API = new CoreSystemsAPI();
             API.Load(Replied, getWeaponDefinitions: false);
         }
 
@@ -68,7 +72,7 @@ namespace Digi.BuildInfo.Systems
             {
                 if(physItemDef is MyWeaponItemDefinition)
                 {
-                    weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName).Add(physItemDef.Id.TypeId);
+                    weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName, () => new List<MyObjectBuilderType>(8)).Add(physItemDef.Id.TypeId);
                 }
             }
 
@@ -79,22 +83,25 @@ namespace Digi.BuildInfo.Systems
             {
                 byte[] bytes = definitionsAsBytes[idx];
 
-                WcApiDef.WeaponDefinition weaponDef;
+                CoreSystemsDef.WeaponDefinition weaponDef;
                 try
                 {
-                    weaponDef = MyAPIGateway.Utilities.SerializeFromBinary<WcApiDef.WeaponDefinition>(bytes);
+                    weaponDef = MyAPIGateway.Utilities.SerializeFromBinary<CoreSystemsDef.WeaponDefinition>(bytes);
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Error deserializing WeaponCore definition bytes #{idx.ToString()} of {definitionsAsBytes.Count.ToString()}\n{e}");
+                    Log.Error($"Error deserializing {APIName} weapon definition bytes #{idx.ToString()} of {definitionsAsBytes.Count.ToString()}\n{e}");
                     continue;
                 }
 
-                foreach(WcApiDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
+                if(weaponDef.HardPoint.HardWare.Type != CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.HandWeapon)
+                    continue;
+
+                foreach(CoreSystemsDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
                 {
                     string subtype = mount.SubtypeId;
 
-                    // HACK: vanilla replacement. https://github.com/sstixrud/WeaponCore/blob/7051b905d13bc0b36f20aecc7ab9216de2121c6a/Data/Scripts/WeaponCore/Session/SessionSupport.cs#L785
+                    // HACK: vanilla replacement, SessionSupport.LoadVanillaData() https://github.com/sstixrud/WeaponCore/blob/master/Data/Scripts/CoreSystems/Session/SessionSupport.cs#L1104
                     switch(mount.SubtypeId)
                     {
                         case "LargeGatlingTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
@@ -114,14 +121,45 @@ namespace Digi.BuildInfo.Systems
                     }
                     else
                     {
-                        Log.Info($"WARNING: Couldn't find any weapon item, weapon block, conveyor sorter with subtype '{subtype}' for WeaponCore, idx={idx.ToString()}, mod={weaponDef.ModPath}");
+                        Log.Info($"WARNING: Couldn't find any weapon item, weapon block, conveyor sorter with subtype '{subtype}' for {APIName}, idx={idx.ToString()}, mod={weaponDef.ModPath}");
                     }
                 }
             }
 
-            foreach(List<WcApiDef.WeaponDefinition> wcDefs in Weapons.Values)
+            foreach(List<CoreSystemsDef.WeaponDefinition> wcDefs in Weapons.Values)
             {
                 wcDefs.TrimExcess();
+            }
+
+            definitionsAsBytes.Clear();
+            API.GetAllCoreArmors(definitionsAsBytes);
+
+            for(int idx = 0; idx < definitionsAsBytes.Count; idx++)
+            {
+                byte[] bytes = definitionsAsBytes[idx];
+
+                CoreSystemsDef.ArmorDefinition armorDef;
+                try
+                {
+                    armorDef = MyAPIGateway.Utilities.SerializeFromBinary<CoreSystemsDef.ArmorDefinition>(bytes);
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error deserializing {APIName} armor definition bytes #{idx.ToString()} of {definitionsAsBytes.Count.ToString()}\n{e}");
+                    continue;
+                }
+
+                foreach(string subtypeId in armorDef.SubtypeIds)
+                {
+                    CoreSystemsDef.ArmorDefinition existsInDef;
+                    if(Armor.TryGetValue(subtypeId, out existsInDef))
+                    {
+                        Log.Error($"Error in {APIName} armor definition, {subtypeId} is used by multiple armor definitions! Also in: kind={existsInDef.Kind.ToString()}; ids={string.Join(",", existsInDef.SubtypeIds)}");
+                        continue;
+                    }
+
+                    Armor.Add(subtypeId, armorDef);
+                }
             }
         }
     }

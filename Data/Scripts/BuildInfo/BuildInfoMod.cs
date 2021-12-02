@@ -37,7 +37,7 @@ namespace Digi.BuildInfo
         public readonly InputLibHandler InputLibHandler;
         public readonly EquipmentMonitor EquipmentMonitor;
         public readonly GameBlockInfoHandler GameBlockInfoHandler;
-        public readonly WeaponCoreAPIHandler WeaponCoreAPIHandler;
+        public readonly CoreSystemsAPIHandler CoreSystemsAPIHandler;
         public readonly WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
         public readonly DefenseShieldsDetector DefenseShieldsDetector;
         public readonly RichHudFrameworkHandler RichHud;
@@ -112,7 +112,7 @@ namespace Digi.BuildInfo
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             GameBlockInfoHandler = new GameBlockInfoHandler(this);
-            WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
+            CoreSystemsAPIHandler = new CoreSystemsAPIHandler(this);
             WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
             DefenseShieldsDetector = new DefenseShieldsDetector(this);
             RichHud = new RichHudFrameworkHandler(this);

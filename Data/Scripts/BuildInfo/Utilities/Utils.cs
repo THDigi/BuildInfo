@@ -325,17 +325,7 @@ namespace Digi.BuildInfo.Utilities
         }
 
         public static bool CreativeToolsEnabled => MyAPIGateway.Session.CreativeMode || (MyAPIGateway.Session.HasCreativeRights && MyAPIGateway.Session.EnableCopyPaste);
-
-        public static int DamageMultiplierToResistance(float damageMultiplier)
-        {
-            const float initialHpMul = 1f;
-
-            float hpMul = 1f / damageMultiplier;
-            float damageResistance = ((hpMul - initialHpMul) / initialHpMul);
-
-            return (int)(damageResistance * 100);
-        }
-
+        
         /// <summary>
         /// HACK: matching vanilla HUD transparency better
         /// </summary>

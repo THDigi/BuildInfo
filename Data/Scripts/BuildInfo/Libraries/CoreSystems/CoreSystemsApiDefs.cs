@@ -1,308 +1,204 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ProtoBuf;
-using Sandbox.ModAPI;
-using VRage;
-using VRage.Game;
-using VRage.ModAPI;
 using VRageMath;
 
-namespace WeaponCore.Api
+namespace CoreSystems.Api
 {
-    /// <summary>
-    /// https://github.com/sstixrud/WeaponCore/blob/master/Data/Scripts/WeaponCore/Api/WeaponCoreApi.cs
-    /// </summary>
-    public class WcApi
-    {
-        private bool _apiInit;
-
-        private Action<IList<byte[]>> _getAllWeaponDefinitions;
-        private Action<ICollection<MyDefinitionId>> _getCoreWeapons;
-        private Action<ICollection<MyDefinitionId>> _getCoreStaticLaunchers;
-        private Action<ICollection<MyDefinitionId>> _getCoreTurrets;
-        private Func<IMyTerminalBlock, IDictionary<string, int>, bool> _getBlockWeaponMap;
-        private Func<IMyEntity, MyTuple<bool, int, int>> _getProjectilesLockedOn;
-        private Action<IMyEntity, ICollection<MyTuple<IMyEntity, float>>> _getSortedThreats;
-        private Func<IMyEntity, int, IMyEntity> _getAiFocus;
-        private Func<IMyEntity, IMyEntity, int, bool> _setAiFocus;
-        private Func<IMyTerminalBlock, int, MyTuple<bool, bool, bool, IMyEntity>> _getWeaponTarget;
-        private Action<IMyTerminalBlock, IMyEntity, int> _setWeaponTarget;
-        private Action<IMyTerminalBlock, bool, int> _fireWeaponOnce;
-        private Action<IMyTerminalBlock, bool, bool, int> _toggleWeaponFire;
-        private Func<IMyTerminalBlock, int, bool, bool, bool> _isWeaponReadyToFire;
-        private Func<IMyTerminalBlock, int, float> _getMaxWeaponRange;
-        private Func<IMyTerminalBlock, ICollection<string>, int, bool> _getTurretTargetTypes;
-        private Action<IMyTerminalBlock, ICollection<string>, int> _setTurretTargetTypes;
-        private Action<IMyTerminalBlock, float> _setBlockTrackingRange;
-        private Func<IMyTerminalBlock, IMyEntity, int, bool> _isTargetAligned;
-        private Func<IMyTerminalBlock, IMyEntity, int, MyTuple<bool, Vector3D?>> _isTargetAlignedExtended;
-        private Func<IMyTerminalBlock, IMyEntity, int, bool> _canShootTarget;
-        private Func<IMyTerminalBlock, IMyEntity, int, Vector3D?> _getPredictedTargetPos;
-        private Func<IMyTerminalBlock, float> _getHeatLevel;
-        private Func<IMyTerminalBlock, float> _currentPowerConsumption;
-        private Func<MyDefinitionId, float> _getMaxPower;
-        private Action<IMyTerminalBlock> _disableRequiredPower;
-        private Func<IMyEntity, bool> _hasGridAi;
-        private Func<IMyTerminalBlock, bool> _hasCoreWeapon;
-        private Func<IMyEntity, float> _getOptimalDps;
-        private Func<IMyTerminalBlock, int, string> _getActiveAmmo;
-        private Action<IMyTerminalBlock, int, string> _setActiveAmmo;
-        private Action<IMyTerminalBlock, int, Action<long, int, ulong, long, Vector3D, bool>> _monitorProjectile;
-        private Action<IMyTerminalBlock, int, Action<long, int, ulong, long, Vector3D, bool>> _unMonitorProjectile;
-        private Func<ulong, MyTuple<Vector3D, Vector3D, float, float, long, string>> _getProjectileState;
-        private Func<IMyEntity, float> _getConstructEffectiveDps;
-        private Func<IMyTerminalBlock, long> _getPlayerController;
-        private Func<IMyTerminalBlock, int, Matrix> _getWeaponAzimuthMatrix;
-        private Func<IMyTerminalBlock, int, Matrix> _getWeaponElevationMatrix;
-        private Func<IMyTerminalBlock, IMyEntity, bool, bool, bool> _isTargetValid;
-        private Func<IMyTerminalBlock, int, MyTuple<Vector3D, Vector3D>> _getWeaponScope;
-        private Func<IMyEntity, MyTuple<bool, bool>> _isInRange;
-        private const long Channel = 67549756549;
-        private bool _getWeaponDefinitions;
-        private bool _isRegistered;
-        private Action _readyCallback;
-
-        /// <summary>
-        /// True if the WeaponCore replied when <see cref="Load"/> got called.
-        /// </summary>
-        public bool IsReady { get; private set; }
-
-        /// <summary>
-        /// Only filled if giving true to <see cref="Load"/>.
-        /// </summary>
-        public readonly List<WcApiDef.WeaponDefinition> WeaponDefinitions = new List<WcApiDef.WeaponDefinition>();
-
-        /// <summary>
-        /// Ask WeaponCore to send the API methods.
-        /// <para>Throws an exception if it gets called more than once per session without <see cref="Unload"/>.</para>
-        /// </summary>
-        /// <param name="readyCallback">Method to be called when WeaponCore replies.</param>
-        /// <param name="getWeaponDefinitions">Set to true to fill <see cref="WeaponDefinitions"/>.</param>
-        public void Load(Action readyCallback = null, bool getWeaponDefinitions = false)
-        {
-            if(_isRegistered)
-                throw new Exception($"{GetType().Name}.Load() should not be called multiple times!");
-
-            _readyCallback = readyCallback;
-            _getWeaponDefinitions = getWeaponDefinitions;
-            _isRegistered = true;
-            MyAPIGateway.Utilities.RegisterMessageHandler(Channel, HandleMessage);
-            MyAPIGateway.Utilities.SendModMessage(Channel, "ApiEndpointRequest");
-        }
-
-        public void Unload()
-        {
-            MyAPIGateway.Utilities.UnregisterMessageHandler(Channel, HandleMessage);
-
-            ApiAssign(null, false);
-
-            _isRegistered = false;
-            _apiInit = false;
-            IsReady = false;
-        }
-
-        private void HandleMessage(object obj)
-        {
-            if(_apiInit || obj is string
-            ) // the sent "ApiEndpointRequest" will also be received here, explicitly ignoring that
-                return;
-
-            var dict = obj as IReadOnlyDictionary<string, Delegate>;
-
-            if(dict == null)
-                return;
-
-            ApiAssign(dict, _getWeaponDefinitions);
-
-            IsReady = true;
-            _readyCallback?.Invoke();
-        }
-
-        public void ApiAssign(IReadOnlyDictionary<string, Delegate> delegates, bool getWeaponDefinitions = false)
-        {
-            _apiInit = (delegates != null);
-
-            AssignMethod(delegates, "GetAllWeaponDefinitions", ref _getAllWeaponDefinitions);
-            AssignMethod(delegates, "GetCoreWeapons", ref _getCoreWeapons);
-            AssignMethod(delegates, "GetCoreStaticLaunchers", ref _getCoreStaticLaunchers);
-            AssignMethod(delegates, "GetCoreTurrets", ref _getCoreTurrets);
-            AssignMethod(delegates, "GetBlockWeaponMap", ref _getBlockWeaponMap);
-            AssignMethod(delegates, "GetProjectilesLockedOn", ref _getProjectilesLockedOn);
-            AssignMethod(delegates, "GetSortedThreats", ref _getSortedThreats);
-            AssignMethod(delegates, "GetAiFocus", ref _getAiFocus);
-            AssignMethod(delegates, "SetAiFocus", ref _setAiFocus);
-            AssignMethod(delegates, "GetWeaponTarget", ref _getWeaponTarget);
-            AssignMethod(delegates, "SetWeaponTarget", ref _setWeaponTarget);
-            AssignMethod(delegates, "FireWeaponOnce", ref _fireWeaponOnce);
-            AssignMethod(delegates, "ToggleWeaponFire", ref _toggleWeaponFire);
-            AssignMethod(delegates, "IsWeaponReadyToFire", ref _isWeaponReadyToFire);
-            AssignMethod(delegates, "GetMaxWeaponRange", ref _getMaxWeaponRange);
-            AssignMethod(delegates, "GetTurretTargetTypes", ref _getTurretTargetTypes);
-            AssignMethod(delegates, "SetTurretTargetTypes", ref _setTurretTargetTypes);
-            AssignMethod(delegates, "SetBlockTrackingRange", ref _setBlockTrackingRange);
-            AssignMethod(delegates, "IsTargetAligned", ref _isTargetAligned);
-            AssignMethod(delegates, "IsTargetAlignedExtended", ref _isTargetAlignedExtended);
-            AssignMethod(delegates, "CanShootTarget", ref _canShootTarget);
-            AssignMethod(delegates, "GetPredictedTargetPosition", ref _getPredictedTargetPos);
-            AssignMethod(delegates, "GetHeatLevel", ref _getHeatLevel);
-            AssignMethod(delegates, "GetCurrentPower", ref _currentPowerConsumption);
-            AssignMethod(delegates, "GetMaxPower", ref _getMaxPower);
-            AssignMethod(delegates, "DisableRequiredPower", ref _disableRequiredPower);
-            AssignMethod(delegates, "HasGridAi", ref _hasGridAi);
-            AssignMethod(delegates, "HasCoreWeapon", ref _hasCoreWeapon);
-            AssignMethod(delegates, "GetOptimalDps", ref _getOptimalDps);
-            AssignMethod(delegates, "GetActiveAmmo", ref _getActiveAmmo);
-            AssignMethod(delegates, "SetActiveAmmo", ref _setActiveAmmo);
-            AssignMethod(delegates, "MonitorProjectile", ref _monitorProjectile);
-            AssignMethod(delegates, "UnMonitorProjectile", ref _unMonitorProjectile);
-            AssignMethod(delegates, "GetProjectileState", ref _getProjectileState);
-            AssignMethod(delegates, "GetConstructEffectiveDps", ref _getConstructEffectiveDps);
-            AssignMethod(delegates, "GetPlayerController", ref _getPlayerController);
-            AssignMethod(delegates, "GetWeaponAzimuthMatrix", ref _getWeaponAzimuthMatrix);
-            AssignMethod(delegates, "GetWeaponElevationMatrix", ref _getWeaponElevationMatrix);
-            AssignMethod(delegates, "IsTargetValid", ref _isTargetValid);
-            AssignMethod(delegates, "GetWeaponScope", ref _getWeaponScope);
-            AssignMethod(delegates, "IsInRange", ref _isInRange);
-
-            if(getWeaponDefinitions)
-            {
-                var byteArrays = new List<byte[]>();
-                GetAllWeaponDefinitions(byteArrays);
-                foreach(var byteArray in byteArrays)
-                    WeaponDefinitions.Add(MyAPIGateway.Utilities.SerializeFromBinary<WcApiDef.WeaponDefinition>(byteArray));
-            }
-        }
-
-        private void AssignMethod<T>(IReadOnlyDictionary<string, Delegate> delegates, string name, ref T field)
-            where T : class
-        {
-            if(delegates == null)
-            {
-                field = null;
-                return;
-            }
-
-            Delegate del;
-            if(!delegates.TryGetValue(name, out del))
-                throw new Exception($"{GetType().Name} :: Couldn't find {name} delegate of type {typeof(T)}");
-
-            field = del as T;
-
-            if(field == null)
-                throw new Exception(
-                    $"{GetType().Name} :: Delegate {name} is not type {typeof(T)}, instead it's: {del.GetType()}");
-        }
-
-        public void GetAllWeaponDefinitions(IList<byte[]> collection) => _getAllWeaponDefinitions?.Invoke(collection);
-        public void GetAllCoreWeapons(ICollection<MyDefinitionId> collection) => _getCoreWeapons?.Invoke(collection);
-
-        public void GetAllCoreStaticLaunchers(ICollection<MyDefinitionId> collection) =>
-            _getCoreStaticLaunchers?.Invoke(collection);
-
-        public void GetAllCoreTurrets(ICollection<MyDefinitionId> collection) => _getCoreTurrets?.Invoke(collection);
-
-        public bool GetBlockWeaponMap(IMyTerminalBlock weaponBlock, IDictionary<string, int> collection) =>
-            _getBlockWeaponMap?.Invoke(weaponBlock, collection) ?? false;
-
-        public MyTuple<bool, int, int> GetProjectilesLockedOn(IMyEntity victim) =>
-            _getProjectilesLockedOn?.Invoke(victim) ?? new MyTuple<bool, int, int>();
-
-        public void GetSortedThreats(IMyEntity shooter, ICollection<MyTuple<IMyEntity, float>> collection) =>
-            _getSortedThreats?.Invoke(shooter, collection);
-
-        public IMyEntity GetAiFocus(IMyEntity shooter, int priority = 0) => _getAiFocus?.Invoke(shooter, priority);
-
-        public bool SetAiFocus(IMyEntity shooter, IMyEntity target, int priority = 0) =>
-            _setAiFocus?.Invoke(shooter, target, priority) ?? false;
-
-        public MyTuple<bool, bool, bool, IMyEntity> GetWeaponTarget(IMyTerminalBlock weapon, int weaponId = 0) =>
-            _getWeaponTarget?.Invoke(weapon, weaponId) ?? new MyTuple<bool, bool, bool, IMyEntity>();
-
-        public void SetWeaponTarget(IMyTerminalBlock weapon, IMyEntity target, int weaponId = 0) =>
-            _setWeaponTarget?.Invoke(weapon, target, weaponId);
-
-        public void FireWeaponOnce(IMyTerminalBlock weapon, bool allWeapons = true, int weaponId = 0) =>
-            _fireWeaponOnce?.Invoke(weapon, allWeapons, weaponId);
-
-        public void ToggleWeaponFire(IMyTerminalBlock weapon, bool on, bool allWeapons, int weaponId = 0) =>
-            _toggleWeaponFire?.Invoke(weapon, on, allWeapons, weaponId);
-
-        public bool IsWeaponReadyToFire(IMyTerminalBlock weapon, int weaponId = 0, bool anyWeaponReady = true,
-            bool shootReady = false) =>
-            _isWeaponReadyToFire?.Invoke(weapon, weaponId, anyWeaponReady, shootReady) ?? false;
-
-        public float GetMaxWeaponRange(IMyTerminalBlock weapon, int weaponId) =>
-            _getMaxWeaponRange?.Invoke(weapon, weaponId) ?? 0f;
-
-        public bool GetTurretTargetTypes(IMyTerminalBlock weapon, IList<string> collection, int weaponId = 0) =>
-            _getTurretTargetTypes?.Invoke(weapon, collection, weaponId) ?? false;
-
-        public void SetTurretTargetTypes(IMyTerminalBlock weapon, IList<string> collection, int weaponId = 0) =>
-            _setTurretTargetTypes?.Invoke(weapon, collection, weaponId);
-
-        public void SetBlockTrackingRange(IMyTerminalBlock weapon, float range) =>
-            _setBlockTrackingRange?.Invoke(weapon, range);
-
-        public bool IsTargetAligned(IMyTerminalBlock weapon, IMyEntity targetEnt, int weaponId) =>
-            _isTargetAligned?.Invoke(weapon, targetEnt, weaponId) ?? false;
-
-        public MyTuple<bool, Vector3D?> IsTargetAlignedExtended(IMyTerminalBlock weapon, IMyEntity targetEnt, int weaponId) =>
-            _isTargetAlignedExtended?.Invoke(weapon, targetEnt, weaponId) ?? new MyTuple<bool, Vector3D?>();
-
-        public bool CanShootTarget(IMyTerminalBlock weapon, IMyEntity targetEnt, int weaponId) =>
-            _canShootTarget?.Invoke(weapon, targetEnt, weaponId) ?? false;
-
-        public Vector3D? GetPredictedTargetPosition(IMyTerminalBlock weapon, IMyEntity targetEnt, int weaponId) =>
-            _getPredictedTargetPos?.Invoke(weapon, targetEnt, weaponId) ?? null;
-
-        public float GetHeatLevel(IMyTerminalBlock weapon) => _getHeatLevel?.Invoke(weapon) ?? 0f;
-        public float GetCurrentPower(IMyTerminalBlock weapon) => _currentPowerConsumption?.Invoke(weapon) ?? 0f;
-        public float GetMaxPower(MyDefinitionId weaponDef) => _getMaxPower?.Invoke(weaponDef) ?? 0f;
-        public void DisableRequiredPower(IMyTerminalBlock weapon) => _disableRequiredPower?.Invoke(weapon);
-        public bool HasGridAi(IMyEntity entity) => _hasGridAi?.Invoke(entity) ?? false;
-        public bool HasCoreWeapon(IMyTerminalBlock weapon) => _hasCoreWeapon?.Invoke(weapon) ?? false;
-        public float GetOptimalDps(IMyEntity entity) => _getOptimalDps?.Invoke(entity) ?? 0f;
-
-        public string GetActiveAmmo(IMyTerminalBlock weapon, int weaponId) =>
-            _getActiveAmmo?.Invoke(weapon, weaponId) ?? null;
-
-        public void SetActiveAmmo(IMyTerminalBlock weapon, int weaponId, string ammoType) =>
-            _setActiveAmmo?.Invoke(weapon, weaponId, ammoType);
-
-        public void MonitorProjectileCallback(IMyTerminalBlock weapon, int weaponId, Action<long, int, ulong, long, Vector3D, bool> action) =>
-            _monitorProjectile?.Invoke(weapon, weaponId, action);
-
-        public void UnMonitorProjectileCallback(IMyTerminalBlock weapon, int weaponId, Action<long, int, ulong, long, Vector3D, bool> action) =>
-            _unMonitorProjectile?.Invoke(weapon, weaponId, action);
-
-        public MyTuple<Vector3D, Vector3D, float, float, long, string> GetProjectileState(ulong projectileId) =>
-            _getProjectileState?.Invoke(projectileId) ?? new MyTuple<Vector3D, Vector3D, float, float, long, string>();
-
-        public float GetConstructEffectiveDps(IMyEntity entity) => _getConstructEffectiveDps?.Invoke(entity) ?? 0f;
-
-        public long GetPlayerController(IMyTerminalBlock weapon) => _getPlayerController?.Invoke(weapon) ?? -1;
-
-        public Matrix GetWeaponAzimuthMatrix(IMyTerminalBlock weapon, int weaponId) =>
-            _getWeaponAzimuthMatrix?.Invoke(weapon, weaponId) ?? Matrix.Zero;
-
-        public Matrix GetWeaponElevationMatrix(IMyTerminalBlock weapon, int weaponId) =>
-            _getWeaponElevationMatrix?.Invoke(weapon, weaponId) ?? Matrix.Zero;
-
-        public bool IsTargetValid(IMyTerminalBlock weapon, IMyEntity target, bool onlyThreats, bool checkRelations) =>
-            _isTargetValid?.Invoke(weapon, target, onlyThreats, checkRelations) ?? false;
-
-        public MyTuple<Vector3D, Vector3D> GetWeaponScope(IMyTerminalBlock weapon, int weaponId) =>
-            _getWeaponScope?.Invoke(weapon, weaponId) ?? new MyTuple<Vector3D, Vector3D>();
-
-        // block/grid, Threat, Other 
-        public MyTuple<bool, bool> IsInRange(IMyEntity entity) =>
-            _isInRange?.Invoke(entity) ?? new MyTuple<bool, bool>();
-    }
-
-    public static class WcApiDef
+    public static class CoreSystemsDef
     {
         [ProtoContract]
-        public struct WeaponDefinition
+        public class ContainerDefinition
+        {
+            [ProtoMember(1)] internal WeaponDefinition[] WeaponDefs;
+            [ProtoMember(2)] internal ArmorDefinition[] ArmorDefs;
+            [ProtoMember(3)] internal UpgradeDefinition[] UpgradeDefs;
+            [ProtoMember(4)] internal SupportDefinition[] SupportDefs;
+        }
+
+        [ProtoContract]
+        public class ConsumeableDef
+        {
+            [ProtoMember(1)] internal string ItemName;
+            [ProtoMember(2)] internal string InventoryItem;
+            [ProtoMember(3)] internal int ItemsNeeded;
+            [ProtoMember(4)] internal bool Hybrid;
+            [ProtoMember(5)] internal float EnergyCost;
+            [ProtoMember(6)] internal float Strength;
+        }
+
+        [ProtoContract]
+        public class UpgradeDefinition
+        {
+            [ProtoMember(1)] internal ModelAssignmentsDef Assignments;
+            [ProtoMember(2)] internal HardPointDef HardPoint;
+            [ProtoMember(3)] internal WeaponDefinition.AnimationDef Animations;
+            [ProtoMember(4)] internal string ModPath;
+            [ProtoMember(5)] internal ConsumeableDef[] Consumable;
+
+            [ProtoContract]
+            public struct ModelAssignmentsDef
+            {
+                [ProtoMember(1)] internal MountPointDef[] MountPoints;
+
+                [ProtoContract]
+                public struct MountPointDef
+                {
+                    [ProtoMember(1)] internal string SubtypeId;
+                    [ProtoMember(2)] internal float DurabilityMod;
+                    [ProtoMember(3)] internal string IconName;
+                }
+            }
+
+            [ProtoContract]
+            public struct HardPointDef
+            {
+                [ProtoMember(1)] internal string PartName;
+                [ProtoMember(2)] internal HardwareDef HardWare;
+                [ProtoMember(3)] internal UiDef Ui;
+                [ProtoMember(4)] internal OtherDef Other;
+
+                [ProtoContract]
+                public struct UiDef
+                {
+                    [ProtoMember(1)] internal bool StrengthModifier;
+                }
+
+                [ProtoContract]
+                public struct HardwareDef
+                {
+                    public enum HardwareType
+                    {
+                        Default,
+                    }
+
+                    [ProtoMember(1)] internal float InventorySize;
+                    [ProtoMember(2)] internal HardwareType Type;
+                    [ProtoMember(3)] internal int BlockDistance;
+
+                }
+
+                [ProtoContract]
+                public struct OtherDef
+                {
+                    [ProtoMember(1)] internal int ConstructPartCap;
+                    [ProtoMember(2)] internal int EnergyPriority;
+                    [ProtoMember(3)] internal bool Debug;
+                    [ProtoMember(4)] internal double RestrictionRadius;
+                    [ProtoMember(5)] internal bool CheckInflatedBox;
+                    [ProtoMember(6)] internal bool CheckForAnySupport;
+                    [ProtoMember(7)] internal bool StayCharged;
+                }
+            }
+        }
+
+        [ProtoContract]
+        public class SupportDefinition
+        {
+            [ProtoMember(1)] internal ModelAssignmentsDef Assignments;
+            [ProtoMember(2)] internal HardPointDef HardPoint;
+            [ProtoMember(3)] internal WeaponDefinition.AnimationDef Animations;
+            [ProtoMember(4)] internal string ModPath;
+            [ProtoMember(5)] internal ConsumeableDef[] Consumable;
+            [ProtoMember(6)] internal SupportEffect Effect;
+
+            [ProtoContract]
+            public struct ModelAssignmentsDef
+            {
+                [ProtoMember(1)] internal MountPointDef[] MountPoints;
+
+                [ProtoContract]
+                public struct MountPointDef
+                {
+                    [ProtoMember(1)] internal string SubtypeId;
+                    [ProtoMember(2)] internal float DurabilityMod;
+                    [ProtoMember(3)] internal string IconName;
+                }
+            }
+            [ProtoContract]
+            public struct HardPointDef
+            {
+                [ProtoMember(1)] internal string PartName;
+                [ProtoMember(2)] internal HardwareDef HardWare;
+                [ProtoMember(3)] internal UiDef Ui;
+                [ProtoMember(4)] internal OtherDef Other;
+
+                [ProtoContract]
+                public struct UiDef
+                {
+                    [ProtoMember(1)] internal bool ProtectionControl;
+                }
+
+                [ProtoContract]
+                public struct HardwareDef
+                {
+                    [ProtoMember(1)] internal float InventorySize;
+                }
+
+                [ProtoContract]
+                public struct OtherDef
+                {
+                    [ProtoMember(1)] internal int ConstructPartCap;
+                    [ProtoMember(2)] internal int EnergyPriority;
+                    [ProtoMember(3)] internal bool Debug;
+                    [ProtoMember(4)] internal double RestrictionRadius;
+                    [ProtoMember(5)] internal bool CheckInflatedBox;
+                    [ProtoMember(6)] internal bool CheckForAnySupport;
+                    [ProtoMember(7)] internal bool StayCharged;
+                }
+            }
+
+            [ProtoContract]
+            public struct SupportEffect
+            {
+                public enum AffectedBlocks
+                {
+                    Armor,
+                    ArmorPlus,
+                    PlusFunctional,
+                    All,
+                }
+
+                public enum Protections
+                {
+                    KineticProt,
+                    EnergeticProt,
+                    GenericProt,
+                    Regenerate,
+                    Structural,
+                }
+
+                [ProtoMember(1)] internal Protections Protection;
+                [ProtoMember(2)] internal AffectedBlocks Affected;
+                [ProtoMember(3)] internal int BlockRange;
+                [ProtoMember(4)] internal int MaxPoints;
+                [ProtoMember(5)] internal int PointsPerCharge;
+                [ProtoMember(6)] internal int UsablePerSecond;
+                [ProtoMember(7)] internal int UsablePerMinute;
+                [ProtoMember(8)] internal float Overflow;
+                [ProtoMember(9)] internal float Effectiveness;
+                [ProtoMember(10)] internal float ProtectionMin;
+                [ProtoMember(11)] internal float ProtectionMax;
+            }
+        }
+
+        [ProtoContract]
+        public class ArmorDefinition
+        {
+            internal enum ArmorType
+            {
+                Light,
+                Heavy,
+                NonArmor,
+            }
+
+            [ProtoMember(1)] internal string[] SubtypeIds;
+            [ProtoMember(2)] internal ArmorType Kind;
+            [ProtoMember(3)] internal double KineticResistance;
+            [ProtoMember(4)] internal double EnergeticResistance;
+        }
+
+        [ProtoContract]
+        public class WeaponDefinition
         {
             [ProtoMember(1)] internal ModelAssignmentsDef Assignments;
             [ProtoMember(2)] internal TargetingDef Targeting;
@@ -316,7 +212,7 @@ namespace WeaponCore.Api
             public struct ModelAssignmentsDef
             {
                 [ProtoMember(1)] internal MountPointDef[] MountPoints;
-                [ProtoMember(2)] internal string[] Barrels;
+                [ProtoMember(2)] internal string[] Muzzles;
                 [ProtoMember(3)] internal string Ejector;
                 [ProtoMember(4)] internal string Scope;
 
@@ -324,7 +220,7 @@ namespace WeaponCore.Api
                 public struct MountPointDef
                 {
                     [ProtoMember(1)] internal string SubtypeId;
-                    [ProtoMember(2)] internal string AimPartId;
+                    [ProtoMember(2)] internal string SpinPartId;
                     [ProtoMember(3)] internal string MuzzlePartId;
                     [ProtoMember(4)] internal string AzimuthPartId;
                     [ProtoMember(5)] internal string ElevationPartId;
@@ -376,8 +272,8 @@ namespace WeaponCore.Api
             [ProtoContract]
             public struct AnimationDef
             {
-                [ProtoMember(1)] internal PartAnimationSetDef[] WeaponAnimationSets;
-                [ProtoMember(2)] internal WeaponEmissive[] Emissives;
+                [ProtoMember(1)] internal PartAnimationSetDef[] AnimationSets;
+                [ProtoMember(2)] internal PartEmissive[] Emissives;
                 [ProtoMember(3)] internal string[] HeatingEmissiveParts;
                 [ProtoMember(4)] internal Dictionary<PartAnimationSetDef.EventTriggers, EventParticle[]> EventParticles;
 
@@ -393,11 +289,12 @@ namespace WeaponCore.Api
                         TurnOn,
                         TurnOff,
                         BurstReload,
-                        OutOfAmmo,
+                        NoMagsToLoad,
                         PreFire,
                         EmptyOnGameLoad,
                         StopFiring,
-                        StopTracking
+                        StopTracking,
+                        LockDelay,
                     }
 
 
@@ -414,7 +311,7 @@ namespace WeaponCore.Api
                 }
 
                 [ProtoContract]
-                public struct WeaponEmissive
+                public struct PartEmissive
                 {
                     [ProtoMember(1)] internal string EmissiveName;
                     [ProtoMember(2)] internal string[] EmissivePartNames;
@@ -423,7 +320,6 @@ namespace WeaponCore.Api
                     [ProtoMember(5)] internal Vector4[] Colors;
                     [ProtoMember(6)] internal float[] IntensityRange;
                 }
-
                 [ProtoContract]
                 public struct EventParticle
                 {
@@ -434,7 +330,6 @@ namespace WeaponCore.Api
                     [ProtoMember(5)] internal uint LoopDelay;
                     [ProtoMember(6)] internal bool ForceStop;
                 }
-
                 [ProtoContract]
                 internal struct RelMove
                 {
@@ -471,14 +366,22 @@ namespace WeaponCore.Api
             public struct UpgradeValues
             {
                 [ProtoMember(1)] internal string[] Ammo;
-                [ProtoMember(2)] internal int RateOfFireMod;
-                [ProtoMember(3)] internal int BarrelsPerShotMod;
-                [ProtoMember(4)] internal int ReloadMod;
-                [ProtoMember(5)] internal int MaxHeatMod;
-                [ProtoMember(6)] internal int HeatSinkRateMod;
-                [ProtoMember(7)] internal int ShotsInBurstMod;
-                [ProtoMember(8)] internal int DelayAfterBurstMod;
-                [ProtoMember(9)] internal int AmmoPriority;
+                [ProtoMember(2)] internal Dependency[] Dependencies;
+                [ProtoMember(3)] internal int RateOfFireMod;
+                [ProtoMember(4)] internal int BarrelsPerShotMod;
+                [ProtoMember(5)] internal int ReloadMod;
+                [ProtoMember(6)] internal int MaxHeatMod;
+                [ProtoMember(7)] internal int HeatSinkRateMod;
+                [ProtoMember(8)] internal int ShotsInBurstMod;
+                [ProtoMember(9)] internal int DelayAfterBurstMod;
+                [ProtoMember(10)] internal int AmmoPriority;
+
+                [ProtoContract]
+                public struct Dependency
+                {
+                    internal string SubtypeId;
+                    internal int Quanity;
+                }
             }
 
             [ProtoContract]
@@ -492,7 +395,7 @@ namespace WeaponCore.Api
                     Advanced,
                 }
 
-                [ProtoMember(1)] internal string WeaponName;
+                [ProtoMember(1)] internal string PartName;
                 [ProtoMember(2)] internal int DelayCeaseFire;
                 [ProtoMember(3)] internal float DeviateShotAngle;
                 [ProtoMember(4)] internal double AimingTolerance;
@@ -506,20 +409,6 @@ namespace WeaponCore.Api
                 [ProtoMember(12)] internal OtherDef Other;
                 [ProtoMember(13)] internal bool AddToleranceToTracking;
                 [ProtoMember(14)] internal bool CanShootSubmerged;
-
-                [ProtoContract]
-                public struct UpgradeValues
-                {
-                    [ProtoMember(1)] internal string[] Ammo;
-                    [ProtoMember(2)] internal int RateOfFireMod;
-                    [ProtoMember(3)] internal int BarrelsPerShotMod;
-                    [ProtoMember(4)] internal int ReloadMod;
-                    [ProtoMember(5)] internal int MaxHeatMod;
-                    [ProtoMember(6)] internal int HeatSinkRateMod;
-                    [ProtoMember(7)] internal int ShotsInBurstMod;
-                    [ProtoMember(8)] internal int DelayAfterBurstMod;
-                    [ProtoMember(9)] internal int AmmoPriority;
-                }
 
                 [ProtoContract]
                 public struct LoadingDef
@@ -538,9 +427,12 @@ namespace WeaponCore.Api
                     [ProtoMember(12)] internal int DelayAfterBurst;
                     [ProtoMember(13)] internal bool DegradeRof;
                     [ProtoMember(14)] internal int BarrelSpinRate;
-                    [ProtoMember(15)] internal bool FireFullBurst;
-                    [ProtoMember(16)] internal bool GiveUpAfterBurst;
+                    [ProtoMember(15)] internal bool FireFull;
+                    [ProtoMember(16)] internal bool GiveUpAfter;
                     [ProtoMember(17)] internal bool DeterministicSpin;
+                    [ProtoMember(18)] internal bool SpinFree;
+                    [ProtoMember(19)] internal bool StayCharged;
+                    [ProtoMember(20)] internal int MagsToLoad;
                 }
 
 
@@ -563,16 +455,17 @@ namespace WeaponCore.Api
                     [ProtoMember(4)] internal bool PrimaryTracking;
                     [ProtoMember(5)] internal bool LockOnFocus;
                     [ProtoMember(6)] internal bool SuppressFire;
+                    [ProtoMember(7)] internal bool OverrideLeads;
                 }
 
                 [ProtoContract]
                 public struct HardwareDef
                 {
-                    public enum ArmorState
+                    public enum HardwareType
                     {
-                        IsWeapon,
-                        Passive,
-                        Active,
+                        BlockWeapon = 0,
+                        HandWeapon = 1,
+                        Phantom = 6,
                     }
 
                     [ProtoMember(1)] internal float RotateRate;
@@ -584,7 +477,21 @@ namespace WeaponCore.Api
                     [ProtoMember(7)] internal int MaxElevation;
                     [ProtoMember(8)] internal int MinElevation;
                     [ProtoMember(9)] internal float InventorySize;
-                    [ProtoMember(10)] internal ArmorState Armor;
+                    [ProtoMember(10)] internal HardwareType Type;
+                    [ProtoMember(11)] internal int HomeAzimuth;
+                    [ProtoMember(12)] internal int HomeElevation;
+                    [ProtoMember(13)] internal CriticalDef CriticalReaction;
+                    [ProtoMember(14)] internal float IdlePower;
+
+                    [ProtoContract]
+                    public struct CriticalDef
+                    {
+                        [ProtoMember(1)] internal bool Enable;
+                        [ProtoMember(2)] internal int DefaultArmedTimer;
+                        [ProtoMember(3)] internal bool PreArmed;
+                        [ProtoMember(4)] internal bool TerminalControls;
+                        [ProtoMember(5)] internal string AmmoRound;
+                    }
                 }
 
                 [ProtoContract]
@@ -603,7 +510,7 @@ namespace WeaponCore.Api
                 [ProtoContract]
                 public struct OtherDef
                 {
-                    [ProtoMember(1)] internal int GridWeaponCap;
+                    [ProtoMember(1)] internal int ConstructPartCap;
                     [ProtoMember(2)] internal int EnergyPriority;
                     [ProtoMember(3)] internal int RotateBarrelAxis;
                     [ProtoMember(4)] internal bool MuzzleCheck;
@@ -616,8 +523,8 @@ namespace WeaponCore.Api
                 [ProtoContract]
                 public struct HardPointParticleDef
                 {
-                    [ProtoMember(1)] internal ParticleDef Barrel1;
-                    [ProtoMember(2)] internal ParticleDef Barrel2;
+                    [ProtoMember(1)] internal ParticleDef Effect1;
+                    [ProtoMember(2)] internal ParticleDef Effect2;
                 }
             }
 
@@ -638,14 +545,14 @@ namespace WeaponCore.Api
                 [ProtoMember(12)] internal TrajectoryDef Trajectory;
                 [ProtoMember(13)] internal AreaDamageDef AreaEffect;
                 [ProtoMember(14)] internal BeamDef Beams;
-                [ProtoMember(15)] internal ShrapnelDef Shrapnel;
+                [ProtoMember(15)] internal FragmentDef Fragment;
                 [ProtoMember(16)] internal GraphicDef AmmoGraphics;
                 [ProtoMember(17)] internal AmmoAudioDef AmmoAudio;
                 [ProtoMember(18)] internal bool HardPointUsable;
-                [ProtoMember(19)] internal AmmoPatternDef Pattern;
+                [ProtoMember(19)] internal PatternDef Pattern;
                 [ProtoMember(20)] internal int EnergyMagazineSize;
                 [ProtoMember(21)] internal float DecayPerShot;
-                [ProtoMember(22)] internal AmmoEjectionDef Ejection;
+                [ProtoMember(22)] internal EjectionDef Ejection;
                 [ProtoMember(23)] internal bool IgnoreWater;
 
                 [ProtoContract]
@@ -663,6 +570,7 @@ namespace WeaponCore.Api
                     [ProtoMember(9)] internal FallOffDef FallOff;
                     [ProtoMember(10)] internal double HealthHitModifier;
                     [ProtoMember(11)] internal double VoxelHitModifier;
+                    [ProtoMember(12)] internal DamageTypes DamageType;
 
                     [ProtoContract]
                     public struct FallOffDef
@@ -695,15 +603,29 @@ namespace WeaponCore.Api
                     }
 
                     [ProtoContract]
+                    public struct DamageTypes
+                    {
+                        internal enum Damage
+                        {
+                            Energy,
+                            Kinetic,
+                        }
+
+                        [ProtoMember(1)] internal Damage Base;
+                        [ProtoMember(2)] internal Damage AreaEffect;
+                        [ProtoMember(3)] internal Damage Detonation;
+                        [ProtoMember(4)] internal Damage Shield;
+                    }
+
+                    [ProtoContract]
                     public struct ShieldDef
                     {
                         internal enum ShieldType
                         {
+                            Default,
                             Heal,
                             Bypass,
                             Emp,
-                            Energy,
-                            Kinetic
                         }
 
                         [ProtoMember(1)] internal float Modifier;
@@ -843,7 +765,7 @@ namespace WeaponCore.Api
                 }
 
                 [ProtoContract]
-                public struct ShrapnelDef
+                public struct FragmentDef
                 {
                     [ProtoMember(1)] internal string AmmoRound;
                     [ProtoMember(2)] internal int Fragments;
@@ -855,9 +777,9 @@ namespace WeaponCore.Api
                 }
 
                 [ProtoContract]
-                public struct AmmoPatternDef
+                public struct PatternDef
                 {
-                    [ProtoMember(1)] internal string[] Ammos;
+                    [ProtoMember(1)] internal string[] Patterns;
                     [ProtoMember(2)] internal bool Enable;
                     [ProtoMember(3)] internal float TriggerChance;
                     [ProtoMember(4)] internal bool SkipParent;
@@ -868,7 +790,7 @@ namespace WeaponCore.Api
                 }
 
                 [ProtoContract]
-                public struct AmmoEjectionDef
+                public struct EjectionDef
                 {
                     public enum SpawnType
                     {
@@ -907,6 +829,7 @@ namespace WeaponCore.Api
                         DotField,
                         PushField,
                         PullField,
+                        TractorField,
                     }
 
                     [ProtoMember(1)] internal double AreaEffectRadius;
@@ -963,6 +886,9 @@ namespace WeaponCore.Api
                             [ProtoMember(1)] internal Force ForceFrom;
                             [ProtoMember(2)] internal Force ForceTo;
                             [ProtoMember(3)] internal Force Position;
+                            [ProtoMember(4)] internal bool DisableRelativeMass;
+                            [ProtoMember(5)] internal double TractorRange;
+                            [ProtoMember(6)] internal bool ShooterFeelsForce;
                         }
                     }
 
@@ -1044,6 +970,8 @@ namespace WeaponCore.Api
                         [ProtoMember(8)] internal bool NoTargetExpire;
                         [ProtoMember(9)] internal bool Roam;
                         [ProtoMember(10)] internal bool KeepAliveAfterTargetLoss;
+                        [ProtoMember(11)] internal float OffsetRatio;
+                        [ProtoMember(12)] internal int OffsetTime;
                     }
 
                     [ProtoContract]

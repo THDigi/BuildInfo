@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Features
                     weaponTracker = null;
                     weaponBlockDef = null;
                     weaponDef = null;
-                    weaponCoreBlock = Main.WeaponCoreAPIHandler.Weapons.ContainsKey(turret.BlockDefinition);
+                    weaponCoreBlock = Main.CoreSystemsAPIHandler.Weapons.ContainsKey(turret.BlockDefinition);
 
                     if(!weaponCoreBlock)
                     {

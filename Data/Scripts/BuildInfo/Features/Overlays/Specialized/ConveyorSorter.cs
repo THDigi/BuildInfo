@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
+using CoreSystems.Api;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
-using WeaponCore.Api;
 
 namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
@@ -15,15 +15,15 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
         public override void Draw(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> wcDefs;
+            if(Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
             {
                 DrawWeaponCoreWeapon(ref drawMatrix, drawInstance, def, block, wcDefs);
                 return;
             }
         }
 
-        internal static void DrawWeaponCoreWeapon(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block, List<WcApiDef.WeaponDefinition> wcDefs)
+        internal static void DrawWeaponCoreWeapon(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block, List<CoreSystemsDef.WeaponDefinition> weaponDefs)
         {
         }
     }

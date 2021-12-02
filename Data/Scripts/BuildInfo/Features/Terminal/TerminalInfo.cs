@@ -480,7 +480,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Input: <n> W
 
             // Conveyor sorters can be used as a base block for WeaponCore.
-            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -543,7 +543,7 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;

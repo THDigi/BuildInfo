@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using System.Xml.Serialization;
+using CoreSystems.Api;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
@@ -26,7 +27,6 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using WeaponCore.Api;
 using Whiplash.WeaponFramework;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
@@ -829,7 +829,7 @@ namespace Digi.BuildInfo.Features
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
-            if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
@@ -1204,12 +1204,12 @@ namespace Digi.BuildInfo.Features
                 if(dmgMul != 1 || gridDmgMul != 1)
                 {
                     AddLine();
-                    ResistanceFormat(dmgMul);
+                    DamageMultiplierAsResistance(dmgMul);
 
                     if(gridDmgMul != 1)
                     {
                         GetLine().Separator();
-                        ResistanceFormat(gridDmgMul, label: "Grid");
+                        DamageMultiplierAsResistance(gridDmgMul, label: "Grid");
                     }
                 }
 
@@ -1827,7 +1827,18 @@ namespace Digi.BuildInfo.Features
                 if(dmgMul != 1)
                 {
                     GetLine().Separator();
-                    ResistanceFormat(dmgMul);
+                    DamageMultiplierAsResistance(dmgMul);
+                }
+            }
+
+            // TODO: add PlaceInfoFlags.ModDetails? and use everywhere where's mod-given info
+            //if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ModDetails))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
+            {
+                CoreSystemsDef.ArmorDefinition csArmorDef;
+                if(Main.CoreSystemsAPIHandler.Armor.TryGetValue(def.Id.SubtypeName, out csArmorDef))
+                {
+                    Format_CoreSystemsArmor(def, csArmorDef);
                 }
             }
 
@@ -2129,10 +2140,10 @@ namespace Digi.BuildInfo.Features
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
+            if(Main.CoreSystemsAPIHandler.IsRunning && Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out csWeaponDefs))
             {
-                Format_WeaponCore(def, wcDefs);
+                Format_CoreSystemsWeapon(def, csWeaponDefs);
                 return;
             }
 
@@ -3458,10 +3469,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
+            if(Main.CoreSystemsAPIHandler.IsRunning && Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out csWeaponDefs))
             {
-                Format_WeaponCore(def, wcDefs);
+                Format_CoreSystemsWeapon(def, csWeaponDefs);
                 return;
             }
 
@@ -3782,7 +3793,25 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_WeaponCore(MyCubeBlockDefinition blockDef, List<WcApiDef.WeaponDefinition> wcDefs)
+        void Format_CoreSystemsArmor(MyCubeBlockDefinition blockDef, CoreSystemsDef.ArmorDefinition armorDef)
+        {
+            StringBuilder sb = AddLine().Append(CoreSystemsAPIHandler.APIName).Append(" Armor: ");
+
+            switch(armorDef.Kind)
+            {
+                case CoreSystemsDef.ArmorDefinition.ArmorType.Heavy: sb.Append("Heavy"); break;
+                case CoreSystemsDef.ArmorDefinition.ArmorType.Light: sb.Append("Light"); break;
+                case CoreSystemsDef.ArmorDefinition.ArmorType.NonArmor: sb.Append("None"); break;
+                default: sb.Append(armorDef.Kind.ToString()); break;
+            }
+
+            sb.Separator();
+            ResistanceFormat(armorDef.EnergeticResistance, "Energy");
+            sb.Separator();
+            ResistanceFormat(armorDef.KineticResistance, "Kinetic");
+        }
+
+        void Format_CoreSystemsWeapon(MyCubeBlockDefinition blockDef, List<CoreSystemsDef.WeaponDefinition> weaponDefs)
         {
             // NOTE: this includes conveyor sorter too
 
@@ -3804,7 +3833,7 @@ namespace Digi.BuildInfo.Features
             //    }
             //}
 
-            AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
+            AddLine().Color(COLOR_UNIMPORTANT).Append("(").Append(CoreSystemsAPIHandler.APIName).Append(" block, vanilla stats hidden)");
 
 
             //for(int wcIdx = 0; wcIdx < wcDefs.Count; wcIdx++)
@@ -4086,13 +4115,23 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void ResistanceFormat(float damageMultiplier, string label = "Resistance")
+        private void DamageMultiplierAsResistance(float damageMultiplier, string label = "Resistance")
         {
-            int dmgResPercent = Utils.DamageMultiplierToResistance(damageMultiplier);
+            int dmgResPercent = (int)(((1f / damageMultiplier) - 1) * 100);
 
             GetLine()
                 .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%")
                 .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetFormatting();
+        }
+
+        private void ResistanceFormat(double resistance, string label = "Resistance")
+        {
+            int resPercent = (int)((resistance - 1) * 100f);
+            float multiplier = (float)(1d / resistance);
+
+            GetLine()
+                .Color(resPercent == 1 ? COLOR_NORMAL : (resPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(resPercent > 0 ? "+" : "").Append(resPercent).Append("%")
+                .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(multiplier, 2).Append(")").ResetFormatting();
         }
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
