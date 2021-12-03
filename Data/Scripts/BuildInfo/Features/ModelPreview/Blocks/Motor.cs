@@ -1,5 +1,8 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
+using Digi.Input;
 using Sandbox.Definitions;
+using Sandbox.ModAPI;
+using VRage.Game;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
@@ -10,11 +13,13 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         PreviewEntityWrapper TopPart;
         MyMotorStatorDefinition MotorDef;
         BData_Motor Data;
+        float Displacement;
 
         protected override bool Initialized()
         {
             bool baseReturn = base.Initialized();
             Valid = false;
+            Displacement = 0;
 
             Data = Main.LiveDataHandler.Get<BData_Motor>(BlockDef);
             MotorDef = BlockDef as MyMotorStatorDefinition;
@@ -59,7 +64,21 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
-            float displacement = 0 + MotorDef.RotorDisplacementInModel; // this is what IMyMotorStator.Displacement would return for 0 displacement
+            if(InputLib.IsInputReadable())
+            {
+                bool isSmall = (MotorDef.CubeSize == MyCubeSize.Small);
+                float minDisplacement = (isSmall ? MotorDef.RotorDisplacementMinSmall : MotorDef.RotorDisplacementMin);
+                float maxDisplacement = (isSmall ? MotorDef.RotorDisplacementMaxSmall : MotorDef.RotorDisplacementMax);
+
+                if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                    Displacement += (maxDisplacement - minDisplacement) / 60f; // so it takes a second to go from one end to the other
+                else if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+                    Displacement -= (maxDisplacement - minDisplacement) / 60f;
+
+                Displacement = MathHelper.Clamp(Displacement, minDisplacement, maxDisplacement);
+            }
+
+            float displacement = Displacement - MotorDef.RotorDisplacementInModel;
 
             MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, displacement);
 
