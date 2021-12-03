@@ -11,6 +11,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
@@ -527,6 +528,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 {
                     info.Append("Status: Connected\n");
                     info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
+
+                    if(connector.OtherConnector.GetValue<bool>("Trading")) // HACK: replace with interface property if that ever gets added
+                    {
+                        info.Append("Target is in Trade-Mode").Append('\n');
+                    }
+
                     info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
                 }
                 else

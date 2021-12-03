@@ -19,6 +19,7 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
@@ -1321,6 +1322,21 @@ namespace Digi.BuildInfo.Features
                 }
             }
             #endregion Optional: ownership
+
+            //if(Main.Config.AimInfo.IsSet(AimInfoFlags.BlockSpecific))
+            {
+                IMyShipConnector connector = aimedBlock.FatBlock as IMyShipConnector;
+                if(connector != null)
+                {
+                    if(connector.GetValue<bool>("Trading")) // HACK: replace with interface property if that ever gets added
+                    {
+                        if(!connector.HasLocalPlayerAccess())
+                            AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Connector is in Trade-Mode.");
+                        else
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("Connector is in Trade-Mode.");
+                    }
+                }
+            }
 
             #region Time to complete/grind
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
