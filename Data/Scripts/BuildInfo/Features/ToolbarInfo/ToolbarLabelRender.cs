@@ -567,7 +567,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
-                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)<reset>\n");
+                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
             }
 
             for(int i = 0; i < slotsPerPage; i++)

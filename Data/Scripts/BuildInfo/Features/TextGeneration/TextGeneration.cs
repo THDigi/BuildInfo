@@ -1812,6 +1812,7 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Label("Part").Append(def.DisplayNameText);
                 partPrefix = (Main.TextAPI.IsEnabled ? "<color=55,255,155>        | <reset>" : "       | ");
+                Utilities.StringBuilderExtensions.CurrentColor = COLOR_NORMAL;
             }
 
             #region Mass/size/build time/deconstruct time/no models
@@ -2110,8 +2111,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
-
+                AddLine().LabelHardcoded("Power required");
                 GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerGrid).Append(" per grid (regardless of conveyor presence)");
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
@@ -2748,7 +2748,7 @@ namespace Digi.BuildInfo.Features
                 if(medicalRoom.RefuelAllowed)
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x5)");
                 else
-                    AddLine(FontsHandler.RedSh).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).LabelHardcoded("Refuel").Append("No").ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -4166,7 +4166,7 @@ namespace Digi.BuildInfo.Features
                 Color color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
 
                 if(powerHardcoded)
-                    AddLine().Color(color).LabelHardcoded("Power required", color);
+                    AddLine().Color(color).LabelHardcoded("Power required");
                 else
                     AddLine().Color(color).Label("Power required");
 

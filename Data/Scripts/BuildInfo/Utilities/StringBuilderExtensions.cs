@@ -238,9 +238,11 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder NewCleanLine(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+            {
+                CurrentColor = VRageMath.Color.White;
                 return s.Append("<reset>\n");
-            else
-                return s.Append('\n');
+            }
+            return s.Append('\n');
         }
 
         public static StringBuilder Label(this StringBuilder s, string label)
@@ -248,19 +250,10 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(label).Append(": ");
         }
 
-        public static StringBuilder LabelHardcoded(this StringBuilder s, string label, Color color)
-        {
-            return s.Append(label).Hardcoded().Color(color).Append(": ");
-        }
-
         public static StringBuilder LabelHardcoded(this StringBuilder s, string label)
         {
-            return s.LabelHardcoded(label, BuildInfoMod.Instance.TextGeneration.COLOR_NORMAL);
-        }
-
-        public static StringBuilder Hardcoded(this StringBuilder s)
-        {
-            return s.Color(new Color(255, 200, 100)).Append('*');
+            Color prevColor = CurrentColor;
+            return s.Append(label).Color(new Color(255, 200, 100)).Append('*').Color(prevColor).Append(": ");
         }
 
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
@@ -273,26 +266,39 @@ namespace Digi.BuildInfo.Utilities
             return s.Color(BuildInfoMod.Instance.TextGeneration.COLOR_UNIMPORTANT).Append(" ([").Append(num).Append("] @ /bi)");
         }
 
+        /// <summary>
+        /// Assigned by Color methods as well as Reset ones.
+        /// </summary>
+        public static Color CurrentColor { get; set; } = VRageMath.Color.White;
+
         public static StringBuilder Color(this StringBuilder s, Color color)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+            {
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append('>');
+                CurrentColor = color;
+            }
             return s;
         }
 
         public static StringBuilder ColorA(this StringBuilder s, Color color)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+            {
                 s.Append("<color=").Append(color.R).Append(',').Append(color.G).Append(',').Append(color.B).Append(',').Append(color.A).Append('>');
+                CurrentColor = color;
+            }
             return s;
         }
 
         public static StringBuilder ResetFormatting(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+            {
+                CurrentColor = VRageMath.Color.White;
                 return s.Append("<reset>");
-            else
-                return s;
+            }
+            return s;
         }
 
         // Some ResourceSinkGroup are string and some are MyStringHash...
@@ -930,6 +936,42 @@ namespace Digi.BuildInfo.Utilities
                 return s;
 
             return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##########"));
+        }
+
+        static char[] SplitExponent = new char[] { 'e' };
+        public static StringBuilder ExponentNumber(this StringBuilder s, double value)
+        {
+            if(value >= 10000 || value < 0.01)
+            {
+                //Vector3 hsv = CurrentColor.ColorToHSV();
+
+                //hsv.X += 0.2f;
+                //if(hsv.X > 1f)
+                //    hsv.X -= 1f;
+
+                //if(hsv.Y <= 0.8f)
+                //    hsv.Y += 0.2f;
+                //else if(hsv.Z <= 0.8f)
+                //    hsv.Z += 0.2f;
+
+                //Color expColor = hsv.HSVtoColor();
+
+                //s.Append(value.ToString($"0.##<i><color={expColor.R}\\,{expColor.G}\\,{expColor.B}>e+0</i>")).Color(CurrentColor);
+
+                string numText = value.ToString($"0.##e+0");
+                string[] parts = numText.Split(SplitExponent);
+
+                if(parts.Length != 2)
+                    Log.Error($"Exponent has more than one 'e'???: value={value.ToString("N10")}; numText='{numText}'");
+
+                Color prevColor = CurrentColor;
+                s.Append(parts[0]).Color(new Color(200, 55, 200)).Append('e').Color(prevColor).Append(parts[1]);
+            }
+            else
+            {
+                s.Append(Math.Round(value, 2));
+            }
+            return s;
         }
 
         public static StringBuilder ShortNumber(this StringBuilder s, float value)

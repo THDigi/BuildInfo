@@ -310,7 +310,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
-                sb.Color(ModNameColor).Append("<i>(").Append(BuildInfoMod.ModName).Append(" Mod)<reset>\n");
+                sb.Color(ModNameColor).Append("<i>(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
             }
 
             sb.TrimEndWhitespace();
