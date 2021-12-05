@@ -11,6 +11,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Game.ModAPI.Interfaces;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -107,12 +108,22 @@ namespace Digi.BuildInfo.Utilities
             MyOrientedBoundingBoxD box = MyCubeBuilder.Static.GetBuildBoundingBox();
             matrix = MatrixD.CreateFromQuaternion(box.Orientation);
 
-            if(MyCubeBuilder.Static.DynamicMode && MyCubeBuilder.Static.HitInfo.HasValue)
+            if(MyCubeBuilder.Static.DynamicMode)
             {
-                IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo.Value.GetHitEnt();
+                IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo?.GetHitEnt();
                 if(hitEnt == null)
                 {
-                    matrix.Translation = MyCubeBuilder.Static.FreePlacementTarget; // required for the position to be accurate when the block is not aimed at anything
+                    // better accuracy that doesn't race with current frame update for cubebuilder making it jitter
+                    // cloned from MyDefaultPlacementProvider.RayStart & RayDirection
+                    MatrixD rayMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+                    if(MyAPIGateway.Session.ControlledObject != null)
+                    {
+                        MyCameraControllerEnum cameraControllerEnum = GetCameraControllerEnum();
+                        if(cameraControllerEnum == MyCameraControllerEnum.Entity || cameraControllerEnum == MyCameraControllerEnum.ThirdPersonSpectator)
+                            rayMatrix = MyAPIGateway.Session.ControlledObject.GetHeadMatrix(includeY: false);
+                    }
+
+                    matrix.Translation = rayMatrix.Translation + rayMatrix.Forward * MyCubeBuilder.IntersectionDistance;
                 }
                 else if(hitEnt is IMyVoxelBase)
                 {
@@ -134,6 +145,50 @@ namespace Digi.BuildInfo.Utilities
             }
 
             return true;
+        }
+
+        static MyCameraControllerEnum GetCameraControllerEnum()
+        {
+            IMyCameraController camCtrl = MyAPIGateway.Session.CameraController;
+            if(camCtrl == null)
+                return MyCameraControllerEnum.Spectator;
+
+            string camControllerName = camCtrl.GetType().Name;
+
+            if(camControllerName == "MySpectatorCameraController")
+            {
+                return MyCameraControllerEnum.Spectator;
+
+                //switch(MySpectatorCameraController.Static.SpectatorCameraMovement)
+                //{
+                //    case MySpectatorCameraMovementEnum.UserControlled:
+                //        return MyCameraControllerEnum.Spectator;
+                //    case MySpectatorCameraMovementEnum.ConstantDelta:
+                //        return MyCameraControllerEnum.SpectatorDelta;
+                //    case MySpectatorCameraMovementEnum.None:
+                //        return MyCameraControllerEnum.SpectatorFixed;
+                //    case MySpectatorCameraMovementEnum.Orbit:
+                //        return MyCameraControllerEnum.SpectatorOrbit;
+                //}
+            }
+            else
+            {
+                if(camControllerName == "MyThirdPersonSpectator")
+                {
+                    return MyCameraControllerEnum.ThirdPersonSpectator;
+                }
+
+                if(camCtrl is MyEntity || camCtrl is MyEntityRespawnComponentBase)
+                {
+                    if((!camCtrl.IsInFirstPersonView && !camCtrl.ForceFirstPersonCamera) || !camCtrl.EnableFirstPersonView)
+                    {
+                        return MyCameraControllerEnum.ThirdPersonSpectator;
+                    }
+
+                    return MyCameraControllerEnum.Entity;
+                }
+            }
+            return MyCameraControllerEnum.Spectator;
         }
 
         public static IMyModelDummy GetDummy(IMyModel model, string name)
