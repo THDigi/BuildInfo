@@ -1,5 +1,6 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Digi.Input;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -64,7 +65,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
-            if(InputLib.IsInputReadable())
+            if(MotorDef.RotorType == MyRotorType.Rotor && InputLib.IsInputReadable())
             {
                 bool isSmall = (MotorDef.CubeSize == MyCubeSize.Small);
                 float minDisplacement = (isSmall ? MotorDef.RotorDisplacementMinSmall : MotorDef.RotorDisplacementMin);

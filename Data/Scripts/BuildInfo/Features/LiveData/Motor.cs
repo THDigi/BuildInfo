@@ -9,12 +9,10 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Motor : BData_Base
     {
-        public Matrix TopLocalMatrix;
-
         protected Vector3 DummyLocalPos;
 
         // from MyMotorBase.DummyPosition
-        protected Vector3 GetDummyLocalPosition(Matrix localMatrix, float displacement)
+        public Vector3 GetDummyLocalPosition(Matrix localMatrix, float displacement)
         {
             Vector3 offset = Vector3.Zero;
             if(DummyLocalPos.LengthSquared() > 0f)

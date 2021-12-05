@@ -325,7 +325,7 @@ namespace Digi.BuildInfo.Utilities
         }
 
         public static bool CreativeToolsEnabled => MyAPIGateway.Session.CreativeMode || (MyAPIGateway.Session.HasCreativeRights && MyAPIGateway.Session.EnableCopyPaste);
-        
+
         /// <summary>
         /// HACK: matching vanilla HUD transparency better
         /// </summary>

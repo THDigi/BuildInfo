@@ -1204,15 +1204,22 @@ namespace Digi.BuildInfo.Features
 
                 if(dmgMul != 1 || gridDmgMul != 1)
                 {
-                    AddLine();
+                    StringBuilder sb = AddLine();
                     DamageMultiplierAsResistance(dmgMul);
 
                     if(gridDmgMul != 1)
                     {
-                        GetLine().Separator();
+                        sb.Separator();
                         DamageMultiplierAsResistance(gridDmgMul, label: "Grid");
                     }
                 }
+
+                // TODO: add here or not?
+                //CoreSystemsDef.ArmorDefinition csArmorDef;
+                //if(Main.CoreSystemsAPIHandler.Armor.TryGetValue(def.Id.SubtypeName, out csArmorDef))
+                //{
+                //    Format_CoreSystemsArmor(def, csArmorDef);
+                //}
 
                 // TODO: impact resistance? wheels in particular...
             }
@@ -1226,48 +1233,53 @@ namespace Digi.BuildInfo.Features
                     MyRelationsBetweenPlayerAndBlock relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
                     MyOwnershipShareModeEnum shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
 
-                    AddLine();
+                    StringBuilder sb = AddLine();
 
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
-                        GetLine().Color(COLOR_BAD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                        GetLine().Color(COLOR_OWNER);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                        GetLine().Color(COLOR_GOOD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                        GetLine().Color(COLOR_WARNING);
+                    sb.Label("Owner");
 
                     if(aimedBlock.OwnerId == 0)
                     {
-                        GetLine().Append("Not owned");
+                        sb.Color(COLOR_WARNING).Append("(Nobody)");
                     }
                     else
                     {
-                        GetLine().Append("Owner: ");
+                        Color ownershipColor = COLOR_NORMAL;
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                            ownershipColor = COLOR_BAD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                            ownershipColor = COLOR_OWNER;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                            ownershipColor = COLOR_GOOD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                            ownershipColor = COLOR_WARNING;
 
-                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
+                        sb.Color(ownershipColor);
+
                         string factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
-                            GetLine().Append(factionTag).Append('.');
+                            sb.Append(factionTag).Append('.');
 
-                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
+                        sb.AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
                     }
 
-                    GetLine().ResetFormatting().Separator();
+                    sb.ResetFormatting().Separator();
+
+                    sb.Label("Access");
 
                     if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
                     {
-                        GetLine().Color(COLOR_GOOD).Append("Access: All");
+                        sb.Color(COLOR_GOOD).Append("All");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.All)
                     {
                         if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
-                            GetLine().Color(COLOR_GOOD);
+                            sb.Color(COLOR_GOOD);
                         else
-                            GetLine().Color(COLOR_WARNING);
+                            sb.Color(COLOR_WARNING);
 
-                        GetLine().Append("Access: All");
+                        sb.Append("All");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.Faction)
                     {
@@ -1276,7 +1288,7 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().Color(COLOR_BAD);
 
-                        GetLine().Append("Access: Faction");
+                        GetLine().Append("Faction");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.None)
                     {
@@ -1285,39 +1297,40 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().Color(COLOR_BAD);
 
-                        GetLine().Append("Access: Owner");
+                        GetLine().Append("Owner");
                     }
                 }
                 else if(isProjected)
                 {
                     MyRelationsBetweenPlayerAndBlock relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
 
-                    AddLine();
-
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
-                        GetLine().Color(COLOR_BAD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                        GetLine().Color(COLOR_OWNER);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                        GetLine().Color(COLOR_GOOD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                        GetLine().Color(COLOR_WARNING);
+                    StringBuilder sb = AddLine();
 
                     if(projectedBy.OwnerId == 0)
                     {
-                        GetLine().Append("Projector not owned");
+                        sb.Color(COLOR_WARNING).Append("Projector not owned");
                     }
                     else
                     {
-                        GetLine().Append("Projector owner: ");
+                        Color ownershipColor = COLOR_NORMAL;
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                            ownershipColor = COLOR_BAD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                            ownershipColor = COLOR_OWNER;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                            ownershipColor = COLOR_GOOD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                            ownershipColor = COLOR_WARNING;
+
+                        sb.Label("Projector owner").Color(ownershipColor);
 
                         // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
                         string factionTag = projectedBy.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
-                            GetLine().Append(factionTag).Append('.');
+                            sb.Append(factionTag).Append('.');
 
-                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(projectedBy.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                        sb.AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(projectedBy.OwnerId), PLAYER_NAME_MAX_LENGTH);
                     }
                 }
             }
@@ -2215,6 +2228,11 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
+                    if(motor.MinAngleDeg.HasValue || motor.MaxAngleDeg.HasValue)
+                    {
+                        AddLine().Label("Rotation Limits").AngleFormatDeg(motor.MinAngleDeg.GetValueOrDefault(-180)).Append(" to ").AngleFormatDeg(motor.MaxAngleDeg.GetValueOrDefault(180));
+                    }
+
                     AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)

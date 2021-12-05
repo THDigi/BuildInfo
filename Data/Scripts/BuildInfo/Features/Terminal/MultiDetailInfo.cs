@@ -247,7 +247,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     {
                         MyStringHash key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
                         MyGyro internalGyro = (MyGyro)gyro;
-                        MyGyroDefinition gyroDef = (MyGyroDefinition)internalGyro.BlockDefinition;
+                        MyGyroDefinition gyroDef = (MyGyroDefinition)gyro.SlimBlock.BlockDefinition;
 
                         IncrementResInfo(ResInput, key, internalGyro.RequiredPowerInput, gyroDef.RequiredPowerInput * gyro.PowerConsumptionMultiplier);
                     }
