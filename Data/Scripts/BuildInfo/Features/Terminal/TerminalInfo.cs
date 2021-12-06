@@ -1011,6 +1011,39 @@ namespace Digi.BuildInfo.Features.Terminal
                 else
                     info.Append("(unknown)\n");
 
+                MyMotorStatorDefinition statorDef = block.SlimBlock.BlockDefinition as MyMotorStatorDefinition;
+                if(statorDef != null)
+                {
+                    bool isSmall = (block.CubeGrid.GridSizeEnum == MyCubeSize.Small);
+                    float minDisplacement = (isSmall ? statorDef.RotorDisplacementMinSmall : statorDef.RotorDisplacementMin);
+                    float maxDisplacement = (isSmall ? statorDef.RotorDisplacementMaxSmall : statorDef.RotorDisplacementMax);
+
+                    if(minDisplacement < maxDisplacement)
+                    {
+                        BData_Motor data = Main.LiveDataHandler.Get<BData_Motor>(statorDef);
+                        if(data != null)
+                        {
+                            float displacement = minDisplacement - statorDef.RotorDisplacementInModel;
+                            float totalTravel = (maxDisplacement - minDisplacement);
+
+                            MatrixD topMatrix = data.GetRotorMatrix(block.LocalMatrix, block.WorldMatrix, block.CubeGrid.WorldMatrix, displacement);
+
+                            float aligned = GetNearestGridAlign(block, topMatrix, 0, totalTravel);
+
+                            info.Label("Grid-aligned displacement");
+                            if(aligned < 0 || aligned > totalTravel)
+                            {
+                                info.Append("Impossible").Append('\n');
+                            }
+                            else
+                            {
+                                aligned = minDisplacement + aligned;
+                                info.RoundedNumber(aligned, 5).Append("m\n");
+                            }
+                        }
+                    }
+                }
+
                 if(Main.Config.InternalInfo.Value)
                 {
                     info.Append("\nAPI Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians\n");
@@ -1039,12 +1072,12 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 MatrixD topMatrix = data.TopLocalMatrix * Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
 
-                float minAligned = GetNearestGridAligndLimit(block, topMatrix, def.Minimum, piston.MinLimit);
-                float maxAligned = GetNearestGridAligndLimit(block, topMatrix, def.Minimum, piston.MaxLimit);
+                float minAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MinLimit);
+                float maxAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MaxLimit);
 
                 info.Append("Nearest grid-aligned limits:\n");
-                info.Append("  Min: ").DistanceFormat(minAligned, 5).Append('\n');
-                info.Append("  Max: ").DistanceFormat(maxAligned, 5).Append('\n');
+                info.Append("  Min: ").RoundedNumber(minAligned, 5).Append("m\n");
+                info.Append("  Max: ").RoundedNumber(maxAligned, 5).Append("m\n");
             }
 
             if(Main.Config.InternalInfo.Value)
@@ -1053,20 +1086,20 @@ namespace Digi.BuildInfo.Features.Terminal
             }
         }
 
-        static float GetNearestGridAligndLimit(IMyTerminalBlock block, MatrixD topMatrix, float minLimit, float limit)
+        static float GetNearestGridAlign(IMyTerminalBlock block, MatrixD topMatrix, float minOffset, float currentOffset)
         {
             float nearest = 0;
-            float offset = 0;
-            Vector3D startVec = topMatrix.Translation + topMatrix.Up * minLimit;
+            float cellOffset = 0;
+            Vector3D startVec = topMatrix.Translation + topMatrix.Up * minOffset;
 
             do
             {
-                Vector3D limitVec = topMatrix.Translation + topMatrix.Up * (limit + offset);
+                Vector3D limitVec = topMatrix.Translation + topMatrix.Up * (currentOffset + cellOffset);
                 Vector3D alignedVec = block.CubeGrid.GridIntegerToWorld(block.CubeGrid.WorldToGridInteger(limitVec));
 
                 nearest = (float)Vector3D.Dot(topMatrix.Up, (alignedVec - startVec));
 
-                offset += block.CubeGrid.GridSize;
+                cellOffset += block.CubeGrid.GridSize;
             }
             while(nearest < 0);
 
