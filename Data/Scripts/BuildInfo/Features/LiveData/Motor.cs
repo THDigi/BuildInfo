@@ -9,11 +9,17 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Motor : BData_Base
     {
+        public MyMotorStatorDefinition StatorDef;
+        public MyCubeBlockDefinition TopDef;
+
         protected Vector3 DummyLocalPos;
 
         // from MyMotorBase.DummyPosition
-        public Vector3 GetDummyLocalPosition(Matrix localMatrix, float displacement)
+        protected Vector3 GetDummyLocalPosition(Matrix localMatrix, float displacement)
         {
+            if(StatorDef != null)
+                displacement -= StatorDef.RotorDisplacementInModel;
+
             Vector3 offset = Vector3.Zero;
             if(DummyLocalPos.LengthSquared() > 0f)
             {
@@ -50,6 +56,16 @@ namespace Digi.BuildInfo.Features.LiveData
                     DummyLocalPos = Matrix.Normalize(kv.Value.Matrix).Translation;
                     success = true;
                     break;
+                }
+            }
+
+            StatorDef = def as MyMotorStatorDefinition;
+            if(StatorDef != null)
+            {
+                MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(StatorDef.TopPart);
+                if(blockPair != null)
+                {
+                    TopDef = blockPair[def.CubeSize];
                 }
             }
 

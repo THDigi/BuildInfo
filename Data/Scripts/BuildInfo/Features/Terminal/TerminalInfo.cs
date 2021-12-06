@@ -1023,7 +1023,7 @@ namespace Digi.BuildInfo.Features.Terminal
                         BData_Motor data = Main.LiveDataHandler.Get<BData_Motor>(statorDef);
                         if(data != null)
                         {
-                            float displacement = minDisplacement - statorDef.RotorDisplacementInModel;
+                            float displacement = minDisplacement;
                             float totalTravel = (maxDisplacement - minDisplacement);
 
                             MatrixD topMatrix = data.GetRotorMatrix(block.LocalMatrix, block.WorldMatrix, block.CubeGrid.WorldMatrix, displacement);

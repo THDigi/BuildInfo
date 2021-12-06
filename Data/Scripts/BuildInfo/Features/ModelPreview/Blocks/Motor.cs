@@ -12,7 +12,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     {
         bool Valid;
         PreviewEntityWrapper TopPart;
-        MyMotorStatorDefinition MotorDef;
         BData_Motor Data;
         float Displacement;
 
@@ -23,19 +22,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Displacement = 0;
 
             Data = Main.LiveDataHandler.Get<BData_Motor>(BlockDef);
-            MotorDef = BlockDef as MyMotorStatorDefinition;
-            if(Data == null || MotorDef == null)
+            if(Data == null || Data.StatorDef == null || Data.TopDef == null)
                 return baseReturn;
 
-            MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(MotorDef.TopPart);
-            if(blockPair == null)
-                return baseReturn;
-
-            MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
-            if(topDef == null)
-                return baseReturn;
-
-            TopPart = new PreviewEntityWrapper(topDef.Model);
+            TopPart = new PreviewEntityWrapper(Data.TopDef.Model);
             Valid = (TopPart != null);
             return baseReturn || Valid;
         }
@@ -47,7 +37,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             TopPart?.Close();
             TopPart = null;
 
-            MotorDef = null;
             Data = null;
         }
 
@@ -65,11 +54,11 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
-            if(MotorDef.RotorType == MyRotorType.Rotor && InputLib.IsInputReadable())
+            if(Data.StatorDef.RotorType == MyRotorType.Rotor && InputLib.IsInputReadable())
             {
-                bool isSmall = (MotorDef.CubeSize == MyCubeSize.Small);
-                float minDisplacement = (isSmall ? MotorDef.RotorDisplacementMinSmall : MotorDef.RotorDisplacementMin);
-                float maxDisplacement = (isSmall ? MotorDef.RotorDisplacementMaxSmall : MotorDef.RotorDisplacementMax);
+                bool isSmall = (Data.StatorDef.CubeSize == MyCubeSize.Small);
+                float minDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMinSmall : Data.StatorDef.RotorDisplacementMin);
+                float maxDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMaxSmall : Data.StatorDef.RotorDisplacementMax);
 
                 if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
                     Displacement += (maxDisplacement - minDisplacement) / 60f; // so it takes a second to go from one end to the other
@@ -79,9 +68,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 Displacement = MathHelper.Clamp(Displacement, minDisplacement, maxDisplacement);
             }
 
-            float displacement = Displacement - MotorDef.RotorDisplacementInModel;
-
-            MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, displacement);
+            MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, Displacement);
 
             TopPart.Update(ref topMatrix);
         }
