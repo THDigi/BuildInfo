@@ -375,6 +375,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(!overrideStatus)
                 {
                     sb.Clear(); // erase any partial appends
+
+                    if(Main.Config.ToolbarActionStatus.Value)
+                        sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align all to the left, unless feature is turned off
+
                     item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
                 }
 

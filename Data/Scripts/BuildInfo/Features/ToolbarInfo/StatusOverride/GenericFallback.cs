@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
@@ -9,7 +10,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public GenericFallback(ToolbarStatusProcessor processor) : base(processor)
         {
+            ToolbarStatusProcessor.StatusDel funcShowIn = new ToolbarStatusProcessor.StatusDel(ShowIn);
+
+            processor.AddFallback(OnOff, "OnOff", "OnOff_On", "OnOff_Off");
             processor.AddFallback(UseConveyor, "UseConveyor");
+            processor.AddFallback(funcShowIn, "ShowOnHUD", "ShowOnHUD_On", "ShowOnHUD_Off");
+            // these don't seem to have actions
+            //processor.AddFallback(funcShowIn, "ShowInTerminal", "ShowInTerminal_On", "ShowInTerminal_Off");
+            //processor.AddFallback(funcShowIn, "ShowInInventory", "ShowInInventory_On", "ShowInInventory_Off");
+            //processor.AddFallback(funcShowIn, "ShowInToolbarConfig", "ShowInToolbarConfig_On", "ShowInToolbarConfig_Off");
 
             processor.AddGroupFallback(GroupOnOff, "OnOff", "OnOff_On", "OnOff_Off");
             processor.AddGroupFallback(GroupUseConveyor, "UseConveyor");
@@ -19,6 +28,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             bool useConveyor = item.Block.GetValue<bool>("UseConveyor"); // TODO: replace when GetProperty() no longer necessary
             sb.Append(useConveyor ? "Share" : "Isolate");
+            return true;
+        }
+
+        bool OnOff(StringBuilder sb, ToolbarItem item)
+        {
+            IMyFunctionalBlock block = item.Block as IMyFunctionalBlock;
+            if(block == null)
+                return false;
+
+            // to differentiate at a glance between block on/off and other toggle.
+            sb.Append("Turned\n").Append(block.Enabled ? "ON" : "OFF");
+            return true;
+        }
+
+        bool ShowIn(StringBuilder sb, ToolbarItem item)
+        {
+            sb.Append(item.Block.ShowOnHUD ? "Shown" : "Hidden");
             return true;
         }
 
