@@ -151,6 +151,7 @@
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\Overlays\Specialized\Motor.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
     <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
     <Compile Include="Features\LiveData\Wheel.cs" />

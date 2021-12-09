@@ -22,6 +22,7 @@ namespace Digi.BuildInfo.Features.Overlays
             new Door(this);
             new LandingGear(this);
             new LaserAntenna(this);
+            new Motor(this);
             new Piston(this);
             new ShipDrill(this);
             new ShipTool(this);
