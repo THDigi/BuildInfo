@@ -401,6 +401,7 @@
     <Compile Include="Libraries\WhiplashWeaponFramework\WhipWeaponFrameworkAPI.cs" />
     <Compile Include="Libraries\WhiplashWeaponFramework\WeaponConfig.cs" />
     <Compile Include="ModComponent.cs" />
+    <Compile Include="Systems\ModDetector.cs" />
     <Compile Include="Systems\GameBlockInfoHandler.cs" />
     <Compile Include="Systems\BlockMonitor.cs" />
     <Compile Include="Systems\EquipmentMonitor.cs" />

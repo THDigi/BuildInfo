@@ -1441,11 +1441,18 @@ namespace Digi.BuildInfo.Features
             #region Optional: item changes on grind
             if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
             {
-                foreach(MyCubeBlockDefinition.Component comp in def.Components)
+                if(Main.ModDetector.DetectedAwwScrap)
                 {
-                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("Some/All components turn into specialized scrap on grind.");
+                }
+                else
+                {
+                    foreach(MyCubeBlockDefinition.Component comp in def.Components)
                     {
-                        AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                        {
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        }
                     }
                 }
             }

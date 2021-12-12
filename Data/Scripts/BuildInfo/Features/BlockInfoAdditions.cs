@@ -28,7 +28,6 @@ namespace Digi.BuildInfo.Features
     {
         readonly Vector4 LineFunctionalColor = new Color(115, 69, 80).ToVector4(); // from MyGuiScreenHudSpace.RecreateControls()
         readonly Vector4 LineOwnershipColor = new Color(56, 67, 147).ToVector4();
-        readonly Vector4 HighlightCompLossColor = (Color.Yellow * 0.75f).ToVector4();
 
         // from MyGuiControlBlockGroupInfo.CreateBlockInfoControl()
         readonly Vector4 ScrollbarColor = new Vector4(118f / 255f, 166f / 255f, 64f / 85f, 1f);
@@ -60,7 +59,8 @@ namespace Digi.BuildInfo.Features
         class ComponentInfo
         {
             public int Index;
-            public MyPhysicalItemDefinition Replaced;
+            public bool ReturnsDifferent;
+            public MyPhysicalItemDefinition ReturnsItem;
             public HudAPIv2.SpaceMessage Text;
         }
 
@@ -146,7 +146,9 @@ namespace Digi.BuildInfo.Features
             for(int i = 0; i < ComponentReplaceInfoCount; ++i)
             {
                 ComponentInfo info = ComponentReplaceInfo[i];
-                info.Replaced = null;
+                info.Index = -1;
+                info.ReturnsItem = null;
+                info.ReturnsDifferent = false;
             }
 
             for(int i = 0; i < blockDef.Components.Length; ++i)
@@ -158,7 +160,8 @@ namespace Digi.BuildInfo.Features
                     OwnershipComponentIndex = i;
                 }
 
-                if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                bool returnsDifferent = (comp.DeconstructItem == null || comp.DeconstructItem != comp.Definition);
+                if(Main.ModDetector.DetectedAwwScrap || returnsDifferent)
                 {
                     ComponentInfo info = null;
                     if(ComponentReplaceInfoCount >= ComponentReplaceInfo.Count)
@@ -172,7 +175,8 @@ namespace Digi.BuildInfo.Features
                     }
 
                     info.Index = i;
-                    info.Replaced = comp.DeconstructItem;
+                    info.ReturnsItem = comp.DeconstructItem;
+                    info.ReturnsDifferent = returnsDifferent;
 
                     ComponentReplaceInfoCount++;
                 }
@@ -576,10 +580,17 @@ namespace Digi.BuildInfo.Features
 
                     Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
+                    Color color;
+                    if(info.ReturnsItem == null) // grinds to nothing, vanilla doesn't really support this but doesn't hurt to have the case
+                        color = Color.Red;
+                    else if(info.ReturnsDifferent)
+                        color = (Main.ModDetector.DetectedAwwScrap ? Color.Gray : Color.Yellow);
+                    else // returns same as grinded, only shows up if aww scrap is detected
+                        color = Color.Lime;
+
                     if(Main.TextAPI.IsEnabled)
                     {
                         const double LeftOffset = 0.0183;
-                        const string LabelPrefix = "<color=255,255,0>Grinds to: ";
                         const string TextFont = FontsHandler.SEOutlined;
                         const int NameMaxChars = 24;
                         double textScale = 0.0012 * scaleFOV;
@@ -588,7 +599,7 @@ namespace Digi.BuildInfo.Features
 
                         if(info.Text == null)
                         {
-                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(LabelPrefix.Length + NameMaxChars), posWorld, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BlendType, TextFont);
+                            info.Text = new HudAPIv2.SpaceMessage(new StringBuilder(32 + NameMaxChars), posWorld, camMatrix.Up, camMatrix.Left, textScale, null, 2, HudAPIv2.TextOrientation.ltr, BlendType, TextFont);
                             info.Text.Visible = false; // not required when using manual .Draw()
                         }
                         else
@@ -600,8 +611,19 @@ namespace Digi.BuildInfo.Features
                         }
 
                         StringBuilder sb = info.Text.Message.Clear();
-                        sb.Append(LabelPrefix);
-                        sb.AppendMaxLength(info.Replaced.DisplayNameText, NameMaxChars);
+
+                        if(info.ReturnsItem == null)
+                        {
+                            sb.Color(color).Append("Grinds to nothing!");
+                        }
+                        else if(info.ReturnsDifferent)
+                        {
+                            sb.Color(color).Append("Grinds to: ").AppendMaxLength(info.ReturnsItem.DisplayNameText, NameMaxChars);
+                        }
+                        else // returns same, only shows up if aww scrap mod is detected
+                        {
+                            sb.Color(color).Append("Grinds to same component");
+                        }
 
                         //info.Text.Visible = true;
                         info.Text.Draw();
@@ -612,7 +634,7 @@ namespace Digi.BuildInfo.Features
 
                         posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y;
 
-                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, HighlightCompLossColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * 0.75f, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
                     }
                 }
                 #endregion

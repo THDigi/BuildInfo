@@ -41,6 +41,7 @@ namespace Digi.BuildInfo
         public readonly WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
         public readonly DefenseShieldsDetector DefenseShieldsDetector;
         public readonly RichHudFrameworkHandler RichHud;
+        public readonly ModDetector ModDetector;
 
         // Features
         public readonly Config Config;
@@ -116,6 +117,7 @@ namespace Digi.BuildInfo
             WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
             DefenseShieldsDetector = new DefenseShieldsDetector(this);
             RichHud = new RichHudFrameworkHandler(this);
+            ModDetector = new ModDetector(this);
 
             // Features
             Config = new Config(this);
