@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(topDef == null)
                 return baseReturn;
 
-            TopPart = new PreviewEntityWrapper(topDef.Model);
+            TopPart = new PreviewEntityWrapper(topDef.Model, null, topDef);
             Valid = (TopPart != null);
             return baseReturn || Valid;
         }

@@ -42,7 +42,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(WheelData == null)
                 return baseReturn;
 
-            WheelPart = new PreviewEntityWrapper(topDef.Model);
+            WheelPart = new PreviewEntityWrapper(topDef.Model, null, topDef);
             Valid = (WheelPart != null);
             RaycastOffset = 0;
             return baseReturn || Valid;

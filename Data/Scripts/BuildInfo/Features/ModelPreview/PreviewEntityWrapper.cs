@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         Vector3? SkinPaintOverride = null;
         float Transparency;
 
-        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null)
+        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null)
         {
             LocalMatrix = localMatrix;
 
@@ -33,6 +33,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Entity.Save = false;
             Entity.SyncFlag = false;
             Entity.IsPreview = true;
+
+            // quick and dirty way of preventing model spawning with last LOD
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            double distance = 3;
+            if(defForInfo != null)
+                distance = (defForInfo.Size.AbsMax() * MyDefinitionManager.Static.GetCubeSize(defForInfo.CubeSize));
+            Entity.WorldMatrix = MatrixD.CreateTranslation(camMatrix.Translation + camMatrix.Backward * distance);
+
             Entity.Init(null, modelFullPath, null, null, null);
             Entity.DisplayName = $"BuildInfo_PreviewModel:{Path.GetFileName(modelFullPath)}";
             Entity.Render.EnableColorMaskHsv = true;
