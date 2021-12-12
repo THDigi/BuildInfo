@@ -94,7 +94,7 @@ namespace Digi.BuildInfo.Systems
                     continue;
                 }
 
-                if(weaponDef.HardPoint.HardWare.Type != CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.HandWeapon)
+                if(weaponDef.HardPoint.HardWare.Type != CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.BlockWeapon)
                     continue;
 
                 foreach(CoreSystemsDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
