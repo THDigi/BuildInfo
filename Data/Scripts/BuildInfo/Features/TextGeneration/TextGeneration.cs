@@ -3755,9 +3755,9 @@ namespace Digi.BuildInfo.Features
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
 
-                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetFormatting().Append(", ");
+                        GetLine().Color(COLOR_STAT_SHIPDMG).Number(ammo.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).Number(ammo.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Number((ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage) * wpDef.DamageMultiplier).ResetFormatting().Append(", ");
 
                         // from MyProjectile.Start()
                         if(ammo.SpeedVar > 0)
@@ -3805,8 +3805,10 @@ namespace Digi.BuildInfo.Features
                         MyAmmoMagazineDefinition mag = data.Item1;
                         MyMissileAmmoDefinition ammo = data.Item2;
 
+                        // HACK: wpDef.DamageMultiplier is not used for explosions
+
                         AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
-                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_SHIPDMG).Number(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
 
                         // HACK: ammo.SpeedVar is not used for missiles
