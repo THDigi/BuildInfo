@@ -1,4 +1,5 @@
-﻿using VRage.Game.Entity;
+﻿#if false
+using VRage.Game.Entity;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
@@ -37,3 +38,4 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         }
     }
 }
+#endif

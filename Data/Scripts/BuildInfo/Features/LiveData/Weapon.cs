@@ -242,15 +242,15 @@ namespace Digi.BuildInfo.Features.LiveData
             MyEntitySubpart subpartPitch;
             if(subpartYaw.TryGetSubpart(pitchName, out subpartPitch))
             {
-                // HACK: interior turret's default subpart orientation is weird
-                if(block is IMyLargeInteriorTurret)
-                {
-                    Matrix yawLM = subpartYaw.PositionComp.LocalMatrixRef;
-                    Matrix pitchLM = subpartPitch.PositionComp.LocalMatrixRef;
-                    Matrix lm = pitchLM * (MatrixD.CreateRotationX(-MathHelper.PiOver2) * yawLM);
-                    turret.PitchLocalPos = lm.Translation;
-                }
-                else
+                // interior turret's default subpart orientation is weird... but mods manage to have it not weird and also rotate properly, so I don't even.
+                //if(block is IMyLargeInteriorTurret)
+                //{
+                //    Matrix yawLM = subpartYaw.PositionComp.LocalMatrixRef;
+                //    Matrix pitchLM = subpartPitch.PositionComp.LocalMatrixRef;
+                //    Matrix lm = pitchLM * (MatrixD.CreateRotationX(-MathHelper.PiOver2) * yawLM);
+                //    turret.PitchLocalPos = lm.Translation;
+                //}
+                //else
                 {
                     turret.PitchLocalPos = (Vector3)Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
                 }
