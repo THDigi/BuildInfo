@@ -68,13 +68,13 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
-            foreach(MyPhysicalItemDefinition physItemDef in Main.Caches.ItemDefs)
-            {
-                if(physItemDef is MyWeaponItemDefinition)
-                {
-                    weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName, () => new List<MyObjectBuilderType>(8)).Add(physItemDef.Id.TypeId);
-                }
-            }
+            //foreach(MyPhysicalItemDefinition physItemDef in Main.Caches.ItemDefs)
+            //{
+            //    if(physItemDef is MyWeaponItemDefinition)
+            //    {
+            //        weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName, () => new List<MyObjectBuilderType>(8)).Add(physItemDef.Id.TypeId);
+            //    }
+            //}
 
             List<byte[]> definitionsAsBytes = new List<byte[]>(32);
             API.GetAllWeaponDefinitions(definitionsAsBytes);

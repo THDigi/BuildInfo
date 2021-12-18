@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features.LiveData
             MyButtonPanelDefinition buttonDef = def as MyButtonPanelDefinition;
             if(buttonDef == null)
             {
-                Log.Error($"Block '{def.Id}' is not {nameof(MyButtonPanelDefinition)}, probably missing `<Definition xsi:type=\"MyObjectBuilder_ButtonPanelDefinition\">` in its definition?");
+                Log.Error($"Block '{def.Id.ToString()}' is not {nameof(MyButtonPanelDefinition)}, probably missing `<Definition xsi:type=\"MyObjectBuilder_ButtonPanelDefinition\">` in its definition?");
                 return base.IsValid(block, def) || false;
             }
 

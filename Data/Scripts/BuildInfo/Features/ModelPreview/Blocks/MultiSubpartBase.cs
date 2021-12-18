@@ -9,7 +9,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         protected bool HasParts;
         protected BData_Base BaseData;
         protected List<PreviewEntityWrapper> Parts;
-        protected bool HideRootSubparts = true;
 
         protected override bool Initialized()
         {
@@ -68,7 +67,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 MatrixD relativeMatrix = part.LocalMatrix.Value * drawMatrix;
 
                 // invisible root subparts because game spawns them too
-                part.Update(ref relativeMatrix, invisibleRoot: HideRootSubparts);
+                part.Update(ref relativeMatrix);
             }
         }
     }

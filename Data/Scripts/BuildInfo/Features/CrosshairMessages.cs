@@ -72,6 +72,9 @@ namespace Digi.BuildInfo.Features
             if(Text == null)
                 return;
 
+            // TODO: unify the split check
+            // TODO: mark an attached connector/piston/hinge/rotor/susp as splitting as well
+
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
             if(aimedBlock != null && Main.EquipmentMonitor.IsAnyGrinder && Main.EquipmentMonitor.AimedProjectedBy == null)
             {

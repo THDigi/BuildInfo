@@ -48,14 +48,14 @@ namespace Digi.BuildInfo.Systems
                 UseChanged?.Invoke(value);
             }
         }
+        bool _use = true;
 
         /// <summary>
         /// Triggered when <see cref="Use"/> changes.
         /// </summary>
         public event Action<bool> UseChanged;
 
-        private HudAPIv2 api;
-        private bool _use = true;
+        HudAPIv2 Api;
 
         public TextAPI(BuildInfoMod main) : base(main)
         {
@@ -64,13 +64,13 @@ namespace Digi.BuildInfo.Systems
 
         public override void RegisterComponent()
         {
-            api = new HudAPIv2(TextAPIDetected);
+            Api = new HudAPIv2(TextAPIDetected);
         }
 
         public override void UnregisterComponent()
         {
-            api?.Close();
-            api = null;
+            Api?.Close();
+            Api = null;
         }
 
         private void TextAPIDetected()
@@ -106,20 +106,20 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        HudAPIv2.HUDMessage measuringMsg;
+        HudAPIv2.HUDMessage _measuringMsg;
         public Vector2D GetStringSize(StringBuilder text)
         {
             if(!WasDetected)
                 throw new Exception("GetStringSize() was calledbefore TextAPI was available!");
 
-            if(measuringMsg == null)
+            if(_measuringMsg == null)
             {
-                measuringMsg = new HudAPIv2.HUDMessage();
-                measuringMsg.Visible = false;
+                _measuringMsg = new HudAPIv2.HUDMessage();
+                _measuringMsg.Visible = false;
             }
 
-            measuringMsg.Message = text;
-            return measuringMsg.GetTextLength();
+            _measuringMsg.Message = text;
+            return _measuringMsg.GetTextLength();
         }
 
         /// <summary>

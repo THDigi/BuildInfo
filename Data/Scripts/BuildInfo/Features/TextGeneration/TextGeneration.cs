@@ -1336,6 +1336,7 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional: ownership
 
+            #region connector trade mode alert
             //if(Main.Config.AimInfo.IsSet(AimInfoFlags.BlockSpecific))
             {
                 IMyShipConnector connector = aimedBlock.FatBlock as IMyShipConnector;
@@ -1350,6 +1351,7 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
+            #endregion 
 
             #region Time to complete/grind
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
@@ -3877,6 +3879,57 @@ namespace Digi.BuildInfo.Features
             //}
 
             AddLine().Color(COLOR_UNIMPORTANT).Append("(").Append(CoreSystemsAPIHandler.APIName).Append(" block, vanilla stats hidden)");
+
+
+#if false
+            string paddingCategory = $" | ";
+            string paddingList = $"<color={COLOR_LIST.R},{COLOR_LIST.G},{COLOR_LIST.B}>    | <reset>";
+            
+            for(int i = 0; i < weaponDefs.Count; i++)
+            {
+                CoreSystemsDef.WeaponDefinition wpDef = weaponDefs[i];
+
+                AddLine().Append($"Weapon #{i}:");
+
+                AddLine().Append(paddingCategory).Label("Ammos");
+
+                foreach(var ammo in wpDef.Ammos)
+                {
+                    AddLine().Append(paddingList).Append($"mag={ammo.AmmoMagazine}; round={ammo.AmmoRound}; hybrid={ammo.HybridRound}; beams={ammo.Beams.Enable}");
+                }
+
+                //AddLine().Append(paddingCategory).Label("Muzzles");
+
+                //foreach(var muzzle in wpDef.Assignments.Muzzles)
+                //{
+                //    AddLine().Append(paddingList).Append($"{muzzle}");
+                //}
+
+                //AddLine().Append(paddingCategory).Label("Mountpoints");
+
+                //foreach(var mount in wpDef.Assignments.MountPoints)
+                //{
+                //    AddLine().Append(paddingList).Append($"id={mount.SubtypeId}; spin={mount.SpinPartId}; yaw={mount.AzimuthPartId}; pitch={mount.ElevationPartId}; durability={mount.DurabilityMod}");
+                //}
+
+                //AddLine().Append(paddingCategory).Append($"ejector={wpDef.Assignments.Ejector}; scope={wpDef.Assignments.Scope}");
+
+                //AddLine().Append(paddingCategory).Append($"shootSubmerged={wpDef.HardPoint.CanShootSubmerged}; aimPrediction={wpDef.HardPoint.AimLeadingPrediction}; type={wpDef.HardPoint.HardWare.Type}");
+
+                //AddLine().Append(paddingCategory).Append($"invSize={wpDef.HardPoint.HardWare.InventorySize}; idlepower={wpDef.HardPoint.HardWare.IdlePower};");
+
+                //AddLine().Append(paddingCategory).Label("Upgrades");
+
+                //foreach(var upgrade in wpDef.Upgrades)
+                //{
+                //    AddLine().Append(paddingList).Append($"{upgrade.Key} = {upgrade.Value.Length} things");
+                //}
+
+                //AddLine().Append(paddingCategory).Label("Targetting");
+
+                //AddLine().Append(paddingList).Append($"subsystems={string.Join(",", wpDef.Targeting.SubSystems)}; threats={string.Join(",", wpDef.Targeting.Threats)}");
+            }
+#endif
 
 
             //for(int wcIdx = 0; wcIdx < wcDefs.Count; wcIdx++)

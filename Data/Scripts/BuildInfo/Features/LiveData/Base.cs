@@ -52,6 +52,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public struct SubpartInfo
     {
+        //public readonly string Name;
         public readonly Matrix LocalMatrix;
         public readonly string Model;
         public readonly List<SubpartInfo> Subparts;
@@ -118,11 +119,17 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
+            dummies.Clear();
+            block.Model.GetDummies(dummies);
+
             ComputeSubparts(block);
             ComputeUpgrades(block);
             ComputeHas(block);
-            ComputeDummies(block, def);
+            ComputeDummies(block, def, dummies);
             //ComputeUseObjects(block, def);
+
+            dummies.Clear();
 
             bool isValid = IsValid(block, def);
 
@@ -210,20 +217,16 @@ namespace Digi.BuildInfo.Features.LiveData
                 Has |= BlockHas.OwnershipDetector;
         }
 
-        void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)
+        void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def, Dictionary<string, IMyModelDummy> dummies)
         {
+            if(dummies.Count == 0)
+                return;
+
             if(block?.Model == null)
             {
                 //Log.Error($"Block '{def.Id.ToString()}' has a FatBlock but no Model, this will crash when opening info tab on its grid; I recommend you add a <Model> tag to it, even if it's a single tiny triangle model.", Log.PRINT_MESSAGE);
                 return;
             }
-
-            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
-            dummies.Clear();
-            block.Model.GetDummies(dummies);
-
-            if(dummies.Count == 0)
-                return;
 
             Color colorTerminalOnly = new Color(55, 255, 220);
             Color colorInteractiveAndTerminal = new Color(50, 255, 150);

@@ -21,13 +21,19 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public Matrix? LocalMatrix;
 
+        /// <summary>
+        /// Wether this entity's model is visible, does not affect subparts.
+        /// </summary>
+        public bool BaseModelVisible = false;
+
         MyStringHash Skin = MyStringHash.NullOrEmpty;
         Vector3? SkinPaintOverride = null;
         float Transparency;
 
-        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null)
+        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null, bool modelVisible = false)
         {
             LocalMatrix = localMatrix;
+            BaseModelVisible = modelVisible;
 
             Entity = new MyEntity();
             Entity.Save = false;
@@ -86,13 +92,13 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             }
         }
 
-        public void Update(ref MatrixD matrix, float? customTransparency = null, bool invisibleRoot = false)
+        public void Update(ref MatrixD matrix, float? customTransparency = null)
         {
             float transparency = (MyCubeBuilder.Static == null || MyCubeBuilder.Static.UseTransparency ? customTransparency ?? Hardcoded.CubeBuilderTransparency : 0f);
             if(Transparency != transparency)
             {
                 Transparency = transparency;
-                Entity.Render.Transparency = (invisibleRoot ? 1f : transparency);
+                Entity.Render.Transparency = (BaseModelVisible ? transparency : 1f);
                 Entity.Render.UpdateTransparency();
 
                 if(AllSubparts != null)

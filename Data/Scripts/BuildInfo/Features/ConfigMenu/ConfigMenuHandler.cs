@@ -116,7 +116,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 Name = "Settings?",
                 SubHeaderText = string.Empty,
                 HeaderText = $"{BuildInfoMod.ModName} Settings",
-                Text = new RichText("Open chat and press F2 to open TextAPI's mod config menu, you should see on the left a \"Mod Settings\" button."),
+                Text = new RichText($"This is the RichHUD menu, while {BuildInfoMod.ModName} only supports TextAPI for now.\n\nTo access TextAPI's mod configurator, open chat and press F2 then look top-left for a \"Mod Settings\" button."),
             });
         }
 
