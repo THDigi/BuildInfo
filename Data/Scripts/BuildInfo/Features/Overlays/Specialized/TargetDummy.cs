@@ -30,14 +30,14 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
-            if(data.Subparts.Count > 0)
+            if(data.ShootableParts.Count > 0)
             {
                 bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
-                foreach(KeyValuePair<string, BData_TargetDummy.SubpartInfo> kv in data.Subparts)
+                foreach(KeyValuePair<string, BData_TargetDummy.PartInfo> kv in data.ShootableParts)
                 {
                     string subpartName = kv.Key;
-                    BData_TargetDummy.SubpartInfo subpartInfo = kv.Value;
+                    BData_TargetDummy.PartInfo subpartInfo = kv.Value;
                     MatrixD matrix = subpartInfo.LocalMatrix * drawMatrix;
 
                     Vector4 color = (subpartInfo.IsCritical ? ColorCrit : ColorLimb);

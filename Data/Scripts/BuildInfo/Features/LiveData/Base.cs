@@ -166,7 +166,7 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
-        void RecursiveSubpartScan(MyEntity entity, List<SubpartInfo> addTo)
+        static void RecursiveSubpartScan(MyEntity entity, List<SubpartInfo> addTo)
         {
             // HACK: make the first layer of subparts be relative to centered block matrix, not ModelOffset'd one
             MatrixD? transform = null;
