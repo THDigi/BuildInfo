@@ -32,6 +32,8 @@ namespace Digi.BuildInfo.Features.ModelPreview
             RegisterType<Piston>(typeof(MyObjectBuilder_PistonBase));
 
             //RegisterType<InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
+
+            RegisterType<AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
         }
 
         public override void RegisterComponent()

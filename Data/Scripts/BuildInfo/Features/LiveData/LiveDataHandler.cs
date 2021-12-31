@@ -74,6 +74,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
+            AddType<BData_AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
+
             // every other block type is going to use BData_Base
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
