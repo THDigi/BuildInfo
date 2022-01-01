@@ -1438,6 +1438,32 @@ namespace Digi.BuildInfo.Features.Terminal
             info.DetailInfo_CurrentPowerUsage(Sink);
             info.DetailInfo_InputGasList(Sink);
             info.DetailInfo_OutputGasList(Source);
+
+            IMyGasTank tank = block as IMyGasTank;
+            MyGasTankDefinition tankDef = block.SlimBlock.BlockDefinition as MyGasTankDefinition;
+            if(tank != null && tank.FilledRatio < 1 && tankDef != null && Sink != null && Source != null)
+            {
+                float input = Sink.CurrentInputByType(tankDef.StoredGasId);
+                float output = Source.CurrentOutputByType(tankDef.StoredGasId);
+                double filledGas = tank.FilledRatio * tank.Capacity;
+
+                if(input == output)
+                {
+                }
+                else if(input > output)
+                {
+                    float filling = (input - output);
+                    double remainingGas = tank.Capacity - filledGas;
+                    float timeToFill = (float)(remainingGas / filling);
+                    info.Append("Filled in: ").TimeFormat(timeToFill);
+                }
+                else
+                {
+                    float draining = (output - input);
+                    float timeToEmpty = (float)(filledGas / draining);
+                    info.Append("Empty in: ").TimeFormat(timeToEmpty);
+                }
+            }
         }
 
         void Format_MedicalRoom(IMyTerminalBlock block, StringBuilder info)
