@@ -399,7 +399,6 @@
     <Compile Include="Libraries\CoreSystems\CoreSystemsApiBase.cs" />
     <Compile Include="Libraries\CoreSystems\CoreSystemsApiBlocks.cs" />
     <Compile Include="Libraries\CoreSystems\CoreSystemsApiDefs.cs" />
-    <Compile Include="Libraries\CoreSystems\CoreSystemsApiPhantoms.cs" />
     <Compile Include="Libraries\WhiplashWeaponFramework\WhipWeaponFrameworkAPI.cs" />
     <Compile Include="Libraries\WhiplashWeaponFramework\WeaponConfig.cs" />
     <Compile Include="ModComponent.cs" />

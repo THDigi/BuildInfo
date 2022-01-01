@@ -161,6 +161,8 @@ namespace Digi.BuildInfo.Systems
                     Armor.Add(subtypeId, armorDef);
                 }
             }
+
+            Log.Info($"{APIName} API registered. Got {Weapons.Count.ToString()} weapons and {Armor.Count.ToString()} armor definitions.");
         }
     }
 }

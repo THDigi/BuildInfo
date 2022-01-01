@@ -554,6 +554,9 @@ namespace CoreSystems.Api
                 [ProtoMember(21)] internal float DecayPerShot;
                 [ProtoMember(22)] internal EjectionDef Ejection;
                 [ProtoMember(23)] internal bool IgnoreWater;
+                [ProtoMember(24)] internal AreaOfDamageDef AreaOfDamage;
+                [ProtoMember(25)] internal EwarDef Ewar;
+                [ProtoMember(26)] internal bool IgnoreVoxels;
 
                 [ProtoContract]
                 public struct DamageScaleDef
@@ -598,8 +601,16 @@ namespace CoreSystems.Api
                     [ProtoContract]
                     public struct CustomScalesDef
                     {
+                        internal enum SkipMode
+                        {
+                            NoSkip,
+                            Inclusive,
+                            Exclusive,
+                        }
+
                         [ProtoMember(1)] internal CustomBlocksDef[] Types;
                         [ProtoMember(2)] internal bool IgnoreAllOthers;
+                        [ProtoMember(3)] internal SkipMode SkipOthers;
                     }
 
                     [ProtoContract]
@@ -625,7 +636,7 @@ namespace CoreSystems.Api
                             Default,
                             Heal,
                             Bypass,
-                            Emp,
+                            EmpRetired,
                         }
 
                         [ProtoMember(1)] internal float Modifier;
@@ -774,6 +785,9 @@ namespace CoreSystems.Api
                     [ProtoMember(5)] internal float Degrees;
                     [ProtoMember(6)] internal bool Reverse;
                     [ProtoMember(7)] internal bool RandomizeDir;
+                    [ProtoMember(8)] internal bool DropVelocity;
+                    [ProtoMember(9)] internal float Offset;
+                    [ProtoMember(10)] internal float Radial;
                 }
 
                 [ProtoContract]
@@ -810,6 +824,133 @@ namespace CoreSystems.Api
                         [ProtoMember(3)] internal int Delay;
                     }
                 }
+
+                [ProtoContract]
+                public struct AreaOfDamageDef
+                {
+                    public enum Falloff
+                    {
+                        Legacy,
+                        NoFalloff,
+                        Linear,
+                        Curve,
+                        InvCurve,
+                        Squeeze,
+                        Pooled,
+                    }
+
+                    public enum AoeShape
+                    {
+                        Round,
+                        Diamond,
+                    }
+
+                    [ProtoMember(1)] internal ByBlockHitDef ByBlockHit;
+                    [ProtoMember(2)] internal EndOfLifeDef EndOfLife;
+
+                    [ProtoContract]
+                    public struct ByBlockHitDef
+                    {
+                        [ProtoMember(1)] internal bool Enable;
+                        [ProtoMember(2)] internal double Radius;
+                        [ProtoMember(3)] internal float Damage;
+                        [ProtoMember(4)] internal float Depth;
+                        [ProtoMember(5)] internal float MaxAbsorb;
+                        [ProtoMember(6)] internal Falloff Falloff;
+                        [ProtoMember(7)] internal AoeShape Shape;
+                    }
+
+                    [ProtoContract]
+                    public struct EndOfLifeDef
+                    {
+                        [ProtoMember(1)] internal bool Enable;
+                        [ProtoMember(2)] internal double Radius;
+                        [ProtoMember(3)] internal float Damage;
+                        [ProtoMember(4)] internal float Depth;
+                        [ProtoMember(5)] internal float MaxAbsorb;
+                        [ProtoMember(6)] internal Falloff Falloff;
+                        [ProtoMember(7)] internal bool ArmOnlyOnHit;
+                        [ProtoMember(8)] internal int MinArmingTime;
+                        [ProtoMember(9)] internal bool NoVisuals;
+                        [ProtoMember(10)] internal bool NoSound;
+                        [ProtoMember(11)] internal float ParticleScale;
+                        [ProtoMember(12)] internal string CustomParticle;
+                        [ProtoMember(13)] internal string CustomSound;
+                        [ProtoMember(14)] internal AoeShape Shape;
+                    }
+                }
+
+                [ProtoContract]
+                public struct EwarDef
+                {
+                    public enum EwarType
+                    {
+                        AntiSmart,
+                        JumpNull,
+                        EnergySink,
+                        Anchor,
+                        Emp,
+                        Offense,
+                        Nav,
+                        Dot,
+                        Push,
+                        Pull,
+                        Tractor,
+                    }
+
+                    public enum EwarMode
+                    {
+                        Effect,
+                        Field,
+                    }
+
+                    [ProtoMember(1)] internal bool Enable;
+                    [ProtoMember(2)] internal EwarType Type;
+                    [ProtoMember(3)] internal EwarMode Mode;
+                    [ProtoMember(4)] internal float Strength;
+                    [ProtoMember(5)] internal double Radius;
+                    [ProtoMember(6)] internal int Duration;
+                    [ProtoMember(7)] internal bool StackDuration;
+                    [ProtoMember(8)] internal bool Depletable;
+                    [ProtoMember(9)] internal int MaxStacks;
+                    [ProtoMember(10)] internal bool NoHitParticle;
+                    [ProtoMember(11)] internal PushPullDef Force;
+                    [ProtoMember(12)] internal FieldDef Field;
+
+
+                    [ProtoContract]
+                    public struct FieldDef
+                    {
+                        [ProtoMember(1)] internal int Interval;
+                        [ProtoMember(2)] internal int PulseChance;
+                        [ProtoMember(3)] internal int GrowTime;
+                        [ProtoMember(4)] internal bool HideModel;
+                        [ProtoMember(5)] internal bool ShowParticle;
+                        [ProtoMember(6)] internal double TriggerRange;
+                        [ProtoMember(7)] internal ParticleDef Particle;
+                    }
+
+                    [ProtoContract]
+                    public struct PushPullDef
+                    {
+                        public enum Force
+                        {
+                            ProjectileLastPosition,
+                            ProjectileOrigin,
+                            HitPosition,
+                            TargetCenter,
+                            TargetCenterOfMass,
+                        }
+
+                        [ProtoMember(1)] internal Force ForceFrom;
+                        [ProtoMember(2)] internal Force ForceTo;
+                        [ProtoMember(3)] internal Force Position;
+                        [ProtoMember(4)] internal bool DisableRelativeMass;
+                        [ProtoMember(5)] internal double TractorRange;
+                        [ProtoMember(6)] internal bool ShooterFeelsForce;
+                    }
+                }
+
 
                 [ProtoContract]
                 public struct AreaDamageDef
@@ -1017,4 +1158,5 @@ namespace CoreSystems.Api
             }
         }
     }
+
 }

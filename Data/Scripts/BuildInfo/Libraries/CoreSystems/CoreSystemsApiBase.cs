@@ -73,9 +73,11 @@ namespace CoreSystems.Api
         public void RemoveProjectileCallback(MyEntity entity, int weaponId, Action<long, int, ulong, long, Vector3D, bool> action) =>
             _removeProjectileMonitor?.Invoke(entity, weaponId, action);
 
+
         // block/grid, Threat, Other 
         public MyTuple<bool, bool> IsInRange(IMyEntity entity) =>
             _isInRange?.Invoke(entity) ?? new MyTuple<bool, bool>();
+
 
         private const long Channel = 67549756549;
         private bool _getWeaponDefinitions;
@@ -123,17 +125,24 @@ namespace CoreSystems.Api
 
         private void HandleMessage(object obj)
         {
-            if(_apiInit || obj is string) // the sent "ApiEndpointRequest" will also be received here, explicitly ignoring that
-                return;
+            try
+            {
+                if(_apiInit || obj is string) // the sent "ApiEndpointRequest" will also be received here, explicitly ignoring that
+                    return;
 
-            var dict = obj as IReadOnlyDictionary<string, Delegate>;
-            if(dict == null)
-                return;
+                var dict = obj as IReadOnlyDictionary<string, Delegate>;
+                if(dict == null)
+                    return;
 
-            ApiAssign(dict, _getWeaponDefinitions);
+                ApiAssign(dict, _getWeaponDefinitions);
 
-            IsReady = true;
-            _readyCallback?.Invoke();
+                IsReady = true;
+                _readyCallback?.Invoke();
+            }
+            catch(Exception e)
+            {
+                Digi.Log.Error(e);
+            }
         }
 
         public void ApiAssign(IReadOnlyDictionary<string, Delegate> delegates, bool getWeaponDefinitions = false)
@@ -192,13 +201,14 @@ namespace CoreSystems.Api
             AssignMethod(delegates, "GetWeaponScope", ref _getWeaponScope);
 
             //Phantom methods
-            AssignMethod(delegates, "GetTargetAssessment", ref _getTargetAssessment);
-            //AssignMethod(delegates, "GetPhantomInfo", ref _getPhantomInfo);
-            AssignMethod(delegates, "SetTriggerState", ref _setTriggerState);
-            AssignMethod(delegates, "AddMagazines", ref _addMagazines);
-            AssignMethod(delegates, "SetAmmo", ref _setAmmo);
-            AssignMethod(delegates, "ClosePhantom", ref _closePhantom);
-            AssignMethod(delegates, "SpawnPhantom", ref _spawnPhantom);
+            //AssignMethod(delegates, "GetTargetAssessment", ref _getTargetAssessment);
+            ////AssignMethod(delegates, "GetPhantomInfo", ref _getPhantomInfo);
+            //AssignMethod(delegates, "SetTriggerState", ref _setTriggerState);
+            //AssignMethod(delegates, "AddMagazines", ref _addMagazines);
+            //AssignMethod(delegates, "SetAmmo", ref _setAmmo);
+            //AssignMethod(delegates, "ClosePhantom", ref _closePhantom);
+            //AssignMethod(delegates, "SpawnPhantom", ref _spawnPhantom);
+            //AssignMethod(delegates, "SetFocusTarget", ref _setPhantomFocusTarget);
 
             //if(getWeaponDefinitions)
             //{
