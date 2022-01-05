@@ -33,6 +33,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 // FIXME: internal info not vanishing on older cached blocks text when resetting config
 // FIXME: box size gets cached from overlay lock on or something
+// TODO: needs redesign to be more flexible and allow hotkey to show block definition info while aiming at a real one
 
 namespace Digi.BuildInfo.Features
 {
