@@ -210,6 +210,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             ResInput.Clear();
             ResOutput.Clear();
+            ResStorage.Clear();
 
             float inventoryCurrentM3 = 0f;
             float inventoryMaxM3 = 0f;
