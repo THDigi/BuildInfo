@@ -160,7 +160,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             switch(action.Id)
             {
                 case "Braking":
-                    action.Name.Clear().Append("Can Brake On/Off");
+                    // HACK: new SB because otherwise it modifies the language key's text
+                    action.Name = new StringBuilder("Can Brake On/Off");
                     break;
 
                 case "Forward":
@@ -173,9 +174,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     string label = MyTexts.GetString("BlockPropertyTitle_ForwardDirection") ?? "Forward Direction";
                     string dirName = GetDirectionTranslated(action.Id);
 
-                    StringBuilder sb = action.Name.Clear();
-                    sb.EnsureCapacity(label.Length + 2 + dirName.Length);
-                    sb.Append(label).Append(": ").Append(dirName);
+                    // HACK: new SB because otherwise it modifies the language key's text
+                    action.Name = new StringBuilder(label.Length + 2 + dirName.Length).Append(label).Append(": ").Append(dirName);
                     break;
                 }
             }
