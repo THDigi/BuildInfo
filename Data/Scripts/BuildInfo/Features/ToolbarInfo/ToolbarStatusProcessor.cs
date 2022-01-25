@@ -61,6 +61,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const string CustomStatusTag = "c";
         public const int CustomTagPrefixSpaces = 8;
 
+        public bool Enabled { get; private set; } = true;
+
         public bool AnimFlip { get; private set; }
 
         int CurrentSlot = 0; // for calling one status callback per tick
@@ -82,6 +84,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public ToolbarStatusProcessor(BuildInfoMod main) : base(main)
         {
+            // HACK: hardcoded known mods to have larger toolbar status text size
+            foreach(var mod in MyAPIGateway.Session.Mods)
+            {
+                switch(mod.PublishedFileId)
+                {
+                    case 1556866989: // HUD modified
+                    case 1715925905: // Colorfull HUD
+                        Enabled = false;
+                        Log.Info("NOTE: Custom action status is forced off because of a HUD mod that increases toolbar status text size.\nThis is a hardcoded list because mods cannot access the text size, if you're the author of such a mod and you changed it, contact me (Digi) about removing your mod from this list that turns off this feature.");
+                        break;
+                }
+            }
         }
 
         public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
@@ -281,7 +295,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 bool overrideStatus = false;
 
-                if(Main.Config.ToolbarActionStatus.Value)
+                if(Enabled && Main.Config.ToolbarActionStatus.Value)
                 {
                     try
                     {

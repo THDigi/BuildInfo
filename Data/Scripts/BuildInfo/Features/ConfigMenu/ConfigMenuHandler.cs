@@ -192,7 +192,13 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
             AddSpacer(Category_Toolbar);
-            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus);
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, onToggle: (v) =>
+            {
+                if(!Main.ToolbarStatusProcessor.Enabled)
+                {
+                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.MOD_NAME, "NOTE: Toolbar action status is forced off because of a HUD mod that increases status text size.");
+                }
+            });
 
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
@@ -606,7 +612,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null)
+        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, Action<bool> onToggle = null)
         {
             ItemToggle item = new ItemToggle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
@@ -615,6 +621,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     setting.Value = v;
                     UpdateTextBox(redraw: false);
                     setGroupInteractable?.SetInteractable(setting.Value);
+                    onToggle?.Invoke(v);
                 },
                 defaultValue: setting.DefaultValue);
 
