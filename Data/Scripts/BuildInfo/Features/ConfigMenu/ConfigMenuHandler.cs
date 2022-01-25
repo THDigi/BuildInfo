@@ -229,6 +229,14 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarActionIcons, execOnCycle: (v) => MyAPIGateway.Utilities.ShowNotification($"NOTE: Toolbar action icons can't be refreshed in real time, you'll need to rejoin world.", 3000, FontsHandler.YellowSh));
             #endregion
 
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, callOnSet: (v) =>
+            {
+                if(!Main.ToolbarStatusProcessor.Enabled)
+                {
+                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, "NOTE: Toolbar action status is forced off because of a HUD mod that increases status text size.");
+                }
+            });
+
             #region Terminal
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
