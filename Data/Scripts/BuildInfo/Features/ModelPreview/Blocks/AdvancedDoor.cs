@@ -27,7 +27,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             foreach(SubpartInfo info in Data.DoorSubparts)
             {
                 PreviewEntityWrapper ent = new PreviewEntityWrapper(info.Model, info.LocalMatrix, BlockDef);
-                ent.BaseModelVisible = true; // show all of them because model doesn't have them as subparts for the game to show them
                 Parts.Add(ent);
             }
 

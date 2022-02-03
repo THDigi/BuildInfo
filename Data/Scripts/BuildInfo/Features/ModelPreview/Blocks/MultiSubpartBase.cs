@@ -34,7 +34,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Parts = new List<PreviewEntityWrapper>(BaseData.Subparts.Count);
             foreach(SubpartInfo info in BaseData.Subparts)
             {
-                Parts.Add(new PreviewEntityWrapper(info.Model, info.LocalMatrix, BlockDef));
+                // don't show the first layer as that is done by the game itself
+                Parts.Add(new PreviewEntityWrapper(info.Model, info.LocalMatrix, BlockDef, modelVisible: false));
             }
 
             HasParts = true;

@@ -24,13 +24,13 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         /// <summary>
         /// Wether this entity's model is visible, does not affect subparts.
         /// </summary>
-        public bool BaseModelVisible = false;
+        public bool BaseModelVisible;
 
         MyStringHash Skin = MyStringHash.NullOrEmpty;
         Vector3? SkinPaintOverride = null;
         float Transparency;
 
-        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null, bool modelVisible = false)
+        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null, bool modelVisible = true)
         {
             LocalMatrix = localMatrix;
             BaseModelVisible = modelVisible;
