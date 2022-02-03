@@ -35,6 +35,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  They can have custom functionality provided by a mod or no functionality at all, can't tell from code." +
             "\n  They're shown in overlays because their position is still useful if you can identify their purpose." +
             "\n" +
+            "\n [4] What is camera raycast?" +
+            "\n  Programmable block can use camera blocks to raycast to detect hits, for more info see the PB API (on MDK wiki maybe)." +
+            "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
             "\n  The vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +

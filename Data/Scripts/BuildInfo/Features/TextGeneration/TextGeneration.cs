@@ -3400,7 +3400,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
+                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).MoreInfoInHelp(4);
             }
         }
 
