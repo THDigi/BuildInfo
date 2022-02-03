@@ -27,6 +27,7 @@ namespace Digi.BuildInfo.Features.Overlays
             new Piston(this);
             new ShipDrill(this);
             new ShipTool(this);
+            new Suspension(this);
             new TargetDummy(this);
             new Thruster(this);
             new Weapon(this);
