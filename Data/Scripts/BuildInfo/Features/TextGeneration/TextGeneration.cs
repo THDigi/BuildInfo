@@ -3401,8 +3401,6 @@ namespace Digi.BuildInfo.Features
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
                 GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
-
-                // TODO: visualize angle limits?
             }
         }
 

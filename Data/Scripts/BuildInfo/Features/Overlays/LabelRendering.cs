@@ -56,6 +56,7 @@ namespace Digi.BuildInfo.Features.Overlays
         SideClearence,
         OptimalClearence,
         Laser,
+        RaycastLimits,
     }
 
     public class LabelRendering

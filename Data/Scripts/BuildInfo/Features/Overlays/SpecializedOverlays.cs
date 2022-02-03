@@ -17,6 +17,7 @@ namespace Digi.BuildInfo.Features.Overlays
             // TODO: add sensor/gravity/etc range overlay that's better than the vanilla one!
 
             new ButtonPanel(this);
+            new Camera(this);
             new Collector(this);
             new ConveyorSorter(this);
             new Door(this);

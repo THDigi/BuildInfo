@@ -153,6 +153,7 @@
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\LiveData\AdvancedDoor.cs" />
     <Compile Include="Features\ModelPreview\Blocks\AdvancedDoor.cs" />
+    <Compile Include="Features\Overlays\Specialized\Camera.cs" />
     <Compile Include="Features\Overlays\Specialized\Motor.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
     <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
