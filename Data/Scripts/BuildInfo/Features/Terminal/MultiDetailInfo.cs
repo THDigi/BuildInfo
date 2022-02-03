@@ -182,6 +182,7 @@ namespace Digi.BuildInfo.Features.Terminal
         readonly Dictionary<MyStringHash, ResInfo> ResInput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
         readonly Dictionary<MyStringHash, ResInfo> ResOutput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
         readonly Dictionary<MyStringHash, ResInfo> ResStorage = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
+        readonly Dictionary<long, int> OtherOwners = new Dictionary<long, int>();
 
         struct ResInfo
         {
@@ -190,7 +191,7 @@ namespace Digi.BuildInfo.Features.Terminal
             public int Blocks;
         }
 
-        static void IncrementResInfo(Dictionary<MyStringHash, ResInfo> dict, MyStringHash key, float addCurrent, float addMax)
+        static void IncrementResInfo<TKey>(Dictionary<TKey, ResInfo> dict, TKey key, float addCurrent, float addMax)
         {
             ResInfo resInfo = dict.GetValueOrDefault(key);
 
@@ -203,6 +204,9 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void UpdateText()
         {
+            if(MyAPIGateway.Session?.Player == null)
+                return; // HACK: player can be null for first few frames, just ignore those...
+
             List<IMyTerminalBlock> selected = Main.TerminalInfo.SelectedInTerminal;
             int totalBlocks = selected.Count;
             if(totalBlocks <= 0)
@@ -211,11 +215,19 @@ namespace Digi.BuildInfo.Features.Terminal
             ResInput.Clear();
             ResOutput.Clear();
             ResStorage.Clear();
+            OtherOwners.Clear();
 
             float inventoryCurrentM3 = 0f;
             float inventoryMaxM3 = 0f;
             float inventoryMass = 0f;
             int inventoryBlocks = 0;
+
+            long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
+            int unowned = 0;
+            int ownedByMe = 0;
+            int sharePrivate = 0;
+            int shareFaction = 0;
+            int shareAll = 0;
 
             IMyTerminalBlock firstBlock = selected[0];
             bool allSameId = true;
@@ -231,6 +243,25 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
                     allSameId = false;
+
+                MyCubeBlock internalBlock = (MyCubeBlock)block;
+                if(internalBlock.IDModule != null)
+                {
+                    long ownerId = block.OwnerId;
+                    if(ownerId == 0)
+                        unowned++;
+                    else if(ownerId == localIdentityId)
+                        ownedByMe++;
+                    else
+                        OtherOwners[ownerId] = OtherOwners.GetValueOrDefault(ownerId, 0) + 1;
+
+                    switch(internalBlock.IDModule.ShareMode)
+                    {
+                        case MyOwnershipShareModeEnum.None: sharePrivate++; break;
+                        case MyOwnershipShareModeEnum.Faction: shareFaction++; break;
+                        case MyOwnershipShareModeEnum.All: shareAll++; break;
+                    }
+                }
 
                 IMyThrust thrust = block as IMyThrust; // HACK: thrusters have shared sinks and not reliable to get
                 IMyGyro gyro = (thrust == null ? block as IMyGyro : null); // HACK: gyro has no sink 
@@ -296,11 +327,11 @@ namespace Digi.BuildInfo.Features.Terminal
 
                         if(isHydrogenEngine)
                         {
-                            MyHydrogenEngineDefinition def = (MyHydrogenEngineDefinition)block.SlimBlock.BlockDefinition;
-                            MyStringHash key = def.Fuel.FuelId.SubtypeId;
+                            MyHydrogenEngineDefinition engineDef = (MyHydrogenEngineDefinition)block.SlimBlock.BlockDefinition;
+                            MyStringHash key = engineDef.Fuel.FuelId.SubtypeId;
                             float filled = source.RemainingCapacityByType(MyResourceDistributorComponent.ElectricityId);
 
-                            IncrementResInfo(ResStorage, key, filled, def.FuelCapacity);
+                            IncrementResInfo(ResStorage, key, filled, engineDef.FuelCapacity);
                         }
                     }
                 }
@@ -391,10 +422,64 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append(inventoryBlocks).Append("x Inventories: ").VolumeFormat(inventoryCurrentM3 * 1000).Append(" / ").VolumeFormat(inventoryMaxM3 * 1000).Append(" (").MassFormat(inventoryMass).Append(")\n");
             }
 
+            // owners summary
+            {
+                int length = info.Length;
+
+                if(unowned > 0)
+                {
+                    info.Append(unowned).Append(" not owned, ");
+                }
+
+                //if(ownedByMe > 0)
+                //{
+                //    info.Append(ownedByMe).Append(" mine, ");
+                //}
+
+                if(OtherOwners.Count > 0)
+                {
+                    int friendOwned = 0;
+                    int enemyOwned = 0;
+
+                    foreach(KeyValuePair<long, int> kv in OtherOwners)
+                    {
+                        if(MyAPIGateway.Session.Player.GetRelationTo(kv.Key).IsFriendly())
+                        {
+                            friendOwned += kv.Value;
+                        }
+                        else
+                        {
+                            enemyOwned += kv.Value;
+                        }
+                    }
+
+                    if(enemyOwned > 0)
+                        info.Append(enemyOwned).Append(" enemy-owned, ");
+
+                    if(friendOwned > 0)
+                        info.Append(friendOwned).Append(" friend-owned, ");
+                }
+
+                if(shareAll > 0)
+                {
+                    info.Append(shareAll).Append(" shared all, ");
+                }
+
+                if(sharePrivate > 0)
+                {
+                    info.Append(sharePrivate).Append(" not shared, ");
+                }
+
+                if(info.Length > length)
+                    info.Length -= 2; // remove last comma+space
+
+                info.Append('\n');
+            }
+
             if(allSameType)
             {
-                info.Append('\n');
                 MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameId);
+                info.Append('\n');
             }
         }
 
