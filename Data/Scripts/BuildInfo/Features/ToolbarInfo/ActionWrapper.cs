@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage;
@@ -533,6 +534,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetNeutrals":
                 case "TargetNeutrals_On":
                 case "TargetNeutrals_Off":
+                case "TargetFriends":
+                case "TargetFriends_On":
+                case "TargetFriends_Off":
+                case "TargetEnemies":
+                case "TargetEnemies_On":
+                case "TargetEnemies_Off":
+
+                case "TargetingGroup_Weapons":
+                case "TargetingGroup_Propulsion":
+                case "TargetingGroup_PowerSystems":
+                case "TargetingGroup_CycleSubsystems":
+
+                case "CopyTarget":
+                case "ForgetTarget":
 
                 case "Forward":
                 case "Backward":
@@ -543,6 +558,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     return null;
             }
             #endregion
+
+            // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+
+            // ignore icons for all target group actions
+            if(action.Id.StartsWith("TargetingGroup_"))
+            {
+                string targetId = action.Id.Substring("TargetingGroup_".Length);
+
+                foreach(MyTargetingGroupDefinition targetGroup in MyDefinitionManager.Static.GetTargetingGroupDefinitions())
+                {
+                    if(targetId == targetGroup.Id.SubtypeName)
+                        return null;
+                }
+            }
+#endif
 
             #region replace by icon path
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))
