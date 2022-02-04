@@ -23,6 +23,7 @@ using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
+using VRage.Game.Definitions;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
@@ -96,8 +97,9 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
         public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
-        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 155, 0);
+        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 200, 0);
         public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
+        public readonly Color COLOR_STAT_EXPLOSION = new Color(255, 100, 0);
         public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
         public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
         #endregion Constants
@@ -815,11 +817,10 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                int px = GetStringSizeNotif(notificationLines[line].str);
+                HudLine hudLine = notificationLines[line];
+                hudLine.lineWidthPx = GetStringSizeNotif(hudLine.str);
 
-                largestLineWidth = Math.Max(largestLineWidth, px);
-
-                notificationLines[line].lineWidthPx = px;
+                largestLineWidth = Math.Max(largestLineWidth, hudLine.lineWidthPx);
             }
         }
 
@@ -1814,6 +1815,8 @@ namespace Digi.BuildInfo.Features
         #endregion Equipped block info generation
 
         #region Shared generation methods
+        //readonly List<MyTargetingGroupDefinition> TargetGroups = new List<MyTargetingGroupDefinition>(4);
+
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
             int airTightFaces = 0;
@@ -1864,12 +1867,80 @@ namespace Digi.BuildInfo.Features
                     GetLine().Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
 
                 float dmgMul = def.GeneralDamageMultiplier;
-                if(dmgMul != 1)
+                if(dmgMul != 1f)
                 {
                     GetLine().Separator();
                     DamageMultiplierAsResistance(dmgMul);
                 }
+
+                // TODO: improve formatting?
+                float expDmgMul = def.DamageMultiplierExplosion;
+                if(expDmgMul != 1f)
+                {
+                    GetLine().Separator();
+                    DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
+                }
             }
+
+            // TODO: keep & improve?
+            //{
+            //    StringBuilder sb = AddLine().Append(partPrefix).Label("Targetting groups");
+            //    int atLabelLen = sb.Length;
+            //
+            //    // TODO: some blocks have no targetting groups, what then?!
+            //    if(def.TargetingGroups != null && def.TargetingGroups.Count > 0)
+            //    {
+            //        foreach(var group in def.TargetingGroups)
+            //        {
+            //            sb.Append(group.String).Append(", ");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        TargetGroups.Clear();
+            //        MyDefinitionManager.Static.GetTargetingGroupDefinitions(TargetGroups);
+
+            //        foreach(MyTargetingGroupDefinition group in TargetGroups)
+            //        {
+            //            if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
+            //            {
+            //                sb.Append(group.Id.SubtypeName).Append(", ");
+            //            }
+            //        }
+            //    }
+
+            //    if(sb.Length > atLabelLen)
+            //        sb.Length -= 2; // remove last comma
+
+            //    sb.Separator().Label("Priority").ExponentNumber(def.PriorityModifier).Separator().Label("Priority if broken").ExponentNumber(def.PriorityModifier * def.NotWorkingPriorityMultiplier);
+            //}
+
+
+            // TODO: ammo detonation for inventory-owning blocks?
+            /*
+		    if (MyFakes.ENABLE_AMMO_DETONATION)
+		    {
+			    MyCubeBlockDefinition cubeBlockDefinition = MyDefinitionManager.Static.GetCubeBlockDefinition(builder.GetId());
+			    MyGameDefinition gameDefinition = MySession.Static.GameDefinition;
+			    m_detonationData = new DetonationData
+			    {
+				    DamageThreshold = cubeBlockDefinition.DamageThreshold,
+				    DetonateChance = cubeBlockDefinition.DetonateChance,
+				    ExplosionAmmoVolumeMin = gameDefinition.ExplosionAmmoVolumeMin,
+				    ExplosionAmmoVolumeMax = gameDefinition.ExplosionAmmoVolumeMax,
+				    ExplosionRadiusMin = gameDefinition.ExplosionRadiusMin,
+				    ExplosionRadiusMax = gameDefinition.ExplosionRadiusMax,
+				    ExplosionDamagePerLiter = gameDefinition.ExplosionDamagePerLiter,
+				    ExplosionDamageMax = gameDefinition.ExplosionDamageMax
+			    };
+			    MyInventory inventory = this.GetInventory();
+			    if (inventory != null)
+			    {
+				    inventory.InventoryContentChanged += CacheItem;
+				    CacheInventory(inventory);
+			    }
+		    }*/
+
 
             // TODO: add PlaceInfoFlags.ModDetails? and use everywhere where's mod-given info
             //if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ModDetails))
@@ -2430,8 +2501,6 @@ namespace Digi.BuildInfo.Features
                         MyDefinitionBase defHUD;
                         if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
                         {
-                            // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
-                            //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
                             AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetFormatting().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
                         }
                         else
@@ -3687,7 +3756,7 @@ namespace Digi.BuildInfo.Features
                         MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
                         MyProjectileAmmoDefinition ammo = data.Item2;
 
-                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0))
+                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0) || ammo.ProjectileExplosionDamage != 0)
                         {
                             isValidWeapon = true;
                             break;
@@ -3699,7 +3768,7 @@ namespace Digi.BuildInfo.Features
                         MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
                         MyMissileAmmoDefinition ammo = data.Item2;
 
-                        if(ammo.MissileExplosionDamage != 0)
+                        if(ammo.MissileExplosionDamage != 0 || ammo.MissileHealthPool != 0)
                         {
                             isValidWeapon = true;
                             break;
@@ -3742,6 +3811,7 @@ namespace Digi.BuildInfo.Features
                         .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_EXPLOSION).Append("explode").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
 
@@ -3759,6 +3829,9 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(COLOR_STAT_SHIPDMG).Number(ammo.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_CHARACTERDMG).Number(ammo.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
                             .Color(COLOR_STAT_HEADSHOTDMG).Number((ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage) * wpDef.DamageMultiplier).ResetFormatting().Append(", ");
+
+                        // HACK: wpDef.DamageMultiplier is not used for this explosion
+                        GetLine().Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.ProjectileExplosionRadius).Append(" ").Number(ammo.ProjectileExplosionDamage).ResetFormatting().Append(", ");
 
                         // from MyProjectile.Start()
                         if(ammo.SpeedVar > 0)
@@ -3795,10 +3868,11 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("No reloading");
 
                     AddLine().Append("Missiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_EXPLOSION).Append("explosion").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_HEADSHOTDMG).Append("penetration pool").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_PROJECTILECOUNT).Append("gravity").ResetFormatting().Append(")");
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -3809,8 +3883,8 @@ namespace Digi.BuildInfo.Features
                         // HACK: wpDef.DamageMultiplier is not used for explosions
 
                         AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
-                            .Color(COLOR_STAT_SHIPDMG).Number(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
+                            .Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.MissileExplosionRadius).Append(" ").Number(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Number(ammo.MissileHealthPool).ResetFormatting().Append(", ");
 
                         // HACK: ammo.SpeedVar is not used for missiles
                         // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
@@ -3822,7 +3896,8 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.MissileGravityEnabled ? "Y" : "N")
                             .ResetFormatting().Append(")");
                     }
                 }
@@ -4201,7 +4276,13 @@ namespace Digi.BuildInfo.Features
                 MyDLCs.MyDLC dlc;
                 if(MyDLCs.TryGetDLC(dlcId, out dlc))
                 {
-                    GetLine().Append(MyTexts.GetString(dlc.DisplayName));
+                    // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                    if(!MyAPIGateway.DLC.HasDLC(dlcId, MyAPIGateway.Multiplayer.MyId))
+                        GetLine().Color(COLOR_BAD);
+#endif
+
+                    GetLine().Append(MyTexts.GetString(dlc.DisplayName)).ResetFormatting();
                 }
                 else
                 {

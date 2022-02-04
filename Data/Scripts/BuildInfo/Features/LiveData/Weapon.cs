@@ -5,9 +5,11 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
+using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Serialization;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
@@ -49,9 +51,25 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(block is IMyLargeTurretBase)
             {
+                MyLargeTurretBaseDefinition turretDef = def as MyLargeTurretBaseDefinition;
+
                 if(block is IMyLargeGatlingTurret)
                 {
-                    valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
+                    // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                    if(turretDef?.SubpartPairing != null)
+                    {
+                        // TODO: needs to be better?
+                        string base1 = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Base1"));
+                        string base2 = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Base2"));
+                        string barrel = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Barrel"));
+                        valid = GetTurretData(block, out Turret, base1, base2, barrel, 0.5f, 0.75f);
+                    }
+                    else
+#endif
+                    {
+                        valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
+                    }
                 }
                 else if(block is IMyLargeMissileTurret)
                 {
@@ -219,6 +237,40 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
+        // from MyLargeGatlingTurret.GetTurretSubpart()
+        static readonly char[] TurretSubpartSeparator = new[] { '/' };
+        static string GetTurretPartName(string data)
+        {
+            string[] parts = data.Split(TurretSubpartSeparator);
+            return parts[parts.Length - 1];
+        }
+
+        //static MyEntitySubpart GetTurretSubpart(MyEntity startingEntity, SerializableDictionary<string, string> pairing, string partName, MyDefinitionId defId)
+        //{
+        //    string value;
+        //    if(!pairing.Dictionary.TryGetValue(partName, out value))
+        //    {
+        //        Log.Error($"Couldn't find {partName} in block {defId.ToString()}");
+        //        return null;
+        //    }
+
+        //    MyEntity returnEnt = startingEntity;
+
+        //    string[] parts = value.Split(TurretSubpartSeparator);
+        //    foreach(string key in parts)
+        //    {
+        //        MyEntitySubpart subpart;
+        //        if(!returnEnt.Subparts.TryGetValue(key, out subpart))
+        //        {
+        //            Log.Error($"Couldn't find {key} subpart for {partName} in block {defId.ToString()}");
+        //            return null;
+        //        }
+
+        //        returnEnt = subpart;
+        //    }
+        //    return returnEnt as MyEntitySubpart;
+        //}
+
         public static bool GetTurretData(IMyCubeBlock block, out TurretData turret, string yawName, string pitchName, string barrelName = null, float camForwardOffset = 0f, float camUpOffset = 0f)
         {
             turret = new TurretData();
@@ -264,6 +316,23 @@ namespace Digi.BuildInfo.Features.LiveData
                 Dictionary<string, IMyModelDummy> pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
                 pitchDummies.Clear();
                 ((IMyEntity)subpartPitch).Model.GetDummies(pitchDummies);
+
+                // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                MyLargeTurretBaseDefinition turretDef = block?.SlimBlock?.BlockDefinition as MyLargeTurretBaseDefinition;
+                if(turretDef != null)
+                {
+                    IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault(turretDef.CameraDummyName, null);
+
+                    // from MyLargeTurretBase.GetViewMatrix() (without the invert)
+                    if(cameraDummy != null)
+                        turret.CameraForSubpart = Matrix.Normalize(cameraDummy.Matrix);
+                    else
+                        turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * turretDef.ForwardCameraOffset + Vector3.Up * turretDef.UpCameraOffset);
+
+                    turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
+                }
+#else
                 IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault("camera", null);
 
                 // from MyLargeTurretBase.GetViewMatrix() (without the invert)
@@ -273,6 +342,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
 
                 turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
+#endif
             }
             else
             {

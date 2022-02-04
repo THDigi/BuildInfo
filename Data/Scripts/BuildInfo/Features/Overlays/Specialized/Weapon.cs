@@ -141,6 +141,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             }
             #endregion Accuracy cone
 
+            // FIXME: Autocannon has no muzzle detected
             #region Barrels
             if(hasMuzzles)
             {
