@@ -433,6 +433,8 @@ namespace CoreSystems.Api
                     [ProtoMember(18)] internal bool SpinFree;
                     [ProtoMember(19)] internal bool StayCharged;
                     [ProtoMember(20)] internal int MagsToLoad;
+                    [ProtoMember(21)] internal int MaxActiveProjectiles;
+                    [ProtoMember(22)] internal int MaxReloads;
                 }
 
 
@@ -505,6 +507,7 @@ namespace CoreSystems.Api
                     [ProtoMember(6)] internal bool FiringSoundPerShot;
                     [ProtoMember(7)] internal string PreFiringSound;
                     [ProtoMember(8)] internal uint FireSoundEndDelay;
+                    [ProtoMember(9)] internal bool FireSoundNoBurst;
                 }
 
                 [ProtoContract]
@@ -557,6 +560,8 @@ namespace CoreSystems.Api
                 [ProtoMember(24)] internal AreaOfDamageDef AreaOfDamage;
                 [ProtoMember(25)] internal EwarDef Ewar;
                 [ProtoMember(26)] internal bool IgnoreVoxels;
+                [ProtoMember(27)] internal bool Synchronize;
+                [ProtoMember(28)] internal double HeatModifier;
 
                 [ProtoContract]
                 public struct DamageScaleDef
@@ -780,19 +785,53 @@ namespace CoreSystems.Api
                 {
                     [ProtoMember(1)] internal string AmmoRound;
                     [ProtoMember(2)] internal int Fragments;
-                    [ProtoMember(3)] internal float ForwardDegrees;
+                    [ProtoMember(3)] internal float Radial;
                     [ProtoMember(4)] internal float BackwardDegrees;
                     [ProtoMember(5)] internal float Degrees;
                     [ProtoMember(6)] internal bool Reverse;
-                    [ProtoMember(7)] internal bool RandomizeDir;
+                    [ProtoMember(7)] internal bool IgnoreArming;
                     [ProtoMember(8)] internal bool DropVelocity;
                     [ProtoMember(9)] internal float Offset;
-                    [ProtoMember(10)] internal float Radial;
+                    [ProtoMember(10)] internal int MaxChildren;
+                    [ProtoMember(11)] internal TimedSpawnDef TimedSpawns;
+                    [ProtoMember(12)] internal bool FireSound;
+                    [ProtoMember(13)] internal Vector3D AdvOffset;
+
+                    [ProtoContract]
+                    public struct TimedSpawnDef
+                    {
+                        public enum PointTypes
+                        {
+                            Direct,
+                            Lead,
+                            Predict,
+                        }
+
+                        [ProtoMember(1)] internal bool Enable;
+                        [ProtoMember(2)] internal int Interval;
+                        [ProtoMember(3)] internal int StartTime;
+                        [ProtoMember(4)] internal int MaxSpawns;
+                        [ProtoMember(5)] internal double Proximity;
+                        [ProtoMember(6)] internal bool ParentDies;
+                        [ProtoMember(7)] internal bool PointAtTarget;
+                        [ProtoMember(8)] internal int GroupSize;
+                        [ProtoMember(9)] internal int GroupDelay;
+                        [ProtoMember(10)] internal PointTypes PointType;
+                    }
                 }
 
                 [ProtoContract]
                 public struct PatternDef
                 {
+                    public enum PatternModes
+                    {
+                        Never,
+                        Weapon,
+                        Fragment,
+                        Both,
+                    }
+
+
                     [ProtoMember(1)] internal string[] Patterns;
                     [ProtoMember(2)] internal bool Enable;
                     [ProtoMember(3)] internal float TriggerChance;
@@ -801,6 +840,7 @@ namespace CoreSystems.Api
                     [ProtoMember(6)] internal int RandomMin;
                     [ProtoMember(7)] internal int RandomMax;
                     [ProtoMember(8)] internal int PatternSteps;
+                    [ProtoMember(9)] internal PatternModes Mode;
                 }
 
                 [ProtoContract]
@@ -837,6 +877,7 @@ namespace CoreSystems.Api
                         InvCurve,
                         Squeeze,
                         Pooled,
+                        Exponential,
                     }
 
                     public enum AoeShape
@@ -1067,6 +1108,7 @@ namespace CoreSystems.Api
                     [ProtoMember(6)] internal string PlayerHitSound;
                     [ProtoMember(7)] internal string FloatingHitSound;
                     [ProtoMember(8)] internal string ShieldHitSound;
+                    [ProtoMember(9)] internal string ShotSound;
                 }
 
                 [ProtoContract]
@@ -1081,6 +1123,7 @@ namespace CoreSystems.Api
                         DetectTravelTo,
                         DetectSmart,
                         DetectFixed,
+                        DroneAdvanced,
                     }
 
                     [ProtoMember(1)] internal float MaxTrajectory;
@@ -1089,7 +1132,7 @@ namespace CoreSystems.Api
                     [ProtoMember(4)] internal float TargetLossDegree;
                     [ProtoMember(5)] internal int TargetLossTime;
                     [ProtoMember(6)] internal int MaxLifeTime;
-                    [ProtoMember(7)] internal int FieldTime;
+                    [ProtoMember(7)] internal int DeaccelTime;
                     [ProtoMember(8)] internal Randomize SpeedVariance;
                     [ProtoMember(9)] internal Randomize RangeVariance;
                     [ProtoMember(10)] internal GuidanceType Guidance;
@@ -1158,5 +1201,4 @@ namespace CoreSystems.Api
             }
         }
     }
-
 }
