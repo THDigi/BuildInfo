@@ -304,6 +304,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     break;
                 }
 
+                IMyTurretControlBlock tcb = TargetBlock as IMyTurretControlBlock;
+                if(tcb != null)
+                {
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" when turret is on target (angle deviation).").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" when turret is no longer on target.").Append('\n');
+                    break;
+                }
+
                 return; // unknown block, don't draw
             }
             while(false);
