@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Localization;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using VRage;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
@@ -29,6 +32,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             Processor.AddStatus(type, Shoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
 
             Processor.AddGroupStatus(type, GroupShoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
+
+            Processor.AddStatus(type, CycleTarget, "TargetingGroup_CycleSubsystems");
+            Processor.AddGroupStatus(type, GroupCycleTarget, "TargetingGroup_CycleSubsystems");
         }
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
@@ -176,6 +182,107 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 sb.NumberCapped(mostAmmo, 5);
 
             return true;
+        }
+
+        bool CycleTarget(StringBuilder sb, ToolbarItem item)
+        {
+            // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+
+            int groupIdx = (int)item.Block.GetValue<long>("TargetingGroup_Selector") - 1;
+
+            if(groupIdx == -1)
+            {
+                sb.Append(MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default));
+            }
+            else
+            {
+                List<MyTargetingGroupDefinition> targetGroups = MyDefinitionManager.Static.GetTargetingGroupDefinitions();
+
+                if(groupIdx < 0 || groupIdx >= targetGroups.Count)
+                {
+                    sb.Append("#").Append(groupIdx);
+                }
+                else
+                {
+                    MyTargetingGroupDefinition group = targetGroups[groupIdx];
+                    sb.Append(group.DisplayNameText);
+                }
+            }
+
+            return true;
+#else
+            return false;
+#endif
+        }
+
+        readonly HashSet<int> Targetting = new HashSet<int>();
+
+        bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        {
+            // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+
+            if(!groupData.GetGroupBlocks<IMyLargeTurretBase>())
+                return false;
+
+            Targetting.Clear();
+
+            foreach(IMyLargeTurretBase gunBlock in groupData.Blocks)
+            {
+                //if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
+                //    continue;
+
+                ITerminalProperty prop = gunBlock.GetProperty("TargetingGroup_Selector");
+                if(prop != null)
+                {
+                    int groupIdx = (int)prop.As<long>().GetValue(gunBlock) - 1;
+                    Targetting.Add(groupIdx);
+
+                    //Targetting[groupIdx] = Targetting.GetValueOrDefault(groupIdx, 0) + 1;
+                }
+            }
+
+            if(Targetting.Count == 0)
+            {
+                sb.Append("Unknown");
+            }
+            else if(Targetting.Count > 1)
+            {
+                sb.Append("Mixed");
+            }
+            else
+            {
+                sb.Append("All\n");
+
+                //KeyValuePair<int, int> firstPair = Targetting.FirstPair();
+                //int groupIdx = firstPair.Key;
+                int groupIdx = Targetting.FirstElement();
+
+                if(groupIdx == -1)
+                {
+                    sb.Append(MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default));
+                }
+                else
+                {
+                    List<MyTargetingGroupDefinition> targetGroups = MyDefinitionManager.Static.GetTargetingGroupDefinitions();
+
+                    if(groupIdx < 0 || groupIdx >= targetGroups.Count)
+                    {
+                        sb.Append("#").Append(groupIdx);
+                    }
+                    else
+                    {
+                        MyTargetingGroupDefinition group = targetGroups[groupIdx];
+                        sb.Append(group.DisplayNameText);
+                    }
+                }
+            }
+
+            return true;
+#else
+            return false;
+#endif
         }
     }
 }
