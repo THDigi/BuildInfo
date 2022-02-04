@@ -119,7 +119,7 @@ namespace Digi.BuildInfo.VanillaData
 
         void DefineVanillaBlocks()
         {
-            // Auto-generated vanilla definitions from SE v1.199.25
+            // Auto-generated vanilla definitions from SE v1.200.25
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeRailStraight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere1), "DebugSphereLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_DebugSphere2), "DebugSphereLarge"));
@@ -429,6 +429,7 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LandingGear), "SmallBlockMagneticPlate"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CargoContainer), "LargeBlockLargeIndustrialContainer"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "VerticalButtonPanelLarge"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "VerticalButtonPanelSmall"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeSeamless"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ConveyorConnector), "LargeBlockConveyorPipeCorner"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Conveyor), "LargeBlockConveyorPipeJunction"));
@@ -480,6 +481,8 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "LargeInteriorPillar"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatLarge"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatSmall"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatSmallNew"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerSeatSmallOffset"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Ladder2), ""));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Ladder2), "LadderSmall"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TextPanel), "SmallTextPanel"));
@@ -778,6 +781,30 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageScifiCorner"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiTjunction"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "PassageSciFiWindow"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "BridgeWindow1x1Slope"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "BridgeWindow1x1Face"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "PassengerBench"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_InteriorLight), "LargeLightPanel"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_InteriorLight), "SmallLightPanel"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Reactor), "LargeBlockSmallGeneratorWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Reactor), "LargeBlockLargeGeneratorWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Reactor), "SmallBlockSmallGeneratorWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Reactor), "SmallBlockLargeGeneratorWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirtightHangarDoor), "AirtightHangarDoorWarfare2A"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirtightHangarDoor), "AirtightHangarDoorWarfare2B"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_AirtightHangarDoor), "AirtightHangarDoorWarfare2C"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), "SmallMissileLauncherWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), "SmallGatlingGunWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_BatteryBlock), "LargeBlockBatteryBlockWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_BatteryBlock), "SmallBlockBatteryBlockWarfare2"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Door), "SlidingHatchDoor"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Door), "SlidingHatchDoorHalf"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "SmallBlockStandingCockpit"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Cockpit), "LargeBlockStandingCockpit"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "SmallBlockSmallModularThruster"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "SmallBlockLargeModularThruster"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "LargeBlockSmallModularThruster"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Thrust), "LargeBlockLargeModularThruster"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "LargeWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Warhead), "SmallWarhead"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Decoy), "LargeDecoy"));
@@ -791,6 +818,15 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), "LargeMissileLauncher"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncherReload), "SmallRocketLauncherReload"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), ""));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), "SmallBlockAutocannon"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncherReload), "SmallBlockMediumCalibreGun"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), "LargeBlockLargeCalibreGun"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncherReload), "LargeRailgun"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncherReload), "SmallRailgun"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), "LargeCalibreTurret"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), "LargeBlockMediumCalibreTurret"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), "SmallBlockMediumCalibreTurret"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), "AutoCannonTurret"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MotorSuspension), "Suspension3x3"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MotorSuspension), "Suspension5x5"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_MotorSuspension), "Suspension1x1"));
@@ -863,6 +899,16 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow3x3FlatInv"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3Flat"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3FlatInv"));
+
+            // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Searchlight), "SmallSearchlight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Searchlight), "LargeSearchlight"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_HeatVentBlock), "LargeHeatVentBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_HeatVentBlock), "SmallHeatVentBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TurretControlBlock), "LargeTurretControlBlock"));
+            Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TurretControlBlock), "SmallTurretControlBlock"));
+#endif
         }
     }
 }
