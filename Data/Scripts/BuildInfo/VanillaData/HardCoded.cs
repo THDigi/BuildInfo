@@ -362,6 +362,8 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyThrust.LoadDummies()
         public const string Thrust_DummyPrefix = "thruster_flame";
+        public const string Thrust_DummyNoDamageSuffix = "_nodamage";
+        public const string Thrust_DummyGlareSuffix = "_glare";
 
         // from MyAirVent.VentDummy
         public const string AirVent_DummyName = "vent_001";

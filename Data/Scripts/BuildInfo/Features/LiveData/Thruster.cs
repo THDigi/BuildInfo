@@ -62,6 +62,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 // from MyThrust.LoadDummies()
                 if(dummy.Name.StartsWith(Hardcoded.Thrust_DummyPrefix, StringComparison.InvariantCultureIgnoreCase))
                 {
+                    if(dummy.Name.EndsWith(Hardcoded.Thrust_DummyNoDamageSuffix))
+                        continue;
+
                     Vector3 startPosition = dummy.Matrix.Translation;
                     Vector3 direction = Vector3.Normalize(dummy.Matrix.Forward);
                     float dummyRadius = Math.Max(dummy.Matrix.Scale.X, dummy.Matrix.Scale.Y) * 0.5f;
