@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Features.LiveData
     public class TurretData
     {
         public Vector3 YawLocalPos;
+        public Vector3 YawModelCenter;
         public Vector3 PitchLocalPos;
         public Matrix CameraForSubpart;
         public Matrix CameraForBlock;
@@ -226,6 +227,8 @@ namespace Digi.BuildInfo.Features.LiveData
             if(block.TryGetSubpart(yawName, out subpartYaw))
             {
                 turret.YawLocalPos = (Vector3)Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+
+                turret.YawModelCenter = (Vector3)Vector3D.Transform(subpartYaw.PositionComp.WorldAABB.Center, block.WorldMatrixInvScaled);
 
                 // avoid y-fighting if it's a multiple of grid size
                 int y = (int)(turret.YawLocalPos.Y * 100);

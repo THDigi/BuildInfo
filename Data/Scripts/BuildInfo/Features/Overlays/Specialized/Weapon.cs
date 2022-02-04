@@ -72,6 +72,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             IMyEntity muzzleEntity = null;
             bool hasMuzzles = (data.Muzzles != null && data.Muzzles.Count > 0);
 
+            // TODO: include current gravity estimated trajectory? or just mention that it gets affected by it...
             #region Accuracy cone
             if(hasMuzzles)
             {
@@ -208,7 +209,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 // yaw limit indicator
                 {
-                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
+                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawModelCenter, drawMatrix);
 
                     MatrixD yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
 
