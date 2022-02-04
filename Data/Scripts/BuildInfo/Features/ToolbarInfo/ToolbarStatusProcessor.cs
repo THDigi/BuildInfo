@@ -64,8 +64,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public bool Enabled { get; private set; } = true;
 
-        public bool Enabled { get; private set; } = true;
-
         public bool AnimFlip { get; private set; }
 
         int CurrentSlot = 0; // for calling one status callback per tick
