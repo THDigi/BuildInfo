@@ -22,6 +22,11 @@
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
           </Resources>
         </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
       </LanguageSpecificDefinitions>
     </Font>
 
@@ -39,6 +44,11 @@
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>
@@ -63,6 +73,11 @@
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
           </Resources>
         </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
       </LanguageSpecificDefinitions>
     </Font>
     <Font>
@@ -83,6 +98,11 @@
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>
@@ -107,6 +127,11 @@
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
           </Resources>
         </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
       </LanguageSpecificDefinitions>
     </Font>
     <Font>
@@ -127,6 +152,11 @@
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>
