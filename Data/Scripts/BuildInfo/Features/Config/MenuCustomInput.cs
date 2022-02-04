@@ -8,7 +8,7 @@ namespace Digi.BuildInfo.Features.Config
     /// </summary>
     public class MenuCustomInput : InputCustomBase
     {
-        public MenuCustomInput() : base(Config.MENU_BIND_INPUT_NAME, "BuildInfo Menu")
+        public MenuCustomInput() : base(Config.MENU_BIND_INPUT_NAME, $"{BuildInfoMod.ModName} Menu")
         {
         }
 

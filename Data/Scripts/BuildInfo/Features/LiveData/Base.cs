@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
+using Sandbox.Game.Components;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.Components;
+using VRage.Game.Entity;
+using VRage.Game.Entity.UseObject;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRageMath;
@@ -44,26 +50,66 @@ namespace Digi.BuildInfo.Features.LiveData
         }
     }
 
+    public struct SubpartInfo
+    {
+        //public readonly string Name;
+        public readonly Matrix LocalMatrix;
+        public readonly string Model;
+        public readonly List<SubpartInfo> Subparts;
+
+        public SubpartInfo(Matrix localMatrix, string model, List<SubpartInfo> subparts)
+        {
+            LocalMatrix = localMatrix;
+            Model = model;
+            Subparts = subparts;
+        }
+    }
+
     [Flags]
     public enum BlockHas : byte
     {
         Nothing = 0,
+
+        /// <summary>
+        /// Block type supports connecting to conveyor network.
+        /// </summary>
         ConveyorSupport = (1 << 0),
+
+        /// <summary>
+        /// Block has a terminal (is IMyTerminalBlock)
+        /// </summary>
         Terminal = (1 << 1),
+
+        /// <summary>
+        /// Block has at least one inventory.
+        /// </summary>
         Inventory = (1 << 2),
-        TerminalAndInventoryAccess = (1 << 3),
+
+        /// <summary>
+        /// Block model has interactive access to terminal/inventory
+        /// </summary>
+        PhysicalTerminalAccess = (1 << 3),
+
+        /// <summary>
+        /// Block has detector_ownership in the model which enables ownership support (but rather buggy, especially if it's not present in construction model).
+        /// </summary>
+        OwnershipDetector = (1 << 4),
+
+        /// <summary>
+        /// Block has custom useobjects or custom gamelogic.
+        /// </summary>
+        //CustomLogic = (1 << 5),
     }
 
     public class BData_Base
     {
-        //public List<MyTuple<string, Matrix>> Dummies;
-
         public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
         public List<ConveyorInfo> InteractableConveyorPorts;
         public List<InteractionInfo> Interactive;
         public List<Matrix> UpgradePorts;
         public List<string> Upgrades;
+        public List<SubpartInfo> Subparts;
 
         public BData_Base()
         {
@@ -73,9 +119,17 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
+            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
+            dummies.Clear();
+            block.Model.GetDummies(dummies);
+
+            ComputeSubparts(block);
             ComputeUpgrades(block);
             ComputeHas(block);
-            ComputeDummies(block, def);
+            ComputeDummies(block, def, dummies);
+            //ComputeUseObjects(block, def);
+
+            dummies.Clear();
 
             bool isValid = IsValid(block, def);
 
@@ -101,8 +155,54 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
+        void ComputeSubparts(IMyCubeBlock block)
+        {
+            MyEntity ent = (MyEntity)block;
+
+            if(ent.Subparts != null && ent.Subparts.Count > 0)
+            {
+                Subparts = new List<SubpartInfo>(ent.Subparts.Count);
+                RecursiveSubpartScan(ent, Subparts);
+            }
+        }
+
+        static void RecursiveSubpartScan(MyEntity entity, List<SubpartInfo> addTo)
+        {
+            // HACK: make the first layer of subparts be relative to centered block matrix, not ModelOffset'd one
+            MatrixD? transform = null;
+            IMyCubeBlock block = entity as IMyCubeBlock;
+            if(block != null)
+                transform = MatrixD.Invert(Utils.GetBlockCenteredWorldMatrix(block.SlimBlock));
+
+            foreach(MyEntitySubpart subpart in entity.Subparts.Values)
+            {
+                IMyModel model = (IMyModel)subpart.Model;
+
+                Matrix localMatrix;
+                if(transform.HasValue)
+                    localMatrix = (Matrix)(subpart.PositionComp.WorldMatrixRef * transform.Value);
+                else
+                    localMatrix = subpart.PositionComp.LocalMatrixRef;
+
+                SubpartInfo info;
+                if(subpart.Subparts != null && subpart.Subparts.Count > 0)
+                {
+                    info = new SubpartInfo(localMatrix, model.AssetName, new List<SubpartInfo>(subpart.Subparts.Count));
+                    RecursiveSubpartScan(subpart, info.Subparts);
+                }
+                else
+                {
+                    info = new SubpartInfo(localMatrix, model.AssetName, null);
+                }
+
+                addTo.Add(info);
+            }
+        }
+
         void ComputeHas(IMyCubeBlock block)
         {
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
+
             if(BuildInfoMod.Instance.LiveDataHandler.ConveyorSupportTypes.GetValueOrDefault(block.BlockDefinition.TypeId, false))
                 Has |= BlockHas.ConveyorSupport;
 
@@ -111,22 +211,22 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(block.HasInventory)
                 Has |= BlockHas.Inventory;
+
+            // HACK: from MyCubeBlock.InitOwnership()
+            if(internalBlock.UseObjectsComponent != null && internalBlock.UseObjectsComponent.GetDetectors("ownership").Count > 0)
+                Has |= BlockHas.OwnershipDetector;
         }
 
-        void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def)
+        void ComputeDummies(IMyCubeBlock block, MyCubeBlockDefinition def, Dictionary<string, IMyModelDummy> dummies)
         {
+            if(dummies.Count == 0)
+                return;
+
             if(block?.Model == null)
             {
                 //Log.Error($"Block '{def.Id.ToString()}' has a FatBlock but no Model, this will crash when opening info tab on its grid; I recommend you add a <Model> tag to it, even if it's a single tiny triangle model.", Log.PRINT_MESSAGE);
                 return;
             }
-
-            Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
-            dummies.Clear();
-            block.Model.GetDummies(dummies);
-
-            if(dummies.Count == 0)
-                return;
 
             Color colorTerminalOnly = new Color(55, 255, 220);
             Color colorInteractiveAndTerminal = new Color(50, 255, 150);
@@ -176,7 +276,7 @@ namespace Digi.BuildInfo.Features.LiveData
                             InteractableConveyorPorts = new List<ConveyorInfo>();
 
                         InteractableConveyorPorts.Add(new ConveyorInfo(matrix, flags));
-                        Has |= BlockHas.TerminalAndInventoryAccess;
+                        Has |= BlockHas.PhysicalTerminalAccess;
                     }
                 }
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
@@ -189,14 +289,12 @@ namespace Digi.BuildInfo.Features.LiveData
                 // from classes that use MyUseObjectAttribute
                 else if(detectorType.EqualsIgnoreCase("terminal"))
                 {
-                    // HACK: MyUseObjectsComponent.CreateInteractiveObject() hardcodes 'detector_terminal' to be door open/close if it's MyDoor type.
-                    // HACK: Can't use `is IMyDoor` because it's implemented by all doors
-                    if(block.GetType().Name == "MyDoor")
+                    if(Hardcoded.DetectorIsOpenCloseDoor("terminal", block))
                         Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
                     else
                         Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
 
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("inventory")
                      || detectorType.EqualsIgnoreCase("vendingMachine") // excluding vendingMachineBuy/vendingMachineNext/vendingMachinePrevious; clicking this one just opens terminal
@@ -212,27 +310,27 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("door"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("block")) // medical room/survival kit heal
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Recharge\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("contract"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Contracts\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("store"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Store\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("ATM"))
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Open Transactions\n+Terminal access", colorInteractiveAndTerminal));
-                    Has |= BlockHas.TerminalAndInventoryAccess;
+                    Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 // from here only interactive things that can't open terminal
                 else if(detectorType.EqualsIgnoreCase("cockpit")
@@ -240,26 +338,28 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Entrance", colorInteractiveOnly));
                 }
-                //else if(detectorType.EqualsIgnoreCase("wardrobe")
-                //     || detectorType.EqualsIgnoreCase("ladder")
-                //     || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
-                //     || detectorType.EqualsIgnoreCase("panel") // button panel
-                //     || detectorType.EqualsIgnoreCase("jukeboxNext")
-                //     || detectorType.EqualsIgnoreCase("jukeboxPrevious")
-                //     || detectorType.EqualsIgnoreCase("jukeboxPause")
-                //     || detectorType.EqualsIgnoreCase("vendingMachineBuy")
-                //     || detectorType.EqualsIgnoreCase("vendingMachineNext")
-                //     || detectorType.EqualsIgnoreCase("vendingMachinePrevious"))
-                //{
-                //    Interactive.Add(new InteractionInfo(matrix, "Stuff...", colorInteractiveOnly));
-                //}
-                //else
-                //{
-                //    if(Dummies == null)
-                //        Dummies = new List<MyTuple<string, Matrix>>();
-                //
-                //    Dummies.Add(new MyTuple<string, Matrix>(dummy.Name, matrix));
-                //}
+                else if(detectorType.EqualsIgnoreCase("wardrobe")
+                     || detectorType.EqualsIgnoreCase("ladder")
+                     || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
+                     || detectorType.EqualsIgnoreCase("jukeboxNext")
+                     || detectorType.EqualsIgnoreCase("jukeboxPrevious")
+                     || detectorType.EqualsIgnoreCase("jukeboxPause")
+                     || detectorType.EqualsIgnoreCase("vendingMachineBuy")
+                     || detectorType.EqualsIgnoreCase("vendingMachineNext")
+                     || detectorType.EqualsIgnoreCase("vendingMachinePrevious")
+                     || detectorType.EqualsIgnoreCase("connector")
+                     || detectorType.EqualsIgnoreCase("shiptool")
+                     || detectorType.EqualsIgnoreCase("merge")
+                     || detectorType.EqualsIgnoreCase("collector")
+                     || detectorType.EqualsIgnoreCase("ladder")
+                     || detectorPtr.StartsWithCaseInsensitive("panel_button"))
+                {
+                    // nothing, just ignoring known dummies so I can find new ones
+                }
+                else if(BuildInfoMod.IsDevMod)
+                {
+                    Log.Info($"[DEV] Model for {def.Id.ToString()} has unknown dummy '{name}'.");
+                }
             }
 
             if(ConveyorPorts != null)
@@ -280,6 +380,58 @@ namespace Digi.BuildInfo.Features.LiveData
             }
 
             dummies.Clear();
+        }
+
+        void ComputeUseObjects(IMyCubeBlock block, MyCubeBlockDefinition def)
+        {
+#if false
+            // block has 2+ gamelogic components
+            if(block.GameLogic is MyCompositeGameLogicComponent)
+            {
+                Has |= BlockHas.CustomLogic;
+                return;
+            }
+
+            if(block.GameLogic != null)
+            {
+                // HACK: not very reliable but it'll do
+                string classFullName = block.GameLogic.GetType().FullName;
+                bool vanillaUseObject = classFullName.StartsWith("SpaceEngineers.") || classFullName.StartsWith("Sandbox.") || classFullName.StartsWith("VRage.");
+
+                if(!vanillaUseObject)
+                {
+                    Has |= BlockHas.CustomLogic;
+                    return;
+                }
+            }
+
+            MyCubeBlock internalBlock = (MyCubeBlock)block;
+            MyUseObjectsComponentBase comp = internalBlock.UseObjectsComponent;
+            if(comp != null)
+            {
+                List<IMyUseObject> useObjects = BuildInfoMod.Instance.Caches.UseObjects;
+                useObjects.Clear();
+                comp.GetInteractiveObjects(useObjects);
+
+                if(useObjects.Count > 0)
+                {
+                    foreach(IMyUseObject useObject in useObjects)
+                    {
+                        // HACK: not very reliable but it'll do
+                        string classFullName = useObject.GetType().FullName;
+                        bool vanillaUseObject = classFullName.StartsWith("SpaceEngineers.") || classFullName.StartsWith("Sandbox.") || classFullName.StartsWith("VRage.");
+
+                        if(!vanillaUseObject)
+                        {
+                            Has |= BlockHas.CustomLogic;
+                            break;
+                        }
+                    }
+
+                    useObjects.Clear();
+                }
+            }
+#endif
         }
 
         static StringSegment GetNextSection(string text, ref int startIndex)

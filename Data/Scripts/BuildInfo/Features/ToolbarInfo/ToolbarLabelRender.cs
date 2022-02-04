@@ -11,6 +11,7 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
@@ -37,10 +38,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         Vector2D PosOnHUD = new Vector2D(-0.3, -0.75);
         Vector2D PosInGUI = new Vector2D(0.5, -0.5);
 
-        const BlendType TextBlendType = BlendType.PostPP;
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
-        const string TextFont = "white";
+        const float OpacityInMenu = 0.75f;
+
+        const string TextFont = FontsHandler.SEOutlined;
+        const bool UseShadowMessage = false;
         const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;
         const double BackgroundPadding = 0.03;
@@ -64,20 +67,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         int RenderedAtTick = -1;
 
-        Vector2D? ClickOffset;
-        Vector2D TextSize;
-        bool SelectedBox;
+        BoxDragging BoxDrag;
 
         HudAPIv2.BillBoardHUDMessage Background;
         HudAPIv2.BillBoardHUDMessage BackgroundBottom;
         HudAPIv2.BillBoardHUDMessage CornerBotomLeft;
         HudAPIv2.BillBoardHUDMessage BackgroundTop;
         HudAPIv2.BillBoardHUDMessage CornerTopRight;
-        HudAPIv2.HUDMessage Shadows;
-        HudAPIv2.HUDMessage Labels;
-        HudAPIv2.HUDMessage ShadowsLine2;
-        HudAPIv2.HUDMessage LabelsLine2;
         List<HudAPIv2.BillBoardHUDMessage> Backgrounds;
+
+        TextAPI.TextPackage List;
+        TextAPI.TextPackage ListColumn2;
 
         public ToolbarLabelRender(BuildInfoMod main) : base(main)
         {
@@ -102,6 +102,31 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
+
+            BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : MathHelper.Clamp(Main.GameConfig.HudBackgroundOpacity * 1.5f, 0.5f, 1f), BackgroundColorSelected);
+            BoxDrag.BoxDeselected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : Main.GameConfig.HudBackgroundOpacity);
+            BoxDrag.Dragging += (newPos) =>
+            {
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll != 0)
+                {
+                    ConfigLib.FloatSetting setting = Main.Config.ToolbarLabelsScale;
+                    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
+                    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
+                    setting.Value = (float)Math.Round(scale, 3);
+                }
+
+                if(InToolbarConfig)
+                    Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
+                else
+                    Main.Config.ToolbarLabelsPosition.Value = newPos;
+            };
+            BoxDrag.FinishedDragging += (finalPos) =>
+            {
+                Main.Config.Save();
+                Main.ConfigMenuHandler.RefreshAll();
+            };
         }
 
         public override void UnregisterComponent()
@@ -126,6 +151,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.ToolbarMonitor.ToolbarPageChanged -= ToolbarPageChanged;
 
             MyVisualScriptLogicProvider.PlayerEnteredCockpit -= EnteredCockpit;
+
+            BoxDrag = null;
         }
 
         void ConfigBoolChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
@@ -159,12 +186,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             WasInToolbarConfig = null; // force origin refresh
 
-            if(Labels != null)
+            if(List != null)
             {
-                Shadows.Scale = Scale;
-                ShadowsLine2.Scale = Scale;
-                Labels.Scale = Scale;
-                LabelsLine2.Scale = Scale;
+                List.Scale = Scale;
+                ListColumn2.Scale = Scale;
+
                 UpdateBgOpacity(Main.GameConfig.HudBackgroundOpacity);
                 UpdateTextOpacity(1f);
             }
@@ -193,10 +219,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 bg.Origin = bottomLeftPos;
             }
 
-            Shadows.Origin = bottomLeftPos;
-            ShadowsLine2.Origin = bottomLeftPos;
-            Labels.Origin = bottomLeftPos;
-            LabelsLine2.Origin = bottomLeftPos;
+            List.Position = bottomLeftPos;
+            ListColumn2.Position = bottomLeftPos;
         }
 
         void UpdateBgOpacity(float opacity, Color? colorOverride = null)
@@ -220,13 +244,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             Color whiteFade = Color.White * opacity;
 
-            Labels.InitialColor = whiteFade;
-            LabelsLine2.InitialColor = whiteFade;
+            List.Text.InitialColor = whiteFade;
+            ListColumn2.Text.InitialColor = whiteFade;
 
-            Color blackFade = Color.Black * opacity;
+            if(List.Shadow != null)
+            {
+                Color blackFade = Color.Black * opacity;
 
-            Shadows.InitialColor = blackFade;
-            ShadowsLine2.InitialColor = blackFade;
+                List.Shadow.InitialColor = blackFade;
+                ListColumn2.Shadow.InitialColor = blackFade;
+            }
 
             TextOpacity = opacity;
 
@@ -255,45 +282,44 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Backgrounds = new List<HudAPIv2.BillBoardHUDMessage>(6);
 
+            MyStringId squareMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+            MyStringId cornerMaterial = MyStringId.GetOrCompute("BuildInfo_UI_Corner");
+
             // creation order important for draw order
-            Background = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            Background = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(Background);
 
-            BackgroundTop = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            BackgroundTop = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(BackgroundTop);
 
-            CornerTopRight = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
-            CornerTopRight.Rotation = MathHelper.Pi;
+            CornerTopRight = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
+            CornerTopRight.Rotation = MathHelper.ToRadians(180);
             Backgrounds.Add(CornerTopRight);
 
-            BackgroundBottom = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), PosOnHUD, Color.White);
+            BackgroundBottom = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(BackgroundBottom);
 
-            CornerBotomLeft = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Corner"), PosOnHUD, Color.White);
+            CornerBotomLeft = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(CornerBotomLeft);
 
             foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
-                bg.Visible = false;
-                bg.Blend = TextBlendType;
-                bg.Options = HudAPIv2.Options.HideHud;
+                //bg.Visible = false;
+                //bg.Blend = BlendType.PostPP;
+                //bg.Options = HudAPIv2.Options.HideHud;
                 bg.Width = 0f;
                 bg.Height = 0f;
             }
 
-            Shadows = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            Shadows.InitialColor = Color.Black;
-            Shadows.Visible = false;
+            List = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
+            ListColumn2 = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
 
-            ShadowsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            ShadowsLine2.InitialColor = Color.Black;
-            ShadowsLine2.Visible = false;
+            List.Text.Font = TextFont;
 
-            Labels = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            Labels.Visible = false;
-
-            LabelsLine2 = new HudAPIv2.HUDMessage(new StringBuilder(SBCapacity), PosOnHUD, HideHud: true, Scale: Scale, Font: TextFont, Blend: TextBlendType);
-            LabelsLine2.Visible = false;
+            if(List.Shadow != null)
+            {
+                List.Shadow.Font = TextFont;
+            }
 
             WereVisible = null;
 
@@ -311,7 +337,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     IMyPlayer player = MyAPIGateway.Session?.Player;
                     if(player != null && player.IdentityId == playerId)
                     {
-                        ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
+                        ShowUntilTick = Main.Tick + (int)(Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TicksPerSecond);
                     }
                 }
             }
@@ -324,89 +350,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         void ToolbarPageChanged()
         {
             Main.ToolbarLabelRender.ForceRefreshAtTick = Main.Tick + 1;
-        }
-
-        //HudAPIv2.HUDMessage DebugMousePos;
-
-        public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
-        {
-            if(ClickOffset.HasValue && MyAPIGateway.Input.IsNewLeftMouseReleased())
-            {
-                ClickOffset = null;
-                Main.Config.Save();
-                Main.ConfigMenuHandler.RefreshAll();
-            }
-
-            if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
-            {
-                const int Rounding = 6;
-                Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
-                Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
-                Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
-
-                Vector2D bottomLeftPos = Labels.Origin;
-                float edge = (float)(BackgroundPadding * Scale);
-                BoundingBox2D box = new BoundingBox2D(bottomLeftPos, bottomLeftPos + new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y)) + edge);
-                box.Min = Vector2D.Min(box.Min, box.Max);
-                box.Max = Vector2D.Max(box.Min, box.Max);
-
-                //{
-                //    MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-                //    float w = (0.032f * DrawUtils.ScaleFOV);
-                //    float h = w;
-
-                //    Vector3D worldPos = DrawUtils.TextAPIHUDtoWorld(box.Min);
-                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Lime, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
-
-                //    worldPos = DrawUtils.TextAPIHUDtoWorld(box.Max);
-                //    VRage.Game.MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("WhiteDot"), Color.Red, worldPos, camMatrix.Left, camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType.PostPP);
-                //}
-
-                //if(DebugMousePos == null)
-                //    DebugMousePos = new HudAPIv2.HUDMessage(new StringBuilder(128), Vector2D.Zero, Shadowing: true, Blend: BlendType.PostPP);
-                //DebugMousePos.Origin = Config.ToolbarLabelsInMenuPosition.Value + new Vector2D(-0.1, 0.4);
-                //DebugMousePos.Message.Clear().Append($"MousePos={mousePos.X:0.##},{mousePos.Y:0.##}" +
-                //    $"\nMouseOnScreen={mouseOnScreen.X:0.##},{mouseOnScreen.Y:0.##}" +
-                //    $"\nTextSize={TextSize.X:0.##},{TextSize.Y:0.##}" +
-                //    $"\nBoxMin={box.Min.X:0.##},{box.Min.Y:0.##}; Max={box.Max.X:0.##},{box.Max.Y:0.##}");
-
-                if(box.Contains(mouseOnScreen) == ContainmentType.Contains)
-                {
-                    if(!SelectedBox)
-                    {
-                        SelectedBox = true;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : Math.Min(1f, Main.GameConfig.HudBackgroundOpacity * 1.2f), BackgroundColorSelected);
-                    }
-
-                    if(MyAPIGateway.Input.IsNewLeftMousePressed())
-                    {
-                        if(InToolbarConfig)
-                            ClickOffset = Main.Config.ToolbarLabelsInMenuPosition.Value - mouseOnScreen;
-                        else
-                            ClickOffset = Main.Config.ToolbarLabelsPosition.Value - mouseOnScreen;
-                    }
-                }
-                else
-                {
-                    if(SelectedBox)
-                    {
-                        SelectedBox = false;
-                        UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
-                    }
-                }
-
-                if(ClickOffset.HasValue && MyAPIGateway.Input.IsLeftMousePressed())
-                {
-                    Vector2D newPos = mouseOnScreen + ClickOffset.Value;
-                    newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
-                    newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
-
-                    if(InToolbarConfig)
-                        Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
-                    else
-                        Main.Config.ToolbarLabelsPosition.Value = newPos;
-                }
-            }
         }
 
         bool ComputeVisible()
@@ -462,8 +405,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // show and fade out when entering cockpit
             if(modeForFadeOut && ShowUntilTick >= tick && (LabelsMode != ToolbarLabelsMode.HudHints || Main.GameConfig.HudState != HudState.HINTS))
             {
-                float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TICKS_PER_SECOND);
-                float fadeTicks = (Constants.TICKS_PER_SECOND * 1.5f);
+                float showForTicks = (Main.Config.ToolbarLabelsEnterCockpitTime.Value * Constants.TicksPerSecond);
+                float fadeTicks = (Constants.TicksPerSecond * 1.5f);
 
                 float bgOpacity = Main.GameConfig.HudBackgroundOpacity;
                 float textOpacity = 1f;
@@ -514,7 +457,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 WasInToolbarConfig = InToolbarConfig;
 
                 UpdatePosition();
-                UpdateBgOpacity(InToolbarConfig ? 1f : Main.GameConfig.HudBackgroundOpacity);
+                UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : Main.GameConfig.HudBackgroundOpacity);
                 UpdateTextOpacity(1f);
 
                 // refresh instantly to update names
@@ -535,12 +478,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     bg.Visible = MustBeVisible;
                 }
 
-                Shadows.Visible = MustBeVisible;
-                Labels.Visible = MustBeVisible;
+                List.Visible = MustBeVisible;
 
-                bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
-                ShadowsLine2.Visible = splitMode && MustBeVisible;
-                LabelsLine2.Visible = splitMode && MustBeVisible;
+                // forced single list in toolbar config GUI
+                ListColumn2.Visible = MustBeVisible && !InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns;
 
                 WereVisible = MustBeVisible;
 
@@ -556,12 +497,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     UpdateRender();
                 }
             }
+
+            #region Draggable box update
+            if(MustBeVisible && (InToolbarConfig || Main.TextAPI.InModMenu))
+            {
+                BoxDrag.Position = List.Text.Origin;
+                BoxDrag.Update();
+            }
+            #endregion
         }
 
         void EquipmentMonitor_ControlledChanged(VRage.Game.ModAPI.Interfaces.IMyControllableEntity controlled)
         {
             bool update = controlled is IMyShipController;
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, update);
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, update);
 
             UpdateRender();
@@ -569,7 +517,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UpdateRender()
         {
-            if(Labels == null || !MustBeVisible)
+            if(List == null || !MustBeVisible)
                 return;
 
             int tick = Main.Tick;
@@ -607,23 +555,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             //        return;
             //}
 
-            double topLinesWidth = 0;
+            double firstLineWidth = 0;
 
             float opacity = TextOpacity;
 
-            StringBuilder sb = Labels.Message.Clear();
+            StringBuilder sb = List.Text.Message.Clear();
             StringBuilder sb2 = null;
-
             bool splitMode = (!InToolbarConfig && StyleMode == ToolbarStyle.TwoColumns);
-
             if(splitMode)
-            {
-                sb2 = LabelsLine2.Message.Clear();
-            }
+                sb2 = ListColumn2.Text.Message.Clear();
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
-                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(BuildInfo Mod)<reset>\n");
+                sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
             }
 
             for(int i = 0; i < slotsPerPage; i++)
@@ -633,15 +577,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 int index = startIndex + i;
                 ToolbarItem item = slots[index];
-                if(item.Name == null)
+
+                // process display name after all slots have been computed
+                if(item.DisplayName == null && item.OriginalName != null && item.Block != null)
+                {
+                    item.DisplayName = Main.ToolbarMonitor.ComputeShortName(item.OriginalName, item.Block?.CubeGrid);
+                }
+
+                if(item.DisplayName == null)
                     sb.ColorA(Color.Gray * opacity);
 
                 if(gamepadHUD)
-                    sb.Append(Main.Constants.DPAD_CHARS[i]).Append("  ");
+                    sb.Append(Main.Constants.DPadIcons[i]).Append("  ");
                 else
                     sb.Append(i + 1).Append(". ");
 
-                if(item.Name == null)
+                if(item.DisplayName == null)
                 {
                     sb.Append("—").NewCleanLine();
                     continue;
@@ -656,49 +607,30 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     else
                     {
                         if(NamesMode == ToolbarNameMode.AlwaysShow
-                        || (NamesMode == ToolbarNameMode.GroupsOnly && item.GroupName != null)
+                        || (NamesMode == ToolbarNameMode.GroupsOnly && item.GroupId != null)
                         || (NamesMode == ToolbarNameMode.InMenuOnly && InToolbarConfig))
                         {
-                            if(item.GroupName != null)
+                            if(item.GroupId != null)
                                 sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
 
                             int maxNameLength = (item.PBArgument != null ? MaxBlockNameLengthIfPbArg : MaxBlockNameLength);
-                            string blockName = item.GroupName ?? item.Name;
-                            int blockNameLen = blockName.Length;
-                            if(blockNameLen > maxNameLength)
-                                sb.Append("...").Append(blockName, blockNameLen - maxNameLength, maxNameLength);
-                            else
-                                sb.Append(blockName);
+                            sb.AppendMaxLength(item.DisplayName, maxNameLength).ResetFormatting();
 
-                            if(item.GroupName != null)
-                                sb.Append('*'); // .ResetFormatting();
+                            if(item.GroupId != null)
+                                sb.Append('*');
 
                             sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
                         }
 
-                        string actionName = item.ActionName;
-                        int actionNameLen = actionName.Length;
-                        if(actionNameLen > MaxActionNameLength)
-                            sb.Append(actionName, 0, MaxActionNameLength).Append("...");
-                        else
-                            sb.Append(actionName);
+                        sb.AppendMaxLength(item.ActionName, MaxActionNameLength);
 
                         if(item.PBArgument != null)
                         {
-                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity);
-
-                            string arg = item.PBArgument;
-                            int argLen = arg.Length;
-                            if(argLen > MaxArgLength)
-                                sb.Append(arg, 0, MaxArgLength).Append("...");
-                            else
-                                sb.Append(arg);
-
-                            sb.ResetFormatting();
+                            sb.Append(": <i>").ColorA(new Color(55, 200, 155) * opacity).AppendMaxLength(item.PBArgument, MaxArgLength).ResetFormatting();
                         }
                     }
                 }
-                else if(item.Name != null)
+                else if(item.DisplayName != null)
                 {
                     bool isWeaponSlot = (item.SlotOB.Data is MyObjectBuilder_ToolbarItemWeapon);
 
@@ -708,23 +640,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         sb.ColorA(new Color(200, 210, 215) * opacity);
 
                     if(item.SlotOB.Data is MyObjectBuilder_ToolbarItemEmote || item.SlotOB.Data is MyObjectBuilder_ToolbarItemAnimation)
-                    {
                         sb.Append("Emote - ");
-                    }
 
-                    string name = item.CustomLabel ?? item.Name;
-                    int nameLen = name.Length;
-                    if(nameLen > MaxBlockNameLength)
-                        sb.Append("...").Append(name, nameLen - MaxBlockNameLength, MaxBlockNameLength);
-                    else
-                        sb.Append(name);
-
-                    sb.ResetFormatting();
+                    sb.AppendMaxLength(item.DisplayName, MaxBlockNameLength).ResetFormatting();
                 }
 
                 if(i == 1)
                 {
-                    topLinesWidth = Labels.GetTextLength().X;
+                    firstLineWidth = List.Text.GetTextLength().X;
                 }
 
                 sb.NewLine();
@@ -733,53 +656,61 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // remove last new line
             if(splitMode)
             {
-                sb = Labels.Message;
+                sb = List.Text.Message;
                 sb2.Length -= 1;
             }
             sb.Length -= 1;
 
-            TextAPI.CopyWithoutColor(sb, Shadows.Message);
+            if(UseShadowMessage)
+            {
+                TextAPI.CopyWithoutColor(sb, List.Shadow.Message);
 
-            if(splitMode)
-                TextAPI.CopyWithoutColor(sb2, ShadowsLine2.Message);
+                if(splitMode)
+                    TextAPI.CopyWithoutColor(sb2, ListColumn2.Shadow.Message);
+            }
 
             float separator = 0f;
 
-            Vector2D labelsTextSize = Labels.GetTextLength();
+            Vector2D labelsTextSize = List.Text.GetTextLength();
             Vector2D labelsLine2TextSize = Vector2D.Zero;
+            Vector2D textSize;
 
             if(splitMode)
             {
                 labelsTextSize.X = Math.Max(labelsTextSize.X, SplitModeLeftSideMinWidth);
 
                 separator = (0.015f * Scale);
-                labelsLine2TextSize = LabelsLine2.GetTextLength();
-                TextSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
+                labelsLine2TextSize = ListColumn2.Text.GetTextLength();
+                textSize = new Vector2D(labelsTextSize.X + labelsLine2TextSize.X + separator, Math.Min(labelsTextSize.Y, labelsLine2TextSize.Y)); // min because Y is always negative
             }
             else
             {
-                TextSize = labelsTextSize;
+                textSize = labelsTextSize;
             }
 
             float cornerHeight = (float)(CornerSize * Scale);
             float cornerWidth = (float)(cornerHeight / Main.GameConfig.AspectRatio);
 
             float edge = (float)(BackgroundPadding * Scale);
-            float bgWidth = (float)Math.Abs(TextSize.X) + edge;
-            float bgHeight = (float)Math.Abs(TextSize.Y) + edge;
+            float bgWidth = (float)Math.Abs(textSize.X) + edge;
+            float bgHeight = (float)Math.Abs(textSize.Y) + edge;
             Vector2D halfEdgeVec = new Vector2D(edge / 2);
 
             Vector2D shadowOffset = new Vector2D(ShadowOffset, -ShadowOffset);
 
-            Vector2D textOffset = new Vector2D(0, -TextSize.Y); // bottom-left pivot
-            Labels.Offset = textOffset + halfEdgeVec;
-            Shadows.Offset = textOffset + halfEdgeVec + shadowOffset;
+            Vector2D textOffset = new Vector2D(0, -textSize.Y); // bottom-left pivot
+            List.Text.Offset = textOffset + halfEdgeVec;
+
+            if(UseShadowMessage)
+                List.Shadow.Offset = textOffset + halfEdgeVec + shadowOffset;
 
             if(splitMode)
             {
-                Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -TextSize.Y);
-                LabelsLine2.Offset = l2offset + halfEdgeVec;
-                ShadowsLine2.Offset = l2offset + halfEdgeVec + shadowOffset;
+                Vector2D l2offset = new Vector2D(labelsTextSize.X + separator, -textSize.Y);
+                ListColumn2.Text.Offset = l2offset + halfEdgeVec;
+
+                if(UseShadowMessage)
+                    ListColumn2.Shadow.Offset = l2offset + halfEdgeVec + shadowOffset;
             }
 
             BackgroundBottom.Width = bgWidth - cornerWidth;
@@ -803,7 +734,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Background.Width = bgWidth;
             Background.Height = bgHeight - cornerHeight - (cornerHeight * topRightCornerScale);
-            Background.Offset = textOffset + (TextSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
+            Background.Offset = textOffset + (textSize / 2) + halfEdgeVec + new Vector2D(0, (cornerHeight - (cornerHeight * topRightCornerScale)) / 2);
+
+            // update draggable box
+            Vector2D center = List.Text.Origin;
+            BoundingBox2D box = new BoundingBox2D(center, center + new Vector2D(bgWidth, bgHeight));
+            BoxDrag.DragHitbox = box;
         }
     }
 }

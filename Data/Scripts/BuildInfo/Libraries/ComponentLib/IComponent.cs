@@ -15,5 +15,7 @@
         void UpdateAfterSim(int tick);
         void UpdateDraw();
         void RefreshFlags();
+
+        ProfileUpdates Profiled { get; }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Sandbox.ModAPI;
+using VRage;
+using VRage.Game;
 using VRage.Game.Components;
 
 namespace Digi.ComponentLib
@@ -42,16 +45,20 @@ namespace Digi.ComponentLib
 
         /// <summary>
         /// Wether simulation is paused.
+        /// NOTE: requires ModBase to have simulation updates.
         /// </summary>
         public bool IsPaused { get; private set; }
 
         public bool SessionHasBeforeSim { get; private set; }
+
         public bool SessionHasAfterSim { get; private set; }
 
         /// <summary>
-        /// Simulation tick from server start.
+        /// Simulation tick from session start on local machine.
         /// </summary>
         public int Tick;
+
+        public static bool IsLocalMod { get; private set; }
 
         /// <summary>
         /// After all components registered.
@@ -68,19 +75,42 @@ namespace Digi.ComponentLib
         /// </summary>
         public event Action OnWorldSave;
 
-        private readonly List<IComponent> Components = new List<IComponent>();
+        public readonly List<IComponent> Components = new List<IComponent>();
         private readonly HashSet<IComponent> ComponentRefreshFlags = new HashSet<IComponent>();
-        private readonly List<IComponent> ComponentUpdateInput = new List<IComponent>();
-        private readonly List<IComponent> ComponentUpdateBeforeSim = new List<IComponent>();
-        private readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
-        private readonly List<IComponent> ComponentUpdateDraw = new List<IComponent>();
+        public readonly List<IComponent> ComponentUpdateInput = new List<IComponent>();
+        public readonly List<IComponent> ComponentUpdateBeforeSim = new List<IComponent>();
+        public readonly List<IComponent> ComponentUpdateAfterSim = new List<IComponent>();
+        public readonly List<IComponent> ComponentUpdateDraw = new List<IComponent>();
 
         private readonly bool RunCriticalOnInput;
         private readonly bool RunCriticalOnBeforeSim;
         private readonly bool RunCriticalOnAfterSim;
 
+        public bool Profile { get; set; } = false;
+        public const double NewMeasureWeight = 0.01;
+        public const string MeasureFormat = "0.000000";
+
+        Stopwatch Stopwatch { get; } = new Stopwatch();
+        string MeasuredFor { get; set; }
+        List<ProfileData> MeasuredResults { get; } = new List<ProfileData>();
+
         protected ModBase(string modName, BuildInfo_GameSession session, MyUpdateOrder sessionUpdates)
         {
+            MeasuredFor = "ModBase";
+            Stopwatch.Restart();
+
+            // mod is a local mod
+            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
+            {
+                if(mod.PublishedFileId == 0 && mod.Name == session.ModContext.ModId)
+                {
+                    IsLocalMod = true;
+                    break;
+                }
+            }
+
+            Profile = IsLocalMod;
+
             Log.ModName = modName;
             Log.AutoClose = false;
             IsServer = MyAPIGateway.Multiplayer.IsServer;
@@ -110,13 +140,61 @@ namespace Digi.ComponentLib
                 throw new CrashGameException("No critical run executing!");
         }
 
+        void IModBase.FinishProfilingConstructors()
+        {
+            if(Profile)
+            {
+                // add last ctor's results
+                Stopwatch.Stop();
+                MeasuredResults.Add(new ProfileData(MeasuredFor, Stopwatch.Elapsed.TotalMilliseconds));
+
+
+                MeasuredResults.Sort((a, b) => b.MeasuredMs.CompareTo(a.MeasuredMs)); // sort descending
+
+                double totalMs = 0;
+                foreach(ProfileData data in MeasuredResults)
+                {
+                    totalMs += data.MeasuredMs;
+                }
+
+                Log.Info($"Profiled component constructors, total: {totalMs.ToString(ModBase<IModBase>.MeasureFormat)} ms");
+                Log.IncreaseIndent();
+                foreach(ProfileData data in MeasuredResults)
+                {
+                    Log.Info($"{data.MeasuredMs.ToString(ModBase<IModBase>.MeasureFormat)} ms for {data.Name}");
+                }
+                Log.DecreaseIndent();
+
+                MeasuredResults.Clear();
+            }
+        }
+
         void IModBase.WorldStart()
         {
+            if(Profile)
+            {
+                MeasuredResults.Clear();
+            }
+
             for(int i = 0; i < Components.Count; ++i)
             {
                 try
                 {
-                    Components[i].RegisterComponent();
+                    IComponent comp = Components[i];
+
+                    if(Profile)
+                    {
+                        Stopwatch.Restart();
+
+                        comp.RegisterComponent();
+
+                        Stopwatch.Stop();
+                        MeasuredResults.Add(new ProfileData($"{comp.GetType().Name}.RegisterComponent()", Stopwatch.Elapsed.TotalMilliseconds));
+                    }
+                    else
+                    {
+                        comp.RegisterComponent();
+                    }
                 }
                 catch(Exception e)
                 {
@@ -129,7 +207,36 @@ namespace Digi.ComponentLib
             }
 
             ComponentsRegistered = true;
-            OnWorldStart?.Invoke();
+
+            if(Profile)
+            {
+                Stopwatch.Restart();
+
+                OnWorldStart?.Invoke();
+
+                Stopwatch.Stop();
+                MeasuredResults.Add(new ProfileData("OnWorldStart event", Stopwatch.Elapsed.TotalMilliseconds));
+
+                MeasuredResults.Sort((a, b) => b.MeasuredMs.CompareTo(a.MeasuredMs)); // sort descending
+
+                double totalMs = 0;
+                foreach(ProfileData data in MeasuredResults)
+                {
+                    totalMs += data.MeasuredMs;
+                }
+
+                Log.Info($"Profiled component registering, total: {totalMs.ToString(MeasureFormat)} ms");
+                Log.IncreaseIndent();
+                foreach(ProfileData data in MeasuredResults)
+                {
+                    Log.Info($"PROFILE: {data.MeasuredMs.ToString(MeasureFormat)} ms for {data.Name}");
+                }
+                Log.DecreaseIndent();
+            }
+            else
+            {
+                OnWorldStart?.Invoke();
+            }
         }
 
         void IModBase.WorldExit()
@@ -207,19 +314,51 @@ namespace Digi.ComponentLib
                     bool anyKeyOrMouse = MyAPIGateway.Input.IsAnyKeyPress() || MyAPIGateway.Input.IsAnyMousePressed();
                     bool paused = IsPaused;
 
-                    for(int i = 0; i < comps; ++i)
+                    if(Profile)
                     {
-                        try
+                        for(int i = 0; i < comps; ++i)
                         {
-                            ComponentUpdateInput[i].UpdateInput(anyKeyOrMouse, inMenu, paused);
-                        }
-                        catch(Exception e)
-                        {
-                            if(e is CrashGameException)
-                                throw e;
+                            try
+                            {
+                                Stopwatch.Restart();
 
-                            Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
-                            Log.Error(e);
+                                IComponent comp = ComponentUpdateInput[i];
+                                comp.UpdateInput(anyKeyOrMouse, inMenu, paused);
+
+                                Stopwatch.Stop();
+                                double ms = Stopwatch.Elapsed.TotalMilliseconds;
+                                ProfileMeasure profiled = comp.Profiled.MeasuredInput;
+                                profiled.Min = Math.Min(profiled.Min, ms);
+                                profiled.Max = Math.Max(profiled.Max, ms);
+                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                IComponent comp = ComponentUpdateInput[i];
+                                comp.UpdateInput(anyKeyOrMouse, inMenu, paused);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
                         }
                     }
                 }
@@ -257,19 +396,55 @@ namespace Digi.ComponentLib
                     }
                 }
 
-                for(int i = 0; i < ComponentUpdateBeforeSim.Count; ++i)
+                int comps = ComponentUpdateBeforeSim.Count;
+                if(comps > 0)
                 {
-                    try
+                    if(Profile)
                     {
-                        ComponentUpdateBeforeSim[i].UpdateBeforeSim(Tick);
-                    }
-                    catch(Exception e)
-                    {
-                        if(e is CrashGameException)
-                            throw e;
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                Stopwatch.Restart();
 
-                        Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
-                        Log.Error(e);
+                                IComponent comp = ComponentUpdateBeforeSim[i];
+                                comp.UpdateBeforeSim(Tick);
+
+                                Stopwatch.Stop();
+                                double ms = Stopwatch.Elapsed.TotalMilliseconds;
+                                ProfileMeasure profiled = comp.Profiled.MeasuredBeforeSim;
+                                profiled.Min = Math.Min(profiled.Min, ms);
+                                profiled.Max = Math.Max(profiled.Max, ms);
+                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                IComponent comp = ComponentUpdateBeforeSim[i];
+                                comp.UpdateBeforeSim(Tick);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
                     }
                 }
             }
@@ -306,19 +481,55 @@ namespace Digi.ComponentLib
                     }
                 }
 
-                for(int i = 0; i < ComponentUpdateAfterSim.Count; ++i)
+                int comps = ComponentUpdateAfterSim.Count;
+                if(comps > 0)
                 {
-                    try
+                    if(Profile)
                     {
-                        ComponentUpdateAfterSim[i].UpdateAfterSim(Tick);
-                    }
-                    catch(Exception e)
-                    {
-                        if(e is CrashGameException)
-                            throw e;
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                Stopwatch.Restart();
 
-                        Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
-                        Log.Error(e);
+                                IComponent comp = ComponentUpdateAfterSim[i];
+                                comp.UpdateAfterSim(Tick);
+
+                                Stopwatch.Stop();
+                                double ms = Stopwatch.Elapsed.TotalMilliseconds;
+                                ProfileMeasure profiled = comp.Profiled.MeasuredAfterSim;
+                                profiled.Min = Math.Min(profiled.Min, ms);
+                                profiled.Max = Math.Max(profiled.Max, ms);
+                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                IComponent comp = ComponentUpdateAfterSim[i];
+                                comp.UpdateAfterSim(Tick);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
                     }
                 }
             }
@@ -338,19 +549,55 @@ namespace Digi.ComponentLib
                 if(IsDedicatedServer)
                     return; // just making sure
 
-                for(int i = 0; i < ComponentUpdateDraw.Count; ++i)
+                int comps = ComponentUpdateDraw.Count;
+                if(comps > 0)
                 {
-                    try
+                    if(Profile)
                     {
-                        ComponentUpdateDraw[i].UpdateDraw();
-                    }
-                    catch(Exception e)
-                    {
-                        if(e is CrashGameException)
-                            throw e;
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                Stopwatch.Restart();
 
-                        Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
-                        Log.Error(e);
+                                IComponent comp = ComponentUpdateDraw[i];
+                                comp.UpdateDraw();
+
+                                Stopwatch.Stop();
+                                double ms = Stopwatch.Elapsed.TotalMilliseconds;
+                                ProfileMeasure profiled = comp.Profiled.MeasuredDraw;
+                                profiled.Min = Math.Min(profiled.Min, ms);
+                                profiled.Max = Math.Max(profiled.Max, ms);
+                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for(int i = 0; i < comps; ++i)
+                        {
+                            try
+                            {
+                                IComponent comp = ComponentUpdateDraw[i];
+                                comp.UpdateDraw();
+                            }
+                            catch(Exception e)
+                            {
+                                if(e is CrashGameException)
+                                    throw e;
+
+                                Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
+                                Log.Error(e);
+                            }
+                        }
                     }
                 }
             }
@@ -386,6 +633,15 @@ namespace Digi.ComponentLib
         void IModBase.ComponentAdd(IComponent component)
         {
             Components.Add(component);
+
+            if(Profile)
+            {
+                Stopwatch.Stop();
+                MeasuredResults.Add(new ProfileData(MeasuredFor, Stopwatch.Elapsed.TotalMilliseconds));
+
+                MeasuredFor = $"{component.GetType().Name}.ctor()";
+                Stopwatch.Restart();
+            }
         }
 
         void IModBase.ComponentScheduleRefresh(IComponent component)

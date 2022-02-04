@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -8,22 +9,24 @@ using Draygo.API;
 using Sandbox.Engine.Physics;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using VRage.ObjectBuilders;
-using Digi.BuildInfo.Features.LiveData;
-using Sandbox.Definitions;
-using Sandbox.ModAPI.Interfaces;
 using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
+using System.Linq;
+using VRage.ModAPI;
+using VRage.Input;
 
 namespace Digi.BuildInfo.Features
 {
@@ -33,7 +36,8 @@ namespace Digi.BuildInfo.Features
         {
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
-            //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
+            if(Main.Profile)
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
 
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
             //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
@@ -78,32 +82,121 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        public override void UpdateDraw()
+        {
+            if(Main.Profile && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.P) && MyAPIGateway.Input.IsAnyShiftKeyPressed() && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            {
+                ShowMeasurements = !ShowMeasurements;
+            }
+
+            if(Main.Profile && ShowMeasurements)
+            {
+                DrawMeasurements();
+            }
+        }
+
+        #region Showing update profiling results
+        bool ShowMeasurements = false;
+        const string MeasureFormat = "0.000000";
+        double AllUpdatesMs;
+        HudAPIv2.HUDMessage ProfileText;
+        List<MyTuple<IComponent, ProfileMeasure>> CompAndTimesList = new List<MyTuple<IComponent, ProfileMeasure>>();
+
+        void DrawMeasurements()
+        {
+            if(!Main.TextAPI.IsEnabled)
+                return;
+
+            if(ProfileText == null)
+            {
+                ProfileText = TextAPI.CreateHUDText(new StringBuilder(512), new Vector2D(-0.99, 0.98), scale: 0.8, hideWithHud: false);
+            }
+
+            StringBuilder sb = ProfileText.Message.Clear();
+
+            sb.Append("Sim speed: ").Append(MyAPIGateway.Physics.SimulationRatio.ToString("P")).Append('\n');
+
+            AllUpdatesMs = 0;
+
+            AppendType(sb, "Input", Main.ComponentUpdateInput, (c) => c.Profiled.MeasuredInput);
+
+            if(Main.SessionHasBeforeSim)
+                AppendType(sb, "BeforeSim", Main.ComponentUpdateBeforeSim, (c) => c.Profiled.MeasuredBeforeSim);
+
+            if(Main.SessionHasAfterSim)
+                AppendType(sb, "AfterSim", Main.ComponentUpdateAfterSim, (c) => c.Profiled.MeasuredAfterSim);
+
+            AppendType(sb, "Draw", Main.ComponentUpdateDraw, (c) => c.Profiled.MeasuredDraw);
+
+            sb.Append("Total: ").Append(AllUpdatesMs.ToString(MeasureFormat)).Append(" ms");
+
+            ProfileText.Draw();
+        }
+
+        void AppendType(StringBuilder sb, string title, List<IComponent> components, Func<IComponent, ProfileMeasure> getField)
+        {
+            CompAndTimesList.Clear();
+
+            double totalMs = 0;
+            foreach(IComponent comp in components)
+            {
+                if(comp == this)
+                    continue;
+
+                ProfileMeasure profiled = getField(comp);
+                CompAndTimesList.Add(MyTuple.Create(comp, profiled));
+                totalMs += profiled.MovingAvg;
+            }
+
+            AllUpdatesMs += totalMs;
+
+            sb.Append(title).Append(" - total ").Append(totalMs.ToString(MeasureFormat)).Append("ms\n");
+
+            CompAndTimesList.Sort((a, b) => b.Item2.MovingAvg.CompareTo(a.Item2.MovingAvg)); // sort descending
+
+            foreach(MyTuple<IComponent, ProfileMeasure> kv in CompAndTimesList)
+            {
+                ProfileMeasure profiled = kv.Item2;
+                string avg = profiled.MovingAvg.ToString(MeasureFormat);
+                string min = profiled.Min.ToString(MeasureFormat);
+                string max = profiled.Max.ToString(MeasureFormat);
+                sb.Append("  ").Append(avg).Append(" ms | ").Append(min).Append(" ms min | ").Append(max).Append(" ms max | ").Append(kv.Item1.GetType().Name).Append("\n");
+            }
+        }
+        #endregion
+
         void Debug_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
             Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
 
             if(newValue)
                 Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+
+            if(DebugEquipmentMsg != null)
+                DebugEquipmentMsg.Visible = newValue;
         }
 
-        HudAPIv2.HUDMessage debugEquipmentMsg;
+        HudAPIv2.HUDMessage DebugEquipmentMsg;
 
         void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
         {
             if(Main.TextAPI.WasDetected && Main.Config.Debug.Value)
             {
-                if(debugEquipmentMsg == null)
-                {
-                    debugEquipmentMsg = new HudAPIv2.HUDMessage(new StringBuilder(), new Vector2D(-0.2f, 0.98f), Scale: 0.75, HideHud: false);
-                    debugEquipmentMsg.Visible = false;
-                }
+                if(DebugEquipmentMsg == null)
+                    DebugEquipmentMsg = TextAPI.CreateHUDText(new StringBuilder(128), new Vector2D(-0.2f, 0.98f), scale: 0.75, hideWithHud: false);
 
-                debugEquipmentMsg.Message.Clear().Append($"BuildInfo Debug - Equipment.Update()\n" +
-                    $"{(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other<color=white>"))}\n" +
-                    $"tool=<color=yellow>{(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString())}\n" +
-                    $"<color=white>block=<color=yellow>{Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE"}");
+                StringBuilder sb = DebugEquipmentMsg.Message.Clear();
 
-                debugEquipmentMsg.Draw();
+                sb.Append(BuildInfoMod.ModName).Append(" Debug - Equipment.Update()\n");
+                sb.Append(character != null ? "Character" : (shipController != null ? "Ship" : "<color=red>Other")).NewCleanLine();
+                sb.Append("tool=").Color(Color.Yellow).Append(Main.EquipmentMonitor.ToolDefId == default(MyDefinitionId) ? "NONE" : Main.EquipmentMonitor.ToolDefId.ToString()).NewCleanLine();
+                sb.Append("block=").Color(Color.Yellow).Append(Main.EquipmentMonitor.BlockDef?.Id.ToString() ?? "NONE").NewCleanLine();
+
+                DebugEquipmentMsg.Visible = true;
+            }
+            else if(DebugEquipmentMsg != null)
+            {
+                DebugEquipmentMsg.Visible = false;
             }
 
             //if(character != null && MyAPIGateway.Input.IsAnyShiftKeyPressed())

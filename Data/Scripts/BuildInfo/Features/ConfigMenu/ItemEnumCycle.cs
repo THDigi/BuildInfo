@@ -11,8 +11,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         public Action<int> Setter;
         public string Title;
 
-        public Color ColorValue = new Color(50, 255, 75);
-        public Color ColorValueName = new Color(255, 255, 255);
+        public Color ColorValue = new Color(255, 255, 255);
+        public Color ColorValueName = new Color(50, 255, 75);
 
         private readonly string[] names;
         private readonly int[] values;
@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             string titleColor = (Item.Interactable ? "" : "<color=gray>");
             string valueIntColor = (Item.Interactable ? Utils.ColorTag(ColorValue) : "");
             string valueNameColor = (Item.Interactable ? Utils.ColorTag(ColorValueName) : "");
-            Item.Text = $"{titleColor}{Title}: {valueIntColor}{val.ToString()} of {(names.Length - 1).ToString()} {valueNameColor}({names[val]}){(defaultValue == val ? " <color=gray>[default]" : "")}";
+            Item.Text = $"{titleColor}{Title}: {valueNameColor}{names[val]} {valueIntColor}({val.ToString()} of {(names.Length - 1).ToString()}) {(defaultValue == val ? " <color=gray>[default]" : "")}";
         }
 
         private void OnClick()

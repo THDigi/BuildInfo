@@ -1,5 +1,4 @@
 ﻿using System;
-using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage.ModAPI;
@@ -114,34 +113,17 @@ namespace Digi.BuildInfo.Utilities
 
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
-            Vector2 size = Main.Constants.BLOCKINFO_SIZE;
+            Vector2 size = new Vector2(0.02164f, 0.00076f);
             size.Y *= Ymultiplier;
-            size.Y += Constants.BLOCKINFO_TEXT_PADDING;
+            size.Y += 0.001f; // padding
             size *= ScaleFOV;
 
             if(Math.Abs(Main.GameConfig.AspectRatio - (1280.0 / 1024.0)) <= 0.0001) // HACK 5:4 aspect ratio manual fix
             {
-                size.X *= Constants.ASPECT_RATIO_54_FIX;
+                size.X *= 0.938f;
             }
 
             return size;
-        }
-
-        public Vector2 GetHudComponentListStart()
-        {
-            Vector2 posHUD = new Vector2(0.9894f, 0.678f);
-
-            if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                posHUD.Y = 0.498f;
-
-            if(Main.GameConfig.HudState == HudState.BASIC)
-                posHUD.Y = 0.558f;
-
-            // FIXME: vanilla UI is all over the place with this, needs tweaking
-            if(Main.GameConfig.AspectRatio > 5) // triple monitor
-                posHUD.X += 0.75f;
-
-            return posHUD;
         }
     }
 }

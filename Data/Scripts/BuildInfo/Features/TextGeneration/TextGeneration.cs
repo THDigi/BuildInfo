@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using System.Xml.Serialization;
+using CoreSystems.Api;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
@@ -10,30 +11,30 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
-using Draygo.API;
 using ObjectBuilders.SafeZone;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
+using VRage.Game.Definitions;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using WeaponCore.Api;
 using Whiplash.WeaponFramework;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 // FIXME: internal info not vanishing on older cached blocks text when resetting config
 // FIXME: box size gets cached from overlay lock on or something
+// TODO: needs redesign to be more flexible and allow hotkey to show block definition info while aiming at a real one
 
 namespace Digi.BuildInfo.Features
 {
@@ -49,8 +50,7 @@ namespace Digi.BuildInfo.Features
         #region Constants
         private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
-        private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("Square");
-        private const BlendTypeEnum BG_BLEND_TYPE = BlendTypeEnum.PostPP;
+        private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
         private readonly Color BG_COLOR = new Color(41, 54, 62);
         private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
         public readonly Color COLOR_NORMAL = Color.White;
         public readonly Color COLOR_GOOD = Color.Lime;
-        public readonly Color COLOR_BAD = Color.Red;
+        public readonly Color COLOR_BAD = new Color(255, 10, 10);
         public readonly Color COLOR_WARNING = Color.Yellow;
         public readonly Color COLOR_UNIMPORTANT = Color.Gray;
         public readonly Color COLOR_PART = new Color(55, 255, 155);
@@ -97,8 +97,9 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
         public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
         public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
-        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 155, 0);
+        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 200, 0);
         public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
+        public readonly Color COLOR_STAT_EXPLOSION = new Color(255, 100, 0);
         public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
         public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
         #endregion Constants
@@ -106,7 +107,7 @@ namespace Digi.BuildInfo.Features
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public bool textShown = false;
         private bool aimInfoNeedsUpdate = false;
-        private GridSplitType willSplitGrid;
+        public GridSplitType WillSplitGrid;
         private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
         public Vector3D? LastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
@@ -122,8 +123,7 @@ namespace Digi.BuildInfo.Features
         private int lines;
         private int forceDrawTicks = 0;
         private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
-        private HudAPIv2.HUDMessage textObject = null;
-        private HudAPIv2.BillBoardHUDMessage bgObject = null;
+        private TextAPI.TextPackage textObject;
         private const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
@@ -200,7 +200,7 @@ namespace Digi.BuildInfo.Features
 
         private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
         {
-            willSplitGrid = GridSplitType.Recalculate;
+            WillSplitGrid = GridSplitType.Recalculate;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
@@ -241,8 +241,13 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown && textObject != null)
             {
-                bgObject.Draw();
-                textObject.Draw();
+                if(textObject.Background != null)
+                    textObject.Background.Draw();
+
+                if(textObject.Shadow != null)
+                    textObject.Shadow.Draw();
+
+                textObject.Text.Draw();
             }
             else
             {
@@ -317,7 +322,7 @@ namespace Digi.BuildInfo.Features
                 {
                     LastDefId = def.Id;
 
-                    if(Main.Config.TextShow.Value)
+                    if(Main.Config.TextShow.ShouldShowText)
                     {
                         if(hasAimedBlock)
                         {
@@ -426,19 +431,18 @@ namespace Digi.BuildInfo.Features
 
         private Vector2D UpdateTextAPIvisuals(StringBuilder textSB, Vector2D textSize = default(Vector2D))
         {
-            if(bgObject == null)
+            if(textObject == null)
             {
-                bgObject = new HudAPIv2.BillBoardHUDMessage(BG_MATERIAL, Vector2D.Zero, Color.White, HideHud: !Main.Config.TextAlwaysVisible.Value, Shadowing: true, Blend: BG_BLEND_TYPE); // scale on bg must always remain 1
-                bgObject.Visible = false;
-                textObject = new HudAPIv2.HUDMessage(new StringBuilder(TEXTAPI_TEXT_LENGTH), Vector2D.Zero, Scale: Main.Config.TextAPIScale.Value, HideHud: !Main.Config.TextAlwaysVisible.Value, Blend: FG_BLEND_TYPE);
-                textObject.Visible = false;
+                textObject = new TextAPI.TextPackage(TEXTAPI_TEXT_LENGTH, backgroundTexture: BG_MATERIAL);
+                textObject.HideWithHUD = !Main.Config.TextAlwaysVisible.Value;
+                textObject.Scale = Main.Config.TextAPIScale.Value;
             }
 
             //bgObject.Visible = true;
             //textObject.Visible = true;
 
             #region Update text and count lines
-            StringBuilder msg = textObject.Message;
+            StringBuilder msg = textObject.Text.Message;
             msg.Clear().EnsureCapacity(msg.Length + textSB.Length);
             lines = 0;
 
@@ -452,7 +456,7 @@ namespace Digi.BuildInfo.Features
                     lines++;
             }
 
-            textObject.Flush();
+            textObject.Text.Flush();
             #endregion Update text and count lines
 
             Vector2D textPos = Vector2D.Zero;
@@ -460,7 +464,7 @@ namespace Digi.BuildInfo.Features
 
             // calculate text size if it wasn't inputted
             if(Math.Abs(textSize.X) <= 0.0001 && Math.Abs(textSize.Y) <= 0.0001)
-                textSize = textObject.GetTextLength();
+                textSize = textObject.Text.GetTextLength();
 
             if(Main.QuickMenu.Shown) // in the menu
             {
@@ -515,8 +519,8 @@ namespace Digi.BuildInfo.Features
                 textOffset = new Vector2D(0, 0); // top-left pivot
             }
 
-            textObject.Origin = textPos;
-            textObject.Offset = textOffset;
+            textObject.Text.Origin = textPos;
+            textObject.Text.Offset = textOffset;
 
 #if false // disabled blockinfo-attached GUI
             if(showMenu || selectedBlock == null)
@@ -538,11 +542,11 @@ namespace Digi.BuildInfo.Features
 
                 float edge = BG_EDGE * Main.Config.TextAPIScale.Value;
 
-                bgObject.BillBoardColor = color;
-                bgObject.Origin = textPos;
-                bgObject.Width = (float)Math.Abs(textSize.X) + edge;
-                bgObject.Height = (float)Math.Abs(textSize.Y) + edge;
-                bgObject.Offset = textOffset + (textSize / 2);
+                textObject.Background.BillBoardColor = color;
+                textObject.Background.Origin = textPos;
+                textObject.Background.Width = (float)Math.Abs(textSize.X) + edge;
+                textObject.Background.Height = (float)Math.Abs(textSize.Y) + edge;
+                textObject.Background.Offset = textOffset + (textSize / 2);
             }
 
             textShown = true;
@@ -556,7 +560,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.TextAPI.IsEnabled)
             {
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.ShouldShowText && !Main.QuickMenu.Shown))
                 {
                     HideText();
                     return;
@@ -589,7 +593,7 @@ namespace Digi.BuildInfo.Features
                 if(Main.IsPaused)
                     return; // HACK: avoid notification glitching out if showing them continuously when game is paused
 
-                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.Value && !Main.QuickMenu.Shown))
+                if(MyAPIGateway.Gui.IsCursorVisible || (!Main.Config.TextShow.ShouldShowText && !Main.QuickMenu.Shown))
                     return;
 
                 List<IMyHudNotification> hudLines = null;
@@ -813,11 +817,10 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                int px = GetStringSizeNotif(notificationLines[line].str);
+                HudLine hudLine = notificationLines[line];
+                hudLine.lineWidthPx = GetStringSizeNotif(hudLine.str);
 
-                largestLineWidth = Math.Max(largestLineWidth, px);
-
-                notificationLines[line].lineWidthPx = px;
+                largestLineWidth = Math.Max(largestLineWidth, hudLine.lineWidthPx);
             }
         }
 
@@ -829,7 +832,7 @@ namespace Digi.BuildInfo.Features
         private void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
-            if(Main.Overlays.DrawLookup.ContainsKey(def.Id.TypeId) && !Main.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
             {
                 AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
                 Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
@@ -868,7 +871,7 @@ namespace Digi.BuildInfo.Features
         {
             ResetLines();
 
-            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.MOD_NAME).Append(" mod");
+            AddLine(FontsHandler.SkyBlueSh).Color(COLOR_BLOCKTITLE).Append(BuildInfoMod.ModName).Append(" mod");
 
             int i = 0;
 
@@ -917,9 +920,9 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Settings:");
             }
 
-            AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.Value ? "ON" : "OFF");
+            AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.ValueName);
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayNames[Main.Overlays.DrawOverlay]);
+            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayModeName);
             if(Main.Config.CycleOverlaysBind.Value.IsAssigned())
             {
                 GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
@@ -978,9 +981,9 @@ namespace Digi.BuildInfo.Features
             }
 
             IMyProjector projectedBy = Main.EquipmentMonitor.AimedProjectedBy;
-            bool projected = (projectedBy != null);
-            float integrityRatio = (projected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
-            IMyCubeGrid grid = (projected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
+            bool isProjected = (projectedBy != null);
+            float integrityRatio = (isProjected ? 0 : aimedBlock.Integrity / aimedBlock.MaxIntegrity);
+            IMyCubeGrid grid = (isProjected ? projectedBy.CubeGrid : aimedBlock.CubeGrid);
 
             IMyTerminalBlock terminalBlock = aimedBlock.FatBlock as IMyTerminalBlock;
             bool hasComputer = (terminalBlock != null && def.ContainsComputer());
@@ -992,7 +995,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Append('"').Color(COLOR_BLOCKTITLE).AppendMaxLength(terminalBlock.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
                 }
-                else if(projected) // show block def name because game might not.
+                else if(isProjected) // show block def name because game might not.
                 {
                     AddLine().Color(COLOR_BLOCKTITLE).AppendMaxLength(def.DisplayNameText, BLOCK_NAME_MAX_LENGTH).ResetFormatting();
                 }
@@ -1015,7 +1018,7 @@ namespace Digi.BuildInfo.Features
                 float mass = (def.HasPhysics ? def.Mass : 0); // HACK: game doesn't use mass from blocks with HasPhysics=false
                 Color massColor = Color.GreenYellow;
 
-                if(projected)
+                if(isProjected)
                 {
                     AddLine().Color(massColor).MassFormat(mass);
                 }
@@ -1058,7 +1061,7 @@ namespace Digi.BuildInfo.Features
             #endregion Mass, grid mass
 
             #region Projector info and status
-            if(projected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            if(isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 // TODO: custom extracted method to be able to compare blocks and not select the projection of the same block that's already placed
 
@@ -1101,23 +1104,20 @@ namespace Digi.BuildInfo.Features
 
             #region Different block projected under this one
             IMyCubeGrid nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
-            if(!projected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
+            if(!isProjected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
                 ProjectedUnder.Clear();
-                string firstProjectedName = null;
 
-                Vector3I min = aimedBlock.Min;
-                Vector3I max = aimedBlock.Max;
+                // need the real block's positions in the projected grid's space
+                Vector3I min = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Min));
+                Vector3I max = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Max));
                 Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref min, ref max);
                 while(iterator.IsValid())
                 {
-                    IMySlimBlock projectedUnder = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
-                    if(projectedUnder != null && projectedUnder.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                    IMySlimBlock projectedBlock = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
+                    if(projectedBlock != null && projectedBlock.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
                     {
-                        if(firstProjectedName == null)
-                            firstProjectedName = projectedUnder.BlockDefinition.DisplayNameText;
-
-                        ProjectedUnder.Add(projectedUnder);
+                        ProjectedUnder.Add(projectedBlock);
                     }
 
                     iterator.MoveNext();
@@ -1126,12 +1126,14 @@ namespace Digi.BuildInfo.Features
                 int projectedUnderCount = ProjectedUnder.Count;
                 if(projectedUnderCount == 1)
                 {
-                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(firstProjectedName);
+                    AddLine().Color(COLOR_BAD).Label("Projected under").AppendMaxLength(ProjectedUnder.FirstElement().BlockDefinition.DisplayNameText, 24);
                 }
                 else if(projectedUnderCount > 1)
                 {
                     AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectedUnderCount).Append(" blocks");
                 }
+
+                // TODO: add this to under-crosshair messages?
 
                 ProjectedUnder.Clear();
             }
@@ -1140,7 +1142,7 @@ namespace Digi.BuildInfo.Features
             #region Integrity
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Integrity))
             {
-                if(projected)
+                if(isProjected)
                 {
                     float originalIntegrity = (aimedBlock.Integrity / aimedBlock.MaxIntegrity);
 
@@ -1196,7 +1198,7 @@ namespace Digi.BuildInfo.Features
             #endregion Component volume
 
             #region Optional: intake damage multiplier
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.DamageMultiplier))
             {
                 // MySlimBlock.BlockGeneralDamageModifier is inaccessible
                 float dmgMul = aimedBlock.DamageRatio * def.GeneralDamageMultiplier;
@@ -1204,15 +1206,22 @@ namespace Digi.BuildInfo.Features
 
                 if(dmgMul != 1 || gridDmgMul != 1)
                 {
-                    AddLine();
-                    ResistanceFormat(dmgMul);
+                    StringBuilder sb = AddLine();
+                    DamageMultiplierAsResistance(dmgMul);
 
                     if(gridDmgMul != 1)
                     {
-                        GetLine().Separator();
-                        ResistanceFormat(gridDmgMul, label: "Grid");
+                        sb.Separator();
+                        DamageMultiplierAsResistance(gridDmgMul, label: "Grid");
                     }
                 }
+
+                // TODO: add here or not?
+                //CoreSystemsDef.ArmorDefinition csArmorDef;
+                //if(Main.CoreSystemsAPIHandler.Armor.TryGetValue(def.Id.SubtypeName, out csArmorDef))
+                //{
+                //    Format_CoreSystemsArmor(def, csArmorDef);
+                //}
 
                 // TODO: impact resistance? wheels in particular...
             }
@@ -1221,53 +1230,58 @@ namespace Digi.BuildInfo.Features
             #region Optional: ownership
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.Ownership))
             {
-                if(!projected && hasComputer)
+                if(!isProjected && hasComputer)
                 {
                     MyRelationsBetweenPlayerAndBlock relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
                     MyOwnershipShareModeEnum shareMode = Utils.GetBlockShareMode(aimedBlock.FatBlock);
 
-                    AddLine();
+                    StringBuilder sb = AddLine();
 
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
-                        GetLine().Color(COLOR_BAD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                        GetLine().Color(COLOR_OWNER);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                        GetLine().Color(COLOR_GOOD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                        GetLine().Color(COLOR_WARNING);
+                    sb.Label("Owner");
 
                     if(aimedBlock.OwnerId == 0)
                     {
-                        GetLine().Append("Not owned");
+                        sb.Color(COLOR_WARNING).Append("(Nobody)");
                     }
                     else
                     {
-                        GetLine().Append("Owner: ");
+                        Color ownershipColor = COLOR_NORMAL;
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                            ownershipColor = COLOR_BAD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                            ownershipColor = COLOR_OWNER;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                            ownershipColor = COLOR_GOOD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                            ownershipColor = COLOR_WARNING;
 
-                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
+                        sb.Color(ownershipColor);
+
                         string factionTag = aimedBlock.FatBlock.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
-                            GetLine().Append(factionTag).Append('.');
+                            sb.Append(factionTag).Append('.');
 
-                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                        // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also used for "nobody" in ownership.
+                        sb.AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(aimedBlock.FatBlock.OwnerId), PLAYER_NAME_MAX_LENGTH);
                     }
 
-                    GetLine().ResetFormatting().Separator();
+                    sb.ResetFormatting().Separator();
+
+                    sb.Label("Access");
 
                     if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
                     {
-                        GetLine().Color(COLOR_GOOD).Append("Access: All");
+                        sb.Color(COLOR_GOOD).Append("All");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.All)
                     {
                         if(relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.Enemies)
-                            GetLine().Color(COLOR_GOOD);
+                            sb.Color(COLOR_GOOD);
                         else
-                            GetLine().Color(COLOR_WARNING);
+                            sb.Color(COLOR_WARNING);
 
-                        GetLine().Append("Access: All");
+                        sb.Append("All");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.Faction)
                     {
@@ -1276,7 +1290,7 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().Color(COLOR_BAD);
 
-                        GetLine().Append("Access: Faction");
+                        GetLine().Append("Faction");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.None)
                     {
@@ -1285,43 +1299,61 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().Color(COLOR_BAD);
 
-                        GetLine().Append("Access: Owner");
+                        GetLine().Append("Owner");
                     }
                 }
-                else if(projected)
+                else if(isProjected)
                 {
                     MyRelationsBetweenPlayerAndBlock relation = (projectedBy.OwnerId > 0 ? localPlayer.GetRelationTo(projectedBy.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
 
-                    AddLine();
-
-                    if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
-                        GetLine().Color(COLOR_BAD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                        GetLine().Color(COLOR_OWNER);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                        GetLine().Color(COLOR_GOOD);
-                    else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
-                        GetLine().Color(COLOR_WARNING);
+                    StringBuilder sb = AddLine();
 
                     if(projectedBy.OwnerId == 0)
                     {
-                        GetLine().Append("Projector not owned");
+                        sb.Color(COLOR_WARNING).Append("Projector not owned");
                     }
                     else
                     {
-                        GetLine().Append("Projector owner: ");
+                        Color ownershipColor = COLOR_NORMAL;
+                        if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
+                            ownershipColor = COLOR_BAD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
+                            ownershipColor = COLOR_OWNER;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                            ownershipColor = COLOR_GOOD;
+                        else if(relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                            ownershipColor = COLOR_WARNING;
+
+                        sb.Label("Projector owner").Color(ownershipColor);
 
                         // NOTE: MyVisualScriptLogicProvider.GetPlayersName() returns local player on id 0 and id 0 is also use for "nobody" in ownership.
                         string factionTag = projectedBy.GetOwnerFactionTag();
 
                         if(!string.IsNullOrEmpty(factionTag))
-                            GetLine().Append(factionTag).Append('.');
+                            sb.Append(factionTag).Append('.');
 
-                        GetLine().AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(projectedBy.OwnerId), PLAYER_NAME_MAX_LENGTH);
+                        sb.AppendMaxLength(MyVisualScriptLogicProvider.GetPlayersName(projectedBy.OwnerId), PLAYER_NAME_MAX_LENGTH);
                     }
                 }
             }
             #endregion Optional: ownership
+
+            #region connector trade mode alert
+            //if(Main.Config.AimInfo.IsSet(AimInfoFlags.BlockSpecific))
+            {
+                IMyShipConnector connector = aimedBlock.FatBlock as IMyShipConnector;
+                if(connector != null)
+                {
+                    if(connector.GetValue<bool>("Trading")) // HACK: replace with interface property if that ever gets added
+                    {
+                        if(!connector.HasLocalPlayerAccess())
+                            AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Connector is in Trade-Mode.");
+                        else
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("Connector is in Trade-Mode.");
+                    }
+                }
+            }
+            #endregion 
 
             #region Time to complete/grind
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.ToolUseTime))
@@ -1367,6 +1399,7 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
+                    // accounts for hardcoded multipliers from MyDoor and MyAdvancedDoor
                     float grindRatio = (aimedBlock?.FatBlock != null ? aimedBlock.FatBlock.DisassembleRatio : def.DisassembleRatio);
 
                     bool hackable = false;
@@ -1410,13 +1443,20 @@ namespace Digi.BuildInfo.Features
             #endregion Time to complete/grind
 
             #region Optional: item changes on grind
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindChangeWarning) && Main.EquipmentMonitor.IsAnyGrinder && !Main.TextAPI.IsEnabled)
             {
-                foreach(MyCubeBlockDefinition.Component comp in def.Components)
+                if(Main.ModDetector.DetectedAwwScrap)
                 {
-                    if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                    AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("Some/All components turn into specialized scrap on grind.");
+                }
+                else
+                {
+                    foreach(MyCubeBlockDefinition.Component comp in def.Components)
                     {
-                        AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        if(comp.DeconstructItem != null && comp.DeconstructItem != comp.Definition)
+                        {
+                            AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append(comp.Definition.DisplayNameText).Append(" turns into ").Append(comp.DeconstructItem.DisplayNameText);
+                        }
                     }
                 }
             }
@@ -1449,7 +1489,7 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: grid moving
 
             #region Optional: ship grinder apply force
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
+            if(!isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.ShipGrinderImpulse) && Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
                 IMyShipController controller = MyAPIGateway.Session.ControlledObject as IMyShipController;
                 if(controller != null)
@@ -1472,13 +1512,13 @@ namespace Digi.BuildInfo.Features
             #endregion Optional: ship grinder apply force
 
             #region Optional: grinder makes grid split
-            if(!projected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
+            if(!Main.Config.UnderCrosshairMessages.Value && !isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
             {
-                if(willSplitGrid == GridSplitType.Recalculate)
-                    willSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+                if(WillSplitGrid == GridSplitType.Recalculate)
+                    WillSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
 
-                if(willSplitGrid == GridSplitType.Split)
-                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Grid will split if removed!");
+                if(WillSplitGrid == GridSplitType.Split)
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Grid will split if removed!");
 
                 // TODO: find if split grid will vanish due to no physics/no standalone
             }
@@ -1558,6 +1598,21 @@ namespace Digi.BuildInfo.Features
                     if(totalBlocks > 1)
                         GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(blockNumber).Append(" of ").Append(totalBlocks).Append(")");
                 }
+
+                // TODO: implement in some nicer way?
+                //MyCubeBlockDefinitionGroup pairDef = MyDefinitionManager.Static.TryGetDefinitionGroup(def.BlockPairName);
+                //if(pairDef != null)
+                //{
+                //    if(pairDef.Large != null && pairDef.Small != null)
+                //    {
+                //        GetLine().ResetFormatting().Append(" (");
+
+                //        if(def.CubeSize == MyCubeSize.Small)
+                //            GetLine().Color(COLOR_GOOD).Append("s").ResetFormatting().Append("|L)");
+                //        else
+                //            GetLine().Append("s|").Color(COLOR_GOOD).Append("L").ResetFormatting().Append(")");
+                //    }
+                //}
             }
             #endregion Block name line only for textAPI
 
@@ -1638,25 +1693,28 @@ namespace Digi.BuildInfo.Features
                     int conveyors = (data.ConveyorPorts?.Count ?? 0);
                     int interactiveConveyors = (data.InteractableConveyorPorts?.Count ?? 0);
 
-                    AddLine();
-
+                    bool hasCustomLogic = false; // (data.Has & BlockHas.CustomLogic) != 0;
+                    bool hasTerminal = (data.Has & BlockHas.Terminal) != 0;
+                    bool hasPhysicalTerminal = (data.Has & BlockHas.PhysicalTerminalAccess) != 0;
                     bool hasConveyorPorts = (data.Has & BlockHas.ConveyorSupport) != 0 && (conveyors > 0 || interactiveConveyors > 0);
-                    if(hasConveyorPorts)
-                    {
-                        GetLine().Color(COLOR_CONVEYORPORTS).Label("Conveyor ports").Append(conveyors + interactiveConveyors).ResetFormatting().Separator(); // separator because next thing shows up regardless
-                    }
-
                     //bool hasInventory = (data.Has & BlockHas.Inventory) != 0;
 
-                    if((data.Has & BlockHas.Terminal) != 0)
-                        GetLine().Color(COLOR_GOOD).Append("Terminal").ResetFormatting();
-                    else
-                        GetLine().Append("No terminal");
+                    StringBuilder line = AddLine();
 
-                    if((data.Has & BlockHas.TerminalAndInventoryAccess) != 0)
-                        GetLine().Separator().Color(COLOR_GOOD).Append("Terminal/inventory access");
+                    if(hasTerminal)
+                        line.Append("Terminal");
                     else
-                        GetLine().Separator().Color(COLOR_WARNING).Append("No terminal/inventory access");
+                        line.Append("No terminal");
+
+                    if(hasPhysicalTerminal)
+                        line.Separator().Color(COLOR_GOOD).Append("Physical terminal");
+                    else if(!hasCustomLogic)
+                        line.Separator().Color(hasTerminal ? COLOR_WARNING : COLOR_NORMAL).Append("No physical terminal");
+
+                    if(hasConveyorPorts)
+                    {
+                        line.Separator().Color(COLOR_CONVEYORPORTS).Label("Conveyor ports").Append(conveyors + interactiveConveyors).ResetFormatting();
+                    }
 
                     // HACK: weird conveyor support mention
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
@@ -1664,6 +1722,11 @@ namespace Digi.BuildInfo.Features
                         if(hasConveyorPorts && def.CubeSize == MyCubeSize.Small && def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher))
                             AddLine(FontsHandler.YellowSh).Color(COLOR_WARNING).Append("UseConveyors is default off!");
                     }
+
+                    //if(hasCustomLogic)
+                    //{
+                    //    AddLine().Append("NOTE: Block has custom logic from a mod, its behavior could be different or could not.");
+                    //}
                 }
             }
             #endregion Conveyor/interactibles count
@@ -1752,6 +1815,8 @@ namespace Digi.BuildInfo.Features
         #endregion Equipped block info generation
 
         #region Shared generation methods
+        //readonly List<MyTargetingGroupDefinition> TargetGroups = new List<MyTargetingGroupDefinition>(4);
+
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
             int airTightFaces = 0;
@@ -1763,21 +1828,23 @@ namespace Digi.BuildInfo.Features
             float weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
             float grindRatio = def.DisassembleRatio;
 
-            if(def is MyDoorDefinition || def is MyAdvancedDoorDefinition)
-                grindRatio *= Hardcoded.Door_Closed_DisassembleRatioMultiplier;
+            if(def is MyDoorDefinition)
+                grindRatio *= Hardcoded.Door_DisassembleRatioMultiplier;
+            else if(def is MyAdvancedDoorDefinition)
+                grindRatio *= Hardcoded.AdvDoor_Closed_DisassembleRatioMultiplier;
 
-            string padding = (part ? (Main.TextAPI.IsEnabled ? "        | " : "       | ") : "");
-
+            string partPrefix = string.Empty;
             if(part)
+            {
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_PART).Label("Part").Append(def.DisplayNameText);
+                partPrefix = (Main.TextAPI.IsEnabled ? "<color=55,255,155>        | <reset>" : "       | ");
+                Utilities.StringBuilderExtensions.CurrentColor = COLOR_NORMAL;
+            }
 
             #region Mass/size/build time/deconstruct time/no models
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
             {
-                AddLine();
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding);
+                AddLine().Append(partPrefix);
 
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
                 GetLine().Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator()
@@ -1794,21 +1861,95 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
-                AddLine();
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding).ResetFormatting();
-
-                GetLine().Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
+                AddLine().Append(partPrefix).Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
                 if(deformable)
                     GetLine().Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
 
                 float dmgMul = def.GeneralDamageMultiplier;
-                if(dmgMul != 1)
+                if(dmgMul != 1f)
                 {
                     GetLine().Separator();
-                    ResistanceFormat(dmgMul);
+                    DamageMultiplierAsResistance(dmgMul);
+                }
+
+                // TODO: improve formatting?
+                float expDmgMul = def.DamageMultiplierExplosion;
+                if(expDmgMul != 1f)
+                {
+                    GetLine().Separator();
+                    DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
+                }
+            }
+
+            // TODO: keep & improve?
+            //{
+            //    StringBuilder sb = AddLine().Append(partPrefix).Label("Targetting groups");
+            //    int atLabelLen = sb.Length;
+            //
+            //    // TODO: some blocks have no targetting groups, what then?!
+            //    if(def.TargetingGroups != null && def.TargetingGroups.Count > 0)
+            //    {
+            //        foreach(var group in def.TargetingGroups)
+            //        {
+            //            sb.Append(group.String).Append(", ");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        TargetGroups.Clear();
+            //        MyDefinitionManager.Static.GetTargetingGroupDefinitions(TargetGroups);
+
+            //        foreach(MyTargetingGroupDefinition group in TargetGroups)
+            //        {
+            //            if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
+            //            {
+            //                sb.Append(group.Id.SubtypeName).Append(", ");
+            //            }
+            //        }
+            //    }
+
+            //    if(sb.Length > atLabelLen)
+            //        sb.Length -= 2; // remove last comma
+
+            //    sb.Separator().Label("Priority").ExponentNumber(def.PriorityModifier).Separator().Label("Priority if broken").ExponentNumber(def.PriorityModifier * def.NotWorkingPriorityMultiplier);
+            //}
+
+
+            // TODO: ammo detonation for inventory-owning blocks?
+            /*
+		    if (MyFakes.ENABLE_AMMO_DETONATION)
+		    {
+			    MyCubeBlockDefinition cubeBlockDefinition = MyDefinitionManager.Static.GetCubeBlockDefinition(builder.GetId());
+			    MyGameDefinition gameDefinition = MySession.Static.GameDefinition;
+			    m_detonationData = new DetonationData
+			    {
+				    DamageThreshold = cubeBlockDefinition.DamageThreshold,
+				    DetonateChance = cubeBlockDefinition.DetonateChance,
+				    ExplosionAmmoVolumeMin = gameDefinition.ExplosionAmmoVolumeMin,
+				    ExplosionAmmoVolumeMax = gameDefinition.ExplosionAmmoVolumeMax,
+				    ExplosionRadiusMin = gameDefinition.ExplosionRadiusMin,
+				    ExplosionRadiusMax = gameDefinition.ExplosionRadiusMax,
+				    ExplosionDamagePerLiter = gameDefinition.ExplosionDamagePerLiter,
+				    ExplosionDamageMax = gameDefinition.ExplosionDamageMax
+			    };
+			    MyInventory inventory = this.GetInventory();
+			    if (inventory != null)
+			    {
+				    inventory.InventoryContentChanged += CacheItem;
+				    CacheInventory(inventory);
+			    }
+		    }*/
+
+
+            // TODO: add PlaceInfoFlags.ModDetails? and use everywhere where's mod-given info
+            //if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ModDetails))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
+            {
+                CoreSystemsDef.ArmorDefinition csArmorDef;
+                if(Main.CoreSystemsAPIHandler.Armor.TryGetValue(def.Id.SubtypeName, out csArmorDef))
+                {
+                    Format_CoreSystemsArmor(def, csArmorDef);
                 }
             }
 
@@ -1826,13 +1967,13 @@ namespace Digi.BuildInfo.Features
                 if(inv != null)
                     charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
 
-                AddLine().Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
+                AddLine().Append(partPrefix).Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 if(!def.IsStandAlone || !def.HasPhysics)
-                    AddLine();
+                    AddLine().Append(partPrefix);
 
                 if(!def.HasPhysics)
                 {
@@ -1851,10 +1992,7 @@ namespace Digi.BuildInfo.Features
             #region Airtightness
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
             {
-                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh)));
-
-                if(part)
-                    GetLine().Color(COLOR_PART).Append(padding);
+                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh))).Append(partPrefix);
 
                 bool isDoor = (def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition);
                 bool sealsOnClose = false;
@@ -1869,7 +2007,7 @@ namespace Digi.BuildInfo.Features
                     {
                         for(int i = 0; i < 6; ++i)
                         {
-                            Vector3I normal = (Vector3I)Main.Overlays.DIRECTIONS[i];
+                            Vector3I normal = Base6Directions.IntDirections[i];
 
                             if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
                             {
@@ -2043,7 +2181,7 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Warhead), Format_Warhead);
 
-            Add(Constants.TargetDummyType, Format_TargetDummy);
+            Add(Hardcoded.TargetDummyType, Format_TargetDummy);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
@@ -2067,8 +2205,7 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Color(COLOR_NORMAL).LabelHardcoded("Power required", COLOR_NORMAL);
-
+                AddLine().LabelHardcoded("Power required");
                 GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerGrid).Append(" per grid (regardless of conveyor presence)");
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
@@ -2113,10 +2250,10 @@ namespace Digi.BuildInfo.Features
         private void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
+            if(Main.CoreSystemsAPIHandler.IsRunning && Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out csWeaponDefs))
             {
-                Format_WeaponCore(def, wcDefs);
+                Format_CoreSystemsWeapon(def, csWeaponDefs);
                 return;
             }
 
@@ -2172,6 +2309,11 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
+                    if(motor.MinAngleDeg.HasValue || motor.MaxAngleDeg.HasValue)
+                    {
+                        AddLine().Label("Rotation Limits").AngleFormatDeg(motor.MinAngleDeg.GetValueOrDefault(-180)).Append(" to ").AngleFormatDeg(motor.MaxAngleDeg.GetValueOrDefault(180));
+                    }
+
                     AddLine().Label("Max Torque, Safe").TorqueFormat(motor.UnsafeTorqueThreshold).Separator().Label("Unsafe").TorqueFormat(motor.MaxForceMagnitude);
 
                     if(motor.RotorDisplacementMin < motor.RotorDisplacementMax)
@@ -2359,8 +2501,6 @@ namespace Digi.BuildInfo.Features
                         MyDefinitionBase defHUD;
                         if(MyDefinitionManager.Static.TryGetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_HudDefinition), cockpit.HUD), out defHUD))
                         {
-                            // HACK MyHudDefinition is not whitelisted; also GetObjectBuilder() is useless because it doesn't get filled in
-                            //var hudDefObj = (MyObjectBuilder_HudDefinition)defBase.GetObjectBuilder();
                             AddLine(FontsHandler.GreenSh).Color(COLOR_GOOD).Append("Custom HUD: ").Append(cockpit.HUD).ResetFormatting().Separator().Color(COLOR_MOD).Append("Mod: ").ModFormat(defHUD.Context);
                         }
                         else
@@ -2506,8 +2646,8 @@ namespace Digi.BuildInfo.Features
                         .Separator().Label("Longest").DistanceFormat(data.LongestFlame, 2)
                         .Append(" (").DistanceFormat(data.LongestFlamePastEdge).Append(" past cube edge)");
 
-                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TICKS_PER_SECOND).Append("/s")
-                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TICKS_PER_SECOND).Append("/s");
+                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TicksPerSecond).Append("/s")
+                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TicksPerSecond).Append("/s");
                 }
 
                 if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)
@@ -2645,7 +2785,7 @@ namespace Digi.BuildInfo.Features
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
-                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").IdTypeSubtypeFormat(parachute.MaterialDefinitionId);
+                    AddLine().Label("Required item to deploy").Append(parachute.MaterialDeployCost).Append("x ").ItemName(parachute.MaterialDefinitionId);
                 }
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2705,7 +2845,7 @@ namespace Digi.BuildInfo.Features
                 if(medicalRoom.RefuelAllowed)
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x5)");
                 else
-                    AddLine(FontsHandler.RedSh).LabelHardcoded("Refuel", COLOR_WARNING).Append("No").ResetFormatting();
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).LabelHardcoded("Refuel").Append("No").ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -3008,7 +3148,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
-                    AddLine().Label("Needs fuel").IdTypeSubtypeFormat(h2Engine.Fuel.FuelId);
+                    AddLine().Label("Needs fuel").ItemName(h2Engine.Fuel.FuelId);
                     AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
 
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
@@ -3039,7 +3179,7 @@ namespace Digi.BuildInfo.Features
                             if(!hasOneFuel)
                                 AddLine().Append("       - ");
 
-                            GetLine().IdTypeSubtypeFormat(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)");
+                            GetLine().ItemName(fuel.FuelId).Append(" (").RoundedNumber(fuel.ConsumptionPerSecond_Items, 5).Append("/s)");
                         }
                     }
                 }
@@ -3329,9 +3469,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
-
-                // TODO: visualize angle limits?
+                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).MoreInfoInHelp(4);
             }
         }
 
@@ -3442,10 +3580,10 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
-            List<WcApiDef.WeaponDefinition> wcDefs;
-            if(Main.WeaponCoreAPIHandler.IsRunning && Main.WeaponCoreAPIHandler.Weapons.TryGetValue(def.Id, out wcDefs))
+            List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
+            if(Main.CoreSystemsAPIHandler.IsRunning && Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out csWeaponDefs))
             {
-                Format_WeaponCore(def, wcDefs);
+                Format_CoreSystemsWeapon(def, csWeaponDefs);
                 return;
             }
 
@@ -3618,7 +3756,7 @@ namespace Digi.BuildInfo.Features
                         MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
                         MyProjectileAmmoDefinition ammo = data.Item2;
 
-                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0))
+                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0) || ammo.ProjectileExplosionDamage != 0)
                         {
                             isValidWeapon = true;
                             break;
@@ -3630,7 +3768,7 @@ namespace Digi.BuildInfo.Features
                         MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
                         MyMissileAmmoDefinition ammo = data.Item2;
 
-                        if(ammo.MissileExplosionDamage != 0)
+                        if(ammo.MissileExplosionDamage != 0 || ammo.MissileHealthPool != 0)
                         {
                             isValidWeapon = true;
                             break;
@@ -3673,6 +3811,7 @@ namespace Digi.BuildInfo.Features
                         .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_EXPLOSION).Append("explode").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
 
@@ -3687,9 +3826,12 @@ namespace Digi.BuildInfo.Features
                         if(ammo.ProjectileCount > 1)
                             GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
 
-                        GetLine().Color(COLOR_STAT_SHIPDMG).Append(ammo.ProjectileMassDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).Append(ammo.ProjectileHealthDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Append(ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage).ResetFormatting().Append(", ");
+                        GetLine().Color(COLOR_STAT_SHIPDMG).Number(ammo.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_CHARACTERDMG).Number(ammo.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Number((ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage) * wpDef.DamageMultiplier).ResetFormatting().Append(", ");
+
+                        // HACK: wpDef.DamageMultiplier is not used for this explosion
+                        GetLine().Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.ProjectileExplosionRadius).Append(" ").Number(ammo.ProjectileExplosionDamage).ResetFormatting().Append(", ");
 
                         // from MyProjectile.Start()
                         if(ammo.SpeedVar > 0)
@@ -3726,10 +3868,11 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append("No reloading");
 
                     AddLine().Append("Missiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("damage").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("radius").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_EXPLOSION).Append("explosion").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_HEADSHOTDMG).Append("penetration pool").ResetFormatting().Append(", ")
                         .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
+                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(", ")
+                        .Color(COLOR_STAT_PROJECTILECOUNT).Append("gravity").ResetFormatting().Append(")");
 
                     for(int i = 0; i < ammoMissiles.Count; ++i)
                     {
@@ -3737,9 +3880,11 @@ namespace Digi.BuildInfo.Features
                         MyAmmoMagazineDefinition mag = data.Item1;
                         MyMissileAmmoDefinition ammo = data.Item2;
 
+                        // HACK: wpDef.DamageMultiplier is not used for explosions
+
                         AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
-                            .Color(COLOR_STAT_SHIPDMG).Append(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).DistanceFormat(ammo.MissileExplosionRadius).ResetFormatting().Append(", ");
+                            .Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.MissileExplosionRadius).Append(" ").Number(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_HEADSHOTDMG).Number(ammo.MissileHealthPool).ResetFormatting().Append(", ");
 
                         // HACK: ammo.SpeedVar is not used for missiles
                         // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
@@ -3751,7 +3896,8 @@ namespace Digi.BuildInfo.Features
                         else
                             GetLine().SpeedFormat(ammo.DesiredSpeed);
 
-                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory)
+                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory).ResetFormatting().Append(", ")
+                            .Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.MissileGravityEnabled ? "Y" : "N")
                             .ResetFormatting().Append(")");
                     }
                 }
@@ -3766,7 +3912,25 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_WeaponCore(MyCubeBlockDefinition blockDef, List<WcApiDef.WeaponDefinition> wcDefs)
+        void Format_CoreSystemsArmor(MyCubeBlockDefinition blockDef, CoreSystemsDef.ArmorDefinition armorDef)
+        {
+            StringBuilder sb = AddLine().Append(CoreSystemsAPIHandler.APIName).Append(" Armor: ");
+
+            switch(armorDef.Kind)
+            {
+                case CoreSystemsDef.ArmorDefinition.ArmorType.Heavy: sb.Append("Heavy"); break;
+                case CoreSystemsDef.ArmorDefinition.ArmorType.Light: sb.Append("Light"); break;
+                case CoreSystemsDef.ArmorDefinition.ArmorType.NonArmor: sb.Append("None"); break;
+                default: sb.Append(armorDef.Kind.ToString()); break;
+            }
+
+            sb.Separator();
+            ResistanceFormat(armorDef.EnergeticResistance, "Energy");
+            sb.Separator();
+            ResistanceFormat(armorDef.KineticResistance, "Kinetic");
+        }
+
+        void Format_CoreSystemsWeapon(MyCubeBlockDefinition blockDef, List<CoreSystemsDef.WeaponDefinition> weaponDefs)
         {
             // NOTE: this includes conveyor sorter too
 
@@ -3788,7 +3952,58 @@ namespace Digi.BuildInfo.Features
             //    }
             //}
 
-            AddLine().Color(COLOR_UNIMPORTANT).Append("(WeaponCore block, no stats to show)");
+            AddLine().Color(COLOR_UNIMPORTANT).Append("(").Append(CoreSystemsAPIHandler.APIName).Append(" block, vanilla stats hidden)");
+
+
+#if false
+            string paddingCategory = $" | ";
+            string paddingList = $"<color={COLOR_LIST.R},{COLOR_LIST.G},{COLOR_LIST.B}>    | <reset>";
+            
+            for(int i = 0; i < weaponDefs.Count; i++)
+            {
+                CoreSystemsDef.WeaponDefinition wpDef = weaponDefs[i];
+
+                AddLine().Append($"Weapon #{i}:");
+
+                AddLine().Append(paddingCategory).Label("Ammos");
+
+                foreach(var ammo in wpDef.Ammos)
+                {
+                    AddLine().Append(paddingList).Append($"mag={ammo.AmmoMagazine}; round={ammo.AmmoRound}; hybrid={ammo.HybridRound}; beams={ammo.Beams.Enable}");
+                }
+
+                //AddLine().Append(paddingCategory).Label("Muzzles");
+
+                //foreach(var muzzle in wpDef.Assignments.Muzzles)
+                //{
+                //    AddLine().Append(paddingList).Append($"{muzzle}");
+                //}
+
+                //AddLine().Append(paddingCategory).Label("Mountpoints");
+
+                //foreach(var mount in wpDef.Assignments.MountPoints)
+                //{
+                //    AddLine().Append(paddingList).Append($"id={mount.SubtypeId}; spin={mount.SpinPartId}; yaw={mount.AzimuthPartId}; pitch={mount.ElevationPartId}; durability={mount.DurabilityMod}");
+                //}
+
+                //AddLine().Append(paddingCategory).Append($"ejector={wpDef.Assignments.Ejector}; scope={wpDef.Assignments.Scope}");
+
+                //AddLine().Append(paddingCategory).Append($"shootSubmerged={wpDef.HardPoint.CanShootSubmerged}; aimPrediction={wpDef.HardPoint.AimLeadingPrediction}; type={wpDef.HardPoint.HardWare.Type}");
+
+                //AddLine().Append(paddingCategory).Append($"invSize={wpDef.HardPoint.HardWare.InventorySize}; idlepower={wpDef.HardPoint.HardWare.IdlePower};");
+
+                //AddLine().Append(paddingCategory).Label("Upgrades");
+
+                //foreach(var upgrade in wpDef.Upgrades)
+                //{
+                //    AddLine().Append(paddingList).Append($"{upgrade.Key} = {upgrade.Value.Length} things");
+                //}
+
+                //AddLine().Append(paddingCategory).Label("Targetting");
+
+                //AddLine().Append(paddingList).Append($"subsystems={string.Join(",", wpDef.Targeting.SubSystems)}; threats={string.Join(",", wpDef.Targeting.Threats)}");
+            }
+#endif
 
 
             //for(int wcIdx = 0; wcIdx < wcDefs.Count; wcIdx++)
@@ -3899,7 +4114,7 @@ namespace Digi.BuildInfo.Features
                 if(dummyDef.ConstructionItemAmount == 0)
                     AddLine().Color(COLOR_GOOD).Label("Regeneration requires item").Append("(nothing)");
                 else
-                    AddLine().Color(COLOR_WARNING).Label("Regeneration requires item").Append(dummyDef.ConstructionItemAmount).Append("x ").IdTypeSubtypeFormat(dummyDef.ConstructionItem);
+                    AddLine().Color(COLOR_WARNING).Label("Regeneration requires item").Append(dummyDef.ConstructionItemAmount).Append("x ").ItemName(dummyDef.ConstructionItem);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -4009,10 +4224,13 @@ namespace Digi.BuildInfo.Features
                                 if(!exists)
                                     GetLine().Color(COLOR_BAD);
 
-                                GetLine().IdTypeSubtypeFormat(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
+                                GetLine().ItemName(entry.Item.Value).Separator().Label("Price").CurrencyFormat(entry.PricePerUnit);
 
                                 if(!exists)
-                                    GetLine().Append(" (Item not found!)").ResetFormatting();
+                                    GetLine().ResetFormatting();
+
+                                //if(!exists)
+                                //    GetLine().Append(" (Item not found!)").ResetFormatting();
                                 break;
                             }
                             case ItemTypes.Grid:
@@ -4058,7 +4276,13 @@ namespace Digi.BuildInfo.Features
                 MyDLCs.MyDLC dlc;
                 if(MyDLCs.TryGetDLC(dlcId, out dlc))
                 {
-                    GetLine().Append(MyTexts.GetString(dlc.DisplayName));
+                    // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                    if(!MyAPIGateway.DLC.HasDLC(dlcId, MyAPIGateway.Multiplayer.MyId))
+                        GetLine().Color(COLOR_BAD);
+#endif
+
+                    GetLine().Append(MyTexts.GetString(dlc.DisplayName)).ResetFormatting();
                 }
                 else
                 {
@@ -4067,13 +4291,23 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void ResistanceFormat(float damageMultiplier, string label = "Resistance")
+        private void DamageMultiplierAsResistance(float damageMultiplier, string label = "Resistance")
         {
-            int dmgResPercent = Utils.DamageMultiplierToResistance(damageMultiplier);
+            int dmgResPercent = (int)(((1f / damageMultiplier) - 1) * 100);
 
             GetLine()
                 .Color(dmgResPercent == 0 ? COLOR_NORMAL : (dmgResPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(dmgResPercent > 0 ? "+" : "").Append(dmgResPercent).Append("%")
                 .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetFormatting();
+        }
+
+        private void ResistanceFormat(double resistance, string label = "Resistance")
+        {
+            int resPercent = (int)((resistance - 1) * 100f);
+            float multiplier = (float)(1d / resistance);
+
+            GetLine()
+                .Color(resPercent == 1 ? COLOR_NORMAL : (resPercent > 0 ? COLOR_GOOD : COLOR_WARNING)).Label(label).Append(resPercent > 0 ? "+" : "").Append(resPercent).Append("%")
+                .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(multiplier, 2).Append(")").ResetFormatting();
         }
 
         private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
@@ -4092,7 +4326,7 @@ namespace Digi.BuildInfo.Features
                 Color color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
 
                 if(powerHardcoded)
-                    AddLine().Color(color).LabelHardcoded("Power required", color);
+                    AddLine().Color(color).LabelHardcoded("Power required");
                 else
                     AddLine().Color(color).Label("Power required");
 
@@ -4101,7 +4335,7 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().PowerFormat(mw);
 
-                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                if(mw > 0 && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
                     GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }
@@ -4171,11 +4405,13 @@ namespace Digi.BuildInfo.Features
 
                 foreach(MyDefinitionId id in invLimit.ConstrainedIds)
                 {
-                    MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
-                    if(itemDef == null)
-                        continue;
+                    AddLine().Append("       - ").ItemName(id);
 
-                    AddLine().Append("       - ").Append(itemDef.DisplayNameText).Append(" (").IdTypeSubtypeFormat(id).Append(")");
+                    //MyPhysicalItemDefinition itemDef = MyDefinitionManager.Static.GetPhysicalItemDefinition(id);
+                    //if(itemDef == null)
+                    //    continue;
+
+                    //AddLine().Append("       - ").Append(itemDef.DisplayNameText).Append(" (").IdTypeSubtypeFormat(id).Append(")");
 
                     //AddLine().Append("       - ").IdTypeSubtypeFormat(id).Append(" (Max fit: ");
                     //
@@ -4199,28 +4435,10 @@ namespace Digi.BuildInfo.Features
 
                 foreach(MyObjectBuilderType type in invLimit.ConstrainedTypes)
                 {
-                    AddLine().Append("       - All of type: ");
-
-                    string friendlyName = TypeFriendlyNames.GetValueOrDefault(type, null);
-                    if(friendlyName != null)
-                    {
-                        GetLine().Append(friendlyName).Append(" (").IdTypeFormat(type).Append(")");
-                    }
-                    else
-                    {
-                        GetLine().IdTypeFormat(type);
-                    }
+                    AddLine().Append("       - All of type: ").IdTypeFormat(type);
                 }
             }
         }
-
-        readonly Dictionary<MyObjectBuilderType, string> TypeFriendlyNames = new Dictionary<MyObjectBuilderType, string>()
-        {
-            [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand-Tool/Gun",
-            [typeof(MyObjectBuilder_AmmoMagazine)] = "Ammo Magazine",
-            [typeof(MyObjectBuilder_GasContainerObject)] = "Gas Bottle",
-            [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
-        };
 
         [ProtoContract]
         public class HackyScreenArea
@@ -4372,17 +4590,7 @@ namespace Digi.BuildInfo.Features
             if(textObject != null)
             {
                 textObject.Scale = Main.Config.TextAPIScale.Value;
-
-                if(Main.Config.TextAlwaysVisible.Value)
-                {
-                    textObject.Options &= ~HudAPIv2.Options.HideHud;
-                    bgObject.Options &= ~HudAPIv2.Options.HideHud;
-                }
-                else
-                {
-                    textObject.Options |= HudAPIv2.Options.HideHud;
-                    bgObject.Options |= HudAPIv2.Options.HideHud;
-                }
+                textObject.HideWithHUD = !Main.Config.TextAlwaysVisible.Value;
             }
 
             if(redraw)

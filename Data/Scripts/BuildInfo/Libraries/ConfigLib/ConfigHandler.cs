@@ -39,6 +39,11 @@ namespace Digi.ConfigLib
         /// </summary>
         public event Action SettingsSaving;
 
+        /// <summary>
+        /// When any setting's value is set.
+        /// </summary>
+        public event Action<ISetting> SettingValueSet;
+
         public ConfigHandler(string fileName, int configVersion, int expectedExportCharacters)
         {
             sb = new StringBuilder(expectedExportCharacters);
@@ -200,6 +205,11 @@ namespace Digi.ConfigLib
             {
                 Log.Error(e);
             }
+        }
+
+        public void InvokeSettingValueSet(ISetting setting)
+        {
+            SettingValueSet?.Invoke(setting);
         }
     }
 }

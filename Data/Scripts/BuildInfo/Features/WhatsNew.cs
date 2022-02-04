@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             int modVersion = Main.Config.ModVersion.Value;
-            if(modVersion < Constants.MOD_VERSION)
+            if(modVersion < Constants.ModVersion)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick % Constants.TICKS_PER_SECOND != 0)
+            if(tick % Constants.TicksPerSecond != 0)
                 return;
 
             IMyCharacter character = MyAPIGateway.Session?.Player?.Character;
@@ -34,9 +34,9 @@ namespace Digi.BuildInfo.Features
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
 
-                Main.Config.ModVersion.Value = Constants.MOD_VERSION;
+                Main.Config.ModVersion.Value = Constants.ModVersion;
                 Main.Config.Save();
-                Utils.ShowColoredChatMessage(Log.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
             }
         }
     }

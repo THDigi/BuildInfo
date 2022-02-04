@@ -7,6 +7,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -32,7 +33,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
-            if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
                 return false;
 
             if(!Processor.AppendSingleStats(sb, item.Block))
@@ -58,7 +59,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             ReloadTracker.TrackedWeapon weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
             if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
             {
-                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
                 sb.Append("Rld:").TimeFormat(seconds);
             }
             else
@@ -92,7 +93,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             foreach(IMyUserControllableGun gunBlock in groupData.Blocks)
             {
-                if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
+                if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
                     continue;
 
                 if(!gunBlock.IsFunctional)
@@ -127,7 +128,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     {
                         reloading++;
 
-                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TICKS_PER_SECOND;
+                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
                         minReloadTimeLeft = Math.Min(minReloadTimeLeft, seconds);
                     }
                     else

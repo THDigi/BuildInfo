@@ -14,15 +14,11 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    // TODO: find in-paste grid and show some info on the right? or maybe in BI's text info...
     public class CubeBuilderAdditions : ModComponent
     {
-        IMySlimBlock LastRemoveBlock;
-        MyCubeGrid AimedGrid;
         IMyHudNotification Notify;
-        CubeBuilderSelectionInfo Mode;
         BlockSelectInfo BlockSelectInfo = new BlockSelectInfo();
-
-        readonly MyCubeBlock BlockForHax = new MyCubeBlock(); // needed just for the MySlimBlock reference for the generic hax below
 
         public CubeBuilderAdditions(BuildInfoMod main) : base(main)
         {
@@ -31,9 +27,9 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-
-            Main.Config.CubeBuilderSelectionInfoMode.ValueAssigned += CubeBuilderSelectionInfoMode_ValueAssigned;
+            MyCubeBuilder.Static.OnBlockSizeChanged += CubeBuilder_SizeChanged;
+            Main.EquipmentMonitor.ToolChanged += ToolChanged;
+            Main.EquipmentMonitor.BuilderAimedBlockChanged += BuilderAimedBlockChanged;
         }
 
         public override void UnregisterComponent()
@@ -41,26 +37,60 @@ namespace Digi.BuildInfo.Features
             if(MyCubeBuilder.Static != null)
                 MyCubeBuilder.Static.ShowRemoveGizmo = true;
 
+            if(MyCubeBuilder.Static != null)
+                MyCubeBuilder.Static.OnBlockSizeChanged -= CubeBuilder_SizeChanged;
+
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-
-            Main.Config.CubeBuilderSelectionInfoMode.ValueAssigned -= CubeBuilderSelectionInfoMode_ValueAssigned;
+            Main.EquipmentMonitor.ToolChanged -= ToolChanged;
+            Main.EquipmentMonitor.BuilderAimedBlockChanged -= BuilderAimedBlockChanged;
         }
 
-        void CubeBuilderSelectionInfoMode_ValueAssigned(int oldValue, int newValue, ConfigLib.SettingBase<int> setting)
+        bool IgnoreNextBuilderSizeChangeEvent = false;
+        void CubeBuilder_SizeChanged()
         {
-            Mode = (CubeBuilderSelectionInfo)newValue;
+            try
+            {
+                if(IgnoreNextBuilderSizeChangeEvent)
+                {
+                    IgnoreNextBuilderSizeChangeEvent = false;
+                    return;
+                }
+
+                // prevent cube size from changing when pressing any modifier, simple solution to prevent it from interferring hotkeys
+                MyCubeBlockDefinition blockDef = MyCubeBuilder.Static?.CurrentBlockDefinition;
+                if(blockDef != null && (MyAPIGateway.Input.IsAnyShiftKeyPressed() || MyAPIGateway.Input.IsAnyCtrlKeyPressed() || MyAPIGateway.Input.IsAnyAltKeyPressed()))
+                {
+                    MyCubeBlockDefinitionGroup blockPairDef = MyDefinitionManager.Static.GetDefinitionGroup(blockDef.BlockPairName);
+                    if((blockDef.CubeSize == MyCubeSize.Large && blockPairDef.Small != null) || (blockDef.CubeSize == MyCubeSize.Small && blockPairDef.Large != null))
+                    {
+                        IgnoreNextBuilderSizeChangeEvent = true;
+
+                        if(blockDef.CubeSize == MyCubeSize.Large)
+                            MyCubeBuilder.Static.Activate(blockPairDef.Small.Id);
+                        else
+                            MyCubeBuilder.Static.Activate(blockPairDef.Large.Id);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
-        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        void BuilderAimedBlockChanged(IMySlimBlock obj)
         {
-            LastRemoveBlock = null;
+            BlockSelectInfo.ClearCaches();
+        }
+
+        void ToolChanged(MyDefinitionId toolDefId)
+        {
             BlockSelectInfo.ClearCaches();
 
             bool drawBox = Main.Config.OverrideToolSelectionDraw.Value;
-            bool showInfo = Main.EquipmentMonitor.IsCubeBuilder && (drawBox || Mode != CubeBuilderSelectionInfo.Off);
+            bool showInfo = Main.EquipmentMonitor.IsCubeBuilder && (drawBox || Main.Config.CubeBuilderSelectionInfoMode.ValueEnum != CubeBuilderSelectionInfo.Off);
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, showInfo);
 
@@ -69,113 +99,111 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateDraw()
         {
-            if(Main.IsPaused || !MyAPIGateway.CubeBuilder.IsActivated)
-                return;
+            if(!Main.ComponentsRegistered) throw new Exception("Mod did not finish registering yet!");
+            if(MyAPIGateway.Input == null) throw new Exception("MyAPiGateway.Input is null!");
+            if(Main.EquipmentMonitor == null) throw new Exception("Main.EquipmentMonitor is null!");
+            if(Main.GameConfig == null) throw new Exception("Main.GameConfig is null!");
+            if(Main.Config == null) throw new Exception("Main.Config is null!");
 
-            // drag-to-build/remove shouldn't show selection anymore.
+            // ignore drag-to-build/drag-to-remove
             if(MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.PRIMARY_TOOL_ACTION) || MyAPIGateway.Input.IsGameControlPressed(MyControlsSpace.SECONDARY_TOOL_ACTION))
                 return;
 
-            AimedGrid = MyCubeBuilder.Static.FindClosestGrid();
-            if(AimedGrid == null)
-                return;
-
-            bool creativeTools = Utils.CreativeToolsEnabled;
-            if(MyAPIGateway.Input.IsJoystickLastUsed && MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.BuildTool && !creativeTools)
-                return;
-
-            MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
-            if(def == null || def.CubeSize != AimedGrid.GridSizeEnum)
-                return;
-
-            // HACK: required to be able to give MySlimBlock to GetAddAndRemovePositions() because it needs to 'out' it.
-            IMySlimBlock removeBlock = Hackery(BlockForHax.SlimBlock, (slim) =>
-            {
-                Vector3I addPos;
-                Vector3? addSmallToLargePos;
-                Vector3I addDir;
-                Vector3I removePos;
-                ushort? compoundBlockId;
-                bool canBuild = MyCubeBuilder.Static.GetAddAndRemovePositions(AimedGrid.GridSize, false,
-                                                                              out addPos, out addSmallToLargePos, out addDir,
-                                                                              out removePos, out slim, out compoundBlockId, null);
-                return slim;
-            });
-
-            if(removeBlock != LastRemoveBlock)
-                BlockSelectInfo.ClearCaches();
-
-            LastRemoveBlock = removeBlock;
-
-            if(removeBlock == null)
+            IMySlimBlock aimedBlock = Main.EquipmentMonitor.BuilderAimedBlock;
+            if(aimedBlock == null)
                 return;
 
             bool showMessage = false;
-            if(!Main.IsPaused && Main.GameConfig.HudState != HudState.OFF)
+            try
             {
-                if(Mode == CubeBuilderSelectionInfo.AlwaysOn)
-                    showMessage = true;
-
-                if(Mode == CubeBuilderSelectionInfo.HudHints && Main.GameConfig.HudState == HudState.HINTS)
-                    showMessage = true;
-
-                if(Mode == CubeBuilderSelectionInfo.HudHints || Mode == CubeBuilderSelectionInfo.ShowOnPress)
+                if(!Main.IsPaused && Main.GameConfig.HudState != HudState.OFF)
                 {
-                    ControlContext context = (MyAPIGateway.Session.ControlledObject is IMyCharacter ? ControlContext.CHARACTER : ControlContext.VEHICLE);
-                    if(Main.Config.ShowCubeBuilderSelectionInfoBind.Value.IsPressed(context))
+                    CubeBuilderSelectionInfo mode = Main.Config.CubeBuilderSelectionInfoMode.ValueEnum;
+
+                    if(mode == CubeBuilderSelectionInfo.AlwaysOn)
                         showMessage = true;
+
+                    if(mode == CubeBuilderSelectionInfo.HudHints && Main.GameConfig.HudState == HudState.HINTS)
+                        showMessage = true;
+
+                    if(mode == CubeBuilderSelectionInfo.HudHints || mode == CubeBuilderSelectionInfo.ShowOnPress)
+                    {
+                        ControlContext context = (MyAPIGateway.Session.ControlledObject is IMyCharacter ? ControlContext.CHARACTER : ControlContext.VEHICLE);
+                        if(Main.Config.ShowCubeBuilderSelectionInfoBind.Value.IsPressed(context))
+                            showMessage = true;
+                    }
                 }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@ComputeShowMessage");
+                Log.Error(e);
             }
 
             // TODO: compute mirrored selections too?
-            // TODO: expand selection (preferably white) when holding ctrl or shift to show what will be painted?
-            // TODO: include area-paint info in message?
 
-            if(showMessage)
+            try
             {
-                string name = null;
-                IMyTerminalBlock tb = removeBlock?.FatBlock as IMyTerminalBlock;
-
-                if(tb != null)
-                    name = tb.CustomName;
-
-                if(string.IsNullOrWhiteSpace(name))
-                    name = removeBlock.BlockDefinition.DisplayNameText;
-
-                if(MyAPIGateway.Input.IsJoystickLastUsed)
+                if(showMessage && !Main.IsPaused)
                 {
-                    if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
-                        ShowHUDNotification($"Selected for paint: [{name}]");
-                    else if(creativeTools)
-                        ShowHUDNotification($"Selected for remove: [{name}]");
-                }
-                else
-                {
-                    if(creativeTools)
-                        ShowHUDNotification($"Selected for paint/remove: [{name}]");
+                    string name = null;
+                    IMyTerminalBlock tb = aimedBlock.FatBlock as IMyTerminalBlock;
+
+                    if(tb != null)
+                        name = tb.CustomName;
+
+                    if(string.IsNullOrWhiteSpace(name))
+                        name = aimedBlock.BlockDefinition.DisplayNameText;
+
+                    if(MyAPIGateway.Input.IsJoystickLastUsed)
+                    {
+                        if(MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.ColorTool)
+                            ShowText($"Selected for paint: [{name}]");
+                        else if(Utils.CreativeToolsEnabled)
+                            ShowText($"Selected for remove: [{name}]");
+                    }
                     else
-                        ShowHUDNotification($"Selected for paint: [{name}]");
+                    {
+                        if(Utils.CreativeToolsEnabled)
+                            ShowText($"Selected for paint/remove: [{name}]");
+                        else
+                            ShowText($"Selected for paint: [{name}]");
+                    }
                 }
             }
-
-            if(Main.Config.OverrideToolSelectionDraw.Value)
+            catch(Exception e)
             {
-                MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@HudMessage");
+                Log.Error(e);
+            }
 
-                float lineWidth = (removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.02f : 0.016f);
-                double inflate = (removeBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 0.1 : 0.03);
+            try
+            {
+                if(Main.Config.OverrideToolSelectionDraw.Value)
+                {
+                    MyCubeBuilder.Static.ShowRemoveGizmo = false; // required because pressing same key twice on block without other size would show gizmo again
 
-                Main.OverrideToolSelectionDraw.GetBlockModelBB(removeBlock, BlockSelectInfo, inflate);
+                    bool isLarge = (aimedBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+                    float lineWidth = (isLarge ? 0.02f : 0.016f);
+                    double inflate = (isLarge ? 0.1 : 0.03);
 
-                if(BlockSelectInfo.ModelBB.HasValue)
-                    Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB.Value, new Color(255, 200, 55), lineWidth);
+                    Main.OverrideToolSelectionDraw.GetBlockModelBB(aimedBlock, BlockSelectInfo, inflate);
 
-                // always draw boundary when using cubebuilder
-                Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.BlockMatrix, BlockSelectInfo.Boundaries, new Color(100, 155, 255), lineWidth);
+                    if(BlockSelectInfo.ModelBB.HasValue)
+                        Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB.Value, new Color(255, 200, 55), lineWidth);
+
+                    // always draw boundary when using cubebuilder
+                    Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.BlockMatrix, BlockSelectInfo.Boundaries, new Color(100, 155, 255), lineWidth);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in {nameof(CubeBuilderAdditions)}.{nameof(UpdateDraw)}()@OverrideToolSelectionDraw");
+                Log.Error(e);
             }
         }
 
-        void ShowHUDNotification(string message)
+        void ShowText(string message)
         {
             if(Notify == null)
                 Notify = MyAPIGateway.Utilities.CreateNotification("", 16 * 5, FontsHandler.WhiteSh);
@@ -183,11 +211,6 @@ namespace Digi.BuildInfo.Features
             Notify.Hide();
             Notify.Text = message;
             Notify.Show();
-        }
-
-        IMySlimBlock Hackery<T>(T refType, Func<T, IMySlimBlock> callback) where T : class
-        {
-            return callback.Invoke(null);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
@@ -12,82 +13,26 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
     public class MultiDetailInfo : ModComponent
     {
-        readonly BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
+        const string TextFont = FontsHandler.SEOutlined;
+        const bool UseShadowMessage = false;
+
+        public readonly StringBuilder InfoText = new StringBuilder(512);
 
         bool RefreshNext;
-        public HudAPIv2.HUDMessage Text;
-        public HudAPIv2.HUDMessage TextShadow;
-
+        TextAPI.TextPackage Label;
+        TextAPI.TextPackage Hint;
         HudAPIv2.BillBoardHUDMessage MoveIcon;
-        Vector2D? DragOffset;
-        bool IconHovered;
 
-        HudAPIv2.HUDMessage Hint;
-
-        readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
-        {
-            [typeof(MyObjectBuilder_MotorSuspension)] = "Suspension",
-            [typeof(MyObjectBuilder_MotorStator)] = "Rotor Base",
-            [typeof(MyObjectBuilder_MotorAdvancedStator)] = "Adv. Rotor Base",
-            [typeof(MyObjectBuilder_MotorRotor)] = "Rotor Top",
-            [typeof(MyObjectBuilder_MotorAdvancedRotor)] = "Adv. Rotor Top",
-            [typeof(MyObjectBuilder_ExtendedPistonBase)] = "Piston",
-            [typeof(MyObjectBuilder_PistonBase)] = "Piston",
-            [typeof(MyObjectBuilder_PistonTop)] = "Piston Top",
-
-            [typeof(MyObjectBuilder_OxygenGenerator)] = "Gas Generator",
-            [typeof(MyObjectBuilder_OxygenTank)] = "Gas Tank",
-            [typeof(MyObjectBuilder_HydrogenEngine)] = "Hydrogen Engine",
-
-            [typeof(MyObjectBuilder_LargeGatlingTurret)] = "Gatling Turret",
-            [typeof(MyObjectBuilder_LargeMissileTurret)] = "Missile Turret",
-            [typeof(MyObjectBuilder_InteriorTurret)] = "Interior Turret",
-            [typeof(MyObjectBuilder_SmallGatlingGun)] = "Gatling Gun",
-            [typeof(MyObjectBuilder_SmallMissileLauncher)] = "Missile Launcher",
-            [typeof(MyObjectBuilder_SmallMissileLauncherReload)] = "Reloadable Missile Launcher",
-
-            [typeof(MyObjectBuilder_ShipConnector)] = "Connector",
-            [typeof(MyObjectBuilder_MergeBlock)] = "Merge",
-            [typeof(MyObjectBuilder_ExhaustBlock)] = "Exhaust",
-            [typeof(MyObjectBuilder_CameraBlock)] = "Camera",
-            [typeof(MyObjectBuilder_BatteryBlock)] = "Battery",
-
-            [typeof(MyObjectBuilder_SensorBlock)] = "Sensor",
-            [typeof(MyObjectBuilder_ReflectorLight)] = "Spotlight",
-            [typeof(MyObjectBuilder_InteriorLight)] = "Interior Light",
-
-            [typeof(MyObjectBuilder_OreDetector)] = "Ore Detector",
-            [typeof(MyObjectBuilder_RadioAntenna)] = "Radio Antenna",
-            [typeof(MyObjectBuilder_LaserAntenna)] = "Laser Antenna",
-            [typeof(MyObjectBuilder_LandingGear)] = "Landing Gear",
-            [typeof(MyObjectBuilder_JumpDrive)] = "Jump Drive",
-            [typeof(MyObjectBuilder_GravityGenerator)] = "Gravity Generator",
-            [typeof(MyObjectBuilder_GravityGeneratorSphere)] = "Spherical Gravity Generator",
-            [typeof(MyObjectBuilder_CryoChamber)] = "Cryo Chamber",
-            [typeof(MyObjectBuilder_ConveyorSorter)] = "Conveyor Sorter",
-            [typeof(MyObjectBuilder_ControlPanel)] = "Control Panel",
-            [typeof(MyObjectBuilder_CargoContainer)] = "Cargo Container",
-            [typeof(MyObjectBuilder_ButtonPanel)] = "Button Panel",
-            [typeof(MyObjectBuilder_AirVent)] = "Air Vent",
-            [typeof(MyObjectBuilder_AirtightSlideDoor)] = "Slide Door",
-            [typeof(MyObjectBuilder_AirtightHangarDoor)] = "Hangar Door",
-            [typeof(MyObjectBuilder_AdvancedDoor)] = "Advanced Door",
-
-            [typeof(MyObjectBuilder_ShipGrinder)] = "Grinder",
-            [typeof(MyObjectBuilder_ShipWelder)] = "Welder",
-
-            [typeof(MyObjectBuilder_TextPanel)] = "LCD",
-            [typeof(MyObjectBuilder_LCDPanelsBlock)] = "Decorative with LCD",
-        };
+        BoxDragging Drag;
 
         delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId);
         readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>();
@@ -102,6 +47,31 @@ namespace Digi.BuildInfo.Features.Terminal
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
             Main.TerminalInfo.SelectedChanged += TerminalSelectedChanged;
 
+            Drag = new BoxDragging(MyMouseButtonsEnum.Right);
+            Drag.BoxSelected += () => MoveIcon.BillBoardColor = Color.Lime;
+            Drag.BoxDeselected += () => MoveIcon.BillBoardColor = Color.White;
+            Drag.Dragging += (newPos) =>
+            {
+                Main.Config.TerminalMultiDetailedInfoPosition.Value = newPos;
+
+                // TODO: scale setting?
+                //int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                //if(scroll != 0)
+                //{
+                //    ConfigLib.FloatSetting setting = Main.Config.TerminalMultiDetailedInfoScale???;
+                //    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
+                //    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
+                //    setting.Value = (float)Math.Round(scale, 3);
+                //}
+
+                RefreshPositions();
+            };
+            Drag.FinishedDragging += (finalPos) =>
+            {
+                Main.Config.Save();
+                Main.ConfigMenuHandler.RefreshAll();
+            };
+
             SetupPerTypeFormatters();
         }
 
@@ -112,25 +82,31 @@ namespace Digi.BuildInfo.Features.Terminal
 
             Main.Config.Handler.SettingsLoaded -= RefreshPositions;
             Main.TerminalInfo.SelectedChanged -= TerminalSelectedChanged;
+
+            Drag = null;
         }
 
         void RefreshPositions()
         {
-            if(Text == null)
+            if(Label == null)
                 return;
 
             Vector2D pos = Main.Config.TerminalMultiDetailedInfoPosition.Value;
             const float scale = 1f;
+            float textScale = scale * 1.3f;
 
-            float iconHeight = 0.55f;
+            float iconHeight = 0.4f;
             float iconWidth = (float)(0.0025 / Main.GameConfig.AspectRatio);
 
-            Text.Scale = scale * 1.3f;
-            Text.Origin = pos;
+            Label.Text.Scale = textScale;
+            Label.Text.Origin = pos;
 
-            TextShadow.Scale = Text.Scale;
-            TextShadow.Origin = pos;
-            TextShadow.Offset = Text.Offset + new Vector2D(0.002, -0.002) * TextShadow.Scale;
+            if(Label.Shadow != null)
+            {
+                Label.Shadow.Scale = textScale;
+                Label.Shadow.Origin = pos;
+                Label.Shadow.Offset = Label.Text.Offset + new Vector2D(0.002, -0.002) * textScale;
+            }
 
             MoveIcon.Scale = scale;
             MoveIcon.Origin = pos;
@@ -146,13 +122,6 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public override void UpdateDraw()
         {
-            if(DragOffset.HasValue && MyAPIGateway.Input.IsNewRightMouseReleased())
-            {
-                DragOffset = null;
-                Main.Config.Save();
-                Main.ConfigMenuHandler.RefreshAll();
-            }
-
             int selectedNum = Main.TerminalInfo.SelectedInTerminal.Count;
             if(selectedNum <= 1
             || !Main.TextAPI.IsEnabled
@@ -162,32 +131,25 @@ namespace Digi.BuildInfo.Features.Terminal
             || MyAPIGateway.Gui.ActiveGamePlayScreen != "MyGuiScreenTerminal")
                 return;
 
-            if(Text == null)
+            if(Label == null)
             {
-                StringBuilder sharedSB = new StringBuilder(512);
+                Label = new TextAPI.TextPackage(InfoText);
 
-                Text = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
-                Text.Visible = false;
+                MoveIcon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, hideWithHud: false);
 
-                TextShadow = new HudAPIv2.HUDMessage(sharedSB, Vector2D.Zero, HideHud: false, Shadowing: false, Blend: BlendType);
-                TextShadow.InitialColor = Color.Black;
-                TextShadow.Visible = false;
-
-                MoveIcon = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Vector2D.Zero, Color.White, HideHud: false, Shadowing: false, Blend: BlendType);
-                MoveIcon.Visible = false;
-
-                StringBuilder hintSB = new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo.");
-                Hint = new HudAPIv2.HUDMessage(hintSB, new Vector2D(0, -0.98), Scale: 0.6f, HideHud: false, Shadowing: true, Blend: BlendType);
-                Hint.Visible = false;
-                Vector2D hintTextSize = Hint.GetTextLength();
-                Hint.Offset = new Vector2D(hintTextSize.X / -2, 0);
+                Hint = new TextAPI.TextPackage(new StringBuilder("UI bg opacity too high to see multi-select info provided by buildinfo."));
+                Hint.Text.Origin = new Vector2D(0, -0.98);
+                Hint.Text.Scale = 0.6f;
+                Hint.Text.Options &= ~HudAPIv2.Options.HideHud;
+                Vector2D hintTextSize = Hint.Text.GetTextLength();
+                Hint.Text.Offset = new Vector2D(hintTextSize.X / -2, 0);
 
                 RefreshPositions();
             }
 
             if(Main.GameConfig.UIBackgroundOpacity >= 0.9f && Main.Config.TerminalMultiDetailedInfoPosition.Value == Main.Config.TerminalMultiDetailedInfoPosition.DefaultValue)
             {
-                Hint.Draw();
+                Hint.Text.Draw();
             }
 
             int skipEveryTicks;
@@ -206,56 +168,21 @@ namespace Digi.BuildInfo.Features.Terminal
                 UpdateText();
             }
 
-            Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
-            Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
-            Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
-
             Vector2D center = MoveIcon.Origin + MoveIcon.Offset;
             Vector2D halfSize = new Vector2D(0.02, MoveIcon.Height) / 2;
-            BoundingBox2D bb = new BoundingBox2D(center - halfSize, center + halfSize);
+            Drag.DragHitbox = new BoundingBox2D(center - halfSize, center + halfSize);
+            Drag.Position = Label.Text.Origin;
+            Drag.Update();
 
-            if(bb.Contains(mouseOnScreen) == ContainmentType.Contains)
-            {
-                if(!IconHovered)
-                {
-                    IconHovered = true;
-                    MoveIcon.BillBoardColor = Color.Lime;
-                }
-
-                if(MyAPIGateway.Input.IsNewRightMousePressed())
-                {
-                    DragOffset = Text.Origin - mouseOnScreen;
-                }
-            }
-            else
-            {
-                if(IconHovered)
-                {
-                    IconHovered = false;
-                    MoveIcon.BillBoardColor = Color.White;
-                }
-            }
-
-            if(DragOffset.HasValue && MyAPIGateway.Input.IsRightMousePressed())
-            {
-                const int Rounding = 4;
-
-                Vector2D newPos = mouseOnScreen + DragOffset.Value;
-                newPos = new Vector2D(Math.Round(newPos.X, Rounding), Math.Round(newPos.Y, Rounding));
-                newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
-
-                Main.Config.TerminalMultiDetailedInfoPosition.Value = newPos;
-                RefreshPositions();
-            }
-
-            TextShadow.Draw();
-            Text.Draw();
+            Label.Shadow?.Draw();
+            Label.Text.Draw();
             MoveIcon.Draw();
         }
 
         readonly Dictionary<MyStringHash, ResInfo> ResInput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
         readonly Dictionary<MyStringHash, ResInfo> ResOutput = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
         readonly Dictionary<MyStringHash, ResInfo> ResStorage = new Dictionary<MyStringHash, ResInfo>(MyStringHash.Comparer);
+        readonly Dictionary<long, int> OtherOwners = new Dictionary<long, int>();
 
         struct ResInfo
         {
@@ -264,7 +191,7 @@ namespace Digi.BuildInfo.Features.Terminal
             public int Blocks;
         }
 
-        static void IncrementResInfo(Dictionary<MyStringHash, ResInfo> dict, MyStringHash key, float addCurrent, float addMax)
+        static void IncrementResInfo<TKey>(Dictionary<TKey, ResInfo> dict, TKey key, float addCurrent, float addMax)
         {
             ResInfo resInfo = dict.GetValueOrDefault(key);
 
@@ -277,6 +204,9 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void UpdateText()
         {
+            if(MyAPIGateway.Session?.Player == null)
+                return; // HACK: player can be null for first few frames, just ignore those...
+
             List<IMyTerminalBlock> selected = Main.TerminalInfo.SelectedInTerminal;
             int totalBlocks = selected.Count;
             if(totalBlocks <= 0)
@@ -284,11 +214,20 @@ namespace Digi.BuildInfo.Features.Terminal
 
             ResInput.Clear();
             ResOutput.Clear();
+            ResStorage.Clear();
+            OtherOwners.Clear();
 
             float inventoryCurrentM3 = 0f;
             float inventoryMaxM3 = 0f;
             float inventoryMass = 0f;
             int inventoryBlocks = 0;
+
+            long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
+            int unowned = 0;
+            int ownedByMe = 0;
+            int sharePrivate = 0;
+            int shareFaction = 0;
+            int shareAll = 0;
 
             IMyTerminalBlock firstBlock = selected[0];
             bool allSameId = true;
@@ -304,6 +243,25 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
                     allSameId = false;
+
+                MyCubeBlock internalBlock = (MyCubeBlock)block;
+                if(internalBlock.IDModule != null)
+                {
+                    long ownerId = block.OwnerId;
+                    if(ownerId == 0)
+                        unowned++;
+                    else if(ownerId == localIdentityId)
+                        ownedByMe++;
+                    else
+                        OtherOwners[ownerId] = OtherOwners.GetValueOrDefault(ownerId, 0) + 1;
+
+                    switch(internalBlock.IDModule.ShareMode)
+                    {
+                        case MyOwnershipShareModeEnum.None: sharePrivate++; break;
+                        case MyOwnershipShareModeEnum.Faction: shareFaction++; break;
+                        case MyOwnershipShareModeEnum.All: shareAll++; break;
+                    }
+                }
 
                 IMyThrust thrust = block as IMyThrust; // HACK: thrusters have shared sinks and not reliable to get
                 IMyGyro gyro = (thrust == null ? block as IMyGyro : null); // HACK: gyro has no sink 
@@ -321,7 +279,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     {
                         MyStringHash key = MyResourceDistributorComponent.ElectricityId.SubtypeId;
                         MyGyro internalGyro = (MyGyro)gyro;
-                        MyGyroDefinition gyroDef = (MyGyroDefinition)internalGyro.BlockDefinition;
+                        MyGyroDefinition gyroDef = (MyGyroDefinition)gyro.SlimBlock.BlockDefinition;
 
                         IncrementResInfo(ResInput, key, internalGyro.RequiredPowerInput, gyroDef.RequiredPowerInput * gyro.PowerConsumptionMultiplier);
                     }
@@ -369,11 +327,11 @@ namespace Digi.BuildInfo.Features.Terminal
 
                         if(isHydrogenEngine)
                         {
-                            MyHydrogenEngineDefinition def = (MyHydrogenEngineDefinition)block.SlimBlock.BlockDefinition;
-                            MyStringHash key = def.Fuel.FuelId.SubtypeId;
+                            MyHydrogenEngineDefinition engineDef = (MyHydrogenEngineDefinition)block.SlimBlock.BlockDefinition;
+                            MyStringHash key = engineDef.Fuel.FuelId.SubtypeId;
                             float filled = source.RemainingCapacityByType(MyResourceDistributorComponent.ElectricityId);
 
-                            IncrementResInfo(ResStorage, key, filled, def.FuelCapacity);
+                            IncrementResInfo(ResStorage, key, filled, engineDef.FuelCapacity);
                         }
                     }
                 }
@@ -395,7 +353,8 @@ namespace Digi.BuildInfo.Features.Terminal
             #endregion Block compute loop
 
             // NOTE: the same SB is used by both the text and the shadow, therefore it can't use colors.
-            StringBuilder info = Text.Message.Clear();
+            // NOTE: this SB is also used on the copy detail info feature, if adding colors, must strip them there.
+            StringBuilder info = InfoText.Clear();
 
             info.Append("--- ").Append(totalBlocks).Append("x ");
 
@@ -405,12 +364,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             else if(allSameType)
             {
-                string friendlyName = TypeToFriendlyName.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null);
-                if(friendlyName != null)
-                    info.Append(friendlyName);
-                else
-                    info.IdTypeFormat(firstBlock.BlockDefinition.TypeId);
-                info.Append(" blocks");
+                info.IdTypeFormat(firstBlock.BlockDefinition.TypeId).Append(" blocks");
             }
             else
             {
@@ -468,10 +422,64 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append(inventoryBlocks).Append("x Inventories: ").VolumeFormat(inventoryCurrentM3 * 1000).Append(" / ").VolumeFormat(inventoryMaxM3 * 1000).Append(" (").MassFormat(inventoryMass).Append(")\n");
             }
 
+            // owners summary
+            {
+                int length = info.Length;
+
+                if(unowned > 0)
+                {
+                    info.Append(unowned).Append(" not owned, ");
+                }
+
+                //if(ownedByMe > 0)
+                //{
+                //    info.Append(ownedByMe).Append(" mine, ");
+                //}
+
+                if(OtherOwners.Count > 0)
+                {
+                    int friendOwned = 0;
+                    int enemyOwned = 0;
+
+                    foreach(KeyValuePair<long, int> kv in OtherOwners)
+                    {
+                        if(MyAPIGateway.Session.Player.GetRelationTo(kv.Key).IsFriendly())
+                        {
+                            friendOwned += kv.Value;
+                        }
+                        else
+                        {
+                            enemyOwned += kv.Value;
+                        }
+                    }
+
+                    if(enemyOwned > 0)
+                        info.Append(enemyOwned).Append(" enemy-owned, ");
+
+                    if(friendOwned > 0)
+                        info.Append(friendOwned).Append(" friend-owned, ");
+                }
+
+                if(shareAll > 0)
+                {
+                    info.Append(shareAll).Append(" shared all, ");
+                }
+
+                if(sharePrivate > 0)
+                {
+                    info.Append(sharePrivate).Append(" not shared, ");
+                }
+
+                if(info.Length > length)
+                    info.Length -= 2; // remove last comma+space
+
+                info.Append('\n');
+            }
+
             if(allSameType)
             {
-                info.Append('\n');
                 MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameId);
+                info.Append('\n');
             }
         }
 

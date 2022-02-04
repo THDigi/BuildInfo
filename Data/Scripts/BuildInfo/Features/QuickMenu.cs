@@ -1,6 +1,8 @@
-﻿using Digi.ComponentLib;
+﻿using Digi.BuildInfo.Features.Config;
+using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -102,22 +104,23 @@ namespace Digi.BuildInfo.Features
                         CloseMenu();
                         break;
                     case 1:
-                        if(Main.EquipmentMonitor.AimedBlock != null)
+                        IMySlimBlock aimed = Main.EquipmentMonitor.AimedBlock ?? Main.EquipmentMonitor.BuilderAimedBlock;
+                        if(aimed != null)
                         {
                             CloseMenu();
-                            Main.PickBlock.AskToPick(Main.EquipmentMonitor.BlockDef);
+                            Main.PickBlock.AskToPick((MyCubeBlockDefinition)aimed.BlockDefinition);
                         }
                         else
-                            MyAPIGateway.Utilities.ShowNotification("This only works with a hand or ship tool.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification("First aim at a block using builder/welder/grinder.", 3000, FontsHandler.RedSh);
                         break;
                     case 2:
                         if(Main.EquipmentMonitor.BlockDef == null)
                         {
-                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added by a mod.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification("Equip/aim at a block that was added/changed by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else if(Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                         {
-                            MyAPIGateway.Utilities.ShowNotification($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} was not added by a mod.", 3000, FontsHandler.RedSh);
+                            MyAPIGateway.Utilities.ShowNotification($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} was not added/changed by a mod.", 3000, FontsHandler.RedSh);
                         }
                         else
                         {
@@ -137,7 +140,7 @@ namespace Digi.BuildInfo.Features
                         ToggleTextInfo();
                         break;
                     case 6:
-                        Main.Overlays.CycleOverlayMode(showNotification: false);
+                        Main.Overlays.CycleMode(showNotification: false);
                         break;
                     case 7:
                         SetPlacementTransparency(!MyCubeBuilder.Static.UseTransparency, showNotification: false);
@@ -177,7 +180,7 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.CycleOverlaysBind.Value.IsJustPressed(context))
                 {
                     NeedsUpdate = true;
-                    Main.Overlays.CycleOverlayMode();
+                    Main.Overlays.CycleMode();
                 }
 
                 return;
@@ -228,14 +231,18 @@ namespace Digi.BuildInfo.Features
 
         public void ToggleTextInfo()
         {
-            Main.Config.TextShow.Value = !Main.Config.TextShow.Value;
+            int value = Main.Config.TextShow.Value;
+            if(++value > Main.Config.TextShow.HighestValue)
+                value = 0;
+
+            Main.Config.TextShow.Value = value;
             Main.Config.Save();
 
             if(buildInfoNotification == null)
                 buildInfoNotification = MyAPIGateway.Utilities.CreateNotification("");
 
             buildInfoNotification.Hide(); // required since SE v1.194
-            buildInfoNotification.Text = (Main.Config.TextShow.Value ? "Text info ON + saved to config" : "Text info OFF + saved to config");
+            buildInfoNotification.Text = $"Text info mode set to [{Main.Config.TextShow.ValueName}] + saved to config";
             buildInfoNotification.Show();
         }
 

@@ -36,6 +36,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupTextInfo = new ItemGroup();
         private readonly ItemGroup groupCustomStyling = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
+        private readonly ItemGroup groupEventToolbar = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
         private readonly ItemGroup groupTerminalDetailInfo = new ItemGroup();
@@ -45,9 +46,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         public void RefreshAll()
         {
-            groupTextInfo.SetInteractable(Main.Config.TextShow.Value);
-            groupCustomStyling.SetInteractable(Main.Config.TextShow.Value && Main.Config.TextAPICustomStyling.Value);
+            bool textModeOn = Main.Config.TextShow.Value != 0;
+
+            groupTextInfo.SetInteractable(textModeOn);
+            groupCustomStyling.SetInteractable(textModeOn && Main.Config.TextAPICustomStyling.Value);
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
+            //groupEventToolbar.SetInteractable(true);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
             groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
             groupTerminalDetailInfo.SetInteractable(Main.Config.TerminalDetailInfoAdditions.Value);
@@ -110,9 +114,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             RichHudTerminal.Root.Add(new TextPage()
             {
                 Name = "Settings?",
-                SubHeaderText = "",
-                HeaderText = BuildInfoMod.MOD_NAME + " Settings",
-                Text = new RichText("Open chat and press F2 to open TextAPI's mod config menu, you should see on the left a \"Mod Settings\" button."),
+                SubHeaderText = string.Empty,
+                HeaderText = $"{BuildInfoMod.ModName} Settings",
+                Text = new RichText($"This is the RichHUD menu, while {BuildInfoMod.ModName} only supports TextAPI for now.\n\nTo access TextAPI's mod configurator, open chat and press F2 then look top-left for a \"Mod Settings\" button."),
             });
         }
 
@@ -120,7 +124,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             Log.Info($"TextAPI detected, creating menu.");
 
-            Category_Mod = new MenuRootCategory(BuildInfoMod.MOD_NAME, MenuFlag.PlayerMenu, BuildInfoMod.MOD_NAME + " Settings");
+            Category_Mod = new MenuRootCategory(BuildInfoMod.ModName, MenuFlag.PlayerMenu, BuildInfoMod.ModName + " Settings");
 
             new ItemButton(Category_Mod, "Help Window", () =>
             {
@@ -137,7 +141,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_Binds = AddCategory("Binds", Category_Mod, header: "Key/button bindings");
             Category_Misc = AddCategory("Misc", Category_Mod, header: "Various other settings");
 
-            ItemAdd_TextShow(Category_Textbox);
+            #region TextBox
+            SimpleEnumCycle(Category_Textbox, null, Main.Config.TextShow, execOnCycle: (v) =>
+            {
+                Main.Config.TextShow.Value = v;
+                bool off = (v == 0);
+                bool forceShow = (!off && Main.EquipmentMonitor.BlockDef == null);
+                UpdateTextBox(redraw: !off, drawTicks: (forceShow ? TOGGLE_FORCEDRAWTICKS : 0));
+                groupTextInfo.SetInteractable(!off);
+                groupCustomStyling.SetInteractable(!off ? Main.Config.TextAPICustomStyling.Value : false);
+            });
             SimpleToggle(Category_Textbox, null, Main.Config.TextAlwaysVisible, groupTextInfo);
             ItemAdd_TextInfoScale(Category_Textbox, groupTextInfo);
             ItemAdd_BackgroundOpacity(Category_Textbox);
@@ -152,16 +165,22 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemAdd_PlaceInfoToggles(Category_PlaceInfo);
             Category_AimInfo = AddCategory("Aim Info", Category_Textbox, header: "Aiming at a block will show these stats:", group: groupTextInfo);
             ItemAdd_AimInfoToggles(Category_AimInfo);
+            #endregion
 
+            #region Overlays
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
+            #endregion
 
+            #region HUD
             SimpleToggle(Category_HUD, null, Main.Config.BlockInfoAdditions);
             SimpleToggle(Category_HUD, null, Main.Config.ScrollableComponentsList);
             SimpleToggle(Category_HUD, null, Main.Config.SelectAllProjectedBlocks);
             SimpleToggle(Category_HUD, null, Main.Config.OverrideToolSelectionDraw);
-            SimpleEnumCycle(Category_HUD, null, typeof(CubeBuilderSelectionInfo), Main.Config.CubeBuilderSelectionInfoMode);
+            SimpleToggle(Category_HUD, null, Main.Config.CubeBuilderDrawSubparts);
+            SimpleEnumCycle(Category_HUD, null, Main.Config.CubeBuilderSelectionInfoMode);
+            SimpleToggle(Category_HUD, null, Main.Config.UnderCrosshairMessages);
             AddSpacer(Category_HUD);
             SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
             SimpleToggle(Category_HUD, null, Main.Config.HudStatOverrides);
@@ -172,18 +191,22 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemAdd_ShipInvBarPosition(Category_HUD, groupShipToolInvBar);
             SimplePositionReset(Category_HUD, Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
             SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
+            #endregion
 
+            #region Toolbar
             ItemSlider cockpitEnterTimeSlider = null;
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarLabelsMode), Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarLabels, setGroupInteractable: groupToolbarLabels, execOnCycle: (v) =>
             {
                 ToolbarLabelsMode ve = (ToolbarLabelsMode)v;
                 cockpitEnterTimeSlider.Interactable = (ve == ToolbarLabelsMode.ShowOnPress || ve == ToolbarLabelsMode.HudHints);
             });
             cockpitEnterTimeSlider = SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsEnterCockpitTime, groupToolbarLabels, dialogTitle: "Shown for this many seconds if not always visible.");
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarNameMode), Main.Config.ToolbarItemNameMode, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarItemNameMode, groupToolbarLabels);
             SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarLabelsHeader, groupToolbarLabels);
-            SimpleEnumCycle(Category_Toolbar, null, typeof(ToolbarStyle), Main.Config.ToolbarStyleMode, groupToolbarLabels);
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarStyleMode, groupToolbarLabels);
+
             AddSpacer(Category_Toolbar);
+
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             groupToolbarLabels.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition),
@@ -191,15 +214,29 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
+
             AddSpacer(Category_Toolbar);
-            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, onToggle: (v) =>
+
+            SimpleToggle(Category_Toolbar, null, Main.Config.EventToolbarInfo, setGroupInteractable: groupEventToolbar);
+            SimpleSlider(Category_Toolbar, null, Main.Config.EventToolbarInfoScale, groupEventToolbar);
+            groupEventToolbar.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.EventToolbarInfoPosition),
+                () => ShowNotify("Event toolbar info box can be moved in menu by holding LMB on it and dragging.", 7000)));
+            SimplePositionReset(Category_Toolbar, Main.Config.EventToolbarInfoPosition, groupEventToolbar);
+
+            AddSpacer(Category_Toolbar);
+
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, callOnSet: (v) =>
             {
                 if(!Main.ToolbarStatusProcessor.Enabled)
                 {
-                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.MOD_NAME, "NOTE: Toolbar action status is forced off because of a HUD mod that increases status text size.");
+                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, "NOTE: Toolbar action status is forced off because of a HUD mod that increases status text size.");
                 }
             });
 
+            SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarActionIcons, execOnCycle: (v) => MyAPIGateway.Utilities.ShowNotification($"NOTE: Toolbar action icons can't be refreshed in real time, you'll need to rejoin world.", 3000, FontsHandler.YellowSh));
+            #endregion
+
+            #region Terminal
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
             new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
@@ -214,11 +251,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             AddSpacer(Category_Terminal);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
             SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);
+            #endregion
 
+            #region Leak Info
             SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorWorld);
             SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorOverlay);
+            #endregion
 
+            #region Binds
             SimpleBind(Category_Binds, "Menu Bind", Config.Config.MENU_BIND_INPUT_NAME, Main.Config.MenuBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Text Show Bind", Config.Config.TEXT_SHOW_INPUT_NAME, Main.Config.TextShowBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Cycle Overlays Bind", Config.Config.CYCLE_OVERLAYS_INPUT_NAME, Main.Config.CycleOverlaysBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Freeze Placement Bind", Config.Config.FREEZE_PLACEMENT_INPUT_NAME, Main.Config.FreezePlacementBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Toggle Transparency Bind", Config.Config.TOGGLE_TRANSPARENCY_INPUT_NAME, Main.Config.ToggleTransparencyBind, groupBinds, groupBinds);
@@ -226,7 +268,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleBind(Category_Binds, "Lock Overlay Bind", Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show Toolbar Info Bind", Config.Config.SHOW_TOOLBAR_INFO_INPUT_NAME, Main.Config.ShowToolbarInfoBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show CubeBuilder Selection Info Bind", Config.Config.SHOW_CB_SELECTION_INFO_INPUT_NAME, Main.Config.ShowCubeBuilderSelectionInfoBind, groupBinds, groupBinds);
+            #endregion
 
+            #region Misc
             SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
@@ -240,6 +284,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 ShowNotify("Config reset to defaults and saved.", 3000, FontsHandler.WhiteSh);
                 RefreshAll();
             });
+            #endregion
 
             ItemButton button = new ItemButton(Category_Mod, "Mod's workshop page", Main.ChatCommandHandler.CommandWorkshop.ExecuteNoArgs);
             button.Interactable = (Log.WorkshopId > 0);
@@ -253,22 +298,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         void Handler_SettingsLoaded()
         {
             RefreshAll();
-        }
-
-        private void ItemAdd_TextShow(MenuCategoryBase category)
-        {
-            ItemToggle item = new ItemToggle(category, "Show",
-                getter: () => Main.Config.TextShow.Value,
-                setter: (v) =>
-                {
-                    Main.Config.TextShow.Value = v;
-                    UpdateTextBox(redraw: v, drawTicks: (v ? TOGGLE_FORCEDRAWTICKS : 0));
-                    groupTextInfo.SetInteractable(v);
-                    groupCustomStyling.SetInteractable(v ? Main.Config.TextAPICustomStyling.Value : false);
-                },
-                defaultValue: Main.Config.TextShow.DefaultValue);
-
-            groupAll.Add(item);
         }
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
@@ -612,7 +641,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
-        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, Action<bool> onToggle = null)
+        private void SimpleToggle(MenuCategoryBase category, string label, BoolSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, Action<bool> callOnSet = null)
         {
             ItemToggle item = new ItemToggle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
@@ -621,7 +650,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     setting.Value = v;
                     UpdateTextBox(redraw: false);
                     setGroupInteractable?.SetInteractable(setting.Value);
-                    onToggle?.Invoke(v);
+                    callOnSet?.Invoke(v);
                 },
                 defaultValue: setting.DefaultValue);
 
@@ -741,7 +770,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         //    groupAll.Add(item);
         //}
 
-        private void SimpleEnumCycle(MenuCategoryBase category, string label, Type enumType, IntegerSetting setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0, Action<int> execOnCycle = null)
+        private void SimpleEnumCycle<TEnum>(MenuCategoryBase category, string label, EnumSetting<TEnum> setting, ItemGroup group = null, ItemGroup setGroupInteractable = null, int offValue = 0, Action<int> execOnCycle = null) where TEnum : struct
         {
             ItemEnumCycle item = new ItemEnumCycle(category, GetLabelFromSetting(label, setting),
                 getter: () => setting.Value,
@@ -752,7 +781,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     execOnCycle?.Invoke(v);
                     Main.Config.Save();
                 },
-                enumType: enumType,
+                enumType: typeof(TEnum),
                 defaultValue: setting.DefaultValue);
 
             group?.Add(item);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -156,9 +157,19 @@ namespace Digi.BuildInfo.Features
                     if(Main.EquipmentMonitor.IsAnyGrinder)
                     {
                         if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, Utils.SZAGrinding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAGrinding))
+                        {
                             color = Color.DarkRed;
+                        }
                         else
-                            color = new Color(255, 200, 75);
+                        {
+                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Recalculate)
+                                Main.TextGeneration.WillSplitGrid = aimedBlock.CubeGrid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+
+                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Split)
+                                color = Main.TextGeneration.COLOR_BAD;
+                            else
+                                color = new Color(255, 200, 75);
+                        }
                     }
                     else
                     {
@@ -190,6 +201,9 @@ namespace Digi.BuildInfo.Features
             #endregion
         }
 
+        List<MyEntity> _inputs = new List<MyEntity>();
+        List<MyEntity> _inputsForNext = new List<MyEntity>();
+
         /// <summary>
         /// Fills given <see cref="BlockSelectInfo"/> object with data.
         /// Also only updates model BB 4 times a second if same object is fed.
@@ -215,32 +229,40 @@ namespace Digi.BuildInfo.Features
             {
                 fillData.ModelMatrix = fatBlock.PositionComp.WorldMatrixRef;
 
-                if(!fillData.ModelBB.HasValue || Main.Tick % (Constants.TICKS_PER_SECOND / 4) == 0)
+                const bool DebugDrawSubparts = false;
+
+                if(DebugDrawSubparts || !fillData.ModelBB.HasValue || Main.Tick % (Constants.TicksPerSecond / 4) == 0)
                 {
-                    BoundingBox localAABB = fatBlock.PositionComp.LocalAABB;
-                    BoundingBoxD modelBB = new BoundingBoxD(localAABB.Min, localAABB.Max);
+                    BoundingBoxD modelBB = (BoundingBoxD)fatBlock.PositionComp.LocalAABB;
 
                     #region Subpart localBB inclusion
-                    if(fatBlock.Subparts != null)
+                    // HACK: recursion without methods, avoids mod profiler...
+                    _inputs.Clear();
+                    _inputsForNext.Clear();
+
+                    _inputs.Add(fatBlock);
+
+                    MatrixD transformToBlockLocal = fatBlock.PositionComp.WorldMatrixInvScaled;
+
+                    while(_inputs.Count > 0)
                     {
-                        MatrixD transformToBlockLocal = fatBlock.PositionComp.WorldMatrixInvScaled;
-
-                        foreach(MyEntitySubpart s1 in fatBlock.Subparts.Values)
+                        foreach(MyEntity entity in _inputs)
                         {
-                            MyOrientedBoundingBoxD obbS1 = new MyOrientedBoundingBoxD(s1.PositionComp.LocalAABB, s1.PositionComp.WorldMatrixRef);
-                            obbS1.GetCorners(Corners, 0);
-
-                            for(int i = 0; i < Corners.Length; i++)
+                            if(entity.Subparts != null)
                             {
-                                Vector3D corner = Corners[i];
-                                modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
-                            }
-
-                            if(s1.Subparts != null)
-                                foreach(MyEntitySubpart s2 in s1.Subparts.Values)
+                                foreach(MyEntitySubpart subpart in entity.Subparts.Values)
                                 {
-                                    MyOrientedBoundingBoxD obbS2 = new MyOrientedBoundingBoxD(s2.PositionComp.LocalAABB, s2.PositionComp.WorldMatrixRef);
-                                    obbS2.GetCorners(Corners, 0);
+                                    if(DebugDrawSubparts)
+                                    {
+                                        MatrixD wm = subpart.WorldMatrix;
+                                        BoundingBoxD localBox = (BoundingBoxD)subpart.PositionComp.LocalAABB;
+                                        Color color = Color.Lime * 0.75f;
+                                        MyStringId material = MyStringId.GetOrCompute("Square");
+                                        MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBox, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, 0.01f, material, SelectionLineMaterial, blendType: BlendType.AdditiveTop);
+                                    }
+
+                                    MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(subpart.PositionComp.LocalAABB, subpart.PositionComp.WorldMatrixRef);
+                                    obb.GetCorners(Corners, 0);
 
                                     for(int i = 0; i < Corners.Length; i++)
                                     {
@@ -248,34 +270,17 @@ namespace Digi.BuildInfo.Features
                                         modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
                                     }
 
-                                    if(s2.Subparts != null)
-                                        foreach(MyEntitySubpart s3 in s2.Subparts.Values)
-                                        {
-                                            MyOrientedBoundingBoxD obbS3 = new MyOrientedBoundingBoxD(s3.PositionComp.LocalAABB, s3.PositionComp.WorldMatrixRef);
-                                            obbS3.GetCorners(Corners, 0);
-
-                                            for(int i = 0; i < Corners.Length; i++)
-                                            {
-                                                Vector3D corner = Corners[i];
-                                                modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
-                                            }
-
-                                            if(s3.Subparts != null)
-                                                foreach(MyEntitySubpart s4 in s3.Subparts.Values)
-                                                {
-                                                    MyOrientedBoundingBoxD obbS4 = new MyOrientedBoundingBoxD(s4.PositionComp.LocalAABB, s4.PositionComp.WorldMatrixRef);
-                                                    obbS4.GetCorners(Corners, 0);
-
-                                                    for(int i = 0; i < Corners.Length; i++)
-                                                    {
-                                                        Vector3D corner = Corners[i];
-                                                        modelBB.Include(Vector3D.Transform(corner, transformToBlockLocal));
-                                                    }
-                                                }
-                                        }
+                                    _inputsForNext.Add(subpart);
                                 }
+                            }
                         }
+
+                        _inputs.Clear();
+                        MyUtils.Swap(ref _inputsForNext, ref _inputs);
                     }
+
+                    _inputs.Clear();
+                    _inputsForNext.Clear();
                     #endregion
 
                     if(inflate != 0)
@@ -293,9 +298,9 @@ namespace Digi.BuildInfo.Features
 
             Vector3D center = Vector3D.Transform((localBB.Min + localBB.Max) * 0.5, worldMatrix);
             Vector3D halfExtent = (localBB.Max - localBB.Min) * 0.5;
-            Vector3D left = worldMatrix.Left * halfExtent.X;
-            Vector3D up = worldMatrix.Up * halfExtent.Y;
-            Vector3D back = worldMatrix.Backward * halfExtent.Z;
+            Vector3 left = (Vector3)(worldMatrix.Left * halfExtent.X);
+            Vector3 up = (Vector3)(worldMatrix.Up * halfExtent.Y);
+            Vector3 back = (Vector3)(worldMatrix.Backward * halfExtent.Z);
 
             Vector3D top = center + up;
             Vector3D bottom = center - up;

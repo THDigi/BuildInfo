@@ -13,6 +13,8 @@ using VRageMath;
 
 namespace Digi
 {
+    // TODO: make use of MyDefinitionErrors ?
+
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
@@ -481,7 +483,7 @@ namespace Digi
                 try
                 {
                     sb.Clear();
-                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(MyAPIGateway.Session.GameplayFrameCounter % 60).Append("] ");
+                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append((MyAPIGateway.Session.GameplayFrameCounter % 60).ToString("00")).Append("] ");
 
                     if(writer == null)
                         sb.Append("(PRE-INIT) ");

@@ -11,13 +11,14 @@ namespace Digi.ComponentLib
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
     public partial class BuildInfo_GameSession : MySessionComponentBase
     {
-        IModBase main;
+        IModBase ModBase;
 
         public override void LoadData()
         {
             try
             {
                 LoadMod();
+                ModBase?.FinishProfilingConstructors();
             }
             catch(Exception e)
             {
@@ -31,7 +32,7 @@ namespace Digi.ComponentLib
         {
             try
             {
-                main?.WorldStart();
+                ModBase?.WorldStart();
             }
             catch(Exception e)
             {
@@ -45,7 +46,7 @@ namespace Digi.ComponentLib
         {
             try
             {
-                main?.WorldExit();
+                ModBase?.WorldExit();
             }
             catch(Exception e)
             {
@@ -58,33 +59,33 @@ namespace Digi.ComponentLib
 
         public override void HandleInput()
         {
-            main?.UpdateInput();
+            ModBase?.UpdateInput();
         }
 
         public override void UpdateBeforeSimulation()
         {
-            main?.UpdateBeforeSim();
+            ModBase?.UpdateBeforeSim();
         }
 
         public override void UpdateAfterSimulation()
         {
-            main?.UpdateAfterSim();
+            ModBase?.UpdateAfterSim();
         }
 
         public override void Draw()
         {
-            main?.UpdateDraw();
+            ModBase?.UpdateDraw();
         }
 
         public override MyObjectBuilder_SessionComponent GetObjectBuilder()
         {
-            main?.WorldSave();
+            ModBase?.WorldSave();
             return base.GetObjectBuilder();
         }
 
         public override void UpdatingStopped()
         {
-            main?.UpdateStopped();
+            ModBase?.UpdateStopped();
         }
     }
 }

@@ -24,6 +24,15 @@ namespace Digi.ConfigLib
                 {
                     Log.Error(e);
                 }
+
+                try
+                {
+                    ConfigInstance?.InvokeSettingValueSet(this);
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
             }
         }
 
@@ -39,29 +48,29 @@ namespace Digi.ConfigLib
         public event ValueChangedDel ValueAssigned;
         public delegate void ValueChangedDel(T oldValue, T newValue, SettingBase<T> setting);
 
-        protected readonly string[] commentLines;
-        protected readonly ConfigHandler configInstance;
+        protected readonly string[] CommentLines;
+        protected readonly ConfigHandler ConfigInstance;
 
         protected const string FLOAT_FORMAT = "0.0#########";
 
         public SettingBase(ConfigHandler configInstance, string name, T defaultValue, params string[] commentLines)
         {
-            this.configInstance = configInstance;
-            this.Name = name;
-            this.DefaultValue = defaultValue;
-            this.commentLines = commentLines;
+            ConfigInstance = configInstance;
+            Name = name;
+            DefaultValue = defaultValue;
+            CommentLines = commentLines;
 
             configInstance.Settings.Add(Name, this);
         }
 
         public void AddCompatibilityNames(string name1, string name2 = null, string name3 = null, string name4 = null, string name5 = null, string name6 = null)
         {
-            if(name1 != null) configInstance.SettingsAlias.Add(name1, this);
-            if(name2 != null) configInstance.SettingsAlias.Add(name2, this);
-            if(name3 != null) configInstance.SettingsAlias.Add(name3, this);
-            if(name4 != null) configInstance.SettingsAlias.Add(name4, this);
-            if(name5 != null) configInstance.SettingsAlias.Add(name5, this);
-            if(name6 != null) configInstance.SettingsAlias.Add(name6, this);
+            if(name1 != null) ConfigInstance.SettingsAlias.Add(name1, this);
+            if(name2 != null) ConfigInstance.SettingsAlias.Add(name2, this);
+            if(name3 != null) ConfigInstance.SettingsAlias.Add(name3, this);
+            if(name4 != null) ConfigInstance.SettingsAlias.Add(name4, this);
+            if(name5 != null) ConfigInstance.SettingsAlias.Add(name5, this);
+            if(name6 != null) ConfigInstance.SettingsAlias.Add(name6, this);
         }
 
         public override string ToString()
@@ -97,9 +106,9 @@ namespace Digi.ConfigLib
             output.AppendLine();
         }
 
-        protected void AppendComments(StringBuilder output)
+        protected virtual void AppendComments(StringBuilder output)
         {
-            foreach(string line in commentLines)
+            foreach(string line in CommentLines)
             {
                 if(string.IsNullOrEmpty(line))
                     output.AppendLine();

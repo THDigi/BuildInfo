@@ -19,13 +19,13 @@ namespace Digi.BuildInfo.VanillaData
 
         public VanillaDefinitions(BuildInfoMod main) : base(main)
         {
-            if(Constants.EXPORT_VANILLA_BLOCKS)
+            if(Constants.ExportVanillaDefinitions)
             {
                 ExtractVanillaBlocks();
             }
 
             DefineVanillaBlocks();
-            CheckVanillaHardcoded();
+            CheckDefinitions();
         }
 
         public override void RegisterComponent()
@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.VanillaData
         {
         }
 
-        void CheckVanillaHardcoded()
+        void CheckDefinitions()
         {
             if(!BuildInfoMod.IsDevMod)
                 return;
@@ -49,10 +49,24 @@ namespace Digi.BuildInfo.VanillaData
                 if(blockDef == null)
                     continue;
 
-                if(blockDef.Context.IsBaseGame && !Definitions.Contains(blockDef.Id))
+                if(!blockDef.Context.IsBaseGame)
+                    continue;
+
+                if(!Definitions.Contains(blockDef.Id))
                 {
                     needsRegen = true;
-                    break;
+                    //break;
+                }
+
+                if(blockDef.MountPoints != null && blockDef.MountPoints.Length > 0)
+                {
+                    foreach(MyCubeBlockDefinition.MountPoint mount in blockDef.MountPoints)
+                    {
+                        if(mount.ExclusionMask > 3 || mount.PropertiesMask > 3)
+                        {
+                            Log.Info($"Vanilla block '{def.Id.ToString()}' has mountpoint with >3 masks: exclusionMask={mount.ExclusionMask}; propertiesMask={mount.PropertiesMask}!");
+                        }
+                    }
                 }
             }
 
@@ -62,7 +76,7 @@ namespace Digi.BuildInfo.VanillaData
 
                 if(BuildInfoMod.IsDevMod)
                 {
-                    WarnAtTick = Constants.TICKS_PER_SECOND * 3;
+                    WarnAtTick = Constants.TicksPerSecond * 3;
                     SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
                 }
             }
@@ -286,7 +300,7 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Projector), "SmallProjector"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "SmallBlockSensor"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SensorBlock), "LargeBlockSensor"));
-            Definitions.Add(new MyDefinitionId(Constants.TargetDummyType, "TargetDummy"));
+            Definitions.Add(new MyDefinitionId(Hardcoded.TargetDummyType, "TargetDummy"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "SmallBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_SoundBlock), "LargeBlockSoundBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_ButtonPanel), "ButtonPanelLarge"));

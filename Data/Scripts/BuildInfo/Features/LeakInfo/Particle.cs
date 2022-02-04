@@ -12,10 +12,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
     {
         public readonly float Size;
         public readonly int SpawnDelay;
-        public readonly double LerpPos;
+        public readonly float LerpPos;
         public readonly float WalkSpeed;
 
-        public ParticleData(float size, int spawnDelay, double lerpPos, float walkSpeed)
+        public ParticleData(float size, int spawnDelay, float lerpPos, float walkSpeed)
         {
             Size = size;
             SpawnDelay = spawnDelay;
@@ -81,7 +81,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             int tick = BuildInfoMod.Instance.Tick;
             bool paused = MyParticlesManager.Paused;
             if(!paused)
-                LocalPos = Vector3D.Lerp(LocalPos, targetPosLocal, particleData.LerpPos);
+                LocalPos = Vector3.Lerp(LocalPos, targetPosLocal, particleData.LerpPos);
 
             Vector3D posWorld = Vector3D.Transform(LocalPos, grid.WorldMatrix);
 
@@ -94,7 +94,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 for(int t = 0; t < TrailPointsPerTick; t++)
                 {
                     float lerp = (t % TrailPointsPerTick) * TrailLerpPerPoint;
-                    Trails.Add(new ParticleTrail(Vector3D.Lerp(prevLocalPos, LocalPos, lerp), tick + TrailLifeTicks));
+                    Trails.Add(new ParticleTrail(Vector3.Lerp(prevLocalPos, LocalPos, lerp), tick + TrailLifeTicks));
                 }
             }
 
@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 if(!paused && trail.ExpiresAtTick <= tick) // trail expired
                 {
                     float lerp = (t % TrailPointsPerTick) * TrailLerpPerPoint;
-                    trail = new ParticleTrail(Vector3D.Lerp(prevLocalPos, LocalPos, lerp), tick + TrailLifeTicks);
+                    trail = new ParticleTrail(Vector3.Lerp(prevLocalPos, LocalPos, lerp), tick + TrailLifeTicks);
                     Trails[t] = trail;
                     StopTrailSpawn = true;
                 }

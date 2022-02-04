@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             IMyMotorStator stator = (IMyMotorStator)item.Block;
             float angleRad = stator.Angle;
 
-            if(!Processor.AppendSingleStats(sb, item.Block) && !Processor.AnimFlip && stator.TargetVelocityRPM == 0)
+            if(!Processor.AppendSingleStats(sb, item.Block) && stator.TargetVelocityRPM == 0)
                 sb.Append("No Vel\n");
 
             float minRad = stator.LowerLimitRad;
@@ -142,9 +142,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
             }
 
-            Processor.AppendGroupStats(sb, broken, off);
+            bool shownWarnings = Processor.AppendGroupStats(sb, broken, off);
 
-            if(!Processor.AnimFlip && !allCanMove)
+            if(!shownWarnings && !allCanMove)
                 sb.Append("No Vel\n");
 
             int total = groupData.Blocks.Count;

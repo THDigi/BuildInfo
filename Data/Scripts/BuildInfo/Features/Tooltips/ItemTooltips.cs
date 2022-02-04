@@ -279,7 +279,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(bottleDef == null)
                 return;
 
-            s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").IdTypeSubtypeFormat(bottleDef.StoredGasId);
+            s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").ItemName(bottleDef.StoredGasId);
         }
 
         public void TooltipTool(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)

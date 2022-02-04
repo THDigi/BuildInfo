@@ -48,7 +48,7 @@ namespace Digi.BuildInfo
                 if(text.StartsWith("/runchecks", StringComparison.InvariantCultureIgnoreCase))
                 {
                     sendToOthers = false;
-                    MyAPIGateway.Utilities.ShowMessage("GameChecks", $"Running for {Log.ModName}...");
+                    MyAPIGateway.Utilities.ShowMessage("GameChecks", $"Running for {BuildInfoMod.ModName}...");
 
                     CompareVanillaDetailInfo();
                 }
@@ -160,7 +160,7 @@ namespace Digi.BuildInfo
             else
             {
                 Log.Info($"{NAME}: {readFile} not found.");
-                MyAPIGateway.Utilities.ShowMessage(NAME, $"{Log.ModName} WARNING: missing 'Storage/{readFile}' file, nothing to compare to!");
+                MyAPIGateway.Utilities.ShowMessage(NAME, $"{BuildInfoMod.ModName} WARNING: missing 'Storage/{readFile}' file, nothing to compare to!");
             }
 
             return true;
@@ -328,11 +328,11 @@ namespace Digi.BuildInfo
                 Log.Info($"{NAME}: Finished.");
 
                 if(vanillaDetailInfo == null)
-                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {Log.ModName}, nothing to compare to.");
+                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, nothing to compare to.");
                 else if(newDetected)
-                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {Log.ModName}, NEW STUFF DETECTED!!!!!!");
+                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, NEW STUFF DETECTED!!!!!!");
                 else
-                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {Log.ModName}, nothing new detected.");
+                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, nothing new detected.");
             }
             catch(Exception e)
             {

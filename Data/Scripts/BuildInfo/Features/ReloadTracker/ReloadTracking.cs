@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(gunBlock == null)
                 return; // ignore weirdness
 
-            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition.Id))
+            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition.Id))
                 return; // no tracking of weaponcore blocks
 
             if(WeaponLookup.ContainsKey(gunBlock.EntityId))

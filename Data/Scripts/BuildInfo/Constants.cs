@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Digi.ComponentLib;
+using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -9,42 +11,96 @@ using VRage;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
-using VRageMath;
 
 namespace Digi.BuildInfo
 {
     public class Constants : ModComponent
     {
-        public const int MOD_VERSION = 4; // notifies player of notable changes and links them to workshop's changelog.
+        public const int ModVersion = 4; // notifies player of notable changes and links them to workshop's changelog.
 
-        public readonly Vector2 BLOCKINFO_SIZE = new Vector2(0.02164f, 0.00076f);
-        public const float ASPECT_RATIO_54_FIX = 0.938f;
-        public const float BLOCKINFO_TEXT_PADDING = 0.001f;
+        public const int TicksPerSecond = (int)(MyEngineConstants.UPDATE_STEPS_PER_MINUTE / 60);
 
-        public const int TICKS_PER_SECOND = 60;
+        public const string WarnPlayerIsNull = "Local Player is null, silly bugs... try again in a few seconds.";
 
-        public readonly MyDefinitionId COMPUTER_COMPONENT_ID = new MyDefinitionId(typeof(MyObjectBuilder_Component), MyStringHash.GetOrCompute("Computer")); // HACK: this is what the game uses for determining if a block can have ownership
+        public static bool ExportVanillaDefinitions = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
 
-        public const bool BLOCKPICKER_IN_MP = true;
-        public const string BLOCKPICKER_DISABLED_CONFIG = "NOTE: This feature is disabled in MP because of issues, see: https://support.keenswh.com/spaceengineers/pc/topic/187-2-modapi-settoolbarslottoitem-causes-everyone-in-server-to-disconnect";
-        public const string BLOCKPICKER_DISABLED_CHAT = "Pick block feature disabled in MP because of issues, see workshop page for details.";
-        public const string PLAYER_IS_NULL = "Local Player is null, silly bugs... try again in a few seconds.";
-
-        public static bool EXPORT_VANILLA_BLOCKS = false; // used for exporting vanilla block IDs for AnalyseShip's hardcoded list.
-
-        public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
-
-        public readonly HashSet<MyObjectBuilderType> DEFAULT_ALLOWED_TYPES = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting if type argument is null
+        public readonly HashSet<MyObjectBuilderType> DefaultItemsForMass = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer) // used in inventory formatting to compute min/max mass
         {
             typeof(MyObjectBuilder_Ore),
             typeof(MyObjectBuilder_Ingot),
             typeof(MyObjectBuilder_Component)
         };
 
-        public readonly MyStringId[] CONTROL_SLOTS = new MyStringId[]
+        public static readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
+        {
+            [typeof(MyObjectBuilder_GasProperties)] = "Gas",
+
+            // items
+            [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand Tool/Gun",
+            [typeof(MyObjectBuilder_AmmoMagazine)] = "Magazine",
+            [typeof(MyObjectBuilder_GasContainerObject)] = "Gas Bottle",
+            [typeof(MyObjectBuilder_OxygenContainerObject)] = "Oxygen Bottle",
+
+            // blocks
+            [typeof(MyObjectBuilder_MotorSuspension)] = "Suspension",
+            [typeof(MyObjectBuilder_MotorStator)] = "Rotor Base",
+            [typeof(MyObjectBuilder_MotorAdvancedStator)] = "Adv. Rotor Base",
+            [typeof(MyObjectBuilder_MotorRotor)] = "Rotor Top",
+            [typeof(MyObjectBuilder_MotorAdvancedRotor)] = "Adv. Rotor Top",
+            [typeof(MyObjectBuilder_ExtendedPistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonBase)] = "Piston",
+            [typeof(MyObjectBuilder_PistonTop)] = "Piston Top",
+
+            [typeof(MyObjectBuilder_OxygenGenerator)] = "Gas Generator",
+            [typeof(MyObjectBuilder_OxygenTank)] = "Gas Tank",
+            [typeof(MyObjectBuilder_HydrogenEngine)] = "Hydrogen Engine",
+
+            [typeof(MyObjectBuilder_LargeGatlingTurret)] = "Gatling Turret",
+            [typeof(MyObjectBuilder_LargeMissileTurret)] = "Missile Turret",
+            [typeof(MyObjectBuilder_InteriorTurret)] = "Interior Turret",
+            [typeof(MyObjectBuilder_SmallGatlingGun)] = "Gatling Gun",
+            [typeof(MyObjectBuilder_SmallMissileLauncher)] = "Missile Launcher",
+            [typeof(MyObjectBuilder_SmallMissileLauncherReload)] = "Reloadable Missile Launcher",
+
+            [typeof(MyObjectBuilder_ShipConnector)] = "Connector",
+            [typeof(MyObjectBuilder_MergeBlock)] = "Merge",
+            [typeof(MyObjectBuilder_ExhaustBlock)] = "Exhaust",
+            [typeof(MyObjectBuilder_CameraBlock)] = "Camera",
+            [typeof(MyObjectBuilder_BatteryBlock)] = "Battery",
+
+            [typeof(MyObjectBuilder_SensorBlock)] = "Sensor",
+            [typeof(MyObjectBuilder_ReflectorLight)] = "Spotlight",
+            [typeof(MyObjectBuilder_InteriorLight)] = "Interior Light",
+
+            [typeof(MyObjectBuilder_OreDetector)] = "Ore Detector",
+            [typeof(MyObjectBuilder_RadioAntenna)] = "Radio Antenna",
+            [typeof(MyObjectBuilder_LaserAntenna)] = "Laser Antenna",
+            [typeof(MyObjectBuilder_LandingGear)] = "Landing Gear",
+            [typeof(MyObjectBuilder_JumpDrive)] = "Jump Drive",
+            [typeof(MyObjectBuilder_GravityGenerator)] = "Gravity Generator",
+            [typeof(MyObjectBuilder_GravityGeneratorSphere)] = "Spherical Gravity Generator",
+            [typeof(MyObjectBuilder_CryoChamber)] = "Cryo Chamber",
+            [typeof(MyObjectBuilder_ConveyorSorter)] = "Conveyor Sorter",
+            [typeof(MyObjectBuilder_ControlPanel)] = "Control Panel",
+            [typeof(MyObjectBuilder_CargoContainer)] = "Cargo Container",
+            [typeof(MyObjectBuilder_ButtonPanel)] = "Button Panel",
+            [typeof(MyObjectBuilder_AirVent)] = "Air Vent",
+            [typeof(MyObjectBuilder_AirtightSlideDoor)] = "Slide Door",
+            [typeof(MyObjectBuilder_AirtightHangarDoor)] = "Hangar Door",
+            [typeof(MyObjectBuilder_AdvancedDoor)] = "Advanced Door",
+
+            [typeof(MyObjectBuilder_ShipGrinder)] = "Grinder",
+            [typeof(MyObjectBuilder_ShipWelder)] = "Welder",
+
+            [typeof(MyObjectBuilder_TextPanel)] = "LCD",
+            [typeof(MyObjectBuilder_LCDPanelsBlock)] = "Decorative with LCD",
+        };
+
+        public readonly MyStringId[] ToolbarSlotControlIds = new MyStringId[]
         {
             MyControlsSpace.SLOT0, // do not edit order
             MyControlsSpace.SLOT1,
@@ -58,7 +114,7 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT9,
         };
 
-        public readonly MyJoystickButtonsEnum[] DPAD_NAMES = new MyJoystickButtonsEnum[]
+        public readonly MyJoystickButtonsEnum[] DPadValues = new MyJoystickButtonsEnum[]
         {
             MyJoystickButtonsEnum.JDUp, // do not edit order
             MyJoystickButtonsEnum.JDLeft,
@@ -66,7 +122,7 @@ namespace Digi.BuildInfo
             MyJoystickButtonsEnum.JDDown,
         };
 
-        public readonly char[] DPAD_CHARS = new char[]
+        public readonly char[] DPadIcons = new char[]
         {
             '\ue011', // do not edit order
             '\ue010',
@@ -135,10 +191,9 @@ namespace Digi.BuildInfo
         #region Resource group priorities
         public int ResourceSinkGroups = 0;
         public int ResourceSourceGroups = 0;
-        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority
-                  = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
+        public readonly Dictionary<MyStringHash, ResourceGroupData> ResourceGroupPriority = new Dictionary<MyStringHash, ResourceGroupData>(MyStringHash.Comparer);
 
-        private void ComputeResourceGroups()
+        void ComputeResourceGroups()
         {
             ResourceGroupPriority.Clear();
             ResourceSourceGroups = 0;

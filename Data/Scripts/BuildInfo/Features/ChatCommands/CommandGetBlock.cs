@@ -15,13 +15,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             if(MyAPIGateway.Session?.Player == null)
             {
-                PrintChat(Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
-                return;
-            }
-
-            if(!Constants.BLOCKPICKER_IN_MP && MyAPIGateway.Multiplayer.MultiplayerActive)
-            {
-                PrintChat(Constants.BLOCKPICKER_DISABLED_CHAT, FontsHandler.RedSh);
+                PrintChat(Constants.WarnPlayerIsNull, FontsHandler.RedSh);
                 return;
             }
 

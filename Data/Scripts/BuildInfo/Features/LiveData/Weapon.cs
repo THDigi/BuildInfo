@@ -5,9 +5,11 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
+using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Serialization;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
@@ -15,6 +17,7 @@ namespace Digi.BuildInfo.Features.LiveData
     public class TurretData
     {
         public Vector3 YawLocalPos;
+        public Vector3 YawModelCenter;
         public Vector3 PitchLocalPos;
         public Matrix CameraForSubpart;
         public Matrix CameraForBlock;
@@ -41,16 +44,32 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-            if(BuildInfoMod.Instance.WeaponCoreAPIHandler.Weapons.ContainsKey(def.Id))
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
                 return false; // ignore weaponcore blocks
 
             bool valid = true;
 
             if(block is IMyLargeTurretBase)
             {
+                MyLargeTurretBaseDefinition turretDef = def as MyLargeTurretBaseDefinition;
+
                 if(block is IMyLargeGatlingTurret)
                 {
-                    valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
+                    // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                    if(turretDef?.SubpartPairing != null)
+                    {
+                        // TODO: needs to be better?
+                        string base1 = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Base1"));
+                        string base2 = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Base2"));
+                        string barrel = GetTurretPartName(turretDef.SubpartPairing.Dictionary.GetValueOrDefault("Barrel"));
+                        valid = GetTurretData(block, out Turret, base1, base2, barrel, 0.5f, 0.75f);
+                    }
+                    else
+#endif
+                    {
+                        valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
+                    }
                 }
                 else if(block is IMyLargeMissileTurret)
                 {
@@ -218,6 +237,40 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
+        // from MyLargeGatlingTurret.GetTurretSubpart()
+        static readonly char[] TurretSubpartSeparator = new[] { '/' };
+        static string GetTurretPartName(string data)
+        {
+            string[] parts = data.Split(TurretSubpartSeparator);
+            return parts[parts.Length - 1];
+        }
+
+        //static MyEntitySubpart GetTurretSubpart(MyEntity startingEntity, SerializableDictionary<string, string> pairing, string partName, MyDefinitionId defId)
+        //{
+        //    string value;
+        //    if(!pairing.Dictionary.TryGetValue(partName, out value))
+        //    {
+        //        Log.Error($"Couldn't find {partName} in block {defId.ToString()}");
+        //        return null;
+        //    }
+
+        //    MyEntity returnEnt = startingEntity;
+
+        //    string[] parts = value.Split(TurretSubpartSeparator);
+        //    foreach(string key in parts)
+        //    {
+        //        MyEntitySubpart subpart;
+        //        if(!returnEnt.Subparts.TryGetValue(key, out subpart))
+        //        {
+        //            Log.Error($"Couldn't find {key} subpart for {partName} in block {defId.ToString()}");
+        //            return null;
+        //        }
+
+        //        returnEnt = subpart;
+        //    }
+        //    return returnEnt as MyEntitySubpart;
+        //}
+
         public static bool GetTurretData(IMyCubeBlock block, out TurretData turret, string yawName, string pitchName, string barrelName = null, float camForwardOffset = 0f, float camUpOffset = 0f)
         {
             turret = new TurretData();
@@ -225,13 +278,15 @@ namespace Digi.BuildInfo.Features.LiveData
             MyEntitySubpart subpartYaw;
             if(block.TryGetSubpart(yawName, out subpartYaw))
             {
-                turret.YawLocalPos = Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+                turret.YawLocalPos = (Vector3)Vector3D.Transform(subpartYaw.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+
+                turret.YawModelCenter = (Vector3)Vector3D.Transform(subpartYaw.PositionComp.WorldAABB.Center, block.WorldMatrixInvScaled);
 
                 // avoid y-fighting if it's a multiple of grid size
                 int y = (int)(turret.YawLocalPos.Y * 100);
                 int gs = (int)(block.CubeGrid.GridSize * 100);
                 if(y % gs == 0)
-                    turret.YawLocalPos += new Vector3D(0, 0.05f, 0);
+                    turret.YawLocalPos += new Vector3(0, 0.05f, 0);
             }
             else
             {
@@ -242,7 +297,18 @@ namespace Digi.BuildInfo.Features.LiveData
             MyEntitySubpart subpartPitch;
             if(subpartYaw.TryGetSubpart(pitchName, out subpartPitch))
             {
-                turret.PitchLocalPos = Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+                // interior turret's default subpart orientation is weird... but mods manage to have it not weird and also rotate properly, so I don't even.
+                //if(block is IMyLargeInteriorTurret)
+                //{
+                //    Matrix yawLM = subpartYaw.PositionComp.LocalMatrixRef;
+                //    Matrix pitchLM = subpartPitch.PositionComp.LocalMatrixRef;
+                //    Matrix lm = pitchLM * (MatrixD.CreateRotationX(-MathHelper.PiOver2) * yawLM);
+                //    turret.PitchLocalPos = lm.Translation;
+                //}
+                //else
+                {
+                    turret.PitchLocalPos = (Vector3)Vector3D.Transform(subpartPitch.WorldMatrix.Translation, block.WorldMatrixInvScaled);
+                }
 
                 // FIXME: camera dummy is ignored on engineer turret block?!
 
@@ -250,6 +316,23 @@ namespace Digi.BuildInfo.Features.LiveData
                 Dictionary<string, IMyModelDummy> pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
                 pitchDummies.Clear();
                 ((IMyEntity)subpartPitch).Model.GetDummies(pitchDummies);
+
+                // HACK: backwards compatible
+#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
+                MyLargeTurretBaseDefinition turretDef = block?.SlimBlock?.BlockDefinition as MyLargeTurretBaseDefinition;
+                if(turretDef != null)
+                {
+                    IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault(turretDef.CameraDummyName, null);
+
+                    // from MyLargeTurretBase.GetViewMatrix() (without the invert)
+                    if(cameraDummy != null)
+                        turret.CameraForSubpart = Matrix.Normalize(cameraDummy.Matrix);
+                    else
+                        turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * turretDef.ForwardCameraOffset + Vector3.Up * turretDef.UpCameraOffset);
+
+                    turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
+                }
+#else
                 IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault("camera", null);
 
                 // from MyLargeTurretBase.GetViewMatrix() (without the invert)
@@ -259,6 +342,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
 
                 turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
+#endif
             }
             else
             {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -16,13 +17,12 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
-            // HACK: behavior from MyCollector.LoadDummies()
+            // from MyCollector.LoadDummies()
             foreach(KeyValuePair<string, IMyModelDummy> dummy in dummies)
             {
-                if(dummy.Key.ContainsIgnoreCase("collector"))
+                if(dummy.Key.ContainsIgnoreCase(Hardcoded.Collector_DummyName))
                 {
                     Matrix dummyMatrix = dummy.Value.Matrix;
-
                     boxLocalMatrix = Matrix.Normalize(dummyMatrix);
 
                     // from GetBoxFromMatrix()

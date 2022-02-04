@@ -11,8 +11,10 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
@@ -58,7 +60,7 @@ namespace Digi.BuildInfo.Features.Terminal
         private readonly HashSet<long> longSetTemp = new HashSet<long>();
         private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
 
-        readonly PowerSourcesMonitor PS;
+        readonly ResourceStatsCollector ResourceStats;
 
         private MyResourceSinkComponent _sinkCache = null;
         private MyResourceSourceComponent _sourceCache = null;
@@ -81,7 +83,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
         public TerminalInfo(BuildInfoMod main) : base(main)
         {
-            PS = new PowerSourcesMonitor(Main);
+            ResourceStats = new ResourceStatsCollector(Main);
         }
 
         public override void RegisterComponent()
@@ -94,6 +96,8 @@ namespace Digi.BuildInfo.Features.Terminal
         public override void UnregisterComponent()
         {
             MyAPIGateway.TerminalControls.CustomControlGetter -= TerminalCustomControlGetter;
+
+            ResourceStats?.Dispose();
         }
 
         private void RegisterFormats()
@@ -171,6 +175,7 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_Collector), Format_Collector);
 
             Add(typeof(MyObjectBuilder_Reactor), Format_Reactor);
+            Add(typeof(MyObjectBuilder_BatteryBlock), Format_Battery);
             Add(typeof(MyObjectBuilder_HydrogenEngine), Format_HydrogenEngine);
             Add(typeof(MyObjectBuilder_SolarPanel), Format_SolarPanel);
             Add(typeof(MyObjectBuilder_WindTurbine), Format_WindTurbine);
@@ -281,8 +286,6 @@ namespace Digi.BuildInfo.Features.Terminal
             viewedInTerminal = null;
             currentFormatCall = null;
 
-            PS.Reset();
-
             ClearCaches(); // block changed so caches are no longer relevant
 
             if(newBlock != null)
@@ -298,6 +301,15 @@ namespace Digi.BuildInfo.Features.Terminal
                 newBlock.PropertiesChanged += PropertiesChanged;
 
                 UpdateDetailInfo(force: true);
+
+                if(oldBlock == null || oldBlock.CubeGrid != newBlock.CubeGrid)
+                {
+                    ResourceStats.Reset(oldBlock == null ? "no prev block" : "grid changed");
+                }
+            }
+            else
+            {
+                ResourceStats.Reset("deselected");
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (viewedInTerminal != null));
@@ -401,7 +413,7 @@ namespace Digi.BuildInfo.Features.Terminal
             catch(Exception e)
             {
                 Log.Error(e);
-                info?.Append($"\n[ {Log.ModName} ERROR; SEND GAME LOG! ]");
+                info?.Append($"\n[ {BuildInfoMod.ModName} ERROR; SEND GAME LOG! ]");
             }
         }
 
@@ -469,7 +481,7 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Input: <n> W
 
             // Conveyor sorters can be used as a base block for WeaponCore.
-            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -516,6 +528,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 {
                     info.Append("Status: Connected\n");
                     info.Append("Target: ").Append(connector.OtherConnector.CustomName).Append('\n');
+
+                    if(connector.OtherConnector.GetValue<bool>("Trading")) // HACK: replace with interface property if that ever gets added
+                    {
+                        info.Append("Target is in Trade-Mode").Append('\n');
+                    }
+
                     info.Append("Ship: ").Append(connector.OtherConnector.CubeGrid.CustomName).Append('\n');
                 }
                 else
@@ -532,7 +550,7 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            if(Main.WeaponCoreAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
             {
                 Format_WeaponCore(block, info);
                 return;
@@ -855,248 +873,107 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 MyShipController internalController = (MyShipController)block;
                 MyResourceDistributorComponent distributor = internalController.GridResourceDistributor;
-                MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
-                float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
-
-#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
-                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
-#else
-                float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, internalController.CubeGrid);
-#endif
-
-                PS.Update(block.CubeGrid);
-
-                info.Append("Ship power: ");
-                switch(state)
-                {
-                    case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
-                    case MyResourceStateEnum.Ok: info.Append("OK"); break;
-                    case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
-                    case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
-                }
-                info.Append('\n');
-
-                info.Append("  Total required: ").PowerFormat(required).Append('\n');
-                info.Append("  Total available: ").PowerFormat(available).Append('\n');
-
-                info.Append("  Reactors: ");
-                if(PS.Reactors == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.ReactorsWorking).Append(" of ").Append(PS.Reactors).Append(" working\n");
-
-                info.Append("  Engines: ");
-                if(PS.Engines == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.EnginesWorking).Append(" of ").Append(PS.Engines).Append(" working\n");
-
-                info.Append("  Batteries: ");
-                if(PS.Batteries == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.BatteriesWorking).Append(" of ").Append(PS.Batteries).Append(" working\n");
-
-                info.Append("  Solar Panels: ");
-                if(PS.SolarPanels == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.SolarPanelsWorking).Append(" of ").Append(PS.SolarPanels).Append(" working\n");
-
-                info.Append("  Wind Turbines: ");
-                if(PS.WindTurbines == 0)
-                    info.Append("None\n");
-                else
-                    info.Append(PS.WindTurbinesWorking).Append(" of ").Append(PS.WindTurbines).Append(" working\n");
-
-                if(PS.Other > 0)
-                    info.Append("  Other power sources: ").Append(PS.OthersWorking).Append(" of ").Append(PS.Other).Append(" working\n");
+                Suffix_PowerSources(block, info, distributor);
             }
         }
 
-        class PowerSourcesMonitor
+        void Suffix_PowerSources(IMyTerminalBlock block, StringBuilder info, MyResourceDistributorComponent distributor, bool lite = false)
         {
-            public int Reactors { get; private set; }
-            public int ReactorsWorking { get; private set; }
+#if VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 // HACK: backwards compatible
+            MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId);
+            float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
+            float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId);
+            float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId);
+#else
+            MyCubeGrid internalGrid = (MyCubeGrid)block.CubeGrid;
+            MyResourceStateEnum state = distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float required = distributor.TotalRequiredInputByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float available = distributor.MaxAvailableResourceByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+            float hoursLeft = distributor.RemainingFuelTimeByType(MyResourceDistributorComponent.ElectricityId, grid: internalGrid);
+#endif
 
-            public int Engines { get; private set; }
-            public int EnginesWorking { get; private set; }
+            if(info.Length > 0)
+                info.Append('\n');
 
-            public int Batteries { get; private set; }
-            public int BatteriesWorking { get; private set; }
-
-            public int SolarPanels { get; private set; }
-            public int SolarPanelsWorking { get; private set; }
-
-            public int WindTurbines { get; private set; }
-            public int WindTurbinesWorking { get; private set; }
-
-            public int Other { get; private set; }
-            public int OthersWorking { get; private set; }
-
-            bool FullScan = true;
-            int RecheckAfterTick = 0;
-            IMyCubeGrid LastGrid;
-
-            readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>();
-            readonly BuildInfoMod Main;
-
-            // TODO: use the interface when one is added
-            readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine);
-            readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
-
-            public PowerSourcesMonitor(BuildInfoMod main)
+            info.Append("Ship power: ");
+            switch(state)
             {
-                Main = main;
+                case MyResourceStateEnum.Disconnected: info.Append("Disconnected!"); break;
+                case MyResourceStateEnum.NoPower: info.Append("No power!"); break;
+                case MyResourceStateEnum.Ok: info.Append("OK"); break;
+                case MyResourceStateEnum.OverloadAdaptible: info.Append("Minor Overload!"); break;
+                case MyResourceStateEnum.OverloadBlackout: info.Append("Heavy Overload!"); break;
+                default: info.Append(state.ToString()); break;
             }
+            info.Append('\n');
 
-            public void Reset()
-            {
-                FullScan = true;
-                RecheckAfterTick = 0; // remove cooldown to instantly rescan
-                LastGrid = null;
-                Blocks.Clear();
-            }
+#if true
+            // TODO: find an alternate way of getting power required as it's buggy (usually negative or 0) if there's only solar panels (prob wind turbines too)
+            info.Append("  Total required: ").PowerFormat(required).Append('\n');
+            info.Append("  Total available: ").PowerFormat(available).Append('\n');
+            info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
+#else
+            ResourceStats.Update(block.CubeGrid);
+            ResourceStatsCollector.Stats stats = ResourceStats.ComputedStats;
 
-            public void Update(IMyCubeGrid grid)
-            {
-                if(grid == null || RecheckAfterTick > Main.Tick)
-                    return;
+            //info.Append("  Total required: ").PowerFormat(required).Append('\n');
+            //info.Append("  Total available: ").PowerFormat(available).Append('\n');
 
-                if(grid != LastGrid)
-                {
-                    Reset();
-                    LastGrid = grid;
-                }
+            //info.Append("  Input: ").PowerFormat(PS.PowerInput).Append(" / ").PowerFormat(PS.PowerRequired).Append('\n');
+            //info.Append("  Output: ").PowerFormat(PS.PowerOutput).Append(" / ").PowerFormat(PS.PowerMaxOutput).Append('\n');
 
-                RecheckAfterTick = Constants.TICKS_PER_SECOND * 3;
+            info.Append("  Total required: ").PowerFormat(stats.PowerRequired).Append('\n');
+            info.Append("  Total available: ").PowerFormat(stats.PowerOutputCapacity).Append('\n');
 
-                if(FullScan)
-                {
-                    RefreshEntirely(grid);
-                }
-                else
-                {
-                    RefreshWorking(grid);
-                }
-            }
 
-            void RefreshEntirely(IMyCubeGrid grid)
-            {
-                Reactors = 0;
-                ReactorsWorking = 0;
-                Engines = 0;
-                EnginesWorking = 0;
-                Batteries = 0;
-                BatteriesWorking = 0;
-                SolarPanels = 0;
-                SolarPanelsWorking = 0;
-                WindTurbines = 0;
-                WindTurbinesWorking = 0;
-                Other = 0;
-                OthersWorking = 0;
+            info.Append("  Full: ").Append(ResourceStats.RefreshFullMs.ToString("0.##########")).Append(" ms").Append('\n'); 
+            info.Append("  Working: ").Append(ResourceStats.RefreshWorkingMs.ToString("0.##########")).Append(" ms").Append('\n');
+            info.Append($"  Blocks: {ResourceStats.Blocks.Count}\n");
 
-                Blocks.Clear();
-                MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid)?.GetBlocksOfType(Blocks, ComputeBlock);
-            }
+            info.Append("  Time left: ").TimeFormat(hoursLeft * 60 * 60).Append('\n');
 
-            bool ComputeBlock(IMyTerminalBlock block)
-            {
-                MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
-                if(source == null)
-                    return false;
+            if(lite)
+                return;
 
-                for(int i = 0; i < source.ResourceTypes.Count; i++)
-                {
-                    MyDefinitionId res = source.ResourceTypes[i];
-                    if(res == MyResourceDistributorComponent.ElectricityId)
-                    {
-                        bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
+            //info.Append("  Consumers: ");
+            //if(ResourceStats.Consumers == 0)
+            //    info.Append("None\n");
+            //else
+            //    info.Append(ResourceStats.ConsumersWorking).Append(" of ").Append(ResourceStats.Consumers).Append(" working\n");
 
-                        if(block is IMyReactor)
-                        {
-                            Reactors++;
-                            if(working)
-                                ReactorsWorking++;
-                        }
-                        else if(block.BlockDefinition.TypeId == HydrogenEngineType)
-                        {
-                            Engines++;
-                            if(working)
-                                EnginesWorking++;
-                        }
-                        else if(block is IMyBatteryBlock)
-                        {
-                            Batteries++;
-                            if(working)
-                                BatteriesWorking++;
-                        }
-                        else if(block is IMySolarPanel)
-                        {
-                            SolarPanels++;
-                            if(working)
-                                SolarPanelsWorking++;
-                        }
-                        else if(block.BlockDefinition.TypeId == WindTurbineType)
-                        {
-                            WindTurbines++;
-                            if(working)
-                                WindTurbinesWorking++;
-                        }
-                        else
-                        {
-                            Other++;
-                            if(working)
-                                OthersWorking++;
-                        }
+            info.Append("  Reactors: ");
+            if(stats.Reactors == 0)
+                info.Append("None\n");
+            else
+                info.Append(stats.ReactorsWorking).Append(" of ").Append(stats.Reactors).Append(" working\n");
 
-                        return true;
-                    }
-                }
+            info.Append("  Engines: ");
+            if(stats.Engines == 0)
+                info.Append("None\n");
+            else
+                info.Append(stats.EnginesWorking).Append(" of ").Append(stats.Engines).Append(" working\n");
 
-                return false;
-            }
+            info.Append("  Batteries: ");
+            if(stats.Batteries == 0)
+                info.Append("None\n");
+            else
+                info.Append(stats.BatteriesWorking).Append(" of ").Append(stats.Batteries).Append(" working\n");
 
-            void RefreshWorking(IMyCubeGrid grid)
-            {
-                ReactorsWorking = 0;
-                EnginesWorking = 0;
-                BatteriesWorking = 0;
-                SolarPanelsWorking = 0;
-                WindTurbinesWorking = 0;
-                OthersWorking = 0;
+            info.Append("  Solar Panels: ");
+            if(stats.SolarPanels == 0)
+                info.Append("None\n");
+            else
+                info.Append(stats.SolarPanelsWorking).Append(" of ").Append(stats.SolarPanels).Append(" working\n");
 
-                for(int i = (Blocks.Count - 1); i >= 0; i--)
-                {
-                    IMyTerminalBlock block = Blocks[i];
-                    if(block.MarkedForClose)
-                    {
-                        Blocks.RemoveAtFast(i);
-                        continue;
-                    }
+            info.Append("  Wind Turbines: ");
+            if(stats.WindTurbines == 0)
+                info.Append("None\n");
+            else
+                info.Append(stats.WindTurbinesWorking).Append(" of ").Append(stats.WindTurbines).Append(" working\n");
 
-                    MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
-                    if(source == null)
-                        continue;
-
-                    bool working = (source.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId) > 0);
-                    if(!working)
-                        continue;
-
-                    if(block is IMyReactor)
-                        ReactorsWorking++;
-                    else if(block.BlockDefinition.TypeId == HydrogenEngineType)
-                        EnginesWorking++;
-                    else if(block is IMyBatteryBlock)
-                        BatteriesWorking++;
-                    else if(block is IMySolarPanel)
-                        SolarPanelsWorking++;
-                    else if(block.BlockDefinition.TypeId == WindTurbineType)
-                        WindTurbinesWorking++;
-                    else
-                        OthersWorking++;
-                }
-            }
+            if(stats.OtherProducers > 0)
+                info.Append("  Other power sources: ").Append(stats.OtherProducersWorking).Append(" of ").Append(stats.OtherProducers).Append(" working\n");
+#endif
         }
         #endregion ShipController extra stuff
 
@@ -1134,6 +1011,39 @@ namespace Digi.BuildInfo.Features.Terminal
                 else
                     info.Append("(unknown)\n");
 
+                MyMotorStatorDefinition statorDef = block.SlimBlock.BlockDefinition as MyMotorStatorDefinition;
+                if(statorDef != null)
+                {
+                    bool isSmall = (block.CubeGrid.GridSizeEnum == MyCubeSize.Small);
+                    float minDisplacement = (isSmall ? statorDef.RotorDisplacementMinSmall : statorDef.RotorDisplacementMin);
+                    float maxDisplacement = (isSmall ? statorDef.RotorDisplacementMaxSmall : statorDef.RotorDisplacementMax);
+
+                    if(minDisplacement < maxDisplacement)
+                    {
+                        BData_Motor data = Main.LiveDataHandler.Get<BData_Motor>(statorDef);
+                        if(data != null)
+                        {
+                            float displacement = minDisplacement;
+                            float totalTravel = (maxDisplacement - minDisplacement);
+
+                            MatrixD topMatrix = data.GetRotorMatrix(block.LocalMatrix, block.WorldMatrix, block.CubeGrid.WorldMatrix, displacement);
+
+                            float aligned = GetNearestGridAlign(block, topMatrix, 0, totalTravel);
+
+                            info.Label("Grid-aligned displacement");
+                            if(aligned < 0 || aligned > totalTravel)
+                            {
+                                info.Append("Impossible").Append('\n');
+                            }
+                            else
+                            {
+                                aligned = minDisplacement + aligned;
+                                info.RoundedNumber(aligned, 5).Append("m\n");
+                            }
+                        }
+                    }
+                }
+
                 if(Main.Config.InternalInfo.Value)
                 {
                     info.Append("\nAPI Angle: ").RoundedNumber(rotorStator.Angle, 2).Append(" radians\n");
@@ -1149,11 +1059,51 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_InputPower(Sink);
 
+            IMyPistonBase piston = block as IMyPistonBase;
+            if(piston == null)
+                return;
+
+            MyPistonBaseDefinition def = block.SlimBlock.BlockDefinition as MyPistonBaseDefinition;
+            if(def == null)
+                return;
+
+            BData_Piston data = Main.LiveDataHandler.Get<BData_Piston>(def);
+            if(data != null)
+            {
+                MatrixD topMatrix = data.TopLocalMatrix * Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
+
+                float minAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MinLimit);
+                float maxAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MaxLimit);
+
+                info.Append("Nearest grid-aligned limits:\n");
+                info.Append("  Min: ").RoundedNumber(minAligned, 5).Append("m\n");
+                info.Append("  Max: ").RoundedNumber(maxAligned, 5).Append("m\n");
+            }
+
             if(Main.Config.InternalInfo.Value)
             {
-                IMyPistonBase piston = (IMyPistonBase)block;
                 info.Append("API Position: ").DistanceFormat(piston.CurrentPosition, 5).Append('\n');
             }
+        }
+
+        static float GetNearestGridAlign(IMyTerminalBlock block, MatrixD topMatrix, float minOffset, float currentOffset)
+        {
+            float nearest = 0;
+            float cellOffset = 0;
+            Vector3D startVec = topMatrix.Translation + topMatrix.Up * minOffset;
+
+            do
+            {
+                Vector3D limitVec = topMatrix.Translation + topMatrix.Up * (currentOffset + cellOffset);
+                Vector3D alignedVec = block.CubeGrid.GridIntegerToWorld(block.CubeGrid.WorldToGridInteger(limitVec));
+
+                nearest = (float)Vector3D.Dot(topMatrix.Up, (alignedVec - startVec));
+
+                cellOffset += block.CubeGrid.GridSize;
+            }
+            while(nearest < 0);
+
+            return nearest;
         }
 
         void Format_AirVent(IMyTerminalBlock block, StringBuilder info)
@@ -1203,7 +1153,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     info.Append("Current Usage: ").MassFormat(perSec).Append("/s\n");
                     info.Append("Time Left: ").TimeFormat(seconds).Append('\n');
-                    info.Append("Uses Fuel: ").IdTypeSubtypeFormat(fuel.FuelId).Append('\n');
+                    info.Append("Uses Fuel: ").ItemName(fuel.FuelId).Append('\n');
                 }
                 else
                 {
@@ -1212,7 +1162,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     foreach(MyReactorDefinition.FuelInfo fuel in reactorDef.FuelInfos)
                     {
-                        tmp.Append("  ").IdTypeSubtypeFormat(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
+                        tmp.Append("  ").ItemName(fuel.FuelId).Append(" (").MassFormat(fuel.ConsumptionPerSecond_Items).Append("/s)\n");
 
                         perSec += ratio * fuel.ConsumptionPerSecond_Items;
                     }
@@ -1232,6 +1182,23 @@ namespace Digi.BuildInfo.Features.Terminal
                 maxVolume = (reactorDef.InventoryMaxVolume > 0 ? reactorDef.InventoryMaxVolume : reactorDef.InventorySize.Volume);
 
             info.DetailInfo_Inventory(Inv, maxVolume);
+
+            Suffix_PowerSourceGridStats(block, info);
+        }
+
+        void Format_Battery(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.199.025:
+            //      Type: <BlockDefName>
+            //      Max Output: <n> W
+            //      Max Required Input: <n> W
+            //      Max Stored Power: <n> Wh
+            //      Current Input: <n> W
+            //      Current Output: <n> W
+            //      Stored Power: <n> Wh
+            //      Fully depleted/recharged in: <time>
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_HydrogenEngine(IMyTerminalBlock block, StringBuilder info)
@@ -1243,6 +1210,8 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Filled: 0.0% (0L/500000L)
 
             info.DetailInfo_InputHydrogen(Sink);
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_WindTurbine(IMyTerminalBlock block, StringBuilder info)
@@ -1273,6 +1242,8 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("N/A");
             }
+
+            Suffix_PowerSourceGridStats(block, info);
         }
 
         void Format_SolarPanel(IMyTerminalBlock block, StringBuilder info)
@@ -1284,6 +1255,17 @@ namespace Digi.BuildInfo.Features.Terminal
 
             MySolarPanelDefinition solarDef = (MySolarPanelDefinition)block.SlimBlock.BlockDefinition;
             info.Append("Max Possible Output: ").PowerFormat(solarDef.MaxPowerOutput).Append('\n');
+
+            Suffix_PowerSourceGridStats(block, info);
+        }
+
+        MyShipController _fakeController = new MyShipController();
+        void Suffix_PowerSourceGridStats(IMyTerminalBlock block, StringBuilder info)
+        {
+            // HACK: trickery to get resource distributor
+            _fakeController.SlimBlock = Utils.CastHax(_fakeController.SlimBlock, block.SlimBlock);
+            MyResourceDistributorComponent distributor = _fakeController.GridResourceDistributor;
+            Suffix_PowerSources(block, info, distributor, lite: true);
         }
 
         //void Format_Gyro(IMyTerminalBlock block, StringBuilder info)
@@ -1456,6 +1438,32 @@ namespace Digi.BuildInfo.Features.Terminal
             info.DetailInfo_CurrentPowerUsage(Sink);
             info.DetailInfo_InputGasList(Sink);
             info.DetailInfo_OutputGasList(Source);
+
+            IMyGasTank tank = block as IMyGasTank;
+            MyGasTankDefinition tankDef = block.SlimBlock.BlockDefinition as MyGasTankDefinition;
+            if(tank != null && tank.FilledRatio < 1 && tankDef != null && Sink != null && Source != null)
+            {
+                float input = Sink.CurrentInputByType(tankDef.StoredGasId);
+                float output = Source.CurrentOutputByType(tankDef.StoredGasId);
+                double filledGas = tank.FilledRatio * tank.Capacity;
+
+                if(input == output)
+                {
+                }
+                else if(input > output)
+                {
+                    float filling = (input - output);
+                    double remainingGas = tank.Capacity - filledGas;
+                    float timeToFill = (float)(remainingGas / filling);
+                    info.Append("Filled in: ").TimeFormat(timeToFill);
+                }
+                else
+                {
+                    float draining = (output - input);
+                    float timeToEmpty = (float)(filledGas / draining);
+                    info.Append("Empty in: ").TimeFormat(timeToEmpty);
+                }
+            }
         }
 
         void Format_MedicalRoom(IMyTerminalBlock block, StringBuilder info)

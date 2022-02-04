@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features
             if(Main.Tick > jumpsAt)
                 return -1;
 
-            return (jumpsAt - Main.Tick) / (float)Constants.TICKS_PER_SECOND;
+            return (jumpsAt - Main.Tick) / (float)Constants.TicksPerSecond;
         }
 
         public override void RegisterComponent()
@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features
 
         void JumpCountdownStart(long identityId, string gridName, long gridEntityId)
         {
-            int jumpsAtTick = Main.Tick + (int)(Hardcoded.JumpDriveJumpDelay * Constants.TICKS_PER_SECOND);
+            int jumpsAtTick = Main.Tick + (int)(Hardcoded.JumpDriveJumpDelay * Constants.TicksPerSecond);
             JumpStartAt[gridEntityId] = jumpsAtTick;
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 

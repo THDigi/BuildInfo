@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -18,8 +19,20 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
-        BData_Base DataCache;
-        MyDefinitionId DataCacheForId;
+        public event Action<Type, BData_Base> DataGenerated;
+
+        Type ConveyorEndpointInterface = null;
+        Type ConveyorSegmentInterface = null;
+
+        readonly Cache DefaultCache = new Cache();
+
+        readonly BData_Base SlimBlockData = new BData_Base();
+
+        public class Cache
+        {
+            public BData_Base Data;
+            public MyDefinitionBase ForDef;
+        }
 
         readonly HashSet<MyDefinitionId> BlockIdsSpawned = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         readonly Dictionary<MyObjectBuilderType, Func<BData_Base>> BDataInstancer = new Dictionary<MyObjectBuilderType, Func<BData_Base>>();
@@ -28,12 +41,25 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             AddType<BData_Collector>(typeof(MyObjectBuilder_Collector));
 
+            AddType<BData_ButtonPanel>(typeof(MyObjectBuilder_ButtonPanel));
+
             AddType<BData_LandingGear>(typeof(MyObjectBuilder_LandingGear));
 
             AddType<BData_Connector>(typeof(MyObjectBuilder_ShipConnector));
 
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipWelder));
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipGrinder));
+
+            AddType<BData_Piston>(typeof(MyObjectBuilder_PistonBase));
+            AddType<BData_Piston>(typeof(MyObjectBuilder_ExtendedPistonBase));
+
+            AddType<BData_Motor>(typeof(MyObjectBuilder_MotorStator));
+            AddType<BData_Motor>(typeof(MyObjectBuilder_MotorAdvancedStator));
+
+            AddType<BData_Suspension>(typeof(MyObjectBuilder_MotorSuspension));
+
+            AddType<BData_Wheel>(typeof(MyObjectBuilder_RealWheel));
+            AddType<BData_Wheel>(typeof(MyObjectBuilder_Wheel));
 
             AddType<BData_Thrust>(typeof(MyObjectBuilder_Thrust));
 
@@ -44,33 +70,38 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeMissileTurret));
             AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
 
-            AddType<BData_TargetDummy>(Constants.TargetDummyType);
+            AddType<BData_TargetDummy>(Hardcoded.TargetDummyType);
 
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
-            // every other block type is going to use BData_Base
+            AddType<BData_AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
 
+            // every other block type is going to use BData_Base
             Main.BlockMonitor.BlockAdded += BlockMonitor_BlockAdded;
         }
 
         public override void RegisterComponent()
         {
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
         }
 
         public override void UnregisterComponent()
         {
             Main.BlockMonitor.BlockAdded -= BlockMonitor_BlockAdded;
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
-        public T Get<T>(MyCubeBlockDefinition def) where T : BData_Base
+        public T Get<T>(MyCubeBlockDefinition def, Cache cache = null) where T : BData_Base
         {
+            if(typeof(T) == typeof(BData_Base) && string.IsNullOrEmpty(def.Model))
+                return (T)SlimBlockData;
+
             T data = null;
 
-            if(DataCache != null && def.Id == DataCacheForId)
+            if(cache == null)
+                cache = DefaultCache;
+
+            if(cache.ForDef == def)
             {
-                data = DataCache as T;
+                data = cache.Data as T;
                 if(data != null)
                     return data;
             }
@@ -89,21 +120,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 data = null; // will work next time
             }
 
-            DataCacheForId = def.Id;
-            DataCache = data;
+            cache.Data = data;
+            cache.ForDef = def;
             return data;
-        }
-
-        public void InvalidateCache()
-        {
-            DataCache = null;
-            DataCacheForId = default(MyDefinitionId);
-        }
-
-        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
-        {
-            DataCache = null;
-            DataCacheForId = default(MyDefinitionId);
         }
 
         void AddType<T>(MyObjectBuilderType blockType) where T : BData_Base, new()
@@ -130,9 +149,21 @@ namespace Digi.BuildInfo.Features.LiveData
             MyCubeBlock internalBlock = (MyCubeBlock)block;
             if(internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
             {
-                // instance special type if available, otherwise the base one.
-                BData_Base data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
-                success = data.CheckAndAdd(block);
+                BData_Base data = null;
+                try
+                {
+                    // instance special type if available, otherwise the base one.
+                    data = BDataInstancer.GetValueOrDefault(defId.TypeId, null)?.Invoke() ?? new BData_Base();
+                    success = data.CheckAndAdd(block);
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error in BData for {defId.ToString()} :: {e.Message}\n{e.StackTrace}");
+                    success = false;
+                }
+
+                if(success)
+                    DataGenerated?.Invoke(defId.TypeId, data);
             }
 
             if(success && Main.TextGeneration != null)
@@ -143,9 +174,6 @@ namespace Digi.BuildInfo.Features.LiveData
                 Main.TextGeneration.LastDefId = default(MyDefinitionId);
             }
         }
-
-        Type ConveyorEndpointInterface;
-        Type ConveyorSegmentInterface;
 
         void CheckConveyorSupport(IMyCubeBlock block)
         {

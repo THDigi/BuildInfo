@@ -53,6 +53,7 @@ namespace Digi.BuildInfo.Features.LiveData
             //MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
 
             MyCubeGrid grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
+            grid.DisplayName = grid.Name;
             grid.IsPreview = true;
             grid.Save = false;
             grid.Flags = EntityFlags.None;

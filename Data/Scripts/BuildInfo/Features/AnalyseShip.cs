@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features
             {
                 if(MyAPIGateway.Session?.Player == null)
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, Constants.PLAYER_IS_NULL, FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
                     return true; // must be true to avoid showing other messages
                 }
 
@@ -359,11 +359,11 @@ namespace Digi.BuildInfo.Features
                         writer.Write(shipInfoText);
                         writer.Flush();
 
-                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Exported ship info to: %appdata%/SpaceEngineers/Storage/{modStorageName}/{fileName}", FontsHandler.GreenSh);
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Exported ship info to: %appdata%/SpaceEngineers/Storage/{modStorageName}/{fileName}", FontsHandler.GreenSh);
                     }
                     catch(Exception e)
                     {
-                        Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Failed to export ship info! Exception: {e.Message}; see SE log for details.", FontsHandler.RedSh);
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Failed to export ship info! Exception: {e.Message}; see SE log for details.", FontsHandler.RedSh);
                         Log.Error(e);
                     }
 

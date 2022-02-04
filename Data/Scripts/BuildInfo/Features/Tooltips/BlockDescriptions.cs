@@ -17,6 +17,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         StringBuilder SB = new StringBuilder(512);
 
+        // HACK: fill in args using the help of game code instead of cloning it.
+        MyHudBlockInfo DescriptionParser = new MyHudBlockInfo();
+
         void DisposeTempObjects()
         {
         }
@@ -75,10 +78,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(blockDef.DescriptionArgs != null)
             {
-                // HACK: fill in args using the help of game code instead of cloning it.
                 // also fixes description in G-menu not getting any replacements.
-                MyHud.BlockInfo.SetContextHelp(blockDef);
-                SB.Append(MyHud.BlockInfo.ContextHelp);
+                DescriptionParser.SetContextHelp(blockDef);
+                SB.Append(DescriptionParser.ContextHelp);
                 blockDef.DescriptionArgs = null;
             }
             else
@@ -101,18 +103,36 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
 
             #region internal info
-            const string IdLabel = "\nId: ";
+            const string IdLabel = "\nId:\u00A0"; // non-space space to not count as whitespace for splitting the words.
+            const string IdTypeLabel = "\nIdType:\u00A0";
+            const string IdSubtypeLabel = "\nIdSub:\u00A0";
 
             if(SB.Length > 0)
             {
                 SB.RemoveLineStartsWith(IdLabel);
+                SB.RemoveLineStartsWith(IdTypeLabel);
+                SB.RemoveLineStartsWith(IdSubtypeLabel);
             }
 
             if(Main.Config.InternalInfo.Value)
             {
-                int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = blockDef.Id.TypeId.ToString();
-                SB.Append(IdLabel).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(blockDef.Id.SubtypeName);
+                string subtypeIdString = blockDef.Id.SubtypeName;
+
+                const int obPrefixLen = 16; // "MyObjectBuilder_".Length;
+                int shortTypeIdLength = (typeIdString.Length - obPrefixLen);
+
+                const int MaxWidth = 32;
+                int totalWidth = shortTypeIdLength + 1 + subtypeIdString.Length;
+                if(totalWidth > MaxWidth)
+                {
+                    SB.Append(IdTypeLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength);
+                    SB.Append(IdSubtypeLabel).Append(subtypeIdString);
+                }
+                else
+                {
+                    SB.Append(IdLabel).Append(typeIdString, obPrefixLen, shortTypeIdLength).Append("/").Append(subtypeIdString);
+                }
             }
             #endregion internal info
 
@@ -157,6 +177,10 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
 
             TooltipHandler.AppendModInfo(s, blockDef);
+
+            // escape text yellowifying markers
+            s.Replace("[", "[[");
+            s.Replace("]", "]]");
 
             s.TrimEndWhitespace();
         }

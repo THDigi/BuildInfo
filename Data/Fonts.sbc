@@ -11,17 +11,20 @@
         <SubtypeId>Blue</SubtypeId>
       </Id>
       <ColorMask>
-        <X>255</X>
-        <Y>255</Y>
-        <Z>255</Z>
+        <X>220</X>
+        <Y>244</Y>
+        <Z>252</Z>
       </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
+      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
       <LanguageSpecificDefinitions>
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>
@@ -30,6 +33,26 @@
     <!--
       Custom versions of existing fonts to have more colors and use shadowed version.
     -->
+    <Font>
+      <Id>
+        <TypeId>FontDefinition</TypeId>
+        <SubtypeId>BI_SEOutlined</SubtypeId>
+      </Id>
+      <Public>false</Public>
+      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
+      <LanguageSpecificDefinitions>
+        <LanguageDefinition Language="ChineseChina">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
+      </LanguageSpecificDefinitions>
+    </Font>
     <Font>
       <Id>
         <TypeId>FontDefinition</TypeId>
@@ -48,6 +71,11 @@
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>
@@ -72,6 +100,11 @@
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
           </Resources>
         </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
       </LanguageSpecificDefinitions>
     </Font>
     <Font>
@@ -94,6 +127,11 @@
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
           </Resources>
         </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
+          </Resources>
+        </LanguageDefinition>
       </LanguageSpecificDefinitions>
     </Font>
     <Font>
@@ -114,6 +152,11 @@
         <LanguageDefinition Language="ChineseChina">
           <Resources>
             <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
+          </Resources>
+        </LanguageDefinition>
+        <LanguageDefinition Language="Japanese">
+          <Resources>
+            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
           </Resources>
         </LanguageDefinition>
       </LanguageSpecificDefinitions>

@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.Terminal;
@@ -20,75 +21,83 @@ namespace Digi.BuildInfo
 {
     public class BuildInfoMod : ModBase<BuildInfoMod>
     {
-        public const string MOD_NAME = "Build Info";
+        public const string ModName = "Build Info";
 
         // Utils
-        public Caches Caches;
-        public Constants Constants;
-        public DrawUtils DrawUtils;
-        public VanillaDefinitions VanillaDefinitions;
+        public readonly Caches Caches;
+        public readonly Constants Constants;
+        public readonly DrawUtils DrawUtils;
+        public readonly VanillaDefinitions VanillaDefinitions;
 
         // Systems
-        public TextAPI TextAPI;
-        public GameConfig GameConfig;
-        public GUIMonitor GUIMonitor;
-        public BlockMonitor BlockMonitor;
-        public InputLibHandler InputLibHandler;
-        public EquipmentMonitor EquipmentMonitor;
-        public WeaponCoreAPIHandler WeaponCoreAPIHandler;
-        public WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
-        public DefenseShieldsDetector DefenseShieldsDetector;
-        public RichHudFrameworkHandler RichHud;
+        public readonly TextAPI TextAPI;
+        public readonly GameConfig GameConfig;
+        public readonly GUIMonitor GUIMonitor;
+        public readonly BlockMonitor BlockMonitor;
+        public readonly InputLibHandler InputLibHandler;
+        public readonly EquipmentMonitor EquipmentMonitor;
+        public readonly GameBlockInfoHandler GameBlockInfoHandler;
+        public readonly CoreSystemsAPIHandler CoreSystemsAPIHandler;
+        public readonly WhipWeaponFrameworkAPI WhipWeaponFrameworkAPI;
+        public readonly DefenseShieldsDetector DefenseShieldsDetector;
+        public readonly RichHudFrameworkHandler RichHud;
+        public readonly ModDetector ModDetector;
 
         // Features
-        public Config Config;
-        public LegacyConfig LegacyConfig;
-        public FontsHandler FontsHandler;
-        public ConfigMenuHandler ConfigMenuHandler;
-        public JumpDriveMonitor JumpDriveMonitor;
-        public LeakInfo LeakInfo;
-        public Overlays Overlays;
-        public LockOverlay LockOverlay;
-        public PickBlock PickBlock;
-        public QuickMenu QuickMenu;
-        public AnalyseShip AnalyseShip;
-        public ChatCommandHandler ChatCommandHandler;
-        public ReloadTracking ReloadTracking;
-        public TerminalInfo TerminalInfo;
-        public DetailInfoButtons DetailInfoButtons;
-        public MultiDetailInfo MultiDetailInfo;
-        public TextGeneration TextGeneration;
-        public LiveDataHandler LiveDataHandler;
-        public TurretHUD TurretHUD;
-        public PlacementDistance PlacementDistance;
-        public CubeBuilderAdditions CubeBuilderAdditions;
-        public BlockInfoAdditions BlockInfoAdditions;
-        public ProjectedBlockInfo ProjectedBlockInfo;
-        public OverrideToolSelectionDraw OverrideToolSelectionDraw;
-        public RelativeDampenerInfo RelativeDampenerInfo;
-        public ShipToolInventoryBar ShipToolInventoryBar;
-        public BlockInfoScrollComponents BlockInfoScrollComponents;
-        public WhatsNew WhatsNew;
-        public TooltipHandler TooltipHandler;
-        public BlueprintTooltips BlueprintTooltips;
-        public BlockDescriptions BlockDescriptions;
-        public ItemTooltips ItemTooltips;
-        public ToolbarOverride ToolbarOverride;
-        public ToolbarMonitor ToolbarMonitor;
-        public ToolbarCustomLabels ToolbarCustomLabels;
-        public ToolbarStatusProcessor ToolbarStatusProcessor;
-        public ToolbarLabelRender ToolbarLabelRender;
-        public GridMassCompute GridMassCompute;
-        public PBMonitor PBMonitor;
-        public InterModAPI InterModAPI;
-        public DebugEvents DebugEvents;
-        public DebugLog DebugLog;
+        public readonly Config Config;
+        public readonly FontsHandler FontsHandler;
+        public readonly ConfigMenuHandler ConfigMenuHandler;
+        public readonly JumpDriveMonitor JumpDriveMonitor;
+        public readonly ProjectedBlockInfo ProjectedBlockInfo;
+        public readonly LeakInfo LeakInfo;
+        public readonly Overlays Overlays;
+        public readonly SpecializedOverlays SpecializedOverlays;
+        public readonly LockOverlay LockOverlay;
+        public readonly ModelPreview ModelPreview;
+        public readonly PickBlock PickBlock;
+        public readonly QuickMenu QuickMenu;
+        public readonly AnalyseShip AnalyseShip;
+        public readonly ChatCommandHandler ChatCommandHandler;
+        public readonly ReloadTracking ReloadTracking;
+        public readonly TerminalInfo TerminalInfo;
+        public readonly DetailInfoButtons DetailInfoButtons;
+        public readonly MultiDetailInfo MultiDetailInfo;
+        public readonly TextGeneration TextGeneration;
+        public readonly CrosshairMessages CrosshairMessages;
+        public readonly LiveDataHandler LiveDataHandler;
+        public readonly TurretHUD TurretHUD;
+        public readonly PlacementDistance PlacementDistance;
+        public readonly CubeBuilderAdditions CubeBuilderAdditions;
+        public readonly BlockInfoAdditions BlockInfoAdditions;
+        public readonly OverrideToolSelectionDraw OverrideToolSelectionDraw;
+        public readonly RelativeDampenerInfo RelativeDampenerInfo;
+        public readonly ShipToolInventoryBar ShipToolInventoryBar;
+        public readonly BlockInfoScrollComponents BlockInfoScrollComponents;
+        public readonly WhatsNew WhatsNew;
+        public readonly TooltipHandler TooltipHandler;
+        public readonly BlueprintTooltips BlueprintTooltips;
+        public readonly BlockDescriptions BlockDescriptions;
+        public readonly ItemTooltips ItemTooltips;
+        public readonly Inventories Inventories;
+        public readonly ToolbarOverride ToolbarOverride;
+        public readonly ToolbarMonitor ToolbarMonitor;
+        public readonly ToolbarCustomLabels ToolbarCustomLabels;
+        public readonly ToolbarStatusProcessor ToolbarStatusProcessor;
+        public readonly ToolbarLabelRender ToolbarLabelRender;
+        public readonly EventToolbarMonitor EventToolbarMonitor;
+        public readonly EventToolbarInfo EventToolbarInfo;
+        public readonly GridMassCompute GridMassCompute;
+        public readonly PBMonitor PBMonitor;
+        public readonly TopPartColor TopPartColor;
+        public readonly InterModAPI InterModAPI;
+        public readonly DebugEvents DebugEvents;
+        public readonly DebugLog DebugLog;
 
         public static bool IsDevMod { get; private set; } = false;
 
-        public BuildInfoMod(BuildInfo_GameSession session) : base(MOD_NAME, session, MyUpdateOrder.AfterSimulation)
+        public BuildInfoMod(BuildInfo_GameSession session) : base(ModName, session, MyUpdateOrder.AfterSimulation)
         {
-            IsDevMod = (Log.WorkshopId == 0 && session?.ModContext?.ModId == "BuildInfo.dev");
+            IsDevMod = (IsLocalMod && session?.ModContext?.ModId == "BuildInfo.dev");
 
             // Utils
             Caches = new Caches(this);
@@ -103,21 +112,24 @@ namespace Digi.BuildInfo
             GUIMonitor = new GUIMonitor(this);
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
-            WeaponCoreAPIHandler = new WeaponCoreAPIHandler(this);
+            GameBlockInfoHandler = new GameBlockInfoHandler(this);
+            CoreSystemsAPIHandler = new CoreSystemsAPIHandler(this);
             WhipWeaponFrameworkAPI = new WhipWeaponFrameworkAPI(this);
             DefenseShieldsDetector = new DefenseShieldsDetector(this);
             RichHud = new RichHudFrameworkHandler(this);
+            ModDetector = new ModDetector(this);
 
             // Features
             Config = new Config(this);
-            LegacyConfig = new LegacyConfig(this);
             FontsHandler = new FontsHandler(this);
             ConfigMenuHandler = new ConfigMenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             Overlays = new Overlays(this);
+            SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);
+            ModelPreview = new ModelPreview(this);
             LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
@@ -128,6 +140,7 @@ namespace Digi.BuildInfo
             DetailInfoButtons = new DetailInfoButtons(this);
             MultiDetailInfo = new MultiDetailInfo(this);
             TextGeneration = new TextGeneration(this);
+            CrosshairMessages = new CrosshairMessages(this);
             LiveDataHandler = new LiveDataHandler(this);
             PlacementDistance = new PlacementDistance(this);
             CubeBuilderAdditions = new CubeBuilderAdditions(this);
@@ -141,13 +154,17 @@ namespace Digi.BuildInfo
             BlueprintTooltips = new BlueprintTooltips(this);
             BlockDescriptions = new BlockDescriptions(this);
             ItemTooltips = new ItemTooltips(this);
+            Inventories = new Inventories(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);
             ToolbarCustomLabels = new ToolbarCustomLabels(this);
             ToolbarStatusProcessor = new ToolbarStatusProcessor(this);
             ToolbarLabelRender = new ToolbarLabelRender(this);
+            EventToolbarMonitor = new EventToolbarMonitor(this);
+            EventToolbarInfo = new EventToolbarInfo(this);
             GridMassCompute = new GridMassCompute(this);
             PBMonitor = new PBMonitor(this);
+            TopPartColor = new TopPartColor(this);
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);

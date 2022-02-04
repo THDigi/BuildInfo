@@ -3,6 +3,7 @@ using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -13,21 +14,30 @@ namespace Digi.BuildInfo.Features.Overlays
     {
         public IMySlimBlock LockedOnBlock { get; private set; }
         public MyCubeBlockDefinition LockedOnBlockDef { get; private set; }
+        public event Action<IMySlimBlock> LockedOnBlockChanged;
+
         private IMyHudNotification Notification;
 
         const string NotifyPrefix = "Overlay Lock-On: ";
 
         public LockOverlay(BuildInfoMod main) : base(main)
         {
-            UpdateMethods = UpdateFlags.UPDATE_INPUT;
         }
 
         public override void RegisterComponent()
         {
+            Main.EquipmentMonitor.ToolChanged += ToolChanged;
         }
 
         public override void UnregisterComponent()
         {
+            Main.EquipmentMonitor.ToolChanged -= ToolChanged;
+        }
+
+        void ToolChanged(MyDefinitionId toolDefId)
+        {
+            EquipmentMonitor eq = Main.EquipmentMonitor;
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (LockedOnBlock != null || eq.IsCubeBuilder || eq.IsAnyWelder || eq.IsAnyGrinder));
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
@@ -35,44 +45,40 @@ namespace Digi.BuildInfo.Features.Overlays
             if(paused || inMenu)
                 return;
 
-            EquipmentMonitor eq = Main.EquipmentMonitor;
-            if((LockedOnBlock != null || eq.IsAnyWelder || eq.IsAnyGrinder) && Main.Config.LockOverlayBind.Value.IsJustPressed())
+            if(Main.Config.LockOverlayBind.Value.IsJustPressed())
             {
-                LockOverlayToAimedBlock();
+                EquipmentMonitor eq = Main.EquipmentMonitor;
+                IMySlimBlock aimed = eq.AimedBlock ?? eq.BuilderAimedBlock;
+                if(aimed != null && (eq.IsCubeBuilder || eq.IsAnyWelder || eq.IsAnyGrinder))
+                {
+                    SetLockOnBlock(aimed);
+                }
+                else // not aiming at any block
+                {
+                    if(LockedOnBlock != null)
+                    {
+                        SetLockOnBlock(null);
+                    }
+                    else
+                    {
+                        SetNotification("Aim at a block with welder/grinder/builder first.", 2000, FontsHandler.RedSh);
+                    }
+                }
             }
         }
 
         public override void UpdateDraw()
         {
+            if(Main.IsPaused)
+                return;
+
             if(LockedOnBlock == null)
                 return;
 
-            // alternate update for when overlays doesn't update this
-            if(Main.Overlays.DrawOverlay > 0)
-                return;
-
-            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
-            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            UpdateLockedOnBlock(ref aimedBlock, ref def);
-        }
-
-        public void LockOverlayToAimedBlock()
-        {
-            if(LockedOnBlock == null && Main.EquipmentMonitor.AimedBlock == null)
-            {
-                SetNotification("Aim at a block with welder/grinder first.", 2000, FontsHandler.RedSh);
-                return;
-            }
-
-            SetLockOnBlock(Main.EquipmentMonitor.AimedBlock);
-        }
-
-        public bool UpdateLockedOnBlock(ref IMySlimBlock aimedBlock, ref MyCubeBlockDefinition def)
-        {
-            if(LockedOnBlock == null || LockedOnBlock.IsFullyDismounted || LockedOnBlock.IsDestroyed || (LockedOnBlock.FatBlock?.MarkedForClose ?? false))
+            if(LockedOnBlock.IsFullyDismounted || LockedOnBlock.IsDestroyed || (LockedOnBlock.FatBlock != null && LockedOnBlock.FatBlock.MarkedForClose))
             {
                 SetLockOnBlock(null, "Block removed, disabled overlay lock.");
-                return false;
+                return;
             }
 
             Vector3D blockPos;
@@ -95,49 +101,43 @@ namespace Digi.BuildInfo.Features.Overlays
             if(Vector3D.DistanceSquared(MyAPIGateway.Session.Camera.WorldMatrix.Translation, blockPos) > maxRangeSq)
             {
                 SetLockOnBlock(null, "Turned off, too far.");
-                return false;
+                return;
             }
 
-            aimedBlock = LockedOnBlock;
-            def = LockedOnBlockDef;
-
-            if(Main.Overlays.DrawOverlay == 0)
+            if(Main.Overlays.OverlayMode == Overlays.ModeEnum.Off)
                 SetNotification($"Overlays off. [{Main.Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Main.Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
             else
                 SetNotification($"{LockedOnBlockDef.DisplayNameText}. [{Main.Config.LockOverlayBind.Value.GetBinds()}] to change/unlock.", 100);
-
-            return true;
         }
 
         void SetLockOnBlock(IMySlimBlock block, string message = null)
         {
-            //Main.Overlays.HideLabels();
-            Main.Overlays.SetOverlayCallFor(null);
             LockedOnBlockDef = null;
 
             // unhook previous
             if(LockedOnBlock != null)
             {
-                if(LockedOnBlock.FatBlock != null)
-                    LockedOnBlock.FatBlock.OnMarkForClose -= LockedOnBlock_MarkedForClose;
-
-                Main.Overlays.SetOverlayCallFor(null);
-                Main.LiveDataHandler.InvalidateCache();
+                LockedOnBlock.CubeGrid.OnBlockRemoved -= LockedOnGrid_OnBlockRemoved;
             }
 
             LockedOnBlock = block;
+
+            try
+            {
+                LockedOnBlockChanged?.Invoke(block);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (LockedOnBlock != null));
 
             // hook new
             if(LockedOnBlock != null)
             {
-                if(LockedOnBlock.FatBlock != null)
-                    LockedOnBlock.FatBlock.OnMarkForClose += LockedOnBlock_MarkedForClose;
-
                 LockedOnBlockDef = (MyCubeBlockDefinition)LockedOnBlock.BlockDefinition;
-
-                Main.Overlays.SetOverlayCallFor(LockedOnBlockDef.Id);
+                LockedOnBlock.CubeGrid.OnBlockRemoved += LockedOnGrid_OnBlockRemoved;
             }
             else
             {
@@ -145,10 +145,28 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
 
+        void LockedOnGrid_OnBlockRemoved(IMySlimBlock block)
+        {
+            try
+            {
+                if(block == null)
+                    return;
+
+                if(LockedOnBlock == block)
+                {
+                    SetLockOnBlock(null, "Turned off, block was removed.");
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
         void SetNotification(string message, int aliveTimeMs = 2000, string font = FontsHandler.WhiteSh)
         {
-            if(aliveTimeMs < 1000 && Main.IsPaused)
-                return; // HACK: avoid notification glitching out if showing them continuously when game is paused
+            if(Main.IsPaused)
+                return; // avoid notification glitching out if showing them continuously when game is paused
 
             if(Notification == null)
                 Notification = MyAPIGateway.Utilities.CreateNotification("");
@@ -158,25 +176,6 @@ namespace Digi.BuildInfo.Features.Overlays
             Notification.Font = font;
             Notification.Text = NotifyPrefix + message;
             Notification.Show();
-        }
-
-        private void LockedOnBlock_MarkedForClose(IMyEntity ent)
-        {
-            try
-            {
-                IMyCubeBlock block = ent as IMyCubeBlock;
-                if(block != null)
-                    block.OnMarkForClose -= LockedOnBlock_MarkedForClose;
-
-                if(LockedOnBlock == null || block != LockedOnBlock.FatBlock)
-                    return;
-
-                SetLockOnBlock(null, "Turned off, block was removed.");
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
         }
     }
 }

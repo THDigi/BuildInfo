@@ -7,8 +7,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class ChatCommandHandler : ModComponent
     {
-        public const string MAIN_COMMAND = "/bi";
-        public const string HELP_ALT = "/buildinfo";
+        public const string MainCommandPrefix = "/bi";
+        public const string HelpAlternative = "/buildinfo";
 
         public readonly List<Command> Commands = new List<Command>();
         public readonly Dictionary<string, Command> AliasToCommand = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
@@ -20,6 +20,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandGetBlock CommandGetBlock;
         public CommandShipMods CommandShipMods;
         public CommandQuickMenu CommandQuickMenu;
+        public CommandToolbarCustomLabel CommandToolbarCustomLabel;
         public CommandLaserPower CommandLaserPower;
         public CommandReloadConfig CommandReloadConfig;
         public CommandClearCache CommandClearCache;
@@ -34,6 +35,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void RegisterComponent()
         {
+            // affects order in help menu
             CommandHelp = new CommandHelp();
             CommandModLink = new CommandModLink();
             CommandWorkshop = new CommandWorkshop();
@@ -41,6 +43,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandGetBlock = new CommandGetBlock();
             CommandShipMods = new CommandShipMods();
             CommandQuickMenu = new CommandQuickMenu();
+            CommandToolbarCustomLabel = new CommandToolbarCustomLabel();
             CommandLaserPower = new CommandLaserPower();
             CommandReloadConfig = new CommandReloadConfig();
             CommandClearCache = new CommandClearCache();
@@ -59,13 +62,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             try
             {
-                if(text.StartsWith(HELP_ALT))
+                if(text.StartsWith(HelpAlternative))
                 {
                     CommandHelp.ExecuteNoArgs();
                     return;
                 }
 
-                if(!text.StartsWith(MAIN_COMMAND))
+                if(!text.StartsWith(MainCommandPrefix))
                     return;
 
                 if(!args.TryParse(text))
@@ -83,8 +86,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
                 else
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"Unknown command: {MAIN_COMMAND} {alias}", FontsHandler.RedSh);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.MOD_NAME, $"For commands list, type: {MAIN_COMMAND}", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Unknown command: {MainCommandPrefix} {alias}", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"For commands list, type: {MainCommandPrefix}", FontsHandler.RedSh);
                 }
             }
             catch(Exception e)

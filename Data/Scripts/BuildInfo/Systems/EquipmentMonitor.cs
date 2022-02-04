@@ -37,6 +37,8 @@ namespace Digi.BuildInfo.Systems
         public event EventHandlerBlockChanged BlockChanged;
         public delegate void EventHandlerBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock);
 
+        public event Action<IMySlimBlock> BuilderAimedBlockChanged;
+
         /// <summary>
         /// Update after simulation and after this system computed its things.
         /// All args can be null at the same time.
@@ -46,6 +48,11 @@ namespace Digi.BuildInfo.Systems
 
         public event EventHandlerControlledChanged ControlledChanged;
         public delegate void EventHandlerControlledChanged(IMyControllableEntity controlled);
+
+        /// <summary>
+        /// Aimed-at block with cubebuilder (for painting or removal), null if nothing is aimed at.
+        /// </summary>
+        public IMySlimBlock BuilderAimedBlock { get; private set; }
 
         /// <summary>
         /// Aimed-at block with ship welder/grinder, null if nothing is aimed at.
@@ -186,7 +193,51 @@ namespace Digi.BuildInfo.Systems
                 ControlledChanged?.Invoke(controlled);
 
             UpdateControlled?.Invoke(character, shipController, controlled, tick);
+
+            IMySlimBlock builderRemoveBlock = ComputeBuilderAimedBlock();
+            if(builderRemoveBlock != BuilderAimedBlock)
+            {
+                BuilderAimedBlock = builderRemoveBlock;
+                BuilderAimedBlockChanged?.Invoke(builderRemoveBlock);
+            }
         }
+
+        IMySlimBlock ComputeBuilderAimedBlock()
+        {
+            if(!IsCubeBuilder)
+                return null;
+
+            // fixes FreezeGizmo causing GetAddAndRemovePositions() to throw "Nullable must have a value" in MyBlockBuilderBase.GetIntersectedBlockData().
+            if(!MyCubeBuilder.Static.HitInfo.HasValue)
+                return null;
+
+            //if(MyCubeBuilder.Static.FreezeGizmo)
+            //    return null;
+
+            MyCubeGrid aimedGrid = MyCubeBuilder.Static.FindClosestGrid();
+            MyCubeBlockDefinition def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+            if(def == null || aimedGrid == null || def.CubeSize != aimedGrid.GridSizeEnum)
+                return null;
+
+            if(MyAPIGateway.Input.IsJoystickLastUsed && MyCubeBuilder.Static.ToolType == MyCubeBuilderToolType.BuildTool && !Utils.CreativeToolsEnabled)
+                return null;
+
+            // HACK: required to be able to give MySlimBlock to GetAddAndRemovePositions() because it needs to 'out' it.
+            return BuilderGetBlockHackery(aimedGrid, aimedGrid.CubeBlocks, (removeBlock, grid) =>
+            {
+                Vector3I addPos, addDir, removePos;
+                Vector3? addSmallToLargePos;
+                ushort? compoundBlockId;
+
+                bool canBuild = MyCubeBuilder.Static.GetAddAndRemovePositions(
+                    grid.GridSize, false, out addPos, out addSmallToLargePos, out addDir,
+                    out removePos, out removeBlock, out compoundBlockId, null);
+
+                return removeBlock;
+            });
+        }
+
+        IMySlimBlock BuilderGetBlockHackery<T>(MyCubeGrid grid, HashSet<T> refType, Func<T, MyCubeGrid, IMySlimBlock> callback) where T : class => callback.Invoke(null, grid);
 
         private void UpdateInShip(IMyShipController shipController, bool controllerChanged)
         {
@@ -300,7 +351,7 @@ namespace Digi.BuildInfo.Systems
             MatrixD worldMatrix = MatrixD.CreateTranslation(weaponPosition.LogicalPositionWorld);
             worldMatrix.Right = character.WorldMatrix.Right;
             worldMatrix.Forward = weaponPosition.LogicalOrientationWorld;
-            worldMatrix.Up = Vector3.Cross(worldMatrix.Right, worldMatrix.Forward);
+            worldMatrix.Up = Vector3D.Cross(worldMatrix.Right, worldMatrix.Forward);
 
             Vector3D forward = worldMatrix.Forward;
             Vector3D start = worldMatrix.Translation; // + forward * originOffset;
@@ -426,7 +477,7 @@ namespace Digi.BuildInfo.Systems
 
                     if(!check)
                     {
-                        MyStringId[] controlSlots = Main.Constants.CONTROL_SLOTS;
+                        MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
                         // intentionally skipping SLOT0
                         for(int i = 1; i < controlSlots.Length; ++i)
@@ -567,6 +618,8 @@ namespace Digi.BuildInfo.Systems
 
             if(IsCubeBuilder)
                 handToolCasterComp = null;
+
+            BuilderAimedBlock = null;
 
             ToolChanged?.Invoke(ToolDefId);
         }

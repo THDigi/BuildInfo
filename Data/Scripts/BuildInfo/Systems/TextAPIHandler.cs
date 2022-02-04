@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Text;
+using Digi.BuildInfo.Features;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.ModAPI;
 using VRage.Input;
+using VRage.Utils;
 using VRageMath;
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Systems
 {
     public class TextAPI : ModComponent
     {
+        public const string DefaultFont = FontsHandler.SEOutlined;
+        public const bool DefaultUseShadow = false;
+        public const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
+        public const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;
+
         /// <summary>
         /// Triggered when TextAPI is detected.
         /// </summary>
@@ -40,14 +48,14 @@ namespace Digi.BuildInfo.Systems
                 UseChanged?.Invoke(value);
             }
         }
+        bool _use = true;
 
         /// <summary>
         /// Triggered when <see cref="Use"/> changes.
         /// </summary>
         public event Action<bool> UseChanged;
 
-        private HudAPIv2 api;
-        private bool _use = true;
+        HudAPIv2 Api;
 
         public TextAPI(BuildInfoMod main) : base(main)
         {
@@ -56,13 +64,13 @@ namespace Digi.BuildInfo.Systems
 
         public override void RegisterComponent()
         {
-            api = new HudAPIv2(TextAPIDetected);
+            Api = new HudAPIv2(TextAPIDetected);
         }
 
         public override void UnregisterComponent()
         {
-            api?.Close();
-            api = null;
+            Api?.Close();
+            Api = null;
         }
 
         private void TextAPIDetected()
@@ -98,20 +106,176 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        HudAPIv2.HUDMessage measuringMsg;
+        HudAPIv2.HUDMessage _measuringMsg;
         public Vector2D GetStringSize(StringBuilder text)
         {
             if(!WasDetected)
-                throw new Exception("Requested GetStringSize() before textAPI was available!");
+                throw new Exception("GetStringSize() was calledbefore TextAPI was available!");
 
-            if(measuringMsg == null)
+            if(_measuringMsg == null)
             {
-                measuringMsg = new HudAPIv2.HUDMessage();
-                measuringMsg.Visible = false;
+                _measuringMsg = new HudAPIv2.HUDMessage();
+                _measuringMsg.Visible = false;
             }
 
-            measuringMsg.Message = text;
-            return measuringMsg.GetTextLength();
+            _measuringMsg.Message = text;
+            return _measuringMsg.GetTextLength();
+        }
+
+        /// <summary>
+        /// NOTE: Starts off invisible.
+        /// </summary>
+        public static HudAPIv2.HUDMessage CreateHUDText(StringBuilder sb, Vector2D hudPos, double scale = 1, bool hideWithHud = true)
+        {
+            HudAPIv2.HUDMessage msg = new HudAPIv2.HUDMessage(sb, hudPos, Scale: scale, HideHud: hideWithHud, Shadowing: false, Font: DefaultFont, Blend: DefaultHUDBlendType);
+            msg.Visible = false;
+            return msg;
+        }
+
+        /// <summary>
+        /// NOTE: Starts off invisible.
+        /// </summary>
+        public static HudAPIv2.BillBoardHUDMessage CreateHUDTexture(MyStringId material, Color color, Vector2D hudPos, bool hideWithHud = true)
+        {
+            HudAPIv2.BillBoardHUDMessage msg = new HudAPIv2.BillBoardHUDMessage(material, hudPos, color, HideHud: hideWithHud, Shadowing: false, Blend: DefaultHUDBlendType);
+            msg.Visible = false;
+            return msg;
+        }
+
+        public class TextPackage
+        {
+            public readonly StringBuilder TextStringBuilder;
+            public readonly StringBuilder ShadowStringBuilder;
+            public readonly HudAPIv2.HUDMessage Text;
+            public readonly HudAPIv2.HUDMessage Shadow;
+            public readonly HudAPIv2.BillBoardHUDMessage Background;
+
+            /// <summary>
+            /// NOTE: Starts off invisible.
+            /// NOTE: The given StringBuilder is used on both text and shadow. Use the other constructor for it to make one per text.
+            /// </summary>
+            public TextPackage(StringBuilder sb, bool useShadow = DefaultUseShadow, MyStringId? backgroundTexture = null)
+            {
+                if(backgroundTexture.HasValue)
+                {
+                    Background = CreateHUDTexture(backgroundTexture.Value, Color.White, Vector2D.Zero);
+                }
+
+                if(useShadow)
+                {
+                    ShadowStringBuilder = sb;
+                    Shadow = CreateHUDText(ShadowStringBuilder, Vector2D.Zero);
+                    Shadow.InitialColor = Color.Black;
+                    Shadow.Offset = new Vector2D(0.002, -0.002);
+                }
+
+                TextStringBuilder = sb;
+                Text = CreateHUDText(TextStringBuilder, Vector2D.Zero);
+            }
+
+            /// <summary>
+            /// NOTE: Starts off invisible.
+            /// </summary>
+            public TextPackage(int initialSBSize, bool useShadow = DefaultUseShadow, MyStringId? backgroundTexture = null)
+            {
+                if(backgroundTexture.HasValue)
+                {
+                    Background = CreateHUDTexture(backgroundTexture.Value, Color.White, Vector2D.Zero);
+                }
+
+                if(useShadow)
+                {
+                    ShadowStringBuilder = new StringBuilder(initialSBSize);
+                    Shadow = CreateHUDText(ShadowStringBuilder, Vector2D.Zero);
+                    Shadow.InitialColor = Color.Black;
+                    Shadow.Offset = new Vector2D(0.002, -0.002);
+                }
+
+                TextStringBuilder = new StringBuilder(initialSBSize);
+                Text = CreateHUDText(TextStringBuilder, Vector2D.Zero);
+            }
+
+            public bool Visible
+            {
+                get { return Text.Visible; }
+                set
+                {
+                    Text.Visible = value;
+
+                    if(Shadow != null)
+                        Shadow.Visible = value;
+
+                    if(Background != null)
+                        Background.Visible = value;
+                }
+            }
+
+            public double Scale
+            {
+                get { return Text.Scale; }
+                set
+                {
+                    Text.Scale = value;
+
+                    if(Shadow != null)
+                        Shadow.Scale = value;
+                }
+            }
+
+            public Vector2D Position
+            {
+                get { return Text.Origin; }
+                set
+                {
+                    Text.Origin = value;
+
+                    if(Shadow != null)
+                        Shadow.Origin = value;
+
+                    if(Background != null)
+                        Background.Origin = value;
+                }
+            }
+
+            public bool HideWithHUD
+            {
+                get { return (Text.Options & HudAPIv2.Options.HideHud) != 0; }
+                set
+                {
+                    if(value)
+                    {
+                        Text.Options |= HudAPIv2.Options.HideHud;
+
+                        if(Shadow != null)
+                            Shadow.Options |= HudAPIv2.Options.HideHud;
+
+                        if(Background != null)
+                            Background.Options |= HudAPIv2.Options.HideHud;
+                    }
+                    else
+                    {
+                        Text.Options &= ~HudAPIv2.Options.HideHud;
+
+                        if(Shadow != null)
+                            Shadow.Options &= ~HudAPIv2.Options.HideHud;
+
+                        if(Background != null)
+                            Background.Options &= ~HudAPIv2.Options.HideHud;
+                    }
+                }
+            }
+
+            public string Font
+            {
+                get { return Text.Font; }
+                set
+                {
+                    Text.Font = value;
+
+                    if(Shadow != null)
+                        Shadow.Font = value;
+                }
+            }
         }
 
         public static void CopyWithoutColor(StringBuilder text, StringBuilder shadow)

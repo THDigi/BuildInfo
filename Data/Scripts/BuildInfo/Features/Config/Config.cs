@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting Killswitch;
 
-        public BoolSetting TextShow;
+        public TextShowModeSetting TextShow;
         public BoolSetting TextAlwaysVisible;
 
         public FlagsSetting<PlaceInfoFlags> PlaceInfo;
@@ -36,7 +36,9 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ScrollableComponentsList;
         public BoolSetting SelectAllProjectedBlocks;
         public BoolSetting OverrideToolSelectionDraw;
-        public IntegerSetting CubeBuilderSelectionInfoMode;
+        public BoolSetting CubeBuilderDrawSubparts;
+        public EnumSetting<CubeBuilderSelectionInfo> CubeBuilderSelectionInfoMode;
+        public BoolSetting UnderCrosshairMessages;
 
         public BoolSetting ShipToolInvBarShow;
         public Vector2DSetting ShipToolInvBarPosition;
@@ -53,16 +55,22 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting TurretHUD;
 
-        public IntegerSetting ToolbarLabels;
+        public EnumSetting<ToolbarLabelsMode> ToolbarLabels;
         public FloatSetting ToolbarLabelsEnterCockpitTime;
-        public IntegerSetting ToolbarItemNameMode;
+        public EnumSetting<ToolbarNameMode> ToolbarItemNameMode;
         public BoolSetting ToolbarLabelsHeader;
-        public IntegerSetting ToolbarStyleMode;
+        public EnumSetting<ToolbarStyle> ToolbarStyleMode;
         public Vector2DSetting ToolbarLabelsPosition;
         public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
         public Vector2DSetting ToolbarLabelsOffsetForInvBar;
+
         public BoolSetting ToolbarActionStatus;
+        public EnumSetting<ActionIconsMode> ToolbarActionIcons;
+
+        public BoolSetting EventToolbarInfo;
+        public Vector2DSetting EventToolbarInfoPosition;
+        public FloatSetting EventToolbarInfoScale;
 
         public BoolSetting TerminalDetailInfoAdditions;
         public BoolSetting TerminalDetailInfoHeader;
@@ -79,6 +87,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
         public BoolSetting OverlaysShowLabelsWithBind;
+        // TODO ^ rebindable key?
 
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;
@@ -87,6 +96,7 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting AdjustBuildDistanceShipCreative;
 
         public InputCombinationSetting MenuBind;
+        public InputCombinationSetting TextShowBind;
         public InputCombinationSetting CycleOverlaysBind;
         public InputCombinationSetting ToggleTransparencyBind;
         public InputCombinationSetting FreezePlacementBind;
@@ -102,6 +112,7 @@ namespace Digi.BuildInfo.Features.Config
         public IntegerSetting ModVersion;
 
         public const string MENU_BIND_INPUT_NAME = "bi.menu";
+        public const string TEXT_SHOW_INPUT_NAME = "bi.textShow";
         public const string CYCLE_OVERLAYS_INPUT_NAME = "bi.cycleOverlays";
         public const string TOGGLE_TRANSPARENCY_INPUT_NAME = "bi.toggleTransparency";
         public const string FREEZE_PLACEMENT_INPUT_NAME = "bi.freezePlacement";
@@ -252,7 +263,7 @@ namespace Digi.BuildInfo.Features.Config
 
         private void InitSettings()
         {
-            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MAIN_COMMAND} reload");
+            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MainCommandPrefix} reload");
 
             StringBuilder sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);
@@ -266,13 +277,16 @@ namespace Digi.BuildInfo.Features.Config
             const string SubHeaderFormat = "—————— {0} ————————————————————————————————————————————————————————————";
 
             #region TextBox
-            // TODO: turn it into a mode so that it can be shown only in HUD hints or only when holding alt.
-            TextShow = new BoolSetting(Handler, "TextBox: Show", true,
+            TextShow = new TextShowModeSetting(Handler, "TextBox: Show Mode", TextShowMode.AlwaysOn, new string[]
+            {
                 string.Format(SubHeaderFormat, "Text Box"),
                 "These settings affect the mod's text box that has the equipped/aimed block information.",
                 "",
-                "Toggle if the text box is shown or not.");
-            TextShow.AddCompatibilityNames("Text: Show");
+                "Toggle if the text box is shown or not."
+            });
+            TextShow.SetEnumComment(TextShowMode.ShowOnPress, $"input can be configured in 'Bind: Text Show'"); // can't use field as it's not yet assigned
+            TextShow.SetEnumComment(TextShowMode.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(TextShowMode.ShowOnPress)}'s behavior.");
+            TextShow.AddCompatibilityNames("Text: Show", "TextBox: Show");
 
             TextAlwaysVisible = new BoolSetting(Handler, "TextBox: Show when HUD is off", false,
                 "If true, text box is shown in all HUD states including hidden HUD.");
@@ -339,17 +353,25 @@ namespace Digi.BuildInfo.Features.Config
                 "For example, a large-grid camera block would show selection over the camera model itself, instead of the entire grid cell.",
                 "CubeBuilder's block selection for paint/removal is affected, but the box around your ghost block is not (because it's inaccessible).");
 
-            CubeBuilderSelectionInfoMode = CreateEnumSetting("HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
+            CubeBuilderDrawSubparts = new BoolSetting(Handler, "HUD: CubeBuilder Draw Subparts", true,
+                "Game by default only draws the first layer of subparts when holding the block.",
+                "This setting draws the other layers as well as top-part/wheel for rotor/piston/hinge/suspension.",
+                "Additionally:",
+                "- Suspension wheel 'collides' with world so you can see how much it can travel in the frame.",
+                "- Interior turret has whacky rotations on subparts, the existing one I can't do anything about but the ones I spawn I can rotate properly.");
+
+            CubeBuilderSelectionInfoMode = new EnumSetting<CubeBuilderSelectionInfo>(Handler, "HUD: CubeBuilder Selection Info Mode", CubeBuilderSelectionInfo.Off, new string[]
             {
                 "When holding a block (CubeBuilder tool), aiming at blocks allows you to paint or remove them.",
                 "This setting shows the terminal name or definition name for the aimed block.",
                 $"The selection box is controlled by '{OverrideToolSelectionDraw.Name}' instead.",
-            },
-            new Dictionary<CubeBuilderSelectionInfo, string>()
-            {
-                [CubeBuilderSelectionInfo.ShowOnPress] = $"input can be configured in 'Bind: Show CubeBuilder Selection Info'", // can't use field as it's not yet assigned
-                [CubeBuilderSelectionInfo.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.",
             });
+            CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.ShowOnPress, $"input can be configured in 'Bind: Show CubeBuilder Selection Info'"); // can't use field as it's not yet assigned
+            CubeBuilderSelectionInfoMode.SetEnumComment(CubeBuilderSelectionInfo.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(CubeBuilderSelectionInfo.ShowOnPress)}'s behavior.");
+
+            UnderCrosshairMessages = new BoolSetting(Handler, "HUD: Under-Crosshair Messages", false,
+                "An opt-in feature for moving certain easily missable messages from text box to under the crosshair.",
+                $"Currently only 'Grid will split if block is removed' is affected by this, which sill requires {nameof(AimInfoFlags.GrindGridSplit)} to be enabled in '{AimInfo.Name}' setting.");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected.");
@@ -418,19 +440,16 @@ namespace Digi.BuildInfo.Features.Config
             #endregion
 
             #region Toolbar
-            ToolbarLabels = CreateEnumSetting("Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
+            ToolbarLabels = new EnumSetting<ToolbarLabelsMode>(Handler, "Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
             {
                 "",
                 string.Format(SubHeaderFormat, "Toolbar & ToolbarInfo box"),
                 "",
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the ToolbarInfo stuff (except status override)."
-            },
-            new Dictionary<ToolbarLabelsMode, string>()
-            {
-                [ToolbarLabelsMode.ShowOnPress] = $"input can be configured in 'Bind: Show Toolbar Info'", // can't use field as it's not yet assigned
-                [ToolbarLabelsMode.HudHints] = $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.",
             });
+            ToolbarLabels.SetEnumComment(ToolbarLabelsMode.ShowOnPress, $"input can be configured in 'Bind: Show Toolbar Info'"); // can't use field as it's not yet assigned
+            ToolbarLabels.SetEnumComment(ToolbarLabelsMode.HudHints, $"shown when vanilla HUD is in most detailed mode. Includes {nameof(ToolbarLabelsMode.ShowOnPress)}'s behavior.");
             ToolbarLabels.AddCompatibilityNames("Toolbar: Labels Mode");
 
             ToolbarLabelsEnterCockpitTime = new FloatSetting(Handler, "Toolbar: ToolbarInfo Show on Cockpit Enter", defaultValue: 3, min: 0, max: 15, commentLines: new string[]
@@ -440,16 +459,13 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsEnterCockpitTime.AddCompatibilityNames("Toolbar: Enter Cockpit Time");
 
-            ToolbarItemNameMode = CreateEnumSetting("Toolbar: ToolbarInfo Name Mode", ToolbarNameMode.AlwaysShow, new string[]
+            ToolbarItemNameMode = new EnumSetting<ToolbarNameMode>(Handler, "Toolbar: ToolbarInfo Name Mode", ToolbarNameMode.AlwaysShow, new string[]
             {
                 "Pick what blocks should have their custom name printed in the action label.",
                 "Visibility of this is affected by the above setting."
-            },
-            new Dictionary<ToolbarNameMode, string>()
-            {
-                [ToolbarNameMode.InMenuOnly] = "only shown when toolbar menu is open",
-                [ToolbarNameMode.GroupsOnly] = "only block group names",
             });
+            ToolbarItemNameMode.SetEnumComment(ToolbarNameMode.InMenuOnly, "only shown when toolbar menu is open");
+            ToolbarItemNameMode.SetEnumComment(ToolbarNameMode.GroupsOnly, "only block group names");
             ToolbarItemNameMode.AddCompatibilityNames("Toolbar: Item Name Mode");
 
             ToolbarLabelsHeader = new BoolSetting(Handler, "Toolbar: ToolbarInfo Header+Page", true,
@@ -457,7 +473,7 @@ namespace Digi.BuildInfo.Features.Config
                 "This exists so that people can know what that box is from so they can know which mod to lookup/configure.");
             ToolbarLabelsHeader.AddCompatibilityNames("Toolbar: Toolbar Labels Show Title");
 
-            ToolbarStyleMode = CreateEnumSetting("Toolbar: ToolbarInfo Style", ToolbarStyle.TwoColumns, new string[]
+            ToolbarStyleMode = new EnumSetting<ToolbarStyle>(Handler, "Toolbar: ToolbarInfo Style", ToolbarStyle.TwoColumns, new string[]
             {
                 "Changes the visual layout of the toolbar labels box.",
             });
@@ -496,9 +512,37 @@ namespace Digi.BuildInfo.Features.Config
             ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
-                "This is independent of the ToolbarLabels feature."
+                "This is independent of the ToolbarInfo or EventToolbar features."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
+
+            ToolbarActionIcons = new EnumSetting<ActionIconsMode>(Handler, "Toolbar: Action Icons", ActionIconsMode.Custom, new string[]
+            {
+                "The blocks in toolbars with actions (on/off, run, etc) have little icons top-right of the block icon to indicate the icon.",
+                "These icons are often very generic and sometimes misleading, this setting aims to fix that to better recognize different actions.",
+                "NOTE: changing this during gameplay does not refresh them right away, a world rejoin would be required for that.",
+                "This is independent of the ToolbarInfo or EventToolbar features."
+            });
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Custom, "override with new distinct icons.");
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Hidden, "hides all action icons.");
+            ToolbarActionIcons.SetEnumComment(ActionIconsMode.Original, "doesn't touch the action icons.");
+
+            EventToolbarInfo = new BoolSetting(Handler, "Toolbar: EventToolbarInfo", true,
+                "Blocks that have an event toolbar (like sensors, airvents, etc) don't have any representation on what the slots do.",
+                "This setting shows a small box on the left of those slots to inform you of what they do.",
+                "It also tells you what button you aimed at when you opened its toolbar config menu, as well as show the button panel's overlays in the background.");
+
+            EventToolbarInfoPosition = new Vector2DSetting(Handler, "Toolbar: EventToolbarInfo Position", defaultValue: new Vector2D(-0.50625, -0.741111), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The position (bottom-right corner pivot) of the event toolbar information, somewhere on the left of the toolbar is recommended.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+
+            EventToolbarInfoScale = new FloatSetting(Handler, "Toolbar: EventToolbarInfo Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            {
+                "The scale of the event toolbar info box."
+            });
             #endregion
 
             #region Overlays
@@ -544,6 +588,10 @@ namespace Digi.BuildInfo.Features.Config
                 "",
                 "For accessing the quick menu.");
 
+            TextShowBind = new InputCombinationSetting(Handler, "Bind: Text Show", Combination.Create(TEXT_SHOW_INPUT_NAME, "c.lookaround"),
+                $"Shows block text info while holding a block or aiming at one with welder/grinder.",
+                $"Only works if '{TextShow.Name}' is set to {nameof(TextShowMode.ShowOnPress)} or {nameof(TextShowMode.HudHints)}.");
+
             CycleOverlaysBind = new InputCombinationSetting(Handler, "Bind: Cycle Overlays", Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, "ctrl " + MENU_BIND_INPUT_NAME),
                 $"For cycling through block overlays ({string.Join(", ", Main.Overlays.OverlayNames)}).");
 
@@ -555,8 +603,7 @@ namespace Digi.BuildInfo.Features.Config
 
             BlockPickerBind = new InputCombinationSetting(Handler, "Bind: Block Picker", Combination.Create(BLOCK_PICKER_INPUT_NAME, "ctrl c.cubesizemode"),
                 "The bind for adding the aimed block to the toolbar.",
-                "NOTE: It does request a number press afterwards.",
-                (!Constants.BLOCKPICKER_IN_MP ? Constants.BLOCKPICKER_DISABLED_CONFIG : ""));
+                "NOTE: It does request a number press afterwards.");
 
             LockOverlayBind = new InputCombinationSetting(Handler, "Bind: Lock Overlay", Combination.Create(LOCK_OVERLAY_INPUT_NAME, "shift c.cubesizemode"),
                 "When aiming at a block with a tool it locks overlays to that block so you can move around.",
@@ -595,37 +642,11 @@ namespace Digi.BuildInfo.Features.Config
                 "Debug info shown for: PlacementDistance, EquipmentMonitor");
             #endregion
 
-            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.MOD_VERSION, 0, int.MaxValue,
+            ModVersion = new IntegerSetting(Handler, "Mod Version", Constants.ModVersion, 0, int.MaxValue,
                 "Latest version loaded for notifying you of notable changes.",
                 "Do not edit!");
             ModVersion.AddDefaultValueComment = false;
             ModVersion.AddValidRangeComment = false;
-        }
-
-        IntegerSetting CreateEnumSetting<T>(string title, T defaultValue, string[] comments, Dictionary<T, string> enumComments = null)
-        {
-            string[] names = Enum.GetNames(typeof(T));
-            int[] values = (int[])Enum.GetValues(typeof(T));
-
-            string[] finalComments = new string[names.Length + comments.Length];
-
-            for(int i = 0; i < comments.Length; i++)
-            {
-                finalComments[i] = comments[i];
-            }
-
-            for(int n = 0; n < names.Length; ++n)
-            {
-                int enumInt = values[n];
-                int index = n + comments.Length;
-                finalComments[index] = $"    {enumInt.ToString()} = {names[n]}";
-
-                string comment;
-                if(enumComments != null && enumComments.TryGetValue((T)(object)n, out comment))
-                    finalComments[index] += "  (" + comment + ")";
-            }
-
-            return new IntegerSetting(Handler, title, defaultValue: (int)(object)defaultValue, min: values[0], max: values[values.Length - 1], commentLines: finalComments);
         }
 
         public void Save()

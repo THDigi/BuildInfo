@@ -9,13 +9,13 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_TargetDummy : BData_Base
     {
-        public struct SubpartInfo
+        public struct PartInfo
         {
             public readonly Matrix LocalMatrix;
             public readonly float Health;
             public readonly bool IsCritical;
 
-            public SubpartInfo(Matrix localMatrix, float health, bool isCritical)
+            public PartInfo(Matrix localMatrix, float health, bool isCritical)
             {
                 LocalMatrix = localMatrix;
                 Health = health;
@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
-        public Dictionary<string, SubpartInfo> Subparts = new Dictionary<string, SubpartInfo>();
+        public Dictionary<string, PartInfo> ShootableParts = new Dictionary<string, PartInfo>();
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -38,7 +38,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     MyTargetDummyBlockDefinition.MyDummySubpartDescription subpartDesc;
                     if(dummyDef.SubpartDefinitions.TryGetValue(kv.Key, out subpartDesc))
                     {
-                        Subparts.Add(kv.Key, new SubpartInfo(kv.Value.PositionComp.LocalMatrixRef, subpartDesc.Health, subpartDesc.IsCritical));
+                        ShootableParts.Add(kv.Key, new PartInfo(kv.Value.PositionComp.LocalMatrixRef, subpartDesc.Health, subpartDesc.IsCritical));
                         success = true;
                     }
                 }

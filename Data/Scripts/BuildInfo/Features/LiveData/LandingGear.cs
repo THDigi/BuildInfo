@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -19,22 +20,22 @@ namespace Digi.BuildInfo.Features.LiveData
 
             block.Model.GetDummies(dummies);
 
-            // logic from MyLandingGear.LoadDummies()
+            // from MyLandingGear.LoadDummies()
             //var lockPositions = (from s in dummies
             //                     where s.Key.ToLower().Contains("gear_lock")
             //                     select s.Value.Matrix).ToArray<Matrix>();
 
             foreach(IMyModelDummy dummy in dummies.Values)
             {
-                if(!dummy.Name.ContainsIgnoreCase("gear_lock"))
+                if(!dummy.Name.ContainsIgnoreCase(Hardcoded.LandingGear_DummyName))
                     continue;
 
-                // HACK: copied from MyLandingGear.GetBoxFromMatrix()
+                // from MyLandingGear.GetBoxFromMatrix()
                 MatrixD mn = MatrixD.Normalize(dummy.Matrix);
                 Quaternion orientation = Quaternion.CreateFromRotationMatrix(mn);
                 Vector3 halfExtents = Vector3.Abs(dummy.Matrix.Scale) / 2f;
 
-                // ... and from MyLandingGear.FindBody()
+                // from MyLandingGear.FindBody()
                 halfExtents *= new Vector3(2f, 1f, 2f);
                 orientation.Normalize();
 
