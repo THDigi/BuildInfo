@@ -457,18 +457,14 @@ namespace Digi.BuildInfo.Features
                 MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
                 #region Compute BlockInfo HUD position
-                // it's actually bottom right of the top component line... O:)
-                Vector2 compListTopRight = new Vector2(0.9894f, 0.678f);
-
-                if(MyAPIGateway.Session.ControlledObject is IMyShipController)
-                    compListTopRight.Y = Hardcoded.HudBlockInfoOffsetInShip;
+                Vector2 compListBottomRight = new Vector2(0.9894f, 0.678f); // more or less from MyGuiScreenHudSpace.PrepareDraw()
 
                 if(Main.GameConfig.HudState == HudState.BASIC)
-                    compListTopRight.Y = 0.558f;
+                    compListBottomRight.Y = 0.558f;
 
                 // FIXME: vanilla UI is all over the place with this, needs tweaking
                 if(Main.GameConfig.AspectRatio > 5) // triple monitor
-                    compListTopRight.X += 0.75f;
+                    compListBottomRight.X += 0.75f;
                 #endregion
 
                 int totalComps = blockDef.Components.Length;
@@ -497,7 +493,7 @@ namespace Digi.BuildInfo.Features
 
                             int num = (totalComps - i - scrollIdxOffset - 1);
 
-                            Vector2 posHud = compListTopRight;
+                            Vector2 posHud = compListBottomRight;
                             posHud.Y += HudComponentHeight * num;
                             Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
@@ -528,7 +524,7 @@ namespace Digi.BuildInfo.Features
                     int redLineVisualIdx = criticalCompIndex + scrollIdxOffset;
                     if(redLineVisualIdx >= 0 && redLineVisualIdx < totalComps) // within total limits
                     {
-                        Vector2 posHud = compListTopRight;
+                        Vector2 posHud = compListBottomRight;
                         posHud.Y += HudComponentHeight * (totalComps - redLineVisualIdx - 2) + HudComponentUnderlineOffset;
 
                         Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
@@ -550,7 +546,7 @@ namespace Digi.BuildInfo.Features
                     int blueLineVisualIdx = OwnershipComponentIndex.Value + scrollIdxOffset;
                     if(blueLineVisualIdx >= 0 && blueLineVisualIdx < totalComps) // within total limits
                     {
-                        Vector2 posHud = compListTopRight;
+                        Vector2 posHud = compListBottomRight;
                         posHud.Y += HudComponentHeight * (totalComps - blueLineVisualIdx - 2) + HudComponentUnderlineOffset;
 
                         Vector3D posWOrld = Main.DrawUtils.HUDtoWorld(posHud);
@@ -578,7 +574,7 @@ namespace Digi.BuildInfo.Features
                         scrollPos = (float)scrollIdxOffset / (float)(totalComps - maxVisibleComps);
                     }
 
-                    Vector2 posHud = compListTopRight;
+                    Vector2 posHud = compListBottomRight;
                     posHud.Y -= HudComponentHeight; // make it actually top-right
 
                     #region background coordinates
@@ -627,7 +623,7 @@ namespace Digi.BuildInfo.Features
                         continue;
                     }
 
-                    Vector2 posHud = compListTopRight;
+                    Vector2 posHud = compListBottomRight;
                     posHud.Y += HudComponentHeight * (totalComps - index - 1);
 
                     Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
