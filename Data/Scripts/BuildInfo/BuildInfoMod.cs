@@ -47,6 +47,7 @@ namespace Digi.BuildInfo
         public readonly Config Config;
         public readonly FontsHandler FontsHandler;
         public readonly ConfigMenuHandler ConfigMenuHandler;
+        public readonly HUDEditor HUDEditor;
         public readonly JumpDriveMonitor JumpDriveMonitor;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly LeakInfo LeakInfo;
@@ -124,6 +125,7 @@ namespace Digi.BuildInfo
             FontsHandler = new FontsHandler(this);
             ConfigMenuHandler = new ConfigMenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
+            HUDEditor = new HUDEditor(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             Overlays = new Overlays(this);

@@ -2,35 +2,6 @@
 <Definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Fonts>
     <!--
-      To help with readability in toolbar status text, I made the font used there (Blue) to use the shadowed font and made it white.
-      It's used in a few other places on GUI so I can't give it a color that stands out.
-    -->
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>Blue</SubtypeId>
-      </Id>
-      <ColorMask>
-        <X>220</X>
-        <Y>244</Y>
-        <Z>252</Z>
-      </ColorMask>
-      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-
-    <!--
       Custom versions of existing fonts to have more colors and use shadowed version.
     -->
     <Font>

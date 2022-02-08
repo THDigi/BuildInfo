@@ -151,6 +151,7 @@
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\HUD\HUDEditor.cs" />
     <Compile Include="Features\HUD\GridControlStat.cs" />
     <Compile Include="Features\LiveData\AdvancedDoor.cs" />
     <Compile Include="Features\ModelPreview\Blocks\AdvancedDoor.cs" />
@@ -418,6 +419,7 @@
     <Compile Include="Systems\CoreSystemsAPIHandler.cs" />
     <Compile Include="Utilities\BoxDragging.cs" />
     <Compile Include="Utilities\Caches.cs" />
+    <Compile Include="Libraries\DefinitionEditingToolset.cs" />
     <Compile Include="Utilities\DevProfiler.cs" />
     <Compile Include="Utilities\DevUtils.cs" />
     <Compile Include="Utilities\DrawUtils.cs" />
