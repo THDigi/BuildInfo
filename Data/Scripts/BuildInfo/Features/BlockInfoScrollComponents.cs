@@ -103,6 +103,9 @@ namespace Digi.BuildInfo.Features
 
         void HudInfoChanged(MyHudBlockInfo hud)
         {
+            if(!Main.Config.ScrollableComponentsList.Value)
+                return;
+
             bool enableUpdate = false;
 
             try
@@ -208,6 +211,9 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateDraw()
         {
+            if(!Main.Config.ScrollableComponentsList.Value)
+                return;
+
             if(CycleComponents.Count == 0)
                 return;
 
@@ -240,7 +246,7 @@ namespace Digi.BuildInfo.Features
             if(paused || inMenu
             || CycleComponents.Count == 0
             || Main.EquipmentMonitor.BlockDef == null
-            || !Main.Config.BlockInfoAdditions.Value
+            || !Main.Config.ScrollableComponentsList.Value
             || Main.GameConfig.HudState == HudState.OFF)
                 return;
 
