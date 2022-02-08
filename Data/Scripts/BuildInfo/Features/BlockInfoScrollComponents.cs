@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features
         const int MaxCompsCharacter = 13;
 
         const int MaxCompsShipHudHints = 9;
-        const int MaxCompsShip = 7;
+        const int MaxCompsShip = 13;
 
         public int IndexOffset { get; private set; }
         public int Index { get; private set; }
