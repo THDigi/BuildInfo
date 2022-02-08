@@ -329,7 +329,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Detonate": return Utils.GetModFullPath(@"Textures\ActionIcons\Detonate.dds");
                 case "Safety": return Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds");
                 case "StartCountdown": return Utils.GetModFullPath(@"Textures\ActionIcons\StartWarhead.dds");
-                case "StopCountdown": return Utils.GetModFullPath(@"Textures\ActionIcons\Stop.dds");
+                case "StopCountdown": return Utils.GetModFullPath(@"Textures\ActionIcons\StopButton.dds");
 
                 case "PlaySound": return Utils.GetModFullPath(@"Textures\ActionIcons\PlayButton.dds");
                 case "StopSound": return Utils.GetModFullPath(@"Textures\ActionIcons\StopButton.dds");

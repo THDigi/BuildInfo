@@ -4,6 +4,8 @@ using Sandbox.Definitions;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
+    // TODO: does parachute block also need this?
+
     public class AdvancedDoor : MultiSubpartBase
     {
         BData_AdvancedDoor Data;
