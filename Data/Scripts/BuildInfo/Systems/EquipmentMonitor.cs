@@ -443,7 +443,7 @@ namespace Digi.BuildInfo.Systems
             }
 
             int tick = Main.Tick;
-            bool check = recheckOBAtTick == tick || controllerChanged || closedSomeUI; // check tools if controller was just changed or UI closed (because you can change tools in G menu)
+            bool check = IsCockpitBuildMode || recheckOBAtTick == tick || controllerChanged || closedSomeUI; // check tools if controller was just changed or UI closed (because you can change tools in G menu)
             closedSomeUI = false;
 
             if(!check && Features.ToolbarInfo.ToolbarMonitor.EnableGamepadSupport && Main.Tick % 60 == 0)
