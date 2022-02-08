@@ -350,7 +350,16 @@ namespace Digi.BuildInfo.Features
             }
             #endregion
 
-            if(!isCreative && MonitorInventories.Count > 0)
+            if(isCreative)
+            {
+                for(int i = 0; i < hud.Components.Count; i++)
+                {
+                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+                    SetCompStockpile(ref comp, comp.TotalCount, grayedOut: false);
+                    hud.Components[i] = comp;
+                }
+            }
+            else if(MonitorInventories.Count > 0)
             {
                 CompsInInv.Clear();
 
@@ -369,10 +378,19 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
+                const bool OnlyFirstCompRedHighlight = true;
+
                 // mark first component red if you don't have it to indicate you can't place it
-                if(CompsInInv.GetValueOrDefault(hud.Components[0].DefinitionId, 0) <= 0)
+                if(OnlyFirstCompRedHighlight)
                 {
-                    hud.MissingComponentIndex = 0;
+                    if(CompsInInv.GetValueOrDefault(hud.Components[0].DefinitionId, 0) <= 0)
+                    {
+                        hud.MissingComponentIndex = 0;
+                    }
+                }
+                else
+                {
+                    hud.MissingComponentIndex = -1;
                 }
 
                 for(int i = 0; i < hud.Components.Count; i++)
@@ -383,39 +401,44 @@ namespace Digi.BuildInfo.Features
                     if(inInv > 0)
                         CompsInInv[comp.DefinitionId] = inInv - comp.TotalCount; // remove for next comp stack of same type
 
-                    if(inInv > comp.TotalCount)
-                    {
-                        // HACK: hardcoded based on how math is handled in MyGuiControlBlockInfo.Draw(float transitionAlpha, float backgroundTransitionAlpha)
-                        // goal is to show the inventory contents while also getting the font to be white.
+                    bool hasThisComp = (inInv >= comp.TotalCount);
 
-                        // this affects if text is white or grayed out: if(c.MountedCount == c.TotalCount)
-                        comp.MountedCount = comp.TotalCount;
-
-                        // this gets printed: InstalledCount => MountedCount + StockpileCount;
-                        comp.StockpileCount = inInv - comp.TotalCount;
-                    }
-                    else
+                    if(!OnlyFirstCompRedHighlight)
                     {
-                        comp.MountedCount = 0;
-                        comp.StockpileCount = inInv;
+                        // mark first unavailable component as red unless it's past the red line, then don't care
+                        if(hud.MissingComponentIndex < 0 && blockDef.CriticalGroup >= i && inInv < comp.TotalCount)
+                        {
+                            hud.MissingComponentIndex = i;
+                        }
                     }
+
+                    int available = Math.Min(inInv, comp.TotalCount); // show up to what block needs
+                    SetCompStockpile(ref comp, available, grayedOut: !hasThisComp);
 
                     hud.Components[i] = comp;
                 }
             }
-            else // creative mode or no inventory found
+            else // survival and no inventories found
             {
                 for(int i = 0; i < hud.Components.Count; i++)
                 {
                     MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
-
-                    // needs to print -1 but also show font as white, see above HACK comments for explanation
-                    comp.MountedCount = comp.TotalCount;
-                    comp.StockpileCount = -1 - comp.TotalCount;
-
+                    SetCompStockpile(ref comp, 0, grayedOut: true);
                     hud.Components[i] = comp;
                 }
             }
+        }
+
+        static void SetCompStockpile(ref MyHudBlockInfo.ComponentInfo comp, int stockpile, bool grayedOut)
+        {
+            // HACK: hardcoded based on how math is handled in MyGuiControlBlockInfo.Draw(float transitionAlpha, float backgroundTransitionAlpha)
+            // goal is to show custom number for stockpile while also controlling if font is white or gray
+
+            // this affects if text is white or grayed out: if(c.MountedCount == c.TotalCount)
+            comp.MountedCount = (grayedOut ? 0 : comp.TotalCount);
+
+            // this gets printed: InstalledCount => MountedCount + StockpileCount;
+            comp.StockpileCount = stockpile - comp.MountedCount;
         }
 
         public override void UpdateDraw()
