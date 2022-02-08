@@ -3560,19 +3560,21 @@ namespace Digi.BuildInfo.Features
         {
             MyJumpDriveDefinition jumpDrive = (MyJumpDriveDefinition)def;
 
-            PowerRequired(jumpDrive.RequiredPowerInput, jumpDrive.ResourceSinkGroup);
-
-            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Label("Power for jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
+                StringBuilder sb = AddLine().Label("Power to charge").PowerFormat(jumpDrive.RequiredPowerInput);
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                    sb.ResetFormatting().Separator().ResourcePriority(jumpDrive.ResourceSinkGroup);
+
+                AddLine().Label("Capacity for Jump").PowerStorageFormat(jumpDrive.PowerNeededForJump);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * Hardcoded.JumpDriveRechargeMultiplier);
-                AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - Hardcoded.JumpDriveRechargeMultiplier);
-                AddLine().LabelHardcoded("Jump process").TimeFormat(Hardcoded.JumpDriveJumpDelay); // HACK: jumpDrive.JumpDelay is not used in game code
-                AddLine().Label("Max distance").DistanceFormat((float)jumpDrive.MaxJumpDistance);
+                float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * jumpDrive.PowerEfficiency);
+                AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - jumpDrive.PowerEfficiency);
+                AddLine().LabelHardcoded("Jump process").TimeFormat(Hardcoded.JumpDriveJumpDelay);
+                AddLine().Label("Distance limit").DistanceRangeFormat((float)jumpDrive.MinJumpDistance, (float)jumpDrive.MaxJumpDistance);
                 AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
             }
         }

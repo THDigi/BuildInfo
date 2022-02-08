@@ -481,52 +481,77 @@ namespace Digi.BuildInfo.Features
 
                 float scaleFOV = Main.DrawUtils.ScaleFOV;
 
+                const bool debugMode = false;
+
                 #region for debugging
-                //if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Control))
-                //{
-                //    for(int i = totalComps - 1; i >= 0; --i)
-                //    {
-                //        Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldComponentHighlightHeight * scaleFOV);
+                if(debugMode)
+                {
+                    if(!MyParticlesManager.Paused)
+                        MyAPIGateway.Utilities.ShowNotification($"maxVisibleComps={maxVisibleComps}; total={totalComps}; scrollIdxOffset={scrollIdxOffset}; scrollIdx={scrollIdx}; maxScrollIdx={maxScrollIdx}", 16, FontsHandler.SEOutlined);
 
-                //        Vector2 posHud = compListTopRight;
-                //        posHud.Y += HudComponentHeight * (totalComps - i - scrollIdxOffset - 1);
-                //        Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                    if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.F))
+                    {
+                        for(int i = totalComps - 1; i >= 0; --i)
+                        {
+                            Vector2 sizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldComponentHighlightHeight * scaleFOV);
 
-                //        DrawDotAt(posWorld, new Color(255, 0, 255));
+                            int num = (totalComps - i - scrollIdxOffset - 1);
 
-                //        posWorld = Main.DrawUtils.HUDtoWorld(posHud);
-                //        posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y; // move to center of sprite?
+                            Vector2 posHud = compListTopRight;
+                            posHud.Y += HudComponentHeight * num;
+                            Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                //        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, Color.HotPink * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
-                //    }
-                //}
+                            DrawDotAt(posWorld, new Color(255, 0, 255));
+
+                            posWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                            posWorld += camMatrix.Left * sizeWorld.X + camMatrix.Up * sizeWorld.Y; // move to center of sprite?
+
+                            Color color = (num < 0 ? Color.Red : (num > maxVisibleIdx ? Color.Blue : Color.HotPink));
+
+                            MyTransparentGeometry.AddBillboardOriented(MaterialSquare, color * (0.25f + ((i / (float)totalComps) / 2)), posWorld, camMatrix.Left, camMatrix.Up, sizeWorld.X, sizeWorld.Y, Vector2.Zero, BlendType);
+                        }
+                    }
+                }
                 #endregion
 
                 Vector2 lineSizeWorld = new Vector2(HudComponentWidth * scaleFOV, WorldBlockInfoLineHeight * scaleFOV);
 
+                int criticalCompIndex = blockDef.CriticalGroup;
+
+                if(debugMode)
+                    if(!MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Q))
+                        criticalCompIndex = (int)Dev.GetValueScroll("set criticalCompIndex", 0, 1, VRage.Input.MyKeys.Control);
+
                 #region red functionality line
-                int criticalIndex = (blockDef.CriticalGroup == 0 ? -1 : blockDef.CriticalGroup) + scrollIdxOffset;
-                if(blockDef.CriticalGroup >= 0 && criticalIndex >= -1 && criticalIndex < totalComps && criticalIndex >= maxVisibleIdx)
+                if(criticalCompIndex >= (scrollIdx - 1) && criticalCompIndex <= maxScrollIdx)// within scroll limits
                 {
-                    Vector2 posHud = compListTopRight;
-                    posHud.Y += HudComponentHeight * (totalComps - criticalIndex - 2) + HudComponentUnderlineOffset;
+                    int redLineVisualIdx = criticalCompIndex + scrollIdxOffset;
+                    if(redLineVisualIdx >= 0 && redLineVisualIdx < totalComps) // within total limits
+                    {
+                        Vector2 posHud = compListTopRight;
+                        posHud.Y += HudComponentHeight * (totalComps - redLineVisualIdx - 2) + HudComponentUnderlineOffset;
 
-                    Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
+                        Vector3D posWorld = Main.DrawUtils.HUDtoWorld(posHud);
 
-                    posWorld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * lineSizeWorld.Y;
+                        posWorld += camMatrix.Left * lineSizeWorld.X + camMatrix.Up * lineSizeWorld.Y;
 
-                    MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
+                        MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineFunctionalColor, posWorld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
+                    }
+
+                    if(debugMode)
+                        if(!MyParticlesManager.Paused)
+                            MyAPIGateway.Utilities.ShowNotification($"redLineVisualIdx={redLineVisualIdx}", 16, FontsHandler.SEOutlined);
                 }
                 #endregion
 
                 #region blue hacking line
-                if(OwnershipComponentIndex.HasValue)
+                if(OwnershipComponentIndex.HasValue && OwnershipComponentIndex.Value >= (scrollIdx - 1) && OwnershipComponentIndex.Value <= maxScrollIdx) // within scroll limits
                 {
-                    int ownershipIndex = (OwnershipComponentIndex.HasValue ? OwnershipComponentIndex.Value + scrollIdxOffset : -999);
-                    if(ownershipIndex >= -1 && ownershipIndex < totalComps && ownershipIndex >= maxVisibleIdx)
+                    int blueLineVisualIdx = OwnershipComponentIndex.Value + scrollIdxOffset;
+                    if(blueLineVisualIdx >= 0 && blueLineVisualIdx < totalComps) // within total limits
                     {
                         Vector2 posHud = compListTopRight;
-                        posHud.Y += HudComponentHeight * (totalComps - ownershipIndex - 2) + HudComponentUnderlineOffset;
+                        posHud.Y += HudComponentHeight * (totalComps - blueLineVisualIdx - 2) + HudComponentUnderlineOffset;
 
                         Vector3D posWOrld = Main.DrawUtils.HUDtoWorld(posHud);
 
@@ -534,6 +559,10 @@ namespace Digi.BuildInfo.Features
 
                         MyTransparentGeometry.AddBillboardOriented(MaterialSquare, LineOwnershipColor, posWOrld, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, lineSizeWorld.X, lineSizeWorld.Y, Vector2.Zero, BlendType);
                     }
+
+                    if(debugMode)
+                        if(!MyParticlesManager.Paused)
+                            MyAPIGateway.Utilities.ShowNotification($"blueLineVisualIdx={blueLineVisualIdx}", 16, FontsHandler.SEOutlined);
                 }
                 #endregion
 
