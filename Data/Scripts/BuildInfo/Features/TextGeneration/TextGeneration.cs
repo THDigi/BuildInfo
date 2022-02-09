@@ -4278,11 +4278,8 @@ namespace Digi.BuildInfo.Features
                 MyDLCs.MyDLC dlc;
                 if(MyDLCs.TryGetDLC(dlcId, out dlc))
                 {
-                    // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
                     if(!MyAPIGateway.DLC.HasDLC(dlcId, MyAPIGateway.Multiplayer.MyId))
                         GetLine().Color(COLOR_BAD);
-#endif
 
                     GetLine().Append(MyTexts.GetString(dlc.DisplayName)).ResetFormatting();
                 }

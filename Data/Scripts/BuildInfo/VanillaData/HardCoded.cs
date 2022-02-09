@@ -466,9 +466,6 @@ namespace Digi.BuildInfo.VanillaData
             return relativeEnt.PositionComp.WorldAABB.DistanceSquared(controlledEnt.PositionComp.GetPosition()) <= RelativeDampeners_MaxDistanceSq;
         }
 
-        // from MyJumpDrive.StorePower()
-        public const float JumpDriveRechargeMultiplier = 0.8f;
-
         // from MyGridJumpDriveSystem @ void Jump(Vector3D jumpTarget, long userId)
         public const float JumpDriveJumpDelay = 10f;
 
@@ -489,10 +486,7 @@ namespace Digi.BuildInfo.VanillaData
         public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
         public static readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine); // TODO: use the interface when one is added
         public static readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
-
-        // from MyGuiScreenHudSpace.PrepareDraw()
-        public const float HudBlockInfoOffsetInShip = 0.498f;
-
+        
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         // VanillaDefinitions checks vanilla definitions if any has >3 to alert me if they're using a new flag.
         public enum MountPointMask : byte

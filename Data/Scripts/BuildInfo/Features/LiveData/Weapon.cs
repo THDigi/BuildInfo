@@ -55,8 +55,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 if(block is IMyLargeGatlingTurret)
                 {
-                    // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
                     if(turretDef?.SubpartPairing != null)
                     {
                         // TODO: needs to be better?
@@ -66,7 +64,6 @@ namespace Digi.BuildInfo.Features.LiveData
                         valid = GetTurretData(block, out Turret, base1, base2, barrel, 0.5f, 0.75f);
                     }
                     else
-#endif
                     {
                         valid = GetTurretData(block, out Turret, "GatlingTurretBase1", "GatlingTurretBase2", "GatlingBarrel", 0.5f, 0.75f);
                     }
@@ -312,16 +309,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 // FIXME: camera dummy is ignored on engineer turret block?!
 
-                // from MyLargeTurretBase.GetCameraDummy()
-                Dictionary<string, IMyModelDummy> pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
-                pitchDummies.Clear();
-                ((IMyEntity)subpartPitch).Model.GetDummies(pitchDummies);
-
-                // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
                 MyLargeTurretBaseDefinition turretDef = block?.SlimBlock?.BlockDefinition as MyLargeTurretBaseDefinition;
                 if(turretDef != null)
                 {
+                    // from MyLargeTurretBase.GetCameraDummy()
+                    Dictionary<string, IMyModelDummy> pitchDummies = BuildInfoMod.Instance.Caches.Dummies;
+                    pitchDummies.Clear();
+                    ((IMyEntity)subpartPitch).Model.GetDummies(pitchDummies);
+
                     IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault(turretDef.CameraDummyName, null);
 
                     // from MyLargeTurretBase.GetViewMatrix() (without the invert)
@@ -332,17 +327,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
                 }
-#else
-                IMyModelDummy cameraDummy = pitchDummies.GetValueOrDefault("camera", null);
-
-                // from MyLargeTurretBase.GetViewMatrix() (without the invert)
-                if(cameraDummy != null)
-                    turret.CameraForSubpart = Matrix.Normalize(cameraDummy.Matrix);
-                else
-                    turret.CameraForSubpart = Matrix.CreateTranslation(Vector3.Forward * camForwardOffset + Vector3.Up * camUpOffset);
-
-                turret.CameraForBlock = (turret.CameraForSubpart * subpartPitch.WorldMatrix) * block.WorldMatrixInvScaled;
-#endif
             }
             else
             {

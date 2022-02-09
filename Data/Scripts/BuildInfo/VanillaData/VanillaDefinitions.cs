@@ -899,16 +899,12 @@ namespace Digi.BuildInfo.VanillaData
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow3x3FlatInv"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3Flat"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "SmallWindow2x3FlatInv"));
-
-            // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Searchlight), "SmallSearchlight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_Searchlight), "LargeSearchlight"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_HeatVentBlock), "LargeHeatVentBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_HeatVentBlock), "SmallHeatVentBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TurretControlBlock), "LargeTurretControlBlock"));
             Definitions.Add(new MyDefinitionId(typeof(MyObjectBuilder_TurretControlBlock), "SmallTurretControlBlock"));
-#endif
         }
     }
 }

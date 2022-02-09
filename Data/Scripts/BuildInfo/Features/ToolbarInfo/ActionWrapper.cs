@@ -559,9 +559,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             #endregion
 
-            // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
-
             // ignore icons for all target group actions
             if(action.Id.StartsWith("TargetingGroup_"))
             {
@@ -573,7 +570,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         return null;
                 }
             }
-#endif
 
             #region replace by icon path
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))

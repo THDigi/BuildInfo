@@ -100,6 +100,8 @@ namespace Digi.BuildInfo.Utilities
 
         public static bool GetEquippedBlockMatrix(out MatrixD matrix)
         {
+            const bool DebugMessages = false;
+
             matrix = MatrixD.Identity;
 
             if(MyCubeBuilder.Static == null || !MyCubeBuilder.Static.IsActivated)
@@ -124,14 +126,27 @@ namespace Digi.BuildInfo.Utilities
                     }
 
                     matrix.Translation = rayMatrix.Translation + rayMatrix.Forward * MyCubeBuilder.IntersectionDistance;
+
+                    if(DebugMessages)
+                        if(!MyParticlesManager.Paused)
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; no hit ent", 16, FontsHandler.SEOutlined);
                 }
                 else if(hitEnt is IMyVoxelBase)
                 {
                     matrix.Translation = MyCubeBuilder.Static.HitInfo.Value.GetHitPos(); // required for position to be accurate when aiming at a planet
+
+                    if(DebugMessages)
+                        if(!MyParticlesManager.Paused)
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit voxel: {hitEnt}", 16, FontsHandler.SEOutlined);
                 }
                 else // if(hitEnt is IMyCubeGrid)
                 {
+                    // TODO: fix jittery position
                     matrix.Translation = box.Center;
+
+                    if(DebugMessages)
+                        if(!MyParticlesManager.Paused)
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit grid(?): {hitEnt}", 16, FontsHandler.SEOutlined);
                 }
             }
             else
@@ -142,6 +157,13 @@ namespace Digi.BuildInfo.Utilities
                 Vector3D addPosition;
                 MyCubeBuilder.Static.GetAddPosition(out addPosition);
                 matrix.Translation = addPosition;
+
+                if(DebugMessages)
+                    if(!MyParticlesManager.Paused)
+                    {
+                        IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo?.GetHitEnt();
+                        MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: grid-locked: {hitEnt}", 16, FontsHandler.SEOutlined);
+                    }
             }
 
             return true;
