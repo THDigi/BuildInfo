@@ -143,9 +143,8 @@ namespace Digi.BuildInfo.Features
                     OwnershipComponentIndex = -1; // no computer, no hacking, see early exit in MyCubeBlock.OnIntegrityChanged()
             }
 
-            for(int i = 0; i < ComponentReplaceInfoCount; ++i)
+            foreach(ComponentInfo info in ComponentReplaceInfo)
             {
-                ComponentInfo info = ComponentReplaceInfo[i];
                 info.Index = -1;
                 info.ReturnsItem = null;
                 info.ReturnsDifferent = false;
@@ -230,7 +229,14 @@ namespace Digi.BuildInfo.Features
                 //}
                 #endregion
 
-                UpdateHudInventoryComps();
+                try
+                {
+                    UpdateHudInventoryComps();
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
             }
 
             Main.GameBlockInfoHandler.RedrawBlockInfo();
@@ -238,8 +244,15 @@ namespace Digi.BuildInfo.Features
 
         void InventoryContentChanged(MyInventoryBase inventory, MyPhysicalInventoryItem item, MyFixedPoint amount)
         {
-            UpdateHudInventoryComps();
-            Main.GameBlockInfoHandler.RedrawBlockInfo();
+            try
+            {
+                UpdateHudInventoryComps();
+                Main.GameBlockInfoHandler.RedrawBlockInfo();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         void BlockInfoScrollUpdate(ListReader<MyHudBlockInfo.ComponentInfo> originalComponents)
@@ -270,162 +283,185 @@ namespace Digi.BuildInfo.Features
 
         void UpdateHudInventoryComps()
         {
-            MyHudBlockInfo hud = MyHud.BlockInfo;
-            MyCubeBlockDefinition blockDef;
-            if(!Main.Config.BlockInfoAdditions.Value || !MyDefinitionManager.Static.TryGetCubeBlockDefinition(hud.DefinitionId, out blockDef))
+            int debugStage = 0;
+            try
             {
-                StopUpdates();
-                return;
-            }
-
-            if(!MyCubeBuilder.Static.IsActivated)
-                return;
-
-            bool isCreative = Utils.CreativeToolsEnabled;
-
-            hud.BlockIntegrity = (isCreative ? blockDef.MaxIntegrityRatio : 0.0000001f);
-
-            #region Inventory find and monitor
-            foreach(MyInventory inv in MonitorInventories)
-            {
-                inv.InventoryContentChanged -= InventoryContentChanged;
-            }
-
-            MonitorInventories.Clear();
-
-            MyCockpit cockpit = MyAPIGateway.Session.ControlledObject as MyCockpit;
-            if(cockpit != null)
-            {
-                IMyCharacter pilot = cockpit.Pilot;
-                if(pilot.HasInventory)
-                    MonitorInventories.Add((MyInventory)pilot.GetInventory());
-
-                if(cockpit.HasInventory)
+                MyHudBlockInfo hud = MyHud.BlockInfo;
+                MyCubeBlockDefinition blockDef;
+                if(!Main.Config.BlockInfoAdditions.Value || !MyDefinitionManager.Static.TryGetCubeBlockDefinition(hud.DefinitionId, out blockDef))
                 {
-                    for(int i = 0; i < cockpit.InventoryCount; i++)
+                    StopUpdates();
+                    return;
+                }
+
+                if(!MyCubeBuilder.Static.IsActivated)
+                    return;
+
+                bool isCreative = Utils.CreativeToolsEnabled;
+
+                hud.BlockIntegrity = (isCreative ? blockDef.MaxIntegrityRatio : 0.0000001f);
+
+                #region Inventory find and monitor
+                foreach(MyInventory inv in MonitorInventories)
+                {
+                    inv.InventoryContentChanged -= InventoryContentChanged;
+                }
+
+                MonitorInventories.Clear();
+
+                debugStage = 1;
+
+                MyCockpit cockpit = MyAPIGateway.Session.ControlledObject as MyCockpit;
+                if(cockpit != null)
+                {
+                    IMyCharacter pilot = cockpit.Pilot;
+                    if(pilot.HasInventory)
+                        MonitorInventories.Add((MyInventory)pilot.GetInventory());
+
+                    if(cockpit.HasInventory)
                     {
-                        MonitorInventories.Add(cockpit.GetInventory(i));
-                    }
-
-                    // TODO: cockpit build mode uses conveyor-connected blocks too... use?
-                    //ListReader<MyCubeBlock> fatBlocks = cockpit.CubeGrid.GetFatBlocks();
-                    //if(fatBlocks.Count <= 500)
-                    //{
-                    //    VRage.Game.ModAPI.Ingame.MyItemType standardBuildingItem = VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("SteelPlate"); // TODO: maybe find any large-conveyor requiring item instead?
-                    //    IMyInventory cockpitInventory = cockpit.GetInventory(0);
-                    //
-                    //    foreach(MyCubeBlock block in fatBlocks)
-                    //    {
-                    //        if(block == cockpit)
-                    //            continue;
-                    //
-                    //        if(!block.HasInventory)
-                    //            continue;
-                    //
-                    //        IMyInventory firstInv = block.GetInventory(0);
-                    //        if(!firstInv.CanTransferItemTo(cockpitInventory, standardBuildingItem))
-                    //            continue;
-                    //
-                    //        for(int i = 0; i < block.InventoryCount; i++)
-                    //        {
-                    //            MyInventory inv = block.GetInventory(i);
-                    //            MonitorInventories.Add(inv);
-                    //        }
-                    //    }
-                    //}
-                }
-            }
-            else
-            {
-                IMyCharacter chr = MyAPIGateway.Session.ControlledObject as IMyCharacter;
-                if(chr != null && chr.HasInventory)
-                {
-                    MonitorInventories.Add((MyInventory)chr.GetInventory());
-                }
-            }
-
-            foreach(MyInventory inv in MonitorInventories)
-            {
-                inv.InventoryContentChanged += InventoryContentChanged;
-            }
-            #endregion
-
-            if(isCreative)
-            {
-                for(int i = 0; i < hud.Components.Count; i++)
-                {
-                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
-                    SetCompStockpile(ref comp, comp.TotalCount, grayedOut: false);
-                    hud.Components[i] = comp;
-                }
-            }
-            else if(MonitorInventories.Count > 0)
-            {
-                CompsInInv.Clear();
-
-                for(int i = 0; i < hud.Components.Count; i++)
-                {
-                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
-
-                    if(!CompsInInv.ContainsKey(comp.DefinitionId))
-                    {
-                        int amount = 0;
-                        foreach(MyInventory inv in MonitorInventories)
+                        for(int i = 0; i < cockpit.InventoryCount; i++)
                         {
-                            amount += (int)inv.GetItemAmount(comp.DefinitionId);
+                            MonitorInventories.Add(cockpit.GetInventory(i));
                         }
-                        CompsInInv[comp.DefinitionId] = amount;
-                    }
-                }
 
-                const bool OnlyFirstCompRedHighlight = true;
-
-                // mark first component red if you don't have it to indicate you can't place it
-                if(OnlyFirstCompRedHighlight)
-                {
-                    if(CompsInInv.GetValueOrDefault(hud.Components[0].DefinitionId, 0) <= 0)
-                    {
-                        hud.MissingComponentIndex = 0;
+                        // TODO: cockpit build mode uses conveyor-connected blocks too... use?
+                        //ListReader<MyCubeBlock> fatBlocks = cockpit.CubeGrid.GetFatBlocks();
+                        //if(fatBlocks.Count <= 500)
+                        //{
+                        //    VRage.Game.ModAPI.Ingame.MyItemType standardBuildingItem = VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("SteelPlate"); // TODO: maybe find any large-conveyor requiring item instead?
+                        //    IMyInventory cockpitInventory = cockpit.GetInventory(0);
+                        //
+                        //    foreach(MyCubeBlock block in fatBlocks)
+                        //    {
+                        //        if(block == cockpit)
+                        //            continue;
+                        //
+                        //        if(!block.HasInventory)
+                        //            continue;
+                        //
+                        //        IMyInventory firstInv = block.GetInventory(0);
+                        //        if(!firstInv.CanTransferItemTo(cockpitInventory, standardBuildingItem))
+                        //            continue;
+                        //
+                        //        for(int i = 0; i < block.InventoryCount; i++)
+                        //        {
+                        //            MyInventory inv = block.GetInventory(i);
+                        //            MonitorInventories.Add(inv);
+                        //        }
+                        //    }
+                        //}
                     }
                 }
                 else
                 {
-                    hud.MissingComponentIndex = -1;
+                    IMyCharacter chr = MyAPIGateway.Session.ControlledObject as IMyCharacter;
+                    if(chr != null && chr.HasInventory)
+                    {
+                        MonitorInventories.Add((MyInventory)chr.GetInventory());
+                    }
                 }
 
-                for(int i = 0; i < hud.Components.Count; i++)
+                debugStage = 2;
+
+                foreach(MyInventory inv in MonitorInventories)
                 {
-                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+                    inv.InventoryContentChanged += InventoryContentChanged;
+                }
+                #endregion
 
-                    int inInv = Math.Max(0, CompsInInv[comp.DefinitionId]);
-                    if(inInv > 0)
-                        CompsInInv[comp.DefinitionId] = inInv - comp.TotalCount; // remove for next comp stack of same type
+                if(isCreative)
+                {
+                    debugStage = 3;
 
-                    bool hasThisComp = (inInv >= comp.TotalCount);
-
-                    if(!OnlyFirstCompRedHighlight)
+                    for(int i = 0; i < hud.Components.Count; i++)
                     {
-                        // mark first unavailable component as red unless it's past the red line, then don't care
-                        if(hud.MissingComponentIndex < 0 && blockDef.CriticalGroup >= i && inInv < comp.TotalCount)
+                        MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+                        SetCompStockpile(ref comp, comp.TotalCount, grayedOut: false);
+                        hud.Components[i] = comp;
+                    }
+                }
+                else if(MonitorInventories.Count > 0)
+                {
+                    debugStage = 4;
+
+                    CompsInInv.Clear();
+
+                    for(int i = 0; i < hud.Components.Count; i++)
+                    {
+                        MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+
+                        if(!CompsInInv.ContainsKey(comp.DefinitionId))
                         {
-                            hud.MissingComponentIndex = i;
+                            int amount = 0;
+                            foreach(MyInventory inv in MonitorInventories)
+                            {
+                                amount += (int)inv.GetItemAmount(comp.DefinitionId);
+                            }
+                            CompsInInv[comp.DefinitionId] = amount;
                         }
                     }
 
-                    int available = Math.Min(inInv, comp.TotalCount); // show up to what block needs
-                    SetCompStockpile(ref comp, available, grayedOut: !hasThisComp);
+                    debugStage = 5;
 
-                    hud.Components[i] = comp;
+                    const bool OnlyFirstCompRedHighlight = true;
+
+                    // mark first component red if you don't have it to indicate you can't place it
+                    if(OnlyFirstCompRedHighlight)
+                    {
+                        if(hud.Components.Count > 0 && CompsInInv.GetValueOrDefault(hud.Components[0].DefinitionId, 0) <= 0)
+                        {
+                            hud.MissingComponentIndex = 0;
+                        }
+                    }
+                    else
+                    {
+                        hud.MissingComponentIndex = -1;
+                    }
+
+                    debugStage = 6;
+
+                    for(int i = 0; i < hud.Components.Count; i++)
+                    {
+                        MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+
+                        int inInv = Math.Max(0, CompsInInv[comp.DefinitionId]);
+                        if(inInv > 0)
+                            CompsInInv[comp.DefinitionId] = inInv - comp.TotalCount; // remove for next comp stack of same type
+
+                        bool hasThisComp = (inInv >= comp.TotalCount);
+
+                        if(!OnlyFirstCompRedHighlight)
+                        {
+                            // mark first unavailable component as red unless it's past the red line, then don't care
+                            if(hud.MissingComponentIndex < 0 && blockDef.CriticalGroup >= i && inInv < comp.TotalCount)
+                            {
+                                hud.MissingComponentIndex = i;
+                            }
+                        }
+
+                        int available = Math.Min(inInv, comp.TotalCount); // show up to what block needs
+                        SetCompStockpile(ref comp, available, grayedOut: !hasThisComp);
+
+                        hud.Components[i] = comp;
+                    }
+                }
+                else // survival and no inventories found
+                {
+                    debugStage = 7;
+
+                    for(int i = 0; i < hud.Components.Count; i++)
+                    {
+                        MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
+                        SetCompStockpile(ref comp, 0, grayedOut: true);
+                        hud.Components[i] = comp;
+                    }
                 }
             }
-            else // survival and no inventories found
+            catch(Exception e)
             {
-                for(int i = 0; i < hud.Components.Count; i++)
-                {
-                    MyHudBlockInfo.ComponentInfo comp = hud.Components[i];
-                    SetCompStockpile(ref comp, 0, grayedOut: true);
-                    hud.Components[i] = comp;
-                }
+                Log.Error($"Exception at part #{debugStage}");
+                Log.Error(e, null);
             }
         }
 
