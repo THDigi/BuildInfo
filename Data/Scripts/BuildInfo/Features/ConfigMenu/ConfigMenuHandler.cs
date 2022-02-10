@@ -233,6 +233,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 }
             });
 
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarStatusFontOverride);
+            SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarStatusTextScaleOverride);
+
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarActionIcons, execOnCycle: (v) => MyAPIGateway.Utilities.ShowNotification($"NOTE: Toolbar action icons can't be refreshed in real time, you'll need to rejoin world.", 3000, FontsHandler.YellowSh));
             #endregion
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.HUD;
@@ -67,6 +66,8 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting ToolbarActionStatus;
         public EnumSetting<ActionIconsMode> ToolbarActionIcons;
+        public BoolSetting ToolbarStatusFontOverride;
+        public FloatSetting ToolbarStatusTextScaleOverride;
 
         public BoolSetting EventToolbarInfo;
         public Vector2DSetting EventToolbarInfoPosition;
@@ -515,6 +516,19 @@ namespace Digi.BuildInfo.Features.Config
                 "This is independent of the ToolbarInfo or EventToolbar features."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
+
+            ToolbarStatusFontOverride = new BoolSetting(Handler, "Toolbar: Action Status Font Override", true,
+                "Replaces HUD definition's font for toolbar status with a white font with black outline (BI_SEOutlined), this will affect modded HUDs aswell.",
+                "This greatly helps readability of text on the blueish block icons in the toolbar."
+            );
+
+            ToolbarStatusTextScaleOverride = new FloatSetting(Handler, "Toolbar: Action Status Text Scale Override", defaultValue: HUDEditor.CustomToolbarTextScale, min: 0, max: 2f, commentLines: new string[]
+            {
+                "Overrides the HUD definition's toolbar status text scale because custom status overrides rely on a consistent size to not bug out.",
+                $"Set to 0 to not edit the HUD definition at all, default: {HUDEditor.CustomToolbarTextScale.ToString("0.######")}",
+                $"Not recommended to go higher than {HUDEditor.VanillaToolbarTextScale.ToString("0.######")} (vanilla size), but if you do and you don't get status texts, you'll need to turn off '{ToolbarActionStatus.Name}' (which is also not recommended)."
+            });
+            //ToolbarStatusTextScaleOverride.AddDefaultValueComment = false;
 
             ToolbarActionIcons = new EnumSetting<ActionIconsMode>(Handler, "Toolbar: Action Icons", ActionIconsMode.Custom, new string[]
             {
