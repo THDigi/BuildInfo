@@ -1387,7 +1387,7 @@ namespace Digi.BuildInfo.Features
                     float currentTime = buildTime * (1 - integrityRatio);
                     if(currentTime > 0)
                     {
-                        AddLine().Append("Completed: ").TimeFormat(currentTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.WelderSpeedMultiplier).ResetFormatting();
+                        AddLine().Append("Completed: ").TimeFormat(currentTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.WelderSpeedMultiplier).ResetFormatting();
 
                         if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
                         {
@@ -1431,11 +1431,11 @@ namespace Digi.BuildInfo.Features
 
                     if(grindTime > 0)
                     {
-                        AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();
+                        AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();
 
                         if(hackable)
                         {
-                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime).Color(COLOR_UNIMPORTANT).MultiplierFormat(MyAPIGateway.Session.HackSpeedMultiplier).ResetFormatting();
+                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.HackSpeedMultiplier).ResetFormatting();
                         }
                     }
                 }
@@ -1849,7 +1849,7 @@ namespace Digi.BuildInfo.Features
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
                 GetLine().Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator()
                     .Size3DFormat(def.Size).Separator()
-                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).MultiplierFormat(weldMul).ResetFormatting();
+                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).OptionalMultiplier(weldMul).ResetFormatting();
 
                 if(Math.Abs(grindRatio - 1) >= 0.0001f)
                     GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetFormatting();
@@ -2414,8 +2414,8 @@ namespace Digi.BuildInfo.Features
                     int weakestAt = Hardcoded.ShipWelder_DivideByTargets;
                     float leastWeld = Hardcoded.ShipWelder_WeldPerSec(weakestAt);
 
-                    AddLine().LabelHardcoded("Peak weld speed").ProportionToPercent(peakWeld).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for one block")
-                             .Separator().ProportionToPercent(leastWeld).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
+                    AddLine().LabelHardcoded("Peak weld speed").ProportionToPercent(peakWeld).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Append(" for one block")
+                             .Separator().ProportionToPercent(leastWeld).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
 
                     AddLine().Label("Welding radius").DistanceFormat(shipTool.SensorRadius);
                 }
@@ -2428,8 +2428,8 @@ namespace Digi.BuildInfo.Features
                     int weakestAt = Hardcoded.ShipGrinder_DivideByTargets;
                     float leastGrind = Hardcoded.ShipGrinder_GrindPerSec(weakestAt);
 
-                    AddLine().LabelHardcoded("Peak grind speed").ProportionToPercent(peakGrind).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for one block")
-                             .Separator().ProportionToPercent(leastGrind).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
+                    AddLine().LabelHardcoded("Peak grind speed").ProportionToPercent(peakGrind).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Append(" for one block")
+                             .Separator().ProportionToPercent(leastGrind).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Append(" for ").Append(weakestAt).Append("+ blocks");
 
                     AddLine().Label("Grinding radius").DistanceFormat(shipTool.SensorRadius);
                 }
@@ -2896,7 +2896,7 @@ namespace Digi.BuildInfo.Features
                     float mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     float mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).MultiplierFormat(mulSpeed).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).MultiplierFormat(mulEff);
+                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).OptionalMultiplier(mulEff);
                 }
             }
 
@@ -2919,7 +2919,7 @@ namespace Digi.BuildInfo.Features
                 {
                     float mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
 
-                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).MultiplierFormat(mul).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
+                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
                 }
             }
 

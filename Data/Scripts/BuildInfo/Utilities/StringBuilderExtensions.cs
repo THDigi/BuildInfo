@@ -833,7 +833,7 @@ namespace Digi.BuildInfo.Utilities
             return s.Append('%').Append(" (x").RoundedNumber(multiplier, 2).Append(")");
         }
 
-        public static StringBuilder MultiplierFormat(this StringBuilder s, float mul)
+        public static StringBuilder OptionalMultiplier(this StringBuilder s, float mul)
         {
             if(Math.Abs(mul - 1f) > 0.001f)
                 s.Append(" (x").Number(mul).Append(")");
