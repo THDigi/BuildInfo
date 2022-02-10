@@ -9,6 +9,7 @@ using Sandbox.Game.Localization;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
@@ -25,6 +26,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             RegisterFor(typeof(MyObjectBuilder_InteriorTurret));
             RegisterFor(typeof(MyObjectBuilder_LargeGatlingTurret));
             RegisterFor(typeof(MyObjectBuilder_LargeMissileTurret));
+
+            // TODO: maybe in their own class?
+            RegisterFor(typeof(MyObjectBuilder_TurretControlBlock));
+            RegisterFor(typeof(MyObjectBuilder_Searchlight));
         }
 
         void RegisterFor(MyObjectBuilderType type)
@@ -33,8 +38,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Processor.AddGroupStatus(type, GroupShoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
 
-            Processor.AddStatus(type, CycleTarget, "TargetingGroup_CycleSubsystems");
-            Processor.AddGroupStatus(type, GroupCycleTarget, "TargetingGroup_CycleSubsystems");
+
+            ToolbarStatusProcessor.StatusDel CycleTargetFunc = CycleTarget;
+            ToolbarStatusProcessor.GroupStatusDel GroupCycleTargetFunc = GroupCycleTarget;
+
+            Processor.AddStatus(type, CycleTargetFunc, "TargetingGroup_CycleSubsystems");
+            Processor.AddGroupStatus(type, GroupCycleTargetFunc, "TargetingGroup_CycleSubsystems");
+
+            foreach(MyTargetingGroupDefinition def in Processor.Main.Caches.OrderedTargetGroups)
+            {
+                string actionId = $"TargetingGroup_{def.Id.SubtypeName}";
+                Processor.AddStatus(type, CycleTargetFunc, actionId);
+                Processor.AddGroupStatus(type, GroupCycleTargetFunc, actionId);
+            }
         }
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
@@ -186,68 +202,37 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool CycleTarget(StringBuilder sb, ToolbarItem item)
         {
-            // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
-
-            int groupIdx = (int)item.Block.GetValue<long>("TargetingGroup_Selector") - 1;
-
-            if(groupIdx == -1)
-            {
-                sb.Append(MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default));
-            }
-            else
-            {
-                List<MyTargetingGroupDefinition> targetGroups = MyDefinitionManager.Static.GetTargetingGroupDefinitions();
-
-                if(groupIdx < 0 || groupIdx >= targetGroups.Count)
-                {
-                    sb.Append("#").Append(groupIdx);
-                }
-                else
-                {
-                    MyTargetingGroupDefinition group = targetGroups[groupIdx];
-                    sb.Append(group.DisplayNameText);
-                }
-            }
-
-            return true;
-#else
-            return false;
-#endif
-        }
-
-        readonly HashSet<int> Targetting = new HashSet<int>();
-
-        bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
-        {
-            // HACK: backwards compatible
-#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199)
-
-            if(!groupData.GetGroupBlocks<IMyLargeTurretBase>())
+            string targetGroup = GetTargetGroupSubtypeId(item.Block);
+            if(targetGroup == null)
                 return false;
 
-            Targetting.Clear();
+            sb.Append(GetTargetGroupName(targetGroup));
 
-            foreach(IMyLargeTurretBase gunBlock in groupData.Blocks)
+            return true;
+        }
+
+        readonly HashSet<string> TempTargetting = new HashSet<string>();
+        bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        {
+            if(!groupData.GetGroupBlocks<IMyTerminalBlock>())
+                return false;
+
+            TempTargetting.Clear();
+
+            foreach(IMyTerminalBlock tb in groupData.Blocks)
             {
-                //if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
-                //    continue;
+                string targetGroup = GetTargetGroupSubtypeId(tb);
+                if(targetGroup == null)
+                    continue;
 
-                ITerminalProperty prop = gunBlock.GetProperty("TargetingGroup_Selector");
-                if(prop != null)
-                {
-                    int groupIdx = (int)prop.As<long>().GetValue(gunBlock) - 1;
-                    Targetting.Add(groupIdx);
-
-                    //Targetting[groupIdx] = Targetting.GetValueOrDefault(groupIdx, 0) + 1;
-                }
+                TempTargetting.Add(targetGroup);
             }
 
-            if(Targetting.Count == 0)
+            if(TempTargetting.Count == 0)
             {
                 sb.Append("Unknown");
             }
-            else if(Targetting.Count > 1)
+            else if(TempTargetting.Count > 1)
             {
                 sb.Append("Mixed");
             }
@@ -255,34 +240,68 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 sb.Append("All\n");
 
-                //KeyValuePair<int, int> firstPair = Targetting.FirstPair();
-                //int groupIdx = firstPair.Key;
-                int groupIdx = Targetting.FirstElement();
+                string targetGroup = TempTargetting.FirstElement();
 
-                if(groupIdx == -1)
-                {
-                    sb.Append(MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default));
-                }
-                else
-                {
-                    List<MyTargetingGroupDefinition> targetGroups = MyDefinitionManager.Static.GetTargetingGroupDefinitions();
-
-                    if(groupIdx < 0 || groupIdx >= targetGroups.Count)
-                    {
-                        sb.Append("#").Append(groupIdx);
-                    }
-                    else
-                    {
-                        MyTargetingGroupDefinition group = targetGroups[groupIdx];
-                        sb.Append(group.DisplayNameText);
-                    }
-                }
+                sb.Append(GetTargetGroupName(targetGroup));
             }
 
             return true;
-#else
-            return false;
-#endif
+        }
+
+        /// <summary>
+        /// Returns subtypeId for current targeting group, "" if it's default, and null if it's not a supported block or has invalid group.
+        /// </summary>
+        string GetTargetGroupSubtypeId(IMyTerminalBlock block)
+        {
+            //{
+            //    IMyLargeTurretBase turret = block as IMyLargeTurretBase;
+            //    if(turret != null)
+            //    {
+            //        return turret.GetTargetingGroup() ?? "";
+            //    }
+            //}
+            //{
+            //    IMyTurretControlBlock turretControl = block as IMyTurretControlBlock;
+            //    if(turretControl != null)
+            //    {
+            //        return turretControl.GetTargetingGroup() ?? "";
+            //    }
+            //}
+
+            ITerminalProperty<long> prop = block.GetProperty("TargetingGroup_Selector")?.As<long>();
+            if(prop != null)
+            {
+                int groupIdx = (int)prop.GetValue(block); // 0 is default, 1+ is group index+1
+                groupIdx -= 1; // turn default to -1
+
+                if(groupIdx == -1)
+                    return "";
+
+                List<MyTargetingGroupDefinition> targetGroups = Processor.Main.Caches.OrderedTargetGroups;
+                if(groupIdx < 0 || groupIdx >= targetGroups.Count) // unknown state
+                    return null;
+
+                return targetGroups[groupIdx].Id.SubtypeName;
+            }
+
+            return null;
+        }
+
+        string GetTargetGroupName(string subtypeId)
+        {
+            if(subtypeId == null)
+                return "Unknown";
+
+            if(string.IsNullOrEmpty(subtypeId))
+                return MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default);
+
+            MyTargetingGroupDefinition def;
+            if(Processor.Main.Caches.TargetGroups.TryGetValue(subtypeId, out def))
+            {
+                return def.DisplayNameText;
+            }
+
+            return subtypeId;
         }
     }
 }

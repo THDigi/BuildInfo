@@ -563,12 +563,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(action.Id.StartsWith("TargetingGroup_"))
             {
                 string targetId = action.Id.Substring("TargetingGroup_".Length);
-
-                foreach(MyTargetingGroupDefinition targetGroup in MyDefinitionManager.Static.GetTargetingGroupDefinitions())
-                {
-                    if(targetId == targetGroup.Id.SubtypeName)
-                        return null;
-                }
+                if(BuildInfoMod.Instance.Caches.TargetGroups.ContainsKey(targetId))
+                    return null;
             }
 
             #region replace by icon path

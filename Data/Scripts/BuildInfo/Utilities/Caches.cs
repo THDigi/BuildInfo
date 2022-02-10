@@ -24,6 +24,8 @@ namespace Digi.BuildInfo.Utilities
         public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
         public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
         public readonly Dictionary<string, int> NamedSums = new Dictionary<string, int>();
+        public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3
+        public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
 
         //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
 
@@ -36,6 +38,7 @@ namespace Digi.BuildInfo.Utilities
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
             FillDefs();
+            CacheTargetGroups();
             //ComputeMountpointProperties();
         }
 
@@ -70,6 +73,16 @@ namespace Digi.BuildInfo.Utilities
                         continue;
                     }
                 }
+            }
+        }
+
+        void CacheTargetGroups()
+        {
+            MyDefinitionManager.Static.GetTargetingGroupDefinitions(OrderedTargetGroups);
+
+            foreach(MyTargetingGroupDefinition def in OrderedTargetGroups)
+            {
+                TargetGroups[def.Id.SubtypeName] = def;
             }
         }
 
