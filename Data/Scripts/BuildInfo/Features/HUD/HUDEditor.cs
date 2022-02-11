@@ -80,6 +80,9 @@ namespace Digi.BuildInfo.Features
 
                     MyCockpit cockpit = MyAPIGateway.Session?.ControlledObject as MyCockpit;
                     if(cockpit == null)
+                        cockpit = MyAPIGateway.Session?.Player?.Character?.Parent as MyCockpit;
+
+                    if(cockpit == null)
                     {
                         long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
                         Log.Error($"Player entered cockpit but game says he does not control any cockpits... entName={entityName}; playerId={playerId}; gridName={gridName}; localIdentityId={localIdentityId}");
@@ -144,6 +147,9 @@ namespace Digi.BuildInfo.Features
             if(Main.Tick >= CanReloadAfterThisTick)
             {
                 MyCockpit cockpit = MyAPIGateway.Session?.ControlledObject as MyCockpit;
+                if(cockpit == null)
+                    cockpit = MyAPIGateway.Session?.Player?.Character?.Parent as MyCockpit;
+
                 if(cockpit != null)
                 {
                     ForceHudRefresh(cockpit);
