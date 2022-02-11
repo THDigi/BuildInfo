@@ -63,6 +63,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const int CustomTagPrefixSpacesNoActionIcons = 13;
 
         public bool Enabled { get; private set; } = true;
+        public string DisableReason = "(unknown)";
 
         public bool AnimFlip { get; private set; }
 

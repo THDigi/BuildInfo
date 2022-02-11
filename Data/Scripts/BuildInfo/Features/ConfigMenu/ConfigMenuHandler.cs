@@ -229,7 +229,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             {
                 if(!Main.ToolbarStatusProcessor.Enabled)
                 {
-                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, "NOTE: Toolbar action status is forced off because of a HUD mod that increases status text size.");
+                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"NOTE: Toolbar action status is forced off, reason: {Main.ToolbarStatusProcessor.DisableReason}");
                 }
             });
 
