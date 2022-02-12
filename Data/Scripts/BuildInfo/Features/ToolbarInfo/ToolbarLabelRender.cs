@@ -617,7 +617,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             sb.AppendMaxLength(item.DisplayName, maxNameLength).ResetFormatting();
 
                             if(item.GroupId != null)
-                                sb.Append('*');
+                                sb.ColorA(new Color(155, 220, 255) * opacity).Append('*');
 
                             sb.ColorA(Color.Gray * opacity).Append(" - ").ResetFormatting();
                         }
