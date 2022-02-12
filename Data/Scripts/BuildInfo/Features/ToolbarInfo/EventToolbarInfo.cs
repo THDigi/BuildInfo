@@ -212,13 +212,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             TargetBlock = blocks[0];
             StringBuilder sb = Label.Text.Message.Clear();
 
+            sb.Color(HeaderColor);
+
+            switch(Main.EventToolbarMonitor.LastOpenedToolbarType)
+            {
+                default: sb.Append("Event Toolbar for "); break;
+                case EventToolbarMonitor.ToolbarType.RCWaypoint: sb.Append("Waypoint Event Toolbar for "); break;
+                case EventToolbarMonitor.ToolbarType.LockOnVictim: sb.Append("LockOn Event Toolbar for "); break;
+            }
+
             if(blocks.Count > 1)
             {
-                sb.Color(HeaderColor).Append("Event Toolbar for ").Append(blocks.Count).Append(" blocks").ResetFormatting().Append('\n');
+                sb.Append(blocks.Count).Append(" blocks").ResetFormatting().Append('\n');
             }
             else
             {
-                sb.Color(HeaderColor).Append("Event Toolbar for \"").AppendMaxLength(TargetBlock.CustomName, 24).Append("\"").ResetFormatting().Append('\n');
+                sb.Append("\"").AppendMaxLength(TargetBlock.CustomName, 24).Append("\"").ResetFormatting().Append('\n');
             }
 
             do
@@ -226,7 +235,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 IMyButtonPanel button = TargetBlock as IMyButtonPanel;
                 if(button != null)
                 {
-                    sb.Append("Each slot is a button.").Append('\n');
+                    sb.Append("Each slot is a button.\n");
 
                     MyButtonPanelDefinition buttonDef = TargetBlock.SlimBlock.BlockDefinition as MyButtonPanelDefinition;
 
@@ -269,46 +278,56 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 IMyAirVent vent = TargetBlock as IMyAirVent;
                 if(vent != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when room is filled.").Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when room is emptied.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": room pressurized\n");
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": room no longer pressurized\n");
                     break;
                 }
 
                 IMySensorBlock sensor = TargetBlock as IMySensorBlock;
                 if(sensor != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers on first detection.").Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when nothing is detected anymore.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": on first detection\n");
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": when nothing is detected anymore\n");
                     break;
                 }
 
                 IMyTargetDummyBlock targetDummy = TargetBlock as IMyTargetDummyBlock;
                 if(targetDummy != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" triggers when dummy is hit (or destroyed).").Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" triggers when dummy is destroyed.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": dummy is hit (or destroyed)\n");
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": dummy is destroyed\n");
                     break;
                 }
 
-                IMyRemoteControl rc = TargetBlock as IMyRemoteControl;
-                if(rc != null)
+                IMyShipController shipCtrl = TargetBlock as IMyShipController;
+                if(shipCtrl != null)
                 {
-                    sb.Append("All slots trigger when waypoint is reached.").Append('\n');
-                    break;
+                    if(Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.LockOnVictim)
+                    {
+                        sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": once this ship is locked on\n");
+                        sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no longer locked on\n");
+                        break;
+                    }
+
+                    if(TargetBlock is IMyRemoteControl && Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.RCWaypoint)
+                    {
+                        sb.Append("All slots: waypoint reached\n");
+                        break;
+                    }
                 }
 
                 IMyTimerBlock timer = TargetBlock as IMyTimerBlock;
                 if(timer != null)
                 {
-                    sb.Append("All slots trigger when timer finishes counting.").Append('\n');
+                    sb.Append("All slots: timer countdown reached\n");
                     break;
                 }
 
                 IMyTurretControlBlock tcb = TargetBlock as IMyTurretControlBlock;
                 if(tcb != null)
                 {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(" when turret is on target (angle deviation).").Append('\n');
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(" when turret is no longer on target.").Append('\n');
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": turret aligned with target (angle deviation)\n");
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": turret no longer aligned with target\n");
                     break;
                 }
 

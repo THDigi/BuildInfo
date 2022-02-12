@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Collections;
 using VRage.Game.Entity.UseObject;
 
@@ -16,6 +17,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         readonly List<IMyTerminalBlock> TargetBlocks = new List<IMyTerminalBlock>();
 
+        public ToolbarType LastOpenedToolbarType = ToolbarType.None;
+
+        readonly HashSet<IMyTerminalControl> OverwrittenControls = new HashSet<IMyTerminalControl>();
+
+        public enum ToolbarType
+        {
+            None,
+            RCWaypoint,
+            LockOnVictim,
+        }
+
         public EventToolbarMonitor(BuildInfoMod main) : base(main)
         {
         }
@@ -24,6 +36,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             MyCharacterDetectorComponent.OnInteractiveObjectChanged += UseObjectChanged;
 
+            MyAPIGateway.TerminalControls.CustomControlGetter += TerminalControlGetter;
+
             Main.GUIMonitor.ScreenAdded += GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved += GUIScreenRemoved;
         }
@@ -31,6 +45,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public override void UnregisterComponent()
         {
             MyCharacterDetectorComponent.OnInteractiveObjectChanged -= UseObjectChanged;
+
+            MyAPIGateway.TerminalControls.CustomControlGetter -= TerminalControlGetter;
 
             if(!Main.ComponentsRegistered)
                 return;
@@ -78,7 +94,56 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(TargetBlocks.Count > 0 && !Main.GUIMonitor.InAnyToolbarGUI)
             {
                 ClosedToolbarConfig?.Invoke(TargetBlocks);
+
                 TargetBlocks.Clear();
+
+                LastOpenedToolbarType = ToolbarType.None;
+            }
+        }
+
+        void TerminalControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
+        {
+            try
+            {
+                if(block is IMyShipController)
+                {
+                    foreach(IMyTerminalControl control in controls)
+                    {
+                        if(OverwrittenControls.Contains(control))
+                            continue;
+
+                        IMyTerminalControlButton button = control as IMyTerminalControlButton;
+                        if(button != null)
+                        {
+                            if(button.Id == "Open Toolbar") // waypoint reached action toolbar
+                            {
+                                OverwrittenControls.Add(control);
+
+                                Action<IMyTerminalBlock> originalAction = button.Action;
+                                button.Action = (b) =>
+                                {
+                                    LastOpenedToolbarType = ToolbarType.RCWaypoint;
+                                    originalAction?.Invoke(b);
+                                };
+                            }
+                            else if(button.Id == "OpenToolbar") // lock-on action toolbar
+                            {
+                                OverwrittenControls.Add(control);
+
+                                Action<IMyTerminalBlock> originalAction = button.Action;
+                                button.Action = (b) =>
+                                {
+                                    LastOpenedToolbarType = ToolbarType.LockOnVictim;
+                                    originalAction?.Invoke(b);
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
         }
     }
