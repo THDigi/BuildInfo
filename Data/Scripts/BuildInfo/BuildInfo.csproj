@@ -151,6 +151,7 @@
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Systems\SplitChecking.cs" />
     <Compile Include="Features\HUD\HUDEditor.cs" />
     <Compile Include="Features\HUD\GridControlStat.cs" />
     <Compile Include="Features\LiveData\AdvancedDoor.cs" />

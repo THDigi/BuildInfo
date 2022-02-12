@@ -18,8 +18,6 @@ namespace Digi.BuildInfo.Features
 
         string CurrentText;
 
-        const string SplitText = "<color=yellow>Grid will split if block is removed";
-
         public CrosshairMessages(BuildInfoMod main) : base(main)
         {
         }
@@ -72,21 +70,34 @@ namespace Digi.BuildInfo.Features
             if(Text == null)
                 return;
 
-            // TODO: unify the split check
-            // TODO: mark an attached connector/piston/hinge/rotor/susp as splitting as well
-
             IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
             if(aimedBlock != null && Main.EquipmentMonitor.IsAnyGrinder && Main.EquipmentMonitor.AimedProjectedBy == null)
             {
-                if(Main.TextGeneration.WillSplitGrid == GridSplitType.Recalculate)
-                    Main.TextGeneration.WillSplitGrid = aimedBlock.CubeGrid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+                SplitFlags splitInfo = Main.SplitChecking.GetSplitInfo(aimedBlock);
 
-                if(Main.TextGeneration.WillSplitGrid == GridSplitType.Split)
+                string message = null;
+
+                if(splitInfo.IsSet(SplitFlags.Disconnect))
                 {
-                    if(CurrentText != SplitText)
+                    message = "<color=yellow>Something will disconnect if this block is removed.";
+                }
+
+                if(splitInfo.IsSet(SplitFlags.Split))
+                {
+                    message = "<color=yellow>Grid will split if this block is removed.";
+                }
+
+                if(splitInfo.IsSet(SplitFlags.BlockLoss))
+                {
+                    message = "<color=red>Another block will vanish if this block is removed!";
+                }
+
+                if(message != null)
+                {
+                    if(CurrentText != message)
                     {
-                        CurrentText = SplitText;
-                        TextSB.Clear().Append(SplitText);
+                        CurrentText = message;
+                        TextSB.Clear().Append(message);
                         Vector2D textSize = Text.GetTextLength();
                         Text.Offset = new Vector2D(Math.Abs(textSize.X) / -2, 0); // Math.Abs(textSize.Y) / -2
                     }

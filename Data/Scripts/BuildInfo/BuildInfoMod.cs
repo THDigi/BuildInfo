@@ -42,6 +42,7 @@ namespace Digi.BuildInfo
         public readonly DefenseShieldsDetector DefenseShieldsDetector;
         public readonly RichHudFrameworkHandler RichHud;
         public readonly ModDetector ModDetector;
+        public readonly SplitChecking SplitChecking;
 
         // Features
         public readonly Config Config;
@@ -119,6 +120,7 @@ namespace Digi.BuildInfo
             DefenseShieldsDetector = new DefenseShieldsDetector(this);
             RichHud = new RichHudFrameworkHandler(this);
             ModDetector = new ModDetector(this);
+            SplitChecking = new SplitChecking(this);
 
             // Features
             Config = new Config(this);

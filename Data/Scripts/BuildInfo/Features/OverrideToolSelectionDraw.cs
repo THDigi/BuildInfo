@@ -162,13 +162,21 @@ namespace Digi.BuildInfo.Features
                         }
                         else
                         {
-                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Recalculate)
-                                Main.TextGeneration.WillSplitGrid = aimedBlock.CubeGrid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+                            SplitFlags splitInfo = Main.SplitChecking.GetSplitInfo(aimedBlock);
 
-                            if(Main.TextGeneration.WillSplitGrid == GridSplitType.Split)
-                                color = Main.TextGeneration.COLOR_BAD;
-                            else
-                                color = new Color(255, 200, 75);
+                            color = new Color(255, 200, 75);
+
+                            if(splitInfo != SplitFlags.None)
+                            {
+                                if((splitInfo & (SplitFlags.BlockLoss | SplitFlags.Split)) != 0)
+                                {
+                                    color = new Color(255, 10, 10);
+                                }
+                                else if((splitInfo & SplitFlags.Disconnect) != 0)
+                                {
+                                    color = new Color(255, 70, 20);
+                                }
+                            }
                         }
                     }
                     else

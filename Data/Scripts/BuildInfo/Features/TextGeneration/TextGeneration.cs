@@ -38,13 +38,6 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
-    public enum GridSplitType
-    {
-        Recalculate,
-        NoSplit,
-        Split,
-    }
-
     public class TextGeneration : ModComponent
     {
         #region Constants
@@ -107,7 +100,6 @@ namespace Digi.BuildInfo.Features
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public bool textShown = false;
         private bool aimInfoNeedsUpdate = false;
-        public GridSplitType WillSplitGrid;
         private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
         public Vector3D? LastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
@@ -161,7 +153,6 @@ namespace Digi.BuildInfo.Features
             Main.TextAPI.Detected += TextAPI_APIDetected;
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             Main.GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
 
             ReCheckSide();
@@ -172,7 +163,6 @@ namespace Digi.BuildInfo.Features
             Main.TextAPI.Detected -= TextAPI_APIDetected;
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             Main.GameConfig.OptionsMenuClosed -= GameConfig_OptionsMenuClosed;
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
@@ -196,11 +186,6 @@ namespace Digi.BuildInfo.Features
                 prevAspectRatio = Main.GameConfig.AspectRatio;
                 CachedBuildInfoTextAPI.Clear();
             }
-        }
-
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock block)
-        {
-            WillSplitGrid = GridSplitType.Recalculate;
         }
 
         private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
@@ -1514,13 +1499,20 @@ namespace Digi.BuildInfo.Features
             #region Optional: grinder makes grid split
             if(!Main.Config.UnderCrosshairMessages.Value && !isProjected && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder)
             {
-                if(WillSplitGrid == GridSplitType.Recalculate)
-                    WillSplitGrid = grid.WillRemoveBlockSplitGrid(aimedBlock) ? GridSplitType.Split : GridSplitType.NoSplit;
+                SplitFlags splitInfo = Main.SplitChecking.GetSplitInfo(aimedBlock);
 
-                if(WillSplitGrid == GridSplitType.Split)
+                if(splitInfo.IsSet(SplitFlags.BlockLoss))
+                {
+                    AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Some block will vanish if this is removed!");
+                }
+                else if(splitInfo.IsSet(SplitFlags.Split))
+                {
                     AddLine(FontsHandler.RedSh).Color(COLOR_BAD).Append("Grid will split if removed!");
-
-                // TODO: find if split grid will vanish due to no physics/no standalone
+                }
+                else if(splitInfo.IsSet(SplitFlags.Disconnect))
+                {
+                    AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Append("Something will disconnect if this is removed.");
+                }
             }
             #endregion Optional: grinder makes grid split
 
