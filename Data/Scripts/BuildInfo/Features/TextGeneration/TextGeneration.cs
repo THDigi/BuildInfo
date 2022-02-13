@@ -2215,6 +2215,12 @@ namespace Digi.BuildInfo.Features
 
             Add(Hardcoded.TargetDummyType, Format_TargetDummy);
 
+            Add(typeof(MyObjectBuilder_TurretControlBlock), Format_TurretControl);
+
+            Add(typeof(MyObjectBuilder_Searchlight), Format_Searchlight);
+
+            //Add(typeof(MyObjectBuilder_HeatVentBlock), Format_HeatVent);
+
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
             //Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
             Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
@@ -4201,6 +4207,63 @@ namespace Digi.BuildInfo.Features
                 }
             }
         }
+
+        private void Format_TurretControl(MyCubeBlockDefinition def)
+        {
+            MyTurretControlBlockDefinition tcbDef = def as MyTurretControlBlockDefinition;
+            if(tcbDef == null)
+                return;
+
+            // idle seems to be always
+            PowerRequired(tcbDef.PowerInputIdle, tcbDef.ResourceSinkGroup);
+
+            AddLine().Label("Max AI Range").DistanceFormat(tcbDef.MaxRangeMeters);
+
+            // PlayerInputDivider is making player rotate it slower when manually controlling, doesn't seem relevant
+        }
+
+        private void Format_Searchlight(MyCubeBlockDefinition def)
+        {
+            MySearchlightDefinition lightDef = def as MySearchlightDefinition;
+            if(lightDef == null)
+                return;
+
+            PowerRequired(lightDef.RequiredPowerInput, lightDef.ResourceSinkGroup);
+
+            AddLine().Label("AI targetting").Append(lightDef.AiEnabled ? "Yes" : "No");
+
+            // TODO: more stats!
+        }
+
+        //private void Format_HeatVent(MyCubeBlockDefinition def)
+        //{
+        //    MyHeatVentBlockDefinition ventDef = def as MyHeatVentBlockDefinition;
+        //    if(ventDef == null)
+        //        return;
+
+        //    // TODO: stats?
+
+        //    /*
+        //    AddLine().Label("PowerDependency").Number(ventDef.PowerDependency);
+        //    AddLine().Label("RequiredPowerInput").Number(ventDef.RequiredPowerInput);
+
+        //    //AddLine().Label("ColorMinimalPower").Color(ventDef.ColorMinimalPower).AppendRGBA(ventDef.ColorMinimalPower);
+        //    //AddLine().Label("ColorMaximalPower").Color(ventDef.ColorMaximalPower).AppendRGBA(ventDef.ColorMaximalPower);
+
+        //    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+        //    {
+        //        MyBounds radius = ventDef.LightRadiusBounds;
+        //        MyBounds intensity = ventDef.LightIntensityBounds;
+        //        MyBounds falloff = ventDef.LightFalloffBounds;
+        //        MyBounds offset = ventDef.LightOffsetBounds;
+
+        //        AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
+        //        AddLine().Append("Intensity: ").RoundedNumber(intensity.Min, 2).Append(" to ").RoundedNumber(intensity.Max, 2).Separator().Append("Default: ").RoundedNumber(intensity.Default, 2);
+        //        AddLine().Append("Falloff: ").RoundedNumber(falloff.Min, 2).Append(" to ").RoundedNumber(falloff.Max, 2).Separator().Append("Default: ").RoundedNumber(falloff.Default, 2);
+        //        AddLine().Append("Offset: ").RoundedNumber(offset.Min, 2).Append(" to ").RoundedNumber(offset.Max, 2).Separator().Append("Default: ").RoundedNumber(offset.Default, 2);
+        //    }
+        //    */
+        //}
 
         private void Format_SafeZone(MyCubeBlockDefinition def)
         {
