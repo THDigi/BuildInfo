@@ -949,7 +949,7 @@ namespace Digi.BuildInfo.Utilities
         static char[] SplitExponent = new char[] { 'e' };
         public static StringBuilder ExponentNumber(this StringBuilder s, double value)
         {
-            if(value >= 10000 || value < 0.01)
+            if(value >= 10000 || value < 0.0001)
             {
                 //Vector3 hsv = CurrentColor.ColorToHSV();
 
@@ -977,7 +977,10 @@ namespace Digi.BuildInfo.Utilities
             }
             else
             {
-                s.Append(Math.Round(value, 2));
+                if(value > 10)
+                    s.Append(Math.Round(value, 2));
+                else
+                    s.Append(Math.Round(value, 4));
             }
             return s;
         }
