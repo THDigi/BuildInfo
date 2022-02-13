@@ -14,9 +14,9 @@ namespace Draygo.API
 {
     public class HudAPIv2
     {
-        const string DefaultFont = Digi.BuildInfo.Features.FontsHandler.SEOutlined; // "white";
-        const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
-        const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;
+        public const string DefaultFont = Digi.BuildInfo.Features.FontsHandler.SEOutlined; // was "white";
+        public const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
+        public const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;
 
         private static HudAPIv2 instance;
         private const long REGISTRATIONID = 573804956;
@@ -104,6 +104,7 @@ namespace Draygo.API
                 registered = true;
                 if(m_onRegisteredAction != null)
                     m_onRegisteredAction();
+                APIDialog.GetDialogMethods(MessageGetter);
                 MessageSet(null, (int)RegistrationEnum.OnScreenUpdate, new MyTuple<Action>(ScreenChangedHandle));
             }
         }
@@ -178,18 +179,77 @@ namespace Draygo.API
             UIDefinition = 60,
             UIBehaviourDefinition
         }
+        #region CustomDialogs
+        public static class APIDialog
+        {
+            private enum APIDialogs : int
+            {
+                ColorPickerDialog = 1100,
+                TextDialog,
+                KeybindDialog,
+                ScreenInputDialog,
+                SliderDialog
+            }
+
+            private static Func<StringBuilder, Color, Action<Color>, Action<Color>, Action, bool, bool, bool> ColorPickerDialogDelagete;
+            private static Func<Action<string>, StringBuilder, bool> TextDialogDelagete;
+            private static Func<Action<MyKeys, bool, bool, bool>, StringBuilder, bool> KeybindDialogDelagete;
+            private static Func<StringBuilder, Vector2D, Vector2D, Action<Vector2D>, Action<Vector2D>, Action, bool> ScreenInputDialogDelagete;
+            private static Func<StringBuilder, Action<float>, float, Func<float, object>, Action, bool> SliderDialogDelagete;
+            internal static void GetDialogMethods(Func<object, int, object> messageGetter)
+            {
+                ColorPickerDialogDelagete = messageGetter.Invoke((int)APIinfo.APIinfoMembers.GetDialog, (int)APIDialogs.ColorPickerDialog)
+                    as Func<StringBuilder, Color, Action<Color>, Action<Color>, Action, bool, bool, bool>;
+                TextDialogDelagete = messageGetter.Invoke((int)APIinfo.APIinfoMembers.GetDialog, (int)APIDialogs.TextDialog)
+                    as Func<Action<string>, StringBuilder, bool>;
+                KeybindDialogDelagete = messageGetter.Invoke((int)APIinfo.APIinfoMembers.GetDialog, (int)APIDialogs.KeybindDialog)
+                    as Func<Action<MyKeys, bool, bool, bool>, StringBuilder, bool>;
+                ScreenInputDialogDelagete = messageGetter.Invoke((int)APIinfo.APIinfoMembers.GetDialog, (int)APIDialogs.ScreenInputDialog)
+                    as Func<StringBuilder, Vector2D, Vector2D, Action<Vector2D>, Action<Vector2D>, Action, bool>;
+                SliderDialogDelagete = messageGetter.Invoke((int)APIinfo.APIinfoMembers.GetDialog, (int)APIDialogs.SliderDialog)
+                    as Func<StringBuilder, Action<float>, float, Func<float, object>, Action, bool>;
+            }
+
+            public static bool ColorPickerDialog(StringBuilder Title, Color InitialColor, Action<Color> onSubmit, Action<Color> onUpdate, Action onCancel, bool showAlpha, bool usehsv = false)
+            {
+                return ColorPickerDialogDelagete?.Invoke(Title, InitialColor, onSubmit, onUpdate, onCancel, showAlpha, usehsv) ?? false;
+            }
+
+            public static bool TextDialog(Action<string> onSubmit, StringBuilder Title)
+            {
+                return TextDialogDelagete?.Invoke(onSubmit, Title) ?? false;
+            }
+
+            public static bool KeybindDialog(Action<MyKeys, bool, bool, bool> onSubmit, StringBuilder Title)
+            {
+                return KeybindDialogDelagete?.Invoke(onSubmit, Title) ?? false;
+            }
+
+            public static bool ScreenInputDialog(StringBuilder title, Vector2D origin, Vector2D size, Action<Vector2D> onSubmit, Action<Vector2D> onUpdate, Action onCancel)
+            {
+                return ScreenInputDialogDelagete?.Invoke(title, origin, size, onSubmit, onUpdate, onCancel) ?? false;
+            }
+
+            static public bool SliderDialog(StringBuilder title, Action<float> onSubmit, float initialvalue, Func<float, object> SliderPercentToValue, Action OnCancel)
+            {
+                return SliderDialogDelagete?.Invoke(title, onSubmit, initialvalue, SliderPercentToValue, OnCancel) ?? false;
+            }
+        }
+
+        #endregion
+
         #region Info
         public static class APIinfo
         {
-            private enum APIinfoMembers : int
+            internal enum APIinfoMembers : int
             {
                 ScreenPositionOnePX = 1000,
                 OnScreenUpdate,
                 GetBoxUIDefinition,
                 GetBoxUIBehaviour,
                 GetFontDefinition,
-                GetFonts
-
+                GetFonts,
+                GetDialog
             }
             /// <summary>
             /// Returns the distance for one pixel in x and y directions, can be multiplied and fed into Origin, Offset, and Size parameters for precise manipulation of HUD objects. 
@@ -255,7 +315,8 @@ namespace Draygo.API
             Offset,
             BlendType,
             Draw,
-            Flush
+            Flush,
+            SkipLinearRGB
         }
         public abstract class MessageBase
         {
@@ -352,6 +413,20 @@ namespace Draygo.API
                 set
                 {
                     instance.MessageSet(BackingObject, (int)MessageBaseMembers.BlendType, value);
+                }
+            }
+            /// <summary>
+            /// Skips LinearRGB call in TextHUDAPI
+            /// </summary>
+            public bool SkipLinearRGB
+            {
+                get
+                {
+                    return (bool)(instance.MessageGet(BackingObject, (int)MessageBaseMembers.SkipLinearRGB));
+                }
+                set
+                {
+                    instance.MessageSet(BackingObject, (int)MessageBaseMembers.SkipLinearRGB, value);
                 }
             }
             #endregion
