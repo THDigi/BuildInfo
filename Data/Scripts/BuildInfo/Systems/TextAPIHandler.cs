@@ -129,6 +129,7 @@ namespace Digi.BuildInfo.Systems
         {
             HudAPIv2.HUDMessage msg = new HudAPIv2.HUDMessage(sb, hudPos, Scale: scale, HideHud: hideWithHud, Shadowing: false, Font: DefaultFont, Blend: DefaultHUDBlendType);
             msg.Visible = false;
+            msg.SkipLinearRGB = true;
             return msg;
         }
 
