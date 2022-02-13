@@ -458,6 +458,29 @@ namespace Digi.BuildInfo.VanillaData
             return new TextSurfaceInfo(textureRes, aspectRatio, textureRes * aspectFactor);
         }
 
+        // from MyGasTank.CalculateGasExplosionRadius() and CalculateGasExplosionDamage()
+        //public static GasTankExplosionInfo GasTank_ExplosionInfo(MyGasTankDefinition def, float volume)
+        //{
+        //    float damage = volume * def.GasExplosionDamageMultiplier;
+        //    float radius = (0f - def.GasExplosionMaxRadius) * ((def.GasExplosionNeededVolumeToReachMaxRadius / 40f) - volume) / ((def.GasExplosionNeededVolumeToReachMaxRadius / 40f) + volume);
+        //    if(radius <= 0f)
+        //        radius = 1f;
+        //
+        //    return new GasTankExplosionInfo(damage, radius);
+        //}
+        //
+        //public struct GasTankExplosionInfo
+        //{
+        //    public readonly float Damage;
+        //    public readonly float Radius;
+        //
+        //    public GasTankExplosionInfo(float damage, float radius)
+        //    {
+        //        Damage = damage;
+        //        Radius = radius;
+        //    }
+        //}
+
         // from MyEntityThrustComponent.MAX_DISTANCE_RELATIVE_DAMPENING and MAX_DISTANCE_RELATIVE_DAMPENING_SQ
         public const double RelativeDampeners_MaxDistance = 100f;
         public const double RelativeDampeners_MaxDistanceSq = RelativeDampeners_MaxDistance * RelativeDampeners_MaxDistance;

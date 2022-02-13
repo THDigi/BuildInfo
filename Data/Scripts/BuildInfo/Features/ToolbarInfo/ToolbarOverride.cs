@@ -96,6 +96,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
                 // HACK: can't call it in BlockAdded because it can make some mods' terminal controls vanish...
                 MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectActionFunc);
+
+                // not using MyAPIGateway.TerminalControls.GetActions<T>() because it requires a generic type, can't feed that in
             }
 
             if(RehookForSeconds <= 0 && QueuedTypes.Count <= 0)

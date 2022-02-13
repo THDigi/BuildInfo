@@ -2961,6 +2961,30 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Append("Stores: ").Append(gasTank.StoredGasId.SubtypeName).Separator().Append("Capacity: ").VolumeFormat(gasTank.Capacity);
                 }
+
+                if(gasTank.LeakPercent != 0)
+                {
+                    float ratioPerSec = (gasTank.LeakPercent / 100f) * 60f; // HACK: LeakPercent gets subtracted per 100 ticks
+
+                    if(ratioPerSec > 0)
+                        AddLine().Color(COLOR_WARNING).Label("Damaged Leak").Append("-").VolumeFormat(ratioPerSec * gasTank.Capacity).Append("/s"); //.Append(" (").ExponentNumber(leakRatioPerSec).Append("%/s)");
+                    else
+                        AddLine().Color(COLOR_GOOD).Label("Damaged Leak... Magic-Gain").Append("+").VolumeFormat(Math.Abs(ratioPerSec) * gasTank.Capacity).Append("/s");
+                }
+                else
+                {
+                    AddLine().Label("Damaged Leak").Color(COLOR_GOOD).Append("Leak-proof");
+                }
+
+                if(gasTank.GasExplosionDamageMultiplier > 0)
+                {
+                    AddLine().Color(COLOR_WARNING).Label("Destroyed Explosion - Max Damage").ExponentNumber(gasTank.GasExplosionDamageMultiplier * gasTank.Capacity)
+                        .Separator().Label("Max Radius").DistanceFormat(gasTank.GasExplosionMaxRadius);
+                }
+                else
+                {
+                    AddLine().Label("Destroyed Explosion").Color(COLOR_GOOD).Append("Inexistent");
+                }
             }
 
             MyOxygenGeneratorDefinition oxygenGenerator = def as MyOxygenGeneratorDefinition;
