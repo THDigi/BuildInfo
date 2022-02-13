@@ -399,10 +399,10 @@ namespace Digi.BuildInfo.VanillaData
             maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / EarthGravity;
         }
 
-        // where MyMultiTextPanelComponent.Init() is called: MyCockpit, MyContractBlock, MyLCDPanelsBlock, MyProgrammableBlock, MyProjectorBase, MyStoreBlock, MyButtonPanel, MyJukebox.
+        // where MyMultiTextPanelComponent.Init() is called in MyFunctionalBlock.InitLcdComponent() and MyCockpit.Init()
         public const float TextSurfaceMaxRenderDistance = 120f;
 
-        // where VRage.Network.DistanceRadiusAttribute is appled: MyCockpit, MyContractBlock, MyLCDPanelsBlock, MyProgrammableBlock, MyProjectorBase, MyStoreBlock, MyButtonPanel, MyJukebox.
+        // where VRage.Network.DistanceRadiusAttribute is appled to MyFunctionalBlock, MyCockpit, MyTextPanel
         public const float TextSurfaceMaxSyncDistance = 32f;
 
         public struct TextSurfaceInfo
@@ -486,7 +486,7 @@ namespace Digi.BuildInfo.VanillaData
         public static readonly MyObjectBuilderType TargetDummyType = MyObjectBuilderType.Parse("MyObjectBuilder_TargetDummyBlock"); // HACK: MyObjectBuilder_TargetDummyBlock not whitelisted
         public static readonly MyObjectBuilderType HydrogenEngineType = typeof(MyObjectBuilder_HydrogenEngine); // TODO: use the interface when one is added
         public static readonly MyObjectBuilderType WindTurbineType = typeof(MyObjectBuilder_WindTurbine);
-        
+
         // from https://github.com/KeenSoftwareHouse/SpaceEngineers/blob/master/Sources/Sandbox.Game/Definitions/MyCubeBlockDefinition.cs#L196-L204
         // VanillaDefinitions checks vanilla definitions if any has >3 to alert me if they're using a new flag.
         public enum MountPointMask : byte

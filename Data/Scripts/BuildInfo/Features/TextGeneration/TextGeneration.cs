@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Text;
-using System.Xml.Serialization;
 using CoreSystems.Api;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.LiveData;
@@ -12,8 +10,8 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
 using ObjectBuilders.SafeZone;
-using ProtoBuf;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -23,7 +21,6 @@ using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
-using VRage.Game.Definitions;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
@@ -1822,6 +1819,12 @@ namespace Digi.BuildInfo.Features
                 InventoryStats(def);
             }
 
+            MyFunctionalBlockDefinition fbDef = def as MyFunctionalBlockDefinition; // NOTE: this doesn't mean that it can be turned on/off, it means it has LCD... because keen.
+            if(fbDef != null)
+            {
+                AddScreenInfo(fbDef);
+            }
+
             #region Added by mod
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
@@ -2175,6 +2178,7 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
 
             Add(typeof(MyObjectBuilder_TextPanel), Format_LCD);
+            Add(typeof(MyObjectBuilder_LCDPanelsBlock), Format_LCDPanels);
 
             action = Format_SoundBlock;
             Add(typeof(MyObjectBuilder_SoundBlock), action);
@@ -2185,8 +2189,6 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_CameraBlock), Format_Camera);
 
             Add(typeof(MyObjectBuilder_ButtonPanel), Format_Button);
-
-            Add(typeof(MyObjectBuilder_LCDPanelsBlock), Format_LCDPanels);
 
             action = Format_GravityGenerator;
             Add(typeof(MyObjectBuilder_GravityGeneratorBase), action);
@@ -2214,7 +2216,7 @@ namespace Digi.BuildInfo.Features
             Add(Hardcoded.TargetDummyType, Format_TargetDummy);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
-            Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
+            //Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
             Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
             Add(typeof(MyObjectBuilder_VendingMachine), Format_StoreBlock);
         }
@@ -2540,8 +2542,6 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
-
-            AddScreenInfo(def, shipController.ScreenAreas);
         }
 
         private void Format_Thrust(MyCubeBlockDefinition def)
@@ -2734,8 +2734,6 @@ namespace Digi.BuildInfo.Features
             MyProjectorDefinition projector = (MyProjectorDefinition)def;
 
             PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
-
-            AddScreenInfo(def, projector.ScreenAreas);
         }
 
         #region Doors
@@ -2901,8 +2899,6 @@ namespace Digi.BuildInfo.Features
                 else
                     AddLine(FontsHandler.RedSh).Color(COLOR_WARNING).Label("Suit Change").Append("No").ResetFormatting();
             }
-
-            AddScreenInfo(def, medicalRoom.ScreenAreas);
         }
 
         #region Production
@@ -2938,8 +2934,6 @@ namespace Digi.BuildInfo.Features
                     AddLine().Label("Healing").RoundedNumber(Math.Abs(MyEffectConstants.GenericHeal * 60), 2).Append("hp/s");
                     AddLine().LabelHardcoded("Refuel").Append("Yes (x1)");
                 }
-
-                AddScreenInfo(def, survivalKit.ScreenAreas);
             }
 
             MyRefineryDefinition refinery = def as MyRefineryDefinition;
@@ -3384,8 +3378,6 @@ namespace Digi.BuildInfo.Features
 
             PowerRequired(Hardcoded.ProgrammableBlock_PowerReq, pb.ResourceSinkGroup, powerHardcoded: true);
 
-            AddScreenInfo(def, pb.ScreenAreas);
-
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
             {
                 if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
@@ -3408,7 +3400,6 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 Hardcoded.TextSurfaceInfo info;
-                HackyScreenArea surface;
                 string script = null;
                 bool supportsRotation = false;
 
@@ -3416,9 +3407,7 @@ namespace Digi.BuildInfo.Features
                 if(lcd.ScreenAreas != null && lcd.ScreenAreas.Count == 4)
                 {
                     supportsRotation = true;
-                    List<HackyScreenArea> surfaces = GetOrParseScreenAreaData(lcd.Id, lcd.ScreenAreas, onlyFirst: true);
-                    surface = surfaces[0];
-
+                    ScreenArea surface = lcd.ScreenAreas[0];
                     info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
                     script = surface.Script;
                 }
@@ -3427,17 +3416,65 @@ namespace Digi.BuildInfo.Features
                     info = Hardcoded.TextSurface_GetInfo(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
                 }
 
-                AddLine().Label("Resolution").Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
+                AddLine().Label("LCD - Resolution").Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
                     .Separator().Label("Rotatable").BoolFormat(supportsRotation)
-                    .Separator().Label("Render").DistanceFormat(lcd.MaxScreenRenderDistance)
-                    .Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+                    .Separator().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
+
+                AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
 
                 // not that useful info
                 //if(!string.IsNullOrEmpty(script))
                 //    AddLine().Label("Default script").Color(COLOR_STAT_TRAVEL).Append(script).ResetFormatting();
-
-                AddLine().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
             }
+        }
+
+        void AddScreenInfo(MyFunctionalBlockDefinition fbDef)
+        {
+            if(fbDef is MyTextPanelDefinition)
+                return; // the TextPanel formatter has its own separate stuff
+
+            List<ScreenArea> surfaces = fbDef.ScreenAreas;
+            if(surfaces == null || surfaces.Count == 0 || !Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                return;
+
+            const int SpacePrefix = 9;
+            AddLine().Label(surfaces.Count > 1 ? "LCDs" : "LCD");
+
+            // TODO: toggle between list and just count?
+            for(int i = 0; i < surfaces.Count; i++)
+            {
+                ScreenArea surface = surfaces[i];
+
+                string displayName = MyTexts.GetString(MyStringId.GetOrCompute(surface.DisplayName));
+
+                Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
+
+                if(i > 0)
+                    AddLine().Append(' ', SpacePrefix).Append("| ");
+
+                GetLine().Append(displayName);
+
+                // very edge case use for a lot of width added, who needs it can get it from API or SBC
+                //if(Main.Config.InternalInfo.Value)
+                //    GetLine().Color(COLOR_UNIMPORTANT).Append(" (").Append(surface.Name).Append(")");
+
+                GetLine().ResetFormatting().Separator().Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
+
+                // not that useful info
+                //if(!string.IsNullOrEmpty(surface.Script))
+                //    GetLine().Separator().Color(COLOR_STAT_TRAVEL).Label("Default script").Append(surface.Script).ResetFormatting();
+            }
+
+            AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+        }
+
+        private void Format_LCDPanels(MyCubeBlockDefinition def)
+        {
+            MyLCDPanelsBlockDefinition panel = (MyLCDPanelsBlockDefinition)def;
+
+            PowerRequired(panel.RequiredPowerInput, panel.ResourceSinkGroup);
+
+            // LCD stats are in AddScreenInfo()
         }
 
         private void Format_SoundBlock(MyCubeBlockDefinition def)
@@ -3455,11 +3492,10 @@ namespace Digi.BuildInfo.Features
                 // EmitterNumber and LoopUpdateThreshold seem unused
             }
 
-            MyJukeboxDefinition jukebox = def as MyJukeboxDefinition;
-            if(jukebox != null)
-            {
-                AddScreenInfo(def, jukebox.ScreenAreas);
-            }
+            //MyJukeboxDefinition jukebox = def as MyJukeboxDefinition;
+            //if(jukebox != null)
+            //{
+            //}
         }
 
         private void Format_Sensor(MyCubeBlockDefinition def)
@@ -3513,17 +3549,6 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Button count").Append(button.ButtonCount);
             }
-
-            AddScreenInfo(def, button.ScreenAreas);
-        }
-
-        private void Format_LCDPanels(MyCubeBlockDefinition def)
-        {
-            MyLCDPanelsBlockDefinition panel = (MyLCDPanelsBlockDefinition)def;
-
-            PowerRequired(panel.RequiredPowerInput, panel.ResourceSinkGroup);
-
-            AddScreenInfo(def, panel.ScreenAreas);
         }
 
         #region Magic blocks
@@ -4210,15 +4235,6 @@ namespace Digi.BuildInfo.Features
                     InventoryConstraints(invComp.Volume, invComp.InputConstraint, invComp);
                 }
             }
-
-            AddScreenInfo(def, safeZone.ScreenAreas);
-        }
-
-        private void Format_ContractBlock(MyCubeBlockDefinition def)
-        {
-            MyContractBlockDefinition contracts = (MyContractBlockDefinition)def;
-
-            AddScreenInfo(def, contracts.ScreenAreas);
         }
 
         private void Format_StoreBlock(MyCubeBlockDefinition def)
@@ -4227,8 +4243,6 @@ namespace Digi.BuildInfo.Features
             MyVendingMachineDefinition vending = def as MyVendingMachineDefinition;
 
             InventoryStats(def);
-
-            AddScreenInfo(def, store.ScreenAreas);
 
             if(vending != null)
             {
@@ -4467,100 +4481,6 @@ namespace Digi.BuildInfo.Features
                     AddLine().Append("       - All of type: ").IdTypeFormat(type);
                 }
             }
-        }
-
-        [ProtoContract]
-        public class HackyScreenArea
-        {
-            [ProtoMember(1)]
-            [XmlAttribute]
-            public string Name;
-
-            [ProtoMember(4)]
-            [XmlAttribute]
-            public string DisplayName;
-
-            [ProtoMember(7)]
-            [XmlAttribute]
-            [DefaultValue(512)]
-            public int TextureResolution = 512;
-
-            [ProtoMember(10)]
-            [XmlAttribute]
-            [DefaultValue(1)]
-            public int ScreenWidth = 1;
-
-            [ProtoMember(13)]
-            [XmlAttribute]
-            [DefaultValue(1)]
-            public int ScreenHeight = 1;
-
-            [ProtoMember(16)]
-            [XmlAttribute]
-            [DefaultValue(null)]
-            public string Script;
-        }
-
-        readonly Dictionary<MyDefinitionId, List<HackyScreenArea>> ScreenAreaData = new Dictionary<MyDefinitionId, List<HackyScreenArea>>(MyDefinitionId.Comparer);
-
-        /// <summary>
-        /// HACK: getting data from prohibited serializable class
-        /// </summary>
-        private List<HackyScreenArea> GetOrParseScreenAreaData<T>(MyDefinitionId defId, List<T> screenAreas, bool onlyFirst = false)
-        {
-            List<HackyScreenArea> cachedSurfaces;
-            if(!ScreenAreaData.TryGetValue(defId, out cachedSurfaces))
-            {
-                ScreenAreaData[defId] = cachedSurfaces = new List<HackyScreenArea>();
-
-                for(int i = 0; i < screenAreas.Count; i++)
-                {
-                    byte[] binary = MyAPIGateway.Utilities.SerializeToBinary(screenAreas[i]);
-                    HackyScreenArea surface = MyAPIGateway.Utilities.SerializeFromBinary<HackyScreenArea>(binary);
-                    cachedSurfaces.Add(surface);
-
-                    if(onlyFirst)
-                        break;
-                }
-            }
-
-            return cachedSurfaces;
-        }
-
-        private void AddScreenInfo<T>(MyCubeBlockDefinition def, List<T> screens)
-        {
-            if(screens == null || screens.Count == 0 || !Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
-                return;
-
-            List<HackyScreenArea> surfaces = GetOrParseScreenAreaData(def.Id, screens);
-
-            const int SpacePrefix = 9;
-            AddLine().Label(surfaces.Count > 1 ? "LCDs" : "LCD");
-
-            // TODO: toggle between list and just count?
-            for(int i = 0; i < surfaces.Count; i++)
-            {
-                HackyScreenArea surface = surfaces[i];
-                string displayName = MyTexts.GetString(MyStringId.GetOrCompute(surface.DisplayName));
-                Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
-
-                if(i > 0)
-                    AddLine().Append(' ', SpacePrefix).Append("| ");
-
-                GetLine().Append(displayName);
-
-                // very edge case use for a lot of width added, who needs it can get it from API or SBC
-                //if(Main.Config.InternalInfo.Value)
-                //    GetLine().Color(COLOR_UNIMPORTANT).Append(" (").Append(surface.Name).Append(")");
-
-                GetLine().ResetFormatting().Separator().Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
-
-                // not that useful info
-                //if(!string.IsNullOrEmpty(surface.Script))
-                //    GetLine().Separator().Color(COLOR_STAT_TRAVEL).Label("Default script").Append(surface.Script).ResetFormatting();
-            }
-
-            AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
         }
 
         private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
