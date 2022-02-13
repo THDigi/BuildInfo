@@ -141,6 +141,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             new StatusOverride.Parachutes(this);
             new StatusOverride.Doors(this);
             new StatusOverride.Thrusters(this);
+            new StatusOverride.TurretBase(this);
 
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
