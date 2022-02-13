@@ -1917,6 +1917,23 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ComponentsVolume))
+            {
+                float totalVolumeM3 = 0f;
+
+                foreach(MyCubeBlockDefinition.Component comp in def.Components)
+                {
+                    totalVolumeM3 += comp.Definition.Volume * comp.Count;
+                }
+
+                float charInvVolM3 = float.MaxValue;
+                IMyInventory inv = MyAPIGateway.Session?.Player?.Character?.GetInventory();
+                if(inv != null)
+                    charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
+
+                AddLine().Append(partPrefix).Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
+            }
+
             #region Target groups and priority
             // TODO: its own flag?
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
@@ -1985,23 +2002,6 @@ namespace Digi.BuildInfo.Features
                 {
                     Format_CoreSystemsArmor(def, csArmorDef);
                 }
-            }
-
-            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ComponentsVolume))
-            {
-                float totalVolumeM3 = 0f;
-
-                foreach(MyCubeBlockDefinition.Component comp in def.Components)
-                {
-                    totalVolumeM3 += comp.Definition.Volume * comp.Count;
-                }
-
-                float charInvVolM3 = float.MaxValue;
-                IMyInventory inv = MyAPIGateway.Session?.Player?.Character?.GetInventory();
-                if(inv != null)
-                    charInvVolM3 = (float)inv.MaxVolume - CharInvVolM3Offset;
-
-                AddLine().Append(partPrefix).Append("Components: ").Color(totalVolumeM3 > charInvVolM3 ? COLOR_WARNING : COLOR_NORMAL).VolumeFormat(totalVolumeM3 * 1000).ResetFormatting();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
