@@ -22,6 +22,7 @@ using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -3663,6 +3664,11 @@ namespace Digi.BuildInfo.Features
             WeaponConfig gunWWF = Main.WhipWeaponFrameworkAPI.Weapons.GetValueOrDefault(def.Id, null);
             TurretWeaponConfig turretWWF = gunWWF as TurretWeaponConfig;
 
+            // HACK: only static launcher supports capacitor component
+            MyEntityCapacitorComponentDefinition capacitorDef = null;
+            if(gunWWF == null && (def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncher) || def.Id.TypeId == typeof(MyObjectBuilder_SmallMissileLauncherReload)))
+                capacitorDef = Utils.GetEntityComponentFromDef<MyEntityCapacitorComponentDefinition>(def.Id, typeof(MyObjectBuilder_EntityCapacitorComponent));
+
             bool extraInfo = Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo);
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
@@ -3678,8 +3684,28 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    float requiredPowerInput = (turret != null ? Hardcoded.Turret_PowerReq : Hardcoded.ShipGun_PowerReq);
-                    PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
+                    if(capacitorDef != null)
+                    {
+                        StringBuilder sb = AddLine().Label("Power Charge").PowerFormat(capacitorDef.RechargeDraw);
+
+                        if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                            sb.ResetFormatting().Separator().ResourcePriority(weaponDef.ResourceSinkGroup);
+
+                        float capacitorChargeMultiplier = Hardcoded.CapacitorChargeMultiplier;
+                        if(capacitorChargeMultiplier <= 1f)
+                            sb.Separator().Color(capacitorChargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - capacitorChargeMultiplier);
+                        else
+                            sb.Separator().Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(capacitorChargeMultiplier);
+
+                        float chargeTime = (capacitorDef.Capacity * 60 * 60) / (capacitorDef.RechargeDraw * capacitorChargeMultiplier);
+
+                        AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Label("Recharge time").TimeFormat(chargeTime);
+                    }
+                    else
+                    {
+                        float requiredPowerInput = (turret != null ? Hardcoded.Turret_PowerReq : Hardcoded.ShipGun_PowerReq);
+                        PowerRequired(requiredPowerInput, weaponDef.ResourceSinkGroup, powerHardcoded: true);
+                    }
                 }
             }
 
@@ -3725,7 +3751,10 @@ namespace Digi.BuildInfo.Features
                 float accuracyAt100m = (float)Math.Tan(wpDef.DeviateShotAngle) * 100 * 2;
                 float reloadTime = wpDef.ReloadTime / 1000;
 
-                AddLine().Label("Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m").Separator().Append("Reload: ").TimeFormat(reloadTime);
+                StringBuilder sb = AddLine().Label("Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m");
+
+                if(capacitorDef == null)
+                    sb.Separator().Append("Reload: ").TimeFormat(reloadTime);
             }
 
             bool showAmmoDetails = Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails);

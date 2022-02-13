@@ -12,7 +12,9 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.ModAPI;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -340,11 +342,40 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
+        /// Get entity component of specified <typeparamref name="TDef"/> type (inhereting <see cref="MyComponentDefinitionBase"/>) from given definitionId.
+        /// <para>NOTE: <paramref name="componentObType"/> must be MyObjectBuilder_TheTypeHere, without Definition suffix!</para>
+        /// </summary>
+        public static TDef GetEntityComponentFromDef<TDef>(MyDefinitionId defId, MyObjectBuilderType componentObType) where TDef : MyComponentDefinitionBase
+        {
+            MyContainerDefinition containerDef;
+            if(MyDefinitionManager.Static.TryGetContainerDefinition(defId, out containerDef) && containerDef.DefaultComponents != null)
+            {
+                foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
+                {
+                    if(compPointer.BuilderType != componentObType)
+                        continue;
+
+                    MyComponentDefinitionBase compDefBase;
+                    if(MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(defId.SubtypeId), out compDefBase))
+                    {
+                        TDef comp = compDefBase as TDef;
+                        if(comp != null)
+                            return comp;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static MyInventoryComponentDefinition GetInventoryFromComponent(MyDefinitionBase def) => GetEntityComponentFromDef<MyInventoryComponentDefinition>(def.Id, typeof(MyObjectBuilder_Inventory));
+
+        /// <summary>
         /// Gets the inventory volume from the EntityComponents and EntityContainers definitions.
         /// </summary>
         public static bool GetInventoryVolumeFromComponent(MyDefinitionBase def, out float volume)
         {
-            MyInventoryComponentDefinition invComp = GetInventoryFromComponent(def);
+            MyInventoryComponentDefinition invComp = GetEntityComponentFromDef<MyInventoryComponentDefinition>(def.Id, typeof(MyObjectBuilder_Inventory));
 
             if(invComp != null)
             {
@@ -356,34 +387,6 @@ namespace Digi.BuildInfo.Utilities
                 volume = 0;
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Gets the inventory definition from the EntityComponents and EntityContainers definitions.
-        /// </summary>
-        public static MyInventoryComponentDefinition GetInventoryFromComponent(MyDefinitionBase def)
-        {
-            MyContainerDefinition containerDef;
-
-            if(MyDefinitionManager.Static.TryGetContainerDefinition(def.Id, out containerDef) && containerDef.DefaultComponents != null)
-            {
-                MyComponentDefinitionBase compDefBase;
-
-                foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
-                {
-                    if(compPointer.BuilderType == typeof(MyObjectBuilder_Inventory) && MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
-                    {
-                        MyInventoryComponentDefinition invComp = compDefBase as MyInventoryComponentDefinition;
-
-                        if(invComp != null && invComp.Id.SubtypeId == def.Id.SubtypeId)
-                        {
-                            return invComp;
-                        }
-                    }
-                }
-            }
-
-            return null;
         }
 
         public static string ColorTag(Color color)
