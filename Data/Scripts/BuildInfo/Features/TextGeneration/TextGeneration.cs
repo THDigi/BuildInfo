@@ -1516,6 +1516,47 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional: grinder makes grid split
 
+            #region Optional: warn about inventory contents being explosive
+            // TODO: ammo detonation for inventory-owning blocks?
+            // TODO: include some Main.Config.AimInfo.IsSet(AimInfoFlags.Explode) ?
+            //if(!isProjected && has inventory ??)
+            //{
+            //    MyRelationsBetweenPlayerAndBlock relation = (aimedBlock.OwnerId > 0 ? localPlayer.GetRelationTo(aimedBlock.OwnerId) : MyRelationsBetweenPlayerAndBlock.NoOwnership);
+            //
+            //    if(relation.IsFriendly())
+            //    {
+            //        // HACK unused: def.DetonateChance & def.DamageThreshold
+            //
+            //        MyGameDefinition gameDef = MyDefinitionManager.Static.GetDefinition<MyGameDefinition>(MyGameDefinition.Default); // NOTE: This is not default if world is using some kind of scenario game definition...
+            //
+            //        
+            //        /*
+            //        if (MyFakes.ENABLE_AMMO_DETONATION)
+            //        {
+            //            MyCubeBlockDefinition cubeBlockDefinition = MyDefinitionManager.Static.GetCubeBlockDefinition(builder.GetId());
+            //            MyGameDefinition gameDefinition = MySession.Static.GameDefinition;
+            //            m_detonationData = new DetonationData
+            //            {
+            //                DamageThreshold = cubeBlockDefinition.DamageThreshold,
+            //                DetonateChance = cubeBlockDefinition.DetonateChance,
+            //                ExplosionAmmoVolumeMin = gameDefinition.ExplosionAmmoVolumeMin,
+            //                ExplosionAmmoVolumeMax = gameDefinition.ExplosionAmmoVolumeMax,
+            //                ExplosionRadiusMin = gameDefinition.ExplosionRadiusMin,
+            //                ExplosionRadiusMax = gameDefinition.ExplosionRadiusMax,
+            //                ExplosionDamagePerLiter = gameDefinition.ExplosionDamagePerLiter,
+            //                ExplosionDamageMax = gameDefinition.ExplosionDamageMax
+            //            };
+            //            MyInventory inventory = this.GetInventory();
+            //            if (inventory != null)
+            //            {
+            //                inventory.InventoryContentChanged += CacheItem;
+            //                CacheInventory(inventory);
+            //            }
+            //        }*/
+            //    }
+            //}
+            #endregion
+
             #region Optional: added by mod
             MyModContext context = def.Context;
             if(Main.Config.AimInfo.IsSet(AimInfoFlags.AddedByMod) && !context.IsBaseGame)
@@ -1807,8 +1848,6 @@ namespace Digi.BuildInfo.Features
         #endregion Equipped block info generation
 
         #region Shared generation methods
-        //readonly List<MyTargetingGroupDefinition> TargetGroups = new List<MyTargetingGroupDefinition>(4);
-
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
             int airTightFaces = 0;
@@ -1874,65 +1913,64 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            // TODO: keep & improve?
-            //{
-            //    StringBuilder sb = AddLine().Append(partPrefix).Label("Targetting groups");
-            //    int atLabelLen = sb.Length;
-            //
-            //    // TODO: some blocks have no targetting groups, what then?!
-            //    if(def.TargetingGroups != null && def.TargetingGroups.Count > 0)
-            //    {
-            //        foreach(var group in def.TargetingGroups)
-            //        {
-            //            sb.Append(group.String).Append(", ");
-            //        }
-            //    }
-            //    else
-            //    {
-            //        TargetGroups.Clear();
-            //        MyDefinitionManager.Static.GetTargetingGroupDefinitions(TargetGroups);
+            #region Target groups and priority
+            // TODO: its own flag?
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
+            {
+                StringBuilder sb = AddLine().Append(partPrefix).Label("Target - Priority").MultiplierFormat(def.PriorityModifier);
 
-            //        foreach(MyTargetingGroupDefinition group in TargetGroups)
-            //        {
-            //            if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
-            //            {
-            //                sb.Append(group.Id.SubtypeName).Append(", ");
-            //            }
-            //        }
-            //    }
+                // HACK: from MyLargeTurretTargetingSystem.TestPotentialTarget()
+                // HACK: MyFunctionalBlockDefinition is also used by non-MyFunctionalBlock types...
+                if(MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_FunctionalBlock), def.Id.TypeId))
+                {
+                    sb.Separator().MultiplierFormat(def.PriorityModifier * def.NotWorkingPriorityMultiplier).Append(" if not working");
+                }
 
-            //    if(sb.Length > atLabelLen)
-            //        sb.Length -= 2; // remove last comma
+                bool hasGroup = def.TargetingGroups != null && def.TargetingGroups.Count > 0;
+                if(!hasGroup)
+                {
+                    foreach(MyTargetingGroupDefinition group in BuildInfoMod.Instance.Caches.OrderedTargetGroups)
+                    {
+                        if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
+                        {
+                            hasGroup = true;
+                            break;
+                        }
+                    }
+                }
 
-            //    sb.Separator().Label("Priority").ExponentNumber(def.PriorityModifier).Separator().Label("Priority if broken").ExponentNumber(def.PriorityModifier * def.NotWorkingPriorityMultiplier);
-            //}
+                sb.Separator().Label("Type");
+                if(hasGroup)
+                {
+                    int atLabelLen = sb.Length;
 
+                    if(def.TargetingGroups != null && def.TargetingGroups.Count > 0)
+                    {
+                        foreach(MyStringHash group in def.TargetingGroups)
+                        {
+                            sb.Append(group.String).Append(", ");
+                        }
+                    }
+                    else
+                    {
+                        foreach(MyTargetingGroupDefinition group in BuildInfoMod.Instance.Caches.OrderedTargetGroups)
+                        {
+                            if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
+                            {
+                                sb.Append(group.Id.SubtypeName).Append(", ");
+                            }
+                        }
+                    }
 
-            // TODO: ammo detonation for inventory-owning blocks?
-            /*
-		    if (MyFakes.ENABLE_AMMO_DETONATION)
-		    {
-			    MyCubeBlockDefinition cubeBlockDefinition = MyDefinitionManager.Static.GetCubeBlockDefinition(builder.GetId());
-			    MyGameDefinition gameDefinition = MySession.Static.GameDefinition;
-			    m_detonationData = new DetonationData
-			    {
-				    DamageThreshold = cubeBlockDefinition.DamageThreshold,
-				    DetonateChance = cubeBlockDefinition.DetonateChance,
-				    ExplosionAmmoVolumeMin = gameDefinition.ExplosionAmmoVolumeMin,
-				    ExplosionAmmoVolumeMax = gameDefinition.ExplosionAmmoVolumeMax,
-				    ExplosionRadiusMin = gameDefinition.ExplosionRadiusMin,
-				    ExplosionRadiusMax = gameDefinition.ExplosionRadiusMax,
-				    ExplosionDamagePerLiter = gameDefinition.ExplosionDamagePerLiter,
-				    ExplosionDamageMax = gameDefinition.ExplosionDamageMax
-			    };
-			    MyInventory inventory = this.GetInventory();
-			    if (inventory != null)
-			    {
-				    inventory.InventoryContentChanged += CacheItem;
-				    CacheInventory(inventory);
-			    }
-		    }*/
-
+                    if(sb.Length > atLabelLen)
+                        sb.Length -= 2; // remove last comma
+                }
+                else
+                {
+                    sb.Append("Default");
+                }
+            }
+            #endregion
 
             // TODO: add PlaceInfoFlags.ModDetails? and use everywhere where's mod-given info
             //if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ModDetails))
