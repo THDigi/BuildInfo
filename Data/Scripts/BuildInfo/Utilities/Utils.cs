@@ -248,6 +248,18 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
+        /// Allows non-normalized vectors and returns angle in radians.
+        /// Credit to Whiplash141 for the maffs!
+        /// </summary>
+        public static double VectorAngleBetween(Vector3D a, Vector3D b)
+        {
+            if(Vector3D.IsZero(a) || Vector3D.IsZero(b))
+                return 0;
+            else
+                return Math.Acos(MathHelper.Clamp(a.Dot(b) / Math.Sqrt(a.LengthSquared() * b.LengthSquared()), -1, 1));
+        }
+
+        /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.
         /// <para><paramref name="identityId"/> set to 0 will show to all players, default (-1) will show to local player.</para>

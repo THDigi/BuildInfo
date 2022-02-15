@@ -77,7 +77,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public OverlayDrawInstance(Overlays overlays, string debugName)
         {
             DebugName = debugName;
-            LabelRender = new LabelRendering(this);
+            LabelRender = new LabelRendering(overlays.Main);
 
             Overlays = overlays;
             Main = overlays.Main;
@@ -624,7 +624,7 @@ namespace Digi.BuildInfo.Features.Overlays
         #endregion
 
         #region draw helpers
-        float ConvertToAlwaysOnTop(ref MatrixD matrix)
+        public static float ConvertToAlwaysOnTop(ref MatrixD matrix)
         {
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D posOverlay = camMatrix.Translation + ((matrix.Translation - camMatrix.Translation) * DepthRatio);

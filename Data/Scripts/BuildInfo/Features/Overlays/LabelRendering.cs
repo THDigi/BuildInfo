@@ -58,6 +58,7 @@ namespace Digi.BuildInfo.Features.Overlays
         Laser,
         RaycastLimits,
         SteeringAxis,
+        ShipCenterOfMass,
     }
 
     public class LabelRendering
@@ -91,10 +92,12 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Square");
 
-        public LabelRendering(OverlayDrawInstance drawInstance)
+        public LabelRendering(BuildInfoMod mod)
         {
-            DrawInstance = drawInstance;
-            Main = BuildInfoMod.Instance;
+            if(mod == null)
+                throw new Exception($"invalid instantiation of {nameof(LabelRendering)}");
+
+            Main = mod;
 
             LabelByType = new LabelData[Enum.GetValues(typeof(LabelType)).Length];
         }

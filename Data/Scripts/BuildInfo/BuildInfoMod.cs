@@ -52,6 +52,7 @@ namespace Digi.BuildInfo
         public readonly JumpDriveMonitor JumpDriveMonitor;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly LeakInfo LeakInfo;
+        public readonly ShipOverlays ShipOverlays;
         public readonly Overlays Overlays;
         public readonly SpecializedOverlays SpecializedOverlays;
         public readonly LockOverlay LockOverlay;
@@ -130,6 +131,7 @@ namespace Digi.BuildInfo
             HUDEditor = new HUDEditor(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
+            ShipOverlays = new ShipOverlays(this);
             Overlays = new Overlays(this);
             SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);
