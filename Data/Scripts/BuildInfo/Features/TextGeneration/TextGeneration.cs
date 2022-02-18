@@ -2380,7 +2380,10 @@ namespace Digi.BuildInfo.Features
 
                 MyCubeBlockDefinition partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
 
-                AppendBasics(partDef, part: true);
+                if(partDef != null)
+                    AppendBasics(partDef, part: true);
+                else
+                    AddLine().Color(COLOR_BAD).Append("No attachable part declared!");
             }
         }
 
