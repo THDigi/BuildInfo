@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Game.Entities;
@@ -18,7 +19,12 @@ namespace Digi.BuildInfo.Features.Overlays
         static readonly Color ColorLabel = new Color(0, 255, 0);
         static readonly Vector4 ColorPoint = ColorLabel.ToVector4();
 
+        static readonly Color ColorMassLabel = new Color(255, 155, 0);
+        static readonly Vector4 ColorCoMPoint = ColorMassLabel.ToVector4();
+
         static readonly double ShowLabelAngleRad = MathHelper.ToRadians(10);
+
+        const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         const double ScanRadius = 30;
         const double VolumeSeeExtraRadius = 20;
@@ -29,6 +35,7 @@ namespace Digi.BuildInfo.Features.Overlays
         readonly HashSet<IMyGridGroupData> Ships = new HashSet<IMyGridGroupData>();
         readonly List<IMyCubeGrid> Grids = new List<IMyCubeGrid>();
         readonly List<IHitInfo> Hits = new List<IHitInfo>();
+        readonly HashSet<long> Owners = new HashSet<long>();
 
         public ShipOverlays(BuildInfoMod main) : base(main)
         {
@@ -71,6 +78,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public override void UpdateDraw()
         {
+            if(MyAPIGateway.Session?.Player == null)
+                return;
+
             if(!MyCubeGrid.ShowCenterOfMass)
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
@@ -106,6 +116,10 @@ namespace Digi.BuildInfo.Features.Overlays
 
             if(Ships.Count > 0)
             {
+                long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
+
+                bool drawLabel = LabelRender.CanDrawLabel();
+
                 double closestAngleRad = ShowLabelAngleRad;
                 Vector3D? closestCoM = null;
 
@@ -117,8 +131,37 @@ namespace Digi.BuildInfo.Features.Overlays
                     Grids.Clear();
                     ship.GetGrids(Grids);
 
-                    //if(Grids.Count <= 1)
-                    //    continue;
+                    // TODO: optimize by checking more rarely
+                    // gather all unique owners to reduce the calls on GetRelationPlayerPlayer()
+                    Owners.Clear();
+                    foreach(IMyCubeGrid grid in Grids)
+                    {
+                        foreach(long owner in grid.BigOwners)
+                        {
+                            Owners.Add(owner);
+                        }
+                    }
+
+                    bool shipFriendly = false;
+                    if(Owners.Count == 0)
+                    {
+                        shipFriendly = true;
+                    }
+                    else
+                    {
+                        foreach(long owner in Owners)
+                        {
+                            MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(owner, localIdentityId);
+                            if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
+                            {
+                                shipFriendly = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(!shipFriendly)
+                        continue;
 
                     // has known weird issues so I'd rather just compute it myself when I can
                     //Vector3D shipCoM = MyGridPhysicalGroupData.GetGroupSharedProperties((MyCubeGrid)Grids[0]).CoMWorld;
@@ -131,10 +174,17 @@ namespace Digi.BuildInfo.Features.Overlays
                     foreach(IMyCubeGrid grid in Grids)
                     {
                         float mass = grid.Physics.Mass;
+                        if(mass <= 0)
+                        {
+                            // need mass for clients in MP too, like when grids are LG'd
+                            mass = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
+                        }
+
+                        Vector3D gridCoM = grid.Physics.CenterOfMassWorld;
 
                         // weight each vector by mass to play a factor in the final vector
                         totalMass += mass;
-                        shipCoM += grid.Physics.CenterOfMassWorld * mass;
+                        shipCoM += gridCoM * mass;
 
                         float volume = grid.LocalAABB.Volume();
                         if(volume > biggestGridVolume)
@@ -142,7 +192,47 @@ namespace Digi.BuildInfo.Features.Overlays
                             biggestGrid = grid;
                             biggestGridVolume = volume;
                         }
+
+                        // TODO: optimize by checking more rarely
+                        bool gridFriendly = false;
+                        if(grid.BigOwners == null || grid.BigOwners.Count == 0)
+                        {
+                            gridFriendly = true;
+                        }
+                        else
+                        {
+                            foreach(long owner in grid.BigOwners)
+                            {
+                                MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(grid.BigOwners[0], localIdentityId);
+                                if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
+                                {
+                                    gridFriendly = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(!gridFriendly)
+                            continue;
+
+                        {
+                            MatrixD matrix = biggestGrid.WorldMatrix;
+                            matrix.Translation = gridCoM;
+                            float rescale = OverlayDrawInstance.ConvertToAlwaysOnTop(ref matrix);
+
+                            MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, ColorCoMPoint, matrix.Translation, 0.05f * rescale, 0, blendType: BlendType);
+                        }
+
+                        if(drawLabel && Utils.VectorAngleBetween((gridCoM - camPos), camForward) <= ShowLabelAngleRad)
+                        {
+                            Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Right;
+                            LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(grid.CustomName).Append(grid.IsStatic ? " <color=gray>(Static)" : "").Color(ColorMassLabel).Append("\nMass: ").MassFormat(mass);
+                            LabelRender.DrawLineLabel(LabelType.DynamicLabel, gridCoM, labelDir, ColorMassLabel, alwaysOnTop: true);
+                        }
                     }
+
+                    if(Grids.Count <= 1)
+                        continue; // don't show ship CoM as there's only one grid
 
                     shipCoM /= totalMass; // important to get an actual world-space vector
 
@@ -152,25 +242,26 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     Vector3D camToCoM = (shipCoM - camPos);
 
-                    float distanceToCoM = (float)camToCoM.Length();
-                    float distScale = MathHelper.Lerp(1f, 9f, distanceToCoM / 200f);
+                    {
+                        float distanceToCoM = (float)camToCoM.Length();
+                        float distScale = MathHelper.Lerp(1f, 9f, distanceToCoM / 200f);
 
-                    Vector4 lineColor = new Color(255, 0, 255);
+                        Vector4 lineColor = new Color(255, 0, 255);
 
-                    MatrixD matrix = biggestGrid.WorldMatrix;
-                    matrix.Translation = shipCoM;
+                        MatrixD matrix = biggestGrid.WorldMatrix;
+                        matrix.Translation = shipCoM;
 
-                    float rescale = OverlayDrawInstance.ConvertToAlwaysOnTop(ref matrix);
+                        float rescale = OverlayDrawInstance.ConvertToAlwaysOnTop(ref matrix);
 
-                    float halfLength = 1f * distScale; // no rescale here as matrix directions are already scaled
-                    float thick = 0.015f * distScale * rescale;
-                    const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
+                        float halfLength = 1f * distScale; // no rescale here as matrix directions are already scaled
+                        float thick = 0.015f * distScale * rescale;
 
-                    MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Forward * halfLength, matrix.Forward, halfLength * 2, thick, BlendType);
-                    MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Right * halfLength, matrix.Right, halfLength * 2, thick, BlendType);
-                    MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Up * halfLength, matrix.Up, halfLength * 2, thick, BlendType);
+                        MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Forward * halfLength, matrix.Forward, halfLength * 2, thick, BlendType);
+                        MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Right * halfLength, matrix.Right, halfLength * 2, thick, BlendType);
+                        MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, lineColor, matrix.Translation - matrix.Up * halfLength, matrix.Up, halfLength * 2, thick, BlendType);
 
-                    MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, ColorPoint, matrix.Translation, 0.05f * distScale * rescale, 0, blendType: BlendType);
+                        MyTransparentGeometry.AddPointBillboard(OverlayDrawInstance.MaterialDot, ColorPoint, matrix.Translation, 0.05f * distScale * rescale, 0, blendType: BlendType);
+                    }
 
                     double angleRad = Utils.VectorAngleBetween(camToCoM, camForward);
                     if(angleRad < closestAngleRad)
@@ -182,9 +273,10 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 Grids.Clear();
 
-                if(closestCoM.HasValue && LabelRender.CanDrawLabel())
+                if(drawLabel && closestCoM.HasValue)
                 {
-                    LabelRender.DrawLineLabel(LabelType.ShipCenterOfMass, closestCoM.Value, Vector3D.Forward, ColorLabel, "Ship's Center of Mass", lineHeight: 0, alwaysOnTop: true);
+                    Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Down;
+                    LabelRender.DrawLineLabel(LabelType.ShipCenterOfMass, closestCoM.Value, labelDir, ColorLabel, "Ship's Center of Mass", alwaysOnTop: true);
                 }
             }
         }
