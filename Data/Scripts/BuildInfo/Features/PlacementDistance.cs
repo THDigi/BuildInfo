@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
@@ -6,43 +6,26 @@ using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.Definitions.SessionComponents;
 using VRage.Game.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
     /// <summary>
-    /// Adds the ctrl+scroll block distance adjust to in-ship mode in creative and creative tools as well as survival (ship or character).
+    /// Adds the ctrl+scroll block distance adjust for survival for character as well as in-ship mode for creative.
     /// It also overwrites the behavior for creative tools to allow maximum placement distance like in creative mode.
     /// </summary>
     public class PlacementDistance : ModComponent
     {
-        private const float PLACE_MINRANGE = 1;
-        private const float PLACE_MAXRANGE = 50;
-        private const float PLACE_DIST_ADD = 5;
-        private const float PLACE_MIN_SIZE = 2.5f;
-        private const float VANILLA_CREATIVE_MAXDIST = 100f;
-        private const float VANILLA_SURVIVAL_CREATIVETOOLS_MAXDIST = 12.5f;
+        const float MinRange = 0.1f;
+        const float SurvivalMaxRange = 50f;
+        const float CreativeMaxRange = 100f;
 
-        private float VanillaSurvivalDistance()
-        {
-            // HACK: hardcoded from Data/Game/SessionComponents.sbc
+        float CurrentMaxRange = -1;
+        float? SwapAtDistance = null;
 
-            MyCubeBlockDefinition def = Main.EquipmentMonitor.BlockDef;
-            if(def == null)
-                return 20f;
-
-            if(MyAPIGateway.Session.ControlledObject is IMyCubeBlock)
-                return 12.5f;
-
-            return (def.CubeSize == MyCubeSize.Large ? 10f : 5f);
-        }
-
-        public static void ResetDefaults()
-        {
-            if(!MyAPIGateway.Session.CreativeMode)
-                MyCubeBuilder.IntersectionDistance = 10f;
-        }
+        readonly List<IDefinitionEdit> Edits = new List<IDefinitionEdit>();
 
         public PlacementDistance(BuildInfoMod main) : base(main)
         {
@@ -50,27 +33,131 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
+            Main.Config.AdjustBuildDistanceShipCreative.ValueAssigned += ConfigChanged;
+            Main.Config.AdjustBuildDistanceSurvival.ValueAssigned += ConfigChanged;
+
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+
+            MyCubeBuilder.IntersectionDistance = 10f;
         }
 
         public override void UnregisterComponent()
         {
+            foreach(IDefinitionEdit edit in Edits)
+            {
+                edit.Restore();
+            }
+
+            MyCubeBuilder.IntersectionDistance = 10f;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.Config.AdjustBuildDistanceShipCreative.ValueAssigned -= ConfigChanged;
+            Main.Config.AdjustBuildDistanceSurvival.ValueAssigned -= ConfigChanged;
+
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
 
-        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        void ConfigChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, Main.EquipmentMonitor.IsCubeBuilder);
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
-        private void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        public override void UpdateAfterSim(int tick)
         {
-            // reset survival distance if this feature is disabled
-            if(def != null && Main.EquipmentMonitor.IsCubeBuilder && !Main.Config.AdjustBuildDistanceSurvival.Value && !MyAPIGateway.Session.CreativeMode && !Utils.CreativeToolsEnabled)
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+            EditDefinitions();
+        }
+
+        void EditDefinitions()
+        {
+            MyCubeBuilderDefinition def = MyCubeBuilder.CubeBuilderDefinition;
+            if(def == null)
             {
-                MyCubeBuilder.IntersectionDistance = VanillaSurvivalDistance();
+                Log.Error($"MyCubeBuilder.CubeBuilderDefinition is null for some reason O.o - placement distance tweaks won't work properly");
+                return;
+            }
+
+            foreach(IDefinitionEdit edit in Edits)
+            {
+                edit.Restore();
+            }
+
+            Edits.Clear();
+
+            if(Main.Config.AdjustBuildDistanceSurvival.Value)
+            {
+                //Edits.Add(DefinitionEdit.Create(def, (d, v) => d.DefaultBlockBuildingDistance = v, def.DefaultBlockBuildingDistance, 20f));
+                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.MinBlockBuildingDistance = v, def.MinBlockBuildingDistance, MinRange));
+                //Edits.Add(DefinitionEdit.Create(def, (d, v) => d.MaxBlockBuildingDistance = v, def.MaxBlockBuildingDistance, MaxRangeVanillaCreative));
+                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistLargeSurvivalCharacter = v, def.BuildingDistLargeSurvivalCharacter, SurvivalMaxRange));
+                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistSmallSurvivalCharacter = v, def.BuildingDistSmallSurvivalCharacter, SurvivalMaxRange));
+                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistLargeSurvivalShip = v, def.BuildingDistLargeSurvivalShip, SurvivalMaxRange));
+                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistSmallSurvivalShip = v, def.BuildingDistSmallSurvivalShip, SurvivalMaxRange));
+            }
+        }
+
+        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        {
+            CalculateMaxRange();
+
+            bool update = Main.EquipmentMonitor.IsCubeBuilder && (Main.Config.AdjustBuildDistanceSurvival.Value || Main.Config.AdjustBuildDistanceShipCreative.Value);
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, update);
+        }
+
+        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
+        {
+            CalculateMaxRange();
+
+            // set distance depending on last distance
+            // if it was scrolled farthest then SwapAtDistance is null and equipped block is farthest
+            // otherwise, it'll maintain the closer distance
+            if(SwapAtDistance.HasValue)
+            {
+                MyCubeBuilder.IntersectionDistance = SwapAtDistance.Value;
+            }
+            else
+            {
+                // if set too far it'll spawn at low detail
+                if(CurrentMaxRange > 0)
+                    MyCubeBuilder.IntersectionDistance = CurrentMaxRange;
+            }
+        }
+
+        void CalculateMaxRange()
+        {
+            if(!Main.EquipmentMonitor.IsCubeBuilder || Main.EquipmentMonitor.BlockDef == null)
+                return;
+
+            CurrentMaxRange = -1;
+
+            bool survival = !Utils.CreativeToolsEnabled;
+            bool inShip = (MyAPIGateway.Session.ControlledObject is IMyCubeBlock);
+
+            if(!survival && Main.Config.AdjustBuildDistanceShipCreative.Value)
+            {
+                if(inShip) // fix for no distance adjustment in cockpit build mode in creative mode/tools
+                {
+                    CurrentMaxRange = CreativeMaxRange;
+                }
+                else if(!MyAPIGateway.Session.CreativeMode) // fix for creative tools having shorter max range than creative mode
+                {
+                    CurrentMaxRange = CreativeMaxRange;
+                }
+            }
+
+            // fix for survival (ship or not) having no distance adjust
+            if(survival && Main.Config.AdjustBuildDistanceSurvival.Value)
+            {
+                Vector3 sizeM = Main.EquipmentMonitor.BlockDef.Size * Main.EquipmentMonitor.BlockGridSize;
+                BoundingSphere encasingSphere = BoundingSphere.CreateFromBoundingBox(new BoundingBox(Vector3.Zero, sizeM));
+                float diagonal = encasingSphere.Radius * 2;
+                float add = (inShip ? 10f : 3f);
+                CurrentMaxRange = MathHelper.Clamp(diagonal + add, MinRange, SurvivalMaxRange);
             }
         }
 
@@ -79,60 +166,14 @@ namespace Digi.BuildInfo.Features
             if(inMenu || paused || !Main.EquipmentMonitor.IsCubeBuilder || Main.EquipmentMonitor.BlockDef == null)
                 return;
 
-            float maxRange = 0f;
-            bool inShip = (MyAPIGateway.Session.ControlledObject is IMyCubeBlock);
-
-            if(MyAPIGateway.Session.CreativeMode)
+            if(Main.Tick % 60 == 0)
             {
-                if(!inShip)
-                    return;
-
-                if(!Main.Config.AdjustBuildDistanceShipCreative.Value)
-                    return;
-
-                maxRange = VANILLA_CREATIVE_MAXDIST;
-            }
-            else if(Utils.CreativeToolsEnabled)
-            {
-                if(!Main.Config.AdjustBuildDistanceShipCreative.Value)
-                    return;
-
-                maxRange = VANILLA_CREATIVE_MAXDIST;
-            }
-            else
-            {
-                if(!Main.Config.AdjustBuildDistanceSurvival.Value)
-                    return;
-
-                float blockSizeMeters = Math.Max(Main.EquipmentMonitor.BlockDef.Size.AbsMax() * Main.EquipmentMonitor.BlockGridSize, PLACE_MIN_SIZE);
-
-                // add some extra distance only if the block isn't huge
-                float add = PLACE_DIST_ADD;
-                float tooLarge = 3 * Main.EquipmentMonitor.BlockGridSize;
-                if(blockSizeMeters > tooLarge)
-                    add = Math.Max(add - (blockSizeMeters - tooLarge), 0);
-
-                maxRange = MathHelper.Clamp(blockSizeMeters + add, VanillaSurvivalDistance(), PLACE_MAXRANGE);
+                CalculateMaxRange();
             }
 
-            int move = GetDistanceAdjustInputValue();
+            if(CurrentMaxRange < 0)
+                return; // other cases (creative mode on foot) have distance adjust so those are ignored
 
-            if(move != 0)
-            {
-                if(move > 0)
-                    MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
-                else
-                    MyCubeBuilder.IntersectionDistance /= 1.1f;
-            }
-
-            MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, PLACE_MINRANGE, maxRange);
-
-            if(Main.Config.Debug.Value)
-                MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance.ToString("0.##")}; max={maxRange.ToString("0.##")})", 17);
-        }
-
-        private int GetDistanceAdjustInputValue()
-        {
             int move = 0;
 
             if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
@@ -148,7 +189,23 @@ namespace Digi.BuildInfo.Features
                     move = -1;
             }
 
-            return move;
+            if(move != 0)
+            {
+                if(move > 0)
+                    MyCubeBuilder.IntersectionDistance *= 1.1f; // consistent with how the game moves it
+                else
+                    MyCubeBuilder.IntersectionDistance /= 1.1f;
+
+                if(MyCubeBuilder.IntersectionDistance >= CurrentMaxRange)
+                    SwapAtDistance = null;
+                else
+                    SwapAtDistance = MyCubeBuilder.IntersectionDistance;
+            }
+
+            MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, MinRange, CurrentMaxRange);
+
+            if(Main.Config.Debug.Value)
+                MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance.ToString("0.##")}; max={CurrentMaxRange.ToString("0.##")})", 17);
         }
     }
 }

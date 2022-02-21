@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
 using Digi.ConfigLib;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Utils;
 
@@ -31,10 +31,11 @@ namespace Digi.ComponentLib
             if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
                 return; // this mod does nothing server side (with no render), no reason to allocate any more memory.
 
+            // just making sure it's not too far
+            MyCubeBuilder.IntersectionDistance = 12f;
+
             if(IsKilled)
             {
-                PlacementDistance.ResetDefaults();
-
                 string text = $"REMINDER: No script components loaded! Mod has been killed with '{Config.KillswitchName}' in '{Config.FileName}'.";
                 Log.Info(text);
                 MyLog.Default.WriteLine("### " + Log.ModName + " mod " + text);
