@@ -172,9 +172,9 @@
     <Compile Include="Features\ModelPreview\Blocks\MultiSubpartBase.cs" />
     <Compile Include="Features\ModelPreview\Blocks\Suspension.cs" />
     <Compile Include="Features\ModelPreview\Blocks\Motor.cs" />
-    <Compile Include="Features\ModelPreview\Blocks\PreviewBase.cs" />
+    <Compile Include="Features\ModelPreview\Blocks\PreviewInstanceBase.cs" />
     <Compile Include="Features\ModelPreview\PreviewEntityWrapper.cs" />
-    <Compile Include="Features\ModelPreview\ModelPreview.cs" />
+    <Compile Include="Features\ModelPreview\SubpartPreview.cs" />
     <Compile Include="Features\Overlays\Specialized\Piston.cs" />
     <Compile Include="Features\TopPartColor.cs" />
     <Compile Include="Libraries\TextHudAPI\TextAPIFont.cs" />

@@ -56,7 +56,7 @@ namespace Digi.BuildInfo
         public readonly Overlays Overlays;
         public readonly SpecializedOverlays SpecializedOverlays;
         public readonly LockOverlay LockOverlay;
-        public readonly ModelPreview ModelPreview;
+        public readonly SubpartPreview SubpartPreview;
         public readonly PickBlock PickBlock;
         public readonly QuickMenu QuickMenu;
         public readonly AnalyseShip AnalyseShip;
@@ -135,7 +135,7 @@ namespace Digi.BuildInfo
             Overlays = new Overlays(this);
             SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);
-            ModelPreview = new ModelPreview(this);
+            SubpartPreview = new SubpartPreview(this);
             LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);

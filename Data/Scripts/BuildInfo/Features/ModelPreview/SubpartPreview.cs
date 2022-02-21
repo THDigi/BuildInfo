@@ -12,7 +12,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview
 {
-    public class ModelPreview : ModComponent
+    public class SubpartPreview : ModComponent
     {
         readonly Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>> PreviewFactory = new Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>>(MyObjectBuilderType.Comparer);
 
@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.ModelPreview
         // used by all other blocks that don't have a specific preview class registered.
         readonly MultiSubpartBase FallbackPreview = new MultiSubpartBase();
 
-        public ModelPreview(BuildInfoMod main) : base(main)
+        public SubpartPreview(BuildInfoMod main) : base(main)
         {
             RegisterType<Motor>(typeof(MyObjectBuilder_MotorStator));
             RegisterType<Motor>(typeof(MyObjectBuilder_MotorAdvancedStator));

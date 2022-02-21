@@ -301,6 +301,46 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        public static StringBuilder AppendSanitized(this StringBuilder sb, string text)
+        {
+            for(int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+
+                if(c == '<')
+                {
+                    if(text.IndexOf("<color=", i) == i)
+                    {
+                        int endIdx = text.IndexOf('>', i + "<color=".Length);
+                        if(endIdx != -1)
+                        {
+                            i = endIdx + 1;
+                            continue;
+                        }
+                    }
+                    else if(text.IndexOf("<reset>", i) == i)
+                    {
+                        i += "<reset>".Length;
+                        continue;
+                    }
+                    else if(text.IndexOf("<i>", i) == i)
+                    {
+                        i += "<i>".Length;
+                        continue;
+                    }
+                    else if(text.IndexOf("</i>", i) == i)
+                    {
+                        i += "</i>".Length;
+                        continue;
+                    }
+                }
+
+                sb.Append(c);
+            }
+
+            return sb;
+        }
+
         // Some ResourceSinkGroup are string and some are MyStringHash...
         public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false, bool isSource = false)
         {
