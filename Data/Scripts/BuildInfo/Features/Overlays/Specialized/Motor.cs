@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             MyMotorStatorDefinition statorDef = data.StatorDef;
 
-            float radius = data.TopDef.Size.AbsMax() * 2;
+            float radius = data.TopDef.Size.AbsMax() * MyDefinitionManager.Static.GetCubeSize(data.TopDef.CubeSize); // twice the top's largest axis length
 
             MatrixD blockWorldMatrix = drawMatrix;
 
