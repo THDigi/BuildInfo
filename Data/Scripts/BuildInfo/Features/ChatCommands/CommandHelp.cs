@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Custom labels for toolbar slots per cockpit" + SegmentSuffix +
-            "\n  Easiest to use '" + ChatCommandHandler.MainCommandPrefix + " {0}' chat command which will set CustomData accordingly." +
+            "\n  Easiest to use '{0}' chat command which will set CustomData accordingly." +
             "\n" +
             "\n  Or you can do it manually:" +
             "\n  Cockpit's CustomData can be used to set a custom label per slot, using ini format." +

@@ -68,9 +68,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void PrintHelp(StringBuilder sb)
         {
-            foreach(var alias in Aliases)
+            foreach(string alias in Aliases)
             {
-                sb.Append(alias).Append(" <1~9> [text]").NewLine();
+                sb.Append(ChatCommandHandler.MainCommandPrefix).Append(' ').Append(alias).Append(" <1~9> [text]").NewLine();
             }
 
             sb.Append("  Set custom label for the specified slot on the current page of your controlled cockpit/RC's toolbar.").NewLine();
