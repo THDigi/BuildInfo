@@ -36,7 +36,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  They're shown in overlays because their position is still useful if you can identify their purpose." +
             "\n" +
             "\n [4] What is camera raycast?" +
-            "\n  Programmable block can use camera blocks to raycast to detect hits, for more info see the PB API (on MDK wiki maybe)." +
+            "\n  Programmable Block can use Camera blocks to rangefind objects using physics raycast, for more info see the PB API (on MDK wiki maybe)." +
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
@@ -56,19 +56,20 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Or you can do it manually:" +
             "\n  Cockpit's CustomData can be used to set a custom label per slot, using ini format." +
             "\n  This can be added anywhere in CustomData, but it must be in this order:" +
-            "\n [Toolbar]" +
+            "\n [" + ToolbarCustomLabels.IniSection + "]" +
             "\n page-slot = label" +
-            "\n ...and more like the line above, don't duplicate [Toolbar]" +
+            "\n ...and more like the line above, don't duplicate [" + ToolbarCustomLabels.IniSection + "]" +
             "\n" +
             "\n Functional example:" +
-            "\n [Toolbar]" +
+            "\n [" + ToolbarCustomLabels.IniSection + "]" +
             "\n 1-1 = Named the first slot!" +
             "\n 2-5 = <color=lime>Do stuff" +
             "\n" +
             "\n  You can also use textAPI's formatting:" +
             "\n    <color=red> or <color=255,0,0> (no end tag)." +
             "\n    <i> and </i> for italicized text." +
-            "\n  Max line 128 chars including formatting, and multilines are removed.";
+            "\n  Max line 128 chars including formatting, and multilines are removed." +
+            "\n  NOTE: if non-ini things need to also be in CustomData then add ini at the top and " + ToolbarCustomLabels.IniDivider + " as the divider, parser will ignore everything after those 3 dashes.";
 
         private const string SegmentPrefix = "  "; //  menu;  windows
         private const string SegmentSuffix = ""; // " —————————";

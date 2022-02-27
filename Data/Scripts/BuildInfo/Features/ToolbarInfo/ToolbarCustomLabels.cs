@@ -19,6 +19,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const string IniSection = "Toolbar";
         public const char KeySeparator = '-';
         public const int CustomLabelMaxLength = 128;
+        public const string IniDivider = "---"; // this is hardcoded in MyIni, do not change
 
         public readonly Dictionary<long, CustomToolbarData> BlockData = new Dictionary<long, CustomToolbarData>();
 
@@ -200,9 +201,48 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             IniParser.Clear();
 
+            string customData = shipCtrl.CustomData;
+
+            // determine if a valid --- divider exists, same way MyIni.FindSection() does it
+            bool hasDivider = false;
+            TextPtr ptr = new TextPtr(customData);
+            while(!ptr.IsOutOfBounds())
+            {
+                ptr = ptr.Find("\n");
+                ++ptr;
+                if(ptr.Char == '[')
+                {
+                    // don't care
+                }
+                else if(ptr.StartsWith(IniDivider))
+                {
+                    ptr = (ptr + IniDivider.Length).SkipWhitespace();
+                    if(ptr.IsEndOfLine())
+                    {
+                        hasDivider = true;
+                        break;
+                    }
+                }
+            }
+
             // need to parse the entire thing
-            if(!IniParser.TryParse(shipCtrl.CustomData))
-                return "failed to parse CustomData";
+            MyIniParseResult result;
+            if(!IniParser.TryParse(customData, out result))
+            {
+                if(hasDivider)
+                {
+                    return $"failed to parse CustomData (before {IniDivider} divider)";
+                }
+                else
+                {
+                    // assume the current customdata is not ini and try again with divider
+                    customData = IniDivider + "\n" + customData;
+                    if(!IniParser.TryParse(customData, out result))
+                    {
+                        return "failed to parse CustomData";
+                    }
+                }
+            }
 
             string key = $"{Main.ToolbarMonitor.ToolbarPage + 1}-{slot}";
             if(label != null)
