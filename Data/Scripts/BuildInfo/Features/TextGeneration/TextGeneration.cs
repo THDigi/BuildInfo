@@ -2967,7 +2967,7 @@ namespace Digi.BuildInfo.Features
 
                 if(gasTank.LeakPercent != 0)
                 {
-                    float ratioPerSec = (gasTank.LeakPercent / 100f) * 60f; // HACK: LeakPercent gets subtracted per 100 ticks
+                    float ratioPerSec = (gasTank.LeakPercent / 100f) * 60f; // HACK: LeakPercent gets subtracted every 100 ticks
 
                     if(ratioPerSec > 0)
                         AddLine().Color(COLOR_WARNING).Label("Damaged Leak").Append("-").VolumeFormat(ratioPerSec * gasTank.Capacity).Append("/s"); //.Append(" (").ExponentNumber(leakRatioPerSec).Append("%/s)");
@@ -2990,23 +2990,54 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            MyOxygenGeneratorDefinition oxygenGenerator = def as MyOxygenGeneratorDefinition;
-            if(oxygenGenerator != null)
+            MyOxygenGeneratorDefinition gasGenerator = def as MyOxygenGeneratorDefinition;
+            if(gasGenerator != null)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    AddLine().Append("Ice consumption: ").MassFormat(oxygenGenerator.IceConsumptionPerSecond).Append("/s");
-
-                    if(oxygenGenerator.ProducedGases.Count > 0)
                     {
-                        AddLine().Append("Produces: ");
+                        StringBuilder sb = AddLine().Label("Consumes");
+                        int startLen = sb.Length;
 
-                        foreach(MyOxygenGeneratorDefinition.MyGasGeneratorResourceInfo gas in oxygenGenerator.ProducedGases)
+                        if(gasGenerator.InputInventoryConstraint != null)
                         {
-                            GetLine().Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(oxygenGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
+                            foreach(MyDefinitionId id in gasGenerator.InputInventoryConstraint.ConstrainedIds)
+                            {
+                                if(id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject) || id.TypeId == typeof(MyObjectBuilder_GasContainerObject))
+                                    continue;
+
+                                sb.ItemName(id).Append(", ");
+                            }
+
+                            foreach(MyObjectBuilderType type in gasGenerator.InputInventoryConstraint.ConstrainedTypes)
+                            {
+                                if(type == typeof(MyObjectBuilder_OxygenContainerObject) || type == typeof(MyObjectBuilder_GasContainerObject))
+                                    continue;
+
+                                sb.IdTypeFormat(type).Append(", ");
+                            }
+
+                            if(sb.Length > startLen)
+                                sb.Length -= 2; // remove last comma
+                        }
+                        else
+                        {
+                            sb.Append("(unknown)");
+                        }
+                    }
+
+                    AddLine().Label("Consumption per active output").Number(gasGenerator.IceConsumptionPerSecond).Append("/s");
+
+                    if(gasGenerator.ProducedGases != null && gasGenerator.ProducedGases.Count > 0)
+                    {
+                        StringBuilder sb = AddLine().Label("Produces");
+
+                        foreach(MyOxygenGeneratorDefinition.MyGasGeneratorResourceInfo gas in gasGenerator.ProducedGases)
+                        {
+                            sb.Append(gas.Id.SubtypeName).Append(" (").VolumeFormat(gasGenerator.IceConsumptionPerSecond * gas.IceToGasRatio).Append("/s), ");
                         }
 
-                        GetLine().Length -= 2;
+                        sb.Length -= 2; // remove last comma
                     }
                     else
                     {
@@ -3031,75 +3062,112 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(production.BlueprintClasses != null && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production) && production.BlueprintClasses != null)
             {
-                AddLine();
+                if(gasGenerator != null || gasTank != null)
+                {
+                    StringBuilder sb = AddLine().Label("Refills");
+                    int startLen = sb.Length;
 
-                int SpacePadding = 11;
-
-                if(refinery != null)
-                {
-                    GetLine().Label("Refines");
-                }
-                else if(gasTank != null)
-                {
-                    GetLine().Label("Refills");
-                }
-                else if(assembler != null)
-                {
-                    GetLine().Label("Builds");
-                }
-                else if(oxygenGenerator != null)
-                {
-                    GetLine().Label("Generates");
-                    SpacePadding = 17;
-                }
-                else
-                {
-                    GetLine().Label("Blueprints");
-                    SpacePadding = 17;
-                }
-
-                if(production.BlueprintClasses.Count == 0)
-                {
-                    GetLine().Color(COLOR_WARNING).Append("N/A");
-                }
-                else
-                {
-                    const int NumPerRow = 3;
-
-                    for(int i = 0; i < production.BlueprintClasses.Count; i++)
+                    if(production.InputInventoryConstraint != null)
                     {
-                        MyBlueprintClassDefinition bp = production.BlueprintClasses[i];
-
-                        if(i > 0)
+                        foreach(MyDefinitionId id in production.InputInventoryConstraint.ConstrainedIds)
                         {
-                            if(i % NumPerRow == 0)
-                                AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ").ResetFormatting();
-                            else
-                                GetLine().Separator();
+                            if(id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject) || id.TypeId == typeof(MyObjectBuilder_GasContainerObject))
+                            {
+                                sb.ItemName(id).Append(", ");
+                            }
                         }
 
-                        // not using DisplayNameText because some are really badly named, like BasicIngots -> Ingots; also can contain newlines.
-                        //string name = bp.DisplayNameText;
-                        //int newLineIndex = name.IndexOf('\n');
-                        //
-                        //if(newLineIndex != -1) // name contains a new line, ignore everything after that
-                        //{
-                        //    for(int ci = 0; ci < newLineIndex; ++ci)
-                        //    {
-                        //        GetLine().Append(name[ci]);
-                        //    }
-                        //
-                        //    GetLine().TrimEndWhitespace();
-                        //}
-                        //else
-                        //{
-                        //    GetLine().Append(name);
-                        //}
+                        foreach(MyObjectBuilderType type in production.InputInventoryConstraint.ConstrainedTypes)
+                        {
+                            if(type == typeof(MyObjectBuilder_OxygenContainerObject) || type == typeof(MyObjectBuilder_GasContainerObject))
+                            {
+                                sb.IdTypeFormat(type).Append(", ");
+                            }
+                        }
 
-                        string name = bp.Id.SubtypeName;
-                        GetLine().Append(name);
+                        if(sb.Length > startLen)
+                            sb.Length -= 2; // remove last comma
+                    }
+                    else
+                    {
+                        sb.Append("(unknown)");
+                    }
+                }
+                else
+                {
+                    StringBuilder sb = AddLine();
+
+                    int SpacePadding = 11;
+
+                    if(refinery != null)
+                    {
+                        sb.Label("Refines");
+                        SpacePadding = 13;
+                    }
+                    else if(assembler != null)
+                    {
+                        sb.Label("Builds");
+                        SpacePadding = 11;
+                    }
+                    //else if(gasTank != null)
+                    //{
+                    //    sb.Label("Refills");
+                    //    SpacePadding = 11;
+                    //}
+                    //else if(gasGenerator != null)
+                    //{
+                    //    sb.Label("Uses/Refills");
+                    //    SpacePadding = 22;
+                    //}
+                    else
+                    {
+                        sb.Label("Blueprints");
+                        SpacePadding = 17;
+                    }
+
+                    if(production.BlueprintClasses.Count == 0)
+                    {
+                        sb.Color(COLOR_WARNING).Append("N/A");
+                    }
+                    else
+                    {
+                        const int NumPerRow = 3;
+
+                        for(int i = 0; i < production.BlueprintClasses.Count; i++)
+                        {
+                            MyBlueprintClassDefinition bp = production.BlueprintClasses[i];
+
+                            if(i > 0)
+                            {
+                                if(i % NumPerRow == 0)
+                                    sb = AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ").ResetFormatting();
+                                else
+                                    sb.Separator();
+                            }
+
+                            // not using DisplayNameText because some are really badly named, like BasicIngots -> Ingots; also can contain newlines.
+                            //string name = bp.DisplayNameText;
+                            //int newLineIndex = name.IndexOf('\n');
+                            //
+                            //if(newLineIndex != -1) // name contains a new line, ignore everything after that
+                            //{
+                            //    for(int ci = 0; ci < newLineIndex; ++ci)
+                            //    {
+                            //        sb.Append(name[ci]);
+                            //    }
+                            //
+                            //    sb.TrimEndWhitespace();
+                            //}
+                            //else
+                            //{
+                            //    sb.Append(name);
+                            //}
+
+                            string name = bp.Id.SubtypeName;
+                            sb.Append(name);
+                        }
                     }
                 }
             }

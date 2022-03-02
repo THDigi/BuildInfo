@@ -6,7 +6,9 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
@@ -16,6 +18,7 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
@@ -1424,8 +1427,48 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Type: <BlockDefName>
             //      Max Required Input: <n> W
 
+            IMyGasGenerator generator = block as IMyGasGenerator;
+            MyOxygenGeneratorDefinition def = block?.SlimBlock?.BlockDefinition as MyOxygenGeneratorDefinition;
+            if(generator == null || def == null)
+                return;
+
             info.DetailInfo_CurrentPowerUsage(Sink);
-            info.DetailInfo_OutputGasList(Source);
+
+            MyResourceSourceComponent source = Source;
+            if(source != null)
+            {
+                // HACK: hardcoded from MyGasGenerator
+                float totalConsume = 0;
+                foreach(MyOxygenGeneratorDefinition.MyGasGeneratorResourceInfo gas in def.ProducedGases)
+                {
+                    float output = source.CurrentOutputByType(gas.Id) * generator.ProductionCapacityMultiplier; // like in DoUpdateTimerTick() and GasOutputPerSecond()
+                    float iceToGasRatio = (source.DefinedOutputByType(gas.Id) / def.IceConsumptionPerSecond); // like in IceToGasRatio()
+                    float consume = output / iceToGasRatio; // like in GasToIce()
+                    totalConsume += consume;
+                }
+
+                MyDefinitionId? consumedItemDefId = null;
+                MyInventory inv = block.GetInventory(0) as MyInventory;
+                if(inv != null)
+                {
+                    // like in ConsumeFuel(), gas generator just grabs any non-bottle item, no point in going through definition then
+                    foreach(MyPhysicalInventoryItem item in inv.GetItems())
+                    {
+                        if(item.Content == null || item.Content is MyObjectBuilder_GasContainerObject)
+                            continue;
+
+                        consumedItemDefId = item.Content.GetId();
+                        break;
+                    }
+                }
+
+                if(consumedItemDefId.HasValue)
+                    info.Append("Consumes: ").ItemName(consumedItemDefId.Value).Append(" x").Number(totalConsume).Append("/s\n");
+                else
+                    info.Append("Consumes: 0/s\n");
+
+                info.DetailInfo_OutputGasList(source);
+            }
         }
 
         void Format_GasTank(IMyTerminalBlock block, StringBuilder info)
@@ -1447,6 +1490,24 @@ namespace Digi.BuildInfo.Features.Terminal
                 float output = Source.CurrentOutputByType(tankDef.StoredGasId);
                 double filledGas = tank.FilledRatio * tank.Capacity;
 
+                float leak = 0;
+                if(!block.IsFunctional)
+                {
+                    float ratioPerSec = (tankDef.LeakPercent / 100f) * 60f; // HACK: LeakPercent gets subtracted every 100 ticks
+                    leak = ratioPerSec * tankDef.Capacity;
+
+                    if(leak > 0)
+                    {
+                        info.Append("Leaking: -").VolumeFormat(leak).Append("/s\n");
+                        output += leak;
+                    }
+                    else if(leak < 0)
+                    {
+                        info.Append("Magic refill: +").VolumeFormat(Math.Abs(leak)).Append("/s\n");
+                        input += leak;
+                    }
+                }
+
                 if(input == output)
                 {
                 }
@@ -1455,13 +1516,13 @@ namespace Digi.BuildInfo.Features.Terminal
                     float filling = (input - output);
                     double remainingGas = tank.Capacity - filledGas;
                     float timeToFill = (float)(remainingGas / filling);
-                    info.Append("Filled in: ").TimeFormat(timeToFill);
+                    info.Append("Filled in: ").TimeFormat(timeToFill).Append('\n');
                 }
                 else
                 {
                     float draining = (output - input);
                     float timeToEmpty = (float)(filledGas / draining);
-                    info.Append("Empty in: ").TimeFormat(timeToEmpty);
+                    info.Append("Empty in: ").TimeFormat(timeToEmpty).Append('\n');
                 }
             }
         }

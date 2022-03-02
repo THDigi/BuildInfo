@@ -949,7 +949,14 @@ namespace Digi.BuildInfo.Utilities
             MyPhysicalItemDefinition itemDef;
             if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(id, out itemDef))
             {
-                return s.Append(itemDef.DisplayNameText);
+                string name = itemDef.DisplayNameText;
+
+                // ignore other lines in name if any
+                int newlineIndex = name.IndexOf('\n');
+                if(newlineIndex != -1)
+                    return s.Append(name, 0, newlineIndex);
+                else
+                    return s.Append(name);
             }
 
             return s.Append(id.SubtypeName).Append(' ').IdTypeFormat(id.TypeId);
