@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
@@ -106,18 +107,17 @@ namespace Digi.BuildInfo.Features
 
             if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
             {
-                FilledRatio = GetFilledRatio<IMyShipDrill>(shipController.CubeGrid, Blocks);
+                FilledRatio = GetHighestFilledRatio<IMyShipDrill>(shipController.CubeGrid, Blocks);
             }
             else if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
             {
-                FilledRatio = GetFilledRatio<IMyShipGrinder>(shipController.CubeGrid, Blocks);
+                FilledRatio = GetHighestFilledRatio<IMyShipGrinder>(shipController.CubeGrid, Blocks);
             }
         }
 
-        static float GetFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
+        static float GetHighestFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
         {
-            float volume = 0;
-            float maxVolume = 0;
+            float highestFilled = 0;
 
             blocks.Clear();
 
@@ -128,17 +128,43 @@ namespace Digi.BuildInfo.Features
             foreach(T block in blocks)
             {
                 IMyInventory inv = block.GetInventory(0);
-                if(inv == null)
+                if(inv == null || inv.MaxVolume <= 0)
                     continue;
 
-                volume += (float)inv.CurrentVolume;
-                maxVolume += (float)inv.MaxVolume;
+                float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
+                highestFilled = Math.Max(highestFilled, filled);
             }
 
             blocks.Clear();
 
-            return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
+            return highestFilled;
         }
+
+        //static float GetFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
+        //{
+        //    float volume = 0;
+        //    float maxVolume = 0;
+        //
+        //    blocks.Clear();
+        //
+        //    // NOTE: ship tool toolbar item's click turns on tools beyond rotors/pistons and connectors aswell, so no filtering here.
+        //    IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
+        //    gts?.GetBlocksOfType<T>(blocks);
+        //
+        //    foreach(T block in blocks)
+        //    {
+        //        IMyInventory inv = block.GetInventory(0);
+        //        if(inv == null)
+        //            continue;
+        //
+        //        volume += (float)inv.CurrentVolume;
+        //        maxVolume += (float)inv.MaxVolume;
+        //    }
+        //
+        //    blocks.Clear();
+        //
+        //    return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
+        //}
 
         public override void UpdateDraw()
         {

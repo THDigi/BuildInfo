@@ -375,7 +375,7 @@ namespace Digi.BuildInfo.Features.Config
                 $"Currently only 'Grid will split if block is removed' is affected by this, which sill requires {nameof(AimInfoFlags.GrindGridSplit)} to be enabled in '{AimInfo.Name}' setting.");
 
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
-                "Shows an inventory bar when a ship grinder or ship drill is selected.");
+                "Shows an inventory bar when a ship grinder or ship drill is selected which represents the highest filled tool inventory.");
 
             ShipToolInvBarPosition = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Position", defaultValue: new Vector2D(0f, -0.68f), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
             {
