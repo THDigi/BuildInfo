@@ -36,48 +36,64 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
-            #region Mining
-            MatrixD mineMatrix = drawMatrix;
-            mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
-            float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
-            Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref ColorMineLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
-            if(drawLabel)
+            float mineRadius = Hardcoded.ShipDrill_VoxelVisualAdd + drill.CutOutRadius;
+
+            #region Mining
             {
-                Vector3D labelDir = mineMatrix.Up;
-                Vector3D sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
-                drawInstance.LabelRender.DrawLineLabel(LabelType.MineRadius, sphereEdge, labelDir, ColorMineText, "Mining radius");
+                MatrixD mineMatrix = blockWorldMatrix;
+                mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
+
+                Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref ColorMineLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+
+                if(drawLabel)
+                {
+                    Vector3D labelDir = mineMatrix.Up;
+                    Vector3D sphereEdge = mineMatrix.Translation + (labelDir * mineRadius);
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.MineRadius, sphereEdge, labelDir, ColorMineText, "Mining radius");
+                }
             }
             #endregion
 
             #region Carving
-            MatrixD carveMatrix = mineMatrix;
-            float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
-            Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref ColorCarveLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
-
-            if(drawLabel)
             {
-                Vector3D labelDir = carveMatrix.Up;
-                Vector3D sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
-                drawInstance.LabelRender.DrawLineLabel(LabelType.CarveRadius, sphereEdge, labelDir, ColorCarveText, "Carving radius");
+                MatrixD carveMatrix = blockWorldMatrix;
+                carveMatrix.Translation += carveMatrix.Forward * drill.CutOutOffset;
+
+                float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
+
+                Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref ColorCarveLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+
+                if(drawLabel)
+                {
+                    Vector3D labelDir = carveMatrix.Up;
+                    Vector3D sphereEdge = carveMatrix.Translation + (labelDir * carveRadius);
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.CarveRadius, sphereEdge, labelDir, ColorCarveText, "Carving radius");
+                }
             }
             #endregion
 
             #region Sensor
-            MatrixD sensorMatrix = drawMatrix;
-            sensorMatrix.Translation += sensorMatrix.Forward * drill.SensorOffset;
-            float sensorRadius = drill.SensorRadius;
-
-            if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
             {
-                Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref ColorSensorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
-            }
+                MatrixD sensorMatrix = blockWorldMatrix;
+                sensorMatrix.Translation += sensorMatrix.Forward * drill.SensorOffset;
 
-            if(drawLabel)
-            {
-                Vector3D labelDir = drawMatrix.Left;
-                Vector3D sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
-                drawInstance.LabelRender.DrawLineLabel(LabelType.SensorRadius, sphereEdge, labelDir, ColorSensorText, "Entity detection radius");
+                float sensorRadius = drill.SensorRadius;
+
+                // only draw it if it's a different size or offset
+                if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
+                {
+                    Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref ColorSensorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+                }
+
+                if(drawLabel)
+                {
+                    Vector3D labelDir = drawMatrix.Left;
+                    Vector3D sphereEdge = sensorMatrix.Translation + (labelDir * sensorRadius);
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.SensorRadius, sphereEdge, labelDir, ColorSensorText, "Entity detection radius");
+                }
             }
             #endregion
         }
