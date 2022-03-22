@@ -1,7 +1,6 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Digi.Input;
 using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRageMath;

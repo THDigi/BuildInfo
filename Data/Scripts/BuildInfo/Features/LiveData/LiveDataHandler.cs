@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public readonly Dictionary<MyDefinitionId, BData_Base> BlockData = new Dictionary<MyDefinitionId, BData_Base>(MyDefinitionId.Comparer);
         public readonly Dictionary<MyObjectBuilderType, bool> ConveyorSupportTypes = new Dictionary<MyObjectBuilderType, bool>(MyObjectBuilderType.Comparer);
 
-        public event Action<Type, BData_Base> DataGenerated;
+        public event Action<MyDefinitionId, BData_Base> DataGenerated;
 
         Type ConveyorEndpointInterface = null;
         Type ConveyorSegmentInterface = null;
@@ -163,7 +163,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 }
 
                 if(success)
-                    DataGenerated?.Invoke(defId.TypeId, data);
+                    DataGenerated?.Invoke(defId, data);
             }
 
             if(success && Main.TextGeneration != null)

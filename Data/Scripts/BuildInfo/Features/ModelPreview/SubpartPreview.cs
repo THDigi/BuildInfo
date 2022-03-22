@@ -6,6 +6,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
@@ -58,6 +59,31 @@ namespace Digi.BuildInfo.Features.ModelPreview
 
         void EquippedBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
+            Refresh(def);
+        }
+
+        void ConfigValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
+        {
+            if(newValue)
+                Refresh(Main.EquipmentMonitor?.BlockDef);
+            else
+                Refresh(null);
+        }
+
+        void LiveDataGenerated(MyDefinitionId defId, BData_Base data)
+        {
+            MyCubeBlockDefinition heldDef = Main.EquipmentMonitor.BlockDef;
+            if(heldDef == null || !Main.EquipmentMonitor.IsCubeBuilder)
+                return;
+
+            if(heldDef.Id.TypeId == defId.TypeId || (heldDef is MyMotorSuspensionDefinition && data is BData_Wheel)) // HACK: catch wheel spawn... needs a better system.
+            {
+                Refresh(heldDef);
+            }
+        }
+
+        void Refresh(MyCubeBlockDefinition def)
+        {
             CurrentPreview?.Dispose();
             CurrentPreview = null;
 
@@ -77,26 +103,6 @@ namespace Digi.BuildInfo.Features.ModelPreview
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CurrentPreview != null);
-        }
-
-        void ConfigValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
-        {
-            if(newValue)
-                EquippedBlockChanged(Main.EquipmentMonitor?.BlockDef, Main.EquipmentMonitor?.AimedBlock);
-            else
-                EquippedBlockChanged(null, null);
-        }
-
-        void LiveDataGenerated(Type type, BData_Base data)
-        {
-            MyCubeBlockDefinition heldDef = Main.EquipmentMonitor.BlockDef;
-            if(heldDef == null || !Main.EquipmentMonitor.IsCubeBuilder)
-                return;
-
-            if(heldDef.Id.TypeId == type || (heldDef is MyMotorSuspensionDefinition && data is BData_Wheel)) // HACK: catch wheel spawn... needs a better system.
-            {
-                EquippedBlockChanged(heldDef, null);
-            }
         }
 
         public override void UpdateDraw()

@@ -1,6 +1,5 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.VanillaData;
-using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -12,7 +11,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     {
         bool Valid;
         PreviewEntityWrapper WheelPart;
-        MyMotorSuspensionDefinition SuspensionDef;
         BData_Suspension Data;
         BData_Wheel WheelData;
         //float Angle;
@@ -26,23 +24,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Suspension>(BlockDef);
-            SuspensionDef = BlockDef as MyMotorSuspensionDefinition;
-            if(Data == null || SuspensionDef == null)
+            if(Data == null || Data.SuspensionDef == null || Data.TopDef == null)
                 return baseReturn;
 
-            MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(SuspensionDef.TopPart);
-            if(blockPair == null)
-                return baseReturn;
-
-            MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
-            if(topDef == null)
-                return baseReturn;
-
-            WheelData = Main.LiveDataHandler.Get<BData_Wheel>(topDef);
+            WheelData = Main.LiveDataHandler.Get<BData_Wheel>(Data.TopDef);
             if(WheelData == null)
                 return baseReturn;
 
-            WheelPart = new PreviewEntityWrapper(topDef.Model, null, topDef);
+            WheelPart = new PreviewEntityWrapper(Data.TopDef.Model, null, Data.TopDef);
             Valid = (WheelPart != null);
             RaycastOffset = 0;
             return baseReturn || Valid;
@@ -55,7 +44,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             WheelPart?.Close();
             WheelPart = null;
 
-            SuspensionDef = null;
             Data = null;
         }
 
@@ -73,7 +61,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
-            float height = MathHelper.Clamp(DefaultHeight, SuspensionDef.MinHeight, SuspensionDef.MaxHeight);
+            float height = MathHelper.Clamp(DefaultHeight, Data.SuspensionDef.MinHeight, Data.SuspensionDef.MaxHeight);
 
             MatrixD topMatrix = Data.GetWheelMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, height);
 
@@ -83,7 +71,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             #region detect when wheel hits something and slide it
             //if(Main.Tick % 2 == 0)
             {
-                float totalTravel = (SuspensionDef.MaxHeight - SuspensionDef.MinHeight);
+                float totalTravel = (Data.SuspensionDef.MaxHeight - Data.SuspensionDef.MinHeight);
                 if(totalTravel > 0)
                 {
                     Vector3D wheelCenter = Vector3D.Transform(WheelData.ModelCenter, topMatrix);
@@ -113,8 +101,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             //topMatrix.Translation = pos; 
             //Angle += MathHelper.Pi / 90; // 2deg/tick
 
-            // custom transparency so you can see through the wheel.
-            WheelPart.Update(ref topMatrix, customTransparency: Hardcoded.CubeBuilderTransparency * 2f);
+            WheelPart.Update(ref topMatrix, Hardcoded.CubeBuilderTransparency * 2f);
         }
     }
 }

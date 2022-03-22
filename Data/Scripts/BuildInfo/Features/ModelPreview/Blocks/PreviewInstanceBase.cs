@@ -14,9 +14,9 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public abstract class PreviewInstanceBase
     {
-        protected readonly BuildInfoMod Main;
-
         public MyCubeBlockDefinition BlockDef { get; private set; }
+
+        protected readonly BuildInfoMod Main;
 
         public PreviewInstanceBase()
         {

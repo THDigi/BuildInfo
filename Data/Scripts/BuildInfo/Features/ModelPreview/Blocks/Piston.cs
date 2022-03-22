@@ -1,5 +1,4 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
-using Sandbox.Definitions;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
@@ -8,7 +7,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     {
         bool Valid;
         PreviewEntityWrapper TopPart;
-        MyPistonBaseDefinition PistonDef;
         BData_Piston Data;
 
         protected override bool Initialized()
@@ -17,19 +15,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Valid = false;
 
             Data = Main.LiveDataHandler.Get<BData_Piston>(BlockDef);
-            PistonDef = BlockDef as MyPistonBaseDefinition;
-            if(Data == null || PistonDef == null)
+            if(Data == null || Data.PistonDef == null || Data.TopDef == null)
                 return baseReturn;
 
-            MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(PistonDef.TopPart);
-            if(blockPair == null)
-                return baseReturn;
-
-            MyCubeBlockDefinition topDef = blockPair[BlockDef.CubeSize];
-            if(topDef == null)
-                return baseReturn;
-
-            TopPart = new PreviewEntityWrapper(topDef.Model, null, topDef);
+            TopPart = new PreviewEntityWrapper(Data.TopDef.Model, null, Data.TopDef);
             Valid = (TopPart != null);
             return baseReturn || Valid;
         }
@@ -41,7 +30,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             TopPart?.Close();
             TopPart = null;
 
-            PistonDef = null;
             Data = null;
         }
 

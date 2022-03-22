@@ -10,11 +10,21 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Piston : BData_Base
     {
+        public MyPistonBaseDefinition PistonDef;
+        public MyCubeBlockDefinition TopDef;
         public Matrix TopLocalMatrix;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             bool success = false;
+
+            PistonDef = def as MyPistonBaseDefinition;
+            if(PistonDef != null)
+            {
+                MyCubeBlockDefinitionGroup blockPair = MyDefinitionManager.Static.TryGetDefinitionGroup(PistonDef.TopPart);
+                if(blockPair != null)
+                    TopDef = blockPair[def.CubeSize];
+            }
 
             // from MyPistonBase.LoadSubparts() and MyPistonBase.GetTopGridMatrix()
             MyCubeBlock blockInternal = (MyCubeBlock)block;
