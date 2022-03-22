@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features
         const float CreativeMaxRange = 100f;
 
         float CurrentMaxRange = -1;
-        float? SwapAtDistance = null;
+        float? SwapAtDistance = 15f;
 
         readonly List<IDefinitionEdit> Edits = new List<IDefinitionEdit>();
 
