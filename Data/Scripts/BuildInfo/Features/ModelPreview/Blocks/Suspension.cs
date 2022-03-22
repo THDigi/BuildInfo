@@ -9,6 +9,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public class Suspension : MultiSubpartBase
     {
+        static readonly float? TopPartTransparency = Hardcoded.CubeBuilderTransparency * 2f;
+
         bool Valid;
         PreviewEntityWrapper WheelPart;
         BData_Suspension Data;
@@ -101,7 +103,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             //topMatrix.Translation = pos; 
             //Angle += MathHelper.Pi / 90; // 2deg/tick
 
-            WheelPart.Update(ref topMatrix, Hardcoded.CubeBuilderTransparency * 2f);
+            WheelPart.Update(ref topMatrix, TopPartTransparency);
         }
     }
 }

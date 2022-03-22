@@ -1,4 +1,5 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.VanillaData;
 using Digi.Input;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.ModAPI;
@@ -9,6 +10,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public class Motor : MultiSubpartBase
     {
+        static readonly float? TopPartTransparency = Hardcoded.CubeBuilderTransparency * 2f;
+
         bool Valid;
         PreviewEntityWrapper TopPart;
         BData_Motor Data;
@@ -69,7 +72,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, Displacement);
 
-            TopPart.Update(ref topMatrix);
+            TopPart.Update(ref topMatrix, TopPartTransparency);
         }
     }
 }

@@ -1,10 +1,13 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.VanillaData;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public class Piston : MultiSubpartBase
     {
+        static readonly float? TopPartTransparency = Hardcoded.CubeBuilderTransparency * 2f;
+
         bool Valid;
         PreviewEntityWrapper TopPart;
         BData_Piston Data;
@@ -42,7 +45,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD topMatrix = Data.TopLocalMatrix * drawMatrix;
 
-            TopPart.Update(ref topMatrix);
+            TopPart.Update(ref topMatrix, TopPartTransparency);
         }
     }
 }
