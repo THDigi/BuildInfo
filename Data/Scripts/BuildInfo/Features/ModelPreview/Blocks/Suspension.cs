@@ -104,6 +104,16 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             //Angle += MathHelper.Pi / 90; // 2deg/tick
 
             WheelPart.Update(ref topMatrix, TopPartTransparency);
+
+            ConstructionStack?.SetLocalMatrix(topMatrix * MatrixD.Invert(blockWorldMatrix));
+        }
+
+        public override void SpawnConstructionModel(ConstructionModelPreview comp)
+        {
+            if(Valid)
+            {
+                ConstructionStack = ConstructionModelStack.CreateAndAdd(comp.Stacks, Data.TopDef, null, TopPartTransparency);
+            }
         }
     }
 }

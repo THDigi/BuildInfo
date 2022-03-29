@@ -16,6 +16,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     {
         public MyCubeBlockDefinition BlockDef { get; private set; }
 
+        protected ConstructionModelStack ConstructionStack;
+
         protected readonly BuildInfoMod Main;
 
         public PreviewInstanceBase()
@@ -34,10 +36,12 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             try
             {
                 Disposed();
+                ConstructionStack?.RemoveModels();
             }
             finally
             {
                 BlockDef = null;
+                ConstructionStack = null;
             }
         }
 
@@ -46,5 +50,9 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         protected abstract void Disposed();
 
         public abstract void Update(ref MatrixD drawMatrix);
+
+        public virtual void SpawnConstructionModel(ConstructionModelPreview comp)
+        {
+        }
     }
 }

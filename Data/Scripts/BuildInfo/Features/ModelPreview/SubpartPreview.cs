@@ -13,6 +13,8 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview
 {
+    // TODO: duplicate door subparts and show them closed?
+
     public class SubpartPreview : ModComponent
     {
         readonly Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>> PreviewFactory = new Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>>(MyObjectBuilderType.Comparer);
@@ -42,6 +44,7 @@ namespace Digi.BuildInfo.Features.ModelPreview
             Main.Config.CubeBuilderDrawSubparts.ValueAssigned += ConfigValueAssigned;
             Main.EquipmentMonitor.BlockChanged += EquippedBlockChanged;
             Main.LiveDataHandler.DataGenerated += LiveDataGenerated;
+            Main.ConstructionModelPreview.ConstructionModelRefresh += ConstructionModelRefresh;
         }
 
         public override void UnregisterComponent()
@@ -52,6 +55,7 @@ namespace Digi.BuildInfo.Features.ModelPreview
             Main.Config.CubeBuilderDrawSubparts.ValueAssigned -= ConfigValueAssigned;
             Main.EquipmentMonitor.BlockChanged -= EquippedBlockChanged;
             Main.LiveDataHandler.DataGenerated -= LiveDataGenerated;
+            Main.ConstructionModelPreview.ConstructionModelRefresh -= ConstructionModelRefresh;
         }
 
         void RegisterType<T>(MyObjectBuilderType blockType) where T : PreviewInstanceBase, new() => PreviewFactory.Add(blockType, Instance<T>);
@@ -80,6 +84,11 @@ namespace Digi.BuildInfo.Features.ModelPreview
             {
                 Refresh(heldDef);
             }
+        }
+
+        void ConstructionModelRefresh()
+        {
+            CurrentPreview?.SpawnConstructionModel(Main.ConstructionModelPreview);
         }
 
         void Refresh(MyCubeBlockDefinition def)

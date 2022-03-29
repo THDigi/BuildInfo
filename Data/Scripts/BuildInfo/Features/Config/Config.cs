@@ -105,6 +105,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting LockOverlayBind;
         public InputCombinationSetting ShowToolbarInfoBind;
         public InputCombinationSetting ShowCubeBuilderSelectionInfoBind;
+        public InputCombinationSetting ConstructionModelPreviewBind;
 
         public BoolSetting InternalInfo;
 
@@ -121,6 +122,7 @@ namespace Digi.BuildInfo.Features.Config
         public const string LOCK_OVERLAY_INPUT_NAME = "bi.lockOverlay";
         public const string SHOW_TOOLBAR_INFO_INPUT_NAME = "bi.showToolbarInfo";
         public const string SHOW_CB_SELECTION_INFO_INPUT_NAME = "bi.showCBSelectionInfo";
+        public const string CONSTRUCTION_MODEL_PREVIEW_INPUT_NAME = "bi.constructionModelPreview";
 
         public Config(BuildInfoMod main) : base(main)
         {
@@ -630,6 +632,9 @@ namespace Digi.BuildInfo.Features.Config
             ShowCubeBuilderSelectionInfoBind = new InputCombinationSetting(Handler, "Bind: Show CubeBuilder Selection Info", Combination.Create(SHOW_CB_SELECTION_INFO_INPUT_NAME, "shift"),
                 $"When holding a cube and aiming at a block, holding this bind would show what block you're selecting for removal/paint.",
                 $"Only works if '{CubeBuilderSelectionInfoMode.Name}' is set to {nameof(CubeBuilderSelectionInfo.ShowOnPress)} or {nameof(CubeBuilderSelectionInfo.HudHints)}.");
+
+            ConstructionModelPreviewBind = new InputCombinationSetting(Handler, "Bind: Construction Model Preview", Combination.Create(CONSTRUCTION_MODEL_PREVIEW_INPUT_NAME, "alt c.cubesizemode"),
+                "When holding a cube you can see all its construction models using this bind.");
             #endregion
 
             #region Misc

@@ -156,7 +156,7 @@ namespace Digi.BuildInfo.Features
                 Vector3 sizeM = Main.EquipmentMonitor.BlockDef.Size * Main.EquipmentMonitor.BlockGridSize;
                 BoundingSphere encasingSphere = BoundingSphere.CreateFromBoundingBox(new BoundingBox(Vector3.Zero, sizeM));
                 float diagonal = encasingSphere.Radius * 2;
-                float add = (inShip ? 10f : 3f);
+                float add = (inShip ? 20f : 10f);
                 CurrentMaxRange = MathHelper.Clamp(diagonal + add, MinRange, SurvivalMaxRange);
             }
         }

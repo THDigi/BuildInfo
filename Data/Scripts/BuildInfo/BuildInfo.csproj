@@ -152,6 +152,8 @@
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\HUD\BottleStat.cs" />
+    <Compile Include="Features\ModelPreview\ConstructionModelStack.cs" />
+    <Compile Include="Features\ModelPreview\ConstructionModelPreview.cs" />
     <Compile Include="Features\Overlays\ShipOverlays.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\TurretBase.cs" />
     <Compile Include="Features\ModderHelp.cs" />

@@ -271,6 +271,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleBind(Category_Binds, "Lock Overlay Bind", Config.Config.LOCK_OVERLAY_INPUT_NAME, Main.Config.LockOverlayBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show Toolbar Info Bind", Config.Config.SHOW_TOOLBAR_INFO_INPUT_NAME, Main.Config.ShowToolbarInfoBind, groupBinds, groupBinds);
             SimpleBind(Category_Binds, "Show CubeBuilder Selection Info Bind", Config.Config.SHOW_CB_SELECTION_INFO_INPUT_NAME, Main.Config.ShowCubeBuilderSelectionInfoBind, groupBinds, groupBinds);
+            SimpleBind(Category_Binds, "Construction Model Preview Bind", Config.Config.CONSTRUCTION_MODEL_PREVIEW_INPUT_NAME, Main.Config.ConstructionModelPreviewBind, groupBinds, groupBinds);
             #endregion
 
             #region Misc
