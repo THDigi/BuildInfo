@@ -62,6 +62,8 @@ namespace Digi.BuildInfo.Features.LiveData
                 if(partDef.PivotPosition.HasValue)
                     localMatrix.Translation = partDef.PivotPosition.Value;
 
+                localMatrix.Translation += def.ModelOffset;
+
                 // same way MyAdvancedDoor.LoadSubpartFromName() does it
                 string modelName = Path.Combine(Path.GetDirectoryName(doorDef.Model), partDef.Name) + ".mwm";
 
