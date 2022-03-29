@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(Data == null || Data.PistonDef == null || Data.TopDef == null)
                 return baseReturn;
 
-            TopPart = new PreviewEntityWrapper(Data.TopDef.Model, null, Data.TopDef);
+            TopPart = new PreviewEntityWrapper(Data.TopDef.Model, null);
             Valid = (TopPart != null);
             return baseReturn || Valid;
         }

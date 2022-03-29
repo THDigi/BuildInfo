@@ -28,7 +28,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             foreach(SubpartInfo info in Data.DoorSubparts)
             {
-                PreviewEntityWrapper ent = new PreviewEntityWrapper(info.Model, info.LocalMatrix, BlockDef);
+                PreviewEntityWrapper ent = new PreviewEntityWrapper(info.Model, info.LocalMatrix);
                 Parts.Add(ent);
             }
 

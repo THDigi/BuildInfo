@@ -17,8 +17,8 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
     public class PreviewEntityWrapper
     {
         public readonly MyEntity Entity;
-        public readonly List<MyEntitySubpart> AllSubparts;
-
+        public readonly string ModelFullPath;
+        public List<MyEntitySubpart> AllSubparts;
         public Matrix? LocalMatrix;
 
         /// <summary>
@@ -30,8 +30,9 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         Vector3? SkinPaintOverride = null;
         float Transparency;
 
-        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, MyCubeBlockDefinition defForInfo = null, bool modelVisible = true)
+        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, bool modelVisible = true)
         {
+            ModelFullPath = modelFullPath;
             LocalMatrix = localMatrix;
             BaseModelVisible = modelVisible;
 
@@ -40,19 +41,10 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Entity.SyncFlag = false;
             Entity.IsPreview = true;
 
-            // quick and dirty way of preventing model spawning with last LOD
-            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            double distance = 3;
-            if(defForInfo != null)
-                distance = (defForInfo.Size.AbsMax() * MyDefinitionManager.Static.GetCubeSize(defForInfo.CubeSize));
-            Entity.WorldMatrix = MatrixD.CreateTranslation(camMatrix.Translation + camMatrix.Backward * distance);
-
-            Entity.Init(null, modelFullPath, null, null, null);
-            Entity.DisplayName = $"BuildInfo_PreviewModel:{Path.GetFileName(modelFullPath)}";
+            Entity.Init(null, ModelFullPath, null, null, null);
+            Entity.DisplayName = $"BuildInfo_PreviewModel:{Path.GetFileName(ModelFullPath)}";
             Entity.Render.EnableColorMaskHsv = true;
             Entity.Render.CastShadows = false;
-            //Entity.Render.RemoveRenderObjects();
-            //Entity.Render.AddRenderObjects();
 
             if(Entity.Subparts != null && Entity.Subparts.Count > 0)
             {
@@ -61,11 +53,16 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 RecursiveSubpartInit(Entity, AllSubparts);
             }
 
-            // add last to allow all subparts to get shadows off and all that stuff
             Entity.Flags &= ~EntityFlags.IsGamePrunningStructureObject;
             Entity.Flags |= EntityFlags.IsNotGamePrunningStructureObject;
+
+            // add last to allow all subparts to get shadows off and all that stuff
             MyEntities.Add(Entity, true);
-            Entity.RemoveFromGamePruningStructure();
+
+            if(Entity.TopMostPruningProxyId != -1)
+                MyGamePruningStructure.Remove(Entity);
+
+            Entity.Render.Visible = false;
         }
 
         public void Close()
@@ -84,8 +81,6 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 subpart.IsPreview = true;
                 subpart.Render.EnableColorMaskHsv = true;
                 subpart.Render.CastShadows = false;
-                //subpart.Render.RemoveRenderObjects();
-                //subpart.Render.AddRenderObjects();
 
                 if(subpart.Subparts != null)
                     RecursiveSubpartInit(subpart, addTo);
@@ -94,6 +89,9 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         public void Update(ref MatrixD matrix, float? customTransparency = null)
         {
+            if(!Entity.Render.Visible)
+                Entity.Render.Visible = true;
+
             float transparency = (MyCubeBuilder.Static == null || MyCubeBuilder.Static.UseTransparency ? customTransparency ?? Hardcoded.CubeBuilderTransparency : 0f);
             if(Transparency != transparency)
             {
