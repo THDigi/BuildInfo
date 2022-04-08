@@ -56,12 +56,15 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Entity.Flags &= ~EntityFlags.IsGamePrunningStructureObject;
             Entity.Flags |= EntityFlags.IsNotGamePrunningStructureObject;
 
+            Entity.ClearDebugRenderComponents();
+
             // add last to allow all subparts to get shadows off and all that stuff
             MyEntities.Add(Entity, true);
 
             if(Entity.TopMostPruningProxyId != -1)
                 MyGamePruningStructure.Remove(Entity);
 
+            // avoid it loading with low detail model because it spawns far away, show it later when it's actually positioned
             Entity.Render.Visible = false;
         }
 
