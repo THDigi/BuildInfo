@@ -55,6 +55,7 @@ namespace Digi.BuildInfo.VanillaData
                 if(!Definitions.Contains(blockDef.Id))
                 {
                     needsRegen = true;
+                    Log.Info($"New vanilla block: {blockDef.Id}");
                     //break;
                 }
 

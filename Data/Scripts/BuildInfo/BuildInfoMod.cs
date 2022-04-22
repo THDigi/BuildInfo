@@ -95,6 +95,7 @@ namespace Digi.BuildInfo
         public readonly InterModAPI InterModAPI;
         public readonly DebugEvents DebugEvents;
         public readonly DebugLog DebugLog;
+        public readonly ModderHelp ModderHelp;
 
         public static bool IsDevMod { get; private set; } = false;
 
@@ -174,6 +175,7 @@ namespace Digi.BuildInfo
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);
+            ModderHelp = new ModderHelp(this);
         }
     }
 }
