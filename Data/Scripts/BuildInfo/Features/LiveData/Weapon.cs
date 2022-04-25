@@ -383,7 +383,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             MyEntitySubpart subpartBarrel;
             if(!barrelParent.TryGetSubpart(barrelName, out subpartBarrel))
-                return null;
+                return barrelParent;
 
             return subpartBarrel;
         }
