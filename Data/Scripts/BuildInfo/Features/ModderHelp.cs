@@ -38,6 +38,20 @@ namespace Digi.BuildInfo.Features
                         ModErrors = true;
                         continue;
                     }
+
+                    if(blockDef.MirroringCenter.X < 0 || blockDef.MirroringCenter.Y < 0 || blockDef.MirroringCenter.Z < 0)
+                    {
+                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has negative values for MirroringCenter tag!");
+                        ModErrors = true;
+                        continue;
+                    }
+
+                    if(blockDef.MirroringCenter.X > maxCenter.X || blockDef.MirroringCenter.Y > maxCenter.Y || blockDef.MirroringCenter.Z > maxCenter.Z)
+                    {
+                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has too high values for MirroringCenter tag! It should be at most Size - 1.");
+                        ModErrors = true;
+                        continue;
+                    }
                 }
             }
 
