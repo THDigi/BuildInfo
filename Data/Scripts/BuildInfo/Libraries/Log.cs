@@ -424,23 +424,37 @@ namespace Digi
                         {
                             chatMessageCooldown = timeSec + 60;
 
+                            // HACK: SendChatMessageColored() no longer works if sent by MP clients (even to themselves)
                             if(printText == PRINT_GENERIC_ERROR)
                             {
-                                MyVisualScriptLogicProvider.SendChatMessageColored(errorPrintText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", errorPrintText);
+                                //MyVisualScriptLogicProvider.SendChatMessageColored(errorPrintText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
                             }
                             else if(printText == PRINT_MESSAGE)
                             {
                                 if(font == MyFontEnum.Red)
-                                    MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                {
+                                    MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", message);
+                                    //MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                }
                                 else
-                                    MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                                {
+                                    MyAPIGateway.Utilities.ShowMessage($"{modName} WARNING", message);
+                                    //MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                                }
                             }
                             else
                             {
                                 if(font == MyFontEnum.Red)
-                                    MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                {
+                                    MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", printText);
+                                    //MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
+                                }
                                 else
-                                    MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                                {
+                                    MyAPIGateway.Utilities.ShowMessage($"{modName} WARNING", printText);
+                                    //MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
+                                }
                             }
                         }
                     }
