@@ -75,6 +75,11 @@ namespace Digi.ComponentLib
         /// </summary>
         public event Action OnWorldSave;
 
+        /// <summary>
+        /// Called when Draw() call finishes running all components... mainly used for profiler draw.
+        /// </summary>
+        public event Action OnDrawEnd;
+
         public readonly List<IComponent> Components = new List<IComponent>();
         private readonly HashSet<IComponent> ComponentRefreshFlags = new HashSet<IComponent>();
         public readonly List<IComponent> ComponentUpdateInput = new List<IComponent>();
@@ -90,9 +95,12 @@ namespace Digi.ComponentLib
         public const double NewMeasureWeight = 0.01;
         public const string MeasureFormat = "0.000000";
 
-        Stopwatch Stopwatch { get; } = new Stopwatch();
         string MeasuredFor { get; set; }
-        List<ProfileData> MeasuredResults { get; } = new List<ProfileData>();
+        readonly Stopwatch Stopwatch = new Stopwatch();
+        readonly List<ProfileData> MeasuredResults = new List<ProfileData>();
+
+        readonly Stopwatch StopwatchRoot = new Stopwatch();
+        public readonly ProfileUpdates RootMeasurements = new ProfileUpdates();
 
         protected ModBase(string modName, BuildInfo_GameSession session, MyUpdateOrder sessionUpdates)
         {
@@ -109,7 +117,7 @@ namespace Digi.ComponentLib
                 }
             }
 
-            Profile = IsLocalMod;
+            Profile = true; // IsLocalMod;
 
             Log.ModName = modName;
             Log.AutoClose = false;
@@ -283,6 +291,9 @@ namespace Digi.ComponentLib
         {
             try
             {
+                if(Profile)
+                    StopwatchRoot.Restart();
+
                 if(IsDedicatedServer || !ComponentsRegistered)
                     return; // just making sure
 
@@ -362,6 +373,16 @@ namespace Digi.ComponentLib
                         }
                     }
                 }
+
+                if(Profile)
+                {
+                    StopwatchRoot.Stop();
+                    double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
+                    ProfileMeasure profiled = RootMeasurements.MeasuredInput;
+                    profiled.Min = Math.Min(profiled.Min, ms);
+                    profiled.Max = Math.Max(profiled.Max, ms);
+                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                }
             }
             catch(Exception e)
             {
@@ -376,6 +397,9 @@ namespace Digi.ComponentLib
         {
             try
             {
+                if(Profile)
+                    StopwatchRoot.Restart();
+
                 IsPaused = false;
 
                 if(RunCriticalOnBeforeSim)
@@ -447,6 +471,16 @@ namespace Digi.ComponentLib
                         }
                     }
                 }
+
+                if(Profile)
+                {
+                    StopwatchRoot.Stop();
+                    double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
+                    ProfileMeasure profiled = RootMeasurements.MeasuredBeforeSim;
+                    profiled.Min = Math.Min(profiled.Min, ms);
+                    profiled.Max = Math.Max(profiled.Max, ms);
+                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                }
             }
             catch(Exception e)
             {
@@ -461,6 +495,9 @@ namespace Digi.ComponentLib
         {
             try
             {
+                if(Profile)
+                    StopwatchRoot.Restart();
+
                 IsPaused = false;
 
                 if(RunCriticalOnAfterSim)
@@ -532,6 +569,16 @@ namespace Digi.ComponentLib
                         }
                     }
                 }
+
+                if(Profile)
+                {
+                    StopwatchRoot.Stop();
+                    double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
+                    ProfileMeasure profiled = RootMeasurements.MeasuredAfterSim;
+                    profiled.Min = Math.Min(profiled.Min, ms);
+                    profiled.Max = Math.Max(profiled.Max, ms);
+                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                }
             }
             catch(Exception e)
             {
@@ -546,6 +593,9 @@ namespace Digi.ComponentLib
         {
             try
             {
+                if(Profile)
+                    StopwatchRoot.Restart();
+
                 if(IsDedicatedServer)
                     return; // just making sure
 
@@ -600,6 +650,18 @@ namespace Digi.ComponentLib
                         }
                     }
                 }
+
+                if(Profile)
+                {
+                    StopwatchRoot.Stop();
+                    double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
+                    ProfileMeasure profiled = RootMeasurements.MeasuredDraw;
+                    profiled.Min = Math.Min(profiled.Min, ms);
+                    profiled.Max = Math.Max(profiled.Max, ms);
+                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                }
+
+                OnDrawEnd?.Invoke();
             }
             catch(Exception e)
             {

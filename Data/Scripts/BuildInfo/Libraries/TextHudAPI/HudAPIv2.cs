@@ -1,8 +1,9 @@
-﻿using ProtoBuf;
-using Sandbox.ModAPI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Systems;
+using ProtoBuf;
+using Sandbox.ModAPI;
 using VRage;
 using VRage.Input;
 using VRage.ModAPI;
@@ -447,7 +448,12 @@ namespace Draygo.API
             /// </summary>
             public void Draw()
             {
+                TextAPI.Sharedwatch.Restart();
+
                 instance.MessageGet(BackingObject, (int)MessageBaseMembers.Draw);
+
+                TextAPI.Sharedwatch.Stop();
+                TextAPI.PerFrameDrawCostMs += TextAPI.Sharedwatch.Elapsed.TotalMilliseconds;
             }
 
             /// <summary>

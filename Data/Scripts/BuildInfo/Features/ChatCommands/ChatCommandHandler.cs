@@ -26,6 +26,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandClearCache CommandClearCache;
         public CommandLCDResolution CommandLCDResolution;
         public CommandMeasureText CommandMeasureText;
+        public CommandProfile CommandProfile;
 
         private readonly Arguments args = new Arguments();
 
@@ -49,6 +50,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandClearCache = new CommandClearCache();
             CommandLCDResolution = new CommandLCDResolution();
             CommandMeasureText = new CommandMeasureText();
+            CommandProfile = new CommandProfile();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }

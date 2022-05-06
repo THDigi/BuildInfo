@@ -148,9 +148,11 @@
     <Compile Include="Constants.cs" />
     <Compile Include="DoNotCopy_VanillaDataCompare\VanillaDataCompare.cs" />
     <Compile Include="Features\AnalyseShip.cs" />
+    <Compile Include="Features\ChatCommands\CommandProfile.cs" />
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\ProfilerDisplay.cs" />
     <Compile Include="Features\HUD\BottleStat.cs" />
     <Compile Include="Features\ModelPreview\ConstructionModelStack.cs" />
     <Compile Include="Features\ModelPreview\ConstructionModelPreview.cs" />

@@ -36,9 +36,6 @@ namespace Digi.BuildInfo.Features
         {
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
-            if(Main.Profile)
-                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
-
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
             //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
         }
@@ -81,89 +78,6 @@ namespace Digi.BuildInfo.Features
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
         }
-
-        public override void UpdateDraw()
-        {
-            if(Main.Profile && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.P) && MyAPIGateway.Input.IsAnyShiftKeyPressed() && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-            {
-                ShowMeasurements = !ShowMeasurements;
-            }
-
-            if(Main.Profile && ShowMeasurements)
-            {
-                DrawMeasurements();
-            }
-        }
-
-        #region Showing update profiling results
-        bool ShowMeasurements = false;
-        const string MeasureFormat = "0.000000";
-        double AllUpdatesMs;
-        HudAPIv2.HUDMessage ProfileText;
-        List<MyTuple<IComponent, ProfileMeasure>> CompAndTimesList = new List<MyTuple<IComponent, ProfileMeasure>>();
-
-        void DrawMeasurements()
-        {
-            if(!Main.TextAPI.IsEnabled)
-                return;
-
-            if(ProfileText == null)
-            {
-                ProfileText = TextAPI.CreateHUDText(new StringBuilder(512), new Vector2D(-0.99, 0.98), scale: 0.8, hideWithHud: false);
-            }
-
-            StringBuilder sb = ProfileText.Message.Clear();
-
-            sb.Append("Sim speed: ").Append(MyAPIGateway.Physics.SimulationRatio.ToString("P")).Append('\n');
-
-            AllUpdatesMs = 0;
-
-            AppendType(sb, "Input", Main.ComponentUpdateInput, (c) => c.Profiled.MeasuredInput);
-
-            if(Main.SessionHasBeforeSim)
-                AppendType(sb, "BeforeSim", Main.ComponentUpdateBeforeSim, (c) => c.Profiled.MeasuredBeforeSim);
-
-            if(Main.SessionHasAfterSim)
-                AppendType(sb, "AfterSim", Main.ComponentUpdateAfterSim, (c) => c.Profiled.MeasuredAfterSim);
-
-            AppendType(sb, "Draw", Main.ComponentUpdateDraw, (c) => c.Profiled.MeasuredDraw);
-
-            sb.Append("Total: ").Append(AllUpdatesMs.ToString(MeasureFormat)).Append(" ms");
-
-            ProfileText.Draw();
-        }
-
-        void AppendType(StringBuilder sb, string title, List<IComponent> components, Func<IComponent, ProfileMeasure> getField)
-        {
-            CompAndTimesList.Clear();
-
-            double totalMs = 0;
-            foreach(IComponent comp in components)
-            {
-                if(comp == this)
-                    continue;
-
-                ProfileMeasure profiled = getField(comp);
-                CompAndTimesList.Add(MyTuple.Create(comp, profiled));
-                totalMs += profiled.MovingAvg;
-            }
-
-            AllUpdatesMs += totalMs;
-
-            sb.Append(title).Append(" - total ").Append(totalMs.ToString(MeasureFormat)).Append("ms\n");
-
-            CompAndTimesList.Sort((a, b) => b.Item2.MovingAvg.CompareTo(a.Item2.MovingAvg)); // sort descending
-
-            foreach(MyTuple<IComponent, ProfileMeasure> kv in CompAndTimesList)
-            {
-                ProfileMeasure profiled = kv.Item2;
-                string avg = profiled.MovingAvg.ToString(MeasureFormat);
-                string min = profiled.Min.ToString(MeasureFormat);
-                string max = profiled.Max.ToString(MeasureFormat);
-                sb.Append("  ").Append(avg).Append(" ms | ").Append(min).Append(" ms min | ").Append(max).Append(" ms max | ").Append(kv.Item1.GetType().Name).Append("\n");
-            }
-        }
-        #endregion
 
         void Debug_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {

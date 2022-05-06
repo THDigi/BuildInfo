@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text;
 using Digi.BuildInfo.Features;
 using Digi.ComponentLib;
@@ -13,6 +14,10 @@ namespace Digi.BuildInfo.Systems
 {
     public class TextAPI : ModComponent
     {
+        public static readonly Stopwatch Sharedwatch = new Stopwatch();
+        public static readonly ProfileMeasure DrawCost = new ProfileMeasure();
+        internal static double PerFrameDrawCostMs;
+
         public const string DefaultFont = FontsHandler.SEOutlined;
         public const bool DefaultUseShadow = false;
         public const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
@@ -95,6 +100,17 @@ namespace Digi.BuildInfo.Systems
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
+            // TextAPI's draw calls combined cost
+            {
+                double ms = PerFrameDrawCostMs;
+                ProfileMeasure profiled = DrawCost;
+                profiled.Min = Math.Min(profiled.Min, ms);
+                profiled.Max = Math.Max(profiled.Max, ms);
+                profiled.MovingAvg = (profiled.MovingAvg * (1 - ModBase<BuildInfoMod>.NewMeasureWeight)) + (ms * ModBase<BuildInfoMod>.NewMeasureWeight);
+
+                PerFrameDrawCostMs = 0;
+            }
+
             if(!InModMenu && MyAPIGateway.Gui.ChatEntryVisible && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F2))
             {
                 InModMenu = true;
@@ -276,6 +292,24 @@ namespace Digi.BuildInfo.Systems
                     if(Shadow != null)
                         Shadow.Font = value;
                 }
+            }
+
+            public void UpdateBackgroundSize(float padding = 0.03f, Vector2D? provideTextLength = null)
+            {
+                if(Background == null || Text == null)
+                    return;
+
+                Vector2D textLen = provideTextLength ?? Text.GetTextLength();
+                Background.Width = Math.Abs((float)textLen.X) + padding;
+                Background.Height = Math.Abs((float)textLen.Y) + padding;
+                Background.Offset = textLen / 2;
+            }
+
+            public void Draw()
+            {
+                Background?.Draw();
+                Shadow?.Draw();
+                Text?.Draw();
             }
         }
 
