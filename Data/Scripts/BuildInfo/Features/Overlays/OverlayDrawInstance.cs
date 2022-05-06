@@ -71,6 +71,8 @@ namespace Digi.BuildInfo.Features.Overlays
         public static Color AirtightColor = new Color(0, 155, 255) * AirtightAlpha;
         public static Color AirtightUnavailableColor = Color.Gray * AirtightAlpha;
 
+        public static float SideBrightnessChange = 0.1f; // some sides are darkened or brightened by this amount to give it perspective
+
         public const BlendTypeEnum PortBlendType = BlendTypeEnum.SDR;
         public const BlendTypeEnum PortAimedBlendType = BlendTypeEnum.SDR;
 
@@ -236,7 +238,51 @@ namespace Digi.BuildInfo.Features.Overlays
                             {
                                 Vector3 halfExtents = def.Size * CellSizeHalf;
                                 BoundingBoxD localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MountpointThickness * 0.5);
-                                MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: MaterialSquare, faceMaterial: MaterialSquare, blendType: MountpointBlendType);
+                                //MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: MaterialSquare, faceMaterial: MaterialSquare, blendType: MountpointBlendType);
+
+                                MyStringId faceMaterial = MaterialSquare;
+                                BlendTypeEnum blendType = MountpointBlendType;
+
+                                Color colorZ = color;
+                                Color colorX = Color.Darken(color, SideBrightnessChange);
+                                Color colorY = Color.Lighten(color, SideBrightnessChange);
+
+                                MatrixD objMatrix = drawMatrix.GetOrientation();
+                                Vector3D value = drawMatrix.Translation + Vector3D.Transform(localBB.Center, objMatrix);
+                                float width = (float)(localBB.Max.X - localBB.Min.X) / 2f;
+                                float height = (float)(localBB.Max.Y - localBB.Min.Y) / 2f;
+                                float depth = (float)(localBB.Max.Z - localBB.Min.Z) / 2f;
+
+                                MyQuadD quad;
+
+                                Vector3D offset = objMatrix.Forward * depth;
+                                Vector3D position = value + offset;
+                                MyUtils.GenerateQuad(out quad, ref position, width, height, ref drawMatrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorZ, ref position, blendType: blendType);
+
+                                position = value - offset;
+                                MyUtils.GenerateQuad(out quad, ref position, width, height, ref drawMatrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorZ, ref position, blendType: blendType);
+
+                                MatrixD matrix = MatrixD.CreateRotationY(MathHelper.ToRadians(90f)) * drawMatrix;
+                                offset = drawMatrix.Left * width;
+                                position = value + offset;
+                                MyUtils.GenerateQuad(out quad, ref position, depth, height, ref matrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorY, ref position, blendType: blendType);
+
+                                position = value - offset;
+                                MyUtils.GenerateQuad(out quad, ref position, depth, height, ref matrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorY, ref position, blendType: blendType);
+
+                                matrix = Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * drawMatrix;
+                                offset = drawMatrix.Up * height;
+                                position = value + offset;
+                                MyUtils.GenerateQuad(out quad, ref position, width, depth, ref matrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorX, ref position, blendType: blendType);
+
+                                position = value - offset;
+                                MyUtils.GenerateQuad(out quad, ref position, width, depth, ref matrix);
+                                MyTransparentGeometry.AddQuad(faceMaterial, ref quad, colorX, ref position, blendType: blendType);
                             }
                         }
                         else if(mountPoints != null)
@@ -269,7 +315,14 @@ namespace Digi.BuildInfo.Features.Overlays
                                     Vector3D scale = new Vector3D(CellSize, CellSize, MountpointThickness);
                                     MatrixD.Rescale(ref m, ref scale);
 
-                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref color, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: MaterialSquare, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+                                    Color finalColor = color;
+                                    var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(kv2.Key));
+                                    if(axis == Base6Directions.Axis.LeftRight)
+                                        finalColor = Color.Lighten(color, SideBrightnessChange);
+                                    else if(axis == Base6Directions.Axis.UpDown)
+                                        finalColor = Color.Darken(color, SideBrightnessChange);
+
+                                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref finalColor, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: MaterialSquare, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
 
                                     // TODO: use see-through for airtightness and mountpoints?
                                     #region See-through-wall version
@@ -277,7 +330,7 @@ namespace Digi.BuildInfo.Features.Overlays
                                     //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
                                     ////lineWdith *= depthScale;
 
-                                    //Color colorSeeThrough = color * SEETHROUGH_COLOR_MUL;
+                                    //Color colorSeeThrough = finalColor * SEETHROUGH_COLOR_MUL;
 
                                     //MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorSeeThrough, ref colorSeeThrough, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: OVERLAY_SQUARE_MATERIAL, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
                                     #endregion
@@ -316,13 +369,18 @@ namespace Digi.BuildInfo.Features.Overlays
 
                             bool hasProperties = mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0;
                             Color colorFace = hasProperties ? MountpointColorMasked : MountpointColorNormal;
-                            Color colorDefault = MountpointColorAutoRotate;
+
+                            var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(mountPoint.Normal));
+                            if(axis == Base6Directions.Axis.LeftRight)
+                                colorFace = Color.Lighten(colorFace, SideBrightnessChange);
+                            else if(axis == Base6Directions.Axis.UpDown)
+                                colorFace = Color.Darken(colorFace, SideBrightnessChange);
 
                             float lineWdith = 0.005f;
 
                             MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
                             if(mountPoint.Default)
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorDefault, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref MountpointColorAutoRotate, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
 
                             #region See-through-wall version
                             //var closeMatrix = m;
