@@ -225,8 +225,22 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         if(drawLabel && Utils.VectorAngleBetween((gridCoM - camPos), camForward) <= ShowLabelAngleRad)
                         {
+                            int shapes = ((MyCubeGrid)grid).ShapeCount;
+                            const int maxShapes = (ushort.MaxValue + 1);
+
+                            Color colorShapes = ColorMassLabel;
+
+                            if(shapes > (maxShapes * 0.95f))
+                                colorShapes = Color.Red;
+                            else if(shapes > (maxShapes * 0.8f))
+                                colorShapes = Color.Yellow;
+
                             Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Right;
-                            LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(grid.CustomName).Append(grid.IsStatic ? " <color=gray>(Static)" : "").Color(ColorMassLabel).Append("\nMass: ").MassFormat(mass);
+
+                            LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(grid.CustomName).Append(grid.IsStatic ? " <color=gray>(Static)" : "")
+                                .Color(ColorMassLabel).Append("\nMass: ").MassFormat(mass)
+                                .Color(colorShapes).Append("\nPhysical shapes: ").RoundedNumber(shapes, 0).Append("<color=gray> / ").Append(maxShapes);
+
                             LabelRender.DrawLineLabel(LabelType.DynamicLabel, gridCoM, labelDir, ColorMassLabel, alwaysOnTop: true);
                         }
                     }
