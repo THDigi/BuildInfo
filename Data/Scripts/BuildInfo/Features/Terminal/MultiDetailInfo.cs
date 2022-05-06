@@ -17,6 +17,8 @@ using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
+using PistonStatus = Sandbox.ModAPI.Ingame.PistonStatus;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
@@ -34,8 +36,11 @@ namespace Digi.BuildInfo.Features.Terminal
 
         BoxDragging Drag;
 
-        delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId);
-        readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>();
+        delegate void MultiInfoDelegate(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId);
+        readonly Dictionary<MyObjectBuilderType, MultiInfoDelegate> MultiInfoPerType = new Dictionary<MyObjectBuilderType, MultiInfoDelegate>(MyObjectBuilderType.Comparer);
+
+        readonly Dictionary<MyObjectBuilderType, HashSet<MyObjectBuilderType>> SameType = new Dictionary<MyObjectBuilderType, HashSet<MyObjectBuilderType>>(MyObjectBuilderType.Comparer);
+        readonly HashSet<MyObjectBuilderType> TempTypeSet = new HashSet<MyObjectBuilderType>();
 
         public MultiDetailInfo(BuildInfoMod main) : base(main)
         {
@@ -72,7 +77,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 Main.ConfigMenuHandler.RefreshAll();
             };
 
-            SetupPerTypeFormatters();
+            SetupSimilarTypeFormatters();
         }
 
         public override void UnregisterComponent()
@@ -232,18 +237,36 @@ namespace Digi.BuildInfo.Features.Terminal
             IMyTerminalBlock firstBlock = selected[0];
             bool allSameId = true;
             bool allSameType = true;
+            bool allSimilarType = true;
+
+            HashSet<MyObjectBuilderType> firstSimilarTo = SameType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null);
+            if(firstSimilarTo == null)
+            {
+                TempTypeSet.Clear();
+                TempTypeSet.Add(firstBlock.BlockDefinition.TypeId);
+                firstSimilarTo = TempTypeSet;
+            }
 
             #region Block compute loop
             for(int blockIdx = 0; blockIdx < selected.Count; blockIdx++)
             {
                 IMyTerminalBlock block = selected[blockIdx];
 
-                if(allSameType && block.BlockDefinition.TypeId != firstBlock.BlockDefinition.TypeId)
-                    allSameType = false;
+                #region Compute if all selected are similar or same
+                if(blockIdx > 0)
+                {
+                    if(allSameType && block.BlockDefinition.TypeId != firstBlock.BlockDefinition.TypeId)
+                        allSameType = false;
 
-                if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
-                    allSameId = false;
+                    if(allSimilarType && !firstSimilarTo.Contains(block.BlockDefinition.TypeId))
+                        allSimilarType = false;
 
+                    if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
+                        allSameId = false;
+                }
+                #endregion
+
+                #region Compute ownership
                 MyCubeBlock internalBlock = (MyCubeBlock)block;
                 if(internalBlock.IDModule != null)
                 {
@@ -262,7 +285,9 @@ namespace Digi.BuildInfo.Features.Terminal
                         case MyOwnershipShareModeEnum.All: shareAll++; break;
                     }
                 }
+                #endregion
 
+                #region Compute resource input/output
                 IMyThrust thrust = block as IMyThrust; // HACK: thrusters have shared sinks and not reliable to get
                 IMyGyro gyro = (thrust == null ? block as IMyGyro : null); // HACK: gyro has no sink 
 
@@ -335,7 +360,9 @@ namespace Digi.BuildInfo.Features.Terminal
                         }
                     }
                 }
+                #endregion
 
+                #region Compute inventory
                 if(block.HasInventory)
                 {
                     for(int invIdx = 0; invIdx < block.InventoryCount; invIdx++)
@@ -349,6 +376,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     inventoryBlocks++;
                 }
+                #endregion
             }
             #endregion Block compute loop
 
@@ -365,6 +393,10 @@ namespace Digi.BuildInfo.Features.Terminal
             else if(allSameType)
             {
                 info.IdTypeFormat(firstBlock.BlockDefinition.TypeId).Append(" blocks");
+            }
+            else if(allSimilarType)
+            {
+                info.IdTypeFormat(firstSimilarTo.FirstElement()).Append(" blocks");
             }
             else
             {
@@ -471,14 +503,17 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
 
                 if(info.Length > length)
+                {
                     info.Length -= 2; // remove last comma+space
-
-                info.Append('\n');
+                    info.Append('\n');
+                }
             }
 
-            if(allSameType)
+            if(allSimilarType)
             {
-                MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameId);
+                info.Append('\n');
+
+                MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameType, allSameId);
                 info.Append('\n');
             }
         }
@@ -510,24 +545,173 @@ namespace Digi.BuildInfo.Features.Terminal
             info.Append('\n');
         }
 
-        #region Per-type formatters
-        void SetupPerTypeFormatters()
+        #region Formatters for similar types
+        void SetupSimilarTypeFormatters()
         {
-            //MultiInfoPerType.Add(typeof(MyObjectBuilder_BatteryBlock), Info_Battery);
+            // first given type is also used for naming the kind of blocks selected
+
+            // rotors & hinges, no suspensions
+            AddFormatterAndPairTypes(Info_Rotors, typeof(MyObjectBuilder_MotorStator), typeof(MyObjectBuilder_MotorAdvancedStator));
+
+            AddFormatterAndPairTypes(Info_Pistons, typeof(MyObjectBuilder_PistonBase), typeof(MyObjectBuilder_ExtendedPistonBase));
+
+            AddFormatterAndPairTypes(Info_Doors, typeof(MyObjectBuilder_Door), typeof(MyObjectBuilder_AirtightSlideDoor), typeof(MyObjectBuilder_AirtightHangarDoor), typeof(MyObjectBuilder_AirtightDoorGeneric), typeof(MyObjectBuilder_AdvancedDoor));
         }
 
-        //void Info_Battery(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameId)
-        //{
-        //    for(int blockIdx = 0; blockIdx < blocks.Count; blockIdx++)
-        //    {
-        //        IMyBatteryBlock block = (IMyBatteryBlock)blocks[blockIdx];
+        /// <summary>
+        /// Registers call to format specified types and marks given types as similar, causing them to trigger the formatter if all selected blocks are one of these types
+        /// </summary>
+        void AddFormatterAndPairTypes(MultiInfoDelegate call, params MyObjectBuilderType[] types)
+        {
+            AddFormatter(call, types);
 
-        //        currentStorage += block.CurrentStoredPower;
-        //        maxStorage += block.MaxStoredPower;
-        //    }
+            HashSet<MyObjectBuilderType> set = new HashSet<MyObjectBuilderType>(types);
+            foreach(MyObjectBuilderType type in set)
+            {
+                SameType.Add(type, set);
+            }
+        }
 
-        //    info.Append("Stored Power: ").PowerStorageFormat(currentStorage).Append(" (max: ").PowerStorageFormat(maxStorage).Append(")\n");
-        //}
+        /// <summary>
+        /// Registers call to format specified types only, requiring all selected blocks to all be ONE of the given types.
+        /// </summary>
+        void AddFormatter(MultiInfoDelegate call, params MyObjectBuilderType[] types)
+        {
+            foreach(MyObjectBuilderType type in types)
+            {
+                MultiInfoPerType.Add(type, call);
+            }
+        }
+
+        void Info_Doors(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            int open = 0;
+            int opening = 0;
+            int closed = 0;
+            int closing = 0;
+
+            foreach(IMyDoor door in blocks)
+            {
+                switch(door.Status)
+                {
+                    case DoorStatus.Open: open++; break;
+                    case DoorStatus.Opening: opening++; break;
+                    case DoorStatus.Closed: closed++; break;
+                    case DoorStatus.Closing: closing++; break;
+                    default:
+                        if(BuildInfoMod.IsDevMod)
+                            throw new Exception($"door {door.BlockDefinition.ToString()} has new status: {door.Status.ToString()}");
+                        break;
+                }
+            }
+
+            info.Append("Status: ");
+
+            int states = 0;
+            if(open > 0) states++;
+            if(opening > 0) states++;
+            if(closed > 0) states++;
+            if(closing > 0) states++;
+
+            if(states > 2) // too many different states, combine some
+            {
+                info.Append(open + opening).Append(" open, ").Append(closed + closing).Append(" closed");
+            }
+            else
+            {
+                if(opening > 0) info.Append(opening).Append(" opening, ");
+                if(open > 0) info.Append(open).Append(" open, ");
+                if(closing > 0) info.Append(closing).Append(" closing, ");
+                if(closed > 0) info.Append(closed).Append(" closed, ");
+
+                info.Length -= 2; // remove last comma
+            }
+
+            info.Append('\n');
+        }
+
+        void Info_Rotors(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            float min = float.MaxValue;
+            float max = float.MinValue;
+
+            foreach(IMyMotorStator rotor in blocks)
+            {
+                float angle = rotor.Angle;
+                min = Math.Min(angle, min);
+                max = Math.Max(angle, max);
+            }
+
+            info.Append("Angle: ");
+            if(Math.Abs(min - max) < (Math.PI / 180f)) // all rotors are roughly same angle
+                info.AngleFormat(min);
+            else
+                info.AngleFormat(min).Append(" to ").AngleFormat(max);
+            info.Append('\n');
+        }
+
+        void Info_Pistons(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            int extended = 0;
+            int extending = 0;
+            int retracted = 0;
+            int retracting = 0;
+            int stopped = 0;
+
+            float min = float.MaxValue;
+            float max = float.MinValue;
+
+            foreach(IMyPistonBase piston in blocks)
+            {
+                float pos = piston.CurrentPosition;
+                min = Math.Min(pos, min);
+                max = Math.Max(pos, max);
+
+                switch(piston.Status)
+                {
+                    case PistonStatus.Extended: extended++; break;
+                    case PistonStatus.Extending: extending++; break;
+                    case PistonStatus.Retracted: retracted++; break;
+                    case PistonStatus.Retracting: retracting++; break;
+                    case PistonStatus.Stopped: stopped++; break;
+                    default:
+                        if(BuildInfoMod.IsDevMod)
+                            throw new Exception($"piston {piston.BlockDefinition.ToString()} has new status: {piston.Status.ToString()}");
+                        break;
+                }
+            }
+
+            info.Append("Position: ");
+            if(Math.Abs(min - max) < 0.01f) // all pistons are roughly at the same position
+                info.DistanceFormat(min);
+            else
+                info.DistanceRangeFormat(min, max);
+            info.Append('\n');
+
+            int states = 0;
+            if(extended > 0) states++;
+            if(extending > 0) states++;
+            if(retracted > 0) states++;
+            if(retracting > 0) states++;
+            if(stopped > 0) states++;
+
+            if(states > 2) // too many different states, combine some
+            {
+                info.Append(extended + extending).Append(" extended, ").Append(retracted + retracting).Append(" retracted, ");
+            }
+            else
+            {
+                if(extending > 0) info.Append(extending).Append(" extending, ");
+                if(extended > 0) info.Append(extended).Append(" extended, ");
+                if(retracting > 0) info.Append(retracting).Append(" retracting, ");
+                if(retracted > 0) info.Append(retracted).Append(" retracted, ");
+            }
+
+            if(stopped > 0) info.Append(stopped).Append(" stopped, ");
+
+            info.Length -= 2; // remove last comma
+            info.Append('\n');
+        }
         #endregion
     }
 }
