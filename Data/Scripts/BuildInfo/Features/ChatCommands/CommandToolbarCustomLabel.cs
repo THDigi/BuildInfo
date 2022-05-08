@@ -6,9 +6,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class CommandToolbarCustomLabel : Command
     {
-        StringBuilder TempSB = new StringBuilder(128);
-
-        public CommandToolbarCustomLabel() : base("toolbarlabel", "tl")
+        public CommandToolbarCustomLabel() : base("toolbarLabel", "tl")
         {
         }
 
@@ -35,21 +33,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 return;
             }
 
-            string label = null;
-            if(args.Count > 1)
-            {
-                TempSB.Clear();
-
-                for(int i = 1; i < args.Count; i++)
-                {
-                    TempSB.Append(args.Get(i)).Append(' ');
-                }
-
-                if(TempSB.Length > 0)
-                    TempSB.Length -= 1; // remove last space
-
-                label = TempSB.ToString();
-            }
+            string label = args.GetRestAsText(1);
 
             slotStr = slot.ToString();
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using VRage.Game.ModAPI.Ingame.Utilities;
 
 namespace Digi.BuildInfo.Features.ChatCommands
@@ -13,14 +14,16 @@ namespace Digi.BuildInfo.Features.ChatCommands
         /// Number of available arguments.
         /// Affected by <see cref="IndexOffset"/>.
         /// </summary>
-        public int Count => (args.Count - IndexOffset);
+        public int Count => (Args.Count - IndexOffset);
 
         /// <summary>
         /// Offsets index for <see cref="Get(int)"/>, used before giving to commands so they can get their arguments from 0.
         /// </summary>
         public int IndexOffset { get; set; }
 
-        private readonly List<StringSegment> args = new List<StringSegment>();
+        private readonly List<StringSegment> Args = new List<StringSegment>();
+
+        private static readonly StringBuilder TempSB = new StringBuilder();
 
         /// <summary>
         /// Gets argument at specified index.
@@ -30,16 +33,41 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             index += IndexOffset;
 
-            if(index < 0 || index >= args.Count)
+            if(index < 0 || index >= Args.Count)
                 return null;
 
-            return args[index].ToString();
+            return Args[index].ToString();
+        }
+
+        /// <summary>
+        /// Gets the remaining arguments at specified index (0 being first arg) as a single string.
+        /// Returns null if no args are after that index.
+        /// </summary>
+        public string GetRestAsText(int index)
+        {
+            index += IndexOffset;
+
+            if(index < 0 || index >= Args.Count)
+                return null;
+
+            TempSB.Clear();
+
+            for(int i = index; i < Args.Count; i++)
+            {
+                StringSegment segment = Args[i];
+                TempSB.Append(segment.Text, segment.Start, segment.Length).Append(' ');
+            }
+
+            if(TempSB.Length > 0)
+                TempSB.Length -= 1; // remove last space
+
+            return TempSB.ToString();
         }
 
         public bool TryParse(string message)
         {
             IndexOffset = 0;
-            args.Clear();
+            Args.Clear();
 
             if(string.IsNullOrEmpty(message))
                 return false;
@@ -54,10 +82,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     break;
 
                 StringSegment arg = ParseQuoted(ref ptr);
-                args.Add(arg);
+                Args.Add(arg);
             }
 
-            return args.Count > 0;
+            return Args.Count > 0;
         }
 
         private StringSegment ParseQuoted(ref TextPtr ptr)

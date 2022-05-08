@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game.ModAPI;
@@ -11,12 +12,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     public class CustomToolbarData
     {
         public readonly Dictionary<int, string> CustomLabels = new Dictionary<int, string>();
+        public string ErasePrefix = null;
+
         public readonly List<string> ParseErrors = new List<string>();
     }
 
     public class ToolbarCustomLabels : ModComponent
     {
         public const string IniSection = "Toolbar";
+        public const string PrefixKey = "Prefix";
         public const char KeySeparator = '-';
         public const int CustomLabelMaxLength = 128;
         public const string IniDivider = "---"; // this is hardcoded in MyIni, do not change
@@ -104,6 +108,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             bool hadErrors = (labelData.ParseErrors.Count > 0);
             labelData.CustomLabels.Clear();
+            labelData.ErasePrefix = null;
             labelData.ParseErrors.Clear();
 
             if(string.IsNullOrWhiteSpace(customData))
@@ -134,6 +139,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     MyIniKey key = IniKeys[i];
                     string keyString = key.Name;
+
+                    if(keyString.Equals(PrefixKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string prefix = IniParser.Get(key).ToString();
+                        labelData.ErasePrefix = (string.IsNullOrWhiteSpace(prefix) ? null : prefix);
+                        continue;
+                    }
 
                     if(keyString.Length != 3 || keyString[1] != KeySeparator)
                     {
@@ -183,6 +195,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 ToolbarItem slot = slots[index];
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
+                slot.LabelData = labelData;
             }
         }
 
@@ -199,9 +212,66 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(shipCtrl == null)
                 return "not controlling a cockpit/RC";
 
-            IniParser.Clear();
+            string reason = ParseCustomData(shipCtrl.CustomData, IniParser);
+            if(reason != null)
+                return reason;
 
-            string customData = shipCtrl.CustomData;
+            string key = $"{Main.ToolbarMonitor.ToolbarPage + 1}-{slot}";
+            if(label != null)
+                IniParser.Set(IniSection, key, label);
+            else
+                IniParser.Set(IniSection, key, null);
+
+            shipCtrl.CustomData = GetParsedCustomData(IniParser);
+            return null;
+        }
+
+        /// <summary>
+        /// Sets or clears the prefix to be erased for the currently used ship controller
+        /// Returns null if succeded, otherwise returns the reason it failed.
+        /// </summary>
+        public string SetErasePrefix(string prefix)
+        {
+            IMyShipController shipCtrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            if(shipCtrl == null)
+                return "not controlling a cockpit/RC";
+
+            string reason = ParseCustomData(shipCtrl.CustomData, IniParser);
+            if(reason != null)
+                return reason;
+
+            if(prefix != null)
+                IniParser.Set(IniSection, PrefixKey, prefix);
+            else
+                IniParser.Set(IniSection, PrefixKey, null);
+
+            shipCtrl.CustomData = GetParsedCustomData(IniParser);
+            return null;
+        }
+
+        /// <summary>
+        /// Converts given parser's data into string for CustomData.
+        /// Automatically deletes the section if there's no keys in it, otherwise it gets the given comment (can use null to not have a comment)
+        /// </summary>
+        string GetParsedCustomData(MyIni iniParser, string comment = " Custom toolbar slot labels, used by BuildInfo mod.")
+        {
+            IniKeys.Clear();
+            iniParser.GetKeys(IniSection, IniKeys);
+
+            if(IniKeys.Count == 0)
+                iniParser.DeleteSection(IniSection);
+            else
+                iniParser.SetSectionComment(IniSection, comment);
+
+            return iniParser.ToString();
+        }
+
+        /// <summary>
+        /// Returns null if succeeded, or fail reason if not
+        /// </summary>
+        static string ParseCustomData(string customData, MyIni iniParser)
+        {
+            iniParser.Clear();
 
             // determine if a valid --- divider exists, same way MyIni.FindSection() does it
             bool hasDivider = false;
@@ -227,7 +297,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             // need to parse the entire thing
             MyIniParseResult result;
-            if(!IniParser.TryParse(customData, out result))
+            if(!iniParser.TryParse(customData, out result))
             {
                 if(hasDivider)
                 {
@@ -237,29 +307,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     // assume the current customdata is not ini and try again with divider
                     customData = IniDivider + "\n" + customData;
-                    if(!IniParser.TryParse(customData, out result))
+                    if(!iniParser.TryParse(customData, out result))
                     {
                         return "failed to parse CustomData";
                     }
                 }
             }
 
-            string key = $"{Main.ToolbarMonitor.ToolbarPage + 1}-{slot}";
-            if(label != null)
-                IniParser.Set(IniSection, key, label);
-            else
-                IniParser.Set(IniSection, key, null);
-
-            IniKeys.Clear();
-            IniParser.GetKeys(IniSection, IniKeys);
-
-            if(IniKeys.Count == 0)
-                IniParser.DeleteSection(IniSection);
-            else
-                IniParser.SetSectionComment(IniSection, " Custom toolbar slot labels, used by BuildInfo mod.");
-
-            shipCtrl.CustomData = IniParser.ToString();
-            IniKeys.Clear();
             return null;
         }
 

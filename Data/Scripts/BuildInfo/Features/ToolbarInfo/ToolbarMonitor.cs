@@ -25,6 +25,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public string OriginalName;
         public string DisplayName;
         public string CustomLabel;
+        public CustomToolbarData LabelData;
 
         public ActionWrapper ActionWrapper;
         public string ActionId;
@@ -156,6 +157,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 slot.PBArgument = null;
                 slot.SlotOB = default(MyObjectBuilder_Toolbar.Slot);
                 slot.CustomLabel = labelData?.CustomLabels.GetValueOrDefault(index, null);
+                slot.LabelData = labelData;
             }
 
             HighestIndexUsed = -1;
@@ -472,11 +474,35 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             GamepadPagePerCockpit.Remove(ent.EntityId);
         }
 
-        readonly HashSet<string> Tags = new HashSet<string>();
+        //readonly HashSet<string> Tags = new HashSet<string>();
 
-        public string ComputeShortName(string name, IMyCubeGrid grid)
+        public string ComputeShortName(string name, string erasePrefix, IMyCubeGrid grid)
         {
-            if(name == null || grid == null)
+            if(name == null)
+                return name;
+
+            if(erasePrefix != null)
+            {
+                if(name.StartsWith(erasePrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    // skip past whitespace between the prefix and the name
+                    for(int i = erasePrefix.Length; i < name.Length; i++)
+                    {
+                        char c = name[i];
+                        if(!char.IsWhiteSpace(c))
+                        {
+                            return name.Substring(i);
+                        }
+                    }
+
+                    // reached here means the remaining name is entirely whitespace? maybe don't erase it then...
+                    //return name.Substring(erasePrefix.Length);
+                }
+
+                return name;
+            }
+
+            if(grid == null)
                 return name;
 
             const int MinSizeTag = 2;
@@ -508,6 +534,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             #endregion
 
+#if false // disabled the pattern finding because it can be confusingly wrong
             #region find a prefix pattern on all slots
             Tags.Clear();
 
@@ -556,6 +583,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             name = modifiedName ?? name;
             #endregion
+#endif
 
             return name;
         }

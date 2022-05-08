@@ -581,7 +581,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 // process display name after all slots have been computed
                 if(item.DisplayName == null && item.OriginalName != null && item.Block != null)
                 {
-                    item.DisplayName = Main.ToolbarMonitor.ComputeShortName(item.OriginalName, item.Block?.CubeGrid);
+                    item.DisplayName = Main.ToolbarMonitor.ComputeShortName(item.OriginalName, item.LabelData?.ErasePrefix, item.Block?.CubeGrid);
                 }
 
                 if(item.DisplayName == null)

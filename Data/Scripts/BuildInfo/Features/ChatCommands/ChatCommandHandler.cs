@@ -21,6 +21,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandShipMods CommandShipMods;
         public CommandQuickMenu CommandQuickMenu;
         public CommandToolbarCustomLabel CommandToolbarCustomLabel;
+        public CommandToolbarErasePrefix CommandToolbarErasePrefix;
         public CommandLaserPower CommandLaserPower;
         public CommandReloadConfig CommandReloadConfig;
         public CommandClearCache CommandClearCache;
@@ -45,6 +46,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandShipMods = new CommandShipMods();
             CommandQuickMenu = new CommandQuickMenu();
             CommandToolbarCustomLabel = new CommandToolbarCustomLabel();
+            CommandToolbarErasePrefix = new CommandToolbarErasePrefix();
             CommandLaserPower = new CommandLaserPower();
             CommandReloadConfig = new CommandReloadConfig();
             CommandClearCache = new CommandClearCache();

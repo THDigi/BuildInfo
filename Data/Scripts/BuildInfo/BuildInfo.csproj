@@ -150,6 +150,7 @@
     <Compile Include="Features\AnalyseShip.cs" />
     <Compile Include="Features\ChatCommands\CommandProfile.cs" />
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
+    <Compile Include="Features\ChatCommands\CommandToolbarErasePrefix.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\ProfilerDisplay.cs" />
