@@ -3971,7 +3971,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 const int MaxMagNameLength = 20;
-                bool blockTypeCanReload = Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
+                bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
 
                 if(ammoProjectiles.Count > 0)
                 {
