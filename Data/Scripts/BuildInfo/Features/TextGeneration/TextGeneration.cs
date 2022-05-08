@@ -1854,9 +1854,8 @@ namespace Digi.BuildInfo.Features
         #region Shared generation methods
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
-            int airTightFaces = 0;
-            int totalFaces = 0;
-            AirTightMode airTight = Utils.GetAirTightFaces(def, ref airTightFaces, ref totalFaces);
+            int airTightFaces, totalFaces;
+            AirTightMode airTight = Utils.GetAirTightFaces(def, out airTightFaces, out totalFaces);
             bool deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
             int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
             bool buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);

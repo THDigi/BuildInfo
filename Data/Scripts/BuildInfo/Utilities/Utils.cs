@@ -313,7 +313,7 @@ namespace Digi.BuildInfo.Utilities
         /// An fully airtight face means it keeps the grid airtight when the face is the only obstacle between empty void and the ship's interior.
         /// Due to the complexity of airtightness when connecting blocks, this method simply can not indicate that, that's what the mount points view is for.
         /// </summary>
-        public static AirTightMode GetAirTightFaces(MyCubeBlockDefinition def, ref int airTightFaces, ref int totalFaces)
+        public static AirTightMode GetAirTightFaces(MyCubeBlockDefinition def, out int airTightFaces, out int totalFaces)
         {
             airTightFaces = 0;
             totalFaces = 0;

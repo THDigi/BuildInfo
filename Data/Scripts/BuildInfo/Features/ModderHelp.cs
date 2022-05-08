@@ -1,7 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -24,33 +28,39 @@ namespace Digi.BuildInfo.Features
                 MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null)
                 {
-                    if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
-                    {
-                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has negative values for Center tag! This will break some mountpoints and various other weird issues.");
-                        ModErrors = true;
-                        continue;
-                    }
+                    // TODO: check for airtightness optimization?
+                    //if(!blockDef.IsAirTight.HasValue)
+                    //{
+                    //    int airTightFaces, totalFaces;
+                    //    AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
+                    //    if(airTightFaces == 0)
+                    //    {
+                    //        ModHint(def, $"has no sides airtight but no IsAirTight declared, could set it to false to save some computation.");
+                    //    }
+                    //    else if(airTightFaces == totalFaces)
+                    //    {
+                    //        ModHint(def, $"has all sides airtight but no IsAirTight declared, could set it to true to save some computation.");
+                    //    }
+                    //}
 
                     Vector3I maxCenter = blockDef.Size - 1;
-                    if(blockDef.Center.X > maxCenter.X || blockDef.Center.Y > maxCenter.Y || blockDef.Center.Z > maxCenter.Z)
+
+                    if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
                     {
-                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has too high values for Center tag! It should be at most Size - 1. This will break some mountpoints and various other weird issues.");
-                        ModErrors = true;
-                        continue;
+                        ModError(def, $"has negative values for Center tag! This will break some mountpoints and various other weird issues.");
+                    }
+                    else if(blockDef.Center.X > maxCenter.X || blockDef.Center.Y > maxCenter.Y || blockDef.Center.Z > maxCenter.Z)
+                    {
+                        ModError(def, $"has too high values for Center tag! It should be at most Size - 1. This will break some mountpoints and various other weird issues.");
                     }
 
                     if(blockDef.MirroringCenter.X < 0 || blockDef.MirroringCenter.Y < 0 || blockDef.MirroringCenter.Z < 0)
                     {
-                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has negative values for MirroringCenter tag!");
-                        ModErrors = true;
-                        continue;
+                        ModError(def, $"has negative values for MirroringCenter tag!");
                     }
-
-                    if(blockDef.MirroringCenter.X > maxCenter.X || blockDef.MirroringCenter.Y > maxCenter.Y || blockDef.MirroringCenter.Z > maxCenter.Z)
+                    else if(blockDef.MirroringCenter.X > maxCenter.X || blockDef.MirroringCenter.Y > maxCenter.Y || blockDef.MirroringCenter.Z > maxCenter.Z)
                     {
-                        Log.Error($"Mod '{blockDef.Context?.ModName ?? "(base game)"}' has too high values for MirroringCenter tag! It should be at most Size - 1.");
-                        ModErrors = true;
-                        continue;
+                        ModError(def, $"has too high values for MirroringCenter tag! It should be at most Size - 1.");
                     }
                 }
             }
@@ -65,6 +75,17 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
+        }
+
+        void ModError(MyDefinitionBase def, string text)
+        {
+            Log.Error($"{def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
+            ModErrors = true;
+        }
+
+        void ModHint(MyDefinitionBase def, string text)
+        {
+            Log.Info($"HINT: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
         }
 
         public override void UpdateAfterSim(int tick)
