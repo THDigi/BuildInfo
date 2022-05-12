@@ -16,6 +16,7 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
+using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.Definitions.SafeZone;
@@ -84,15 +85,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_DLC = Color.DeepSkyBlue;
         public readonly Color COLOR_LIST = Color.White;
         public readonly Color COLOR_CONVEYORPORTS = new Color(255, 200, 0);
-
-        public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
-        public readonly Color COLOR_STAT_PROJECTILECOUNT = new Color(0, 255, 0);
-        public readonly Color COLOR_STAT_SHIPDMG = new Color(0, 255, 200);
-        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 200, 0);
-        public readonly Color COLOR_STAT_HEADSHOTDMG = new Color(255, 0, 0);
-        public readonly Color COLOR_STAT_EXPLOSION = new Color(255, 100, 0);
-        public readonly Color COLOR_STAT_SPEED = new Color(0, 200, 255);
-        public readonly Color COLOR_STAT_TRAVEL = new Color(55, 80, 255);
+        public readonly Color COLOR_HIGHLIGHT = new Color(255, 200, 0);
         #endregion Constants
 
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
@@ -132,12 +125,6 @@ namespace Digi.BuildInfo.Features
         private delegate void TextGenerationCall(MyCubeBlockDefinition def);
         private readonly Dictionary<MyObjectBuilderType, TextGenerationCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, TextGenerationCall>(MyObjectBuilderType.Comparer);
-
-        // caches
-        private readonly List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>> ammoProjectiles
-                   = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
-        private readonly List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>> ammoMissiles
-                   = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
 
         public TextGeneration(BuildInfoMod main) : base(main)
         {
@@ -3513,7 +3500,7 @@ namespace Digi.BuildInfo.Features
                     info = Hardcoded.TextSurface_GetInfo(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
                 }
 
-                AddLine().Label("LCD - Resolution").Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
+                AddLine().Label("LCD - Resolution").Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
                     .Separator().Label("Rotatable").BoolFormat(supportsRotation)
                     .Separator().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
 
@@ -3555,7 +3542,7 @@ namespace Digi.BuildInfo.Features
                 //if(Main.Config.InternalInfo.Value)
                 //    GetLine().Color(COLOR_UNIMPORTANT).Append(" (").Append(surface.Name).Append(")");
 
-                GetLine().ResetFormatting().Separator().Color(COLOR_STAT_CHARACTERDMG).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
+                GetLine().ResetFormatting().Separator().Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
 
                 // not that useful info
                 //if(!string.IsNullOrEmpty(surface.Script))
@@ -3732,8 +3719,42 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Magic blocks
 
+        public readonly Color COLOR_STAT_TYPE = new Color(55, 255, 155);
+        public readonly Color COLOR_STAT_SHIPDMG = new Color(55, 155, 255);
+        public readonly Color COLOR_STAT_PENETRATIONDMG = new Color(100, 155, 255);
+        public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 220, 100);
+        public readonly Color COLOR_STAT_EXPLOSION = new Color(255, 100, 0);
+
+        readonly List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>> AmmoBullets = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
+        readonly List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>> AmmoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
+
         private void Format_Weapon(MyCubeBlockDefinition def)
         {
+            #region for debugging icons
+            //{
+            //    StringBuilder sb = AddLine().Append("  ");
+            //    int gridX = 0;
+            //    int gridY = 0;
+            //    int maxGridX = 8;
+            //
+            //    for(int i = 0; i < 64; i++)
+            //    {
+            //        if(gridX >= maxGridX)
+            //        {
+            //            gridY++;
+            //            gridX = 0;
+            //            sb = AddLine().Append("  ");
+            //        }
+            //
+            //        char c = (char)('\ue100' + i);
+            //
+            //        sb.Append(c).Append(" # ");
+            //
+            //        gridX++;
+            //    }
+            //}
+            #endregion
+
             List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
             if(Main.CoreSystemsAPIHandler.IsRunning && Main.CoreSystemsAPIHandler.Weapons.TryGetValue(def.Id, out csWeaponDefs))
             {
@@ -3745,11 +3766,11 @@ namespace Digi.BuildInfo.Features
             MyWeaponDefinition wpDef;
             if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponDef.WeaponDefinitionId, out wpDef))
             {
-                AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ");
+                StringBuilder sb = AddLine(FontsHandler.RedSh).Color(Color.Red).Append("Block error: can't find weapon definition: ");
                 if(weaponDef.WeaponDefinitionId.TypeId != typeof(MyObjectBuilder_WeaponDefinition))
-                    GetLine().Append(weaponDef.WeaponDefinitionId.ToString());
+                    sb.Append(weaponDef.WeaponDefinitionId.ToString());
                 else
-                    GetLine().Append(weaponDef.WeaponDefinitionId.SubtypeName);
+                    sb.Append(weaponDef.WeaponDefinitionId.SubtypeName);
                 return;
             }
 
@@ -3770,11 +3791,11 @@ namespace Digi.BuildInfo.Features
                 if(gunWWF != null)
                 {
                     float powerUsage = turretWWF?.IdlePowerDrawMax ?? gunWWF.IdlePowerDrawBase;
-                    AddLine().Label("Power - Idle").PowerFormat(powerUsage).Separator().Label("Recharge").PowerFormat(gunWWF.ReloadPowerDraw).Append(" (adaptable)");
+                    StringBuilder sb = AddLine().Label("Power - Idle").PowerFormat(powerUsage).Separator().Label("Recharge").PowerFormat(gunWWF.ReloadPowerDraw).Append(" (adaptable)");
 
                     // HACK: hardcoded like in https://gitlab.com/whiplash141/Revived-Railgun-Mod/-/blob/develop/Data/Scripts/WeaponFramework/WhipsWeaponFramework/WeaponBlockBase.cs#L566
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority("Thrust", true);
+                        sb.Separator().ResourcePriority("Thrust", true);
                 }
                 else
                 {
@@ -3793,7 +3814,7 @@ namespace Digi.BuildInfo.Features
 
                         float chargeTime = (capacitorDef.Capacity * 60 * 60) / (capacitorDef.RechargeDraw * capacitorChargeMultiplier);
 
-                        AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Label("Recharge time").TimeFormat(chargeTime);
+                        AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Color(COLOR_WARNING).Label("Recharge time").TimeFormat(chargeTime);
                     }
                     else
                     {
@@ -3839,20 +3860,9 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            if(gunWWF == null && extraInfo)
-            {
-                // accuracy cone diameter = tan(angle) * baseRadius * 2
-                float accuracyAt100m = (float)Math.Tan(wpDef.DeviateShotAngle) * 100 * 2;
-                float reloadTime = wpDef.ReloadTime / 1000;
-
-                StringBuilder sb = AddLine().Label("Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m");
-
-                if(capacitorDef == null)
-                    sb.Separator().Append("Reload: ").TimeFormat(reloadTime);
-            }
-
             bool showAmmoDetails = Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails);
 
+            #region Whiplash weapon framework
             if(gunWWF != null)
             {
                 AddLine().Append("Whiplash Weapon Framework:");
@@ -3907,185 +3917,291 @@ namespace Digi.BuildInfo.Features
                         AddLine().Label("| Proximity detonation").Append(gunWWF.ProximityDetonationRange).Separator().Label("Travel for arming").DistanceFormat(gunWWF.ProximityDetonationArmingRange);
                 }
             }
+            #endregion
 
-            if(showAmmoDetails && gunWWF == null)
+            if(gunWWF == null)
             {
-                ammoProjectiles.Clear();
-                ammoMissiles.Clear();
+                bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
+                bool validWeapon = (wpDef.DamageMultiplier != 0);
+                bool hasAmmo = true;
+                bool hasBullets = false;
+                bool hasMissiles = false;
+
+                AmmoBullets.Clear();
+                AmmoMissiles.Clear();
 
                 for(int i = 0; i < wpDef.AmmoMagazinesId.Length; i++)
                 {
                     MyAmmoMagazineDefinition mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[i]);
                     MyAmmoDefinition ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
-                    int ammoType = (int)ammo.AmmoType;
 
-                    if(wpDef.WeaponAmmoDatas[ammoType] != null)
+                    int ammoTypeIdx = (int)ammo.AmmoType;
+                    if(wpDef.WeaponAmmoDatas[ammoTypeIdx] == null)
+                        continue;
+
+                    switch(ammo.AmmoType)
                     {
-                        switch(ammoType)
+                        case MyAmmoType.HighSpeed:
                         {
-                            case 0: ammoProjectiles.Add(MyTuple.Create(mag, (MyProjectileAmmoDefinition)ammo)); break;
-                            case 1: ammoMissiles.Add(MyTuple.Create(mag, (MyMissileAmmoDefinition)ammo)); break;
+                            hasBullets = true;
+
+                            MyProjectileAmmoDefinition bullet = (MyProjectileAmmoDefinition)ammo;
+                            if(bullet.ProjectileMassDamage != 0
+                            || bullet.ProjectileHealthDamage != 0
+                            || (bullet.HeadShot && bullet.ProjectileHeadShotDamage != 0)
+                            || bullet.ProjectileExplosionDamage != 0)
+                            {
+                                validWeapon = true;
+                                AmmoBullets.Add(MyTuple.Create(mag, bullet));
+                            }
+
+                            break;
                         }
-                    }
-                }
-
-                bool isValidWeapon = false;
-
-                if(ammoProjectiles.Count > 0 || ammoMissiles.Count > 0)
-                {
-                    for(int i = 0; i < ammoProjectiles.Count; ++i)
-                    {
-                        MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
-                        MyProjectileAmmoDefinition ammo = data.Item2;
-
-                        if(ammo.ProjectileMassDamage != 0 || ammo.ProjectileHealthDamage != 0 || (ammo.HeadShot && ammo.ProjectileHeadShotDamage != 0) || ammo.ProjectileExplosionDamage != 0)
+                        case MyAmmoType.Missile:
                         {
-                            isValidWeapon = true;
+                            hasMissiles = true;
+
+                            MyMissileAmmoDefinition missile = (MyMissileAmmoDefinition)ammo;
+                            if(missile.MissileExplosionDamage != 0 || missile.MissileHealthPool != 0)
+                            {
+                                validWeapon = true;
+                                AmmoMissiles.Add(MyTuple.Create(mag, missile));
+                            }
+
+                            break;
+                        }
+                        default:
+                        {
+                            Log.Error($"Warning: Unknown ammo type: {ammo.AmmoType} (#{ammoTypeIdx})");
                             break;
                         }
                     }
+                }
 
-                    for(int i = 0; i < ammoMissiles.Count; ++i)
+                if(!hasBullets && !hasMissiles) // has no valid magazines
+                {
+                    validWeapon = false;
+                    hasAmmo = false;
+                }
+
+                float reloadSeconds = wpDef.ReloadTime / 1000;
+
+                if(extraInfo && validWeapon)
+                {
+                    // DeviateShotAngleAiming only used by hand weapons
+                    if(wpDef.DeviateShotAngle == 0)
                     {
-                        MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
-                        MyMissileAmmoDefinition ammo = data.Item2;
+                        AddLine().Label("Accuracy").Color(COLOR_GOOD).Append("Pinpoint");
+                    }
+                    else
+                    {
+                        // cone base radius = tan(angleFromTip) * height
+                        // DeviateShotAngle is in radians (same for Aiming one) and it's angle offset from center line
+                        float coneBaseDiameter = 2 * (float)Math.Tan(wpDef.DeviateShotAngle) * 100;
 
-                        if(ammo.MissileExplosionDamage != 0 || ammo.MissileHealthPool != 0)
+                        AddLine().Label("Accuracy").DistanceFormat(coneBaseDiameter).Append(" group at 100m");
+                    }
+                }
+
+                bool printBothAmmoData = false;
+                bool printFirstAmmoData = false;
+
+                // determine if RoF and reload are identical for both bullets and missiles
+                if(hasBullets && hasMissiles)
+                {
+                    MyWeaponDefinition.MyWeaponAmmoData dataBullets = wpDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed];
+                    MyWeaponDefinition.MyWeaponAmmoData dataMissiles = wpDef.WeaponAmmoDatas[(int)MyAmmoType.Missile];
+
+                    if(dataBullets.RateOfFire == dataMissiles.RateOfFire && (!blockTypeCanReload || dataBullets.ShotsInBurst == dataMissiles.ShotsInBurst))
+                        printFirstAmmoData = true;
+                    else
+                        printBothAmmoData = true;
+                }
+                else
+                {
+                    printFirstAmmoData = true;
+                }
+
+                if(showAmmoDetails && validWeapon)
+                {
+                    const int MaxMagNameLength = 20;
+                    const string MagazineSeparator = ": ";
+                    const string DamageSeparator = "; ";
+                    const string ColumnSeparator = "; ";
+
+                    if(hasBullets)
+                    {
+                        MyWeaponDefinition.MyWeaponAmmoData ammoData = wpDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed];
+
+                        if(printFirstAmmoData || printBothAmmoData)
                         {
-                            isValidWeapon = true;
-                            break;
+                            printFirstAmmoData = false;
+
+                            float rps = ammoData.RateOfFire / 60f;
+                            StringBuilder sb = AddLine().Label(printBothAmmoData ? "Bullets - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
+
+                            sb.Label("Reload");
+                            if(blockTypeCanReload && ammoData.ShotsInBurst > 0)
+                            {
+                                if(ammoData.ShotsInBurst == 1)
+                                    sb.TimeFormat(reloadSeconds).Append(" after every").Append(printBothAmmoData ? " bullet" : " shot");
+                                else
+                                    sb.TimeFormat(reloadSeconds).Append(" after ").Append(ammoData.ShotsInBurst).Append(printBothAmmoData ? " bullets" : " shots");
+                            }
+                            else
+                            {
+                                sb.Color(COLOR_GOOD).Append("Instant").ResetFormatting();
+                            }
+                        }
+
+                        foreach(MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> tuple in AmmoBullets)
+                        {
+                            MyAmmoMagazineDefinition mag = tuple.Item1;
+                            MyProjectileAmmoDefinition projectile = tuple.Item2;
+
+                            StringBuilder line = AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(MagazineSeparator);
+
+                            if(projectile.ProjectileCount > 1)
+                                line.Color(COLOR_GOOD).Append(projectile.ProjectileCount).Append("x ").ResetFormatting();
+
+                            if(projectile.ProjectileMassDamage == 0)
+                                line.Color(COLOR_BAD);
+                            else
+                                line.Color(COLOR_STAT_SHIPDMG);
+                            line.Number(projectile.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconBlock).Append(DamageSeparator);
+
+                            if(projectile.ProjectileHealthDamage == 0)
+                                line.Color(COLOR_BAD);
+                            else
+                                line.Color(COLOR_STAT_CHARACTERDMG);
+                            line.Number(projectile.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconCharacter).Append(DamageSeparator);
+
+                            if(projectile.HeadShot)
+                            {
+                                if(projectile.ProjectileHeadShotDamage == 0)
+                                    line.Color(COLOR_BAD);
+                                else
+                                    line.Color(COLOR_STAT_CHARACTERDMG);
+                                line.Number(projectile.ProjectileHeadShotDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconCharacterHead).Append(DamageSeparator);
+                            }
+
+                            if(projectile.ProjectileExplosionRadius > 0 && projectile.ProjectileExplosionDamage != 0)
+                            {
+                                // HACK: wpDef.DamageMultiplier is not used for this explosion
+                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(projectile.ProjectileExplosionRadius).ResetFormatting().Append(FontsHandler.IconSphere);
+                                line.Color(COLOR_STAT_EXPLOSION).Number(projectile.ProjectileExplosionDamage).ResetFormatting().Append(FontsHandler.IconExplode).Append(DamageSeparator);
+                            }
+
+                            line.Length -= DamageSeparator.Length;
+
+                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+
+                            // from MyProjectile.Start()
+                            if(projectile.SpeedVar > 0)
+                                line.Number(projectile.DesiredSpeed * (1f - projectile.SpeedVar)).Append("~").Number(projectile.DesiredSpeed * (1f + projectile.SpeedVar)).Append(" m/s");
+                            else
+                                line.SpeedFormat(projectile.DesiredSpeed);
+
+                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+
+                            float range = wpDef.RangeMultiplier * projectile.MaxTrajectory;
+                            if(wpDef.UseRandomizedRange)
+                                line.DistanceRangeFormat(range * Hardcoded.Projectile_RangeMultiplier_Min, range * Hardcoded.Projectile_RangeMultiplier_Max);
+                            else
+                                line.DistanceFormat(range);
+
+                            // projectiles always have gravity
+                            line.Append(" ").Color(COLOR_WARNING).Append(FontsHandler.IconProjectileGravity).ResetFormatting();
+
+                            // TODO: include ProjectileTrailProbability? only if it has some visible values...
+                        }
+                    }
+
+                    if(hasMissiles)
+                    {
+                        MyWeaponDefinition.MyWeaponAmmoData ammoData = wpDef.WeaponAmmoDatas[(int)MyAmmoType.Missile];
+
+                        if(printFirstAmmoData || printBothAmmoData)
+                        {
+                            printFirstAmmoData = false;
+
+                            float rps = ammoData.RateOfFire / 60f;
+                            StringBuilder sb = AddLine().Label(printBothAmmoData ? "Missiles - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
+
+                            sb.Label("Reload");
+                            if(blockTypeCanReload && ammoData.ShotsInBurst > 0)
+                            {
+                                if(ammoData.ShotsInBurst == 1)
+                                    sb.TimeFormat(reloadSeconds).Append(" after every").Append(printBothAmmoData ? " missile" : " shot");
+                                else
+                                    sb.TimeFormat(reloadSeconds).Append(" after ").Append(ammoData.ShotsInBurst).Append(printBothAmmoData ? " missiles" : " shots");
+                            }
+                            else
+                            {
+                                sb.Color(COLOR_GOOD).Append("Instant").ResetFormatting();
+                            }
+                        }
+
+                        foreach(MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> tuple in AmmoMissiles)
+                        {
+                            MyAmmoMagazineDefinition mag = tuple.Item1;
+                            MyMissileAmmoDefinition missile = tuple.Item2;
+
+                            StringBuilder line = AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(MagazineSeparator);
+
+                            // HACK: wpDef.DamageMultiplier is not used for missile explosions nor healthpool
+
+                            if(missile.MissileHealthPool > 0)
+                            {
+                                line.Color(COLOR_STAT_PENETRATIONDMG).Number(missile.MissileHealthPool).ResetFormatting().Append(FontsHandler.IconBlockPenetration).Append(DamageSeparator);
+                            }
+
+                            if(missile.MissileExplosionRadius > 0 && missile.MissileExplosionDamage != 0)
+                            {
+                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(missile.MissileExplosionRadius).ResetFormatting().Append(FontsHandler.IconSphere);
+                                line.Color(COLOR_STAT_EXPLOSION).Number(missile.MissileExplosionDamage).ResetFormatting().Append(FontsHandler.IconExplode).Append(DamageSeparator);
+                            }
+
+                            line.Length -= DamageSeparator.Length;
+
+                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+
+                            // HACK: ammo.SpeedVar is not used for missiles
+                            // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
+
+                            // no initial speed printing
+                            if(!missile.MissileSkipAcceleration && missile.MissileAcceleration != 0)
+                            {
+                                float accel = missile.MissileAcceleration;
+                                float maxSpeed = missile.DesiredSpeed;
+                                line.Append("+").AccelerationFormat(accel).ResetFormatting().Append(FontsHandler.IconMissile).Color(COLOR_UNIMPORTANT).SpeedFormat(maxSpeed);
+                            }
+                            else
+                            {
+                                float speed = Math.Min(missile.MissileInitialSpeed, missile.DesiredSpeed);
+                                line.SpeedFormat(speed);
+                            }
+
+                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+
+                            line.DistanceFormat(missile.MaxTrajectory);
+
+                            line.Append(" ").Color(missile.MissileGravityEnabled ? COLOR_WARNING : COLOR_GOOD).Append(missile.MissileGravityEnabled ? FontsHandler.IconProjectileGravity : FontsHandler.IconProjectileNoGravity).ResetFormatting();
                         }
                     }
                 }
 
-                if(!isValidWeapon)
+                if(!validWeapon)
                 {
-                    if(ammoProjectiles.Count == 0 && ammoMissiles.Count == 0)
-                        AddLine().Color(COLOR_WARNING).Append("Has no ammo! Might have custom behavior.");
+                    StringBuilder sb = AddLine().Color(COLOR_WARNING);
+                    if(wpDef.DamageMultiplier == 0f)
+                        sb.Append("Weapon has 0 damage multiplier!");
+                    else if(!hasAmmo)
+                        sb.Append("Has no ammo!");
                     else
-                        AddLine().Color(COLOR_WARNING).Append("Ammo deals no vanilla damage! Might have custom behavior.");
-
-                    ammoProjectiles.Clear();
-                    ammoMissiles.Clear();
+                        sb.Append("Ammo deals no vanilla damage!");
+                    sb.Append(" Might have custom behavior.");
                 }
-
-                const int MaxMagNameLength = 20;
-                bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
-
-                if(ammoProjectiles.Count > 0)
-                {
-                    // HACK: wepDef.DamageMultiplier is only used for hand weapons in 1.193 - check if it's used for ship weapons in future game versions
-
-                    MyWeaponDefinition.MyWeaponAmmoData projectilesData = wpDef.WeaponAmmoDatas[0];
-
-                    bool hasReload = (blockTypeCanReload && projectilesData.ShotsInBurst > 0);
-                    double rps = Math.Round(projectilesData.RateOfFire / 60f, 2);
-
-                    AddLine().Label("Projectiles - Fire rate").Append(rps).Append(rps == 1 ? " round/s" : " rounds/s")
-                        .Separator().Color(hasReload ? COLOR_WARNING : COLOR_GOOD).Append("Magazine: ");
-
-                    if(hasReload)
-                        GetLine().Append(projectilesData.ShotsInBurst);
-                    else
-                        GetLine().Append("No reloading");
-
-                    AddLine().Append("Projectiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
-                        .Color(COLOR_STAT_SHIPDMG).Append("ship").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_CHARACTERDMG).Append("character").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_HEADSHOTDMG).Append("headshot").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_EXPLOSION).Append("explode").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(")");
-
-                    for(int i = 0; i < ammoProjectiles.Count; ++i)
-                    {
-                        MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition> data = ammoProjectiles[i];
-                        MyAmmoMagazineDefinition mag = data.Item1;
-                        MyProjectileAmmoDefinition ammo = data.Item2;
-
-                        AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (");
-
-                        if(ammo.ProjectileCount > 1)
-                            GetLine().Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.ProjectileCount).Append("x ");
-
-                        GetLine().Color(COLOR_STAT_SHIPDMG).Number(ammo.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_CHARACTERDMG).Number(ammo.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Number((ammo.HeadShot ? ammo.ProjectileHeadShotDamage : ammo.ProjectileHealthDamage) * wpDef.DamageMultiplier).ResetFormatting().Append(", ");
-
-                        // HACK: wpDef.DamageMultiplier is not used for this explosion
-                        GetLine().Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.ProjectileExplosionRadius).Append(" ").Number(ammo.ProjectileExplosionDamage).ResetFormatting().Append(", ");
-
-                        // from MyProjectile.Start()
-                        if(ammo.SpeedVar > 0)
-                            GetLine().Color(COLOR_STAT_SPEED).Number(ammo.DesiredSpeed * (1f - ammo.SpeedVar)).Append("~").Number(ammo.DesiredSpeed * (1f + ammo.SpeedVar)).Append(" m/s");
-                        else
-                            GetLine().Color(COLOR_STAT_SPEED).SpeedFormat(ammo.DesiredSpeed);
-
-                        float range = wpDef.RangeMultiplier * ammo.MaxTrajectory;
-
-                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL);
-
-                        if(wpDef.UseRandomizedRange)
-                            GetLine().DistanceRangeFormat(range * Hardcoded.Projectile_RangeMultiplier_Min, range * Hardcoded.Projectile_RangeMultiplier_Max);
-                        else
-                            GetLine().DistanceFormat(range);
-
-                        GetLine().ResetFormatting().Append(")");
-                    }
-                }
-
-                if(ammoMissiles.Count > 0)
-                {
-                    MyWeaponDefinition.MyWeaponAmmoData missileData = wpDef.WeaponAmmoDatas[1];
-
-                    bool hasReload = (blockTypeCanReload && missileData.ShotsInBurst > 0);
-                    double rps = Math.Round(missileData.RateOfFire / 60f, 2);
-
-                    AddLine().Label("Missiles - Fire rate").Append(rps).Append(rps == 1 ? " round/s" : " rounds/s")
-                        .Separator().Color(hasReload ? COLOR_WARNING : COLOR_GOOD).Append("Magazine: ");
-
-                    if(hasReload)
-                        GetLine().Append(missileData.ShotsInBurst);
-                    else
-                        GetLine().Append("No reloading");
-
-                    AddLine().Append("Missiles - ").Color(COLOR_STAT_TYPE).Append("Type").ResetFormatting().Append(" (")
-                        .Color(COLOR_STAT_EXPLOSION).Append("explosion").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_HEADSHOTDMG).Append("penetration pool").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_SPEED).Append("speed").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_TRAVEL).Append("travel").ResetFormatting().Append(", ")
-                        .Color(COLOR_STAT_PROJECTILECOUNT).Append("gravity").ResetFormatting().Append(")");
-
-                    for(int i = 0; i < ammoMissiles.Count; ++i)
-                    {
-                        MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition> data = ammoMissiles[i];
-                        MyAmmoMagazineDefinition mag = data.Item1;
-                        MyMissileAmmoDefinition ammo = data.Item2;
-
-                        // HACK: wpDef.DamageMultiplier is not used for explosions
-
-                        AddLine().Append("  | ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(" (")
-                            .Color(COLOR_STAT_EXPLOSION).DistanceFormat(ammo.MissileExplosionRadius).Append(" ").Number(ammo.MissileExplosionDamage).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_HEADSHOTDMG).Number(ammo.MissileHealthPool).ResetFormatting().Append(", ");
-
-                        // HACK: ammo.SpeedVar is not used for missiles
-                        // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
-
-                        GetLine().Color(COLOR_STAT_SPEED);
-
-                        if(!ammo.MissileSkipAcceleration)
-                            GetLine().SpeedFormat(ammo.MissileInitialSpeed).Append(" + ").AccelerationFormat(ammo.MissileAcceleration);
-                        else
-                            GetLine().SpeedFormat(ammo.DesiredSpeed);
-
-                        GetLine().ResetFormatting().Append(", ").Color(COLOR_STAT_TRAVEL).DistanceFormat(ammo.MaxTrajectory).ResetFormatting().Append(", ")
-                            .Color(COLOR_STAT_PROJECTILECOUNT).Append(ammo.MissileGravityEnabled ? "Y" : "N")
-                            .ResetFormatting().Append(")");
-                    }
-                }
-
-                ammoProjectiles.Clear();
-                ammoMissiles.Clear();
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings) && !MyAPIGateway.Session.SessionSettings.WeaponsEnabled)
