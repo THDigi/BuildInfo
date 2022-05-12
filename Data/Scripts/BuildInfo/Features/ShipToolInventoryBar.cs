@@ -14,6 +14,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 namespace Digi.BuildInfo.Features
 {
     // TODO: compatible with gamepad HUD too?
+    // TODO: show ship tool inventory bar for CTC?
 
     public class ShipToolInventoryBar : ModComponent
     {

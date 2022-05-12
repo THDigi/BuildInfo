@@ -86,6 +86,8 @@ namespace Digi.BuildInfo.Features.LiveData
             if(!valid)
                 return false;
 
+            // FIXME: gatling gun shows subpart 0,0,0 and real muzzle as both being muzzles O.o
+
             IMyEntity muzzle = GetAimSubpart(block);
             if(muzzle != null && !GetMuzzleData(block, muzzle, this))
                 return false;

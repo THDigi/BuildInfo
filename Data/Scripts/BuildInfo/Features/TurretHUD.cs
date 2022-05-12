@@ -6,7 +6,6 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
@@ -17,6 +16,8 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {
+    // TODO: show ammo for CTC?
+
     public class TurretHUD : ModComponent
     {
         readonly Vector2D AmmoTextPosition = new Vector2D(0.4, 0.01);

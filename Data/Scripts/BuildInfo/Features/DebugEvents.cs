@@ -27,6 +27,8 @@ using CollisionLayers = Sandbox.Engine.Physics.MyPhysics.CollisionLayers;
 using System.Linq;
 using VRage.ModAPI;
 using VRage.Input;
+using VRage.Game.Components;
+using Sandbox.Common.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features
 {
@@ -192,6 +194,22 @@ namespace Digi.BuildInfo.Features
         }
 
 
+        // doublechecked cone maffs, which is correct
+        //public override void UpdateDraw()
+        //{
+        //    float height = (float)Dev.GetValueScroll("height", 5, 1, MyKeys.D1);
+        //    double angleDeg = Dev.GetValueScroll("angle", 3, 0.1, MyKeys.D2);
+        //    double angleRad = MathHelper.ToRadians(angleDeg);
+
+        //    MatrixD m = MatrixD.CreateRotationX(angleRad);
+        //    m.Translation = Vector3D.Zero;
+
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, m.Translation, Vector3.Forward, height, 0.01f);
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Red, m.Translation, m.Forward, height * 2, 0.01f);
+
+        //    float radius = height * (float)Math.Tan(angleRad);
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, m.Translation + Vector3.Forward * height, Vector3.Up, radius, 0.01f);
+        //}
 
 
         //int LastDamageAtTick;

@@ -198,28 +198,41 @@ namespace Digi.BuildInfo.Utilities
             return sb.Append(color.R).Append(", ").Append(color.G).Append(", ").Append(color.B).Append(", ").Append(color.A);
         }
 
-        public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength, bool addDots = true, bool noNewLines = true)
+        public static StringBuilder AppendMaxLength(this StringBuilder s, string text, int maxLength, bool addDots = true, bool noNewLines = true, bool fillWhitespace = false)
         {
             if(text == null)
-                return s.Append("(NULL)");
-
-            if(noNewLines)
             {
-                int newLine = text.IndexOf('\n');
-                if(newLine >= 0)
-                    maxLength = Math.Min(maxLength, newLine); // redefine max length to before the first newline character
-            }
-
-            if(text.Length > maxLength)
-            {
-                if(addDots)
-                    s.Append(text, 0, maxLength - 1).Append("...");
-                else
-                    s.Append(text, 0, maxLength);
+                s.Append("(NULL)");
+                if(fillWhitespace)
+                    s.Append(' ', maxLength - 6);
             }
             else
             {
-                s.Append(text);
+                int len = s.Length;
+
+                if(noNewLines)
+                {
+                    int newLine = text.IndexOf('\n');
+                    if(newLine >= 0)
+                        maxLength = Math.Min(maxLength, newLine); // redefine max length to before the first newline character
+                }
+
+                if(text.Length > maxLength)
+                {
+                    if(addDots)
+                        s.Append(text, 0, maxLength - 1).Append('…');
+                    else
+                        s.Append(text, 0, maxLength);
+                }
+                else
+                {
+                    s.Append(text);
+                }
+
+                if(fillWhitespace)
+                {
+                    s.Append(' ', maxLength - (s.Length - len));
+                }
             }
 
             return s;
@@ -495,6 +508,9 @@ namespace Digi.BuildInfo.Utilities
             return s.PowerFormat(MWh).Append('h');
         }
 
+        /// <summary>
+        /// If <paramref name="digits"/> is left as -1 it will the default for <see cref="Number(StringBuilder, float)"/> (2 digits)
+        /// </summary>
         public static StringBuilder DistanceFormat(this StringBuilder s, float m, int digits = -1)
         {
             if(!IsValid(s, m, " m"))

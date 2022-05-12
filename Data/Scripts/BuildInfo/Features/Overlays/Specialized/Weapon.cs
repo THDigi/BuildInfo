@@ -107,6 +107,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 float projectileMaxTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Max;
                 bool randomizedRange = weaponDef.UseRandomizedRange;
 
+                // TODO accuracy circle closer instead?
+
                 if(weaponDef.DeviateShotAngle > 0)
                 {
                     float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
@@ -141,7 +143,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             }
             #endregion Accuracy cone
 
-            // FIXME: Autocannon has no muzzle detected
             #region Barrels
             if(hasMuzzles)
             {

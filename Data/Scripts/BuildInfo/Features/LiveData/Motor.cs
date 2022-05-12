@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 if(kv.Key.StartsWith("electric_motor", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    DummyLocalPos = Matrix.Normalize(kv.Value.Matrix).Translation;
+                    DummyLocalPos = kv.Value.Matrix.Translation;
                     success = true;
                     break;
                 }

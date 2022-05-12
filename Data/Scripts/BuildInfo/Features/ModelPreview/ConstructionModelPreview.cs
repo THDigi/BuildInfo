@@ -16,6 +16,7 @@ using VRageMath;
 namespace Digi.BuildInfo.Features.ModelPreview
 {
     // TODO: some way to scroll through models around the main block... or even find a way to hide the currently held block
+    // TODO: apply color and skin when skin can be read from IMyPlayer
 
     public class ConstructionModelPreview : ModComponent
     {

@@ -156,7 +156,6 @@ namespace Digi.ComponentLib
                 Stopwatch.Stop();
                 MeasuredResults.Add(new ProfileData(MeasuredFor, Stopwatch.Elapsed.TotalMilliseconds));
 
-
                 MeasuredResults.Sort((a, b) => b.MeasuredMs.CompareTo(a.MeasuredMs)); // sort descending
 
                 double totalMs = 0;
@@ -237,7 +236,7 @@ namespace Digi.ComponentLib
                 Log.IncreaseIndent();
                 foreach(ProfileData data in MeasuredResults)
                 {
-                    Log.Info($"PROFILE: {data.MeasuredMs.ToString(MeasureFormat)} ms for {data.Name}");
+                    Log.Info($"{data.MeasuredMs.ToString(MeasureFormat)} ms for {data.Name}");
                 }
                 Log.DecreaseIndent();
             }
