@@ -1,5 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Digi.BuildInfo.Features.Fonts;
+using Draygo.API;
+using ParallelTasks;
+using Sandbox.Definitions;
+using Sandbox.ModAPI;
+using VRage.Game;
+using VRage.Utils;
 
 namespace Digi.BuildInfo.Features
 {
@@ -12,26 +19,53 @@ namespace Digi.BuildInfo.Features
         public const string YellowSh = "BI_Yellow";
         public const string GraySh = "BI_Gray";
 
-        /// <summary>
-        /// Works on textAPI aswell.
-        /// </summary>
         public const string SEOutlined = "BI_SEOutlined";
+
+        public const char IconExplode = '\ue100';
+        public const char IconCharacter = '\ue101';
+        public const char IconCharacterHead = '\ue102';
+        public const char IconBlock = '\ue103';
+        public const char IconProjectileGravity = '\ue104';
+        public const char IconProjectileNoGravity = '\ue105';
+        public const char IconBlockPenetration = '\ue106';
+        public const char IconMaxSpeed = '\ue107';
+        public const char IconMissile = '\ue108';
+        public const char IconSphere = '\ue109';
+
+        // single-use for parsing, do not make public
+        List<FontInfo> Fonts = new List<FontInfo>()
+        {
+            new FontInfo(SEOutlined, $@"Fonts\{SEOutlined}\FontDataPA.xml"),
+        };
+
+        class FontInfo
+        {
+            public string Name;
+            public string XMLPath;
+            public FontParser Parser;
+
+            public FontInfo(string name, string path)
+            {
+                Name = name;
+                XMLPath = path;
+            }
+        }
 
         /// <summary>
         /// Must be used when CharSize doesn't have the char you want because it's most likely a chinese character.
         /// </summary>
         public const int DefaultCharSize = 33;
+
         public readonly Dictionary<char, int> CharSize = new Dictionary<char, int>();
 
-        readonly TextAPIFont_SEOutlined TextAPIFont_SEOutlined = new TextAPIFont_SEOutlined();
+        Task Task;
+        bool Unloaded = false;
 
         public FontsHandler(BuildInfoMod main) : base(main)
         {
             Main.TextAPI.Detected += TextAPI_Detected;
 
-            ComputeCharacterSizes();
-
-            //ParseFonts();
+            Task = MyAPIGateway.Parallel.StartBackground(BackgroundTask, BackgroundTaskDone);
         }
 
         public override void RegisterComponent()
@@ -40,178 +74,133 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
+            Unloaded = true;
             Main.TextAPI.Detected -= TextAPI_Detected;
         }
 
         void TextAPI_Detected()
         {
-            TextAPIFont_SEOutlined.AddFont();
-        }
-
-        void ComputeCharacterSizes()
-        {
-            CharSize.Clear();
-
-            AddCharsSize(0, "\n\r\t");
-
-            // generated from fonts/white_shadow/FontDataPA.xml+FontDataCH.xml, size is the "aw" property.
-            AddCharsSize(6, "'|¦ˉ‘’‚");
-            AddCharsSize(7, "ј");
-            AddCharsSize(8, " !I`ijl ¡¨¯´¸ÌÍÎÏìíîïĨĩĪīĮįİıĵĺļľłˆˇ˘˙˚˛˜˝ІЇії‹›∙！");
-            AddCharsSize(9, "(),.1:;[]ft{}·ţťŧț（）：《》，。、；【】");
-            AddCharsSize(10, "\"-rª­ºŀŕŗř");
-            AddCharsSize(11, "*²³¹");
-            AddCharsSize(12, "\\°“”„");
-            AddCharsSize(13, "ґ");
-            AddCharsSize(14, "/ĳтэє");
-            AddCharsSize(15, "L_vx«»ĹĻĽĿŁГгзлхчҐ–•");
-            AddCharsSize(16, "7?Jcz¢¿çćĉċčĴźżžЃЈЧавийнопсъьѓѕќ？");
-            AddCharsSize(17, "3FKTabdeghknopqsuy£µÝàáâãäåèéêëðñòóôõöøùúûüýþÿāăąďđēĕėęěĝğġģĥħĶķńņňŉōŏőśŝşšŢŤŦũūŭůűųŶŷŸșȚЎЗКЛбдекруцяёђћўџ");
-            AddCharsSize(18, "+<=>E^~¬±¶ÈÉÊË×÷ĒĔĖĘĚЄЏЕНЭ−");
-            AddCharsSize(19, "#0245689CXZ¤¥ÇßĆĈĊČŹŻŽƒЁЌАБВДИЙПРСТУХЬ€");
-            AddCharsSize(20, "$&GHPUVY§ÙÚÛÜÞĀĜĞĠĢĤĦŨŪŬŮŰŲОФЦЪЯжы†‡￥");
-            AddCharsSize(21, "ABDNOQRSÀÁÂÃÄÅÐÑÒÓÔÕÖØĂĄĎĐŃŅŇŌŎŐŔŖŘŚŜŞŠȘЅЊЖф□");
-            AddCharsSize(22, "љ");
-            AddCharsSize(23, "ю");
-            AddCharsSize(24, "%ĲЫ");
-            AddCharsSize(25, "@©®мшњ");
-            AddCharsSize(26, "MМШ");
-            AddCharsSize(27, "mw¼ŵЮщ");
-            AddCharsSize(28, "¾æœЉ");
-            AddCharsSize(29, "½Щ");
-            AddCharsSize(30, "™");
-            AddCharsSize(31, "WÆŒŴ—…‰");
-            AddCharsSize(32, "");
-            AddCharsSize(34, "");
-            AddCharsSize(37, "");
-            AddCharsSize(40, "");
-            AddCharsSize(41, "");
-            AddCharsSize(45, "");
-            AddCharsSize(46, "");
-            AddCharsSize(57, "");
-        }
-
-        void AddCharsSize(int size, string chars)
-        {
-            for(int i = 0; i < chars.Length; i++)
+            if(!Task.IsComplete)
             {
-                char chr = chars[i];
-                int existingSize;
-                if(CharSize.TryGetValue(chr, out existingSize))
+                Log.Info("Background thread parsing fonts files took too long, waiting for it...");
+                Task.Wait(true);
+            }
+
+            AddFonts();
+        }
+
+        void BackgroundTask()
+        {
+            foreach(FontInfo fontInfo in Fonts)
+            {
+                if(Unloaded)
+                    break;
+
+                // TODO multi-XML support of sorts?
+
+                string xml = null;
+
+                using(TextReader file = MyAPIGateway.Utilities.ReadFileInModLocation(fontInfo.XMLPath, Main.Session.ModContext.ModItem))
                 {
-                    //Log.Error($"Character '{chr.ToString()}' ({((int)chr).ToString()}) already exists for size: {existingSize.ToString()} --- line: AddCharsSize({size.ToString()}, {chars})");
-                    continue;
+                    xml = file.ReadToEnd();
                 }
 
-                CharSize.Add(chr, size);
+                fontInfo.Parser = new FontParser();
+                fontInfo.Parser.Parse(xml);
+
+                Log.Info($"Parsed font '{fontInfo.Name}' - bitmaps: {fontInfo.Parser.Bitmaps.Count}; glyphs: {fontInfo.Parser.Glyphs.Count}; kernpairs: {fontInfo.Parser.Kernpairs.Count}");
+
+                if(fontInfo.Name == SEOutlined)
+                {
+                    // HACK: altered height to 32 so that it fits better with the built-in textAPI font (which is 30 height)
+                    fontInfo.Parser.Height = 32;
+
+                    // HACK: it's the same font as vanilla but outlined, using this to generate character width dictionary aswell
+                    foreach(FontParser.Glyph glyph in fontInfo.Parser.Glyphs)
+                    {
+                        CharSize[glyph.Ch] = glyph.Aw;
+                    }
+                }
             }
         }
 
-        // parsing the game font files, for dev use only.
-#if false
-        private void ParseFonts()
+        void BackgroundTaskDone()
         {
-            Dictionary<int, HashSet<char>> charsBySize = new Dictionary<int, HashSet<char>>();
-
-            if(!ParseFontFile("FontDataPA.xml", charsBySize) | !ParseFontFile("FontDataCH.xml", charsBySize))
+            if(Unloaded)
                 return;
 
-            var sizes = charsBySize.Keys.ToList();
-            sizes.Sort();
+            if(Log.TaskHasErrors(Task, $"{nameof(FontsHandler)} Parse XML"))
+                return;
+        }
 
-            var sb = new System.Text.StringBuilder();
-
-            foreach(var size in sizes)
+        void AddFonts()
+        {
+            foreach(FontInfo fontInfo in Fonts)
             {
-                sb.Append("AddCharsSize(").Append(size).Append(", \"");
+                HudAPIv2.FontDefinition font = HudAPIv2.APIinfo.GetFontDefinition(MyStringId.GetOrCompute(fontInfo.Name));
+                FontParser data = fontInfo.Parser;
 
-                var characters = charsBySize[size];
-
-                foreach(var chr in characters)
+                foreach(FontParser.Bitmap bitmap in data.Bitmaps)
                 {
-                    // escape characters used in code for simpler paste
-                    if(chr == '\\')
-                        sb.Append("\\\\");
-                    else if(chr == '"')
-                        sb.Append("\\\"");
-                    else
-                        sb.Append(chr);
+                    MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_TransparentMaterialDefinition), bitmap.MaterialId.String));
+                    if(def == null)
+                        Log.Error($"Font '{fontInfo.Name}' for textAPI does not have the transparent material '{bitmap.MaterialId.String}' declared in SBC!");
                 }
 
-                sb.Append("\");").AppendLine();
-            }
+                font.DefineFont(data.Base, data.Height, data.Size);
 
-            using(var writer = Sandbox.ModAPI.MyAPIGateway.Utilities.WriteFileInLocalStorage("FontSizes.txt", typeof(Constants)))
-            {
-                writer.Write(sb);
-            }
-        }
-
-        private bool ParseFontFile(string file, Dictionary<int, HashSet<char>> addTo)
-        {
-            if(!Sandbox.ModAPI.MyAPIGateway.Utilities.FileExistsInLocalStorage(file, typeof(Constants)))
-                return false;
-
-            using(var reader = Sandbox.ModAPI.MyAPIGateway.Utilities.ReadFileInLocalStorage(file, typeof(Constants)))
-            {
-                string line;
-
-                while((line = reader.ReadLine()) != null)
+                foreach(FontParser.Glyph glyph in data.Glyphs)
                 {
-                    line = line.Trim();
-
-                    if(line.Equals("</glyphs>"))
-                        break;
-
-                    if(!line.StartsWith("<glyph "))
-                        continue;
-
-                    var ch = GetInBetween(line, "ch=\"", "\"");
-                    var aw = GetInBetween(line, "aw=\"", "\"");
-
-                    ch = unescape.GetValueOrDefault(ch, ch); // stuff like &lt; to be converted to <, etc.
-
-                    var character = ch[0]; // this is how SE is doing it too; some of their ch="" have 2 characters...
-                    var width = int.Parse(aw);
-
-                    HashSet<char> set;
-                    if(!addTo.TryGetValue(width, out set))
-                    {
-                        set = new HashSet<char>();
-                        addTo.Add(width, set);
-                    }
-                    set.Add(character);
+                    FontParser.Bitmap bitmap = data.Bitmaps[glyph.Bitmap];
+                    font.AddCharacter(glyph.Ch, bitmap.MaterialId, bitmap.SizeX, glyph.Code, glyph.OriginX, glyph.OriginY, glyph.SizeX, glyph.SizeY, glyph.Aw, glyph.Lsb, glyph.ForceWhite);
                 }
+
+                foreach(FontParser.Kernpair kp in data.Kernpairs)
+                {
+                    font.AddKerning(kp.Adjust, kp.Right, kp.Left);
+                }
+
+                FontAdded(font, fontInfo);
             }
 
-            return true;
+            Fonts = null;
         }
 
-        private string GetInBetween(string content, string start, string end, int startFrom = 0)
+        void FontAdded(HudAPIv2.FontDefinition font, FontInfo fontInfo)
         {
-            int startIndex = content.IndexOf(start, startFrom);
+            if(fontInfo.Name != SEOutlined)
+                return;
 
-            if(startIndex == -1)
-                throw new System.Exception($"Couldn't find '{start}' after {startFrom.ToString()} in line: {content}");
+            MyStringId material = MyStringId.GetOrCompute("BI_FontIcons");
+            const int materialSizeX = 256;
+            const int iconSize = 32;
+            const int iconAw = 32;
+            const int iconLsb = 0;
+            const bool recolorable = true;
 
-            startIndex += start.Length;
-            int endIndex = content.IndexOf(end, startIndex);
+            const int startingChar = '\ue100';
+            const int offset = 6; // HACK: hardcoded offset in textAPI which is there to fix something else
+            const int maxGridX = materialSizeX / iconSize;
+            const int totalIcons = maxGridX * maxGridX;
 
-            if(endIndex == -1)
-                throw new System.Exception($"Couldn't find '{end}' after {startIndex.ToString()} in line: {content}");
+            int gridX = 0;
+            int gridY = 0;
 
-            return content.Substring(startIndex, (endIndex - startIndex));
+            for(int i = 0; i < totalIcons; i++)
+            {
+                if(gridX >= maxGridX)
+                {
+                    gridY++;
+                    gridX = 0;
+                }
+
+                char c = (char)(startingChar + i);
+                string charCode = ((int)c).ToString("X");
+
+                font.AddCharacter(c, material, materialSizeX, charCode, (gridX * iconSize), (gridY * iconSize) - offset, iconSize, iconSize + offset, iconAw, iconLsb, !recolorable);
+
+                gridX++;
+            }
         }
-
-        // workaround for HttpUtility.HtmlDecode() not being available
-        Dictionary<string, string> unescape = new Dictionary<string, string>()
-        {
-            ["&lt;"] = "<",
-            ["&gt;"] = ">",
-            ["&quot;"] = "\"",
-            ["&amp;"] = "&",
-            ["&apos;"] = "'",
-        };
-#endif
     }
 }

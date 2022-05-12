@@ -153,6 +153,7 @@
     <Compile Include="Features\ChatCommands\CommandToolbarErasePrefix.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\Fonts\FontParser.cs" />
     <Compile Include="Features\ProfilerDisplay.cs" />
     <Compile Include="Features\HUD\BottleStat.cs" />
     <Compile Include="Features\ModelPreview\ConstructionModelStack.cs" />
@@ -169,7 +170,6 @@
     <Compile Include="Features\Overlays\Specialized\Camera.cs" />
     <Compile Include="Features\Overlays\Specialized\Motor.cs" />
     <Compile Include="Features\LiveData\ButtonPanel.cs" />
-    <Compile Include="Features\Fonts\TextAPIFont_SEOutlined.cs" />
     <Compile Include="Features\LiveData\Wheel.cs" />
     <Compile Include="Features\LiveData\Motor.cs" />
     <Compile Include="Features\LiveData\Suspension.cs" />
@@ -184,7 +184,6 @@
     <Compile Include="Features\ModelPreview\SubpartPreview.cs" />
     <Compile Include="Features\Overlays\Specialized\Piston.cs" />
     <Compile Include="Features\TopPartColor.cs" />
-    <Compile Include="Libraries\TextHudAPI\TextAPIFont.cs" />
     <Compile Include="Features\Overlays\LabelRendering.cs" />
     <Compile Include="Features\Overlays\Specialized\ButtonPanel.cs" />
     <Compile Include="Features\Overlays\Specialized\LaserAntenna.cs" />

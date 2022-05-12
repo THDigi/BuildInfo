@@ -15,7 +15,7 @@ namespace Draygo.API
 {
     public class HudAPIv2
     {
-        public const string DefaultFont = Digi.BuildInfo.Features.FontsHandler.SEOutlined; // was "white";
+        public const string DefaultFont = TextAPI.DefaultFont; // was "white";
         public const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
         public const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;
 
