@@ -1,11 +1,9 @@
 ﻿using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Gui;
-using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;

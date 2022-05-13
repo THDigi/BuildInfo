@@ -2,7 +2,6 @@
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Sandbox.ModAPI;
-using SpaceEngineers.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;

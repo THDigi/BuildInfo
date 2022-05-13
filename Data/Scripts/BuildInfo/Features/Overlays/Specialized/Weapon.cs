@@ -6,7 +6,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using VRage.Game;
 using VRage.Game.ModAPI;

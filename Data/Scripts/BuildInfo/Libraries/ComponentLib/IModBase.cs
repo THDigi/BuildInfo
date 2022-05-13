@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using VRage;
-
-namespace Digi.ComponentLib
+﻿namespace Digi.ComponentLib
 {
     /// <summary>
     /// Main class interface for internal use.

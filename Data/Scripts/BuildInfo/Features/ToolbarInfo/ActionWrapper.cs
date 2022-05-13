@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
-using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage;
 using VRage.Game.ModAPI;
-using VRage.Utils;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {

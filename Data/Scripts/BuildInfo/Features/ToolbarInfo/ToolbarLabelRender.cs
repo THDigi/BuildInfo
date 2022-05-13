@@ -14,7 +14,6 @@ using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
-using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 
 // TODO: alternate rendering for gamepad HUD mode
 

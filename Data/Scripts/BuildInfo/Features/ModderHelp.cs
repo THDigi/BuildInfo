@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Digi.BuildInfo.Utilities;
-using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;

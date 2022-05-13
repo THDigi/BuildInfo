@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using ParallelTasks;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.Utils;
-using VRageMath;
 
 namespace Digi
 {

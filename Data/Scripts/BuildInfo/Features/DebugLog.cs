@@ -5,7 +5,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using VRageMath;
-using BlendType = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features
 {

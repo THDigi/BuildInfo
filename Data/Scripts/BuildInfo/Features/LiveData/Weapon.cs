@@ -1,15 +1,12 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
-using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.Serialization;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData

@@ -1,14 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Digi.BuildInfo.VanillaData;
-using Sandbox.Definitions;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.ModAPI;
-using SpaceEngineers.Game.ModAPI;
-using VRage.Game.ModAPI;
-using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.Terminal
 {

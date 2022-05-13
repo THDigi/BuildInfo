@@ -1,13 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Digi.BuildInfo.VanillaData;
-using Sandbox.Definitions;
-using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
-using VRage.Game;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.Utils;
+﻿using Sandbox.Definitions;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview.Blocks

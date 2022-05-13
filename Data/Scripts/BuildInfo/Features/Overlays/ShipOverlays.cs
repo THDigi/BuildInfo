@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Game.Entities;

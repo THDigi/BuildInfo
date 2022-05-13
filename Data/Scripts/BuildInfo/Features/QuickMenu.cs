@@ -1,5 +1,4 @@
-﻿using Digi.BuildInfo.Features.Config;
-using Digi.ComponentLib;
+﻿using Digi.ComponentLib;
 using Digi.Input;
 using Digi.Input.Devices;
 using Sandbox.Definitions;
