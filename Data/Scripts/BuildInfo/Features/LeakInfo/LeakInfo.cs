@@ -394,7 +394,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                     SetStatus(InfoStatus.Drawing);
 
-                    NotifyHUD($"Found leak, path rendered for {drawSeconds.ToString()}s.", 3000, FontsHandler.YellowSh);
+                    NotifyHUD($"Found leak, path rendered (visible for {drawSeconds.ToString()}s)", 3000, FontsHandler.YellowSh);
                 }
 
                 CancelTask = false;
