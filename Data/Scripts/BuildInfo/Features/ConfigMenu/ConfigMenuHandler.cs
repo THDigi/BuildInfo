@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private MenuCategoryBase Category_Overlays;
         private MenuCategoryBase Category_HUD;
         private MenuCategoryBase Category_Toolbar;
-        private MenuCategoryBase Category_Terminal;
+        private MenuCategoryBase Category_GUI;
         private MenuCategoryBase Category_LeakInfo;
         private MenuCategoryBase Category_Binds;
         private MenuCategoryBase Category_Misc;
@@ -136,7 +136,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_Overlays = AddCategory("Block Overlays", Category_Mod, header: "Block Overlays - See binds for how to show overlays.");
             Category_HUD = AddCategory("HUD", Category_Mod, header: "HUD additions and modifications");
             Category_Toolbar = AddCategory("Toolbar", Category_Mod, header: "ToolbarInfo box and other toolbar modifications");
-            Category_Terminal = AddCategory("Terminal/Inventory", Category_Mod, header: "Terminal/inventory additions and modifications");
+            Category_GUI = AddCategory("Terminal/Inventory/GUI", Category_Mod, header: "GUI additions and modifications");
             Category_LeakInfo = AddCategory("Air Leak Scanner", Category_Mod, header: "Air Leak Scanner - Access from any AirVent block");
             Category_Binds = AddCategory("Binds", Category_Mod, header: "Key/button bindings");
             Category_Misc = AddCategory("Misc", Category_Mod, header: "Various other settings");
@@ -240,20 +240,21 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             #endregion
 
             #region Terminal
-            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
-            SimpleToggle(Category_Terminal, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
-            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
+            SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
+            SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
+            new ItemButton(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
                 () => ShowNotify("Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", 7000));
-            SimplePositionReset(Category_Terminal, Main.Config.TerminalButtonsPosition);
-            SimpleSlider(Category_Terminal, null, Main.Config.TerminalButtonsScale);
+            SimplePositionReset(Category_GUI, Main.Config.TerminalButtonsPosition);
+            SimpleSlider(Category_GUI, null, Main.Config.TerminalButtonsScale);
 
-            new ItemButton(Category_Terminal, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
+            new ItemButton(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
                 () => ShowNotify("Multi-select info is always movable with RMB on the vertical line.", 7000));
-            SimplePositionReset(Category_Terminal, Main.Config.TerminalMultiDetailedInfoPosition);
+            SimplePositionReset(Category_GUI, Main.Config.TerminalMultiDetailedInfoPosition);
 
-            AddSpacer(Category_Terminal);
-            SimpleToggle(Category_Terminal, null, Main.Config.ItemTooltipAdditions);
-            SimpleToggle(Category_Terminal, null, Main.Config.ItemSymbolAdditions);
+            AddSpacer(Category_GUI);
+            SimpleToggle(Category_GUI, null, Main.Config.ItemTooltipAdditions);
+            SimpleToggle(Category_GUI, null, Main.Config.ItemSymbolAdditions);
+            SimpleToggle(Category_GUI, null, Main.Config.BlockIconOverlays);
             #endregion
 
             #region Leak Info

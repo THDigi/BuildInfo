@@ -34,8 +34,24 @@ namespace Digi.BuildInfo.Features
 {
     public class DebugEvents : ModComponent
     {
+        // cross reference/testing
+        //public override void UpdateDraw()
+        //{
+        //    MatrixD m = MyAPIGateway.Session.Player.Character.WorldMatrix;
+        //
+        //    Vector3D back = Vector3D.Cross(m.Right, m.Up);
+        //    Vector3D up = Vector3D.Cross(m.Forward, m.Left);
+        //    Vector3D right = Vector3D.Cross(m.Forward, m.Up);
+        //
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Blue, m.Translation, back, 10, 0.1f);
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Lime, m.Translation, up, 10, 0.1f);
+        //    MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), Color.Red, m.Translation, right, 10, 0.1f);
+        //}
+
         public DebugEvents(BuildInfoMod main) : base(main)
         {
+            //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
+
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
 
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;

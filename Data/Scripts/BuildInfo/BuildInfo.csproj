@@ -161,6 +161,7 @@
     <Compile Include="Features\Overlays\ShipOverlays.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\TurretBase.cs" />
     <Compile Include="Features\ModderHelp.cs" />
+    <Compile Include="Features\IconOverlays.cs" />
     <Compile Include="Systems\SplitChecking.cs" />
     <Compile Include="Features\HUD\HUDEditor.cs" />
     <Compile Include="Features\HUD\GridControlStat.cs" />

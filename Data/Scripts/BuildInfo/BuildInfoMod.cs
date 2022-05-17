@@ -82,6 +82,7 @@ namespace Digi.BuildInfo
         public readonly BlueprintTooltips BlueprintTooltips;
         public readonly BlockDescriptions BlockDescriptions;
         public readonly ItemTooltips ItemTooltips;
+        public readonly IconOverlays IconOverlays;
         public readonly Inventories Inventories;
         public readonly ToolbarOverride ToolbarOverride;
         public readonly ToolbarMonitor ToolbarMonitor;
@@ -164,6 +165,7 @@ namespace Digi.BuildInfo
             BlueprintTooltips = new BlueprintTooltips(this);
             BlockDescriptions = new BlockDescriptions(this);
             ItemTooltips = new ItemTooltips(this);
+            IconOverlays = new IconOverlays(this);
             Inventories = new Inventories(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);

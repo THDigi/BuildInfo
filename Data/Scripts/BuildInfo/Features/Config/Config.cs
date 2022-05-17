@@ -50,6 +50,8 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ItemTooltipAdditions;
         public BoolSetting ItemSymbolAdditions;
 
+        public BoolSetting BlockIconOverlays;
+
         public BoolSetting HudStatOverrides;
 
         public BoolSetting TurretHUD;
@@ -412,7 +414,7 @@ namespace Digi.BuildInfo.Features.Config
             #region Terminal
             TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
                 "",
-                string.Format(SubHeaderFormat, "Terminal/Inventory GUI"),
+                string.Format(SubHeaderFormat, "Terminal/Inventory/GUI"),
                 "",
                 "Adds some extra info bottom-right in terminal of certain blocks.",
                 "Does not (and cannot) replace any vanilla info.");
@@ -440,6 +442,9 @@ namespace Digi.BuildInfo.Features.Config
 
             ItemSymbolAdditions = new BoolSetting(Handler, "Terminal: Item Symbol Additions", true,
                 $"Currently adds the '{ItemTooltips.ReqLargeConveyorSymbol}' on top-right of item icons, only for items that require large conveyors (includes modded items too).");
+
+            BlockIconOverlays = new BoolSetting(Handler, "GUI: Block Icon Overlays", true,
+                $"Adds some overlays to blocks to improve identification, currently only adds a weight icon onto vanilla heavy armor blocks.");
             #endregion
 
             #region Toolbar
