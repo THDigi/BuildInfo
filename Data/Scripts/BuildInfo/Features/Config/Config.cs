@@ -129,11 +129,8 @@ namespace Digi.BuildInfo.Features.Config
         public Config(BuildInfoMod main) : base(main)
         {
             const int ConfigSizeByteEst = 17500;
-            Handler = new ConfigHandler(FileName, ConfigVersion, ConfigSizeByteEst / 2);
-        }
 
-        public override void RegisterComponent()
-        {
+            Handler = new ConfigHandler(FileName, ConfigVersion, ConfigSizeByteEst / 2);
             Handler.SettingsLoaded += SettingsLoaded;
 
             InitSettings();
@@ -144,12 +141,16 @@ namespace Digi.BuildInfo.Features.Config
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
+        public override void RegisterComponent()
+        {
+        }
+
         public override void UnregisterComponent()
         {
+            Handler.SettingsLoaded -= SettingsLoaded;
+
             if(!Main.ComponentsRegistered)
                 return;
-
-            Handler.SettingsLoaded -= SettingsLoaded;
         }
 
         public override void UpdateAfterSim(int tick)
@@ -614,7 +615,7 @@ namespace Digi.BuildInfo.Features.Config
                 $"Only works if '{TextShow.Name}' is set to {nameof(TextShowMode.ShowOnPress)} or {nameof(TextShowMode.HudHints)}.");
 
             CycleOverlaysBind = new InputCombinationSetting(Handler, "Bind: Cycle Overlays", Combination.Create(CYCLE_OVERLAYS_INPUT_NAME, "ctrl " + MENU_BIND_INPUT_NAME),
-                $"For cycling through block overlays ({string.Join(", ", Main.Overlays.OverlayNames)}).");
+                $"For cycling through block overlays ({string.Join(", ", Overlays.Overlays.OverlayNames)}).");
 
             ToggleTransparencyBind = new InputCombinationSetting(Handler, "Bind: Toggle Transparency", Combination.Create(TOGGLE_TRANSPARENCY_INPUT_NAME, "shift " + MENU_BIND_INPUT_NAME),
                 "For toggling block transparency when equipped.");

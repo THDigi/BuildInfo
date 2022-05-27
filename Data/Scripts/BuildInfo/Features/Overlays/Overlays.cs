@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public string OverlayModeName { get; private set; }
 
         public enum ModeEnum { Off, AirtightAndSpecialized, MountPoints, Ports }
-        public readonly string[] OverlayNames = new[] { "OFF", "Airtightness + Specialized", "Mount Points", "Ports" };
+        public static readonly string[] OverlayNames = new[] { "OFF", "Airtightness + Specialized", "Mount Points", "Ports" };
 
         readonly OverlayDrawInstance[] DrawInstances;
         OverlayDrawInstance DrawInstanceBuilderHeld;

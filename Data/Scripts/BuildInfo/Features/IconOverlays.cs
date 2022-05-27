@@ -6,58 +6,53 @@ namespace Digi.BuildInfo.Features.Tooltips
 {
     public class IconOverlays : ModComponent
     {
-        bool AddIcons; // used for unloading
-        readonly List<string> TempIcons = new List<string>(4);
-
         public IconOverlays(BuildInfoMod main) : base(main)
         {
+            SetupIcons(Main.Config.BlockIconOverlays.Value);
+
+            Main.Config.BlockIconOverlays.ValueAssigned += BlockIconOverlays_ValueAssigned;
         }
 
         public override void RegisterComponent()
         {
-            Main.Config.BlockIconOverlays.ValueAssigned += BlockIconOverlays_ValueAssigned;
         }
 
         public override void UnregisterComponent()
         {
-            if(!Main.ComponentsRegistered)
-                return;
-
             Main.Config.BlockIconOverlays.ValueAssigned -= BlockIconOverlays_ValueAssigned;
 
             // reset icons to default
-            AddIcons = false;
-            ReplaceIcons();
+            SetupIcons(false);
         }
 
         void BlockIconOverlays_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
-            AddIcons = newValue;
-            ReplaceIcons();
+            SetupIcons(newValue);
         }
 
-        void ReplaceIcons()
+        void SetupIcons(bool addIcon)
         {
             string weightIcon = Path.Combine(Main.Session.ModContext.ModPath, @"Textures\IconOverlays\Weight.dds");
-            SetupGroup("ArmorHeavyCubeGroup", weightIcon);
-            SetupGroup("ArmorHeavyRampGroup", weightIcon);
-            SetupGroup("ArmorHeavyRampCornerGroup", weightIcon);
-            SetupGroup("ArmorHeavyRoundGroup", weightIcon);
-            SetupGroup("ArmorHeavySlopedCorners", weightIcon);
-            SetupGroup("ArmorHeavyTransitionBlocks", weightIcon);
-            SetupGroup("HeavyArmorPanelsGroup", weightIcon);
+            SetupGroup("ArmorHeavyCubeGroup", weightIcon, addIcon);
+            SetupGroup("ArmorHeavyRampGroup", weightIcon, addIcon);
+            SetupGroup("ArmorHeavyRampCornerGroup", weightIcon, addIcon);
+            SetupGroup("ArmorHeavyRoundGroup", weightIcon, addIcon);
+            SetupGroup("ArmorHeavySlopedCorners", weightIcon, addIcon);
+            SetupGroup("ArmorHeavyTransitionBlocks", weightIcon, addIcon);
+            SetupGroup("HeavyArmorPanelsGroup", weightIcon, addIcon);
 
             //string featherIcon = Path.Combine(Main.Session.ModContext.ModPath, @"Textures\IconOverlays\Feather.dds");
-            //SetupGroup("ArmorLightCubeGroup", featherIcon);
-            //SetupGroup("ArmorLightRampGroup", featherIcon);
-            //SetupGroup("ArmorLightRampCornerGroup", featherIcon);
-            //SetupGroup("ArmorLightRoundGroup", featherIcon);
-            //SetupGroup("ArmorLightSlopedCorners", featherIcon);
-            //SetupGroup("ArmorLightTransitionBlocks", featherIcon);
-            //SetupGroup("LightArmorPanelsGroup", featherIcon);
+            //SetupGroup("ArmorLightCubeGroup", featherIcon, addIcon);
+            //SetupGroup("ArmorLightRampGroup", featherIcon, addIcon);
+            //SetupGroup("ArmorLightRampCornerGroup", featherIcon, addIcon);
+            //SetupGroup("ArmorLightRoundGroup", featherIcon, addIcon);
+            //SetupGroup("ArmorLightSlopedCorners", featherIcon, addIcon);
+            //SetupGroup("ArmorLightTransitionBlocks", featherIcon, addIcon);
+            //SetupGroup("LightArmorPanelsGroup", featherIcon, addIcon);
         }
 
-        void SetupGroup(string groupSubtypeId, string iconPath)
+        readonly List<string> _TempIcons = new List<string>(4);
+        void SetupGroup(string groupSubtypeId, string iconPath, bool addIcon)
         {
             MyBlockVariantGroup group;
             if(!MyDefinitionManager.Static.GetBlockVariantGroupDefinitions().TryGetValue(groupSubtypeId, out group))
@@ -65,7 +60,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             foreach(MyCubeBlockDefinition def in group.Blocks)
             {
-                TempIcons.Clear();
+                _TempIcons.Clear();
 
                 for(int i = 0; i < def.Icons.Length; i++)
                 {
@@ -75,17 +70,17 @@ namespace Digi.BuildInfo.Features.Tooltips
                     if(filePath == iconPath)
                         continue;
 
-                    TempIcons.Add(filePath);
+                    _TempIcons.Add(filePath);
                 }
 
-                if(AddIcons)
+                if(addIcon)
                 {
-                    TempIcons.Add(iconPath);
+                    _TempIcons.Add(iconPath);
                 }
 
-                if(def.Icons.Length != TempIcons.Count)
+                if(def.Icons.Length != _TempIcons.Count)
                 {
-                    def.Icons = TempIcons.ToArray();
+                    def.Icons = _TempIcons.ToArray();
                 }
 
                 if(group.PrimaryGUIBlock == def)
