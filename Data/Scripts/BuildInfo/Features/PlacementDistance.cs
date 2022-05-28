@@ -113,18 +113,20 @@ namespace Digi.BuildInfo.Features
         {
             CalculateMaxRange();
 
-            // set distance depending on last distance
-            // if it was scrolled farthest then SwapAtDistance is null and equipped block is farthest
-            // otherwise, it'll maintain the closer distance
-            if(SwapAtDistance.HasValue)
+            // game only assigns MyCubeBuilder.IntersectionDistance in survival on block swap
+            if(MyAPIGateway.Session.SurvivalMode)
             {
-                MyCubeBuilder.IntersectionDistance = SwapAtDistance.Value;
-            }
-            else
-            {
-                // if set too far it'll spawn at low detail
-                if(CurrentMaxRange > 0)
+                // set distance depending on last distance
+                // if it was scrolled farthest then SwapAtDistance is null and equipped block is farthest
+                // otherwise, it'll maintain the closer distance
+                if(SwapAtDistance.HasValue)
+                {
+                    MyCubeBuilder.IntersectionDistance = SwapAtDistance.Value;
+                }
+                else
+                {
                     MyCubeBuilder.IntersectionDistance = CurrentMaxRange;
+                }
             }
         }
 
