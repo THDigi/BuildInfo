@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
@@ -99,9 +100,21 @@ namespace Digi.BuildInfo.Features
                 Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistLargeSurvivalShip = v, def.BuildingDistLargeSurvivalShip, SurvivalMaxRange));
                 Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistSmallSurvivalShip = v, def.BuildingDistSmallSurvivalShip, SurvivalMaxRange));
             }
+            else
+            {
+                MyCubeSize size = Main.EquipmentMonitor?.BlockDef?.CubeSize ?? MyCubeSize.Large;
+                MyCubeBuilder.IntersectionDistance = MathHelper.Clamp(MyCubeBuilder.IntersectionDistance, def.MinBlockBuildingDistance, VanillaIntersectionDistance(size));
+            }
+
+            ComputeNeedingUpdate();
         }
 
         void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        {
+            ComputeNeedingUpdate();
+        }
+
+        void ComputeNeedingUpdate()
         {
             CalculateMaxRange();
 
@@ -114,7 +127,7 @@ namespace Digi.BuildInfo.Features
             CalculateMaxRange();
 
             // game only assigns MyCubeBuilder.IntersectionDistance in survival on block swap
-            if(MyAPIGateway.Session.SurvivalMode)
+            if(MyAPIGateway.Session.SurvivalMode && CurrentMaxRange > 0)
             {
                 // set distance depending on last distance
                 // if it was scrolled farthest then SwapAtDistance is null and equipped block is farthest
@@ -208,6 +221,23 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.Debug.Value)
                 MyAPIGateway.Utilities.ShowNotification($"(DEBUG PlacementDistance: setDist={MyCubeBuilder.IntersectionDistance.ToString("0.##")}; max={CurrentMaxRange.ToString("0.##")})", 17);
+        }
+
+        static float VanillaIntersectionDistance(MyCubeSize size)
+        {
+            MyCubeBuilderDefinition def = MyCubeBuilder.CubeBuilderDefinition;
+
+            if(MyAPIGateway.Session.SurvivalMode)
+            {
+                if(MyAPIGateway.Session.ControlledObject is IMyShipController)
+                    return (float)(size == MyCubeSize.Small ? def.BuildingDistSmallSurvivalShip : def.BuildingDistLargeSurvivalShip);
+                else
+                    return (float)(size == MyCubeSize.Small ? def.BuildingDistSmallSurvivalCharacter : def.BuildingDistLargeSurvivalCharacter);
+            }
+            else
+            {
+                return def.MaxBlockBuildingDistance;
+            }
         }
     }
 }
