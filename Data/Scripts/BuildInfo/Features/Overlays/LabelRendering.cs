@@ -77,7 +77,9 @@ namespace Digi.BuildInfo.Features.Overlays
         public const BlendTypeEnum TextBlendType = BlendTypeEnum.PostPP;
         public const BlendTypeEnum ShadowBlendType = BlendTypeEnum.PostPP;
 
-        public static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Square");
+        public static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
+        public const float LineThickScale = 4f;
+        public const float LabelScale = 1.2f; // TODO config?
 
         public LabelRendering(BuildInfoMod mod)
         {
@@ -98,6 +100,8 @@ namespace Digi.BuildInfo.Features.Overlays
             float scale = 1f, float lineHeight = 0.5f, float lineThick = 0.005f,
             bool autoAlign = true, bool alwaysOnTop = false)
         {
+            scale *= LabelScale;
+
             MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D textWorldPos = start + direction * lineHeight;
 
@@ -114,7 +118,7 @@ namespace Digi.BuildInfo.Features.Overlays
             distanceToCam = Math.Max(distanceToCam, 1f);
             scale = scale * 0.1f * distanceToCam;
 
-            lineThick *= scale;
+            lineThick *= LineThickScale * scale;
 
             textWorldPos = start + direction * lineHeight;
 
@@ -132,6 +136,8 @@ namespace Digi.BuildInfo.Features.Overlays
             if(!Main.TextAPI.IsEnabled)
                 return;
 
+            scale *= LabelScale;
+
             MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D textWorldPos = start + direction * lineHeight;
 
@@ -148,7 +154,7 @@ namespace Digi.BuildInfo.Features.Overlays
             distanceToCam = Math.Max(distanceToCam, 1f);
             scale = scale * 0.1f * distanceToCam;
 
-            lineThick *= scale;
+            lineThick *= LineThickScale * scale;
 
             textWorldPos = start + direction * lineHeight;
 
