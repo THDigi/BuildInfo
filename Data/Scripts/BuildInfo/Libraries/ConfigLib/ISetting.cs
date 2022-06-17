@@ -12,6 +12,8 @@ namespace Digi.ConfigLib
 
         void ReadValue(string valueString, out string error);
 
+        void BeforeMultiline(string valueOnKeyLine);
+
         void WriteValue(StringBuilder output);
 
         void WriteDefaultValue(StringBuilder output);

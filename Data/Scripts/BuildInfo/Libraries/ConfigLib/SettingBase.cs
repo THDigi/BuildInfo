@@ -87,6 +87,10 @@ namespace Digi.ConfigLib
 
         public abstract void ReadValue(string valueString, out string error);
 
+        public virtual void BeforeMultiline(string valueOnKeyLine)
+        {
+        }
+
         public virtual void WriteValue(StringBuilder output)
         {
             output.Append(Value.ToString());

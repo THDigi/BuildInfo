@@ -124,9 +124,14 @@ namespace Digi.ConfigLib
 
                                 if(Settings.TryGetValue(key, out setting) || SettingsAlias.TryGetValue(key, out setting))
                                 {
-                                    if(!setting.IsMultiLine) // only send the subsequent lines for multi-line settings
+                                    string value = args[1];
+
+                                    if(setting.IsMultiLine)
                                     {
-                                        string value = args[1];
+                                        setting.BeforeMultiline(value);
+                                    }
+                                    else
+                                    {
                                         ReadLine(setting, value, lineNumber);
                                     }
                                 }
