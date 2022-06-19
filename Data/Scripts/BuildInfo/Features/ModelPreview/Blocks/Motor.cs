@@ -56,18 +56,24 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
-            if(Data.StatorDef.RotorType == MyRotorType.Rotor && InputLib.IsInputReadable())
+            if(Data.StatorDef.RotorType == MyRotorType.Rotor && MyAPIGateway.Input.IsAnyShiftKeyPressed() && InputLib.IsInputReadable())
             {
-                bool isSmall = (Data.StatorDef.CubeSize == MyCubeSize.Small);
-                float minDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMinSmall : Data.StatorDef.RotorDisplacementMin);
-                float maxDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMaxSmall : Data.StatorDef.RotorDisplacementMax);
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll != 0)
+                {
+                    bool isSmall = (Data.StatorDef.CubeSize == MyCubeSize.Small);
+                    float minDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMinSmall : Data.StatorDef.RotorDisplacementMin);
+                    float maxDisplacement = (isSmall ? Data.StatorDef.RotorDisplacementMaxSmall : Data.StatorDef.RotorDisplacementMax);
 
-                if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
-                    Displacement += (maxDisplacement - minDisplacement) / 60f; // so it takes a second to go from one end to the other
-                else if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-                    Displacement -= (maxDisplacement - minDisplacement) / 60f;
+                    float perScroll = (maxDisplacement - minDisplacement) / 10f;
 
-                Displacement = MathHelper.Clamp(Displacement, minDisplacement, maxDisplacement);
+                    if(scroll < 0)
+                        Displacement -= perScroll;
+                    else if(scroll > 0)
+                        Displacement += perScroll;
+
+                    Displacement = MathHelper.Clamp(Displacement, minDisplacement, maxDisplacement);
+                }
             }
 
             MatrixD topMatrix = Data.GetRotorMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, Displacement);
