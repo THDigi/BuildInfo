@@ -13,8 +13,6 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.ModelPreview
 {
-    // TODO: duplicate door subparts and show them closed?
-
     public class SubpartPreview : ModComponent
     {
         readonly Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>> PreviewFactory = new Dictionary<MyObjectBuilderType, Func<PreviewInstanceBase>>(MyObjectBuilderType.Comparer);
@@ -37,6 +35,8 @@ namespace Digi.BuildInfo.Features.ModelPreview
             //RegisterType<InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
 
             RegisterType<AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
+
+            RegisterType<HangarDoor>(typeof(MyObjectBuilder_AirtightHangarDoor));
         }
 
         public override void RegisterComponent()
