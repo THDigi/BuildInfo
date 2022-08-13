@@ -348,6 +348,7 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("shiptool")
                      || detectorType.EqualsIgnoreCase("merge")
                      || detectorType.EqualsIgnoreCase("collector")
+                     || detectorType.EqualsIgnoreCase("ejector")
                      || detectorType.EqualsIgnoreCase("ladder")
                      || detectorPtr.StartsWithCaseInsensitive("panel_button"))
                 {
