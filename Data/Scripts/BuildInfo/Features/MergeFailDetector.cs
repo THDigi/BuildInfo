@@ -10,28 +10,37 @@ using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
+using VRage.Utils;
 using VRageMath;
+using VRageRender;
 
 namespace Digi.BuildInfo.Features
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_MergeBlock), useEntityUpdate: false)]
     public class MergeBlock : MyGameLogicComponent
     {
-        private const string EMISSIVE_NAME = "Emissive";
-        private readonly Color COLOR_BLINK_ON = Color.Yellow;
-        private readonly Color COLOR_BLINK_OFF = Color.Red;
+        IMyShipMergeBlock block;
+        MyMergeBlockDefinition def;
+        Base6Directions.Direction forward;
+        Base6Directions.Direction right;
+        bool loadedDummies = false;
+        bool mergeFailing = false;
+        bool blinkSwitch = false;
+        ushort frameCounter = 0;
 
-        private IMyShipMergeBlock block;
-        private MyMergeBlockDefinition def;
-        private Base6Directions.Direction forward;
-        private Base6Directions.Direction right;
-        private bool loadedDummies = false;
-        private bool mergeFailing = false;
-        private bool blinkSwitch = false;
-        private ushort frameCounter = 0;
+        IMySlimBlock MarkThis;
+        IMySlimBlock MarkOther;
+
+        const float MaxDistanceBoxRenderSq = 100 * 100; // meters squared
+
+        const string EmissiveName = "Emissive";
+        static readonly Color EmissiveColorBlinkA = Color.Yellow;
+        static readonly Color EmissiveColorBlinkB = Color.Red;
+        static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -51,12 +60,17 @@ namespace Digi.BuildInfo.Features
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
 
             block.AppendingCustomInfo += CustomInfo;
+
+            block.BeforeMerge += BeforeMerge;
         }
 
         public override void MarkForClose()
         {
             if(block != null)
+            {
                 block.AppendingCustomInfo -= CustomInfo;
+                block.BeforeMerge -= BeforeMerge;
+            }
         }
 
         public override void UpdateAfterSimulation10()
@@ -76,7 +90,7 @@ namespace Digi.BuildInfo.Features
 
                 if(mergeFailing)
                 {
-                    block.SetEmissiveParts(EMISSIVE_NAME, (blinkSwitch ? COLOR_BLINK_ON : COLOR_BLINK_OFF), 1);
+                    block.SetEmissiveParts(EmissiveName, (blinkSwitch ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
                     blinkSwitch = !blinkSwitch;
                 }
 
@@ -88,12 +102,22 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void SetMergeFailing(bool failing)
+        void BeforeMerge()
+        {
+            SetMergeFailing(false);
+        }
+
+        void SetMergeFailing(bool failing)
         {
             if(mergeFailing == failing)
                 return;
 
             mergeFailing = failing;
+
+            if(failing)
+                NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
+            else
+                NeedsUpdate &= ~MyEntityUpdateEnum.EACH_FRAME;
 
             if(!failing)
             {
@@ -102,7 +126,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private bool CheckOther()
+        bool CheckOther()
         {
             if(!block.IsWorking)
                 return false;
@@ -119,7 +143,7 @@ namespace Digi.BuildInfo.Features
             return true;
         }
 
-        private void CustomInfo(IMyTerminalBlock b, StringBuilder str)
+        void CustomInfo(IMyTerminalBlock b, StringBuilder str)
         {
             try
             {
@@ -141,9 +165,16 @@ namespace Digi.BuildInfo.Features
 
                 if(mergeFailing)
                 {
-                    str.Append("WARNING: Obstruction detected.\n");
-                    str.Append("Blocks bounding box would intersect\n");
-                    str.Append(" after merge.\n");
+                    str.Append("FAILED: Obstruction detected between:\n");
+
+                    if(MarkThis != null && MarkOther != null)
+                    {
+                        str.Append("  ");
+                        AppendBlockname(str, MarkThis);
+
+                        str.Append("\nand other grid's:\n  ");
+                        AppendBlockname(str, MarkOther);
+                    }
                 }
             }
             catch(Exception e)
@@ -152,9 +183,73 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        // HACK: copied from MyShipMergeBlock
+        static void AppendBlockname(StringBuilder sb, IMySlimBlock block)
+        {
+            IMyTerminalBlock terminalBlock = block.FatBlock as IMyTerminalBlock;
+            if(terminalBlock != null)
+            {
+                sb.Append('"').Append(terminalBlock.CustomName).Append('"');
+            }
+            else
+            {
+                sb.Append(block.BlockDefinition.DisplayNameText);
+            }
+        }
+
+        public override void UpdateAfterSimulation()
+        {
+            if(MarkThis == null && MarkOther == null)
+                return;
+
+            IMySlimBlock anyBlock = (MarkThis ?? MarkOther);
+
+            Vector3D center;
+            anyBlock.ComputeWorldCenter(out center);
+            if(Vector3D.DistanceSquared(center, MyAPIGateway.Session.Camera.Position) > MaxDistanceBoxRenderSq)
+                return;
+
+            if(anyBlock.CubeGrid.BigOwners != null && anyBlock.CubeGrid.BigOwners.Count > 0 && MyAPIGateway.Session.Player != null)
+            {
+                MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(anyBlock.CubeGrid.BigOwners[0], MyAPIGateway.Session.Player.IdentityId);
+                if(relation == MyRelationsBetweenPlayers.Enemies)
+                    return;
+            }
+
+            if(MarkThis != null)
+            {
+                DrawBox(MarkThis);
+            }
+
+            if(MarkOther != null)
+            {
+                DrawBox(MarkOther);
+            }
+        }
+
+        static void DrawBox(IMySlimBlock block)
+        {
+            Color color = Color.Red;
+            bool isLarge = (block.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+            float lineWidth = (isLarge ? 0.02f : 0.016f);
+
+            MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+            MyCubeGrid grid = (MyCubeGrid)block.CubeGrid;
+
+            Vector3 halfSize = def.Size * grid.GridSizeHalf;
+            BoundingBoxD boundaries = new BoundingBoxD(-halfSize, halfSize);
+
+            Matrix localMatrix;
+            block.Orientation.GetMatrix(out localMatrix);
+            localMatrix.Translation = (block.Max + block.Min) * grid.GridSizeHalf; // local block float-center
+            MatrixD blockMatrix = localMatrix * grid.WorldMatrix;
+
+            MySimpleObjectDraw.DrawTransparentBox(ref blockMatrix, ref boundaries, ref color,
+                MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, LineMaterial, blendType: MyBillboard.BlendTypeEnum.AdditiveTop);
+        }
+
+        // HACK: copied from MyShipMergeBlock + modified
         #region Converted vanilla code
-        private void LoadDummies()
+        void LoadDummies()
         {
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
@@ -178,7 +273,7 @@ namespace Digi.BuildInfo.Features
             dummies.Clear();
         }
 
-        private void Update10()
+        void Update10()
         {
             MergeData data = new MergeData();
             CalculateMergeData(ref data);
@@ -193,7 +288,8 @@ namespace Digi.BuildInfo.Features
                     Vector3I gridOffset = CalculateOtherGridOffset(block);
                     Vector3I gridOffset2 = CalculateOtherGridOffset(other);
 
-                    if(!block.CubeGrid.CanMergeCubes(other.CubeGrid, gridOffset))
+                    //if(!block.CubeGrid.CanMergeCubes(other.CubeGrid, gridOffset))
+                    if(!CanMergeCubes((MyCubeGrid)block.CubeGrid, (MyCubeGrid)other.CubeGrid, gridOffset, out MarkThis, out MarkOther))
                     {
                         SetMergeFailing(true);
                     }
@@ -206,7 +302,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void CalculateMergeData(ref MergeData data)
+        void CalculateMergeData(ref MergeData data)
         {
             IMyShipMergeBlock other = block.Other;
 
@@ -240,7 +336,7 @@ namespace Digi.BuildInfo.Features
             data.RotationOk = (data.RotationDelta < 0.08f);
         }
 
-        private static Vector3I CalculateOtherGridOffset(IMyShipMergeBlock b)
+        static Vector3I CalculateOtherGridOffset(IMyShipMergeBlock b)
         {
             MergeBlock blockLogic = b.GameLogic.GetAs<MergeBlock>();
             IMyShipMergeBlock other = b.Other;
@@ -261,12 +357,12 @@ namespace Digi.BuildInfo.Features
             return Vector3I.Round(value + value2);
         }
 
-        private static Vector3 ConstraintPositionInGridSpace(IMyShipMergeBlock b, Base6Directions.Direction forward)
+        static Vector3 ConstraintPositionInGridSpace(IMyShipMergeBlock b, Base6Directions.Direction forward)
         {
             return b.Position * b.CubeGrid.GridSize + b.LocalMatrix.GetDirectionVector(forward) * (b.CubeGrid.GridSize * 0.5f);
         }
 
-        private struct MergeData
+        struct MergeData
         {
             public bool PositionOk;
             public bool RotationOk;
@@ -277,6 +373,77 @@ namespace Digi.BuildInfo.Features
             public float ConstraintStrength;
             public float StrengthFactor;
             public Vector3 RelativeVelocity;
+        }
+
+        static bool CanMergeCubes(MyCubeGrid thisGrid, MyCubeGrid gridToMerge, Vector3I gridOffset, out IMySlimBlock collideThis, out IMySlimBlock collideOther)
+        {
+            collideThis = null;
+            collideOther = null;
+
+            MatrixI transform = thisGrid.CalculateMergeTransform(gridToMerge, gridOffset);
+
+            foreach(IMySlimBlock slimOther in gridToMerge.GetBlocks())
+            {
+                Vector3I start = slimOther.Min;
+                Vector3I end = slimOther.Max;
+                Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref start, ref end);
+
+                while(iterator.IsValid())
+                {
+                    Vector3I posMerge = iterator.Current;
+                    iterator.MoveNext();
+
+                    Vector3I posThis = Vector3I.Transform(posMerge, transform);
+                    IMySlimBlock slimThis = thisGrid.GetCubeBlock(posThis);
+
+                    if(slimThis == null)
+                        continue;
+
+                    collideThis = slimThis;
+                    collideOther = slimOther;
+
+                    // removed compound block checks as SE does not support it
+
+                    if(slimThis?.FatBlock != null && slimOther?.FatBlock != null)
+                    {
+                        IMyPistonTop pistonTop;
+                        if(slimOther.FatBlock is IMyPistonTop)
+                        {
+                            pistonTop = (IMyPistonTop)slimOther.FatBlock;
+                        }
+                        else
+                        {
+                            if(!(slimThis.FatBlock is IMyPistonTop))
+                                return false;
+
+                            pistonTop = (IMyPistonTop)slimThis.FatBlock;
+                        }
+
+                        IMyPistonBase pistonBase;
+                        if(slimOther.FatBlock is IMyPistonBase)
+                        {
+                            pistonBase = (IMyPistonBase)slimOther.FatBlock;
+                        }
+                        else
+                        {
+                            if(!(slimThis.FatBlock is IMyPistonBase))
+                                return false;
+
+                            pistonBase = (IMyPistonBase)slimThis.FatBlock;
+                        }
+
+                        if((pistonBase.Top != null && pistonBase.Top.EntityId == pistonTop.EntityId)
+                        || (pistonTop.Base != null && pistonTop.Base.EntityId == pistonBase.EntityId))
+                        {
+                            continue;
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
         #endregion Converted vanilla code
     }
