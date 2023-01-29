@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.ComponentLib;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game.ModAPI;
@@ -41,6 +42,8 @@ namespace Digi.BuildInfo.Features.HUD
         int Containers = 0;
         bool WasInShip = false;
         bool UsingGroup;
+        static readonly List<IMyCubeGrid> TempGrids = new List<IMyCubeGrid>();
+        static readonly List<IMyTerminalBlock> TempBlocks = new List<IMyTerminalBlock>();
 
         public BackpackBarStat()
         {
@@ -82,35 +85,54 @@ namespace Digi.BuildInfo.Features.HUD
                         if(gts == null)
                             return;
 
-                        List<IMyTerminalBlock> blocks = BuildInfoMod.Instance.ShipToolInventoryBar.Blocks;
-                        blocks.Clear();
-
                         IMyBlockGroup group = gts.GetBlockGroupWithName(GroupName);
                         UsingGroup = (group != null);
                         if(UsingGroup)
-                            group.GetBlocks(blocks);
-                        else
-                            gts.GetBlocksOfType<IMyCargoContainer>(blocks);
-
-                        foreach(IMyTerminalBlock block in blocks)
                         {
-                            //if(!UsingGroup && !(block is IMyCargoContainer || block is IMyShipConnector || block is IMyCollector))
-                            //    continue;
+                            TempBlocks.Clear();
+                            group.GetBlocks(TempBlocks);
 
-                            if(!block.IsSameConstructAs(controlled))
-                                continue;
-
-                            Containers++;
-
-                            for(int i = 0; i < block.InventoryCount; i++)
+                            foreach(IMyTerminalBlock block in TempBlocks)
                             {
-                                IMyInventory inv = block.GetInventory(i);
-                                currentTotal += (float)inv.CurrentVolume * 1000; // add as liters
-                                maxTotal += (float)inv.MaxVolume * 1000;
+                                if(!block.IsSameConstructAs(controlled))
+                                    continue;
+
+                                Containers++;
+
+                                for(int i = 0; i < block.InventoryCount; i++)
+                                {
+                                    IMyInventory inv = block.GetInventory(i);
+                                    currentTotal += (float)inv.CurrentVolume * 1000; // add as liters
+                                    maxTotal += (float)inv.MaxVolume * 1000;
+                                }
                             }
                         }
+                        else
+                        {
+                            TempGrids.Clear();
+                            MyAPIGateway.GridGroups.GetGroup(controlled.CubeGrid, GridLinkTypeEnum.Logical, TempGrids);
 
-                        blocks.Clear();
+                            foreach(MyCubeGrid grid in TempGrids)
+                            {
+                                foreach(MyCubeBlock block in grid.GetFatBlocks())
+                                {
+                                    //if(!(block is IMyCargoContainer || block is IMyShipConnector || block is IMyCollector))
+                                    //    continue;
+
+                                    if(!(block is IMyCargoContainer))
+                                        continue;
+
+                                    Containers++;
+
+                                    for(int i = 0; i < block.InventoryCount; i++)
+                                    {
+                                        IMyInventory inv = block.GetInventory(i);
+                                        currentTotal += (float)inv.CurrentVolume * 1000; // add as liters
+                                        maxTotal += (float)inv.MaxVolume * 1000;
+                                    }
+                                }
+                            }
+                        }
 
                         MaxValue = maxTotal;
                         CurrentValue = currentTotal;
@@ -135,6 +157,11 @@ namespace Digi.BuildInfo.Features.HUD
             catch(Exception e)
             {
                 Log.Error(e);
+            }
+            finally
+            {
+                TempBlocks.Clear();
+                TempGrids.Clear();
             }
         }
 

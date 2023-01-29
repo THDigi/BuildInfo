@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
-using VRage.Game.ModAPI.Interfaces;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
+using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features
 {
@@ -20,24 +22,29 @@ namespace Digi.BuildInfo.Features
     {
         public bool Shown { get; private set; } = false;
 
-        public readonly List<IMyTerminalBlock> Blocks = new List<IMyTerminalBlock>(4);
+        bool ShouldUpdate;
+        bool UsingTool;
+        MyStringId BarIcon;
+        float FilledRatio;
+        int CanRefreshAfterTick;
 
-        private bool ShouldShow = false;
+        List<IMyCubeGrid> TempGrids = new List<IMyCubeGrid>();
 
-        private float FilledRatio = 0f;
+        static readonly MyObjectBuilderType TypeGrinder = typeof(MyObjectBuilder_ShipGrinder);
+        static readonly MyObjectBuilderType TypeDrill = typeof(MyObjectBuilder_Drill);
 
-        private const int FillComputeEveryTicks = 30; // computes fill every these ticks
-        private readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
-        private readonly MyStringId DrillIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
-        private readonly MyStringId BarMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
-        private readonly Vector2D DefaultSize = new Vector2D(32, 2.8) * 0.001;
-        private readonly Vector4 BgColor = (new Color(80, 100, 120) * (120f / 255f)).ToVector4();
-        private readonly Vector4 IconColor = Color.White.ToVector4(); // new Color(186, 238, 249).ToVector4();
-        private readonly Vector4 BarColor = new Color(136, 218, 240).ToVector4();
-        private const float WarnAboveFillRatio = 0.7f;
-        private readonly Vector4 BarWarnColor1 = new Color(200, 80, 0).ToVector4();
-        private readonly Vector4 BarWarnColor2 = new Color(200, 0, 0).ToVector4();
-        private const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
+        const int FillComputeEveryTicks = 30; // computes fill every these ticks
+        readonly MyStringId GrinderIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryGrinderIcon");
+        readonly MyStringId DrillIconMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryDrillIcon");
+        readonly MyStringId BarMaterial = MyStringId.GetOrCompute("BuildInfo_UI_ToolInventoryBar");
+        readonly Vector2D DefaultSize = new Vector2D(32, 2.8) * 0.001;
+        readonly Vector4 BgColor = (new Color(80, 100, 120) * (120f / 255f)).ToVector4();
+        readonly Vector4 IconColor = Color.White.ToVector4(); // new Color(186, 238, 249).ToVector4();
+        readonly Vector4 BarColor = new Color(136, 218, 240).ToVector4();
+        const float WarnAboveFillRatio = 0.7f;
+        readonly Vector4 BarWarnColor1 = new Color(200, 80, 0).ToVector4();
+        readonly Vector4 BarWarnColor2 = new Color(200, 0, 0).ToVector4();
+        const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         public ShipToolInventoryBar(BuildInfoMod main) : base(main)
         {
@@ -47,7 +54,7 @@ namespace Digi.BuildInfo.Features
         {
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-            Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+            Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
             Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
         }
 
@@ -58,7 +65,7 @@ namespace Digi.BuildInfo.Features
 
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-            Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
+            Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
             Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
         }
 
@@ -74,104 +81,107 @@ namespace Digi.BuildInfo.Features
 
         void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            UpdateShow();
-            UpdateFillRatio(MyAPIGateway.Session.ControlledObject as IMyShipController);
+            UpdateShow(force: true);
         }
 
-        void UpdateShow()
+        void EquipmentMonitor_ControlledChanged(IMyControllableEntity controlled)
         {
-            ShouldShow = (Main.GameConfig.HudState != HudState.OFF
-                      && Main.Config.ShipToolInvBarShow.Value
-                      //&& !MyAPIGateway.Input.IsJoystickLastUsed // not even working properly with gamepad, apart from not looking properly
-                      && (Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder) || Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill)));
-
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldShow);
+            UpdateShow(force: true);
         }
 
-        void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
+        void UpdateShow(bool force = false)
         {
-            if(shipController == null || !ShouldShow || MyAPIGateway.Gui.IsCursorVisible)
+            if(!force && Main.Tick < CanRefreshAfterTick)
                 return;
 
-            if(tick % FillComputeEveryTicks == 0)
+            CanRefreshAfterTick = Main.Tick + FillComputeEveryTicks;
+
+            TempGrids.Clear();
+
+            IMyShipController ctrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            ShouldUpdate = ctrl != null && ctrl.CanControlShip && !MyAPIGateway.Input.IsJoystickLastUsed && Main.GameConfig.HudState != HudState.OFF && Main.Config.ShipToolInvBarShow.Value;
+            UsingTool = Main.EquipmentMonitor.ToolDefId.TypeId == TypeGrinder || Main.EquipmentMonitor.ToolDefId.TypeId == TypeDrill;
+
+            if(UsingTool)
+                BarIcon = Main.EquipmentMonitor.IsAnyGrinder ? GrinderIconMaterial : DrillIconMaterial;
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldUpdate);
+
+            if(ShouldUpdate && !UsingTool)
             {
-                UpdateFillRatio(shipController);
+                MyAPIGateway.GridGroups.GetGroup(ctrl.CubeGrid, GridLinkTypeEnum.Logical, TempGrids);
+
+                float highestFilledGrinder = 0f;
+                float highestFilledDrill = 0f;
+                bool grindersOn = false;
+                bool drillsOn = false;
+
+                foreach(MyCubeGrid grid in TempGrids)
+                {
+                    int grinders = grid.BlocksCounters.GetValueOrDefault(TypeGrinder, 0);
+                    int drills = grid.BlocksCounters.GetValueOrDefault(TypeDrill, 0);
+
+                    if(grinders == 0 && drills == 0)
+                        continue;
+
+                    foreach(MyCubeBlock block in grid.GetFatBlocks())
+                    {
+                        MyObjectBuilderType typeId = block.BlockDefinition.Id.TypeId;
+                        if(typeId != TypeGrinder && typeId != TypeDrill)
+                            continue;
+
+                        IMyInventory inv = block.GetInventory(0);
+                        if(inv == null || inv.MaxVolume <= 0)
+                            continue;
+
+                        float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
+                        IMyFunctionalBlock functional = (IMyFunctionalBlock)block;
+
+                        if(typeId == TypeGrinder)
+                        {
+                            grindersOn |= functional.Enabled;
+                            highestFilledGrinder = Math.Max(highestFilledGrinder, filled);
+                        }
+                        else
+                        {
+                            drillsOn |= functional.Enabled;
+                            highestFilledDrill = Math.Max(highestFilledDrill, filled);
+                        }
+                    }
+                }
+
+                if(grindersOn && drillsOn)
+                {
+                    // I don't even
+                }
+                else if(grindersOn)
+                {
+                    UsingTool = true;
+                    FilledRatio = highestFilledGrinder;
+                    BarIcon = GrinderIconMaterial;
+                }
+                else if(drillsOn)
+                {
+                    UsingTool = true;
+                    FilledRatio = highestFilledDrill;
+                    BarIcon = DrillIconMaterial;
+                }
+
+                TempGrids.Clear();
             }
         }
-
-        void UpdateFillRatio(IMyShipController shipController)
-        {
-            if(shipController == null)
-                return;
-
-            FilledRatio = 0;
-
-            if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_Drill))
-            {
-                FilledRatio = GetHighestFilledRatio<IMyShipDrill>(shipController.CubeGrid, Blocks);
-            }
-            else if(Main.EquipmentMonitor.ToolDefId.TypeId == typeof(MyObjectBuilder_ShipGrinder))
-            {
-                FilledRatio = GetHighestFilledRatio<IMyShipGrinder>(shipController.CubeGrid, Blocks);
-            }
-        }
-
-        static float GetHighestFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
-        {
-            float highestFilled = 0;
-
-            blocks.Clear();
-
-            // NOTE: ship tool toolbar item's click turns on tools beyond rotors/pistons and connectors aswell, so no filtering here.
-            IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
-            gts?.GetBlocksOfType<T>(blocks);
-
-            foreach(T block in blocks)
-            {
-                IMyInventory inv = block.GetInventory(0);
-                if(inv == null || inv.MaxVolume <= 0)
-                    continue;
-
-                float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
-                highestFilled = Math.Max(highestFilled, filled);
-            }
-
-            blocks.Clear();
-
-            return highestFilled;
-        }
-
-        //static float GetFilledRatio<T>(IMyCubeGrid grid, List<IMyTerminalBlock> blocks) where T : class, IMyTerminalBlock
-        //{
-        //    float volume = 0;
-        //    float maxVolume = 0;
-        //
-        //    blocks.Clear();
-        //
-        //    // NOTE: ship tool toolbar item's click turns on tools beyond rotors/pistons and connectors aswell, so no filtering here.
-        //    IMyGridTerminalSystem gts = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
-        //    gts?.GetBlocksOfType<T>(blocks);
-        //
-        //    foreach(T block in blocks)
-        //    {
-        //        IMyInventory inv = block.GetInventory(0);
-        //        if(inv == null)
-        //            continue;
-        //
-        //        volume += (float)inv.CurrentVolume;
-        //        maxVolume += (float)inv.MaxVolume;
-        //    }
-        //
-        //    blocks.Clear();
-        //
-        //    return (maxVolume > 0 ? MathHelper.Clamp(volume / maxVolume, 0, 1) : 0);
-        //}
 
         public override void UpdateDraw()
         {
             Shown = false;
 
-            if(!ShouldShow || MyAPIGateway.Gui.IsCursorVisible)
+            if(!ShouldUpdate || MyAPIGateway.Gui.IsCursorVisible)
+                return;
+
+            if(Main.Tick % FillComputeEveryTicks == 0)
+                UpdateShow();
+
+            if(!UsingTool)
                 return;
 
             Shown = true;
@@ -184,14 +194,7 @@ namespace Digi.BuildInfo.Features
             float h = (float)(size.Y * Main.DrawUtils.ScaleFOV);
 
             MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
-
-            MyStringId iconMaterial;
-            if(Main.EquipmentMonitor.IsAnyGrinder)
-                iconMaterial = GrinderIconMaterial;
-            else
-                iconMaterial = DrillIconMaterial;
-
-            MyTransparentGeometry.AddBillboardOriented(iconMaterial, IconColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
+            MyTransparentGeometry.AddBillboardOriented(BarIcon, IconColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
 
             if(FilledRatio > 0)
             {
