@@ -2612,7 +2612,7 @@ namespace Digi.BuildInfo.Features
                 if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
                 {
                     // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var because planetary influence is air density.
-                    // TODO: test if this NeedsAtmosphereForInfluence actually does anything with earth, mars, moon and space.
+                    // tested NeedsAtmosphereForInfluence=false with atmos thrusts and they don't work.
 
                     // renamed to what they actually are for simpler code
                     float minAir = thrust.MinPlanetaryInfluence;
@@ -2636,9 +2636,7 @@ namespace Digi.BuildInfo.Features
                         AddLine().Append(' ', PrefixSpaces).Append("| Max air density: ").ProportionToPercent(maxAir);
                         AddLine().Append(' ', PrefixSpaces).Append("| Thrust at min air: ").ProportionToPercent(thrustAtMinAir);
                         AddLine().Append(' ', PrefixSpaces).Append("| Thrust at max air: ").ProportionToPercent(thrustAtMaxAir);
-
-                        if(thrust.NeedsAtmosphereForInfluence)
-                            AddLine().Append("No atmosphere causes 'thrust at min air'.");
+                        //AddLine().Append(' ', PrefixSpaces).Append("| NeedsAtmosphereForInfluence: ").Append(thrust.NeedsAtmosphereForInfluence);
                     }
                     else
                     {

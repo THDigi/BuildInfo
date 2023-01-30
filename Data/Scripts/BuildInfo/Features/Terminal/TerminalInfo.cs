@@ -1293,6 +1293,9 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("Requires: ").Append(thrustInfo.Fuel.SubtypeName).Append('\n');
 
+                MyThrust thrustInternal = (MyThrust)block;
+                info.Append("Connected to fuel: ").Append(thrustInternal.IsPowered ? "Yes" : "No - WARNING!").Append('\n');
+
                 info.Append("Current Usage*: ").VolumeFormat(thrustInfo.CurrentUsage).Append("/s");
                 if(Math.Abs(thrustInfo.CurrentConsumptionMul - 1) > 0.001f)
                     info.Append(" (x").RoundedNumber(thrustInfo.CurrentConsumptionMul, 2).Append(")");
@@ -1318,7 +1321,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append('\n');
             }
 
-            info.Append('\n');
+            //info.Append('\n');
 
             // HACK NOTE: def.NeedsAtmosphereForInfluence does nothing, influence is always air density
             if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
@@ -1340,9 +1343,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Append(" Max air density: ").ProportionToPercent(maxAir).Append('\n');
                     info.Append(" Thrust at min air: ").ProportionToPercent(thrustAtMinAir).Append('\n');
                     info.Append(" Thrust at max air: ").ProportionToPercent(thrustAtMaxAir).Append('\n');
-
-                    if(def.NeedsAtmosphereForInfluence)
-                        info.Append(" No atmosphere causes 'thrust at min air'.\n");
+                    //info.Append(" NeedsAtmosphereForInfluence: ").Append(def.NeedsAtmosphereForInfluence).Append(".\n");
                 }
                 else
                 {
@@ -1356,7 +1357,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Append('\n');
 
                     info.Append("  ").ProportionToPercent(thrustAtMinAir).Append(" thrust ");
-                    if(def.NeedsAtmosphereForInfluence || minAir <= 0f)
+                    if(minAir <= 0f) // || def.NeedsAtmosphereForInfluence
                         info.Append("in vacuum.");
                     else
                         info.Append("below ").ProportionToPercent(minAir).Append(" air density.");
