@@ -340,6 +340,7 @@ namespace Digi.BuildInfo.VanillaData
                     currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
             }
 
+            // IMyThrust.PowerConsumptionMultiplier is included in MyThrust.Min/MaxPowerConsumption
             float maxPowerUsage = thrustInternal.MaxPowerConsumption;
             float gravityLength = BuildInfoMod.Instance.Caches.GetGravityLengthAtGrid(thrust.CubeGrid);
 
