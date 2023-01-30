@@ -50,7 +50,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 //    return;
 
                 // HACK: not overriding status when in GUI because it can be for timers/other toolbars and no idea which is which...
-                // TODO: maybe find a way to detect them and maybe even label events slots for airvent and such...
                 // Also no status override for gamepad HUD because it doesn't sync with the rest of the system so won't work.
                 if((MyAPIGateway.Gui.IsCursorVisible && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
                 || (!ToolbarMonitor.EnableGamepadSupport && MyAPIGateway.Input.IsJoystickLastUsed))
@@ -67,7 +66,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 int max = toolbarMonitor.SequencedItems.Count;
                 int num = toolbarMonitor.WrapperSlotIndex;
                 if(num >= max)
+                {
+                    AppendOriginalStatus(block, sb);
                     return;
+                }
 
                 // HACK: find next matching slot, it could not match if a mod adds actions via event which won't have this status override class
                 // other issues are PBs or timer blocks calling actions and causing the writer to get triggered, desynchronizing the order.
@@ -76,7 +78,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     num++;
                     if(num >= max)
+                    {
+                        AppendOriginalStatus(block, sb);
                         return;
+                    }
 
                     toolbarItem = toolbarMonitor.SequencedItems[num];
                 }
@@ -85,7 +90,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 toolbarMonitor.WrapperSlotIndex = num + 1;
 
                 if(toolbarMonitor.ToolbarPage != (toolbarItem.Index / ToolbarMonitor.SlotsPerPage))
+                {
+                    AppendOriginalStatus(block, sb);
                     return;
+                }
 
                 // update some properties that are easily accessible in this context.
                 if(toolbarItem.ActionWrapper == null)
