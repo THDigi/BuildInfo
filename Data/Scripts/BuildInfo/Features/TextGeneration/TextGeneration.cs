@@ -3272,6 +3272,8 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
                 {
                     AddLine().Label("Needs fuel").ItemName(h2Engine.Fuel.FuelId);
+
+                    // HACK: hardcoded h2 consumption rate
                     AddLine().Label("Consumption").VolumeFormat(h2Engine.MaxPowerOutput / h2Engine.FuelProductionToCapacityMultiplier).Append("/s");
 
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
