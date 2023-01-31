@@ -1212,7 +1212,41 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Output: 0 W
             //      Filled: 0.0% (0L/500000L)
 
-            info.DetailInfo_InputHydrogen(Sink);
+            // H2 engine only uses one fuel but can be any gas.
+            info.DetailInfo_InputGasList(Sink);
+
+            IMyPowerProducer producer = block as IMyPowerProducer;
+            MyHydrogenEngineDefinition def = block.SlimBlock.BlockDefinition as MyHydrogenEngineDefinition;
+            if(producer != null && def != null)
+            {
+                MyDefinitionId fuelId = def.Fuel.FuelId;
+                float filledGasTank = Source.RemainingCapacityByType(fuelId);
+
+                // HACK: hardcoded h2 fuel consumption
+                float maxBurnRate = (def.MaxPowerOutput / def.FuelProductionToCapacityMultiplier);
+                float burnRate = (producer.CurrentOutput / producer.MaxOutput) * maxBurnRate;
+
+                info.DetailInfo_CustomGas("Uses", fuelId, burnRate, maxBurnRate);
+
+                if(filledGasTank < def.FuelCapacity)
+                {
+                    float input = Sink.CurrentInputByType(fuelId);
+
+                    if(input > burnRate)
+                    {
+                        float filling = (input - burnRate);
+                        double remainingGas = def.FuelCapacity - filledGasTank;
+                        float timeToFill = (float)(remainingGas / filling);
+                        info.Append("Filled in: ").TimeFormat(timeToFill).Append('\n');
+                    }
+                    else if(burnRate > input)
+                    {
+                        float draining = (burnRate - input);
+                        float timeToEmpty = (float)(filledGasTank / draining);
+                        info.Append("Empty in: ").TimeFormat(timeToEmpty).Append('\n');
+                    }
+                }
+            }
 
             Suffix_PowerSourceGridStats(block, info);
         }

@@ -1253,6 +1253,22 @@ namespace Digi.BuildInfo.Utilities
 
             return s;
         }
+
+        public static StringBuilder DetailInfo_CustomGas(this StringBuilder s, string title, MyDefinitionId resId, float current, float max)
+        {
+            s.Append(title).Append(' ');
+
+            if(resId == MyResourceDistributorComponent.HydrogenId)
+                s.Append("H2");
+            else if(resId == MyResourceDistributorComponent.OxygenId)
+                s.Append("O2");
+            else
+                s.Append(resId.SubtypeName);
+
+            s.Append(": ").VolumeFormat(current).Append("/s (max: ").VolumeFormat(max).Append("/s)\n");
+
+            return s;
+        }
         #endregion Detailed info formats
     }
 }
