@@ -924,7 +924,7 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder IdTypeSubtypeFormat(this StringBuilder s, MyDefinitionId id, bool useFriendlyName = true)
+        public static StringBuilder IdFriendlyFormat(this StringBuilder s, MyDefinitionId id)
         {
             if(id == MyResourceDistributorComponent.ElectricityId)
                 return s.Append("Electricity");
@@ -941,7 +941,43 @@ namespace Digi.BuildInfo.Utilities
             if(id.TypeId == typeof(MyObjectBuilder_GasContainerObject) || id.TypeId == typeof(MyObjectBuilder_OxygenContainerObject))
                 return s.Append(id.SubtypeName).Append(" bottle");
 
+            if(id.TypeId == typeof(MyObjectBuilder_BlueprintDefinition) || id.TypeId == typeof(MyObjectBuilder_CompositeBlueprintDefinition))
+                return s.Append(id.SubtypeName).Append(" bp");
+
             return s.Append(id.SubtypeName).Append(' ').IdTypeFormat(id.TypeId);
+        }
+
+        /// <summary>
+        /// Append only first line of the given string.
+        /// </summary>
+        public static StringBuilder FirstLine(this StringBuilder s, string multiLineString)
+        {
+            int newLineIdx = multiLineString.IndexOf('\n');
+            if(newLineIdx != -1)
+                s.Append(multiLineString, 0, newLineIdx);
+            else
+                s.Append(multiLineString);
+
+            return s;
+        }
+
+        public static StringBuilder DefinitionName(this StringBuilder s, MyDefinitionBase def)
+        {
+            if(def == null)
+                return s.Append("(Inexistent) ").IdFriendlyFormat(def.Id);
+
+            string name = def.DisplayNameText;
+            if(!string.IsNullOrWhiteSpace(name) && name[0] != '\n')
+            {
+                int newLineIdx = name.IndexOf('\n');
+                if(newLineIdx != -1)
+                    s.Append(name, 0, newLineIdx);
+                else
+                    s.Append(name);
+            }
+            else
+                s.IdFriendlyFormat(def.Id);
+            return s;
         }
 
         /// <summary>

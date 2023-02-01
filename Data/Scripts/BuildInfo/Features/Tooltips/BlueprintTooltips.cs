@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game;
 
@@ -8,16 +10,12 @@ namespace Digi.BuildInfo.Features.Tooltips
 {
     public class BlueprintTooltips : ModComponent
     {
-        const int ListLimit = 6;
-
-        Dictionary<string, Sizes> TmpNameAndSize = new Dictionary<string, Sizes>();
+        List<MyBlueprintDefinitionBase.ProductionInfo> StackedBlueprints = new List<MyBlueprintDefinitionBase.ProductionInfo>();
 
         void DisposeTempObjects()
         {
-            TmpNameAndSize = null;
+            StackedBlueprints = null;
         }
-
-        enum Sizes { Small, Large, Both, HandWeapon }
 
         StringBuilder SB = new StringBuilder(512);
 
@@ -89,7 +87,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
 
             #region internal info
-            const string BpIdLabel = "\nBlueprint Id: ";
+            const string BpIdLabel = "\n\nBlueprint Id: ";
             // TODO crafted items too?
             //const string CraftIdLabel = "\nCrafted Id: ";
 
@@ -103,7 +101,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = bpBaseDef.Id.TypeId.ToString();
-                SB.Append(BpIdLabel).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(bpBaseDef.Id.SubtypeName);
+                SB.TrimEndWhitespace().Append(BpIdLabel).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(bpBaseDef.Id.SubtypeName);
 
                 //var resultDef = bpDef.Results...;
 
@@ -111,6 +109,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                 //TempSB.Append(BpIdLabel).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(bpDef.Id.SubtypeName);
             }
             #endregion internal info
+
+            SB.TrimEndWhitespace().Append("\n"); // for the progress % to be on its own line, when hovering queued item in assembler
 
             bpBaseDef.DisplayNameEnum = null; // prevent this from being used instead of DisplayNameString
             bpBaseDef.DisplayNameString = SB.ToString();
@@ -120,12 +120,13 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             s.Append('\n');
 
+            BuildTime(s, bpBaseDef);
+
             if(!Main.TooltipHandler.IgnoreModItems.Contains(bpBaseDef.Id))
             {
                 if(bpBaseDef.Results != null && bpBaseDef.Results.Length > 0)
                 {
                     TooltipDescription(s, bpBaseDef);
-                    TooltipPhysItemResult(s, bpBaseDef);
                 }
             }
 
@@ -134,71 +135,156 @@ namespace Digi.BuildInfo.Features.Tooltips
             s.TrimEndWhitespace();
         }
 
-        void TooltipDescription(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        void BuildTime(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
-            const int MaxWidth = 70;
-
-            MyCompositeBlueprintDefinition compositeBp = bpBaseDef as MyCompositeBlueprintDefinition;
-            if(compositeBp != null)
+            List<MyProductionBlockDefinition> prodDefs;
+            if(Main.TooltipHandler.TmpBpUsedIn.TryGetValue(bpBaseDef.Id, out prodDefs))
             {
-                MyDefinitionId id;
-                if(MyDefinitionId.TryParse("MyObjectBuilder_" + bpBaseDef.Id.SubtypeName, out id))
+                bool inRefinery = false;
+                bool inAssembler = false;
+
+                float refineMin = float.MaxValue;
+                float refineMax = float.MinValue;
+
+                float assembleMin = float.MaxValue;
+                float assembleMax = float.MinValue;
+
+                foreach(MyProductionBlockDefinition prodDef in prodDefs)
                 {
-                    MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(id);
-                    if(def != null)
+                    var assemblerDef = prodDef as MyAssemblerDefinition;
+                    if(assemblerDef != null)
                     {
-                        string desc = def.DescriptionText;
-                        if(!string.IsNullOrWhiteSpace(desc))
-                        {
-                            s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
-                        }
+                        inAssembler = true;
+                        float time = Hardcoded.Assembler_BpProductionTime(bpBaseDef, assemblerDef);
+                        assembleMin = Math.Min(assembleMin, time);
+                        assembleMax = Math.Max(assembleMax, time);
+                        continue;
+                    }
+
+                    var refineryDef = prodDef as MyRefineryDefinition;
+                    if(refineryDef != null)
+                    {
+                        inRefinery = true;
+                        float time = Hardcoded.Refinery_BpProductionTime(bpBaseDef, refineryDef);
+                        refineMin = Math.Min(refineMin, time);
+                        refineMax = Math.Max(refineMax, time);
+                        continue;
                     }
                 }
 
-                return;
-            }
-
-            MyDefinitionBase resultDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id);
-            if(resultDef != null)
-            {
-                bool appendedDescription = false;
-                string desc = resultDef.DescriptionText;
-                if(!string.IsNullOrWhiteSpace(desc))
+                if(inRefinery != inAssembler)
                 {
-                    s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
-                    appendedDescription = true;
-                }
+                    float min, max;
 
-                MyPhysicalItemDefinition physDef = resultDef as MyPhysicalItemDefinition;
-                if(physDef != null)
-                {
-                    /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
-                    string tooltip = physDef.ExtraInventoryTooltipLine?.ToString();
-                    string bpTooltip = bpBaseDef.DisplayNameText;
-
-                    // don't add this if another mod already did
-                    if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
+                    if(inRefinery)
                     {
-                        s.TrimEndWhitespace().Append(appendedDescription ? "\n" : "\n\n").AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append("\n");
+                        min = refineMin;
+                        max = refineMax;
                     }
-                }
+                    else //if(inAssembler)
+                    {
+                        min = assembleMin;
+                        max = assembleMax;
+                    }
 
-                return;
+                    s.Append("Stock build time: ");
+                    if(Math.Abs(min - max) > 0.1f)
+                        s.TimeFormat(min).Append(" ~ ").TimeFormat(max).Append('\n');
+                    else
+                        s.TimeFormat(min).Append('\n');
+                }
             }
         }
 
-        void TooltipPhysItemResult(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
+        void TooltipDescription(StringBuilder s, MyBlueprintDefinitionBase bpBaseDef)
         {
-            MyPhysicalItemDefinition physDef = MyDefinitionManager.Static.GetDefinition(bpBaseDef.Results[0].Id) as MyPhysicalItemDefinition;
-            if(physDef == null)
-                return;
+            const int MaxWidth = 70;
+            MyDefinitionBase def;
 
-            ItemTooltips it = Main.ItemTooltips;
-            it.TooltipBottle(s, physDef, true);
-            it.TooltipTool(s, physDef, true);
-            it.TooltipWeapon(s, physDef, true);
-            it.TooltipAmmo(s, physDef, true);
-            it.TooltipConsumable(s, physDef, true);
+            // likely a block blueprint which adds all its components to queue.
+            MyCompositeBlueprintDefinition compositeBp = bpBaseDef as MyCompositeBlueprintDefinition;
+            if(compositeBp != null)
+            {
+                StackedBlueprints.Clear();
+                compositeBp.GetBlueprints(StackedBlueprints);
+
+                // the subtypeId of the blueprint is the block's Id in "typeId/subtypeId" format, so we can use that directly to get the block.
+                MyDefinitionId id;
+                if(MyDefinitionId.TryParse(bpBaseDef.Id.SubtypeName, out id) && MyDefinitionManager.Static.TryGetDefinition(id, out def))
+                {
+                    //string desc = def.DescriptionText;
+                    //if(!string.IsNullOrWhiteSpace(desc))
+                    //{
+                    //    s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n\n");
+                    //}
+
+                    s.Append("Adds block's components to queue:\n");
+                }
+                else
+                {
+                    s.Append("Adds to queue:\n");
+                }
+
+                foreach(MyBlueprintDefinitionBase.ProductionInfo bpInfo in StackedBlueprints)
+                {
+                    s.Append("• ").RoundedNumber((float)bpInfo.Amount, 2).Append("x ").DefinitionName(bpInfo.Blueprint).Append('\n');
+                }
+
+                StackedBlueprints.Clear();
+                return;
+            }
+
+            if(bpBaseDef.Results.Length > 1)
+            {
+                s.TrimEndWhitespace().Append("\nMultiple results:\n");
+
+                foreach(MyBlueprintDefinitionBase.Item result in bpBaseDef.Results)
+                {
+                    s.Append("• ").RoundedNumber((float)result.Amount, 2).Append("x ");
+
+                    if(!MyDefinitionManager.Static.TryGetDefinition(result.Id, out def))
+                        def = null;
+
+                    s.DefinitionName(def).Append('\n');
+
+                    // no tooltips as it would be too long probably.
+                }
+            }
+            else
+            {
+                if(MyDefinitionManager.Static.TryGetDefinition(bpBaseDef.Results[0].Id, out def))
+                {
+                    bool appendedDescription = false;
+                    string desc = def.DescriptionText;
+                    if(!string.IsNullOrWhiteSpace(desc))
+                    {
+                        s.TrimEndWhitespace().Append('\n').AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append('\n');
+                        appendedDescription = true;
+                    }
+
+                    MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
+                    if(physDef != null)
+                    {
+                        /// NOTE: this is before <see cref="ItemTooltips"/> appends stuff to it.
+                        string tooltip = physDef.ExtraInventoryTooltipLine?.ToString();
+                        string bpTooltip = bpBaseDef.DisplayNameText;
+
+                        // don't add this if another mod already did
+                        if(!string.IsNullOrWhiteSpace(tooltip) && !bpTooltip.Contains(tooltip))
+                        {
+                            s.TrimEndWhitespace().Append(appendedDescription ? "\n" : "\n\n").AppendWordWrapped(tooltip, MaxWidth).TrimEndWhitespace().Append('\n');
+                        }
+
+                        // only specific BI's item tooltips added to the blueprint name
+                        ItemTooltips it = Main.ItemTooltips;
+                        it.TooltipBottle(s, physDef, true);
+                        it.TooltipTool(s, physDef, true);
+                        it.TooltipWeapon(s, physDef, true);
+                        it.TooltipAmmo(s, physDef, true);
+                        it.TooltipConsumable(s, physDef, true);
+                    }
+                }
+            }
         }
     }
 }

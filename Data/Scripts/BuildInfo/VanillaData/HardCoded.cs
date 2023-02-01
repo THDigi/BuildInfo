@@ -39,16 +39,16 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         // from MyAssembler.CalculateBlueprintProductionTime()
-        public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler)
+        public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler = null)
         {
-            float speed = (assemblerDef.AssemblySpeed + assembler.UpgradeValues["Productivity"]) * MyAPIGateway.Session.AssemblerSpeedMultiplier;
+            float speed = (assemblerDef.AssemblySpeed + (assembler?.UpgradeValues["Productivity"] ?? 0)) * MyAPIGateway.Session.AssemblerSpeedMultiplier;
             return (bp.BaseProductionTimeInSeconds / speed);
         }
 
         // from MyRefinery.ProcessQueueItems
-        public static float Refinery_BpProductionTime(MyBlueprintDefinitionBase bp, MyRefineryDefinition refineryDef, IMyRefinery refinery)
+        public static float Refinery_BpProductionTime(MyBlueprintDefinitionBase bp, MyRefineryDefinition refineryDef, IMyRefinery refinery = null)
         {
-            float speed = (refineryDef.RefineSpeed + refinery.UpgradeValues["Productivity"]) * MyAPIGateway.Session.RefinerySpeedMultiplier;
+            float speed = (refineryDef.RefineSpeed + (refinery?.UpgradeValues["Productivity"] ?? 0)) * MyAPIGateway.Session.RefinerySpeedMultiplier;
             return (bp.BaseProductionTimeInSeconds / speed);
         }
 

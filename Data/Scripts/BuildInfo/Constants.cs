@@ -39,6 +39,9 @@ namespace Digi.BuildInfo
         {
             [typeof(MyObjectBuilder_GasProperties)] = "Gas",
 
+            [typeof(MyObjectBuilder_BlueprintDefinition)] = "Blueprint",
+            [typeof(MyObjectBuilder_CompositeBlueprintDefinition)] = "Blueprint",
+
             // items
             [typeof(MyObjectBuilder_PhysicalGunObject)] = "Hand Tool/Gun",
             [typeof(MyObjectBuilder_AmmoMagazine)] = "Magazine",

@@ -198,7 +198,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(Hardcoded.Conveyors_ItemNeedsLargeTube(physDef))
             {
-                s.Append('\n').Append(ReqLargeConveyorSymbol).Append(" Item can not pass through small conveyors.");
+                s.Append('\n').Append(ReqLargeConveyorSymbol).Append(" Item is too large for small conveyors.");
             }
         }
 
@@ -214,13 +214,15 @@ namespace Digi.BuildInfo.Features.Tooltips
                 if(consumable.Stats.Count == 1)
                 {
                     MyConsumableItemDefinition.StatValue stat = consumable.Stats[0];
-                    s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                    s.Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
+                     .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                 }
                 else
                 {
                     foreach(MyConsumableItemDefinition.StatValue stat in consumable.Stats)
                     {
-                        s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ").Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
+                        s.Append("\n  ").Append(stat.Value > 0 ? "+" : "").ProportionToPercent(stat.Value * stat.Time, 2).Append(" ")
+                         .Append(statNames.GetValueOrDefault(stat.Name, stat.Name)).Append(" over ").TimeFormat(stat.Time);
                     }
                 }
             }

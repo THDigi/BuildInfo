@@ -39,6 +39,14 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Programmable Block can use Camera blocks to rangefind objects using physics raycast, for more info see the PB API (on MDK wiki maybe)." +
             "\n" +
             "\n" +
+            "\n" +
+            "\n" + SegmentPrefix + "Blueprint's stock build time" + SegmentSuffix +
+            "\n  First off, it is impossible to tell which production block you're looking at from modAPI." +
+            "\n  Therefore this stock time is only affected by world multipliers, but not any assembler/refinery efficiency or modules on it." +
+            "\n  If it has a time range (Xs ~ Ys) it means there's multiple production blocks that can build this item." +
+            "\n" +
+            "\n" +
+            "\n" +
             "\n" + SegmentPrefix + "Inventory bar in ships" + SegmentSuffix +
             "\n  The vanilla backpack icon+bar is altered to show the current ship's combined Cargo Containers fill." +
             "\n  Optionally you can declare a group 'Cargo' to use for the bar (no matter the type)." +

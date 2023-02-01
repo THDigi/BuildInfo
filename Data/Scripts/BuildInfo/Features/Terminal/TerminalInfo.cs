@@ -671,9 +671,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             else
             {
-                info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").Append('\n');
-
-                List<MyProductionQueueItem> queue = production.GetQueue(); // TODO: avoid alloc here somehow?
+                List<MyProductionQueueItem> queue = production.GetQueue(); // TODO: avoid alloc here by using PB API? but then I need to lookup blueprints by ID...
 
                 if(assembler != null || refinery != null)
                 {
@@ -689,35 +687,34 @@ namespace Digi.BuildInfo.Features.Terminal
                         MyBlueprintDefinitionBase bp = (MyBlueprintDefinitionBase)item.Blueprint;
                         float amount = (float)item.Amount;
 
-                        float time = 0;
+                        float time;
                         if(assembler != null)
                         {
-                            time = Hardcoded.Assembler_BpProductionTime(bp, assemblerDef, assembler);
-                            time *= amount;
+                            time = amount * Hardcoded.Assembler_BpProductionTime(bp, assemblerDef, assembler);
                             totalTime += time;
 
-                            // need access to MyAssembler.CurrentItemIndex to determine which queue item is actually being built
+                            tmp.Append("• ").ShortNumber(amount).Append("x ");
 
-                            tmp.Append("• x").ShortNumber(amount);
+                            // need access to MyAssembler.CurrentItemIndex to determine which queue item is actually being built
                         }
                         else // refinery
                         {
-                            time = Hardcoded.Refinery_BpProductionTime(bp, refineryDef, refinery);
-                            time *= amount;
+                            time = amount * Hardcoded.Refinery_BpProductionTime(bp, refineryDef, refinery);
                             totalTime += time;
 
-                            tmp.Append(i + 1).Append('.');
+                            tmp.Append(i + 1).Append(". ");
 
-                            if(bp.Prerequisites.Length == 1 && bp.Results.Length == 1)
-                            {
-                                amount = (float)bp.Results[0].Amount / (float)bp.Prerequisites[0].Amount;
-                                tmp.Append(" x").ShortNumber(amount);
-                            }
+                            //if(bp.Prerequisites.Length == 1 && bp.Results.Length == 1)
+                            //{
+                            //    amount = (float)bp.Results[0].Amount / (float)bp.Prerequisites[0].Amount;
+                            //    tmp.Append(" x").ShortNumber(amount);
+                            //}
                         }
 
-                        tmp.Append(' ').Append(item.Blueprint.DisplayNameText).Append(" (").TimeFormat(time).Append(")\n");
+                        tmp.DefinitionName(item.Blueprint).Append(" (").TimeFormat(time).Append(")\n");
                     }
 
+                    info.Append("Queue: ").Append(production.IsProducing ? "Working..." : "STOPPED").Append('\n');
                     info.Append("Total time: ").TimeFormat(totalTime).Append('\n');
                     info.AppendStringBuilder(tmp);
                     tmp.Clear();
@@ -728,8 +725,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     {
                         MyProductionQueueItem item = queue[i];
                         float amount = (float)item.Amount;
-
-                        info.Append("• x").Number(amount).Append(" ").Append(item.Blueprint.DisplayNameText).Append('\n');
+                        info.Append("• ").Number(amount).Append("x ").DefinitionName(item.Blueprint).Append('\n');
                     }
                 }
             }
