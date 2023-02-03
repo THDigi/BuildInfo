@@ -99,7 +99,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     string symbolString = physDef.IconSymbol.Value.String;
 
                     // only add if it's not there already
-                    if(symbolString.IndexOf(ReqLargeConveyorSymbolAdd) == -1)
+                    if(symbolString.IndexOf(ReqLargeConveyorSymbolSet) == -1)
                         physDef.IconSymbol = MyStringId.GetOrCompute(symbolString + ReqLargeConveyorSymbolAdd);
                 }
                 else
