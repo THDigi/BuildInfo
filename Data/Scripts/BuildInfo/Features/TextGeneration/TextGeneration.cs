@@ -992,6 +992,7 @@ namespace Digi.BuildInfo.Features
                 string typeIdString = def.Id.TypeId.ToString();
                 AddLine().Color(COLOR_INTERNAL).Label("Id").Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Append(def.BlockPairName);
+                AddLine().Color(COLOR_INTERNAL).Label("ModelIntersection").Append(def.UseModelIntersection);
             }
             #endregion Internal info
 
@@ -1654,6 +1655,7 @@ namespace Digi.BuildInfo.Features
                 string typeIdString = def.Id.TypeId.ToString();
                 AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").Color(COLOR_NORMAL).Append(def.BlockPairName);
+                AddLine().Color(COLOR_INTERNAL).Label("ModelIntersection").Append(def.UseModelIntersection);
 
                 Vector3 offset = def.ModelOffset;
                 if(offset.LengthSquared() > 0)
