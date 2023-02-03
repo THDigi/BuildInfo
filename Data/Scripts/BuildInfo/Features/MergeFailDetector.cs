@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -258,7 +259,7 @@ namespace Digi.BuildInfo.Features
 
             foreach(KeyValuePair<string, IMyModelDummy> kv in dummies)
             {
-                if(kv.Key.ContainsIgnoreCase("merge"))
+                if(kv.Key.ContainsIgnoreCase(Hardcoded.Merge_DummyName))
                 {
                     Matrix matrix = kv.Value.Matrix;
                     Vector3 vector = matrix.Scale / 2f;
