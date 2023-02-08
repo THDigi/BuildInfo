@@ -2480,50 +2480,53 @@ namespace Digi.BuildInfo.Features
             if(cryo != null)
             {
                 PowerRequired(cryo.IdlePowerConsumption, cryo.ResourceSinkGroup);
+
+                if(cryo.HasInventory)
+                    InventoryStats(def, hardcodedVolume: Hardcoded.Cockpit_InventoryVolume);
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Append("Abilities: ");
+                StringBuilder sb = AddLine().Append("Abilities: ");
 
-                int preLen = GetLine().Length;
+                int preLen = sb.Length;
+
+                if(shipController is MyCryoChamberDefinition)
+                    sb.Append("Cryo, ");
 
                 if(shipController.EnableShipControl)
-                    GetLine().Append("Ship control, ");
+                    sb.Append("Ship control, ");
 
                 if(shipController.EnableBuilderCockpit)
-                    GetLine().Append("Place blocks, ");
+                    sb.Append("Place blocks, ");
 
                 if(!shipController.EnableFirstPerson)
-                    GetLine().Append("3rd person view only, ");
+                    sb.Append("3rd person view only, ");
 
-                if(preLen == GetLine().Length)
+                if(preLen == sb.Length)
                 {
-                    GetLine().Append("None.");
+                    sb.Append("None.");
                 }
                 else
                 {
-                    GetLine().Length -= 2; // remove last comma
-                    GetLine().Append(".");
+                    sb.Length -= 2; // remove last comma
+                    sb.Append(".");
                 }
             }
 
             MyCockpitDefinition cockpit = def as MyCockpitDefinition;
             if(cockpit != null)
             {
-                if(cockpit.HasInventory)
-                    InventoryStats(def, hardcodedVolume: Hardcoded.Cockpit_InventoryVolume);
-
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
-                    AddLine((cockpit.IsPressurized ? FontsHandler.GreenSh : FontsHandler.RedSh))
+                    StringBuilder sb = AddLine((cockpit.IsPressurized ? FontsHandler.GreenSh : FontsHandler.RedSh))
                        .Color(cockpit.IsPressurized ? COLOR_GOOD : COLOR_WARNING)
-                       .Label("Pressurized");
+                       .Label("Pressurized seat");
 
                     if(cockpit.IsPressurized)
-                        GetLine().Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
+                        sb.Append("Yes, Oxygen capacity: ").VolumeFormat(cockpit.OxygenCapacity);
                     else
-                        GetLine().Append("No");
+                        sb.Append("No");
 
                     if(cockpit.HUD != null)
                     {
@@ -2538,6 +2541,9 @@ namespace Digi.BuildInfo.Features
                         }
                     }
                 }
+
+                if(cockpit.HasInventory)
+                    InventoryStats(def, hardcodedVolume: Hardcoded.Cockpit_InventoryVolume);
             }
         }
 
@@ -3712,7 +3718,14 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 float chargeTime = (jumpDrive.PowerNeededForJump * 60 * 60) / (jumpDrive.RequiredPowerInput * jumpDrive.PowerEfficiency);
-                AddLine().Label("Charge time").TimeFormat(chargeTime).Separator().LabelHardcoded("Loss").ProportionToPercent(1f - jumpDrive.PowerEfficiency);
+                StringBuilder sb = AddLine().Label("Charge - Time").TimeFormat(chargeTime).Separator();
+
+                float rechargeMultiplier = jumpDrive.PowerEfficiency;
+                if(rechargeMultiplier <= 1f)
+                    sb.Color(rechargeMultiplier < 1 ? COLOR_BAD : COLOR_GOOD).Label("Loss").ProportionToPercent(1f - rechargeMultiplier);
+                else
+                    sb.Color(COLOR_GOOD).Label("Multiplier").MultiplierToPercent(rechargeMultiplier);
+
                 AddLine().LabelHardcoded("Jump process").TimeFormat(Hardcoded.JumpDriveJumpDelay);
                 AddLine().Label("Distance limit").DistanceRangeFormat((float)jumpDrive.MinJumpDistance, (float)jumpDrive.MaxJumpDistance);
                 AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
