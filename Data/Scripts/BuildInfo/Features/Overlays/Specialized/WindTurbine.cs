@@ -36,8 +36,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             MyQuadD quad;
 
             #region Side clearence circle
+            float minRadius = turbineDef.RaycasterSize * turbineDef.MinRaycasterClearance;
             float maxRadius = turbineDef.RaycasterSize;
-            float minRadius = maxRadius * turbineDef.MinRaycasterClearance;
 
             float minRadiusRatio = turbineDef.MinRaycasterClearance;
             float maxRadiusRatio = 1f - minRadiusRatio;
@@ -111,32 +111,47 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             #region Ground clearence line
             Vector3D lineStart = drawMatrix.Translation;
+
             float artificialMultiplier;
             Vector3 gravityAccel = MyAPIGateway.Physics.CalculateNaturalGravityAt(lineStart, out artificialMultiplier);
-            bool gravityNearby = (gravityAccel.LengthSquared() > 0);
-            Vector3D end;
-
-            if(gravityNearby)
-                end = lineStart + Vector3.Normalize(gravityAccel) * turbineDef.OptimalGroundClearance;
+            Vector3 groundDir;
+            if(gravityAccel.LengthSquared() > 0)
+                groundDir = Vector3.Normalize(gravityAccel);
             else
-                end = lineStart + drawMatrix.Down * turbineDef.OptimalGroundClearance;
+                groundDir = (Vector3)drawMatrix.Down;
 
-            Vector3D minClearence = Vector3D.Lerp(lineStart, end, turbineDef.MinRaycasterClearance);
+            float groundMinDist = turbineDef.OptimalGroundClearance * turbineDef.MinRaycasterClearance;
+            float groundMaxDist = turbineDef.OptimalGroundClearance;
 
-            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, lineStart, (Vector3)(minClearence - lineStart), 1f, groundLineThick, BlendType);
-
-            Vector3 lineDir = (Vector3)(end - minClearence);
-            MyTransparentGeometry.AddLineBillboard(MaterialGradient, MinColor, minClearence, lineDir, 1f, groundLineThick, BlendType);
-            MyTransparentGeometry.AddLineBillboard(MaterialGradient, MaxColor, end, -lineDir, 1f, groundLineThick, BlendType);
+            Vector3D minPos = lineStart + groundDir * groundMinDist;
+            Vector3D maxPos = lineStart + groundDir * groundMaxDist;
 
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
-            Vector3 right = (Vector3)Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward)); // this determines line width, it's normalized so 1m, doubled because of below math
-            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MaxColor, end - right, right, 2f, groundBottomLineThick, BlendType);
+            Vector3 lineDir = (Vector3)(maxPos - minPos);
+            Vector3 right = (Vector3)Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward));
+
+            // red line
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, lineStart, (Vector3)(minPos - lineStart), 1f, groundLineThick, BlendType);
+
+            // marker at min clearence
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, minPos - right, right, 2f, groundBottomLineThick, BlendType);
+
+            // gradient red-to-green line (texture gradients to transparent, hence the 2 lines)
+            MyTransparentGeometry.AddLineBillboard(MaterialGradient, MinColor, minPos, lineDir, 1f, groundLineThick, BlendType);
+            MyTransparentGeometry.AddLineBillboard(MaterialGradient, MaxColor, maxPos, -lineDir, 1f, groundLineThick, BlendType);
+
+            // marker at max clearence
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MaxColor, maxPos - right, right, 2f, groundBottomLineThick, BlendType);
 
             if(drawLabel)
             {
                 Vector3D labelDir = drawMatrix.Left;
-                Vector3D labelLineStart = Vector3D.Lerp(lineStart, end, 0.5f);
+                Vector3D labelLineStart;
+                if(groundMinDist >= (drawInstance.CellSize * 2))
+                    labelLineStart = minPos;
+                else
+                    labelLineStart = Vector3D.Lerp(minPos, maxPos, 0.5f);
+
                 drawInstance.LabelRender.DrawLineLabel(LabelType.TerrainClearence, labelLineStart, labelDir, new Color(255, 155, 0), "Terrain Clearence");
             }
             #endregion Ground clearence line
