@@ -33,6 +33,9 @@ namespace Digi.BuildInfo.Systems
         public event Action<string> ScreenAdded;
         public event Action<string> ScreenRemoved;
 
+        public event Action FirstScreenOpen;
+        public event Action LastScreenClose;
+
         readonly bool LogEvents = false;
 
         public GUIMonitor(BuildInfoMod main) : base(main)
@@ -61,6 +64,14 @@ namespace Digi.BuildInfo.Systems
             try
             {
                 string name = obj.GetType().Name;
+
+                if(name.Contains("GuiScreenHudSpace"))
+                    return; // ignore HUD as it's not actually a screen
+
+                if(Screens.Count == 0)
+                {
+                    FirstScreenOpen?.Invoke();
+                }
 
                 Screens.Add(name);
 
@@ -95,12 +106,20 @@ namespace Digi.BuildInfo.Systems
             {
                 string name = obj.GetType().Name;
 
+                if(name.Contains("GuiScreenHudSpace"))
+                    return; // ignore HUD as it's not actually a screen
+
                 if(LogEvents && name != "MyGuiScreenLoading" && (Screens.Count == 0 || Screens[Screens.Count - 1] != name))
                 {
                     Log.Error($"{GetType().Name}: Other screen ({name}) got removed before the last one! list={string.Join("/", Screens)}");
                 }
 
                 Screens.Remove(name);
+
+                if(Screens.Count == 0)
+                {
+                    LastScreenClose?.Invoke();
+                }
 
                 if(name.EndsWith("ScreenCubeBuilder"))
                 {
