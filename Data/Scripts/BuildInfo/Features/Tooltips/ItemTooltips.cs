@@ -1,15 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using Sandbox.Game.EntityComponents;
+using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.Tooltips
 {
+    // TODO hold <key> to show more tooltip as it apparently updates in realtime
+    // ... or don't and have that ingame wiki instead.
+
     public class ItemTooltips : ModComponent
     {
         public const string ReqLargeConveyorSymbol = "Ф";
@@ -22,24 +28,24 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         enum Sizes { Small, Large, Both, HandWeapon }
 
-        HashSet<MyBlueprintDefinitionBase> TmpBpsThatResult = new HashSet<MyBlueprintDefinitionBase>();
-        HashSet<MyBlueprintDefinitionBase> TmpBpsThatReq = new HashSet<MyBlueprintDefinitionBase>();
+        HashSet<MyBlueprintDefinitionBase> TmpBpsMakingThis = new HashSet<MyBlueprintDefinitionBase>();
+        HashSet<MyBlueprintDefinitionBase> TmpBpsRequiringThis = new HashSet<MyBlueprintDefinitionBase>();
         Dictionary<string, Sizes> TmpNameAndSize = new Dictionary<string, Sizes>();
+        HashSet<string> TmpStringSet = new HashSet<string>();
 
         void DisposeTempObjects()
         {
-            TmpBpsThatResult = null;
-            TmpBpsThatReq = null;
+            TmpBpsMakingThis = null;
+            TmpBpsRequiringThis = null;
             TmpNameAndSize = null;
+            TmpStringSet = null;
         }
 
         StringBuilder SB = new StringBuilder(1024);
 
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
-            SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_OxygenContainerObject), "OxygenBottle"), "Recharges your life support oxygen automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.");
-            SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_GasContainerObject), "HydrogenBottle"), "Recharges your jetpack hydrogen fuel automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Hydrogen Tanks.");
-
+            AddDescriptions();
             Main.TooltipHandler.Setup += Setup;
         }
 
@@ -64,21 +70,74 @@ namespace Digi.BuildInfo.Features.Tooltips
             Main.TooltipHandler.Setup -= Setup;
         }
 
+        void AddDescriptions()
+        {
+            //SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_OxygenContainerObject), "OxygenBottle"), "Recharges your life support oxygen automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.");
+            //SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_GasContainerObject), "HydrogenBottle"), "Recharges your jetpack hydrogen fuel automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Hydrogen Tanks.");
+
+            string oxygenBottleDesc = "Recharges your life support oxygen automatically when low, if held in inventory." +
+               "\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.";
+
+            string hydrogenBottleDesc = "Recharges your jetpack hydrogen fuel automatically when low, if held in inventory." +
+               "\nFill the bottle by placing it in the inventory of H2/O2 generators or Hydrogen Tanks.";
+
+            foreach(MyPhysicalItemDefinition physDef in Main.Caches.ItemDefs)
+            {
+                MyOxygenContainerDefinition bottleDef = physDef as MyOxygenContainerDefinition;
+                if(bottleDef == null)
+                    continue;
+
+                if(Main.TooltipHandler.IgnoreModItems.Contains(physDef.Id))
+                    continue;
+
+                if(!string.IsNullOrEmpty(bottleDef.DescriptionText))
+                    continue;
+
+                if(bottleDef.StoredGasId == MyResourceDistributorComponent.OxygenId)
+                {
+                    bottleDef.DescriptionEnum = null;
+                    bottleDef.DescriptionString = oxygenBottleDesc;
+                }
+                else if(bottleDef.StoredGasId == MyResourceDistributorComponent.HydrogenId)
+                {
+                    bottleDef.DescriptionEnum = null;
+                    bottleDef.DescriptionString = hydrogenBottleDesc;
+                }
+            }
+        }
+
+        //void SetDescription(MyDefinitionId id, string description)
+        //{
+        //    MyDefinitionBase def;
+        //    if(MyDefinitionManager.Static.TryGetDefinition(id, out def) && string.IsNullOrWhiteSpace(def.DescriptionText))
+        //    {
+        //        def.DescriptionString = description;
+        //    }
+        //}
+
         void Setup(bool generate)
         {
             foreach(MyPhysicalItemDefinition physDef in Main.Caches.ItemDefs)
             {
-                if(generate)
+                try
                 {
-                    string tooltip = null;
-                    if(physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.Length > 0)
-                        tooltip = physDef.ExtraInventoryTooltipLine.ToString();
+                    if(generate)
+                    {
+                        string tooltip = null;
+                        if(physDef.ExtraInventoryTooltipLine != null && physDef.ExtraInventoryTooltipLine.Length > 0)
+                            tooltip = physDef.ExtraInventoryTooltipLine.ToString();
 
-                    OriginalItemData.Add(new OriginalData(physDef, tooltip, physDef.IconSymbol));
+                        OriginalItemData.Add(new OriginalData(physDef, tooltip, physDef.IconSymbol));
+                    }
+
+                    HandleSymbol(physDef);
+                    HandleTooltip(physDef, generate);
                 }
-
-                HandleSymbol(physDef);
-                HandleTooltip(physDef, generate);
+                catch(Exception e)
+                {
+                    Log.Error($"Error setting up tooltips for {physDef.Id}", Log.PRINT_MESSAGE);
+                    Log.Error(e, null);
+                }
             }
 
             if(generate)
@@ -185,12 +244,20 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             if(!Main.TooltipHandler.IgnoreModItems.Contains(physDef.Id))
             {
+                const int MaxWidth = 70;
+                string desc = physDef.DescriptionText;
+                if(!string.IsNullOrWhiteSpace(desc))
+                {
+                    s.TrimEndWhitespace().Append("\n\n").AppendWordWrapped(desc, MaxWidth).TrimEndWhitespace().Append("\n");
+                }
+
                 TooltipConsumable(s, physDef);
-                TooltipFuel(s, physDef);
                 TooltipBottle(s, physDef);
                 TooltipTool(s, physDef);
                 TooltipWeapon(s, physDef);
                 TooltipAmmo(s, physDef);
+                TooltipUsedIn(s, physDef);
+                TooltipBoughtOrSold(s, physDef);
                 TooltipCrafting(s, physDef);
             }
 
@@ -207,7 +274,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             MyConsumableItemDefinition consumable = physDef as MyConsumableItemDefinition;
             if(consumable != null && consumable.Stats.Count > 0)
             {
-                s.Append("\nConsumption: ");
+                s.Append("\nConsumable: ");
 
                 Dictionary<string, string> statNames = Main.TooltipHandler.TmpStatDisplayNames;
 
@@ -228,53 +295,6 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipFuel(StringBuilder s, MyPhysicalItemDefinition physDef)
-        {
-            List<MyCubeBlockDefinition> blocks = Main.TooltipHandler.TmpBlockFuel.GetValueOrDefault(physDef.Id, null);
-            if(blocks == null || blocks.Count == 0)
-                return;
-
-            TmpNameAndSize.Clear();
-
-            foreach(MyCubeBlockDefinition blockDef in blocks)
-            {
-                string key = blockDef.DisplayNameText;
-                Sizes currentSize = (blockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                Sizes existingSize;
-                if(TmpNameAndSize.TryGetValue(key, out existingSize))
-                {
-                    if(existingSize != Sizes.Both && existingSize != currentSize)
-                        TmpNameAndSize[key] = Sizes.Both;
-                }
-                else
-                {
-                    TmpNameAndSize[key] = currentSize;
-                }
-            }
-
-            s.Append("\nConsumed by: ");
-
-            int limit = 0;
-            foreach(KeyValuePair<string, Sizes> kv in TmpNameAndSize)
-            {
-                if(++limit > ListLimit)
-                {
-                    limit--;
-                    s.Append("\n  ...and ").Append(TmpNameAndSize.Count - limit).Append(" more");
-                    break;
-                }
-
-                s.Append("\n  ").Append(kv.Key);
-
-                switch(kv.Value)
-                {
-                    case Sizes.Small: s.Append(" (Small)"); break;
-                    case Sizes.Large: s.Append(" (Large)"); break;
-                    case Sizes.Both: s.Append(" (Small + Large)"); break;
-                }
-            }
-        }
-
         public void TooltipBottle(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
         {
             MyOxygenContainerDefinition bottleDef = physDef as MyOxygenContainerDefinition;
@@ -282,6 +302,22 @@ namespace Digi.BuildInfo.Features.Tooltips
                 return;
 
             s.Append("\nCapacity: ").VolumeFormat(bottleDef.Capacity).Append(" of ").ItemName(bottleDef.StoredGasId);
+
+            // not really necessary
+            /*
+            List<MyProductionBlockDefinition> prodDefs;
+            if(Main.TooltipHandler.TmpItemRefillIn.TryGetValue(physDef.Id, out prodDefs))
+            {
+                TmpNameAndSize.Clear();
+
+                foreach(MyProductionBlockDefinition prodDef in prodDefs)
+                {
+                    AddToList(TmpNameAndSize, prodDef.DisplayNameText, prodDef.CubeSize);
+                }
+
+                PrintList(TmpNameAndSize, s, "Refillable in");
+            }
+            */
         }
 
         public void TooltipTool(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
@@ -329,11 +365,17 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(weaponItemDef == null)
                 return;
 
+            List<CoreSystems.Api.CoreSystemsDef.WeaponDefinition> csDefs;
+            if(Main.CoreSystemsAPIHandler.Weapons.TryGetValue(physDef.Id, out csDefs))
+            {
+                // TODO: WC stats?
+                return;
+            }
+
             MyWeaponDefinition weaponDef;
             if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponItemDef.WeaponDefinitionId, out weaponDef))
                 return;
 
-            // TODO: check if it's weaponcore weapon and avoid some potentially misleading stats.
             // TODO: some weapon stats? they depend on the ammo tho...
 
             if(weaponDef.AmmoMagazinesId != null && weaponDef.AmmoMagazinesId.Length > 0)
@@ -367,56 +409,332 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(magDef.Capacity > 1)
                 s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
+        }
 
+        public void TooltipUsedIn(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        {
             TmpNameAndSize.Clear();
 
-            List<MyTuple<MyDefinitionBase, MyWeaponDefinition>> weapons;
-            if(Main.TooltipHandler.TmpMagUsedIn.TryGetValue(magDef.Id, out weapons))
+            // used as ammo
+            MyAmmoMagazineDefinition magDef = physDef as MyAmmoMagazineDefinition;
+            if(magDef != null)
             {
-                foreach(MyTuple<MyDefinitionBase, MyWeaponDefinition> tuple in weapons)
+                List<MyTuple<MyDefinitionBase, MyWeaponDefinition>> weapons;
+                if(Main.TooltipHandler.TmpMagUsedIn.TryGetValue(magDef.Id, out weapons))
                 {
+                    foreach(MyTuple<MyDefinitionBase, MyWeaponDefinition> tuple in weapons)
                     {
-                        MyWeaponBlockDefinition wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
-                        if(wpBlockDef != null)
                         {
-                            string key = wpBlockDef.DisplayNameText;
-                            Sizes currentSize = (wpBlockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                            Sizes existingSize;
-                            if(TmpNameAndSize.TryGetValue(key, out existingSize))
+                            MyWeaponBlockDefinition wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
+                            if(wpBlockDef != null)
                             {
-                                if(existingSize != Sizes.Both && existingSize != currentSize)
-                                    TmpNameAndSize[key] = Sizes.Both;
+                                AddToList(TmpNameAndSize, wpBlockDef.DisplayNameText, wpBlockDef.CubeSize);
+                                continue;
                             }
-                            else
-                            {
-                                TmpNameAndSize[key] = currentSize;
-                            }
-                            continue;
                         }
-                    }
-                    {
-                        MyWeaponItemDefinition wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
-                        if(wpPhysItem != null)
                         {
-                            TmpNameAndSize[wpPhysItem.DisplayNameText] = Sizes.HandWeapon;
-                            continue;
+                            MyWeaponItemDefinition wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
+                            if(wpPhysItem != null)
+                            {
+                                AddToList(TmpNameAndSize, wpPhysItem.DisplayNameText, Sizes.HandWeapon);
+                                continue;
+                            }
                         }
                     }
                 }
             }
 
-            if(TmpNameAndSize.Count == 0)
-                return;
+            // used as fuel
+            HashSet<MyCubeBlockDefinition> blockDefs;
+            if(Main.TooltipHandler.TmpBlockFuel.TryGetValue(physDef.Id, out blockDefs))
+            {
+                foreach(MyCubeBlockDefinition blockDef in blockDefs)
+                {
+                    AddToList(TmpNameAndSize, blockDef.DisplayNameText, blockDef.CubeSize);
+                }
+            }
 
-            s.Append("\nUsed by:");
+            if(TmpNameAndSize.Count > 0)
+                PrintList(TmpNameAndSize, s, "Used in");
+        }
+
+        public void TooltipBoughtOrSold(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        {
+            TmpNameAndSize.Clear();
+
+            HashSet<MyVendingMachineDefinition> storeList;
+            if(Main.TooltipHandler.TmpVendingBuy.TryGetValue(physDef.Id, out storeList))
+            {
+                foreach(MyVendingMachineDefinition storeDef in storeList)
+                {
+                    AddToList(TmpNameAndSize, storeDef.DisplayNameText, storeDef.CubeSize);
+                }
+            }
+
+            if(TmpNameAndSize.Count > 0)
+            {
+                PrintList(TmpNameAndSize, s, "Buy from");
+            }
+
+            TmpNameAndSize.Clear();
+            storeList = null;
+            if(Main.TooltipHandler.TmpVendingSell.TryGetValue(physDef.Id, out storeList))
+            {
+                foreach(MyVendingMachineDefinition storeDef in storeList)
+                {
+                    AddToList(TmpNameAndSize, storeDef.DisplayNameText, storeDef.CubeSize);
+                }
+            }
+
+            if(TmpNameAndSize.Count > 0)
+            {
+                PrintList(TmpNameAndSize, s, "Sell to");
+            }
+
+            // TODO find if it's sold by NPC stations?
+        }
+
+        public void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        {
+            TmpBpsMakingThis.Clear();
+            TmpBpsRequiringThis.Clear();
+
+            bool survival = MyAPIGateway.Session.SurvivalMode;
+
+            foreach(MyBlueprintDefinitionBase bpDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
+            {
+                if(!bpDef.Public || (!survival && bpDef.AvailableInSurvival))
+                    continue;
+
+                // if composite's subtype contains a type/subtype separator then assume it's for a block and skip it
+                if(bpDef is MyCompositeBlueprintDefinition && bpDef.Id.SubtypeName.Contains("/"))
+                    continue;
+
+                bool isResult = false;
+
+                foreach(MyBlueprintDefinitionBase.Item result in bpDef.Results)
+                {
+                    if(result.Id == physDef.Id)
+                    {
+                        TmpBpsMakingThis.Add(bpDef);
+                        isResult = true;
+                        break; // results loop
+                    }
+                }
+
+                foreach(MyBlueprintDefinitionBase.Item req in bpDef.Prerequisites)
+                {
+                    if(req.Id == physDef.Id)
+                    {
+                        if(isResult)
+                            TmpBpsMakingThis.Remove(bpDef); // ignore bps that require the same item as they produce
+                        else
+                            TmpBpsRequiringThis.Add(bpDef);
+
+                        break; // preqreq loop
+                    }
+                }
+            }
+
+            if(forBlueprint)
+            {
+                Crafting_Ingredient(s, physDef, detailed: true);
+                Crafting_BlockComponent(s, physDef, detailed: true);
+
+            }
+            else
+            {
+                Crafting_Sources(s, physDef);
+                Crafting_Ingredient(s, physDef, detailed: false);
+                Crafting_BlockComponent(s, physDef, detailed: false);
+            }
+
+            if(!forBlueprint)
+            {
+                HashSet<MyCubeBlockDefinition> blockDefs;
+                if(Main.TooltipHandler.TmpComponentFromGrindingBlocks.TryGetValue(physDef.Id, out blockDefs))
+                {
+                    s.Append("\nGained by grinding ").Append(blockDefs.Count).Append(" specific ").Append(blockDefs.Count == 1 ? "block." : "blocks.");
+                }
+            }
+
+            TmpBpsMakingThis.Clear();
+            TmpBpsRequiringThis.Clear();
+        }
+
+        void Crafting_Sources(StringBuilder s, MyPhysicalItemDefinition physDef)
+        {
+            bool showNotCraftable = true;
+
+            if(TmpBpsMakingThis.Count > 0)
+            {
+                TmpNameAndSize.Clear();
+
+                bool areResults = true;
+                foreach(MyBlueprintDefinitionBase bp in TmpBpsMakingThis)
+                {
+                    HashSet<MyProductionBlockDefinition> prodList;
+                    if(BuildInfoMod.Instance.TooltipHandler.TmpBpUsedIn.TryGetValue(bp.Id, out prodList))
+                    {
+                        foreach(MyProductionBlockDefinition prodDef in prodList)
+                        {
+                            // HACK: bp results of gas generators or gas tanks are not used, skip
+                            if(areResults && (prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition))
+                                continue;
+
+                            AddToList(TmpNameAndSize, prodDef.DisplayNameText, prodDef.CubeSize);
+                        }
+                    }
+                }
+
+                if(TmpNameAndSize.Count > 0)
+                {
+                    showNotCraftable = false;
+                    PrintList(TmpNameAndSize, s, "Crafted by");
+                }
+            }
+
+            if(showNotCraftable)
+            {
+                s.Append("\nNot Craftable.");
+            }
+        }
+
+        void Crafting_Ingredient(StringBuilder s, MyPhysicalItemDefinition physDef, bool detailed)
+        {
+            int usedForAssembly = 0;
+            Type baseItemType = typeof(MyObjectBuilder_PhysicalObject);
+
+            TmpStringSet.Clear();
+
+            foreach(MyBlueprintDefinitionBase bp in TmpBpsRequiringThis)
+            {
+                HashSet<MyProductionBlockDefinition> prodDefs;
+                if(Main.TooltipHandler.TmpBpUsedIn.TryGetValue(bp.Id, out prodDefs))
+                {
+                    bool used = false;
+
+                    // is used in any non-refill role?
+                    foreach(var prodDef in prodDefs)
+                    {
+                        if(prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition)
+                            continue;
+
+                        used = true;
+                        break;
+                    }
+
+                    if(!used)
+                        continue; // blueprints loop
+                }
+
+                usedForAssembly++;
+
+                if(detailed)
+                {
+                    string nameNoTooltip = bp.DisplayNameText;
+                    int newlineIdx = nameNoTooltip.IndexOf('\n');
+                    if(newlineIdx != -1)
+                        nameNoTooltip = nameNoTooltip.Substring(0, newlineIdx);
+
+                    TmpStringSet.Add(nameNoTooltip);
+                }
+            }
+
+            if(usedForAssembly > 0)
+            {
+                if(detailed && TmpStringSet.Count <= ListLimit)
+                {
+                    s.Append("\nUsed for crafting ").Append(usedForAssembly == 1 ? "item" : "items").Append(":");
+
+                    int limit = 0;
+
+                    foreach(string name in TmpStringSet)
+                    {
+                        if(++limit > ListLimit)
+                        {
+                            limit--;
+                            s.Append("\n  ...and ").Append(TmpStringSet.Count - limit).Append(" more");
+                            break;
+                        }
+
+                        s.Append("\n  ").Append(name);
+                    }
+                }
+                else
+                {
+                    s.Append("\nUsed for crafting ").Append(usedForAssembly).Append(" item").Append(usedForAssembly == 1 ? "." : "s.");
+                }
+            }
+        }
+
+        void Crafting_BlockComponent(StringBuilder s, MyPhysicalItemDefinition physDef, bool detailed)
+        {
+            HashSet<MyCubeBlockDefinition> blockDefs;
+            if(Main.TooltipHandler.TmpComponentInBlocks.TryGetValue(physDef.Id, out blockDefs))
+            {
+                TmpNameAndSize.Clear();
+
+                if(detailed)
+                {
+                    foreach(var blockDef in blockDefs)
+                    {
+                        AddToList(TmpNameAndSize, blockDef.DisplayNameText, blockDef.CubeSize);
+                    }
+                }
+
+                const int listLimit = 10;
+                if(detailed && TmpNameAndSize.Count <= listLimit * 2)
+                {
+                    PrintList(TmpNameAndSize, s, (blockDefs.Count == 1 ? "Used for building a block" : "Used for building blocks"), customListLimit: listLimit);
+                }
+                else
+                {
+                    s.Append("\nUsed for building ").Append(blockDefs.Count).Append(" ").Append(blockDefs.Count == 1 ? "block." : "blocks.");
+                }
+            }
+        }
+
+        static void AddToList(Dictionary<string, Sizes> dict, string key, MyCubeSize cubeSize)
+        {
+            Sizes currentSize = (cubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+            Sizes existingSize;
+            if(dict.TryGetValue(key, out existingSize))
+            {
+                if(existingSize != Sizes.Both && existingSize != currentSize)
+                    dict[key] = Sizes.Both;
+            }
+            else
+            {
+                dict[key] = currentSize;
+            }
+        }
+
+        static void AddToList(Dictionary<string, Sizes> dict, string key, Sizes currentSize)
+        {
+            Sizes existingSize;
+            if(dict.TryGetValue(key, out existingSize))
+            {
+                if(existingSize != Sizes.Both && existingSize != currentSize)
+                    dict[key] = Sizes.Both;
+            }
+            else
+            {
+                dict[key] = currentSize;
+            }
+        }
+
+        static void PrintList(Dictionary<string, Sizes> dict, StringBuilder s, string label = "Used in", int customListLimit = ListLimit)
+        {
+            s.Append("\n").Append(label).Append(":");
 
             int limit = 0;
-            foreach(KeyValuePair<string, Sizes> kv in TmpNameAndSize)
+            foreach(KeyValuePair<string, Sizes> kv in dict)
             {
-                if(++limit > ListLimit)
+                if(++limit > customListLimit)
                 {
                     limit--;
-                    s.Append("\n  ...and ").Append(TmpNameAndSize.Count - limit).Append(" more");
+                    s.Append("\n  ...and ").Append(dict.Count - limit).Append(" more");
                     break;
                 }
 
@@ -432,149 +750,6 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef)
-        {
-            TmpBpsThatResult.Clear();
-            TmpBpsThatReq.Clear();
-
-            int usedForBlocks = 0;
-            int usedForAssembly = 0;
-
-            foreach(MyBlueprintDefinitionBase bp in MyDefinitionManager.Static.GetBlueprintDefinitions())
-            {
-                bool isResult = false;
-
-                foreach(MyBlueprintDefinitionBase.Item result in bp.Results)
-                {
-                    if(result.Id == physDef.Id)
-                    {
-                        TmpBpsThatResult.Add(bp);
-                        isResult = true;
-                        break;
-                    }
-                }
-
-                foreach(MyBlueprintDefinitionBase.Item req in bp.Prerequisites)
-                {
-                    if(req.Id == physDef.Id)
-                    {
-                        // bps that require same item as they result should be ignored.
-                        if(isResult)
-                        {
-                            TmpBpsThatResult.Remove(bp);
-                            break;
-                        }
-
-                        TmpBpsThatReq.Add(bp);
-                        break;
-                    }
-                }
-            }
-
-            if(TmpBpsThatResult.Count > 0)
-            {
-                TmpNameAndSize.Clear();
-                ComputeBps(TmpBpsThatResult, TmpNameAndSize, ref usedForBlocks, areResults: true);
-                if(TmpNameAndSize.Count > 0)
-                    AppendCraftList(s, "\nCrafted by:", TmpNameAndSize);
-            }
-            else
-            {
-                // TODO find if it's created by vending machines
-                // TODO find if it's sold by NPC stations
-                s.Append("\nNot Craftable.");
-            }
-
-            if(TmpBpsThatReq.Count > 0)
-            {
-                TmpNameAndSize.Clear();
-                ComputeBps(TmpBpsThatReq, TmpNameAndSize, ref usedForAssembly);
-                if(TmpNameAndSize.Count > 0)
-                    AppendCraftList(s, "\nUsed in:", TmpNameAndSize);
-            }
-
-            // TODO: show blocks/items used for crafting if they're less than a few
-
-            if(usedForAssembly > 0)
-            {
-                s.Append("\nUsed for crafting ").Append(usedForAssembly).Append(" items.");
-            }
-
-            if(usedForBlocks > 0)
-            {
-                s.Append("\nUsed for building ").Append(usedForBlocks).Append(" blocks.");
-            }
-        }
-
-        static void ComputeBps(HashSet<MyBlueprintDefinitionBase> bps, Dictionary<string, Sizes> dict, ref int usedFor, bool areResults = false)
-        {
-            foreach(MyBlueprintDefinitionBase bp in bps)
-            {
-                List<MyProductionBlockDefinition> prodList;
-                if(BuildInfoMod.Instance.TooltipHandler.TmpBpUsedIn.TryGetValue(bp.Id, out prodList))
-                {
-                    foreach(MyProductionBlockDefinition prodDef in prodList)
-                    {
-                        // HACK: bp results of gas generators or gas tanks are not used, skip
-                        if(areResults && (prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition))
-                            continue;
-
-                        string name = prodDef.DisplayNameText;
-
-                        Sizes currentSize = (prodDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
-                        Sizes existingSize;
-                        if(dict.TryGetValue(name, out existingSize))
-                        {
-                            if(existingSize != Sizes.Both && existingSize != currentSize)
-                                dict[name] = Sizes.Both;
-                        }
-                        else
-                        {
-                            dict[name] = currentSize;
-                        }
-                    }
-                }
-
-                // determine if this is a composite bp generated for a block, which contains the block's "Type/Subtype" as the bp's subtype.
-                MyCompositeBlueprintDefinition composite = bp as MyCompositeBlueprintDefinition;
-                if(composite != null && composite.Id.SubtypeName.IndexOf('/') != -1)
-                {
-                    MyDefinitionId blockId;
-                    MyCubeBlockDefinition blockDef;
-                    if(MyDefinitionId.TryParse("MyObjectBuilder_" + composite.Id.SubtypeName, out blockId)
-                    && MyDefinitionManager.Static.TryGetCubeBlockDefinition(blockId, out blockDef))
-                    {
-                        usedFor++;
-                    }
-                }
-            }
-        }
-
-        static void AppendCraftList(StringBuilder s, string label, Dictionary<string, Sizes> list)
-        {
-            s.Append(label);
-            int limit = 0;
-
-            foreach(KeyValuePair<string, Sizes> kv in list)
-            {
-                if(++limit > ListLimit)
-                {
-                    limit--;
-                    s.Append("\n  ...and ").Append(list.Count - limit).Append(" more");
-                    break;
-                }
-
-                s.Append("\n  ").Append(kv.Key);
-
-                switch(kv.Value)
-                {
-                    case Sizes.Both: s.Append(" (Small + Large)"); break;
-                    case Sizes.Small: s.Append(" (Small)"); break;
-                    case Sizes.Large: s.Append(" (Large)"); break;
-                }
-            }
-        }
-
         struct OriginalData
         {
             public readonly MyPhysicalItemDefinition Def;
@@ -586,15 +761,6 @@ namespace Digi.BuildInfo.Features.Tooltips
                 Def = def;
                 Tooltip = tooltip;
                 Symbol = symbol;
-            }
-        }
-
-        void SetDescription(MyDefinitionId id, string description)
-        {
-            MyDefinitionBase def;
-            if(MyDefinitionManager.Static.TryGetDefinition(id, out def) && string.IsNullOrWhiteSpace(def.DescriptionText))
-            {
-                def.DescriptionString = description;
             }
         }
     }

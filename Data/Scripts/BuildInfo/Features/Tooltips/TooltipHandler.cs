@@ -2,12 +2,15 @@
 using System.Diagnostics;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.Tooltips
@@ -21,10 +24,17 @@ namespace Digi.BuildInfo.Features.Tooltips
         public delegate void SetupDel(bool generate);
         public event SetupDel Setup;
 
-        public Dictionary<MyDefinitionId, List<MyProductionBlockDefinition>> TmpBpUsedIn = new Dictionary<MyDefinitionId, List<MyProductionBlockDefinition>>(MyDefinitionId.Comparer);
+        public HashSet<MyProductionBlockDefinition> BlueprintPlannerBlocks = new HashSet<MyProductionBlockDefinition>();
+
+        public Dictionary<MyDefinitionId, HashSet<MyProductionBlockDefinition>> TmpBpUsedIn = new Dictionary<MyDefinitionId, HashSet<MyProductionBlockDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyProductionBlockDefinition>> TmpItemRefillIn = new Dictionary<MyDefinitionId, HashSet<MyProductionBlockDefinition>>(MyDefinitionId.Comparer);
         public Dictionary<MyDefinitionId, List<MyTuple<MyDefinitionBase, MyWeaponDefinition>>> TmpMagUsedIn = new Dictionary<MyDefinitionId, List<MyTuple<MyDefinitionBase, MyWeaponDefinition>>>(MyDefinitionId.Comparer);
         public HashSet<MyDefinitionId> TmpHasBP = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
-        public Dictionary<MyDefinitionId, List<MyCubeBlockDefinition>> TmpBlockFuel = new Dictionary<MyDefinitionId, List<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>> TmpBlockFuel = new Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>> TmpVendingBuy = new Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>> TmpVendingSell = new Dictionary<MyDefinitionId, HashSet<MyVendingMachineDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>> TmpComponentInBlocks = new Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
+        public Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>> TmpComponentFromGrindingBlocks = new Dictionary<MyDefinitionId, HashSet<MyCubeBlockDefinition>>(MyDefinitionId.Comparer);
         public Dictionary<string, string> TmpStatDisplayNames = new Dictionary<string, string>()
         {
             ["BatteryCharge"] = "Battery",
@@ -33,9 +43,14 @@ namespace Digi.BuildInfo.Features.Tooltips
         void DisposeTempObjects()
         {
             TmpBpUsedIn = null;
+            TmpItemRefillIn = null;
             TmpMagUsedIn = null;
             TmpHasBP = null;
             TmpBlockFuel = null;
+            TmpVendingBuy = null;
+            TmpVendingSell = null;
+            TmpComponentInBlocks = null;
+            TmpComponentFromGrindingBlocks = null;
             TmpStatDisplayNames = null;
         }
 
@@ -89,10 +104,25 @@ namespace Digi.BuildInfo.Features.Tooltips
                     continue;
 
                 {
+                    foreach(MyCubeBlockDefinition.Component comp in blockDef.Components)
+                    {
+                        if(comp.Definition == null)
+                            continue;
+
+                        TmpComponentInBlocks.GetOrAdd(comp.Definition.Id).Add(blockDef);
+
+                        if(comp.Definition != comp.DeconstructItem)
+                        {
+                            TmpComponentFromGrindingBlocks.GetOrAdd(comp.DeconstructItem.Id).Add(blockDef);
+                        }
+                    }
+                }
+                {
                     MyWeaponBlockDefinition weaponBlockDef = blockDef as MyWeaponBlockDefinition;
                     if(weaponBlockDef != null)
                     {
-                        // TODO: weaponcore?
+                        if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(weaponBlockDef.Id))
+                            continue;
 
                         MyWeaponDefinition wpDef;
                         if(!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out wpDef))
@@ -115,9 +145,27 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                         foreach(MyBlueprintClassDefinition bpClass in prodDef.BlueprintClasses)
                         {
+                            if(bpClass.Id.SubtypeName == Hardcoded.BuildPlanner_BPClassSubtype)
+                            {
+                                BlueprintPlannerBlocks.Add(prodDef);
+                                continue;
+                            }
+
                             foreach(MyBlueprintDefinitionBase bp in bpClass)
                             {
                                 TmpBpUsedIn.GetOrAdd(bp.Id).Add(prodDef);
+
+                                if(isGasGenOrTank)
+                                {
+                                    foreach(MyBlueprintDefinitionBase.Item preReq in bp.Prerequisites)
+                                    {
+                                        // is it a bottle item?
+                                        if(MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_GasContainerObject), preReq.Id.TypeId))
+                                        {
+                                            TmpItemRefillIn.GetOrAdd(preReq.Id).Add(prodDef);
+                                        }
+                                    }
+                                }
 
                                 if(!isGasGenOrTank) // HACK: bp results of gas generators or gas tanks are not used, skip
                                 {
@@ -145,6 +193,22 @@ namespace Digi.BuildInfo.Features.Tooltips
                     if(parachuteDef != null)
                     {
                         TmpBlockFuel.GetOrAdd(parachuteDef.MaterialDefinitionId).Add(parachuteDef);
+                    }
+                }
+                {
+                    MyVendingMachineDefinition vendingDef = blockDef as MyVendingMachineDefinition;
+                    if(vendingDef != null && vendingDef.DefaultItems != null && vendingDef.DefaultItems.Count > 0)
+                    {
+                        foreach(MyObjectBuilder_StoreItem offer in vendingDef.DefaultItems)
+                        {
+                            if(offer.ItemType != ItemTypes.PhysicalItem || !offer.Item.HasValue)
+                                continue;
+
+                            if(offer.StoreItemType == StoreItemTypes.Offer)
+                                TmpVendingBuy.GetOrAdd(offer.Item.Value).Add(vendingDef);
+                            else
+                                TmpVendingSell.GetOrAdd(offer.Item.Value).Add(vendingDef);
+                        }
                     }
                 }
             }

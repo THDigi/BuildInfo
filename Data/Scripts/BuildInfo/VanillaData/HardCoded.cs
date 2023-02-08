@@ -157,7 +157,7 @@ namespace Digi.BuildInfo.VanillaData
             return 0.0003f * (float)Math.Pow((maxField - Sensor_MinField).Volume, 1d / 3d);
         }
 
-        // from MyCockpit.Init()
+        // from MyCockpit.Init(), applies to cryos too
         public const float Cockpit_InventoryVolume = 1f; // Vector3.One.Volume;
         public static float Cockpit_PowerRequired(MyCockpitDefinition def, bool isFunctional = true) => (isFunctional && def.EnableShipControl ? 0.003f : 0f);
 
@@ -178,6 +178,9 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyAdvancedDoor.DisassembleRatio
         public const float AdvDoor_Closed_DisassembleRatioMultiplier = 3.3f; // MyAdvancedDoor override DisassembleRatio and multiplies definition by this when closed
+
+        public const string BuildPlanner_BPClassSubtype = "BuildPlanner";
+        public const string BuildPlanner_BPSubtypePrefix = "BuildPlanItem_";
 
         // simplified from MyDoor.UpdateCurrentOpening()
         public static float Door_MoveSpeed(float openingSpeed, float travelDistance = 1f)

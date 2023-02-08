@@ -85,6 +85,8 @@ namespace Digi.BuildInfo.Features.LiveData
                     Vector3 blockHalfSize = def.Size * (0.5f * MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
                     BoundingBox blockBB = new BoundingBox(-blockHalfSize, blockHalfSize);
 
+                    // TODO: thrusters with angled flames?
+
                     const float RayStartDistance = 1000; // arbitrary large value
                     Ray ray = new Ray(capsuleEdgeStart + direction * RayStartDistance, -direction);
                     float? hitDist = blockBB.Intersects(ray);

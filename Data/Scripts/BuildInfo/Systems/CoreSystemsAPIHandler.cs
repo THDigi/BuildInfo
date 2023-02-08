@@ -68,14 +68,6 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
-            //foreach(MyPhysicalItemDefinition physItemDef in Main.Caches.ItemDefs)
-            //{
-            //    if(physItemDef is MyWeaponItemDefinition)
-            //    {
-            //        weaponSubtypes.GetOrAdd(physItemDef.Id.SubtypeName, () => new List<MyObjectBuilderType>(8)).Add(physItemDef.Id.TypeId);
-            //    }
-            //}
-
             List<byte[]> definitionsAsBytes = new List<byte[]>(32);
             API.GetAllWeaponDefinitions(definitionsAsBytes);
 
@@ -94,34 +86,52 @@ namespace Digi.BuildInfo.Systems
                     continue;
                 }
 
-                if(weaponDef.HardPoint.HardWare.Type != CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.BlockWeapon)
-                    continue;
-
-                foreach(CoreSystemsDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
+                if(weaponDef.HardPoint.HardWare.Type == CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.BlockWeapon)
                 {
-                    string subtype = mount.SubtypeId;
-
-                    // HACK: vanilla replacement, SessionSupport.LoadVanillaData() https://github.com/sstixrud/WeaponCore/blob/master/Data/Scripts/CoreSystems/Session/SessionSupport.cs#L1104
-                    switch(mount.SubtypeId)
+                    foreach(CoreSystemsDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
                     {
-                        case "LargeGatlingTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
-                        case "LargeMissileTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)).Add(weaponDef); continue;
-                        case "SmallGatlingGun": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)).Add(weaponDef); continue;
-                        case "SmallMissileLauncher": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)).Add(weaponDef); continue;
-                    }
+                        string subtype = mount.SubtypeId;
 
-                    List<MyObjectBuilderType> types;
-                    if(weaponSubtypes.TryGetValue(subtype, out types))
-                    {
-                        foreach(MyObjectBuilderType type in types)
+                        // HACK: vanilla replacement, SessionSupport.LoadVanillaData() https://github.com/sstixrud/WeaponCore/blob/master/Data/Scripts/CoreSystems/Session/SessionSupport.cs#L1104
+                        switch(mount.SubtypeId)
                         {
-                            MyDefinitionId defId = new MyDefinitionId(type, subtype);
-                            Weapons.GetOrAdd(defId).Add(weaponDef);
+                            case "LargeGatlingTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
+                            case "LargeMissileTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)).Add(weaponDef); continue;
+                            case "SmallGatlingGun": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)).Add(weaponDef); continue;
+                            case "SmallMissileLauncher": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)).Add(weaponDef); continue;
+                        }
+
+                        List<MyObjectBuilderType> types;
+                        if(weaponSubtypes.TryGetValue(subtype, out types))
+                        {
+                            foreach(MyObjectBuilderType type in types)
+                            {
+                                MyDefinitionId defId = new MyDefinitionId(type, subtype);
+                                Weapons.GetOrAdd(defId).Add(weaponDef);
+                            }
+                        }
+                        else
+                        {
+                            Log.Info($"WARNING: Couldn't find any weapon block or conveyor sorter with subtype '{subtype}' for {APIName}, idx={idx.ToString()}, mod={weaponDef.ModPath}");
                         }
                     }
-                    else
+                }
+                else if(weaponDef.HardPoint.HardWare.Type == CoreSystemsDef.WeaponDefinition.HardPointDef.HardwareDef.HardwareType.HandWeapon)
+                {
+                    foreach(CoreSystemsDef.WeaponDefinition.ModelAssignmentsDef.MountPointDef mount in weaponDef.Assignments.MountPoints)
                     {
-                        Log.Info($"WARNING: Couldn't find any weapon item, weapon block, conveyor sorter with subtype '{subtype}' for {APIName}, idx={idx.ToString()}, mod={weaponDef.ModPath}");
+                        string subtype = mount.SubtypeId;
+
+                        MyDefinitionId defId = new MyDefinitionId(typeof(MyObjectBuilder_PhysicalGunObject), subtype);
+                        MyPhysicalItemDefinition physDef;
+                        if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(defId, out physDef))
+                        {
+                            Weapons.GetOrAdd(defId).Add(weaponDef);
+                        }
+                        else
+                        {
+                            Log.Info($"WARNING: Couldn't find any PhysicalGunObject with subtype '{subtype}' for {APIName}, idx={idx.ToString()}, mod={weaponDef.ModPath}");
+                        }
                     }
                 }
             }
