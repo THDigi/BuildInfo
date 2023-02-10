@@ -9,8 +9,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class Collector : SpecializedOverlayBase
     {
-        Color Color = new Color(20, 255, 100);
-        Color ColorLines = new Color(20, 255, 100) * LaserOverlayAlpha;
+        Color Color = new Color(255, 140, 0);
+        Color ColorLines = new Color(255, 140, 0) * LaserOverlayAlpha;
 
         public Collector(SpecializedOverlays processor) : base(processor)
         {
