@@ -3,6 +3,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
@@ -22,16 +23,28 @@ namespace Digi.BuildInfo.Features.LiveData
             {
                 if(dummy.Key.ContainsIgnoreCase(Hardcoded.Collector_DummyName))
                 {
+                    // from MyCollector.LoadDummies()
+                    //Matrix matrix = dummy.Value.Matrix;
+                    //GetBoxFromMatrix(matrix, out Vector3 halfExtents, out Vector3 _, out Quaternion _);
+                    //HkBvShape shape = CreateFieldShape(halfExtents);
+                    //base.Physics = new MyPhysicsBody(this, RigidBodyFlag.RBF_UNLOCKED_SPEEDS);
+                    //base.Physics.IsPhantom = true;
+                    //base.Physics.CreateFromCollisionObject(shape, matrix.Translation, base.WorldMatrix, null, 26);
+                    //base.Physics.Enabled = true;
+                    //base.Physics.RigidBody.ContactPointCallbackEnabled = false;
+                    //shape.Base.RemoveReference();
+                    //break;
+
                     Matrix dummyMatrix = dummy.Value.Matrix;
-                    boxLocalMatrix = Matrix.Normalize(dummyMatrix);
 
-                    // from GetBoxFromMatrix()
-                    //MatrixD matrix = Matrix.Normalize(dummyMatrix) * block.WorldMatrix;
-                    //Quaternion orientation = Quaternion.CreateFromRotationMatrix(matrix);
-                    //Vector3 halfExtents = Vector3.Abs(dummyMatrix.Scale) / 2f;
-                    //halfExtents = new Vector3(halfExtents.X, halfExtents.Y, halfExtents.Z);
-                    //Vector3D position = matrix.Translation;
+                    //Vector3 halfExtents;
+                    //Vector3 pos;
+                    //Quaternion orient;
+                    //GetBoxFromMatrix(block, dummyMatrix, out halfExtents, out pos, out orient);
 
+                    Vector3 size = Vector3.Abs(dummyMatrix.Scale);
+                    boxLocalMatrix = Matrix.CreateTranslation(dummyMatrix.Translation);
+                    Matrix.Rescale(ref boxLocalMatrix, ref size);
                     break;
                 }
             }
@@ -39,5 +52,15 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
             return base.IsValid(block, def) || true;
         }
+
+        // from MyCollector
+        //void GetBoxFromMatrix(IMyEntity entity, Matrix m, out Vector3 halfExtents, out Vector3 position, out Quaternion orientation)
+        //{
+        //    MatrixD matrix = Matrix.Normalize(m) * entity.WorldMatrix;
+        //    orientation = Quaternion.CreateFromRotationMatrix(matrix);
+        //    halfExtents = Vector3.Abs(m.Scale) / 2f;
+        //    halfExtents = new Vector3(halfExtents.X, halfExtents.Y, halfExtents.Z);
+        //    position = matrix.Translation;
+        //}
     }
 }
