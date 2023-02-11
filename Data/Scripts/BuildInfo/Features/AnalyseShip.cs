@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -11,6 +12,7 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 
 using ModId = VRage.MyTuple<ulong, string, string>;
@@ -25,29 +27,39 @@ namespace Digi.BuildInfo.Features
             public int SkinnedBlocks;
         }
 
-        // per ship data
-        private readonly StringBuilder SB = new StringBuilder(512);
-        private readonly Dictionary<string, Objects> DLCs = new Dictionary<string, Objects>();
-        private readonly Dictionary<ModId, Objects> Mods = new Dictionary<ModId, Objects>();
-        private readonly Dictionary<ModId, Objects> ModsChangingVanilla = new Dictionary<ModId, Objects>();
+        // temporary data to generate info
+        readonly StringBuilder SB = new StringBuilder(512);
+        readonly Dictionary<string, Objects> DLCs = new Dictionary<string, Objects>();
+        readonly Dictionary<ModId, Objects> Mods = new Dictionary<ModId, Objects>();
+        readonly Dictionary<ModId, Objects> ModsChangingVanilla = new Dictionary<ModId, Objects>();
+        readonly Dictionary<MyDefinitionId, Objects> Inexistent = new Dictionary<MyDefinitionId, Objects>(MyDefinitionId.Comparer);
 
-        private readonly Dictionary<MyStringHash, string> ArmorSkinDLC = new Dictionary<MyStringHash, string>(MyStringHash.Comparer);
-        private readonly Dictionary<MyStringHash, ModId> ArmorSkinMods = new Dictionary<MyStringHash, ModId>(MyStringHash.Comparer);
+        void ResetLists()
+        {
+            DLCs.Clear();
+            Mods.Clear();
+            ModsChangingVanilla.Clear();
+            Inexistent.Clear();
+        }
 
-        private IMyTerminalControlButton ProjectorButton;
+        readonly Dictionary<MyStringHash, string> ArmorSkinDLC = new Dictionary<MyStringHash, string>(MyStringHash.Comparer);
+        readonly Dictionary<MyStringHash, ModId> ArmorSkinMods = new Dictionary<MyStringHash, ModId>(MyStringHash.Comparer);
 
-        private Action<ResultEnum> WindowClosedAction;
+        MyObjectBuilder_Projector ProjectorOB;
+
+        const string AddControlsAfterThisId = "Blueprint";
+        IMyTerminalControlButton ProjectorBpInfoButton;
+        IMyTerminalControlListbox ProjectorInfoLines;
+        List<MyTerminalControlListBoxItem> InfoContents = new List<MyTerminalControlListBoxItem>(4);
 
         public AnalyseShip(BuildInfoMod main) : base(main)
         {
             GetArmorSkinDefinitions();
-
-            WindowClosedAction = new Action<ResultEnum>(WindowClosed);
         }
 
         public override void RegisterComponent()
         {
-            CreateProjectorButton();
+            CreateTerminalControls();
 
             MyAPIGateway.TerminalControls.CustomControlGetter += CustomTerminal;
         }
@@ -61,9 +73,102 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                if(block is IMyProjector && ProjectorButton != null)
+                if(block == null || controls == null || ProjectorBpInfoButton == null)
+                    return;
+
+                IMyProjector projector = block as IMyProjector;
+
+                if(projector != null)
                 {
-                    controls?.Add(ProjectorButton);
+                    if(projector.ProjectedGrid != null)
+                    {
+                        int bpButtonIndex = controls.Count;
+
+                        #region Find button index
+                        for(int i = 0; i < controls.Count; i++)
+                        {
+                            IMyTerminalControl c = controls[i];
+                            if(c != null && c.Id == AddControlsAfterThisId)
+                            {
+                                bpButtonIndex = i + 1;
+                                break;
+                            }
+                        }
+                        #endregion
+
+                        #region Projection info (listbox)
+                        // maintain an OB cache of the viewed projector block, to access its projected grids as OBs (because of limited modAPI)
+                        if(ProjectorOB == null || ProjectorOB.EntityId != projector.EntityId)
+                        {
+                            ProjectorOB = (MyObjectBuilder_Projector)projector.GetObjectBuilderCubeBlock(copy: false);
+                        }
+
+                        int projections = 0;
+                        int projectedPCU = 0;
+                        int builtPCU = 0;
+                        int unknownBlocks = 0;
+
+                        foreach(MyObjectBuilder_CubeGrid gridOB in ProjectorOB.ProjectedGrids) // no need to check ProjectedGrid because this OB is generated, the deeper ones are not.
+                        {
+                            projectedPCU += gridOB.CubeBlocks.Count;
+
+                            foreach(MyObjectBuilder_CubeBlock blockOB in gridOB.CubeBlocks)
+                            {
+                                MyCubeBlockDefinition def;
+                                if(!MyDefinitionManager.Static.TryGetCubeBlockDefinition(blockOB.GetId(), out def))
+                                {
+                                    unknownBlocks++;
+                                    continue;
+                                }
+
+                                builtPCU += def.PCU;
+
+                                // any projector that is going to be built is going to project its own stuff which also add PCU, but no deeper than this!
+                                MyObjectBuilder_Projector projectorOB = blockOB as MyObjectBuilder_Projector;
+                                if(projectorOB != null)
+                                {
+                                    if(projectorOB.ProjectedGrids != null)
+                                    {
+                                        foreach(MyObjectBuilder_CubeGrid deeperGridOB in projectorOB.ProjectedGrids)
+                                        {
+                                            builtPCU += deeperGridOB.CubeBlocks.Count;
+                                        }
+                                    }
+                                    else if(projectorOB.ProjectedGrid != null)
+                                    {
+                                        builtPCU += projectorOB.ProjectedGrid.CubeBlocks.Count;
+                                    }
+                                }
+                            }
+
+                            FindProjections(gridOB, ref projections);
+                        }
+
+                        using(InfoLines info = new InfoLines(ProjectorInfoLines, InfoContents))
+                        {
+                            info.Add($"Projection PCU: {projectedPCU}");
+                            info.Add($"Fully built PCU: {builtPCU}");
+
+                            if(unknownBlocks > 0)
+                                info.Add($"WARNING: {unknownBlocks} unknown blocks");
+
+                            if(projections >= 2)
+                                info.Add($"WARNING: {projections} layers of projectors!");
+                        }
+
+                        if(ProjectorInfoLines.VisibleRowsCount > 0)
+                        {
+                            ProjectorInfoLines.RedrawControl();
+                            controls.Insert(bpButtonIndex++, ProjectorInfoLines);
+                        }
+                        #endregion
+
+                        controls.Insert(bpButtonIndex++, ProjectorBpInfoButton);
+                    }
+                    else
+                    {
+                        ProjectorOB = null;
+                    }
                 }
             }
             catch(Exception e)
@@ -72,24 +177,106 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void CreateProjectorButton()
+        static void FindProjections(MyObjectBuilder_CubeGrid startingGridOB, ref int projectedLayers)
         {
-            IMyTerminalControlButton c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildInfo.ShowBlueprintMods");
-            c.Title = MyStringId.GetOrCompute("Show Blueprint Mods");
-            c.Tooltip = MyStringId.GetOrCompute("Shows DLCs and mods used by the projected blueprint.");
-            c.SupportsMultipleBlocks = false;
-            c.Enabled = (block) =>
+            foreach(MyObjectBuilder_CubeBlock blockOB in startingGridOB.CubeBlocks)
             {
-                IMyProjector projector = (IMyProjector)block;
-                return (projector.ProjectedGrid != null);
-            };
-            c.Action = (block) =>
+                MyObjectBuilder_Projector projectorOB = blockOB as MyObjectBuilder_Projector;
+                if(projectorOB == null)
+                    continue;
+
+                if(projectorOB.ProjectedGrids != null)
+                {
+                    projectedLayers++; // not adding per projected grid because this is still one projector
+
+                    foreach(MyObjectBuilder_CubeGrid projectedGridOB in projectorOB.ProjectedGrids)
+                    {
+                        FindProjections(projectedGridOB, ref projectedLayers);
+                    }
+                }
+                else if(projectorOB.ProjectedGrid != null)
+                {
+                    projectedLayers++;
+
+                    FindProjections(projectorOB.ProjectedGrid, ref projectedLayers);
+                }
+            }
+        }
+
+        struct InfoLines : IDisposable
+        {
+            IMyTerminalControlListbox Listbox;
+            List<MyTerminalControlListBoxItem> Lines;
+            int Line;
+
+            public InfoLines(IMyTerminalControlListbox listbox, List<MyTerminalControlListBoxItem> lines)
             {
-                IMyProjector projector = (IMyProjector)block;
-                if(projector.ProjectedGrid != null)
-                    Analyse(projector.ProjectedGrid);
-            };
-            ProjectorButton = c;
+                Listbox = listbox;
+                Lines = lines;
+                Line = 0;
+            }
+
+            public void Add(string text) //, string tooltip = null)
+            {
+                MyTerminalControlListBoxItem line;
+                if(Lines.Count <= Line)
+                {
+                    line = new MyTerminalControlListBoxItem(MyStringId.NullOrEmpty, MyStringId.NullOrEmpty, null);
+                    Lines.Add(line);
+                }
+                else
+                {
+                    line = Lines[Line];
+                }
+
+                line.Text = MyStringId.GetOrCompute(text);
+                //line.Tooltip = (tooltip != null ? MyStringId.GetOrCompute(tooltip) : MyStringId.NullOrEmpty);
+
+                Line++;
+            }
+
+            public void Dispose()
+            {
+                Listbox.VisibleRowsCount = Line;
+            }
+        }
+
+        void CreateTerminalControls()
+        {
+            {
+                IMyTerminalControlButton c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildInfo.ShowBlueprintMods");
+                c.Title = MyStringId.GetOrCompute("Show DLC/Mods");
+                c.Tooltip = MyStringId.GetOrCompute("Opens a window listing the DLCs, mods and unknown blocks in the projected blueprint.\n(Added by BuildInfo mod)");
+                c.SupportsMultipleBlocks = false;
+                c.Enabled = (block) =>
+                {
+                    IMyProjector projector = (IMyProjector)block;
+                    return (projector.ProjectedGrid != null);
+                };
+                c.Action = (block) =>
+                {
+                    if(ProjectorOB?.ProjectedGrids != null && ProjectorOB.ProjectedGrids.Count > 0)
+                    {
+                        AnalyseGridOBs(ProjectorOB.ProjectedGrids, ProjectorOB.ProjectedGrids[0].DisplayName);
+                    }
+                };
+                ProjectorBpInfoButton = c;
+            }
+            {
+                IMyTerminalControlListbox c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlListbox, IMyProjector>("BuildInfo.ProjectionInfo");
+                c.ItemSelected = (b, selected) => { };
+                c.ListContent = (b, content, preselected) =>
+                {
+                    for(int i = 0; i < ProjectorInfoLines.VisibleRowsCount; i++)
+                    {
+                        content.Add(InfoContents[i]);
+                    }
+                };
+                c.Multiselect = false;
+                c.VisibleRowsCount = 0;
+                c.Tooltip = MyStringId.GetOrCompute("Various quick info about the projected blueprint.\nSelecting does nothing, this control is used just for its UI compactness.\n(Added by BuildInfo mod)");
+                ProjectorInfoLines = c;
+            }
         }
 
         void GetArmorSkinDefinitions()
@@ -113,7 +300,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        public bool Analyse(IMyCubeGrid mainGrid)
+        public bool AnalyseRealGrid(IMyCubeGrid targetGrid)
         {
             List<IMyCubeGrid> grids = null;
             try
@@ -124,101 +311,165 @@ namespace Digi.BuildInfo.Features
                     return true; // must be true to avoid showing other messages
                 }
 
-                DLCs.Clear();
-                Mods.Clear();
-                ModsChangingVanilla.Clear();
+                ResetLists();
 
-                grids = Caches.GetGrids(mainGrid, GridLinkTypeEnum.Mechanical);
+                grids = Caches.GetGrids(targetGrid, GridLinkTypeEnum.Mechanical);
 
-                foreach(IMyCubeGrid grid in grids)
+                int totalBlocks = 0;
+
+                foreach(MyCubeGrid grid in grids)
                 {
                     if(grid.BigOwners != null && grid.BigOwners.Count > 0)
                     {
                         foreach(long owner in grid.BigOwners)
                         {
                             if(MyAPIGateway.Session.Player.GetRelationTo(owner) == MyRelationsBetweenPlayerAndBlock.Enemies)
-                            {
                                 return false;
-                            }
                         }
+                    }
+
+                    totalBlocks += grid.BlocksCount;
+
+                    foreach(IMySlimBlock block in grid.GetBlocks())
+                    {
+                        MyDefinitionId defId = block.BlockDefinition?.Id ?? new MyDefinitionId(typeof(MyObjectBuilder_CubeBlock), "BlockDefinition is null!!!");
+                        GetInfoFromBlockDef(block.BlockDefinition as MyCubeBlockDefinition, defId, block.SkinSubtypeId);
                     }
                 }
 
-                GetInfoFromGrids(grids);
-                GenerateShipInfo(mainGrid, grids);
+                GenerateShipInfo(targetGrid.CustomName, totalBlocks, grids.Count);
             }
             finally
             {
-                DLCs.Clear();
-                Mods.Clear();
-                ModsChangingVanilla.Clear();
+                ResetLists();
                 grids?.Clear();
             }
 
             return true;
         }
 
-        void GetInfoFromGrids(List<IMyCubeGrid> grids)
+        public bool AnalyseGridOBs(List<MyObjectBuilder_CubeGrid> gridOBs, string shipName)
         {
-            foreach(MyCubeGrid grid in grids)
+            try
             {
-                foreach(IMySlimBlock block in grid.GetBlocks())
+                if(MyAPIGateway.Session?.Player == null)
                 {
-                    MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.BlockDefinition;
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, Constants.WarnPlayerIsNull, FontsHandler.RedSh);
+                    return true; // must be true to avoid showing other messages
+                }
 
-                    if(block.SkinSubtypeId != MyStringHash.NullOrEmpty)
+                ResetLists();
+
+                // no ownership check because it's given via projector which supposedly has access to press terminal buttons...
+
+                int totalBlocks = 0;
+
+                foreach(MyObjectBuilder_CubeGrid gridOB in gridOBs)
+                {
+                    totalBlocks += gridOB.CubeBlocks.Count;
+
+                    foreach(MyObjectBuilder_CubeBlock blockOB in gridOB.CubeBlocks)
                     {
-                        string dlc;
-                        if(ArmorSkinDLC.TryGetValue(block.SkinSubtypeId, out dlc))
-                        {
-                            Objects objects = DLCs.GetOrAdd(dlc);
-                            objects.SkinnedBlocks++;
-                        }
-                        else
-                        {
-                            ModId modId;
-                            if(ArmorSkinMods.TryGetValue(block.SkinSubtypeId, out modId))
-                            {
-                                Objects objects = Mods.GetOrAdd(modId);
-                                objects.SkinnedBlocks++;
-                            }
-                        }
+                        MyDefinitionId defId = blockOB.GetId();
+                        GetInfoFromBlockDef(MyDefinitionManager.Static.GetCubeBlockDefinition(defId), defId, MyStringHash.GetOrCompute(blockOB.SkinSubtypeId));
                     }
+                }
 
-                    if(def.DLCs != null && def.DLCs.Length != 0)
+                GenerateShipInfo(shipName, totalBlocks, gridOBs.Count);
+            }
+            finally
+            {
+                ResetLists();
+            }
+
+            return true;
+        }
+
+        void GetInfoFromBlockDef(MyCubeBlockDefinition def, MyDefinitionId defId, MyStringHash skin)
+        {
+            if(def == null)
+            {
+                Objects objects = Inexistent.GetOrAdd(defId);
+                objects.Blocks++;
+                return;
+            }
+
+            if(skin != MyStringHash.NullOrEmpty)
+            {
+                string dlc;
+                if(ArmorSkinDLC.TryGetValue(skin, out dlc))
+                {
+                    Objects objects = DLCs.GetOrAdd(dlc);
+                    objects.SkinnedBlocks++;
+                }
+                else
+                {
+                    ModId modId;
+                    if(ArmorSkinMods.TryGetValue(skin, out modId))
                     {
-                        foreach(string dlc in def.DLCs)
-                        {
-                            Objects objects = DLCs.GetOrAdd(dlc);
-                            objects.Blocks++;
-                        }
+                        Objects objects = Mods.GetOrAdd(modId);
+                        objects.SkinnedBlocks++;
                     }
+                }
+            }
 
-                    if(!def.Context.IsBaseGame)
+            if(def.DLCs != null && def.DLCs.Length != 0)
+            {
+                foreach(string dlc in def.DLCs)
+                {
+                    Objects objects = DLCs.GetOrAdd(dlc);
+                    objects.Blocks++;
+                }
+            }
+
+            if(!def.Context.IsBaseGame)
+            {
+                ModId modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
+
+                if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
+                {
+                    if(!Mods.ContainsKey(modId))
                     {
-                        ModId modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
-
-                        if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
-                        {
-                            if(!Mods.ContainsKey(modId))
-                            {
-                                Objects objects = ModsChangingVanilla.GetOrAdd(modId);
-                                objects.Blocks++;
-                            }
-                        }
-                        else
-                        {
-                            Objects objects = Mods.GetOrAdd(modId);
-                            objects.Blocks++;
-                        }
+                        Objects objects = ModsChangingVanilla.GetOrAdd(modId);
+                        objects.Blocks++;
                     }
+                }
+                else
+                {
+                    Objects objects = Mods.GetOrAdd(modId);
+                    objects.Blocks++;
                 }
             }
         }
 
-        void GenerateShipInfo(IMyCubeGrid mainGrid, List<IMyCubeGrid> grids)
+        void GenerateShipInfo(string shipName, int totalBlocks, int gridCount)
         {
             SB.Clear();
+
+            SB.Append("Total blocks: ").Append(totalBlocks).Append("\n\n");
+
+            #region Inexistent blocks
+            AppendTitle(SB, "Unknown block types", Inexistent.Count);
+
+            if(Inexistent.Count == 0)
+            {
+                SB.Append(" (None)").NewLine();
+            }
+            else
+            {
+                foreach(KeyValuePair<MyDefinitionId, Objects> kv in Inexistent)
+                {
+                    MyDefinitionId defId = kv.Key;
+                    Objects objects = kv.Value;
+
+                    SB.Append("- ").Append(defId.TypeId.ToString()).Append("/").Append(defId.SubtypeName).NewLine();
+                    SB.Append("    ").Append(objects.Blocks).Append(" ").Append(objects.Blocks == 1 ? "block" : "blocks").NewLine();
+                }
+            }
+            SB.NewLine();
+            #endregion
+
+            #region from DLC
             AppendTitle(SB, "Blocks or skins from DLCs", DLCs.Count);
 
             if(DLCs.Count == 0)
@@ -245,8 +496,10 @@ namespace Digi.BuildInfo.Features
                         .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
-
             SB.NewLine();
+            #endregion
+
+            #region from Mods
             AppendTitle(SB, "Blocks or skins from mods", Mods.Count);
 
             if(Mods.Count == 0)
@@ -269,8 +522,10 @@ namespace Digi.BuildInfo.Features
                         .Append(objects.SkinnedBlocks).Append(" skin").Append(objects.SkinnedBlocks == 1 ? "." : "s.").NewLine();
                 }
             }
-
             SB.NewLine();
+            #endregion
+
+            #region Vanilla altered by mods
             AppendTitle(SB, "Vanilla blocks altered by mods", ModsChangingVanilla.Count);
             SB.Append("NOTE: This list can't show mods that alter blocks only with scripts.").NewLine();
 
@@ -295,17 +550,19 @@ namespace Digi.BuildInfo.Features
                     SB.NewLine();
                 }
             }
+            SB.NewLine();
+            #endregion
 
-            shipInfoText = SB.ToString();
+            ShipInfoText = SB.TrimEndWhitespace().ToString();
 
             SB.Clear();
-            SB.Append(mainGrid.CustomName);
-            if(grids.Count > 1)
-                SB.Append(" + ").Append(grids.Count - 1).Append(" subgrids");
+            SB.Append(shipName);
+            if(gridCount > 1)
+                SB.Append(" + ").Append(gridCount - 1).Append(" subgrids");
 
-            shipInfoTitle = SB.ToString();
+            ShipInfoTitle = SB.ToString();
 
-            MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", shipInfoTitle, string.Empty, shipInfoText, WindowClosedAction, "Export info to file\n(Press [Esc] to not export)");
+            MyAPIGateway.Utilities.ShowMissionScreen("Mods and DLCs used by:", ShipInfoTitle, string.Empty, ShipInfoText, WindowClosed, "Export info to file\n(Press [Esc] to not export)");
         }
 
         void AppendTitle(StringBuilder sb, string title, int count = -1)
@@ -325,9 +582,9 @@ namespace Digi.BuildInfo.Features
             sb.NewLine();
         }
 
-        StringBuilder fileNameSb = new StringBuilder(128);
-        string shipInfoTitle;
-        string shipInfoText;
+        StringBuilder FileNameSB = new StringBuilder(128);
+        string ShipInfoTitle;
+        string ShipInfoText;
 
         void WindowClosed(ResultEnum result)
         {
@@ -335,28 +592,31 @@ namespace Digi.BuildInfo.Features
             {
                 if(result == ResultEnum.OK)
                 {
-                    fileNameSb.Clear();
-                    fileNameSb.Append("ShipInfo '");
-                    fileNameSb.Append(shipInfoTitle);
-                    fileNameSb.Append("' - ");
-                    fileNameSb.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
-                    fileNameSb.Append(".txt");
+                    FileNameSB.Clear();
+                    FileNameSB.Append("ShipInfo '");
+                    FileNameSB.Append(ShipInfoTitle);
+                    FileNameSB.Append("' - ");
+                    FileNameSB.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
+                    FileNameSB.Append(".txt");
 
-                    char[] invalidFileNameChars = Path.GetInvalidFileNameChars();
-
-                    foreach(char invalidChar in invalidFileNameChars)
+                    foreach(char invalidChar in Path.GetInvalidFileNameChars())
                     {
-                        fileNameSb.Replace(invalidChar, '_');
+                        FileNameSB.Replace(invalidChar, '_');
                     }
 
-                    string fileName = fileNameSb.ToString();
+                    while(FileNameSB.IndexOf("__") != -1)
+                    {
+                        FileNameSB.Replace("__", "_");
+                    }
+
+                    string fileName = FileNameSB.ToString();
                     string modStorageName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
 
                     TextWriter writer = null;
                     try
                     {
                         writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(fileName, typeof(AnalyseShip));
-                        writer.Write(shipInfoText);
+                        writer.Write(ShipInfoText);
                         writer.Flush();
 
                         Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Exported ship info to: %appdata%/SpaceEngineers/Storage/{modStorageName}/{fileName}", FontsHandler.GreenSh);

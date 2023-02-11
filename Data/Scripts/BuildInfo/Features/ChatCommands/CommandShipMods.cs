@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 return;
             }
 
-            bool allowed = Main.AnalyseShip.Analyse(aimedGrid);
+            bool allowed = Main.AnalyseShip.AnalyseRealGrid(aimedGrid);
             if(!allowed)
             {
                 PrintChat("Can't be used on enemy ships.", FontsHandler.RedSh);
