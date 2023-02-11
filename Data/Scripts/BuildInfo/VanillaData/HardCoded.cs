@@ -223,6 +223,9 @@ namespace Digi.BuildInfo.VanillaData
                 return (def.MaxBroadcastPowerDrainkW / 1000f);
         }
 
+        // from MyMyProjectorBase.AllowWelding
+        public static bool Projector_AllowWelding(MyProjectorDefinition def) => def.AllowWelding && !def.AllowScaling && !def.IgnoreSize;
+
         // from MyTimerBlock.Init()
         public const float Timer_PowerReq = 1E-07f;
 
