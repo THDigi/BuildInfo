@@ -1087,39 +1087,44 @@ namespace Digi.BuildInfo.Features
             #endregion Projector info and status
 
             #region Different block projected under this one
-            IMyCubeGrid nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid;
+            MyCubeGrid nearbyProjectedGrid = Main.EquipmentMonitor.NearbyProjector?.ProjectedGrid as MyCubeGrid;
             if(!isProjected && nearbyProjectedGrid != null && Main.Config.AimInfo.IsSet(AimInfoFlags.Projected))
             {
-                ProjectedUnder.Clear();
-
-                // need the real block's positions in the projected grid's space
-                Vector3I min = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Min));
-                Vector3I max = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Max));
-                Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref min, ref max);
-                while(iterator.IsValid())
+                IMyProjector projector = nearbyProjectedGrid.Projector as IMyProjector;
+                MyProjectorDefinition projectorDef = projector?.SlimBlock?.BlockDefinition as MyProjectorDefinition;
+                if(projectorDef != null && Hardcoded.Projector_AllowWelding(projectorDef))
                 {
-                    IMySlimBlock projectedBlock = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
-                    if(projectedBlock != null && projectedBlock.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                    ProjectedUnder.Clear();
+
+                    // need the real block's positions in the projected grid's space
+                    Vector3I min = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Min));
+                    Vector3I max = nearbyProjectedGrid.WorldToGridInteger(aimedBlock.CubeGrid.GridIntegerToWorld(aimedBlock.Max));
+                    Vector3I_RangeIterator iterator = new Vector3I_RangeIterator(ref min, ref max);
+                    while(iterator.IsValid())
                     {
-                        ProjectedUnder.Add(projectedBlock);
+                        IMySlimBlock projectedBlock = nearbyProjectedGrid.GetCubeBlock(iterator.Current);
+                        if(projectedBlock != null && projectedBlock.BlockDefinition.Id != aimedBlock.BlockDefinition.Id)
+                        {
+                            ProjectedUnder.Add(projectedBlock);
+                        }
+
+                        iterator.MoveNext();
                     }
 
-                    iterator.MoveNext();
-                }
+                    int projectedUnderCount = ProjectedUnder.Count;
+                    if(projectedUnderCount == 1)
+                    {
+                        AddLine().Color(COLOR_BAD).Label("Projected under").AppendMaxLength(ProjectedUnder.FirstElement().BlockDefinition.DisplayNameText, 24);
+                    }
+                    else if(projectedUnderCount > 1)
+                    {
+                        AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectedUnderCount).Append(" blocks");
+                    }
 
-                int projectedUnderCount = ProjectedUnder.Count;
-                if(projectedUnderCount == 1)
-                {
-                    AddLine().Color(COLOR_BAD).Label("Projected under").AppendMaxLength(ProjectedUnder.FirstElement().BlockDefinition.DisplayNameText, 24);
-                }
-                else if(projectedUnderCount > 1)
-                {
-                    AddLine().Color(COLOR_BAD).Label("Projected under").Append(projectedUnderCount).Append(" blocks");
-                }
+                    // TODO: add this to under-crosshair messages?
 
-                // TODO: add this to under-crosshair messages?
-
-                ProjectedUnder.Clear();
+                    ProjectedUnder.Clear();
+                }
             }
             #endregion Different block projected under this one
 
@@ -2749,6 +2754,21 @@ namespace Digi.BuildInfo.Features
             MyProjectorDefinition projector = (MyProjectorDefinition)def;
 
             PowerRequired(projector.RequiredPowerInput, projector.ResourceSinkGroup);
+
+            StringBuilder sb = AddLine().Label("Projector mode");
+
+            if(Hardcoded.Projector_AllowWelding(projector))
+            {
+                sb.Append("Building (no rescale, always same grid size)");
+            }
+            else
+            {
+                sb.Append("Preview").Separator().Label("Allows sizes");
+                if(projector.IgnoreSize)
+                    sb.Color(COLOR_GOOD).Append("both");
+                else
+                    sb.Color(COLOR_WARNING).Append(def.CubeSize == MyCubeSize.Large ? "large" : "small").Append(" grid");
+            }
         }
 
         #region Doors

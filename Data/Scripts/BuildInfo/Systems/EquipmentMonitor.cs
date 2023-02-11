@@ -11,6 +11,7 @@ using Sandbox.Game.Entities.Character.Components;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Weapons;
 using VRage.Game;
 using VRage.Game.Entity;
@@ -326,8 +327,8 @@ namespace Digi.BuildInfo.Systems
         }
 
         // HACK hardcoded from MyWelder.FindProjectedBlock()
-        readonly List<Vector3I> cells = new List<Vector3I>();
-        readonly List<IMySlimBlock> blocks = new List<IMySlimBlock>(); // must be list to preserve insert order
+        readonly List<Vector3I> _TmpCells = new List<Vector3I>();
+        readonly List<IMySlimBlock> _TmpBlocks = new List<IMySlimBlock>(); // must be list to preserve insert order
         bool FindProjectedBlock(IMyCharacter character, out IMySlimBlock targetBlock, out BuildCheckResult targetStatus, out IMySlimBlock closestBlock, out BuildCheckResult closestStatus, out IMyProjector projector)
         {
             targetBlock = null;
@@ -365,17 +366,40 @@ namespace Digi.BuildInfo.Systems
                 return false;
 
             projector = grid?.Projector as IMyProjector;
-            if(projector == null)
+            MyProjectorDefinition projectorDef = projector?.SlimBlock?.BlockDefinition as MyProjectorDefinition;
+            if(projectorDef == null)
+            {
+                projector = null;
                 return false;
+            }
+
+            _TmpBlocks.Clear();
+            _TmpCells.Clear();
+
+            if(Hardcoded.Projector_AllowWelding(projectorDef))
+            {
+                grid.RayCastCells(start, end, _TmpCells);
+            }
+            else // aiming at non-buildable projection, likely rescaled
+            {
+                float scaledGridSize = grid.GridSize;
+                ITerminalProperty prop = projector.GetProperty("Scale");
+                if(prop != null && projectorDef.AllowScaling)
+                    scaledGridSize *= prop.AsFloat().GetValue(projector);
+
+                // pretty much same as RayCastCells() except allowing custom GridSize
+                MatrixD toGridLocal = grid.PositionComp.WorldMatrixNormalizedInv;
+                Vector3D localStart = Vector3D.Transform(start, toGridLocal);
+                Vector3D localEnd = Vector3D.Transform(end, toGridLocal);
+                Vector3I size = Vector3I.Max(Vector3I.Abs(grid.Min), Vector3I.Abs(grid.Max));
+                MyCubeGrid.RayCastStaticCells(localStart, localEnd, _TmpCells, scaledGridSize, gridSizeInflate: size, havokWorld: false);
+            }
 
             // inlined RayCastBlocksAllOrdered(grid, start, end, blocks);
-            blocks.Clear();
-            grid.RayCastCells(start, end, cells, clearOutHitPositions: true);
-
-            for(int i = 0; i < cells.Count; ++i)
+            for(int i = 0; i < _TmpCells.Count; ++i)
             {
-                IMySlimBlock slim = grid.GetCubeBlock(cells[i]) as IMySlimBlock;
-                if(slim == null || blocks.Contains(slim))
+                IMySlimBlock slim = grid.GetCubeBlock(_TmpCells[i]) as IMySlimBlock;
+                if(slim == null || _TmpBlocks.Contains(slim))
                     continue;
 
                 BuildCheckResult canBuild = projector.CanBuild(slim, checkHavokIntersections: true);
@@ -398,10 +422,10 @@ namespace Digi.BuildInfo.Systems
                     break;
                 }
 
-                blocks.Add(slim);
+                _TmpBlocks.Add(slim);
             }
 
-            blocks.Clear();
+            _TmpBlocks.Clear();
             return true;
         }
 
