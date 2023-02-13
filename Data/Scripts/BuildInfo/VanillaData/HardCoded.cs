@@ -537,5 +537,57 @@ namespace Digi.BuildInfo.VanillaData
         public static readonly string[] MountPointMaskNames = Enum.GetNames(typeof(MountPointMask));
 
         public static readonly byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
+
+        // from MyCubeGrid.UpgradeCubeBlock()
+        public static bool IsBlockReplaced(MyDefinitionId id, out MyCubeBlockDefinition newDef)
+        {
+            if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(id, out newDef))
+            {
+                return false;
+            }
+            else
+            {
+                // from MyCubeGrid.FindDefinitionUpgrade()
+                foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
+                {
+                    MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
+                    if(blockDef == null)
+                        continue;
+
+                    if(blockDef.Id.SubtypeId == id.SubtypeId && !string.IsNullOrEmpty(id.SubtypeName))
+                    {
+                        newDef = blockDef;
+                        return true;
+                    }
+                }
+
+                string[] array = new string[7]
+                {
+                    "Red",
+                    "Yellow",
+                    "Blue",
+                    "Green",
+                    "Black",
+                    "White",
+                    "Gray"
+                };
+
+                for(int i = 0; i < array.Length; i++)
+                {
+                    if(id.SubtypeName.EndsWith(array[i], StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        string subtypeName = id.SubtypeName.Substring(0, id.SubtypeName.Length - array[i].Length);
+                        MyDefinitionId defId = new MyDefinitionId(id.TypeId, subtypeName);
+
+                        if(MyDefinitionManager.Static.TryGetCubeBlockDefinition(defId, out newDef))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }

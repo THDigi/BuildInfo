@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -462,8 +463,14 @@ namespace Digi.BuildInfo.Features
                     MyDefinitionId defId = kv.Key;
                     Objects objects = kv.Value;
 
-                    SB.Append("- ").Append(defId.TypeId.ToString()).Append("/").Append(defId.SubtypeName).NewLine();
+                    SB.Append("- ").IdTypeSubtypeFormat(defId).NewLine();
                     SB.Append("    ").Append(objects.Blocks).Append(" ").Append(objects.Blocks == 1 ? "block" : "blocks").NewLine();
+
+                    MyCubeBlockDefinition newDef;
+                    if(Hardcoded.IsBlockReplaced(defId, out newDef))
+                    {
+                        SB.Append("    NOTE: Spawns as: ").IdTypeSubtypeFormat(newDef.Id).NewLine();
+                    }
                 }
             }
             SB.NewLine();

@@ -924,6 +924,20 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        public static StringBuilder IdTypeSubtypeFormat(this StringBuilder s, MyDefinitionId id)
+        {
+            string typeName = id.TypeId.ToString();
+            int index = typeName.IndexOf('_') + 1;
+
+            if(index > -1)
+                s.Append(typeName, index, typeName.Length - index);
+            else
+                s.Append(typeName);
+
+            s.Append("/").Append(id.SubtypeName);
+            return s;
+        }
+
         public static StringBuilder IdFriendlyFormat(this StringBuilder s, MyDefinitionId id)
         {
             if(id == MyResourceDistributorComponent.ElectricityId)
