@@ -444,7 +444,7 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, radPerSecond, "°/s"))
                 return s;
 
-            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append(" °/s");
+            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append("°/s");
         }
 
         public static StringBuilder TorqueFormat(this StringBuilder s, float N)

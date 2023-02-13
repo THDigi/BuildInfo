@@ -2708,7 +2708,9 @@ namespace Digi.BuildInfo.Features
             MyLightingBlockDefinition light = (MyLightingBlockDefinition)def;
 
             MyBounds radius = light.LightRadius;
-            bool isSpotlight = (def is MyReflectorBlockDefinition);
+
+            MyReflectorBlockDefinition spotLight = def as MyReflectorBlockDefinition;
+            bool isSpotlight = (spotLight != null);
 
             if(isSpotlight)
                 radius = light.LightReflectorRadius;
@@ -2720,6 +2722,18 @@ namespace Digi.BuildInfo.Features
                 AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
                 AddLine().Append("Intensity: ").RoundedNumber(light.LightIntensity.Min, 2).Append(" to ").RoundedNumber(light.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightIntensity.Default, 2);
                 AddLine().Append("Falloff: ").RoundedNumber(light.LightFalloff.Min, 2).Append(" to ").RoundedNumber(light.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(light.LightFalloff.Default, 2);
+
+                if(isSpotlight)
+                {
+                    BData_Spotlight data = Main.LiveDataHandler.Get<BData_Spotlight>(def);
+                    if(data != null && data.HasRotatingParts)
+                    {
+                        float min = spotLight.RotationSpeedBounds.Min * Hardcoded.Spotlight_RadiansPerSecondMul;
+                        float max = spotLight.RotationSpeedBounds.Max * Hardcoded.Spotlight_RadiansPerSecondMul;
+                        float rotationDefault = spotLight.RotationSpeedBounds.Default * Hardcoded.Spotlight_RadiansPerSecondMul;
+                        AddLine().Append("Rotation speed: ").RotationSpeed(min, 0).Append(" to ").RotationSpeed(max, 0).Separator().Append("Default: ").RotationSpeed(rotationDefault, 0);
+                    }
+                }
             }
         }
 

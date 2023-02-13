@@ -242,6 +242,10 @@ namespace Digi.BuildInfo.VanillaData
             typeof(MyObjectBuilder_SmallGatlingGun), // MySmallGatlingGun.CanShoot()
         };
 
+        // from MyReflectorLight.CreateTerminalControls()
+        public const float Spotlight_RotationSpeedToRPM = 20f;
+        public const float Spotlight_RadiansPerSecondMul = Spotlight_RotationSpeedToRPM * 6f;
+
         // from MyLargeTurretBase.Init()
         public const float Turret_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_TURRET; // 0.002f
 

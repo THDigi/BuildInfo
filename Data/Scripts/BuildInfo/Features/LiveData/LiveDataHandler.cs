@@ -74,6 +74,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_TargetDummy>(Hardcoded.TargetDummyType);
 
+            AddType<BData_Spotlight>(typeof(MyObjectBuilder_ReflectorLight));
+
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 
             AddType<BData_AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));

@@ -29,6 +29,8 @@ using VRage.ModAPI;
 using VRage.Input;
 using VRage.Game.Components;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.EntityComponents;
+using VRage.Game.Entity;
 
 namespace Digi.BuildInfo.Features
 {
@@ -96,6 +98,37 @@ namespace Digi.BuildInfo.Features
                 //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
             }
         }
+
+        //Vector3 PrevDir;
+
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    var slim = MyAPIGateway.Session.Player?.Character?.EquippedTool?.Components?.Get<MyCasterComponent>()?.HitBlock as IMySlimBlock;
+        //    if(slim != null && slim.FatBlock is IMyReflectorLight)
+        //    {
+        //        MyCubeBlock block = (MyCubeBlock)slim.FatBlock;
+
+        //        if(block.Subparts != null && block.Subparts.Count > 0)
+        //        {
+        //            MyEntitySubpart subpart = block.Subparts.First().Value;
+
+        //            Vector3 dir = Vector3D.Normalize(subpart.PositionComp.LocalMatrix.Up);
+
+        //            if(!Vector3.IsZero(PrevDir))
+        //            {
+        //                float angleDiff = (float)Math.Acos(Vector3.Dot(PrevDir, dir));
+
+        //                float RPM = MathHelper.ToDegrees(angleDiff) * 20f;
+        //                float degPerSec = MathHelper.ToDegrees(angleDiff) * 60f;
+
+        //                MyAPIGateway.Utilities.ShowNotification($"RPM={RPM:0.##}", 16);
+        //                MyAPIGateway.Utilities.ShowNotification($"deg per sec={degPerSec:0.##}", 16);
+        //            }
+
+        //            PrevDir = dir;
+        //        }
+        //    }
+        //}
 
         void Debug_ValueAssigned(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {

@@ -152,6 +152,7 @@
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\Fonts\FontParser.cs" />
     <Compile Include="Features\LiveData\Merge.cs" />
+    <Compile Include="Features\LiveData\Spotlight.cs" />
     <Compile Include="Features\ModelPreview\Blocks\HangarDoor.cs" />
     <Compile Include="Features\Overlays\Specialized\Merge.cs" />
     <Compile Include="Features\ProfilerDisplay.cs" />
