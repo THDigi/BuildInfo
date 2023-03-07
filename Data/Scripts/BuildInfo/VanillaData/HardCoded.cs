@@ -232,6 +232,26 @@ namespace Digi.BuildInfo.VanillaData
         // from MyProgrammableBlock.Init()
         public const float ProgrammableBlock_PowerReq = 0.0005f;
 
+        // from MyProgrammableBlock.OpenEditor()
+        public static readonly string ProgrammableBlock_DefaultScript = PB_ComputeDefaultScript();
+        static string PB_ComputeDefaultScript()
+        {
+            string ctorComment = PB_ToIndentedComment(MyTexts.GetString(MySpaceTexts.ProgrammableBlock_DefaultScript_Constructor).Trim());
+            string saveComment = PB_ToIndentedComment(MyTexts.GetString(MySpaceTexts.ProgrammableBlock_DefaultScript_Save).Trim());
+            string mainComment = PB_ToIndentedComment(MyTexts.GetString(MySpaceTexts.ProgrammableBlock_DefaultScript_Main).Trim());
+            string script = $"public Program()\r\n{{\r\n{ctorComment}\r\n}}\r\n\r\npublic void Save()\r\n{{\r\n{saveComment}\r\n}}\r\n\r\npublic void Main(string argument, UpdateType updateSource)\r\n{{\r\n{mainComment}\r\n}}\r\n";
+
+            script = script.Replace("\r", ""); // HACK: the editor GUI does this in backend
+
+            return script;
+        }
+        static string PB_ToIndentedComment(string input)
+        {
+            string[] NEW_LINES = new string[] { "\r\n", "\n" };
+            string[] value = input.Split(NEW_LINES, StringSplitOptions.None);
+            return "    // " + string.Join("\n    // ", value);
+        }
+
         // from MySoundBlock.UpdateRequiredPowerInput()
         public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK; // 0.0002f
 

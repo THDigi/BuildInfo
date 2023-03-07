@@ -556,6 +556,8 @@ namespace Digi.BuildInfo.Features.Terminal
             AddFormatterAndPairTypes(Info_Pistons, typeof(MyObjectBuilder_PistonBase), typeof(MyObjectBuilder_ExtendedPistonBase));
 
             AddFormatterAndPairTypes(Info_Doors, typeof(MyObjectBuilder_Door), typeof(MyObjectBuilder_AirtightSlideDoor), typeof(MyObjectBuilder_AirtightHangarDoor), typeof(MyObjectBuilder_AirtightDoorGeneric), typeof(MyObjectBuilder_AdvancedDoor));
+
+            AddFormatterAndPairTypes(Info_PBs, typeof(MyObjectBuilder_MyProgrammableBlock));
         }
 
         /// <summary>
@@ -711,6 +713,22 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Length -= 2; // remove last comma
             info.Append('\n');
+        }
+
+        void Info_PBs(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            int haveScript = 0;
+
+            foreach(IMyProgrammableBlock pb in blocks)
+            {
+                string script = pb.ProgramData;
+                if(!string.IsNullOrWhiteSpace(script) && script != Hardcoded.ProgrammableBlock_DefaultScript)
+                {
+                    haveScript++;
+                }
+            }
+
+            info.Append("Have script: ").Append(haveScript).Append('\n');
         }
         #endregion
     }
