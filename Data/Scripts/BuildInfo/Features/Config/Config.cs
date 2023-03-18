@@ -91,6 +91,7 @@ namespace Digi.BuildInfo.Features.Config
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
         public BoolSetting OverlaysShowLabelsWithBind;
         // TODO ^ rebindable key?
+        public BoolSetting OverlayLockRememberMode;
 
         public ColorSetting LeakParticleColorWorld;
         public ColorSetting LeakParticleColorOverlay;
@@ -589,6 +590,9 @@ namespace Digi.BuildInfo.Features.Config
             OverlaysShowLabelsWithBind = new BoolSetting(Handler, "Overlays: Show Labels with Look-around key", true,
                 $"Turning off labels above and having this setting on allows you to see labels when holding the look-around bind (last seen bound to: {lookaroundBind}).");
             OverlaysShowLabelsWithBind.AddCompatibilityNames("Overlays: Show Labels with Alt key");
+
+            OverlayLockRememberMode = new BoolSetting(Handler, "Overlay Lock: Remember mode", false,
+                "Setting to true will make locked overlays remain in the mode they were locked-on as.");
             #endregion
 
             #region Air Leak

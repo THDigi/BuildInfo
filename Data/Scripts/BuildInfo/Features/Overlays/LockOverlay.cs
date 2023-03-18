@@ -13,6 +13,7 @@ namespace Digi.BuildInfo.Features.Overlays
     {
         public IMySlimBlock LockedOnBlock { get; private set; }
         public MyCubeBlockDefinition LockedOnBlockDef { get; private set; }
+        public Overlays.ModeEnum LockedOnMode { get; private set; }
         public event Action<IMySlimBlock> LockedOnBlockChanged;
 
         private IMyHudNotification Notification;
@@ -103,10 +104,24 @@ namespace Digi.BuildInfo.Features.Overlays
                 return;
             }
 
-            if(Main.Overlays.OverlayMode == Overlays.ModeEnum.Off)
-                SetNotification($"Overlays off. [{Main.Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Main.Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
+            bool rememberMode = Main.Config.OverlayLockRememberMode.Value;
+            bool overlayShown;
+            if(rememberMode)
+                overlayShown = (LockedOnMode != Overlays.ModeEnum.Off);
             else
+                overlayShown = (Main.Overlays.OverlayMode != Overlays.ModeEnum.Off);
+
+            if(overlayShown)
+            {
                 SetNotification($"{LockedOnBlockDef.DisplayNameText}. [{Main.Config.LockOverlayBind.Value.GetBinds()}] to change/unlock.", 100);
+            }
+            else
+            {
+                if(rememberMode)
+                    SetNotification($"Overlays off. [{Main.Config.LockOverlayBind.Value.GetBinds()}] to update mode or unlock.", 100);
+                else
+                    SetNotification($"Overlays off. [{Main.Config.CycleOverlaysBind.Value.GetBinds()}] to cycle, or [{Main.Config.LockOverlayBind.Value.GetBinds()}] to unlock.", 100);
+            }
         }
 
         void SetLockOnBlock(IMySlimBlock block, string message = null)
@@ -135,6 +150,7 @@ namespace Digi.BuildInfo.Features.Overlays
             // hook new
             if(LockedOnBlock != null)
             {
+                LockedOnMode = Main.Overlays.OverlayMode;
                 LockedOnBlockDef = (MyCubeBlockDefinition)LockedOnBlock.BlockDefinition;
                 LockedOnBlock.CubeGrid.OnBlockRemoved += LockedOnGrid_OnBlockRemoved;
             }

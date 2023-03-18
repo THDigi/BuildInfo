@@ -44,8 +44,6 @@ namespace Digi.BuildInfo.Features.Overlays
             int[] modeValues = (int[])Enum.GetValues(typeof(ModeEnum));
             if(OverlayNames.Length != modeValues.Length)
                 throw new Exception("Not all overlay modes have names or vice-versa!");
-
-            SetMode(ModeEnum.Off);
         }
 
         public override void RegisterComponent()
@@ -56,6 +54,8 @@ namespace Digi.BuildInfo.Features.Overlays
             //Main.EquipmentMonitor.BuilderAimedBlockChanged += EquipmentMonitor_BuilderAimedBlockChanged;
 
             Main.EquipmentMonitor.UpdateControlled += EquipmentMonitor_UpdateControlled;
+
+            SetMode(ModeEnum.Off, showNotification: false);
         }
 
         public override void UnregisterComponent()
@@ -66,10 +66,6 @@ namespace Digi.BuildInfo.Features.Overlays
             //Main.EquipmentMonitor.BuilderAimedBlockChanged -= EquipmentMonitor_BuilderAimedBlockChanged;
 
             Main.EquipmentMonitor.UpdateControlled -= EquipmentMonitor_UpdateControlled;
-        }
-
-        public void SetMode(ModeEnum setMode)
-        {
         }
 
         public void CycleMode(bool showNotification = true)
@@ -88,7 +84,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             OverlayMode = setMode;
             OverlayModeName = OverlayNames[mode];
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, OverlayMode != ModeEnum.Off);
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
 
             if(showNotification)
             {
@@ -111,14 +107,14 @@ namespace Digi.BuildInfo.Features.Overlays
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
         }
 
-        void EquipmentMonitor_BuilderAimedBlockChanged(IMySlimBlock slimBlock)
-        {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
-        }
+        //void EquipmentMonitor_BuilderAimedBlockChanged(IMySlimBlock slimBlock)
+        //{
+        //    SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
+        //}
 
         bool CheckNeedsDraw()
         {
-            if(OverlayMode == ModeEnum.Off)
+            if(OverlayMode == ModeEnum.Off && (!Main.Config.OverlayLockRememberMode.Value || Main.LockOverlay.LockedOnBlock == null))
                 return false;
 
             return Main.EquipmentMonitor.BlockDef != null
@@ -151,7 +147,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public override void UpdateDraw()
         {
-            if(OverlayMode == ModeEnum.Off)
+            if(OverlayMode == ModeEnum.Off && (!Main.Config.OverlayLockRememberMode.Value || Main.LockOverlay.LockedOnBlock == null))
                 return;
 
             if(Main.GameConfig.HudState == HudState.OFF && !Main.Config.OverlaysAlwaysVisible.Value)
@@ -162,7 +158,8 @@ namespace Digi.BuildInfo.Features.Overlays
             IMySlimBlock lockedOnBlock = Main.LockOverlay.LockedOnBlock;
             if(lockedOnBlock != null)
             {
-                DrawInstanceLockedOn.Draw(Main.LockOverlay.LockedOnBlockDef, lockedOnBlock);
+                ModeEnum? overrideMode = (Main.Config.OverlayLockRememberMode.Value ? Main.LockOverlay.LockedOnMode : (ModeEnum?)null);
+                DrawInstanceLockedOn.Draw(Main.LockOverlay.LockedOnBlockDef, lockedOnBlock, overrideMode);
             }
 
             IMySlimBlock toolAimedBlock = Main.EquipmentMonitor.AimedBlock;

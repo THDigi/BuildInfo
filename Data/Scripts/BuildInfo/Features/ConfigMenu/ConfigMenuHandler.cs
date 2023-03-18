@@ -171,6 +171,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysAlwaysVisible);
             ItemAdd_OverlayLabelToggles(Category_Overlays);
             SimpleToggle(Category_Overlays, null, Main.Config.OverlaysShowLabelsWithBind, groupOverlayLabelsShowWithLookaround);
+            SimpleToggle(Category_Overlays, "Overlay Lock - remember mode", Main.Config.OverlayLockRememberMode);
             #endregion
 
             #region HUD

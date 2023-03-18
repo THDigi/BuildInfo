@@ -30,9 +30,6 @@ namespace Digi.BuildInfo.Features.Overlays
         MyCubeBlockDefinition LastDef;
         SpecializedOverlayBase SpecializedOverlay;
 
-        MyOrientedBoundingBoxD? PrevOBB;
-        int ConsecutiveErrors = 0;
-
         readonly BuildInfoMod Main;
         readonly Overlays Overlays;
         readonly Config.Config Config;
@@ -84,7 +81,7 @@ namespace Digi.BuildInfo.Features.Overlays
             Config = Main.Config;
         }
 
-        public void Draw(MyCubeBlockDefinition def, IMySlimBlock block = null)
+        public void Draw(MyCubeBlockDefinition def, IMySlimBlock block = null, Overlays.ModeEnum? modeOverride = null)
         {
             try
             {
@@ -96,9 +93,6 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     LastDef = def;
 
-                    PrevOBB = null;
-                    ConsecutiveErrors = 0;
-
                     CellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
                     CellSizeHalf = CellSize / 2;
 
@@ -106,7 +100,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
                 #endregion
 
-                Overlays.ModeEnum mode = Overlays.OverlayMode;
+                Overlays.ModeEnum mode = modeOverride ?? Overlays.OverlayMode;
                 MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
 
                 MatrixD drawMatrix;
@@ -343,6 +337,24 @@ namespace Digi.BuildInfo.Features.Overlays
                         int closestMountIndex = 0;
                         MyOrientedBoundingBoxD closestMountOBB = default(MyOrientedBoundingBoxD);
                         MatrixD closestMountMatrix = default(MatrixD);
+
+                        // TODO build progress model's mountpoints cycling test
+                        //if(Main.Tick % 120 < 60)
+                        //{
+                        //    if(def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
+                        //    {
+                        //        for(int i = 0; i < def.BuildProgressModels.Length; i++)
+                        //        {
+                        //            MyCubeBlockDefinition.BuildProgressModel bpm = def.BuildProgressModels[i];
+                        //
+                        //            if(bpm.MountPoints != null && bpm.MountPoints.Length > 0)
+                        //            {
+                        //                mountPoints = bpm.MountPoints;
+                        //                break;
+                        //            }
+                        //        }
+                        //    }
+                        //}
 
                         for(int i = 0; i < mountPoints.Length; i++)
                         {
