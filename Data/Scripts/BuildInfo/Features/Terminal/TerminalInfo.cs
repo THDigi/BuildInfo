@@ -381,8 +381,22 @@ namespace Digi.BuildInfo.Features.Terminal
 
                             string text = TickerText[ticker];
 
-                            info.Append(text, 0, 3).Append("( BuildInfo | /bi )").Append(text, 3, 3).Append('\n');
+                            const string label = "( BuildInfo )";
+
+#if VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201 // HACK: backwards compatible
+                            const string separatorColor = "";
+                            const string separatorColorEnd = "";
+#else
+                            const string separatorColor = "{color=#55999999}"; // ARGB
+                            const string separatorColorEnd = "{/color}";
+#endif
+
+                            info.Append(separatorColor).Append(text, 0, 3).Append(label).Append(text, 3, 3).Append(separatorColorEnd).Append('\n');
+
                             info.AppendStringBuilder(tmpInfo);
+
+                            info.TrimEndWhitespace().Append('\n');
+                            info.Append(separatorColor).Append(text).Append(separatorColorEnd).Append('\n');
                         }
                     }
                     else
@@ -402,6 +416,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Append(otherModInfo);
                 }
 
+                // if no header, add the ticker at the very end to still be able to tell when detailed info refreshes.
                 if(!header && addedCustomInfo)
                 {
                     info.Append('\n').Append(TickerText[ticker]);
