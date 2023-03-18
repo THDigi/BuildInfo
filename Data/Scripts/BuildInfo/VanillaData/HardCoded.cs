@@ -6,9 +6,12 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
+using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Library.Utils;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -271,6 +274,62 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyLargeTurretBase.RotationAndElevation() - rotation speed is radisans per milisecond(ish) (since it uses 16, not 1/60)
         public const float Turret_RotationSpeedMul = MyEngineConstants.UPDATE_STEP_SIZE_IN_MILLISECONDS * 60;
+
+        static readonly MyObjectBuilder_TargetingFlags DefaultTargetingFlags = new MyObjectBuilder_TargetingFlags();
+        static readonly MyTurretTargetingOptions MyTurretTargetingOptions_None = (MyTurretTargetingOptions)0;
+
+        public static bool CTC_AutoTarget = true;
+
+        // from MyTurretControlBlock.HiddenTargetingOptions
+        public static readonly MyTurretTargetingOptions CTC_TargetOptionsHidden = MyTurretTargetingOptions_None;
+
+        // from MyTurretControlBlock.Init()
+        public static readonly MyTurretTargetingOptions CTC_TargetOptionsDefault =
+              (DefaultTargetingFlags.TargetMeteors ? MyTurretTargetingOptions.Asteroids : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetMissiles ? MyTurretTargetingOptions.Missiles : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetCharacters ? MyTurretTargetingOptions.Players : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetSmallGrids ? MyTurretTargetingOptions.SmallShips : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetLargeGrids ? MyTurretTargetingOptions.LargeShips : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetStations ? MyTurretTargetingOptions.Stations : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetNeutrals ? MyTurretTargetingOptions.Neutrals : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetFriends ? MyTurretTargetingOptions.Friends : MyTurretTargetingOptions_None)
+            | (DefaultTargetingFlags.TargetEnemies ? MyTurretTargetingOptions.Enemies : MyTurretTargetingOptions_None);
+
+        // from MySearchlight.HiddenTargetingOptions
+        public static readonly MyTurretTargetingOptions Searchlight_TargetOptionsHidden = MyTurretTargetingOptions_None;
+
+        // from MySearchlight.Init()
+        public static readonly MyTurretTargetingOptions Searchlight_TargetOptionsDefault = CTC_TargetOptionsDefault;
+
+        // from MySearchlight.RotationAndElevation()
+        public const float Searchlight_RotationSpeedMul = Turret_RotationSpeedMul;
+
+        public static readonly Dictionary<MyTurretTargetingOptions, string> CustomTargetingOptionName = new Dictionary<MyTurretTargetingOptions, string>()
+        {
+            [MyTurretTargetingOptions.Asteroids] = "Meteors",
+            [MyTurretTargetingOptions.Missiles] = "Missiles",
+            [MyTurretTargetingOptions.Players] = "Characters",
+            [MyTurretTargetingOptions.SmallShips] = "SmallGrids",
+            [MyTurretTargetingOptions.LargeShips] = "LargeGrids",
+        };
+
+        public static readonly List<MyTurretTargetingOptions> TargetOptionsSorted = SortTargetOptions();
+        static List<MyTurretTargetingOptions> SortTargetOptions()
+        {
+            List<MyTurretTargetingOptions> list = new List<MyTurretTargetingOptions>(MyEnum<MyTurretTargetingOptions>.Values);
+
+            if(list.Count > 8)
+            {
+                MyTurretTargetingOptions friends = list[7];
+                MyTurretTargetingOptions enemies = list[8];
+
+                // make the friends value last to be more noticeable
+                list[7] = enemies;
+                list[8] = friends;
+            }
+
+            return list;
+        }
 
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
         public const float LaserAntenna_RotationSpeedMul = 1000f;

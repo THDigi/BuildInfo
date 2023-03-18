@@ -9,6 +9,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Digi.Input;
+using Digi.Input.Devices;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
@@ -24,6 +25,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -3880,31 +3882,31 @@ namespace Digi.BuildInfo.Features
 
             if(turret != null)
             {
-                AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting().Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+                StringBuilder sb = AddLine().Color(turret.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(turret.AiEnabled).ResetFormatting();
+
+                if(turret.AiEnabled)
+                {
+                    sb.Append(turret.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(turret.MaxRangeMeters);
+                }
 
                 if(extraInfo)
                 {
-                    AddLine().Append("Rotation - ");
+                    if(turret.AiEnabled)
+                    {
+                        AppendCanTargetOptions(turret.HiddenTargetingOptions, turret.EnabledTargetingOptions);
+                    }
+
+                    AddLine().Label("Camera field of view").AngleFormat(turret.MinFov).Append(" to ").AngleFormat(turret.MaxFov);
 
                     int minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
                     int maxPitch = Math.Min(turret.MaxElevationDegrees, 90); // turret can't rotate past 90deg up
+                    float pitchSpeed = turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul;
 
                     int minYaw = turret.MinAzimuthDegrees;
                     int maxYaw = turret.MaxAzimuthDegrees;
+                    float yawSpeed = turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul;
 
-                    if(minPitch == -90 && maxPitch >= 90)
-                        GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
-                    else
-                        GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
-
-                    GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.ElevationSpeed * Hardcoded.Turret_RotationSpeedMul).Separator();
-
-                    if(minYaw <= -180 && maxYaw >= 180)
-                        GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
-                    else
-                        GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
-
-                    GetLine().ResetFormatting().Append(" @ ").RotationSpeed(turret.RotationSpeed * Hardcoded.Turret_RotationSpeedMul);
+                    AppendTurretAngles(minPitch, maxPitch, pitchSpeed, minYaw, maxYaw, yawSpeed);
                 }
             }
 
@@ -4258,6 +4260,73 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        /// <summary>
+        /// NOTE: <paramref name="maxTotalWidth"/> includes hidden stuff like &lt;color=red&gt;, &lt;reset&gt; >etc.
+        /// </summary>
+        void AppendCanTargetOptions(MyTurretTargetingOptions hidden, MyTurretTargetingOptions defaultOn, int maxOptionsPerLine = 5, bool hardcoded = false)
+        {
+            StringBuilder sb = AddLine();
+
+            if(hardcoded)
+                sb.LabelHardcoded("Can target");
+            else
+                sb.Label("Can target");
+
+            int spacePadding = hardcoded ? 19 : 18;
+
+            int totalOptions = 0;
+            int optionsPerLine = 0;
+
+            foreach(MyTurretTargetingOptions option in Hardcoded.TargetOptionsSorted)
+            {
+                if((hidden & option) != 0)
+                    continue; // does not support this option
+
+                if(optionsPerLine >= maxOptionsPerLine)
+                {
+                    optionsPerLine = 0;
+                    sb = AddLine().Color(COLOR_LIST).Append(' ', spacePadding).Append("| ").ResetFormatting();
+                }
+
+                bool comesEnabled = ((defaultOn & option) != 0);
+                string name = Hardcoded.CustomTargetingOptionName.GetValueOrDefault(option) ?? MyEnum<MyTurretTargetingOptions>.GetName(option);
+
+                sb.Color(comesEnabled ? new Color(230, 255, 230) : new Color(255, 230, 230)).Append(name).ResetFormatting().Append(", ");
+
+                optionsPerLine++;
+                totalOptions++;
+            }
+
+            if(totalOptions > 0)
+            {
+                sb.Length -= 2; // remove last comma
+                sb.Append(".");
+            }
+            else
+            {
+                sb.Color(COLOR_BAD).Append("(Nothing)");
+            }
+        }
+
+        void AppendTurretAngles(int minPitch, int maxPitch, float pitchSpeed, int minYaw, int maxYaw, float yawSpeed)
+        {
+            AddLine().Append("Rotation - ");
+
+            if(minPitch == -90 && maxPitch >= 90)
+                GetLine().Color(COLOR_GOOD).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+            else
+                GetLine().Color(COLOR_WARNING).Append("Pitch: ").AngleFormatDeg(minPitch).Append(" to ").AngleFormatDeg(maxPitch);
+
+            GetLine().ResetFormatting().Append(" @ ").RotationSpeed(pitchSpeed).Separator();
+
+            if(minYaw <= -180 && maxYaw >= 180)
+                GetLine().Color(COLOR_GOOD).Append("Yaw: ").AngleFormatDeg(360);
+            else
+                GetLine().Color(COLOR_WARNING).Append("Yaw: ").AngleFormatDeg(minYaw).Append(" to ").AngleFormatDeg(maxYaw);
+
+            GetLine().ResetFormatting().Append(" @ ").RotationSpeed(yawSpeed);
+        }
+
         void Format_CoreSystemsArmor(MyCubeBlockDefinition blockDef, CoreSystemsDef.ArmorDefinition armorDef)
         {
             StringBuilder sb = AddLine().Append(CoreSystemsAPIHandler.APIName).Append(" Armor: ");
@@ -4500,22 +4569,59 @@ namespace Digi.BuildInfo.Features
             // idle seems to be always
             PowerRequired(tcbDef.PowerInputIdle, tcbDef.ResourceSinkGroup);
 
-            AddLine().Label("Max AI Range").DistanceFormat(tcbDef.MaxRangeMeters);
+            bool autoTarget = Hardcoded.CTC_AutoTarget;
+            AddLine().LabelHardcoded("Auto-target").BoolFormat(autoTarget);
+
+            if(autoTarget)
+            {
+                AddLine().Label("Max auto-target range").DistanceFormat(tcbDef.MaxRangeMeters);
+
+                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+                    AppendCanTargetOptions(Hardcoded.CTC_TargetOptionsHidden, Hardcoded.CTC_TargetOptionsDefault, hardcoded: true);
+            }
 
             // PlayerInputDivider is making player rotate it slower when manually controlling, doesn't seem relevant
         }
 
         private void Format_Searchlight(MyCubeBlockDefinition def)
         {
-            MySearchlightDefinition lightDef = def as MySearchlightDefinition;
-            if(lightDef == null)
+            MySearchlightDefinition searchlight = def as MySearchlightDefinition;
+            if(searchlight == null)
                 return;
 
-            PowerRequired(lightDef.RequiredPowerInput, lightDef.ResourceSinkGroup);
+            PowerRequired(searchlight.RequiredPowerInput, searchlight.ResourceSinkGroup);
 
-            AddLine().Label("AI targetting").Append(lightDef.AiEnabled ? "Yes" : "No");
+            StringBuilder sb = AddLine().Color(searchlight.AiEnabled ? COLOR_GOOD : COLOR_WARNING).Label("Auto-target").BoolFormat(searchlight.AiEnabled).ResetFormatting();
 
-            // TODO: more stats!
+            if(searchlight.AiEnabled)
+            {
+                sb.Append(searchlight.IdleRotation ? " (With idle rotation)" : "(No idle rotation)").Separator().Color(COLOR_WARNING).Append("Max range: ").DistanceFormat(searchlight.MaxRangeMeters);
+            }
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                if(searchlight.AiEnabled)
+                {
+                    AppendCanTargetOptions(Hardcoded.Searchlight_TargetOptionsHidden, Hardcoded.Searchlight_TargetOptionsDefault, hardcoded: true);
+                }
+
+                AddLine().Label("Camera field of view").AngleFormat(searchlight.MinFov).Append(" to ").AngleFormat(searchlight.MaxFov);
+
+                AddLine().Append("Radius: ").DistanceFormat(searchlight.LightReflectorRadius.Min).Append(" to ").DistanceFormat(searchlight.LightReflectorRadius.Max).Separator().Append("Default: ").DistanceFormat(searchlight.LightReflectorRadius.Default);
+                AddLine().Append("Intensity: ").RoundedNumber(searchlight.LightIntensity.Min, 2).Append(" to ").RoundedNumber(searchlight.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightIntensity.Default, 2);
+                AddLine().Append("Falloff: ").RoundedNumber(searchlight.LightFalloff.Min, 2).Append(" to ").RoundedNumber(searchlight.LightFalloff.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightFalloff.Default, 2);
+
+                // TODO: determine limits
+                int minPitch = searchlight.MinElevationDegrees;
+                int maxPitch = searchlight.MaxElevationDegrees;
+                float pitchSpeed = searchlight.ElevationSpeed * Hardcoded.Searchlight_RotationSpeedMul;
+
+                int minYaw = searchlight.MinAzimuthDegrees;
+                int maxYaw = searchlight.MaxAzimuthDegrees;
+                float yawSpeed = searchlight.RotationSpeed * Hardcoded.Searchlight_RotationSpeedMul;
+
+                AppendTurretAngles(minPitch, maxPitch, pitchSpeed, minYaw, maxYaw, yawSpeed);
+            }
         }
 
         //private void Format_HeatVent(MyCubeBlockDefinition def)
