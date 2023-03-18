@@ -558,6 +558,8 @@ namespace Digi.BuildInfo.Features.Terminal
             AddFormatterAndPairTypes(Info_Doors, typeof(MyObjectBuilder_Door), typeof(MyObjectBuilder_AirtightSlideDoor), typeof(MyObjectBuilder_AirtightHangarDoor), typeof(MyObjectBuilder_AirtightDoorGeneric), typeof(MyObjectBuilder_AdvancedDoor));
 
             AddFormatterAndPairTypes(Info_PBs, typeof(MyObjectBuilder_MyProgrammableBlock));
+
+            AddFormatterAndPairTypes(Info_Thrusters, typeof(MyObjectBuilder_Thrust));
         }
 
         /// <summary>
@@ -729,6 +731,19 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             info.Append("Have script: ").Append(haveScript).Append('\n');
+        }
+
+        void Info_Thrusters(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            int connected = 0;
+
+            foreach(MyThrust thrust in blocks)
+            {
+                if(thrust.IsPowered)
+                    connected++;
+            }
+
+            info.Append("Connected to fuel: ").Append(connected).Append('\n');
         }
         #endregion
     }
