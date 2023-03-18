@@ -55,7 +55,7 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        private void GuiControlRemoved(object obj)
+        void GuiControlRemoved(object obj)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
-        private void UpdateConfigValues()
+        void UpdateConfigValues()
         {
             UpdateHudState();
 
@@ -83,10 +83,16 @@ namespace Digi.BuildInfo.Systems
             Vector2 viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
 
+            Vector2 mouseAreaSize = MyAPIGateway.Input.GetMouseAreaSize();
+            Log.Info($"UpdateConfigValues()" +
+                $"\nCamera.ViewportSize = {viewportSize.X} x {viewportSize.Y}" +
+                $"\nConfig.Screen = {cfg.ScreenWidth} x {cfg.ScreenHeight}" +
+                $"\nInput.GetMouseAreaSize() = {mouseAreaSize.X} x {mouseAreaSize.Y}");
+
             OptionsMenuClosed?.Invoke();
         }
 
-        private void UpdateHudState()
+        void UpdateHudState()
         {
             HudState prevState = HudState;
 
