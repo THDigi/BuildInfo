@@ -212,128 +212,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             TargetBlock = blocks[0];
             StringBuilder sb = Label.Text.Message.Clear();
 
-            sb.Color(HeaderColor);
-
-            switch(Main.EventToolbarMonitor.LastOpenedToolbarType)
-            {
-                default: sb.Append("Event Toolbar for "); break;
-                case EventToolbarMonitor.ToolbarType.RCWaypoint: sb.Append("Waypoint Event Toolbar for "); break;
-                case EventToolbarMonitor.ToolbarType.LockOnVictim: sb.Append("LockOn Event Toolbar for "); break;
-            }
-
-            if(blocks.Count > 1)
-            {
-                sb.Append(blocks.Count).Append(" blocks").ResetFormatting().Append('\n');
-            }
-            else
-            {
-                sb.Append("\"").AppendMaxLength(TargetBlock.CustomName, 24).Append("\"").ResetFormatting().Append('\n');
-            }
-
-            do
-            {
-                IMyButtonPanel button = TargetBlock as IMyButtonPanel;
-                if(button != null)
-                {
-                    sb.Append("Each slot is a button.\n");
-
-                    MyButtonPanelDefinition buttonDef = TargetBlock.SlimBlock.BlockDefinition as MyButtonPanelDefinition;
-
-                    string dummyName = Main.EventToolbarMonitor.LastAimedUseObject?.Dummy?.Name;
-                    BData_ButtonPanel data = Main.LiveDataHandler.Get<BData_ButtonPanel>(buttonDef);
-                    BData_ButtonPanel.ButtonInfo buttonInfo;
-                    if(dummyName != null && data != null && data.ButtonInfoByDummyName.TryGetValue(dummyName, out buttonInfo))
-                    {
-                        sb.Append("Aimed button is ").Color(SlotColor).Append("slot ").Append(buttonInfo.Index + 1).ResetFormatting().Append('\n');
-                    }
-
-                    if(blocks.Count > 1)
-                    {
-                        int buttonCountMin = int.MaxValue;
-                        int buttonCountMax = int.MinValue;
-
-                        for(int i = 0; i < blocks.Count; i++)
-                        {
-                            MyButtonPanelDefinition def = blocks[i].SlimBlock.BlockDefinition as MyButtonPanelDefinition;
-                            if(def != null)
-                            {
-                                buttonCountMin = Math.Min(def.ButtonCount, buttonCountMin);
-                                buttonCountMax = Math.Max(def.ButtonCount, buttonCountMax);
-                            }
-                        }
-
-                        if(buttonDef.ButtonCount > buttonCountMin)
-                        {
-                            sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have less buttons, lowest: ").Append(buttonCountMin).Append('\n');
-                        }
-                        else if(buttonDef.ButtonCount < buttonCountMax)
-                        {
-                            sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have more buttons, highest: ").Append(buttonCountMax).Append('\n');
-                        }
-                    }
-
-                    break;
-                }
-
-                IMyAirVent vent = TargetBlock as IMyAirVent;
-                if(vent != null)
-                {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": room pressurized\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": room no longer pressurized\n");
-                    break;
-                }
-
-                IMySensorBlock sensor = TargetBlock as IMySensorBlock;
-                if(sensor != null)
-                {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": on first detection\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": when nothing is detected anymore\n");
-                    break;
-                }
-
-                IMyTargetDummyBlock targetDummy = TargetBlock as IMyTargetDummyBlock;
-                if(targetDummy != null)
-                {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": dummy is hit (or destroyed)\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": dummy is destroyed\n");
-                    break;
-                }
-
-                IMyShipController shipCtrl = TargetBlock as IMyShipController;
-                if(shipCtrl != null)
-                {
-                    if(Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.LockOnVictim)
-                    {
-                        sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": once this ship is locked on\n");
-                        sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no longer locked on\n");
-                        break;
-                    }
-
-                    if(TargetBlock is IMyRemoteControl && Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.RCWaypoint)
-                    {
-                        sb.Append("All slots: waypoint reached\n");
-                        break;
-                    }
-                }
-
-                IMyTimerBlock timer = TargetBlock as IMyTimerBlock;
-                if(timer != null)
-                {
-                    sb.Append("All slots: timer countdown reached\n");
-                    break;
-                }
-
-                IMyTurretControlBlock tcb = TargetBlock as IMyTurretControlBlock;
-                if(tcb != null)
-                {
-                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": turret aligned with target (angle deviation)\n");
-                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": turret no longer aligned with target\n");
-                    break;
-                }
-
-                return; // unknown block, don't draw
-            }
-            while(false);
+            if(!RenderBoxContent(sb, blocks))
+                return;
 
             if(Main.Config.ToolbarLabelsHeader.Value)
             {
@@ -350,6 +230,157 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Label.Visible = true;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true); // for dragging and overlay
+        }
+
+        bool RenderBoxContent(StringBuilder sb, ListReader<IMyTerminalBlock> blocks)
+        {
+            IMyButtonPanel button = TargetBlock as IMyButtonPanel;
+            if(button != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Append("Each slot is a button.\n");
+
+                MyButtonPanelDefinition buttonDef = TargetBlock.SlimBlock.BlockDefinition as MyButtonPanelDefinition;
+
+                string dummyName = Main.EventToolbarMonitor.LastAimedUseObject?.Dummy?.Name;
+                BData_ButtonPanel data = Main.LiveDataHandler.Get<BData_ButtonPanel>(buttonDef);
+                BData_ButtonPanel.ButtonInfo buttonInfo;
+                if(dummyName != null && data != null && data.ButtonInfoByDummyName.TryGetValue(dummyName, out buttonInfo))
+                {
+                    sb.Append("Aimed button is ").Color(SlotColor).Append("slot ").Append(buttonInfo.Index + 1).ResetFormatting().Append('\n');
+                }
+
+                if(blocks.Count > 1)
+                {
+                    int buttonCountMin = int.MaxValue;
+                    int buttonCountMax = int.MinValue;
+
+                    for(int i = 0; i < blocks.Count; i++)
+                    {
+                        MyButtonPanelDefinition def = blocks[i].SlimBlock.BlockDefinition as MyButtonPanelDefinition;
+                        if(def != null)
+                        {
+                            buttonCountMin = Math.Min(def.ButtonCount, buttonCountMin);
+                            buttonCountMax = Math.Max(def.ButtonCount, buttonCountMax);
+                        }
+                    }
+
+                    if(buttonDef.ButtonCount > buttonCountMin)
+                    {
+                        sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have less buttons, lowest: ").Append(buttonCountMin).Append('\n');
+                    }
+                    else if(buttonDef.ButtonCount < buttonCountMax)
+                    {
+                        sb.Color(Color.Yellow).Append("NOTE: ").ResetFormatting().Append("some blocks have more buttons, highest: ").Append(buttonCountMax).Append('\n');
+                    }
+                }
+
+                return true;
+            }
+
+            IMyAirVent vent = TargetBlock as IMyAirVent;
+            if(vent != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": room pressurized\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": room no longer pressurized\n");
+                return true;
+            }
+
+            IMySensorBlock sensor = TargetBlock as IMySensorBlock;
+            if(sensor != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": on first detection\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": when nothing is detected anymore\n");
+                return true;
+            }
+
+            IMyTargetDummyBlock targetDummy = TargetBlock as IMyTargetDummyBlock;
+            if(targetDummy != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": dummy is hit (or destroyed)\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": dummy is destroyed\n");
+                return true;
+            }
+
+            IMyShipController shipCtrl = TargetBlock as IMyShipController;
+            if(shipCtrl != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                if(Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.LockOnVictim)
+                {
+                    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": once this ship is locked on\n");
+                    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no longer locked on\n");
+                    return true;
+                }
+
+                if(TargetBlock is IMyRemoteControl && Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.RCWaypoint)
+                {
+                    sb.Append("All slots: waypoint reached\n");
+                    return true;
+                }
+            }
+
+            IMyTimerBlock timer = TargetBlock as IMyTimerBlock;
+            if(timer != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Append("All slots: timer countdown reached\n");
+                return true;
+            }
+
+            IMyTurretControlBlock tcb = TargetBlock as IMyTurretControlBlock;
+            if(tcb != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": turret aligned with target (angle deviation)\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": turret no longer aligned with target\n");
+                return true;
+            }
+
+            return false; // unknown block, don't draw
+        }
+
+        void RenderBoxHeader(StringBuilder sb, int blockCount, string customTitle = null, bool includeBlocks = true)
+        {
+            sb.Color(HeaderColor);
+
+            if(!string.IsNullOrEmpty(customTitle))
+            {
+                sb.Append(customTitle);
+            }
+            else
+            {
+                switch(Main.EventToolbarMonitor.LastOpenedToolbarType)
+                {
+                    default: sb.Append("Event Toolbar for "); break;
+                    case EventToolbarMonitor.ToolbarType.RCWaypoint: sb.Append("Waypoint Event Toolbar for "); break;
+                    case EventToolbarMonitor.ToolbarType.LockOnVictim: sb.Append("LockOn Event Toolbar for "); break;
+                }
+            }
+
+            if(includeBlocks)
+            {
+                if(blockCount > 1)
+                {
+                    sb.Append(blockCount).Append(" blocks");
+                }
+                else
+                {
+                    sb.Append("\"").AppendMaxLength(TargetBlock.CustomName, 24).Append("\"");
+                }
+            }
+
+            sb.ResetFormatting().Append('\n');
         }
 
         public override void UpdateDraw()
