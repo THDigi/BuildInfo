@@ -9,6 +9,7 @@ using Digi.Input.Devices;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -30,11 +31,13 @@ namespace Digi.BuildInfo.Features.ModelPreview
         Vector3D LocalStackDir = Vector3D.Down;
         float SmallestAxisSizeMeters = 1f;
         float Spacing = 0f;
+        bool HasCustomBuildMounts;
 
         IMyHudNotification Notification;
 
         public ConstructionModelPreview(BuildInfoMod main) : base(main)
         {
+            UpdateOrder = -501; // must update Draw() before Overlays
         }
 
         public override void RegisterComponent()
@@ -107,6 +110,8 @@ namespace Digi.BuildInfo.Features.ModelPreview
 
         void Refresh()
         {
+            HasCustomBuildMounts = false;
+
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
 
             foreach(ConstructionModelStack stack in Stacks)
@@ -149,6 +154,7 @@ namespace Digi.BuildInfo.Features.ModelPreview
                             continue;
 
                         PreviewEntityWrapper lastModel = stack.Models[stack.Models.Count - 1];
+
                         while(stack.Models.Count < fillUpTo)
                         {
                             stack.Models.Add(new PreviewEntityWrapper(lastModel.ModelFullPath, lastModel.LocalMatrix));
@@ -194,6 +200,22 @@ namespace Digi.BuildInfo.Features.ModelPreview
                     }
                 }
 
+                // check if any build stage has any mount point overrides
+                foreach(ConstructionModelStack stack in Stacks)
+                {
+                    foreach(MyCubeBlockDefinition.BuildProgressModel stage in stack.Def.BuildProgressModels)
+                    {
+                        if(stage.MountPoints != null)
+                        {
+                            HasCustomBuildMounts = true;
+                            break;
+                        }
+                    }
+
+                    if(HasCustomBuildMounts)
+                        break;
+                }
+
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
             }
         }
@@ -235,23 +257,35 @@ namespace Digi.BuildInfo.Features.ModelPreview
             blockWorldMatrix.Translation = Vector3D.Transform(Main.EquipmentMonitor.BlockDef.ModelOffset, blockWorldMatrix);
 
             bool hide = !MyCubeBuilder.Static.DynamicMode; // hide when aiming at a grid
+            bool drawMounts = !hide && HasCustomBuildMounts && Main.Overlays.OverlayMode == Overlays.Overlays.ModeEnum.MountPoints;
+
+            Main.Overlays.DrawInstanceBuilderHeld.DrawBuildStageMounts?.Clear();
 
             for(int i = 0; i < Stacks.Count; i++)
             {
                 ConstructionModelStack stack = Stacks[i];
                 float offset = add;
 
+                // models are stored in reverse order, so build progress model index has to be flipped too
+                int bpmIdx = stack.Models.Count - 1;
+
                 foreach(PreviewEntityWrapper model in stack.Models)
                 {
-                    MatrixD m;
+                    MatrixD matrix;
                     if(model.LocalMatrix.HasValue)
-                        m = model.LocalMatrix.Value * blockWorldMatrix;
+                        matrix = model.LocalMatrix.Value * blockWorldMatrix;
                     else
-                        m = blockWorldMatrix;
+                        matrix = blockWorldMatrix;
 
-                    m.Translation += MaintainDir * offset;
+                    matrix.Translation += MaintainDir * offset;
+                    model.Update(ref matrix, (hide ? 1f : stack.Transparency));
 
-                    model.Update(ref m, (hide ? 1f : stack.Transparency));
+                    if(drawMounts)
+                    {
+                        Main.Overlays.DrawInstanceBuilderHeld.DrawBuildStageMounts.Add(new MyTuple<MatrixD, int>(matrix, bpmIdx));
+                        bpmIdx--;
+                    }
+
                     offset += add;
                 }
             }

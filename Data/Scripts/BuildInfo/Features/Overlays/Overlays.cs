@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -22,7 +24,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public static readonly string[] OverlayNames = new[] { "OFF", "Airtightness + Specialized", "Mount Points", "Ports" };
 
         readonly OverlayDrawInstance[] DrawInstances;
-        OverlayDrawInstance DrawInstanceBuilderHeld;
+        public OverlayDrawInstance DrawInstanceBuilderHeld;
         OverlayDrawInstance DrawInstanceToolAimed;
         //OverlayDrawInstance DrawInstanceBuilderAimed;
         OverlayDrawInstance DrawInstanceLockedOn;
@@ -40,6 +42,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 //DrawInstanceBuilderAimed = new OverlayDrawInstance(this, "Aimed by Placer"),
                 DrawInstanceLockedOn = new OverlayDrawInstance(this, "Lock-On"),
             };
+
+            DrawInstanceBuilderHeld.DrawBuildStageMounts = new List<MyTuple<MatrixD, int>>(0);
 
             int[] modeValues = (int[])Enum.GetValues(typeof(ModeEnum));
             if(OverlayNames.Length != modeValues.Length)

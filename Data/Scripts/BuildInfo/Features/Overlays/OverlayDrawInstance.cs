@@ -7,7 +7,9 @@ using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
@@ -20,6 +22,8 @@ namespace Digi.BuildInfo.Features.Overlays
     {
         public readonly string DebugName;
         public readonly LabelRendering LabelRender;
+
+        public List<MyTuple<MatrixD, int>> DrawBuildStageMounts;
 
         internal float CellSize;
         internal float CellSizeHalf;
@@ -59,6 +63,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public const float MountpointAlpha = 0.8f;
         public static Color MountpointColorNormal = new Color(255, 255, 0) * MountpointAlpha;
         public static Color MountpointColorMasked = new Color(255, 55, 0) * MountpointAlpha;
+        public static Color MountpointColorGrayed = new Color(70, 15, 15) * MountpointAlpha;
         public static Color MountpointColorAutoRotate = new Color(0, 55, 255) * MountpointAlpha;
         public static Color MountpointAimedColor = Color.White;
 
@@ -332,111 +337,57 @@ namespace Digi.BuildInfo.Features.Overlays
                     }
                     else if(mode == Overlays.ModeEnum.MountPoints && mountPoints != null)
                     {
-                        double closestMountDist = double.MaxValue;
-                        MyCubeBlockDefinition.MountPoint? closestMount = null;
-                        int closestMountIndex = 0;
-                        MyOrientedBoundingBoxD closestMountOBB = default(MyOrientedBoundingBoxD);
-                        MatrixD closestMountMatrix = default(MatrixD);
+                        ClosestMount = null;
+                        ClosestMountDist = double.MaxValue;
+                        ClosestMountOBB = default(MyOrientedBoundingBoxD);
+                        ClosestMountMatrix = default(MatrixD);
+                        ClosestMountGrayed = false;
 
-                        // TODO build progress model's mountpoints cycling test
-                        //if(Main.Tick % 120 < 60)
-                        //{
-                        //    if(def.BuildProgressModels != null && def.BuildProgressModels.Length > 0)
-                        //    {
-                        //        for(int i = 0; i < def.BuildProgressModels.Length; i++)
-                        //        {
-                        //            MyCubeBlockDefinition.BuildProgressModel bpm = def.BuildProgressModels[i];
-                        //
-                        //            if(bpm.MountPoints != null && bpm.MountPoints.Length > 0)
-                        //            {
-                        //                mountPoints = bpm.MountPoints;
-                        //                break;
-                        //            }
-                        //        }
-                        //    }
-                        //}
-
-                        for(int i = 0; i < mountPoints.Length; i++)
+                        if(DrawBuildStageMounts != null && DrawBuildStageMounts.Count > 0)
                         {
-                            MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
+                            DrawMountpoints(def, mountPoints, drawMatrix);
 
-                            if(!mountPoint.Enabled)
-                                continue; // ignore all disabled mount points as airtight ones are rendered separate
-
-                            Vector3 startLocal = mountPoint.Start - center;
-                            Vector3 endLocal = mountPoint.End - center;
-
-                            BoundingBoxD bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * CellSize, Vector3.Max(startLocal, endLocal) * CellSize);
-                            MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
-
-                            Base6Directions.Axis normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
-
-                            MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
-                            m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MountpointThickness : 0));
-                            m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MountpointThickness : 0));
-                            m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MountpointThickness : 0));
-                            m.Translation = obb.Center;
-
-                            bool hasProperties = mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0;
-                            Color colorFace = hasProperties ? MountpointColorMasked : MountpointColorNormal;
-
-                            var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(mountPoint.Normal));
-                            if(axis == Base6Directions.Axis.LeftRight)
-                                colorFace = Color.Lighten(colorFace, SideBrightnessChange);
-                            else if(axis == Base6Directions.Axis.UpDown)
-                                colorFace = Color.Darken(colorFace, SideBrightnessChange);
-
-                            float lineWdith = 0.005f;
-
-                            MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
-                            if(mountPoint.Default)
-                                MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref MountpointColorAutoRotate, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
-
-                            #region See-through-wall version
-                            //var closeMatrix = m;
-                            //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
-                            //lineWdith *= depthScale;
-
-                            //colorFace *= SEETHROUGH_COLOR_MUL;
-                            //colorDefault *= SEETHROUGH_COLOR_MUL;
-
-                            //MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
-                            //if(mountPoint.Default)
-                            //    MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorDefault, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
-                            #endregion
-
-                            if(drawLabel)
+                            foreach(MyTuple<MatrixD, int> tuple in DrawBuildStageMounts)
                             {
-                                RayD aimLine = new RayD(camMatrix.Translation, camMatrix.Forward);
-                                double? distance = obb.Intersects(ref aimLine);
-                                if(distance.HasValue && distance.Value < closestMountDist)
-                                {
-                                    closestMountDist = distance.Value;
-                                    closestMount = mountPoint;
-                                    closestMountIndex = i;
-                                    closestMountOBB = obb;
-                                    closestMountMatrix = m;
-                                }
+                                MyCubeBlockDefinition.BuildProgressModel bpm = def.BuildProgressModels[tuple.Item2];
+                                DrawMountpoints(def, def.GetBuildProgressModelMountPoints(bpm.BuildRatioUpperBound), tuple.Item1);
+                            }
+                        }
+                        else
+                        {
+                            if(block != null || MyAPIGateway.Session.SurvivalMode) // creative tools still prevents this from being placed
+                            {
+                                // mountpoints at 100% built are grayed out
+                                DrawMountpoints(def, mountPoints, drawMatrix, grayedOut: true);
+
+                                // mountpoints at 0% built or at current level
+                                mountPoints = def.GetBuildProgressModelMountPoints(block != null ? block.BuildLevelRatio : MyComponentStack.MOUNT_THRESHOLD);
+                                DrawMountpoints(def, mountPoints, drawMatrix);
+                            }
+                            else
+                            {
+                                // mountpoints at 100% built
+                                DrawMountpoints(def, mountPoints, drawMatrix);
                             }
                         }
 
-                        if(closestMount.HasValue)
+                        if(ClosestMount.HasValue)
                         {
                             const float textScale = 1.5f;
 
-                            Vector3D labelPos = closestMountOBB.Center;
+                            Vector3D labelPos = ClosestMountOBB.Center;
                             Vector3D labelDir = Vector3D.Normalize(camMatrix.Up + camMatrix.Right * 0.5);
-                            MyCubeBlockDefinition.MountPoint mountPoint = closestMount.Value;
+                            MyCubeBlockDefinition.MountPoint mountPoint = ClosestMount.Value;
 
                             // selection wire box over the mountpoint
-                            MatrixD.Rescale(ref closestMountMatrix, 1.01);
-                            float depthScale = ConvertToAlwaysOnTop(ref closestMountMatrix);
+                            MatrixD.Rescale(ref ClosestMountMatrix, 1.01);
+                            float depthScale = ConvertToAlwaysOnTop(ref ClosestMountMatrix);
                             float lineWdith = 0.01f * depthScale;
 
                             Color colorFace = Color.White * 0.25f;
-                            MySimpleObjectDraw.DrawTransparentBox(ref closestMountMatrix, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, blendType: MountpointAimedBlendType);
+                            MySimpleObjectDraw.DrawTransparentBox(ref ClosestMountMatrix, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, blendType: MountpointAimedBlendType);
 
-                            MySimpleObjectDraw.DrawTransparentBox(ref closestMountMatrix, ref UnitBB, ref MountpointAimedColor, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: MaterialLaser, blendType: MountpointAimedBlendType);
+                            MySimpleObjectDraw.DrawTransparentBox(ref ClosestMountMatrix, ref UnitBB, ref MountpointAimedColor, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: MaterialLaser, blendType: MountpointAimedBlendType);
 
                             StringBuilder dynamicLabel = LabelRender.DynamicLabel;
                             dynamicLabel.Clear();
@@ -477,6 +428,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
                             if(mountPoint.Default)
                                 dynamicLabel.Append("\nUsed by auto-rotate");
+
+                            if(ClosestMountGrayed)
+                                dynamicLabel.Append("\nOnly when fully built");
 
                             LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, Color.White, scale: textScale, autoAlign: false, alwaysOnTop: true);
                         }
@@ -798,6 +752,93 @@ namespace Digi.BuildInfo.Features.Overlays
             }
         }
         #endregion
+
+        MyCubeBlockDefinition.MountPoint? ClosestMount = null;
+        double ClosestMountDist = double.MaxValue;
+        MyOrientedBoundingBoxD ClosestMountOBB = default(MyOrientedBoundingBoxD);
+        MatrixD ClosestMountMatrix = default(MatrixD);
+        bool ClosestMountGrayed = false;
+
+        void DrawMountpoints(MyCubeBlockDefinition def, MyCubeBlockDefinition.MountPoint[] mountPoints, MatrixD drawMatrix, bool grayedOut = false)
+        {
+            Vector3I center = def.Center;
+            MatrixD mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            bool drawLabel = LabelRender.CanDrawLabel();
+
+            for(int i = 0; i < mountPoints.Length; i++)
+            {
+                MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
+
+                if(!mountPoint.Enabled)
+                    continue;
+
+                Vector3 startLocal = mountPoint.Start - center;
+                Vector3 endLocal = mountPoint.End - center;
+
+                BoundingBoxD bb = new BoundingBoxD(Vector3.Min(startLocal, endLocal) * CellSize, Vector3.Max(startLocal, endLocal) * CellSize);
+                MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(bb, mainMatrix);
+
+                Base6Directions.Axis normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
+
+                MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
+                m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MountpointThickness : 0));
+                m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MountpointThickness : 0));
+                m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MountpointThickness : 0));
+                m.Translation = obb.Center;
+
+                bool hasProperties = mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0;
+                Color colorFace = grayedOut ? MountpointColorGrayed : hasProperties ? MountpointColorMasked : MountpointColorNormal;
+
+                var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(mountPoint.Normal));
+                if(axis == Base6Directions.Axis.LeftRight)
+                    colorFace = Color.Lighten(colorFace, SideBrightnessChange);
+                else if(axis == Base6Directions.Axis.UpDown)
+                    colorFace = Color.Darken(colorFace, SideBrightnessChange);
+
+                float lineWdith = 0.005f;
+
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+
+                if(mountPoint.Default)
+                {
+                    var colorAutoRotate = (grayedOut ? MountpointColorGrayed : MountpointColorAutoRotate);
+                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorAutoRotate, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+                }
+
+                #region See-through-wall version
+                //var closeMatrix = m;
+                //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
+                //lineWdith *= depthScale;
+
+                //colorFace *= SEETHROUGH_COLOR_MUL;
+                //colorDefault *= SEETHROUGH_COLOR_MUL;
+
+                //MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                //if(mountPoint.Default)
+                //    MySimpleObjectDraw.DrawTransparentBox(ref closeMatrix, ref unitBB, ref colorDefault, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: OVERLAY_SQUARE_MATERIAL, onlyFrontFaces: true, blendType: MOUNTPOINT_BLEND_TYPE);
+                #endregion
+
+                if(drawLabel)
+                {
+                    RayD aimLine = new RayD(camMatrix.Translation, camMatrix.Forward);
+                    double? distance = obb.Intersects(ref aimLine);
+
+                    // make grayed out mountpoints have lower priority for selection if they're overlapping current mountpoints
+                    if(grayedOut && distance.HasValue)
+                        distance += 10;
+
+                    if(distance.HasValue && distance.Value < ClosestMountDist)
+                    {
+                        ClosestMountDist = distance.Value;
+                        ClosestMount = mountPoint;
+                        ClosestMountOBB = obb;
+                        ClosestMountMatrix = m;
+                        ClosestMountGrayed = grayedOut;
+                    }
+                }
+            }
+        }
 
         void NewFeatureTestingDraw(MyCubeBlockDefinition def, IMySlimBlock block, MatrixD drawMatrix)
         {

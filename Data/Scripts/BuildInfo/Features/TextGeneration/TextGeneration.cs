@@ -1882,9 +1882,6 @@ namespace Digi.BuildInfo.Features
 
                 if(Math.Abs(grindRatio - 1) >= 0.0001f)
                     GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetFormatting();
-
-                if(!buildModels)
-                    GetLine().Separator().Color(COLOR_WARNING).Append("(No construction models)").ResetFormatting();
             }
             #endregion Mass/size/build time/deconstruct time/no models
 
@@ -1909,6 +1906,34 @@ namespace Digi.BuildInfo.Features
                     GetLine().Separator();
                     DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
                 }
+
+                if(buildModels)
+                {
+                    bool customBuildMounts = false;
+
+                    for(int i = 0; i < def.BuildProgressModels.Length; i++)
+                    {
+                        MyCubeBlockDefinition.BuildProgressModel bpm = def.BuildProgressModels[i];
+                        if(bpm.MountPoints != null && bpm.MountPoints.Length > 0)
+                        {
+                            customBuildMounts = true;
+                            break;
+                        }
+                    }
+
+                    if(customBuildMounts)
+                    {
+                        StringBuilder sb = AddLine().Color(COLOR_WARNING).Append("Different mount points in build stage!").ResetFormatting().Append(" (");
+                        Main.Config.ConstructionModelPreviewBind.Value.GetBinds(sb, ControlContext.BUILD, specialChars: true);
+                        sb.Append(" and ");
+                        Main.Config.CycleOverlaysBind.Value.GetBinds(sb, ControlContext.BUILD, specialChars: true);
+                        sb.Append(" to see)").ResetFormatting();
+                    }
+                }
+                //else
+                //{
+                //    AddLine().Color(COLOR_WARNING).Append("No build stage models.").ResetFormatting();
+                //}
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ComponentsVolume))
