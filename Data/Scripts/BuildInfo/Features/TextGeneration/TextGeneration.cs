@@ -4367,7 +4367,8 @@ namespace Digi.BuildInfo.Features
             //    }
             //}
 
-            AddLine().Color(COLOR_UNIMPORTANT).Append("(").Append(CoreSystemsAPIHandler.APIName).Append(" block, vanilla stats hidden)");
+            AddLine().Color(COLOR_UNIMPORTANT).Append("This is a ").Append(CoreSystemsAPIHandler.APIName).Append(" block, vanilla stats not relevant.");
+            AddLine().Color(COLOR_UNIMPORTANT).Append("Check block's HUD description for any useful stats.");
 
 
 #if false
