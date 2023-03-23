@@ -94,77 +94,109 @@ namespace Digi.BuildInfo.Features
             if(!force && Main.Tick < CanRefreshAfterTick)
                 return;
 
-            CanRefreshAfterTick = Main.Tick + FillComputeEveryTicks;
-
-            TempGrids.Clear();
-
             IMyShipController ctrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
+            CanRefreshAfterTick = Main.Tick + FillComputeEveryTicks;
             ShouldUpdate = ctrl != null && ctrl.CanControlShip && !MyAPIGateway.Input.IsJoystickLastUsed && Main.GameConfig.HudState != HudState.OFF && Main.Config.ShipToolInvBarShow.Value;
             UsingTool = Main.EquipmentMonitor.ToolDefId.TypeId == TypeGrinder || Main.EquipmentMonitor.ToolDefId.TypeId == TypeDrill;
 
-            if(UsingTool)
-                BarIcon = Main.EquipmentMonitor.IsAnyGrinder ? GrinderIconMaterial : DrillIconMaterial;
-
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldUpdate);
 
-            if(ShouldUpdate && !UsingTool)
+            if(ShouldUpdate)
             {
+                TempGrids.Clear();
                 MyAPIGateway.GridGroups.GetGroup(ctrl.CubeGrid, GridLinkTypeEnum.Logical, TempGrids);
 
-                float highestFilledGrinder = 0f;
-                float highestFilledDrill = 0f;
-                bool grindersOn = false;
-                bool drillsOn = false;
-
-                foreach(MyCubeGrid grid in TempGrids)
+                if(UsingTool)
                 {
-                    int grinders = grid.BlocksCounters.GetValueOrDefault(TypeGrinder, 0);
-                    int drills = grid.BlocksCounters.GetValueOrDefault(TypeDrill, 0);
+                    MyObjectBuilderType toolType = Main.EquipmentMonitor.ToolDefId.TypeId;
 
-                    if(grinders == 0 && drills == 0)
-                        continue;
+                    BarIcon = (toolType == TypeGrinder ? GrinderIconMaterial : DrillIconMaterial);
+                    FilledRatio = 0;
 
-                    foreach(MyCubeBlock block in grid.GetFatBlocks())
+                    foreach(MyCubeGrid grid in TempGrids)
                     {
-                        MyObjectBuilderType typeId = block.BlockDefinition.Id.TypeId;
-                        if(typeId != TypeGrinder && typeId != TypeDrill)
+                        int tools = grid.BlocksCounters.GetValueOrDefault(toolType, 0);
+                        if(tools == 0)
                             continue;
 
-                        IMyInventory inv = block.GetInventory(0);
-                        if(inv == null || inv.MaxVolume <= 0)
-                            continue;
-
-                        float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
-                        IMyFunctionalBlock functional = (IMyFunctionalBlock)block;
-
-                        if(typeId == TypeGrinder)
+                        foreach(MyCubeBlock block in grid.GetFatBlocks())
                         {
-                            grindersOn |= functional.Enabled;
-                            highestFilledGrinder = Math.Max(highestFilledGrinder, filled);
-                        }
-                        else
-                        {
-                            drillsOn |= functional.Enabled;
-                            highestFilledDrill = Math.Max(highestFilledDrill, filled);
+                            if(!block.IsFunctional)
+                                continue;
+
+                            MyObjectBuilderType typeId = block.BlockDefinition.Id.TypeId;
+                            if(typeId != toolType)
+                                continue;
+
+                            IMyInventory inv = block.GetInventory(0);
+                            if(inv == null || inv.MaxVolume <= 0)
+                                continue;
+
+                            float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
+                            FilledRatio = Math.Max(FilledRatio, filled);
                         }
                     }
                 }
+                else
+                {
+                    float highestFilledGrinder = 0f;
+                    float highestFilledDrill = 0f;
+                    bool grindersOn = false;
+                    bool drillsOn = false;
 
-                if(grindersOn && drillsOn)
-                {
-                    // I don't even
-                }
-                else if(grindersOn)
-                {
-                    UsingTool = true;
-                    FilledRatio = highestFilledGrinder;
-                    BarIcon = GrinderIconMaterial;
-                }
-                else if(drillsOn)
-                {
-                    UsingTool = true;
-                    FilledRatio = highestFilledDrill;
-                    BarIcon = DrillIconMaterial;
+                    foreach(MyCubeGrid grid in TempGrids)
+                    {
+                        int grinders = grid.BlocksCounters.GetValueOrDefault(TypeGrinder, 0);
+                        int drills = grid.BlocksCounters.GetValueOrDefault(TypeDrill, 0);
+
+                        if(grinders == 0 && drills == 0)
+                            continue;
+
+                        foreach(MyCubeBlock block in grid.GetFatBlocks())
+                        {
+                            if(!block.IsFunctional)
+                                continue;
+
+                            MyObjectBuilderType typeId = block.BlockDefinition.Id.TypeId;
+                            if(typeId != TypeGrinder && typeId != TypeDrill)
+                                continue;
+
+                            IMyInventory inv = block.GetInventory(0);
+                            if(inv == null || inv.MaxVolume <= 0)
+                                continue;
+
+                            float filled = (float)inv.CurrentVolume / (float)inv.MaxVolume;
+                            IMyFunctionalBlock functional = (IMyFunctionalBlock)block;
+
+                            if(typeId == TypeGrinder)
+                            {
+                                grindersOn |= functional.Enabled;
+                                highestFilledGrinder = Math.Max(highestFilledGrinder, filled);
+                            }
+                            else
+                            {
+                                drillsOn |= functional.Enabled;
+                                highestFilledDrill = Math.Max(highestFilledDrill, filled);
+                            }
+                        }
+                    }
+
+                    if(grindersOn && drillsOn)
+                    {
+                        // I don't even
+                    }
+                    else if(grindersOn)
+                    {
+                        UsingTool = true;
+                        FilledRatio = highestFilledGrinder;
+                        BarIcon = GrinderIconMaterial;
+                    }
+                    else if(drillsOn)
+                    {
+                        UsingTool = true;
+                        FilledRatio = highestFilledDrill;
+                        BarIcon = DrillIconMaterial;
+                    }
                 }
 
                 TempGrids.Clear();
@@ -178,7 +210,7 @@ namespace Digi.BuildInfo.Features
             if(!ShouldUpdate || MyAPIGateway.Gui.IsCursorVisible)
                 return;
 
-            if(Main.Tick % FillComputeEveryTicks == 0)
+            if(Main.Tick >= CanRefreshAfterTick)
                 UpdateShow();
 
             if(!UsingTool)
