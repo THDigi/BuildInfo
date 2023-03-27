@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -15,7 +16,7 @@ namespace Digi.BuildInfo.Features
     public class ModderHelp : ModComponent
     {
         int ModProblems = 0;
-        int ModConcerns = 0;
+        int ModHints = 0;
 
         public ModderHelp(BuildInfoMod main) : base(main)
         {
@@ -39,21 +40,6 @@ namespace Digi.BuildInfo.Features
                 MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null)
                 {
-                    // TODO: check for airtightness optimization?
-                    //if(!blockDef.IsAirTight.HasValue)
-                    //{
-                    //    int airTightFaces, totalFaces;
-                    //    AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
-                    //    if(airTightFaces == 0)
-                    //    {
-                    //        ModHint(def, $"has no sides airtight but no IsAirTight declared, could set it to false to save some computation.");
-                    //    }
-                    //    else if(airTightFaces == totalFaces)
-                    //    {
-                    //        ModHint(def, $"has all sides airtight but no IsAirTight declared, could set it to true to save some computation.");
-                    //    }
-                    //}
-
                     Vector3I maxCenter = blockDef.Size - 1;
 
                     if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
@@ -78,13 +64,27 @@ namespace Digi.BuildInfo.Features
                     MyComponentStack.GroupInfo firstComp = comps.GetGroupInfo(0);
                     if(firstComp.TotalCount > 1 && firstComp.MountedCount > 1)
                     {
-                        ModProblem(def, "exploitable! Block gets placed in survival with more than one first componment, allowing players to grind it to gain those extra components." +
+                        ModProblem(def, $"exploitable! Block gets placed in survival with {firstComp.MountedCount}x {firstComp.Component?.DisplayNameText} (first componment), allowing players to grind it to gain those extra components." +
                                         "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
+                    }
+
+                    if(!blockDef.IsAirTight.HasValue)
+                    {
+                        int airTightFaces, totalFaces;
+                        AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
+                        if(airTightFaces == 0)
+                        {
+                            ModHint(def, $"has 0 airtight sides, should set IsAirTight to false to save some computation.");
+                        }
+                        else if(airTightFaces == totalFaces)
+                        {
+                            ModHint(def, $"has all sides airtight, should set IsAirTight to true to save some computation.");
+                        }
                     }
                 }
             }
 
-            if(ModProblems > 0 || ModConcerns > 0)
+            if(ModProblems > 0 || ModHints > 0)
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
@@ -102,10 +102,10 @@ namespace Digi.BuildInfo.Features
             ModProblems++;
         }
 
-        void ModConcern(MyDefinitionBase def, string text)
+        void ModHint(MyDefinitionBase def, string text)
         {
-            Log.Info($"Mod concern: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
-            ModConcerns++;
+            Log.Info($"Mod hint: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
+            ModHints++;
         }
 
         public override void UpdateAfterSim(int tick)
@@ -132,7 +132,7 @@ namespace Digi.BuildInfo.Features
                 //
                 //Utils.ShowColoredChatMessage(BuildInfoMod.ModName, sb.ToString(), FontsHandler.RedSh);
 
-                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There's problems with local mod(s), see SE log or BuildInfo's log.", FontsHandler.RedSh);
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There's problems or hints with local mod(s), see SE log or BuildInfo's log.", FontsHandler.RedSh);
             }
         }
     }
