@@ -4,6 +4,7 @@ using Digi.ComponentLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
@@ -114,11 +115,12 @@ namespace Digi.BuildInfo.Features.HUD
 
                             foreach(MyCubeGrid grid in TempGrids)
                             {
+                                int containers = grid.BlocksCounters.GetValueOrDefault(typeof(MyObjectBuilder_CargoContainer));
+                                if(containers == 0)
+                                    continue;
+
                                 foreach(MyCubeBlock block in grid.GetFatBlocks())
                                 {
-                                    //if(!(block is IMyCargoContainer || block is IMyShipConnector || block is IMyCollector))
-                                    //    continue;
-
                                     if(!(block is IMyCargoContainer))
                                         continue;
 
