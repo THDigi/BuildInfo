@@ -11,5 +11,6 @@ namespace Digi.ComponentLib
         UPDATE_BEFORE_SIM = 2,
         UPDATE_AFTER_SIM = 4,
         UPDATE_DRAW = 8,
+        // TODO add load-balanced less frequent updates
     }
 }

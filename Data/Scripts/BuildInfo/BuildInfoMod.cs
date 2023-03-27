@@ -17,6 +17,8 @@ using Digi.ComponentLib;
 using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
+// TODO: measuring tool?
+
 namespace Digi.BuildInfo
 {
     public class BuildInfoMod : ModBase<BuildInfoMod>

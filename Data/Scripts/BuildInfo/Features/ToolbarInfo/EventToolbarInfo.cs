@@ -9,7 +9,9 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 using VRage.Collections;
+using VRage.Game.Components;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
@@ -234,6 +236,46 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         bool RenderBoxContent(StringBuilder sb, ListReader<IMyTerminalBlock> blocks)
         {
+            // TODO: event toolbar for event controller
+            // HACK: backwards compatible
+            //#if !(VERSION_190 || VERSION_191 || VERSION_192 || VERSION_193 || VERSION_194 || VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201)
+            //IMyEventControllerBlock eventController = TargetBlock as IMyEventControllerBlock;
+            //if(eventController != null)
+            //{
+            //    string eventName = null;
+            //
+            //    foreach(MyComponentBase comp in eventController.Components)
+            //    {
+            //        IMyEventControllerEntityComponent eventComp = comp as IMyEventControllerEntityComponent;
+            //        if(eventComp != null && eventComp.IsSelected)
+            //        {
+            //            eventName = MyTexts.GetString(eventComp.EventDisplayName);
+            //            break;
+            //        }
+            //    }
+            //
+            //    if(eventName != null)
+            //    {
+            //        const int TitleMaxLen = 32;
+            //        string title;
+            //        if(eventName.Length > TitleMaxLen)
+            //            title = $"'{eventName.Substring(0, TitleMaxLen)}...' toolbar for ";
+            //        else
+            //            title = $"'{eventName}' toolbar for ";
+            //
+            //        RenderBoxHeader(sb, blocks.Count, title);
+            //    }
+            //    else
+            //        RenderBoxHeader(sb, blocks.Count, "'(No event)' toolbar for ");
+            //
+            //    sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": ").Append("when condition is true").Append('\n');
+            //    sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": ").Append("when condition is false").Append('\n');
+            //    sb.Append("Other pages work the same way.\n");
+            //    sb.Append("Same action can be used in both slots by using different pages.\n");
+            //    return true;
+            //}
+            //#endif
+
             IMyButtonPanel button = TargetBlock as IMyButtonPanel;
             if(button != null)
             {
@@ -354,7 +396,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             sb.Color(HeaderColor);
 
-            if(!string.IsNullOrEmpty(customTitle))
+            if(customTitle != null)
             {
                 sb.Append(customTitle);
             }
