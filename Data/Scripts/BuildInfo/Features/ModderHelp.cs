@@ -26,10 +26,19 @@ namespace Digi.BuildInfo.Features
 
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
+                if(def.Context == null)
+                {
+                    // HACK: the generated LCD texture defs by the game have null Context
+                    if(!(def is MyLCDTextureDefinition))
+                        ModHint(def, "has null Context, a script probably set it like this?");
+
+                    continue;
+                }
+
                 if(!BuildInfoMod.IsDevMod)
                 {
                     // ignore untouched definitions
-                    if(def.Context == null || def.Context.IsBaseGame)
+                    if(def.Context.IsBaseGame)
                         continue;
 
                     // ignore workshop mods
@@ -68,7 +77,8 @@ namespace Digi.BuildInfo.Features
                                         "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
-                    if(!blockDef.IsAirTight.HasValue)
+                    // the 2nd check is for IsDevMod=true case to not spam myself
+                    if(!blockDef.IsAirTight.HasValue && !def.Context.IsBaseGame)
                     {
                         int airTightFaces, totalFaces;
                         AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
@@ -98,14 +108,21 @@ namespace Digi.BuildInfo.Features
 
         void ModProblem(MyDefinitionBase def, string text)
         {
-            Log.Info($"Mod problem: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
+            Log.Info($"Mod problem: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{GetModName(def)}' {text}");
             ModProblems++;
         }
 
         void ModHint(MyDefinitionBase def, string text)
         {
-            Log.Info($"Mod hint: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{def.Context?.ModName ?? "(base game)"}' {text}");
+            Log.Info($"Mod hint: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{GetModName(def)}' {text}");
             ModHints++;
+        }
+
+        string GetModName(MyDefinitionBase def)
+        {
+            if(def.Context != null)
+                return def.Context.IsBaseGame ? "(base game)" : def.Context.ModName;
+            return "(unknown)";
         }
 
         public override void UpdateAfterSim(int tick)
