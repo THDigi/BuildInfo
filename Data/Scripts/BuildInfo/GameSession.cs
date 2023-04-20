@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using Digi.BuildInfo;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage;
+using VRage.Game;
 using VRage.Utils;
 
 namespace Digi.ComponentLib
@@ -14,20 +19,19 @@ namespace Digi.ComponentLib
     {
         public static bool IsKilled = false;
 
+        static bool IsKilledComputed;
+        static string CustomReason;
+        static BuildInfo_GameSession Instance;
+
         public BuildInfo_GameSession()
         {
-            try
-            {
-                IsKilled = CheckKilled();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
+            Instance = this;
         }
 
         void LoadMod()
         {
+            GetOrComputeIsKilled();
+
             if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
                 return; // this mod does nothing server side (with no render), no reason to allocate any more memory.
 
@@ -36,24 +40,50 @@ namespace Digi.ComponentLib
 
             if(IsKilled)
             {
-                string text = $"REMINDER: No script components loaded! Mod has been killed with '{Config.KillswitchName}' in '{Config.FileName}'.";
+                string text = $"No script components loaded. Mod has been killed, reason: {CustomReason ?? "Unknown"}";
                 Log.Info(text);
-                MyLog.Default.WriteLine("### " + Log.ModName + " mod " + text);
-
+                MyLog.Default.WriteLine($"### {ModContext.ModName} mod NOTICE: {text}");
                 return;
             }
 
-            ModBase = new BuildInfo.BuildInfoMod(this);
+            ModBase = new BuildInfoMod(this);
         }
 
-        bool CheckKilled()
+        public static bool GetOrComputeIsKilled()
         {
+            if(!IsKilledComputed)
+            {
+                IsKilledComputed = true;
+
+                try
+                {
+                    IsKilled = CheckKilled();
+                }
+                catch(Exception e)
+                {
+                    Log.Error(e);
+                }
+
+                Instance = null; // no longer needed
+            }
+
+            return IsKilled;
+        }
+
+        static bool CheckKilled()
+        {
+            if(Instance == null)
+            {
+                CustomReason = "Instance is null xD";
+                return true;
+            }
+
             if(MyAPIGateway.Utilities == null)
-                MyAPIGateway.Utilities = MyAPIUtilities.Static; // HACK: avoid this being null xD
+                MyAPIGateway.Utilities = MyAPIUtilities.Static; // HACK: avoid MyAPIGateway.Utilities being null
 
             if(MyAPIGateway.Utilities == null)
             {
-                Log.Error("MyAPIGateway.Utilities is null, can't check for DS or config to read killswitch. Assumed killswitch is on.");
+                CustomReason = "MyAPIGateway.Utilities is still null after manually assigning it...";
                 return true;
             }
 
@@ -61,36 +91,128 @@ namespace Digi.ComponentLib
             if(MyAPIGateway.Utilities.IsDedicated)
                 return true;
 
+            if(CheckKilledByConfig())
+                return true;
+
+            if(CheckKilledByPriority())
+                return true;
+
+            return false;
+        }
+
+        static bool CheckKilledByConfig()
+        {
             // manually check config for killswitch to avoid loading any components if it's true
             // REMINDER: don't use ANY instanced fields here
-
-            if(!MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FileName, typeof(Config)))
-                return false;
-
-            using(TextReader file = MyAPIGateway.Utilities.ReadFileInLocalStorage(Config.FileName, typeof(Config)))
+            if(MyAPIGateway.Utilities.FileExistsInLocalStorage(Config.FileName, typeof(Config)))
             {
-                string line;
-                while((line = file.ReadLine()) != null)
+                using(TextReader file = MyAPIGateway.Utilities.ReadFileInLocalStorage(Config.FileName, typeof(Config)))
                 {
-                    if(!line.StartsWith(Config.KillswitchName, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    string[] args = line.Split(new char[] { ConfigHandler.VALUE_SEPARATOR }, 2);
-                    if(args.Length != 2)
+                    string line;
+                    while((line = file.ReadLine()) != null)
                     {
-                        Log.Error($"Config '{Config.KillswitchName}' has too many or no separators ({ConfigHandler.VALUE_SEPARATOR.ToString()}), line: '{line}'");
-                        break;
-                    }
+                        if(!line.StartsWith(Config.KillswitchName, StringComparison.OrdinalIgnoreCase))
+                            continue;
 
-                    string value = args[1];
-                    bool on;
-                    if(!bool.TryParse(value, out on))
-                    {
-                        Log.Error($"Config '{Config.KillswitchName}' has invalid value: '{value}'");
-                        break;
-                    }
+                        string[] args = line.Split(new char[] { ConfigHandler.VALUE_SEPARATOR }, 2);
+                        if(args.Length != 2)
+                        {
+                            Log.Error($"Config '{Config.KillswitchName}' has too many or no separators ({ConfigHandler.VALUE_SEPARATOR.ToString()}), line: '{line}'");
+                            break;
+                        }
 
-                    return on;
+                        string value = args[1];
+                        bool on;
+                        if(!bool.TryParse(value, out on))
+                        {
+                            Log.Error($"Config '{Config.KillswitchName}' has invalid value: '{value}'");
+                            break;
+                        }
+
+                        if(on)
+                            CustomReason = $"'{Config.KillswitchName}' setting in '{Config.FileName}'";
+                        return on;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        static bool CheckKilledByPriority()
+        {
+            const string FileName = "buildinfo-priority.txt";
+
+            if(Instance?.Session?.Mods == null)
+            {
+                CustomReason = "Instance?.Session?.Mods is null :(";
+                return true;
+            }
+
+            // HACK: fallback way of finding current mod because ModContext might be null at this time
+            MyObjectBuilder_Checkpoint.ModItem? thisMod = null;
+            string scopeName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+
+            if(Instance?.ModContext != null)
+                thisMod = Instance.ModContext.ModItem;
+
+            List<MyTuple<int, MyObjectBuilder_Checkpoint.ModItem>> biMods = new List<MyTuple<int, MyObjectBuilder_Checkpoint.ModItem>>();
+
+            foreach(MyObjectBuilder_Checkpoint.ModItem mod in Instance.Session.Mods)
+            {
+                if(!MyAPIGateway.Utilities.FileExistsInModLocation(FileName, mod))
+                    continue; // not a relevant mod
+
+                if(thisMod == null)
+                {
+                    // HACK: adding the _ separator so that it cannot be mistaken for another mod; e.g. BuildInfo_Unimportant vs BuildInfo.dev_Unimportant;
+                    string modNameTest = mod.Name + "_";
+
+                    if(scopeName.StartsWith(modNameTest))
+                        thisMod = mod;
+                }
+
+                string firstLine;
+
+                using(TextReader reader = MyAPIGateway.Utilities.ReadFileInModLocation(FileName, mod))
+                {
+                    firstLine = reader.ReadLine();
+                }
+
+                int priority;
+                if(!int.TryParse(firstLine, out priority))
+                {
+                    priority = int.MinValue;
+                    //Log.Error($"Couldn't parse {FileName} first line, not an integer. Mod: {mod.FriendlyName} ({mod.PublishedServiceName}:{mod.PublishedFileId})");
+                    //continue;
+                }
+
+                biMods.Add(MyTuple.Create(priority, mod));
+            }
+
+            if(thisMod == null)
+            {
+                CustomReason = $"thisMod == null";
+                return true;
+            }
+
+            //MyLog.Default.WriteLine($"### {thisMod.Value.GetNameAndId()}: found other buildinfo mods:");
+            //foreach(var tuple in biMods)
+            //{
+            //    MyLog.Default.WriteLine($" - {tuple.Item2.GetNameAndId()}; priority={tuple.Item1}");
+            //}
+
+            if(biMods.Count > 1)
+            {
+                // sort descending
+                biMods.Sort((a, b) => b.Item1.CompareTo(a.Item1));
+
+                MyObjectBuilder_Checkpoint.ModItem priorityMod = biMods[0].Item2;
+
+                if(thisMod.Value.Name != priorityMod.Name)
+                {
+                    CustomReason = $"a higher priority mod is present: {priorityMod.GetNameAndId()}";
+                    return true;
                 }
             }
 

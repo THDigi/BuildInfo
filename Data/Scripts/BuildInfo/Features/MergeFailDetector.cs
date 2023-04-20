@@ -45,7 +45,7 @@ namespace Digi.BuildInfo.Features
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            if(BuildInfo_GameSession.IsKilled)
+            if(BuildInfo_GameSession.GetOrComputeIsKilled())
                 return;
 
             block = (IMyShipMergeBlock)Entity;

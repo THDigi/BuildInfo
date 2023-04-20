@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public UnitFormatStatBase(string id)
         {
-            if(!BuildInfo_GameSession.IsKilled)
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
                 Id = MyStringHash.GetOrCompute(id); // overwrites this stat's script
         }
 

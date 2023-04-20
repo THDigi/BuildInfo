@@ -1,0 +1,5 @@
+500
+
+first line of this file must be a number.
+when multiple buildinfo mods exist, the one with the highest number gets to run.
+feature provided by this mod (GameSession.cs file) not by SE.
