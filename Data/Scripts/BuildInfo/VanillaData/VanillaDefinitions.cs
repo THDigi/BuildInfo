@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
@@ -122,7 +123,7 @@ namespace Digi.BuildInfo.VanillaData
                 }
             }
 
-            foreach(KeyValuePair<MyObjectBuilderType, List<string>> kv in perType)
+            foreach(KeyValuePair<MyObjectBuilderType, List<string>> kv in perType.OrderBy(e => e.Key.ToString()))
             {
                 sb.Append(nameof(AddBlocks)).Append('(');
 

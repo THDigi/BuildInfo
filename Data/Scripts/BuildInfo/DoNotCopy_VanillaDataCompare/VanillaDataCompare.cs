@@ -206,29 +206,36 @@ namespace Digi.BuildInfo
 
         private void GridSpawned(MyEntity ent)
         {
-            IMyCubeGrid grid = (IMyCubeGrid)ent;
-            IMyCubeBlock block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
-
-            if(block == null)
+            try
             {
-                RemoveConnectedGrids(grid);
-                Log.Error($"Can't get block from spawned entity for some unknown block...");
-                //Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
-                return;
+                IMyCubeGrid grid = (IMyCubeGrid)ent;
+                IMyCubeBlock block = grid.GetCubeBlock(Vector3I.Zero)?.FatBlock as IMyCubeBlock;
+
+                if(block == null)
+                {
+                    RemoveConnectedGrids(grid);
+                    Log.Error($"Can't get block from spawned entity for some unknown block...");
+                    //Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
+                    return;
+                }
+
+                IMyTerminalBlock terminalBlock = block as IMyTerminalBlock;
+
+                if(terminalBlock == null)
+                {
+                    Log.Info($"Spawned block is not a terminal block: {block.BlockDefinition}");
+                    RemoveConnectedGrids(grid);
+                    return;
+                }
+
+                block.OnBuildSuccess(0, true);
+
+                spawnedBlocks.Add(terminalBlock);
             }
-
-            IMyTerminalBlock terminalBlock = block as IMyTerminalBlock;
-
-            if(terminalBlock == null)
+            catch(Exception e)
             {
-                Log.Info($"Spawned block is not a terminal block: {block.BlockDefinition}");
-                RemoveConnectedGrids(grid);
-                return;
+                Log.Error(e);
             }
-
-            block.OnBuildSuccess(0, true);
-
-            spawnedBlocks.Add(terminalBlock);
         }
 
         private void RemoveConnectedGrids(IMyCubeGrid grid)
