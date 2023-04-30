@@ -274,7 +274,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 s.TrimEndWhitespace().Append("\n\nMod: ").AppendMaxLength(def.Context.ModName, modNameMaxLen);
 
-                MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.GetModItem();
+                MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.ModItem;
                 if(modItem.Name != null && modItem.PublishedFileId > 0)
                 {
                     s.Append("\nModId: ").Append(modItem.PublishedServiceName).Append(':').Append(modItem.PublishedFileId);

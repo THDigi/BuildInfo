@@ -1557,7 +1557,7 @@ namespace Digi.BuildInfo.Features
                 {
                     AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
-                    MyObjectBuilder_Checkpoint.ModItem modItem = context.GetModItem();
+                    MyObjectBuilder_Checkpoint.ModItem modItem = context.ModItem;
                     if(modItem.Name != null && modItem.PublishedFileId > 0)
                         AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("ID: ").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId);
                 }
@@ -2245,6 +2245,9 @@ namespace Digi.BuildInfo.Features
             //Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
             Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
             Add(typeof(MyObjectBuilder_VendingMachine), Format_StoreBlock);
+
+            // TODO: emotion, event and a few other new blocks, they have at least power usage.
+            //Add(typeof(MyObjectBuilder_EmotionControllerBlock), Format_EmotionController);
         }
 
         private void Add(MyObjectBuilderType blockType, TextGenerationCall call)

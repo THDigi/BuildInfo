@@ -111,8 +111,8 @@ namespace Digi.BuildInfo.Features.LiveData
                 IMySlimBlock block = grid?.GetCubeBlock(Vector3I.Zero);
                 if(block == null)
                 {
-                    MyObjectBuilder_Checkpoint.ModItem mod = BlockDef.Context.GetModItem();
-                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"}; mod={mod.FriendlyName} ({mod.PublishedServiceName}:{mod.PublishedFileId.ToString()})");
+                    MyObjectBuilder_Checkpoint.ModItem mod = BlockDef.Context.ModItem;
+                    Log.Error($"Can't get block from spawned entity for block: {BlockDef.Id.ToString()}; grid={grid?.EntityId.ToString() ?? "(NULL)"}; mod={mod.GetNameAndId()}");
                     return;
                 }
 
