@@ -335,6 +335,14 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     Interactive.Add(new InteractionInfo(matrix, "Entrance", colorInteractiveOnly));
                 }
+                else if(detectorType.EqualsIgnoreCase("connector"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Connector (large)", colorInteractiveOnly));
+                }
+                else if(detectorType.EqualsIgnoreCase("small") && part1.EqualsIgnoreCase("connector"))
+                {
+                    Interactive.Add(new InteractionInfo(matrix, "Connector (small)", colorInteractiveOnly));
+                }
                 else if(detectorType.EqualsIgnoreCase("wardrobe")
                      || detectorType.EqualsIgnoreCase("ladder")
                      || detectorType.EqualsIgnoreCase("respawn") // medical room/survival kit respawn point
@@ -344,7 +352,6 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("vendingMachineBuy")
                      || detectorType.EqualsIgnoreCase("vendingMachineNext")
                      || detectorType.EqualsIgnoreCase("vendingMachinePrevious")
-                     || detectorType.EqualsIgnoreCase("connector")
                      || detectorType.EqualsIgnoreCase("shiptool")
                      || detectorType.EqualsIgnoreCase("merge")
                      || detectorType.EqualsIgnoreCase("collector")
