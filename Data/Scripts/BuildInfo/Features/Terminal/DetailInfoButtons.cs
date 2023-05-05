@@ -250,7 +250,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 RefreshPositions();
             }
 
-            Vector2 screenSize = MyAPIGateway.Input.GetMouseAreaSize();
+            Vector2 screenSize = MyAPIGateway.Session.Camera.ViewportSize;
             Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
             MousePos = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
 
