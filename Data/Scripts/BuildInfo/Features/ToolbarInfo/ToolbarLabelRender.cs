@@ -353,6 +353,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         bool ComputeVisible()
         {
+            if(Main.GameConfig.HudState == HudState.OFF)
+                return false;
+
             if(!Main.TextAPI.IsEnabled || LabelsMode == ToolbarLabelsMode.Off)
                 return false;
 
