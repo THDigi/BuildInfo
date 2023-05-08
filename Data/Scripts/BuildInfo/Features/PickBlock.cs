@@ -67,6 +67,13 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
+                if(!PickedBlockDef.Public)
+                {
+                    ShowText($"{PickedBlockDef.DisplayNameText} is not available to build.", 3000, FontsHandler.RedSh);
+                    AskToPick(null);
+                    return;
+                }
+
                 // refresh showing the slot message
                 if(!paused && Notify != null && Main.Tick % 10 == 0)
                 {
