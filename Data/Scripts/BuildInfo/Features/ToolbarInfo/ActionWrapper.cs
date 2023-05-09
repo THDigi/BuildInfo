@@ -346,6 +346,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Shoot_On": return Utils.GetModFullPath(@"Textures\ActionIcons\ShootOn.dds");
                 case "Shoot_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\ShootOff.dds");
 
+                case "FocusLockedTarget": return Utils.GetModFullPath(@"Textures\ActionIcons\Lock.dds");
+
                 case "EnableIdleMovement":
                 case "EnableIdleMovement_On":
                 case "EnableIdleMovement_Off":
@@ -545,13 +547,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetEnemies_On":
                 case "TargetEnemies_Off":
 
-                case "TargetingGroup_Weapons":
-                case "TargetingGroup_Propulsion":
-                case "TargetingGroup_PowerSystems":
+                case "SetTargetingGroup_Weapons":
+                case "SetTargetingGroup_Propulsion":
+                case "SetTargetingGroup_PowerSystems":
                 case "TargetingGroup_CycleSubsystems":
-
-                case "CopyTarget":
-                case "ForgetTarget":
 
                 case "Forward":
                 case "Backward":
