@@ -132,6 +132,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             });
 
+            new ItemButton(Category_Mod, "World settings & mods", () =>
+            {
+                Main.ChatCommandHandler.CommandServerInfo.ExecuteNoArgs();
+            });
+
             Category_Textbox = AddCategory("Text Box", Category_Mod, header: "Text box when holding or aiming at a block.");
             Category_Overlays = AddCategory("Block Overlays", Category_Mod, header: "Block Overlays - See binds for how to show overlays.");
             Category_HUD = AddCategory("HUD", Category_Mod, header: "HUD additions and modifications");

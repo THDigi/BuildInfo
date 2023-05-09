@@ -14,6 +14,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public readonly Dictionary<string, Command> AliasToCommand = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
 
         public CommandHelp CommandHelp;
+        public CommandServerInfo CommandServerInfo;
         public CommandModLink CommandModLink;
         public CommandWorkshop CommandWorkshop;
         public CommandChangelog CommandChangelog;
@@ -39,6 +40,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             // affects order in help menu
             CommandHelp = new CommandHelp();
+            CommandServerInfo = new CommandServerInfo();
             CommandModLink = new CommandModLink();
             CommandWorkshop = new CommandWorkshop();
             CommandChangelog = new CommandChangelog();

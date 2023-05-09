@@ -122,8 +122,9 @@ namespace Digi.BuildInfo.Systems
             }
         }
 
+        StringBuilder _measuringSB = new StringBuilder(256);
         HudAPIv2.HUDMessage _measuringMsg;
-        public Vector2D GetStringSize(StringBuilder text)
+        public Vector2D GetStringSize(StringBuilder text, double scale = 1d)
         {
             if(!WasDetected)
                 throw new Exception("GetStringSize() was calledbefore TextAPI was available!");
@@ -131,11 +132,19 @@ namespace Digi.BuildInfo.Systems
             if(_measuringMsg == null)
             {
                 _measuringMsg = new HudAPIv2.HUDMessage();
+                _measuringMsg.Message = new StringBuilder(256);
                 _measuringMsg.Visible = false;
             }
 
+            _measuringMsg.Scale = scale;
             _measuringMsg.Message = text;
             return _measuringMsg.GetTextLength();
+        }
+
+        public Vector2D GetStringSize(string text, double scale = 1d)
+        {
+            _measuringSB.Clear().Append(text);
+            return GetStringSize(_measuringSB, scale);
         }
 
         /// <summary>
@@ -239,6 +248,10 @@ namespace Digi.BuildInfo.Systems
                 }
             }
 
+            /// <summary>
+            /// x is -1 left, 1 right
+            /// <para>y is -1 bottom, 1 top</para>
+            /// </summary>
             public Vector2D Position
             {
                 get { return Text.Origin; }
@@ -253,6 +266,11 @@ namespace Digi.BuildInfo.Systems
                         Background.Origin = value;
                 }
             }
+
+            /// <summary>
+            /// Origin+Offset
+            /// </summary>
+            public Vector2D AbsolutePosition => Text.Origin + Text.Offset;
 
             public bool HideWithHUD
             {
