@@ -152,6 +152,8 @@
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
     <Compile Include="Features\Fonts\FontParser.cs" />
+    <Compile Include="Features\GUI\TooltipHandler.cs" />
+    <Compile Include="Features\GUI\Button.cs" />
     <Compile Include="Features\LiveData\Merge.cs" />
     <Compile Include="Features\LiveData\Spotlight.cs" />
     <Compile Include="Features\ModelPreview\Blocks\HangarDoor.cs" />

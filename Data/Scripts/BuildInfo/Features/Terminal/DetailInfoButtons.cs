@@ -1,31 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.GUI;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 using VRageMath;
-using Digi.BuildInfo.Utilities;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
-using Digi.BuildInfo.Systems;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
     public class DetailInfoButtons : ModComponent
     {
-        static readonly MyStringId ButtonBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBg");
-        static readonly MyStringId ButtonBgHover = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
-        static readonly MyStringId ButtonBgActivate = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgActivate");
-        const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
-
-        const float TooltipScaleOffset = 1f;
-        const float TooltipBgEdge = 0.01f;
-        const float TooltipOffset = 0.05f;
-
         const float ButtonScaleOffset = 1.2f;
-        const float ButtonBgEdge = 0.025f;
+        const float TooltipScaleOffset = 1f;
 
         IMyTerminalBlock ViewedInTerminal;
 
@@ -112,7 +102,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 if(--RefreshCooldown <= 0)
                 {
                     RefreshCooldown = TerminalInfo.RefreshMinTicks;
-                    button.Label.Background.Material = ButtonBgActivate;
+                    button.Label.Background.Material = Button.MaterialBgActivate;
 
                     // HACK: one way to refresh detail info and consequently terminal controls, causes network spam though.
                     bool orig = ViewedInTerminal.ShowInToolbarConfig;
@@ -120,7 +110,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     ViewedInTerminal.ShowInToolbarConfig = orig;
                 }
 
-                button.Label.Background.Material = ButtonBgActivate;
+                button.Label.Background.Material = Button.MaterialBgActivate;
                 button.Label.Background.BillBoardColor = Color.Lime;
             }
         }
@@ -184,7 +174,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 Tooltip?.Hover(CopyCopied ? "Copied to clipboard" : "Nothing to copy");
 
-                button.Label.Background.Material = ButtonBgActivate;
+                button.Label.Background.Material = Button.MaterialBgActivate;
                 button.Label.Background.BillBoardColor = (CopyCopied ? Color.Lime : Color.Red);
             }
         }
@@ -215,8 +205,8 @@ namespace Digi.BuildInfo.Features.Terminal
             for(int i = 0; i < Buttons.Length; i++)
             {
                 Button button = Buttons[i];
-                button.Refresh(pos, buttonScale);
-                pos -= new Vector2D(button.Label.Background.Width + ((ButtonBgEdge * buttonScale) / 4), 0);
+                button.Refresh(pos, buttonScale, badPivot: true); // HACK: a way to fix this?
+                pos -= new Vector2D(button.Label.Background.Width + ((Button.EdgePadding * buttonScale) / 4), 0);
             }
 
             Tooltip?.Refresh(scale * TooltipScaleOffset);
@@ -308,171 +298,6 @@ namespace Digi.BuildInfo.Features.Terminal
             else
             {
                 Tooltip?.Draw(MousePos);
-            }
-        }
-
-        // TODO: move to their own files
-        class Button
-        {
-            public bool Selected { get; private set; }
-            public bool Visible { get; set; } = true;
-
-            public readonly TextAPI.TextPackage Label;
-
-            readonly Action<Button> HoverAction;
-            readonly Action<Button> HoverEndAction;
-
-            readonly string Tooltip;
-            readonly ITooltipHandler TooltipHandler;
-
-            BoundingBox2D ButtonBB;
-
-            public Button(string label,
-                string tooltip = null,
-                ITooltipHandler tooltipHandler = null,
-                Action<Button> hover = null, Action<Button> hoverEnd = null)
-            {
-                Label = new TextAPI.TextPackage(new StringBuilder(label), backgroundTexture: ButtonBg);
-
-                Tooltip = tooltip;
-                TooltipHandler = tooltipHandler;
-
-                HoverAction = hover;
-                HoverEndAction = hoverEnd;
-            }
-
-            public void Refresh(Vector2D pos, float scale)
-            {
-                Label.Background.Origin = pos;
-                Label.Text.Scale = scale;
-                Label.Text.Origin = pos;
-
-                Vector2D textSize = Label.Text.GetTextLength();
-
-                // bottom-right pivot and some padding
-                Label.Text.Offset = new Vector2D(-textSize.X, -textSize.Y) + new Vector2D((ButtonBgEdge / 2) * scale);
-
-                Label.Background.Width = (float)Math.Abs(textSize.X) + (ButtonBgEdge * scale);
-                Label.Background.Height = (float)Math.Abs(textSize.Y) + (ButtonBgEdge * scale);
-                Label.Background.Offset = Label.Text.Offset + (textSize / 2);
-
-                Vector2D centerPos = Label.Background.Origin + Label.Background.Offset;
-                Vector2D halfSize = new Vector2D(Label.Background.Width, Label.Background.Height) / 2;
-                ButtonBB = new BoundingBox2D(centerPos - halfSize, centerPos + halfSize);
-            }
-
-            public void Draw(Vector2D mouseOnScreen)
-            {
-                if(!Visible)
-                    return;
-
-                if(ButtonBB.Contains(mouseOnScreen) == ContainmentType.Contains)
-                {
-                    Selected = true;
-                    Label.Background.Material = ButtonBgHover;
-                    Label.Background.BillBoardColor = Color.White;
-
-                    TooltipHandler?.Hover(Tooltip);
-                    HoverAction.Invoke(this);
-                }
-                else if(Selected)
-                {
-                    Selected = false;
-                    Label.Background.Material = ButtonBg;
-                    Label.Background.BillBoardColor = Color.White;
-
-                    TooltipHandler?.HoverEnd();
-                    HoverEndAction?.Invoke(this);
-                }
-
-                Label.Background.Draw();
-                Label.Text.Draw();
-            }
-        }
-
-        interface ITooltipHandler
-        {
-            void Draw(Vector2D mouseOnScreen);
-            void Hover(string tooltip);
-            void HoverEnd();
-        }
-
-        class TooltipHandler : ITooltipHandler
-        {
-            readonly TextAPI.TextPackage Label;
-
-            Vector2D TextSize;
-            string PrevTooltipRef;
-            bool DrawThisTick;
-
-            public TooltipHandler()
-            {
-                Label = new TextAPI.TextPackage(256, backgroundTexture: ButtonBgHover);
-            }
-
-            public void Refresh(float scale)
-            {
-                Label.Text.Scale = scale;
-                TextSize = Label.Text.GetTextLength();
-            }
-
-            public void Hover(string tooltip)
-            {
-                if((tooltip == null && PrevTooltipRef != null) || !object.ReferenceEquals(tooltip, PrevTooltipRef))
-                {
-                    PrevTooltipRef = tooltip;
-                    Label.Text.Message.Clear().Append(tooltip);
-                    TextSize = Label.Text.GetTextLength();
-                }
-
-                // tooltip's Draw() needs to happen after all the buttons's Draw().
-                DrawThisTick = true;
-            }
-
-            public void HoverEnd()
-            {
-                DrawThisTick = false;
-            }
-
-            public void Draw(Vector2D mouseOnScreen)
-            {
-                if(!DrawThisTick)
-                    return;
-
-                DrawThisTick = false;
-
-                float scale = (float)Label.Text.Scale;
-
-                Vector2D absTextSize = new Vector2D(Math.Abs(TextSize.X), Math.Abs(TextSize.Y));
-
-                float tooltipOffset = (TooltipOffset * scale);
-                float tooltipEdge = (TooltipBgEdge * scale);
-
-                Vector2D pos = mouseOnScreen;
-                Vector2D offset = new Vector2D(tooltipOffset, -tooltipOffset); // top-left pivot
-
-                if((mouseOnScreen.X + absTextSize.X + tooltipOffset) > 1) // box collides with right side of screen
-                {
-                    //offset.X = -TextSize.X - TooltipOffset; // flip pivot to right, so it's on the left of the mouse
-                    pos.X -= (mouseOnScreen.X + absTextSize.X + tooltipOffset) - 1; // prevent tooltip from exiting scren on the right
-                }
-
-                if((mouseOnScreen.Y - absTextSize.Y - tooltipOffset) < -1) // box collides with bottom of screen
-                {
-                    offset.Y = -TextSize.Y + tooltipOffset; // flip pivot to bottom, so it's above the mouse
-                }
-
-                Label.Text.Offset = offset;
-
-                Label.Background.Width = (float)absTextSize.X + tooltipEdge;
-                Label.Background.Height = (float)absTextSize.Y + tooltipEdge;
-                Label.Background.Offset = offset + (TextSize / 2);
-
-                Label.Background.Origin = pos;
-                Label.Background.Draw();
-
-                Label.Text.Origin = pos;
-                Label.Text.Draw();
             }
         }
     }
