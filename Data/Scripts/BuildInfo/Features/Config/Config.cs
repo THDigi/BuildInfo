@@ -661,10 +661,14 @@ namespace Digi.BuildInfo.Features.Config
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",
                 "Currently it adds:",
-                "- Block Type+SubType and BlockPairName in aim&place info.",
-                "- Rotor angle from API in terminal info as it differs from what game already prints.",
-                "- Item Type+Subtype in item's tooltip.",
-                "- Piston extended position from API in terminal info in case it differs in some cases.");
+                "- In block overlay: ModelOffset as pink dot+line coming out of the BB center, only if it's not 0,0,0.",
+                "- In block aim&place info: Type+SubType, BlockPairName, ModelIntersection, ModelOffset (place only and only if not 0,0,0).",
+                "- In block description: Type+Subtype.",
+                "- In terminal info: Piston extended position, Rotor angle - because they differ in API compared to what game prints there already.",
+                "- In item's tooltip: Type+Subtype.",
+                "- In blueprint's tooltip: Type+Subtype.",
+                "- In /bi serverinfo: Setting name for sandbox_config.sbc (in tooltips).",
+                "- In info.log: verbose API usage (other mods using this mod's API).");
 
             Debug = new BoolSetting(Handler, "Debug", false,
                 "For debugging purposes only, not for normal use!",
