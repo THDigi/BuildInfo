@@ -1,14 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Text;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using Draygo.API;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features
@@ -17,8 +21,60 @@ namespace Digi.BuildInfo.Features
     {
         int ModProblems = 0;
         int ModHints = 0;
+        bool DefinitionErrors = false;
+        bool CompileErrors = false;
+        HudState? RevertHud;
+        HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
+        const string ErrorsGUITypeName = "MyGuiScreenDebugErrors";
 
         public ModderHelp(BuildInfoMod main) : base(main)
+        {
+            Main.GUIMonitor.ScreenAdded += GUIScreenAdded;
+            Main.GUIMonitor.ScreenRemoved += GUIScreenRemoved;
+
+            CheckErrors();
+            CheckMods();
+        }
+
+        public override void RegisterComponent()
+        {
+        }
+
+        public override void UnregisterComponent()
+        {
+            Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
+            Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
+
+            RevertHUDBack();
+        }
+
+        void CheckErrors()
+        {
+            foreach(MyDefinitionErrors.Error error in MyDefinitionErrors.GetErrors())
+            {
+                bool isLocal = IsLocalMod(error.ModName);
+
+                // chat message when LOCAL mods have definition errors
+                if(isLocal)
+                    DefinitionErrors = true;
+
+                bool isCompileError = error.Message.StartsWith("Compilation of");
+                if(isCompileError)
+                {
+                    // chat message when ANY mod has compile errors (published too)
+                    CompileErrors = true;
+
+                    // pop up F11 menu if there's compile errors with local mods
+                    if(isLocal)
+                        MyDefinitionErrors.ShouldShowModErrors = true;
+                }
+            }
+
+            if(DefinitionErrors || CompileErrors)
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+        }
+
+        void CheckMods()
         {
             // only in offline mode with at least one local mod
             if(MyAPIGateway.Session.OnlineMode != MyOnlineModeEnum.OFFLINE || !MyAPIGateway.Session.Mods.Any(m => m.PublishedFileId == 0))
@@ -77,7 +133,7 @@ namespace Digi.BuildInfo.Features
                                         "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
-                    // the 2nd check is for IsDevMod=true case to not spam myself
+                    // the basegame condition is for IsDevMod=true case to not spam myself
                     if(!blockDef.IsAirTight.HasValue && !def.Context.IsBaseGame)
                     {
                         int airTightFaces, totalFaces;
@@ -98,31 +154,47 @@ namespace Digi.BuildInfo.Features
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
-        public override void RegisterComponent()
-        {
-        }
-
-        public override void UnregisterComponent()
-        {
-        }
-
         void ModProblem(MyDefinitionBase def, string text)
         {
-            Log.Info($"Mod problem: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{GetModName(def)}' {text}");
+            string message = $"Local mod problem: {GetDefId(def)} from '{GetModName(def)}' {text}";
+
+            Log.Info(message);
+            MyDefinitionErrors.Add(def.Context, $"[BuildInfo] {message}", TErrorSeverity.Error);
             ModProblems++;
         }
 
         void ModHint(MyDefinitionBase def, string text)
         {
-            Log.Info($"Mod hint: {def.Id.ToString().Replace("MyObjectBuilder_", "")} from '{GetModName(def)}' {text}");
+            string message = $"Local mod hint: {GetDefId(def)} from '{GetModName(def)}' {text}";
+
+            Log.Info(message);
+            MyDefinitionErrors.Add(def.Context, $"[BuildInfo] {message}", TErrorSeverity.Error);
             ModHints++;
         }
 
-        string GetModName(MyDefinitionBase def)
+        static string GetDefId(MyDefinitionBase def)
+        {
+            return def.Id.ToString().Replace("MyObjectBuilder_", "");
+        }
+
+        static string GetModName(MyDefinitionBase def)
         {
             if(def.Context != null)
                 return def.Context.IsBaseGame ? "(base game)" : def.Context.ModName;
             return "(unknown)";
+        }
+
+        static bool IsLocalMod(string modName)
+        {
+            foreach(MyObjectBuilder_Checkpoint.ModItem modItem in MyAPIGateway.Session.Mods)
+            {
+                if(modItem.Name == modName)
+                {
+                    return modItem.PublishedFileId == 0;
+                }
+            }
+
+            return false;
         }
 
         public override void UpdateAfterSim(int tick)
@@ -131,25 +203,60 @@ namespace Digi.BuildInfo.Features
                 return;
 
             IMyCharacter character = MyAPIGateway.Session?.Player?.Character;
-            if(character != null) // wait until first spawn
+            if(character == null) // wait until first spawn
+                return;
+
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+            if(CompileErrors)
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: Other mod(s) have compile errors! See SE log for details.", FontsHandler.RedSh);
+
+            if(ModHints > 0 || ModProblems > 0)
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There's problems or hints with local mod(s), see F11 menu.", FontsHandler.YellowSh);
+            else if(DefinitionErrors)
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There are definition errors, see F11 menu.", FontsHandler.YellowSh);
+        }
+
+        void GUIScreenAdded(string screenType)
+        {
+            if(Main.TextAPI.WasDetected && screenType.EndsWith(ErrorsGUITypeName))
             {
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+                if(ErrorsMenuBackdrop == null)
+                {
+                    MyStringId material = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+                    //Color color = new Color(41, 54, 62);
+                    Color color = new Color(37, 46, 53);
 
-                //StringBuilder sb = new StringBuilder(512);
-                //
-                //sb.Append("... :");
-                //
-                //if(ModProblems > 0)
-                //    sb.Append(ModProblems).Append(" problems, ");
-                //
-                //if(ModConcerns > 0)
-                //    sb.Append(ModConcerns).Append(" concerns, ");
-                //
-                //sb.Length -= 2; // remove last ", "
-                //
-                //Utils.ShowColoredChatMessage(BuildInfoMod.ModName, sb.ToString(), FontsHandler.RedSh);
+                    ErrorsMenuBackdrop = new HudAPIv2.BillBoardHUDMessage(material, Vector2D.Zero, color, HideHud: false);
+                    ErrorsMenuBackdrop.Width = 100; // fullscreen-est fullscreen xD
+                    ErrorsMenuBackdrop.Height = 100;
+                }
 
-                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There's problems or hints with local mod(s), see SE log or BuildInfo's log.", FontsHandler.RedSh);
+                ErrorsMenuBackdrop.Visible = true;
+
+                if(RevertHud == null)
+                {
+                    RevertHud = Main.GameConfig.HudState;
+                    MyVisualScriptLogicProvider.SetHudState((int)HudState.OFF, playerId: 0); // playerId=0 shorcircuits to calling it locally
+                }
+            }
+        }
+
+        void GUIScreenRemoved(string screenType)
+        {
+            if(ErrorsMenuBackdrop != null && screenType.EndsWith(ErrorsGUITypeName))
+            {
+                ErrorsMenuBackdrop.Visible = false;
+                RevertHUDBack();
+            }
+        }
+
+        void RevertHUDBack()
+        {
+            if(RevertHud != null)
+            {
+                MyVisualScriptLogicProvider.SetHudState((int)RevertHud, playerId: 0);
+                RevertHud = null;
             }
         }
     }
