@@ -160,6 +160,11 @@ namespace Digi.BuildInfo.Features
 
         private void GameConfig_HudStateChanged(HudState prevState, HudState state)
         {
+            if(Main.Config.TextShow.ValueEnum == TextShowMode.HudHints)
+            {
+                LastDefId = default(MyDefinitionId);
+            }
+
             ReCheckSide();
         }
 
@@ -194,6 +199,9 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown && textObject != null && MyAPIGateway.Gui.IsCursorVisible)
                 HideText();
+
+            if(!textShown && Main.Config.TextShow.ValueEnum == TextShowMode.ShowOnPress && Main.Config.TextShowBind.Value.IsPressed(InputLib.GetCurrentInputContext()))
+                LastDefId = default(MyDefinitionId);
 
             Update(tick);
 
