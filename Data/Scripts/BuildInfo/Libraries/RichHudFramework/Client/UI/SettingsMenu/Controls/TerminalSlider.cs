@@ -1,15 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VRage;
-using GlyphFormatMembers = VRage.MyTuple<byte, float, VRageMath.Vector2I, VRageMath.Color>;
-using ApiMemberAccessor = System.Func<object, int, object>;
-using EventAccessor = VRage.MyTuple<bool, System.Action>;
-
-namespace RichHudFramework.UI.Client
+﻿namespace RichHudFramework.UI.Client
 {
-    using RichStringMembers = MyTuple<StringBuilder, GlyphFormatMembers>;
-
     public enum SliderSettingsAccessors : int
     {
         /// <summary>

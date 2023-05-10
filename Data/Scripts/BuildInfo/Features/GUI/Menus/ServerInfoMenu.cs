@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Digi.BuildInfo.Features.GUI;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Draygo.API;

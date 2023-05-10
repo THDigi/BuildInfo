@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using VRage;
 using VRageMath;
 using ApiMemberAccessor = System.Func<object, int, object>;
-using AtlasMembers = VRage.MyTuple<string, VRageMath.Vector2>;
-using GlyphMembers = VRage.MyTuple<int, VRageMath.Vector2, VRageMath.Vector2, float, float>;
 
 namespace RichHudFramework
 {

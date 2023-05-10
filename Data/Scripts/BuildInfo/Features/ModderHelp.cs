@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;

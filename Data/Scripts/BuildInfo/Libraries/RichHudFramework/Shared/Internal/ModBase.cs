@@ -1,10 +1,7 @@
-﻿using RichHudFramework.IO;
-using Sandbox.ModAPI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using VRage.Game;
 using VRage.Game.Components;
-using VRage.Game.ModAPI;
 
 namespace RichHudFramework.Internal
 {

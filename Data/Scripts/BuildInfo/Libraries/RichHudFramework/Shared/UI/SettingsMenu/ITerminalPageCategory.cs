@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using VRage;
-using ApiMemberAccessor = System.Func<object, int, object>;
+﻿using System.Collections.Generic;
 
 namespace RichHudFramework
 {
     namespace UI
     {
-        using Server;
         using Client;
 
         public enum TerminalPageCategoryAccessors : int

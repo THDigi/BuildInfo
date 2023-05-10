@@ -3,7 +3,6 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData

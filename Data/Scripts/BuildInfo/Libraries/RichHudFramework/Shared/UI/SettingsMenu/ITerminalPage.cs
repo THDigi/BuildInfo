@@ -1,8 +1,5 @@
-﻿using System;
-using System.Text;
-using VRage;
+﻿using VRage;
 using ApiMemberAccessor = System.Func<object, int, object>;
-using GlyphFormatMembers = VRage.MyTuple<byte, float, VRageMath.Vector2I, VRageMath.Color>;
 
 namespace RichHudFramework
 {
@@ -13,9 +10,6 @@ namespace RichHudFramework
 
     namespace UI
     {
-        using Client;
-        using Server;
-
         public enum TerminalPageAccessors : int
         {
             /// <summary>

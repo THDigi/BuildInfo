@@ -1,11 +1,8 @@
 ﻿using Sandbox.ModAPI;
 using System;
 using System.Diagnostics;
-using VRage;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRageMath;
-using RichHudFramework.UI;
 
 namespace RichHudFramework.Internal
 {

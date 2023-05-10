@@ -1,15 +1,7 @@
-﻿using System;
-using System.Text;
-using VRage;
-using VRageMath;
-using ApiMemberAccessor = System.Func<object, int, object>;
-using EventAccessor = VRage.MyTuple<bool, System.Action>;
-using GlyphFormatMembers = VRage.MyTuple<byte, float, VRageMath.Vector2I, VRageMath.Color>;
+﻿using ApiMemberAccessor = System.Func<object, int, object>;
 
 namespace RichHudFramework.UI.Client
 {
-    using CollectionData = MyTuple<Func<int, ApiMemberAccessor>, Func<int>>;
-
     /// <summary>
     /// A dropdown list with a label. Designed to mimic the appearance of the dropdown in the SE terminal.
     /// </summary>

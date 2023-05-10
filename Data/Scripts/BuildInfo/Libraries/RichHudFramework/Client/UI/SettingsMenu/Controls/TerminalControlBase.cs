@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using VRage;
 using ApiMemberAccessor = System.Func<object, int, object>;
-using EventAccessor = VRage.MyTuple<bool, System.Action>;
-using GlyphFormatMembers = VRage.MyTuple<byte, float, VRageMath.Vector2I, VRageMath.Color>;
 
 namespace RichHudFramework.UI.Client
 {
@@ -12,7 +8,6 @@ namespace RichHudFramework.UI.Client
         ApiMemberAccessor, // GetOrSetMember
         object // ID
     >;
-    using RichStringMembers = MyTuple<StringBuilder, GlyphFormatMembers>;
 
     /// <summary>
     /// Base type for all controls in the Rich Hud Terminal.

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.Input;
 using Sandbox.Definitions;
