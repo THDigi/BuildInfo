@@ -3,6 +3,7 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game.ModAPI;
 using VRage.Utils;
 
@@ -35,6 +36,9 @@ namespace Digi.BuildInfo.Features
 
         public void AskToPick(MyCubeBlockDefinition def)
         {
+            if(def != null && !CheckDef(def))
+                def = null;
+
             PickedBlockDef = def;
             SetUpdateMethods(UpdateFlags.UPDATE_INPUT, (def != null || Main.EquipmentMonitor.AimedBlock != null || Main.EquipmentMonitor.BuilderAimedBlock != null));
 
@@ -42,6 +46,37 @@ namespace Digi.BuildInfo.Features
             {
                 ShowText($"Press [Slot number] to place [{PickedBlockDef.DisplayNameText}]. Slot0/Unequip to cancel.", 16 * 20, FontsHandler.WhiteSh);
             }
+        }
+
+        bool CheckDef(MyCubeBlockDefinition def)
+        {
+            if(def == null)
+                return true;
+
+            if(!def.Public)
+            {
+                ShowText($"{def.DisplayNameText} is not available to build.", 3000, FontsHandler.RedSh);
+                return false;
+            }
+
+            if(def.DLCs != null)
+            {
+                foreach(string name in def.DLCs)
+                {
+                    if(!MyAPIGateway.DLC.HasDLC(name, MyAPIGateway.Multiplayer.MyId))
+                    {
+                        string displayName = name;
+                        IMyDLC dlc;
+                        if(MyAPIGateway.DLC.TryGetDLC(name, out dlc))
+                            displayName = MyTexts.GetString(dlc.DisplayName);
+
+                        ShowText($"{def.DisplayNameText} requires the '{displayName}' DLC to build.", 3000, FontsHandler.RedSh);
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         void ToolBlockAimChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
@@ -67,13 +102,6 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                if(!PickedBlockDef.Public)
-                {
-                    ShowText($"{PickedBlockDef.DisplayNameText} is not available to build.", 3000, FontsHandler.RedSh);
-                    AskToPick(null);
-                    return;
-                }
-
                 // refresh showing the slot message
                 if(!paused && Notify != null && Main.Tick % 10 == 0)
                 {
