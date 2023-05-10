@@ -230,7 +230,7 @@ namespace Digi.BuildInfo.Features.LiveData
             Color colorInteractiveOnly = new Color(25, 100, 155);
             const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
 
-            Interactive = new List<InteractionInfo>(8);
+            Interactive = new List<InteractionInfo>(dummies.Values.Count);
 
             foreach(IMyModelDummy dummy in dummies.Values)
             {
@@ -367,24 +367,27 @@ namespace Digi.BuildInfo.Features.LiveData
                 }
             }
 
-            if(ConveyorPorts != null)
-                ConveyorPorts.TrimExcess();
+            dummies.Clear();
 
-            if(InteractableConveyorPorts != null)
-                InteractableConveyorPorts.TrimExcess();
+            TrimList(ref ConveyorPorts);
+            TrimList(ref InteractableConveyorPorts);
+            TrimList(ref UpgradePorts);
+            TrimList(ref Interactive);
+        }
 
-            if(UpgradePorts != null)
-                UpgradePorts.TrimExcess();
+        static void TrimList<T>(ref List<T> list)
+        {
+            if(list == null)
+                return;
 
-            if(Interactive != null)
+            if(list.Count == 0)
             {
-                if(Interactive.Count > 0)
-                    Interactive.TrimExcess();
-                else
-                    Interactive = null;
+                list = null;
+                return;
             }
 
-            dummies.Clear();
+            if(list.Count > list.Capacity)
+                list.Capacity = list.Count;
         }
 
         void ComputeUseObjects(IMyCubeBlock block, MyCubeBlockDefinition def)
