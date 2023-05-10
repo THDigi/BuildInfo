@@ -4,7 +4,6 @@ using Digi.Input;
 using Digi.Input.Devices;
 using Sandbox.ModAPI;
 using VRage.Input;
-using VRageMath;
 using static Digi.Input.InputLib;
 using static Draygo.API.HudAPIv2;
 
@@ -16,7 +15,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         public Action<Combination> Setter;
         public string Title;
         public string InputName;
-        public Color ValueColor = new Color(0, 255, 100);
         public Combination DefaultValue;
 
         public ItemInput(MenuCategoryBase category, string title, string inputName, Func<Combination> getter, Action<Combination> setter, Combination defaultValue) : base(category)
@@ -40,12 +38,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         protected override void UpdateTitle()
         {
             Combination value = Getter();
-            string titleColored = (Item.Interactable ? Title : "<color=gray>" + Title);
-            string valueColored = (Item.Interactable ? Utils.ColorTag(ValueColor, value.ToString()) : value.ToString());
-            Item.Text = $"{titleColored}: {valueColored}{(Combination.CombinationEqual(DefaultValue, value) ? " <color=gray>[default]" : "")}";
+            string titleColored = (Item.Interactable ? Title : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled, Title));
+            string valueColor = (Item.Interactable ? Utils.ColorTag((value.CombinationString == DefaultValue.CombinationString ? ConfigMenuHandler.ValueColorDefault : ConfigMenuHandler.ValueColorChanged)) : "");
+            Item.Text = $"{titleColored}: {valueColor}{value.ToString()} {Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{DefaultValue.ToString()}]";
         }
 
-        private void OnSubmit(MyKeys key, bool shift, bool ctrl, bool alt)
+        void OnSubmit(MyKeys key, bool shift, bool ctrl, bool alt)
         {
             try
             {
@@ -63,7 +61,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private static Combination GetCombination(string inputName, MyKeys key, bool alt, bool ctrl, bool shift)
+        static Combination GetCombination(string inputName, MyKeys key, bool alt, bool ctrl, bool shift)
         {
             if(key == MyKeys.None) // unbind
             {

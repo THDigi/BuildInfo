@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Apply = apply;
             Preview = preview;
 
-            string inputDialogTitle = $"{Title} | Default: {Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}";
+            string inputDialogTitle = $"{Title} | Default: {Setting.DefaultValue.R},{Setting.DefaultValue.G},{Setting.DefaultValue.B}";
 
             Item = new MenuColorPickerInput(title, category, setting.Value, inputDialogTitle, OnSubmit, OnSlide, OnCancel, useAlpha);
 
@@ -34,11 +34,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            string valueColor = Utils.ColorTag(Setting.Value);
-            Item.Text = $"{Title}: {valueColor}{Setting.Value.R.ToString()},{Setting.Value.G.ToString()},{Setting.Value.B.ToString()} <color=gray>[default:{Setting.DefaultValue.R.ToString()},{Setting.DefaultValue.G.ToString()},{Setting.DefaultValue.B.ToString()}]";
+            string valueStr = $"{Utils.ColorTag(Setting.Value == Setting.DefaultValue ? ConfigMenuHandler.ValueColorDefault : ConfigMenuHandler.ValueColorChanged)}{Setting.Value.R},{Setting.Value.G},{Setting.Value.B}";
+            string defaultValueStr = $"{Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{Setting.DefaultValue.R},{Setting.DefaultValue.G},{Setting.DefaultValue.B}]";
+            Item.Text = $"{Title}: {Utils.ColorTag(Setting.Value, "□")} {valueStr} {defaultValueStr}";
         }
 
-        private void OnSubmit(Color color)
+        void OnSubmit(Color color)
         {
             try
             {
@@ -53,7 +54,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void OnSlide(Color color)
+        void OnSlide(Color color)
         {
             try
             {
@@ -66,7 +67,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private void OnCancel()
+        void OnCancel()
         {
             try
             {

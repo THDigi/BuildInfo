@@ -44,6 +44,13 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private readonly ItemGroup groupAll = new ItemGroup(); // for mass-updating titles
 
+        public static readonly Color HeaderColor = new Color(155, 220, 255);
+        public static readonly Color LabelColor = new Color(230, 240, 255);
+        public static readonly Color LabelColorDisabled = Color.Gray;
+        public static readonly Color ValueColorDefault = new Color(200, 255, 200);
+        public static readonly Color ValueColorChanged = new Color(255, 230, 180);
+        public static readonly Color DefaultValueTooltipColor = Color.Gray;
+
         public void RefreshAll()
         {
             bool textModeOn = Main.Config.TextShow.Value != 0;
@@ -125,6 +132,8 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Log.Info($"TextAPI detected, creating menu.");
 
             Category_Mod = new MenuRootCategory(BuildInfoMod.ModName, MenuFlag.PlayerMenu, BuildInfoMod.ModName + " Settings");
+
+            new ItemButton(Category_Mod, $"Legend: { Utils.ColorTag(ValueColorDefault)}(Default) {Utils.ColorTag(ValueColorChanged)}(Changed)", () => { });
 
             new ItemButton(Category_Mod, "Help Window", () =>
             {
@@ -287,7 +296,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Reset, are you sure?");
-            new ItemButton(Category_ConfirmReset, "I am sure!", () =>
+            new ItemButton(Category_ConfirmReset, "<colo=orangered>I am sure!", () =>
             {
                 Main.Config.Handler.ResetToDefaults();
                 Main.Config.Handler.SaveToFile();
@@ -424,8 +433,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 onText: "Right",
                 offText: "Left");
 
-            item.ColorOn = item.ColorOff = new Color(255, 255, 0);
-
             groupCustomStyling.Add(item);
             groupAll.Add(item);
         }
@@ -444,8 +451,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 defaultValue: (Main.Config.TextAPIAlign.DefaultValue & (int)TextAlignFlags.Bottom) != 0,
                 onText: "Bottom",
                 offText: "Top");
-
-            item.ColorOn = item.ColorOff = new Color(255, 255, 0);
 
             groupCustomStyling.Add(item);
             groupAll.Add(item);

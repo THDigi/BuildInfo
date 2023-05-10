@@ -1,6 +1,5 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
-using VRageMath;
 using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.ConfigMenu
@@ -13,8 +12,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         public string OnText;
         public string OffText;
         public bool DefaultValue;
-        public Color ColorOn = new Color(50, 255, 75);
-        public Color ColorOff = new Color(255, 155, 0);
 
         public ItemToggle(MenuCategoryBase category, string title, Func<bool> getter, Action<bool> setter, bool defaultValue = true, string onText = "On", string offText = "Off") : base(category)
         {
@@ -36,12 +33,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         protected override void UpdateTitle()
         {
             bool isOn = Getter();
-            string titleColor = (Item.Interactable ? "" : "<color=gray>");
-            string value = (isOn ? Utils.ColorTag(Item.Interactable ? ColorOn : Color.Gray, OnText) : Utils.ColorTag(Item.Interactable ? ColorOff : Color.Gray, OffText));
-            Item.Text = $"{titleColor}{Title}: {value}{(DefaultValue == isOn ? " <color=gray>[default]" : "")}";
+            string title = (Item.Interactable ? Title : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled, Title));
+            string valueColor = (Item.Interactable ? Utils.ColorTag(isOn == DefaultValue ? ConfigMenuHandler.ValueColorDefault : ConfigMenuHandler.ValueColorChanged) : "");
+            Item.Text = $"{title}: {valueColor}{(isOn ? OnText : OffText)}";
         }
 
-        private void OnClick()
+        void OnClick()
         {
             try
             {

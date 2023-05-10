@@ -1,4 +1,5 @@
 ﻿using System;
+using Digi.BuildInfo.Utilities;
 using VRageMath;
 using static Draygo.API.HudAPIv2;
 
@@ -49,10 +50,20 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            string title = (Item.Interactable ? Title : "<color=gray>" + Title);
-            string valueColor = (Item.Interactable ? "<color=yellow>" : "");
             Vector2D value = Getter();
-            Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)} <color=gray>[default:{DefaultValue.X.ToString(format)},{DefaultValue.Y.ToString(format)}]";
+
+            string title = (Item.Interactable ? Title : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled) + Title);
+            string valueColor = "";
+
+            if(Item.Interactable)
+            {
+                if(Vector2D.DistanceSquared(value, DefaultValue) < 0.00001)
+                    valueColor = Utils.ColorTag(ConfigMenuHandler.ValueColorDefault);
+                else
+                    valueColor = Utils.ColorTag(ConfigMenuHandler.ValueColorChanged);
+            }
+
+            Item.Text = $"{title}: {valueColor}{value.X.ToString(format)},{value.Y.ToString(format)} {Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{DefaultValue.X.ToString(format)},{DefaultValue.Y.ToString(format)}]";
         }
 
         void OnSelect()

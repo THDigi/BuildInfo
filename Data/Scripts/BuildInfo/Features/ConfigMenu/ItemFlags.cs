@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             individualToggles.Update();
         }
 
-        private void CreateToggleAll(MenuCategoryBase category)
+        void CreateToggleAll(MenuCategoryBase category)
         {
             ItemToggle item = new ItemToggle(category, ToggleTitle,
                 getter: () => Setting.Value == allValue,
@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             topToggle.Add(item);
         }
 
-        private void CreateFlagToggles(MenuCategoryBase category)
+        void CreateFlagToggles(MenuCategoryBase category)
         {
             string[] names = Enum.GetNames(typeof(T));
             int[] values = (int[])Enum.GetValues(typeof(T));

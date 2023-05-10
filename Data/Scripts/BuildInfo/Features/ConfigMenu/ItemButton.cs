@@ -1,6 +1,5 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
-using VRageMath;
 using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.ConfigMenu
@@ -9,7 +8,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
     {
         public Action Action;
         public string Title;
-        public Color TitleColor = new Color(255, 255, 255);
 
         public ItemButton(MenuCategoryBase category, string title, Action action) : base(category)
         {
@@ -26,10 +24,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         protected override void UpdateTitle()
         {
-            Item.Text = (Item.Interactable ? Utils.ColorTag(TitleColor, Title) : "<color=gray>" + Title);
+            Item.Text = Item.Interactable ? Title : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled, Title);
         }
 
-        private void OnClick()
+        void OnClick()
         {
             try
             {

@@ -1,6 +1,5 @@
 ﻿using System;
 using Digi.BuildInfo.Utilities;
-using VRageMath;
 using static Draygo.API.HudAPIv2;
 
 namespace Digi.BuildInfo.Features.ConfigMenu
@@ -17,7 +16,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         public readonly float Max;
         public readonly float DefaultValue;
         public readonly int Rounding;
-        public Color ValueColor = new Color(0, 255, 100);
 
         public ItemSlider(MenuCategoryBase category, string title, float min, float max, float defaultValue, int rounding,
             Func<float> getter,
@@ -58,12 +56,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         protected override void UpdateTitle()
         {
             float value = Getter();
-            string titleColor = (Item.Interactable ? "" : "<color=gray>");
-            string valueColor = (Item.Interactable ? Utils.ColorTag(ValueColor) : "");
-            Item.Text = $"{titleColor}{Title}: {valueColor}{Format.Invoke(value)} <color=gray>[default:{Format.Invoke(DefaultValue)}]";
+            string titleColor = (Item.Interactable ? "" : Utils.ColorTag(ConfigMenuHandler.LabelColorDisabled));
+            string valueColor = (Item.Interactable ? Utils.ColorTag(Math.Abs(value - DefaultValue) < 0.0001f ? ConfigMenuHandler.ValueColorDefault : ConfigMenuHandler.ValueColorChanged) : "");
+            Item.Text = $"{titleColor}{Title}: {valueColor}{Format.Invoke(value)} {Utils.ColorTag(ConfigMenuHandler.DefaultValueTooltipColor)}[default:{Format.Invoke(DefaultValue)}]";
         }
 
-        private void OnSubmit(float percent)
+        void OnSubmit(float percent)
         {
             try
             {
@@ -80,7 +78,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private string OnSlide(float percent)
+        string OnSlide(float percent)
         {
             try
             {
@@ -96,7 +94,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             return "ERROR!";
         }
 
-        private void OnCancel()
+        void OnCancel()
         {
             try
             {
@@ -109,7 +107,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             }
         }
 
-        private static float PercentToRange(float min, float max, float percent, int round)
+        static float PercentToRange(float min, float max, float percent, int round)
         {
             float value = min + ((max - min) * percent);
 
@@ -126,7 +124,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             return value;
         }
 
-        private static float ValueToPercent(float min, float max, float value)
+        static float ValueToPercent(float min, float max, float value)
         {
             return (value - min) / (max - min);
         }
