@@ -9,9 +9,10 @@ namespace Digi.BuildInfo.Features.LiveData
     public class BData_Connector : BData_Base
     {
         /// <summary>
-        /// False = ejector.
+        /// True = connector, False = ejector
         /// </summary>
-        public bool CanConnect;
+        public bool IsConnector = false;
+        public bool IsSmallConnector = false;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -22,9 +23,16 @@ namespace Digi.BuildInfo.Features.LiveData
             foreach(string name in dummies.Keys)
             {
                 // from MyShipConnector.LoadDummies()
-                if(name.ContainsIgnoreCase(Hardcoded.Connector_DummyName))
+                bool isConnector = name.ContainsIgnoreCase(Hardcoded.Connector_Connect_DummyName);
+                bool isEjector = name.ContainsIgnoreCase(Hardcoded.Connector_Ejector_DummyName);
+                if(isConnector || isEjector)
                 {
-                    CanConnect = true;
+                    if(isConnector)
+                    {
+                        IsSmallConnector = name.ContainsIgnoreCase(Hardcoded.Connector_SmallPort_DummyName);
+                    }
+
+                    IsConnector = isConnector;
                     break;
                 }
             }

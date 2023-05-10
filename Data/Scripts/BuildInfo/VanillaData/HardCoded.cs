@@ -63,7 +63,9 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         // from MyShipConnector.LoadDummies()
-        public static string Connector_DummyName = "connector"; // see BData_Connector too!
+        public static string Connector_Connect_DummyName = "connector";
+        public static string Connector_SmallPort_DummyName = "small_connector";
+        public static string Connector_Ejector_DummyName = "ejector";
 
         // from MyShipMergeBlock.LoadDummies()
         public static string Merge_DummyName = "merge"; // see MergeFailDetector too!

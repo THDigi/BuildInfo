@@ -533,7 +533,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             BData_Connector data = Main.LiveDataHandler.Get<BData_Connector>(def);
-            if(data != null && data.CanConnect)
+            if(data != null && data.IsConnector)
             {
                 IMyShipConnector connector = (IMyShipConnector)block;
 

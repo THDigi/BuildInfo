@@ -2293,12 +2293,13 @@ namespace Digi.BuildInfo.Features
                 BData_Connector data = Main.LiveDataHandler.Get<BData_Connector>(def);
                 if(data != null)
                 {
-                    if(data.CanConnect)
-                        AddLine().Append("Connectable: Yes");
+                    StringBuilder sb = AddLine().Label("Connectable");
+                    if(data.IsConnector)
+                        sb.Append("Yes (").Append(data.IsSmallConnector ? "Small" : "Large").Append(" port)");
                     else
-                        AddLine().Color(COLOR_WARNING).Append("Connectable: No").ResetFormatting();
+                        sb.Append("No");
 
-                    GetLine().Separator().LabelHardcoded("Can throw contents").Append("Yes");
+                    AddLine().LabelHardcoded("Can throw out items").Append("Yes");
                 }
             }
         }
