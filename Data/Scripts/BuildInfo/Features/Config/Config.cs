@@ -283,10 +283,11 @@ namespace Digi.BuildInfo.Features.Config
 
             const string SubHeaderFormat = "—————— {0} ————————————————————————————————————————————————————————————";
 
-            #region TextBox
+            new Comment(Handler, string.Format(SubHeaderFormat, "Text Box"));
+
+            #region TextBox 
             TextShow = new TextShowModeSetting(Handler, "TextBox: Show Mode", TextShowMode.AlwaysOn, new string[]
             {
-                string.Format(SubHeaderFormat, "Text Box"),
                 "These settings affect the mod's text box that has the equipped/aimed block information.",
                 "",
                 "Toggle if the text box is shown or not."
@@ -332,15 +333,14 @@ namespace Digi.BuildInfo.Features.Config
 
             TextAPIAlign = new TextAlignSetting(Handler, "TextBox: Anchor", TextAlignFlags.Bottom | TextAlignFlags.Right,
                 "Determine the pivot point of the text box. Stretches in opposite directions.",
-                $"NOTE: Requires {TextAPICustomStyling.Name} = true");
+               $"NOTE: Requires {TextAPICustomStyling.Name} = true");
             TextAPIAlign.AddCompatibilityNames("TextAPI: Anchor", "TextAPI: Alignment");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "HUD"));
+
             #region HUD
             BlockInfoAdditions = new BoolSetting(Handler, "HUD: Block Info Additions", true,
-                "",
-                string.Format(SubHeaderFormat, "HUD"),
-                "",
                 "Adds various things to the vanilla block info UI:",
                 "- red and blue lines in the component list to better match where the critical/ownership lines are.",
                 "- shows what the component grinds to if it's different than the component itself (e.g. Battery's Power Cells), or just highlights it yellow if TextAPI is turned off.",
@@ -413,11 +413,10 @@ namespace Digi.BuildInfo.Features.Config
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Terminal/Inventory/GUI"));
+
             #region Terminal
             TerminalDetailInfoAdditions = new BoolSetting(Handler, "Terminal: Detail Info Additions", true,
-                "",
-                string.Format(SubHeaderFormat, "Terminal/Inventory/GUI"),
-                "",
                 "Adds some extra info bottom-right in terminal of certain blocks.",
                 "Does not (and cannot) replace any vanilla info.");
 
@@ -449,12 +448,11 @@ namespace Digi.BuildInfo.Features.Config
                 $"Adds some overlays to blocks to improve identification, currently only adds a weight icon onto vanilla heavy armor blocks.");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Toolbar & ToolbarInfo box"));
+
             #region Toolbar
             ToolbarLabels = new EnumSetting<ToolbarLabelsMode>(Handler, "Toolbar: ToolbarInfo Mode", ToolbarLabelsMode.HudHints, new string[]
             {
-                "",
-                string.Format(SubHeaderFormat, "Toolbar & ToolbarInfo box"),
-                "",
                 "Customize ship toolbar block action's labels.",
                 "Turning this off turns off the rest of the ToolbarInfo stuff (except status override)."
             });
@@ -568,11 +566,10 @@ namespace Digi.BuildInfo.Features.Config
             });
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Block Overlays"));
+
             #region Overlays
             OverlaysAlwaysVisible = new BoolSetting(Handler, "Overlays: Show when HUD is off", false,
-                "",
-                string.Format(SubHeaderFormat, "Block Overlays"),
-                "",
                 "Setting to true causes the block overlays to be visible regardless of HUD state.");
             OverlaysAlwaysVisible.AddCompatibilityNames("Overlays: Always Visible");
 
@@ -595,11 +592,10 @@ namespace Digi.BuildInfo.Features.Config
                 "Setting to true will make locked overlays remain in the mode they were locked-on as.");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Air Leak Detector"));
+
             #region Air Leak
             LeakParticleColorWorld = new ColorSetting(Handler, "LeakInfo: Particle Color World", new Color(0, 120, 255), false,
-                "",
-                string.Format(SubHeaderFormat, "Air Leak Detector"),
-                "",
                 "Color of airleak indicator particles in world, only visible if nothing is in the way.");
 
             LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(140, 140, 0), false,
@@ -607,11 +603,10 @@ namespace Digi.BuildInfo.Features.Config
                 "NOTE: This color is overlayed on top of the world ones when those are visible too, making the colors mix, so pick wisely!");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Key/button binds"));
+
             #region Binds
             MenuBind = new InputCombinationSetting(Handler, "Bind: Menu", Combination.Create(MENU_BIND_INPUT_NAME, "plus"),
-                "",
-                string.Format(SubHeaderFormat, "Key/button binds"),
-                "",
                 "For accessing the quick menu.");
 
             TextShowBind = new InputCombinationSetting(Handler, "Bind: Text Show", Combination.Create(TEXT_SHOW_INPUT_NAME, "c.lookaround"),
@@ -647,11 +642,10 @@ namespace Digi.BuildInfo.Features.Config
                 "When holding a cube you can see all its construction models using this bind.");
             #endregion
 
+            new Comment(Handler, string.Format(SubHeaderFormat, "Misc."));
+
             #region Misc
             AdjustBuildDistanceSurvival = new BoolSetting(Handler, "Adjust Build Distance Survival", true,
-                "",
-                string.Format(SubHeaderFormat, "Misc"),
-                "",
                 "Enable ctrl+scroll to change block placement distance in survival (for both character and ship)");
 
             AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,

@@ -106,14 +106,21 @@ namespace Digi.ConfigLib
             output.AppendLine();
         }
 
-        protected virtual void AppendComments(StringBuilder output)
+        public string GetDescription()
+        {
+            StringBuilder sb = new StringBuilder(512);
+            AppendComments(sb, commentPrefix: false);
+            return sb.ToString();
+        }
+
+        protected virtual void AppendComments(StringBuilder output, bool commentPrefix = true)
         {
             foreach(string line in CommentLines)
             {
                 if(string.IsNullOrEmpty(line))
                     output.AppendLine();
                 else
-                    output.Append(ConfigHandler.COMMENT_PREFIX).Append(line).AppendLine();
+                    output.Append(commentPrefix ? ConfigHandler.COMMENT_PREFIX : string.Empty).Append(line).AppendLine();
             }
 
             AppendDefaultValue(output);

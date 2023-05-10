@@ -332,6 +332,7 @@
     <Compile Include="Libraries\ComponentLib\UpdateFlagsExtensions.cs" />
     <Compile Include="Libraries\ConfigLib\BoolSetting.cs" />
     <Compile Include="Libraries\ConfigLib\ColorSetting.cs" />
+    <Compile Include="Libraries\ConfigLib\Comment.cs" />
     <Compile Include="Libraries\ConfigLib\ConfigHandler.cs" />
     <Compile Include="Libraries\ConfigLib\FlagsSetting.cs" />
     <Compile Include="Libraries\ConfigLib\FloatSetting.cs" />

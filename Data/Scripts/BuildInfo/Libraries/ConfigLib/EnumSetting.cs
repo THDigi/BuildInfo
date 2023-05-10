@@ -130,19 +130,19 @@ namespace Digi.ConfigLib
             output.AppendLine();
         }
 
-        protected override void AppendComments(StringBuilder output)
+        protected override void AppendComments(StringBuilder output, bool commentPrefix = true)
         {
             foreach(string line in CommentLines)
             {
                 if(string.IsNullOrEmpty(line))
                     output.AppendLine();
                 else
-                    output.Append(ConfigHandler.COMMENT_PREFIX).Append(line).AppendLine();
+                    output.Append(commentPrefix ? ConfigHandler.COMMENT_PREFIX : string.Empty).Append(line).AppendLine();
             }
 
             foreach(EnumData data in EnumInfo.Values)
             {
-                output.Append(ConfigHandler.COMMENT_PREFIX).Append("    ").Append(data.Value).Append(" or ").Append(data.Name);
+                output.Append(commentPrefix ? ConfigHandler.COMMENT_PREFIX : string.Empty).Append("    ").Append(data.Value).Append(" or ").Append(data.Name);
 
                 if(!string.IsNullOrEmpty(data.Comment))
                     output.Append("  (").Append(data.Comment).Append(")");

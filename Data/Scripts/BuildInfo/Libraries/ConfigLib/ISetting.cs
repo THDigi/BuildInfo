@@ -19,6 +19,11 @@ namespace Digi.ConfigLib
         void SaveSetting(StringBuilder output);
 
         /// <summary>
+        /// The comment without comment prefix
+        /// </summary>
+        string GetDescription();
+
+        /// <summary>
         /// For internal use!
         /// </summary>
         void TriggerValueSetEvent();
