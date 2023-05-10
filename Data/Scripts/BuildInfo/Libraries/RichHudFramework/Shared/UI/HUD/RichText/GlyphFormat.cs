@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using System;
+using System.Collections.Generic;
 using VRage;
 using VRageMath;
 using GlyphFormatMembers = VRage.MyTuple<byte, float, VRageMath.Vector2I, VRageMath.Color>;
@@ -24,7 +26,7 @@ namespace RichHudFramework
         /// <summary>
         /// Defines the formatting of the characters in rich text types.
         /// </summary>
-        public struct GlyphFormat
+        public struct GlyphFormat : IEquatable<GlyphFormat>
         {
             public static readonly GlyphFormat 
                 Black = new GlyphFormat(),
@@ -64,12 +66,23 @@ namespace RichHudFramework
 
             public GlyphFormatMembers Data { get; }
 
-            public GlyphFormat(Color color = default(Color), TextAlignment alignment = TextAlignment.Left, float textSize = 1f, Vector2I fontStyle = default(Vector2I))
+            public GlyphFormat(Color color, TextAlignment alignment, float textSize, Vector2I fontStyle)
             {
                 if (color == default(Color))
                     color = Color.Black;
 
                 Data = new GlyphFormatMembers((byte)alignment, textSize, fontStyle, color);
+            }
+
+            public GlyphFormat(Color color = default(Color), TextAlignment alignment = TextAlignment.Left, float textSize = 1f, FontStyles style = FontStyles.Regular, IFontMin font = null)
+            {
+                if (color == default(Color))
+                    color = Color.Black;
+
+                if (font == null)
+                    font = FontManager.GetFont(FontManager.Default.X);
+
+                Data = new GlyphFormatMembers((byte)alignment, textSize, font.GetStyleIndex(style), color);
             }
 
             public GlyphFormat(GlyphFormatMembers data)
@@ -144,6 +157,17 @@ namespace RichHudFramework
 
                 var format = (GlyphFormat)obj;
 
+                return Data.Item1 == format.Data.Item1
+                    && Data.Item2 == format.Data.Item2
+                    && Data.Item3 == format.Data.Item3
+                    && Data.Item4 == format.Data.Item4;
+            }
+
+            /// <summary>
+            /// Determines whether or not two given <see cref="GlyphFormat"/>s share the same configuration.
+            /// </summary>
+            public bool Equals(GlyphFormat format)
+            {
                 return Data.Item1 == format.Data.Item1
                     && Data.Item2 == format.Data.Item2
                     && Data.Item3 == format.Data.Item3

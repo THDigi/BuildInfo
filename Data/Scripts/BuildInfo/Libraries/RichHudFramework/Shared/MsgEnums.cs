@@ -1,9 +1,5 @@
-﻿using System;
-
-namespace RichHudFramework
+﻿namespace RichHudFramework
 {
-    public delegate void EventHandler(object sender, EventArgs e);
-
     public enum MsgTypes : int
     {
         RegistrationRequest = 1,
@@ -17,6 +13,7 @@ namespace RichHudFramework
         HudMain = 2,
         FontManager = 3,
         SettingsMenu = 4,
+        BillBoardUtils = 5
     }
 
     public enum ClientDataAccessors : int

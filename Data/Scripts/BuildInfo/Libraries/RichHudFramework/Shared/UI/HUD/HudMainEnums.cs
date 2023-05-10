@@ -1,5 +1,9 @@
-﻿namespace RichHudFramework
+﻿using System;
+
+namespace RichHudFramework
 {
+    public delegate void EventHandler(object sender, EventArgs e);
+
     namespace UI
     {
         public enum HudMainAccessors : int
@@ -92,7 +96,27 @@
             /// <summary>
             /// out: HudInputMode (int)
             /// </summary>
-            InputMode = 18
+            InputMode = 18,
+
+            /// <summary>
+            /// in: Action
+            /// </summary>
+            SetBeforeDrawCallback = 19,
+
+            /// <summary>
+            /// in: Action
+            /// </summary>
+            SetAfterDrawCallback = 20,
+
+            /// <summary>
+            /// in: Action
+            /// </summary>
+            SetBeforeInputCallback = 21,
+
+            /// <summary>
+            /// in: Action
+            /// </summary>
+            SetAfterInputCallback = 22,
         }
 
         public enum HudInputMode : int

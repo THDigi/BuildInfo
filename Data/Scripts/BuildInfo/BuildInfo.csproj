@@ -131,12 +131,6 @@
     <Analyzer Include="..\..\..\..\..\_SharedCode\SEWhitelistChecker.dll" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Libraries\RichHudFramework\LICENSE" />
-    <None Include="Libraries\RichHudFramework\README.md" />
-    <None Include="Libraries\RichHudFramework\Shared\LICENSE" />
-    <None Include="Libraries\RichHudFramework\Shared\README.md" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="DoNotCopy_VanillaDataCompare\MyGridGasSystem decompiled.txt" />
     <Content Include="DoNotCopy_VanillaDataCompare\Vanilla Detail Info LastCheck.xml" />
     <Content Include="Libraries\ComponentLib\Usage.txt" />
@@ -396,12 +390,7 @@
     <Compile Include="Libraries\RichHudFramework\Shared\MsgEnums.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\HudElementEnums.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\HudMainEnums.cs" />
-    <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\BlockBoard.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\IFontMin.cs" />
-    <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\MatBoard.cs" />
-    <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\Material.cs" />
-    <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\MaterialFrame.cs" />
-    <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\QuadBoard.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\TextBuilderInterfaces\ILine.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\TextBuilderInterfaces\IRichChar.cs" />
     <Compile Include="Libraries\RichHudFramework\Shared\UI\HUD\Rendering\TextBuilderInterfaces\ITextBoard.cs" />
@@ -448,6 +437,5 @@
     <Compile Include="VanillaData\Hardcoded.cs" />
     <Compile Include="VanillaData\Pressurization.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
