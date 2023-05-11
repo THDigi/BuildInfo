@@ -151,8 +151,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             switch(direction)
             {
-                case "Forward": return MyTexts.GetString("Thrust_Forward");
-                case "Backward": return MyTexts.GetString("Thrust_Back");
+                case "Forward":
+                case "Front":
+                    return MyTexts.GetString("Thrust_Forward");
+
+                case "Backward":
+                case "Back":
+                    return MyTexts.GetString("Thrust_Back");
+
                 case "Left": return MyTexts.GetString("Thrust_Left");
                 case "Right": return MyTexts.GetString("Thrust_Right");
                 case "Up": return MyTexts.GetString("Thrust_Up");
@@ -185,6 +191,41 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     action.Name = new StringBuilder(label.Length + 2 + dirName.Length).Append(label).Append(": ").Append(dirName);
                     break;
                 }
+
+                case "OffensiveCombatStayAtRange_FacingFront":
+                case "OffensiveCombatStayAtRange_FacingBack":
+                case "OffensiveCombatStayAtRange_FacingLeft":
+                case "OffensiveCombatStayAtRange_FacingRight":
+                case "OffensiveCombatStayAtRange_FacingUp":
+                case "OffensiveCombatStayAtRange_FacingDown":
+                case "OffensiveCombatCircleOrbit_FacingFront":
+                case "OffensiveCombatCircleOrbit_FacingBack":
+                case "OffensiveCombatCircleOrbit_FacingLeft":
+                case "OffensiveCombatCircleOrbit_FacingRight":
+                case "OffensiveCombatCircleOrbit_FacingUp":
+                case "OffensiveCombatCircleOrbit_FacingDown":
+                {
+                    string label;
+                    string dirId;
+
+                    if(action.Id.StartsWith("OffensiveCombatStayAtRange"))
+                    {
+                        label = MyTexts.GetString("OffensiveCombatStayAtRange_PatternName") ?? "Stay at range";
+                        dirId = action.Id.Substring("OffensiveCombatStayAtRange_Facing".Length);
+                    }
+                    else //if(action.Id.StartsWith("OffensiveCombatCircleOrbit"))
+                    {
+                        label = MyTexts.GetString("OffensiveCombatCircleOrbit_PatternName") ?? "Circle/Orbit";
+                        dirId = action.Id.Substring("OffensiveCombatCircleOrbit_Facing".Length);
+                    }
+
+                    string dirName = GetDirectionTranslated(dirId);
+
+                    // HACK: new SB because otherwise it modifies the language key's text
+                    action.Name = new StringBuilder(label.Length + 2 + dirName.Length).Append(label).Append(": ").Append(dirName);
+                    break;
+                }
+
             }
         }
 
@@ -299,6 +340,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             // don't change other mod's custom icons
             if(!action.Icon.StartsWith(@"Textures\GUI\Icons\Actions\", StringComparison.OrdinalIgnoreCase))
                 return null;
+
+            // emotion controller has textures as ids, so why not give the same as icon
+            if(action.Id.StartsWith(@"Textures\", StringComparison.OrdinalIgnoreCase))
+                return action.Id;
 
             #region replace by id prefix
             if(action.Id.StartsWith("Increase"))
@@ -444,10 +489,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "CollisionAvoidance_Off":
                     return Utils.GetModFullPath(@"Textures\ActionIcons\CollisionAvoidance.dds");
 
-                case "DockingMode":
+                case "DockingMode": // called "precision mode" ingame
                 case "DockingMode_On":
                 case "DockingMode_Off":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds");
+                    return Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds"); // TODO needs better icon
 
                 case "MainCockpit":
                 case "MainRemoteControl":
@@ -487,6 +532,75 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "SpawnProjection": return Utils.GetModFullPath(@"Textures\ActionIcons\Paste.dds");
 
                 case "PreserveAspectRatio": return Utils.GetModFullPath(@"Textures\ActionIcons\AspectRatio.dds");
+
+                // event controller
+                case "ANDCheckbox": return Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); // TODO: custom icon showing: &&  ?
+
+                // cockpit (RC?, other blocks?)
+                case "TargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds"); // TODO: custom icon?
+
+                // turrets
+                case "EnableTargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds"); // TODO: custom icon?
+
+                // flight movement
+                case "AlignToGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\HorizonIndicator.dds"); // TODO: custom icon?
+
+                // basic mission
+                case "SetCurrentPositionHome": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds"); // TODO: custom icon?
+                case "Wander": return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds"); // TODO: custom icon?
+                case "FollowMe": return Utils.GetModFullPath(@"Textures\ActionIcons\CharacterHelmet.dds");
+                case "StopFollowing": return Utils.GetModFullPath(@"Textures\ActionIcons\StopButton.dds");
+
+                // turrets, CTC?
+                case "TargetingGroup_Weapons": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetWeapons.dds");
+                case "TargetingGroup_Propulsion": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPropulsion.dds");
+                case "TargetingGroup_PowerSystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPower.dds");
+                case "TargetingGroup_CycleSubsystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetCycle.dds");
+
+                // combat blocks
+                case "SetAttackMode_EnemiesOnly": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemies.dds");
+                case "SetAttackMode_EnemiesAndNeutrals": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemiesAndNeutrals.dds");
+                case "LockTarget": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds");
+                case "CanTargetCharacters": return Utils.GetModFullPath(@"Textures\ActionIcons\CharacterHelmet.dds");
+                case "SetTargetingGroup_Weapons": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetWeapons.dds");
+                case "SetTargetingGroup_Propulsion": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPropulsion.dds");
+                case "SetTargetingGroup_PowerSystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPower.dds");
+                case "SetTargetPriority_Closest": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPriorityClosest.dds");
+                case "SetTargetPriority_Largest": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPriorityLargest.dds");
+                case "SetTargetPriority_Smallest": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPrioritySmallest.dds");
+
+                // MyAiBlockComponent
+                case "ActivateBehavior_On": return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
+                case "ActivateBehavior_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
+                case "ActivateBehavior": return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
+
+                // offensive combat
+                case "OffensiveCombatIntercept_OverrideCollisionAvoidance": return Utils.GetModFullPath(@"Textures\ActionIcons\CollisionAvoidance.dds");
+                case "OffensiveCombatCircleOrbit_CircleInPGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.dds"); // TODO: custom icon?
+                case "OffensiveCombatStayAtRange_EvasiveManeuvers": return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds");
+
+                case "OffensiveCombatStayAtRange_FacingFront":
+                case "OffensiveCombatStayAtRange_FacingBack":
+                case "OffensiveCombatStayAtRange_FacingLeft":
+                case "OffensiveCombatStayAtRange_FacingRight":
+                case "OffensiveCombatStayAtRange_FacingUp":
+                case "OffensiveCombatStayAtRange_FacingDown":
+                case "OffensiveCombatCircleOrbit_FacingFront":
+                case "OffensiveCombatCircleOrbit_FacingBack":
+                case "OffensiveCombatCircleOrbit_FacingLeft":
+                case "OffensiveCombatCircleOrbit_FacingRight":
+                case "OffensiveCombatCircleOrbit_FacingUp":
+                case "OffensiveCombatCircleOrbit_FacingDown":
+                    return Utils.GetModFullPath(@"Textures\ActionIcons\Jump.dds"); // TODO: directional icons?
+
+                // MyPathRecorderComponent
+                case "ID_PLAY_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\PlayButton.dds");
+                case "ID_REPEAT_CHEKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
+                case "ReversePath": return Utils.GetModFullPath(@"Textures\ActionIcons\Reverse.dds");
+                case "ID_SHOW_PATH_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\ViewCamera.dds");
+                case "ID_SHOW_POINTS_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\ViewCamera.dds");
+                case "ID_RECORD_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds");
+                case "ID_ADD_WAYPOINT": return Utils.GetModFullPath(@"Textures\ActionIcons\ShowOnHud_On.dds");
 
                 // TODO: unchanged icons
 
@@ -553,16 +667,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetEnemies":
                 case "TargetEnemies_On":
                 case "TargetEnemies_Off":
-
-                // ombat blocks
-                case "SetTargetingGroup_Weapons":
-                case "SetTargetingGroup_Propulsion":
-                case "SetTargetingGroup_PowerSystems":
-                // turrets, CTC?
-                case "TargetingGroup_Weapons":
-                case "TargetingGroup_Propulsion":
-                case "TargetingGroup_PowerSystems":
-                case "TargetingGroup_CycleSubsystems":
 
                 // RC and a few others?
                 case "Forward":
