@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage;
 using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
@@ -17,10 +20,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public event Action<ActionWrapper> ActionCollected;
 
-        readonly Func<ITerminalAction, bool> CollectActionFunc;
         readonly Queue<QueuedActionGet> QueuedTypes = new Queue<QueuedActionGet>();
         HashSet<Type> CheckedTypes = new HashSet<Type>();
         int RehookForSeconds = 10;
+
+        Type CollectType;
+        Func<ITerminalAction, bool> CollectFunc;
+
+        // to check if the same id is added multiple times per block type
+        Dictionary<MyTuple<string, string>, int> TypeActionIdPairs = new Dictionary<MyTuple<string, string>, int>(new MyTupleComparer<string, string>());
 
         struct QueuedActionGet
         {
@@ -38,7 +46,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
 
-            CollectActionFunc = new Func<ITerminalAction, bool>(CollectAction);
+            CollectFunc = new Func<ITerminalAction, bool>(CollectAction);
 
             Main.BlockMonitor.BlockAdded += BlockAdded;
 
@@ -94,55 +102,103 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 // HACK: CustomActionGetter event doesn't get triggered for groups, making them undetectable until you see that action for a single block.
                 // HACK: GetActions()'s collect function gets called before the toolbar check, allowing to get all actions.
                 // HACK: can't call it in BlockAdded because it can make some mods' terminal controls vanish...
-                MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectActionFunc);
+                CollectType = data.BlockType;
+                MyAPIGateway.TerminalActionsHelper.GetActions(data.BlockType, null, CollectFunc);
 
                 // not using MyAPIGateway.TerminalControls.GetActions<T>() because it requires a generic type, can't feed that in
             }
 
+            CheckInfiniteActions();
+
             if(RehookForSeconds <= 0 && QueuedTypes.Count <= 0)
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
-
-            // TODO: make custom icons toggleable
-            // needs a way to refresh toolbar...
-            //if(MyAPIGateway.Input.IsNewKeyPressed(VRage.Input.MyKeys.L) && MyAPIGateway.Input.IsAnyCtrlKeyPressed())
-            //{
-            //    foreach(ActionWrapper wrapper in ActionWrappers.Values)
-            //    {
-            //        if(wrapper.CustomIcon == null)
-            //            continue;
-            //
-            //        if(wrapper.Action.Icon == wrapper.CustomIcon)
-            //            wrapper.Action.Icon = wrapper.OriginalIcon;
-            //        else
-            //            wrapper.Action.Icon = wrapper.CustomIcon;
-            //    }
-            //
-            //    MyAPIGateway.Utilities.ShowNotification("Toggled action icons", 2000, "Debug");
-            //}
-        }
-
-        void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
-        {
-            // required to catch mod actions that are only added to this event
-            for(int i = 0; i < actions.Count; i++)
-            {
-                CollectAction(actions[i]);
-            }
         }
 
         bool CollectAction(ITerminalAction a)
         {
             IMyTerminalAction action = (IMyTerminalAction)a;
-
             if(!ActionWrappers.ContainsKey(action))
             {
-                ActionWrapper wrapper = new ActionWrapper(action);
+                ActionWrapper wrapper = new ActionWrapper(action, CollectType?.Name ?? "type null!");
                 ActionWrappers.Add(action, wrapper);
-
                 ActionCollected?.Invoke(wrapper);
             }
 
             return false; // null list, never add to it.
+        }
+
+        void CustomActionGetter(IMyTerminalBlock block, List<IMyTerminalAction> actions)
+        {
+            int wrappersBefore = ActionWrappers.Count;
+
+            // required to catch mod actions that are only added to this event
+            for(int i = 0; i < actions.Count; i++)
+            {
+                IMyTerminalAction action = actions[i];
+                if(!ActionWrappers.ContainsKey(action))
+                {
+                    if(block != null)
+                    {
+                        const int MaxTriggers = 3;
+
+                        MyTuple<string, string> key = MyTuple.Create(block.GetType().Name, action.Id);
+                        int triggered;
+                        if(TypeActionIdPairs.TryGetValue(key, out triggered))
+                        {
+                            triggered++;
+                            if(triggered == MaxTriggers)
+                                Log.Error($"Action {action.Id} was added {MaxTriggers} times before for type {key.Item1}, is a mod creating new instances in CustomActionGetter?");
+                        }
+                        else
+                        {
+                            triggered = 1;
+                        }
+
+                        TypeActionIdPairs[key] = triggered;
+                    }
+
+                    ActionWrapper wrapper = new ActionWrapper(action, block?.BlockDefinition.ToString() ?? "block null!");
+                    ActionWrappers.Add(action, wrapper);
+                    ActionCollected?.Invoke(wrapper);
+                }
+            }
+
+            if(BuildInfoMod.IsDevMod && wrappersBefore != ActionWrappers.Count)
+            {
+                Log.Info($"CustomActionGetter(): Found {ActionWrappers.Count - wrappersBefore} new actions; total={ActionWrappers.Count}");
+            }
+
+            CheckInfiniteActions();
+        }
+
+        bool AlertedForTooMany = false;
+        void CheckInfiniteActions()
+        {
+            const int TooManyActions = 1000;
+
+            if(!AlertedForTooMany && ActionWrappers.Count > TooManyActions)
+            {
+                const string File = "Error_TooManyActions.txt";
+
+                Log.Error($"There's over {TooManyActions} actions! some mod must be creating them in realtime. Created {File} in storage folder with their list (next to the log).", Log.PRINT_MESSAGE);
+                AlertedForTooMany = true;
+
+                using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(File, typeof(ToolbarOverride)))
+                {
+                    writer.WriteLine("Grouped by ActionId and groups sorted descending by elements");
+                    writer.WriteLine("<ActionId> | <ActionName> | <OriginalIcon> | <BlockSource>");
+
+                    foreach(IGrouping<string, ActionWrapper> group in ActionWrappers.Values.GroupBy(a => a.Action.Id).OrderByDescending(g => g.Count()))
+                    {
+                        foreach(ActionWrapper wrapper in group)
+                        {
+                            writer.WriteLine($"{wrapper.Action.Id} | {wrapper.Action.Name} | {wrapper.OriginalIcon} | {wrapper.DebugSource}");
+                        }
+                    }
+
+                    writer.WriteLine("fin.");
+                }
+            }
         }
 
         void ToolbarActionIcons_ValueAssigned(int oldValue, int newValue, ConfigLib.SettingBase<int> setting)

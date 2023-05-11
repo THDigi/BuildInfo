@@ -15,17 +15,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public readonly string DisplayName;
         public readonly string OriginalIcon;
         public readonly string CustomIcon;
+        public readonly string DebugSource;
 
         public Action<IMyTerminalBlock, StringBuilder> OriginalWriter { get; private set; }
 
         private readonly Action<IMyTerminalBlock, StringBuilder> CustomWriter;
 
-        public ActionWrapper(IMyTerminalAction action)
+        public ActionWrapper(IMyTerminalAction action, string debugSource = null)
         {
             Action = action;
+            DebugSource = debugSource ?? "(null)";
 
             OriginalIcon = Action.Icon;
-            CustomIcon = GetCustomActionIcon(Action) ?? OriginalIcon;
+            CustomIcon = GetCustomActionIcon(Action, debugSource) ?? OriginalIcon;
             UpdateIcon();
 
             OriginalWriter = Action.Writer;
@@ -276,7 +278,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             return null;
         }
 
-        static string GetCustomActionIcon(IMyTerminalAction action)
+        static string GetCustomActionIcon(IMyTerminalAction action, string debugSource = null)
         {
             // HACK: giving an icon for some iconless actions
             if(string.IsNullOrEmpty(action.Icon))
@@ -286,7 +288,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     case "Attach": return Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds");
                     case "Detach": return Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds");
 
-                    default: Log.Info($"Action id '{action.Id}' has no icon, this mod could give it one... tell author :P"); break;
+                    default:
+                        if(BuildInfoMod.IsDevMod)
+                            Log.Info($"Action id '{action.Id}' has no icon"); break;
                 }
 
                 return null;
@@ -485,6 +489,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "PreserveAspectRatio": return Utils.GetModFullPath(@"Textures\ActionIcons\AspectRatio.dds");
 
                 // TODO: unchanged icons
+
+                // sensor (only?)
                 case "Detect Players":
                 case "Detect Players_On":
                 case "Detect Players_Off":
@@ -519,6 +525,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Detect Enemy_On":
                 case "Detect Enemy_Off":
 
+                // weapons, CTC?, combat?
                 case "TargetMeteors":
                 case "TargetMeteors_On":
                 case "TargetMeteors_Off":
@@ -547,11 +554,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetEnemies_On":
                 case "TargetEnemies_Off":
 
+                // ombat blocks
                 case "SetTargetingGroup_Weapons":
                 case "SetTargetingGroup_Propulsion":
                 case "SetTargetingGroup_PowerSystems":
+                // turrets, CTC?
+                case "TargetingGroup_Weapons":
+                case "TargetingGroup_Propulsion":
+                case "TargetingGroup_PowerSystems":
                 case "TargetingGroup_CycleSubsystems":
 
+                // RC and a few others?
                 case "Forward":
                 case "Backward":
                 case "Left":
@@ -562,13 +575,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             #endregion
 
-            // ignore icons for all target group actions
-            if(action.Id.StartsWith("TargetingGroup_"))
-            {
-                string targetId = action.Id.Substring("TargetingGroup_".Length);
-                if(BuildInfoMod.Instance.Caches.TargetGroups.ContainsKey(targetId))
-                    return null;
-            }
+            if(BuildInfoMod.IsDevMod)
+                Log.Info($"[DEV] Generic for actionId='{action.Id}'; name={action.Name}; icon={action.Icon}; debugSource={debugSource}");
 
             #region replace by icon path
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))
@@ -597,7 +605,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             #endregion
 
             if(BuildInfoMod.IsDevMod)
-                Log.Info($"[DEV] Unmodified icon for actionId='{action.Id}'; icon={action.Icon}");
+                Log.Info($"[DEV] Unmodified icon for actionId='{action.Id}'; name={action.Name}; icon={action.Icon}; debugSource={debugSource}");
 
             return null;
         }
