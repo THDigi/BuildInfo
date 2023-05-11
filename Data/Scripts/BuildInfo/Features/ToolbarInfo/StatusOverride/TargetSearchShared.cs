@@ -7,39 +7,64 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using VRage;
 using VRage.ObjectBuilders;
+using static Digi.BuildInfo.Features.ToolbarInfo.ToolbarStatusProcessor;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
-    internal class TurretBase : StatusOverrideBase
+    internal class TargetSearchShared : StatusOverrideBase
     {
-        public TurretBase(ToolbarStatusProcessor processor) : base(processor)
+        struct IdInfo
         {
-            List<MyObjectBuilderType> blockTypes = new List<MyObjectBuilderType>()
+            public readonly string Id;
+            public readonly StatusDel Func;
+            public readonly GroupStatusDel GroupFunc;
+
+            public IdInfo(string id, StatusDel func = null, GroupStatusDel groupFunc = null)
+            {
+                Id = id;
+                Func = func;
+                GroupFunc = groupFunc;
+            }
+        }
+
+        public TargetSearchShared(ToolbarStatusProcessor processor) : base(processor)
+        {
+            List<MyObjectBuilderType> blockTypes = new List<MyObjectBuilderType>(8)
             {
                 typeof(MyObjectBuilder_InteriorTurret),
                 typeof(MyObjectBuilder_LargeGatlingTurret),
                 typeof(MyObjectBuilder_LargeMissileTurret),
                 typeof(MyObjectBuilder_TurretControlBlock),
                 typeof(MyObjectBuilder_Searchlight),
+                typeof(MyObjectBuilder_OffensiveCombatBlock),
+                typeof(MyObjectBuilder_DefensiveCombatBlock),
             };
 
-            ToolbarStatusProcessor.StatusDel cycleTargetFunc = CycleTarget;
-            ToolbarStatusProcessor.GroupStatusDel groupCycleTargetFunc = GroupCycleTarget;
+            StatusDel func = CycleTarget;
+            GroupStatusDel funcGroup = GroupCycleTarget;
 
-            foreach(MyObjectBuilderType type in blockTypes)
-            {
-                Processor.AddStatus(type, cycleTargetFunc, "TargetingGroup_CycleSubsystems");
-                Processor.AddGroupStatus(type, groupCycleTargetFunc, "TargetingGroup_CycleSubsystems");
-            }
+            List<IdInfo> ids = new List<IdInfo>(8);
 
             foreach(MyTargetingGroupDefinition def in Processor.Main.Caches.OrderedTargetGroups)
             {
-                string actionId = $"TargetingGroup_{def.Id.SubtypeName}";
+                // turrets, searchlight, CTC
+                ids.Add(new IdInfo($"TargetingGroup_{def.Id.SubtypeName}", func, funcGroup));
 
+                // used by combat blocks, MySearchEnemyComponent.CreateTerminalControls_CombatBlockTargetGroup()
+                ids.Add(new IdInfo($"SetTargetingGroup_{def.Id.SubtypeName}", func, funcGroup));
+            }
+
+            ids.Add(new IdInfo("TargetingGroup_CycleSubsystems", func, funcGroup));
+
+            foreach(IdInfo info in ids)
+            {
                 foreach(MyObjectBuilderType type in blockTypes)
                 {
-                    Processor.AddStatus(type, cycleTargetFunc, actionId);
-                    Processor.AddGroupStatus(type, groupCycleTargetFunc, actionId);
+                    if(info.Func != null)
+                        Processor.AddStatus(type, info.Func, info.Id);
+
+                    if(info.GroupFunc != null)
+                        Processor.AddGroupStatus(type, info.GroupFunc, info.Id);
                 }
             }
         }
@@ -51,40 +76,36 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return false;
 
             sb.Append(GetTargetGroupName(targetGroup));
-
             return true;
         }
 
-        readonly HashSet<string> TempTargetting = new HashSet<string>();
         bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyTerminalBlock>())
                 return false;
 
-            TempTargetting.Clear();
+            TempUniqueString.Clear();
 
             foreach(IMyTerminalBlock tb in groupData.Blocks)
             {
                 string targetGroup = GetTargetGroupSubtypeId(tb);
-                if(targetGroup == null)
-                    continue;
-
-                TempTargetting.Add(targetGroup);
+                if(targetGroup != null)
+                    TempUniqueString.Add(targetGroup);
             }
 
-            if(TempTargetting.Count == 0)
+            if(TempUniqueString.Count == 0)
             {
                 sb.Append("Unknown");
             }
-            else if(TempTargetting.Count > 1)
+            else if(TempUniqueString.Count > 1)
             {
                 sb.Append("Mixed");
             }
-            else
+            else // only one in set, meaning all of them are using the same value
             {
                 sb.Append("All\n");
 
-                string targetGroup = TempTargetting.FirstElement();
+                string targetGroup = TempUniqueString.FirstElement();
 
                 sb.Append(GetTargetGroupName(targetGroup));
             }
@@ -97,21 +118,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         /// </summary>
         string GetTargetGroupSubtypeId(IMyTerminalBlock block)
         {
-            //{
-            //    IMyLargeTurretBase turret = block as IMyLargeTurretBase;
-            //    if(turret != null)
-            //    {
-            //        return turret.GetTargetingGroup() ?? "";
-            //    }
-            //}
-            //{
-            //    IMyTurretControlBlock turretControl = block as IMyTurretControlBlock;
-            //    if(turretControl != null)
-            //    {
-            //        return turretControl.GetTargetingGroup() ?? "";
-            //    }
-            //}
-
+            // turrets, searchlight, CTC
             ITerminalProperty<long> prop = block.GetProperty("TargetingGroup_Selector")?.As<long>();
             if(prop != null)
             {
@@ -126,6 +133,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     return null;
 
                 return targetGroups[groupIdx].Id.SubtypeName;
+            }
+
+            // combat blocks
+            foreach(var comp in block.Components)
+            {
+                IMySearchEnemyComponent searchComp = comp as IMySearchEnemyComponent;
+                if(searchComp != null)
+                {
+                    return searchComp.SubsystemsToDestroy.String;
+                }
             }
 
             return null;
