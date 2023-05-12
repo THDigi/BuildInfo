@@ -506,6 +506,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 BoxDrag.Position = List.Text.Origin;
                 BoxDrag.Update();
             }
+            else
+            {
+                if(BoxDrag.Hovered)
+                    BoxDrag.Unhover();
+            }
             #endregion
         }
 

@@ -18,6 +18,8 @@ namespace Digi.BuildInfo.Utilities
 
         public BoundingBox2D DragHitbox { get; set; }
 
+        public bool Hovered { get; private set; }
+
         /// <summary>
         /// Button used for dragging.
         /// </summary>
@@ -50,13 +52,21 @@ namespace Digi.BuildInfo.Utilities
         public MyStringId DrawMaterial = MyStringId.GetOrCompute("Square");
 
         int Rounding;
-        bool Hovered;
         Vector2D? ClickOffset;
 
         public BoxDragging(MyMouseButtonsEnum mouseButton = MyMouseButtonsEnum.Left, int rounding = 6)
         {
             MouseButton = mouseButton;
             Rounding = rounding;
+        }
+
+        public void Unhover()
+        {
+            if(Hovered)
+            {
+                Hovered = false;
+                BoxDeselected?.Invoke();
+            }
         }
 
         public void Update()
