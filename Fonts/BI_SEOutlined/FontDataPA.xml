@@ -483,6 +483,9 @@
     <glyph ch="" code="e025" bm="0" origin="132,750" size="66x60" aw="45" lsb="-10" forcewhite="true" />
     <glyph ch="" code="e026" bm="0" origin="198,750" size="66x60" aw="45" lsb="-10" forcewhite="true" />
     <glyph ch="" code="e027" bm="0" origin="264,750" size="66x60" aw="45" lsb="-10" forcewhite="true" />
+    <glyph ch="" code="e030" bm="0" origin="325,750" size="66x60" aw="60" lsb="-13" forcewhite="true" />
+    <glyph ch="" code="e031" bm="0" origin="391,750" size="66x60" aw="60" lsb="-13" forcewhite="true" />
+    <glyph ch="" code="e032" bm="0" origin="457,750" size="66x60" aw="60" lsb="-13" forcewhite="true" />
   </glyphs>
   <kernpairs>
     <kernpair left="Ж" right="в" adjust="-1" />

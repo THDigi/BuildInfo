@@ -1,136 +1,134 @@
 <?xml version="1.0"?>
 <Definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <Fonts>
-    <!--
-      Custom versions of existing fonts to have more colors and use shadowed version.
-    -->
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>BI_SEOutlined</SubtypeId>
-      </Id>
-      <Public>false</Public>
-      <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>BI_Green</SubtypeId>
-      </Id>
-      <Public>false</Public>
-      <ColorMask>
-        <X>100</X>
-        <Y>240</Y>
-        <Z>100</Z>
-      </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>BI_SkyBlue</SubtypeId>
-      </Id>
-      <Public>false</Public>
-      <ColorMask>
-        <X>0</X>
-        <Y>155</Y>
-        <Z>255</Z>
-      </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>BI_Yellow</SubtypeId>
-      </Id>
-      <Public>false</Public>
-      <ColorMask>
-        <X>255</X>
-        <Y>255</Y>
-        <Z>0</Z>
-      </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-    <Font>
-      <Id>
-        <TypeId>FontDefinition</TypeId>
-        <SubtypeId>BI_Gray</SubtypeId>
-      </Id>
-      <Public>false</Public>
-      <ColorMask>
-        <X>125</X>
-        <Y>125</Y>
-        <Z>125</Z>
-      </ColorMask>
-      <Resources>
-        <Resource Path="Fonts\white_shadow\FontDataPA.xml"/>
-      </Resources>
-      <LanguageSpecificDefinitions>
-        <LanguageDefinition Language="ChineseChina">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataCH.xml"/>
-          </Resources>
-        </LanguageDefinition>
-        <LanguageDefinition Language="Japanese">
-          <Resources>
-            <Resource Path="Fonts\white_shadow\FontDataJP.xml"/>
-          </Resources>
-        </LanguageDefinition>
-      </LanguageSpecificDefinitions>
-    </Font>
-  </Fonts>
+    <Fonts>
+        <!-- Custom versions of existing fonts to have more colors and use shadowed version. -->
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_SEOutlined</SubtypeId>
+            </Id>
+            <Public>false</Public> <!-- do not show in LCD fonts list and such -->
+            <Path>Fonts\BI_SEOutlined\FontDataPA.xml</Path> <!-- only tag that works for mod paths -->
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_Green</SubtypeId>
+            </Id>
+            <Public>false</Public>
+            <ColorMask>
+                <X>100</X>
+                <Y>240</Y>
+                <Z>100</Z>
+            </ColorMask>
+            <Resources>
+                <Resource Path="Fonts\white_shadow\FontDataPA.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedPA.xml"/>
+            </Resources>
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_SkyBlue</SubtypeId>
+            </Id>
+            <Public>false</Public>
+            <ColorMask>
+                <X>0</X>
+                <Y>155</Y>
+                <Z>255</Z>
+            </ColorMask>
+            <Resources>
+                <Resource Path="Fonts\white_shadow\FontDataPA.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedPA.xml"/>
+            </Resources>
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_Yellow</SubtypeId>
+            </Id>
+            <Public>false</Public>
+            <ColorMask>
+                <X>255</X>
+                <Y>255</Y>
+                <Z>0</Z>
+            </ColorMask>
+            <Resources>
+                <Resource Path="Fonts\white_shadow\FontDataPA.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedPA.xml"/>
+            </Resources>
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_Gray</SubtypeId>
+            </Id>
+            <Public>false</Public>
+            <ColorMask>
+                <X>125</X>
+                <Y>125</Y>
+                <Z>125</Z>
+            </ColorMask>
+            <Resources>
+                <Resource Path="Fonts\white_shadow\FontDataPA.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedPA.xml"/>
+            </Resources>
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+    </Fonts>
 </Definitions>
