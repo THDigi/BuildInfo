@@ -296,7 +296,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Reset, are you sure?");
-            new ItemButton(Category_ConfirmReset, "<colo=orangered>I am sure!", () =>
+            new ItemButton(Category_ConfirmReset, "<color=255,200,0>I am sure!", () =>
             {
                 Main.Config.Handler.ResetToDefaults();
                 Main.Config.Handler.SaveToFile();
