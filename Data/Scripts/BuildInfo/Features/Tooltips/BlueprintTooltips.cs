@@ -368,7 +368,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     if(!MyDefinitionManager.Static.TryGetDefinition(result.Id, out def))
                         def = null;
 
-                    s.DefinitionName(def).Append('\n');
+                    s.DefinitionName(def, result.Id).Append('\n');
 
                     // no tooltips as it would be too long probably.
                 }

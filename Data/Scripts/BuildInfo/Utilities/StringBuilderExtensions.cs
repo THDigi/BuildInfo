@@ -978,7 +978,12 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder DefinitionName(this StringBuilder s, MyDefinitionBase def)
         {
             if(def == null)
-                return s.Append("(Inexistent) ").IdFriendlyFormat(def.Id);
+            {
+                s.Append("(Inexistent)");
+                if(idIfDefNull != null)
+                    s.Append(' ').IdFriendlyFormat(idIfDefNull.Value);
+                return s;
+            }
 
             string name = def.DisplayNameText;
             if(!string.IsNullOrWhiteSpace(name) && name[0] != '\n')
