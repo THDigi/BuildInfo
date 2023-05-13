@@ -58,7 +58,6 @@ namespace Digi.BuildInfo.Features.Fonts
             public int Adjust;
         }
 
-        const StringComparison Compare = StringComparison.OrdinalIgnoreCase;
         string XML;
 
         public FontParser()
@@ -66,7 +65,8 @@ namespace Digi.BuildInfo.Features.Fonts
         }
 
         /// <summary>
-        /// Thread-safe, can only be used once
+        /// Thread-safe, can only be used once.
+        /// Parsing code cloned from MyFont with various changes/improvements.
         /// </summary>
         public void Parse(string xml)
         {
@@ -110,8 +110,8 @@ namespace Digi.BuildInfo.Features.Fonts
             Size = int.Parse(GetAttributeValue(XML, idx, "size"));
         }
 
-        static char[] SizeSeparator = new char[] { 'x' };
-        static char[] OriginSeparator = new char[] { ',' };
+        static readonly char[] SizeSeparator = new char[] { 'x' };
+        static readonly char[] OriginSeparator = new char[] { ',' };
 
         void ReadBitmaps()
         {
@@ -207,9 +207,9 @@ namespace Digi.BuildInfo.Features.Fonts
         /// <summary>
         /// Finds a case-insensitive tag, skips XML comments.
         /// Returns index AFTER tag + a single space.
-        /// <paramref name="tag"/> must not include the < nor any spaces
+        /// <paramref name="tag"/> must not include &lt; &gt; space
         /// </summary>
-        public static int FindTag(string XML, string tag, int startIndex = 0)
+        static int FindTag(string XML, string tag, int startIndex = 0)
         {
             for(int i = 0; i < tag.Length; i++)
             {
@@ -218,8 +218,8 @@ namespace Digi.BuildInfo.Features.Fonts
                     throw new Exception($"Tag='{tag}' must not contain <, > or spaces!");
             }
 
-            const string commentStart = "<!--";
-            const string commentEnd = "-->";
+            const string CommentStart = "<!--";
+            const string CommentEnd = "-->";
 
             while(true)
             {
@@ -227,23 +227,27 @@ namespace Digi.BuildInfo.Features.Fonts
                 if(idx == -1)
                     return -1;
 
-                TextPtr p = new TextPtr(XML, idx + 1);
+                TextPtr p = new TextPtr(XML, idx);
+                if(p.StartsWith(CommentStart))
+                {
+                    int endIdx = XML.IndexOf(CommentEnd, p.Index);
+                    if(endIdx == -1)
+                        throw new Exception($"Invalid XML comment starts at {idx} and never gets closed");
+
+                    startIndex = endIdx + CommentEnd.Length;
+                    continue;
+                }
+
+                p = new TextPtr(XML, idx + 1);
                 if(p.StartsWithCaseInsensitive(tag))
                 {
                     startIndex = idx + 1 + tag.Length;
+
                     char afterTag = XML[startIndex];
                     if(!char.IsWhiteSpace(afterTag))
                         continue; // not followed by whitespace, could be a different tag, ignore
 
                     return startIndex + 1;
-                }
-                else if(p.StartsWith(commentStart))
-                {
-                    int endIdx = XML.IndexOf(commentEnd, p.Index);
-                    if(endIdx == -1)
-                        throw new Exception($"Invalid XML comment starts at {idx} and never gets closed");
-
-                    startIndex = endIdx + commentEnd.Length;
                 }
                 else
                 {
@@ -252,7 +256,7 @@ namespace Digi.BuildInfo.Features.Fonts
             }
         }
 
-        public static char ParseHTMLChar(string text)
+        static char ParseHTMLChar(string text)
         {
             char ch;
             if(char.TryParse(text, out ch))
@@ -272,7 +276,7 @@ namespace Digi.BuildInfo.Features.Fonts
             throw new Exception($"Unknown XML escaped character: {text}");
         }
 
-        public static string GetAttributeValue(string XML, int startIndex, string name, string defaultValue = null, bool optional = false)
+        static string GetAttributeValue(string XML, int startIndex, string name, string defaultValue = null, bool optional = false)
         {
             int attribIndex = -1;
             for(int i = startIndex; i < XML.Length; i++)

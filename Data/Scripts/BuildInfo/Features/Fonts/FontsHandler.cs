@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features.Fonts;
 using Draygo.API;
@@ -31,6 +32,8 @@ namespace Digi.BuildInfo.Features
         public const char IconMaxSpeed = '\ue107';
         public const char IconMissile = '\ue108';
         public const char IconSphere = '\ue109';
+
+        static readonly bool DoExportSpecialChars = false;
 
         // single-use for parsing, do not make public
         List<FontInfo> Fonts = new List<FontInfo>()
@@ -96,30 +99,35 @@ namespace Digi.BuildInfo.Features
                 if(Unloaded)
                     break;
 
-                // TODO multi-XML support of sorts?
-
                 string xml = null;
-
-                using(TextReader file = MyAPIGateway.Utilities.ReadFileInModLocation(fontInfo.XMLPath, Main.Session.ModContext.ModItem))
+                try
                 {
-                    xml = file.ReadToEnd();
-                }
-
-                fontInfo.Parser = new FontParser();
-                fontInfo.Parser.Parse(xml);
-
-                Log.Info($"Parsed font '{fontInfo.Name}' - bitmaps: {fontInfo.Parser.Bitmaps.Count}; glyphs: {fontInfo.Parser.Glyphs.Count}; kernpairs: {fontInfo.Parser.Kernpairs.Count}");
-
-                if(fontInfo.Name == SEOutlined)
-                {
-                    // HACK: altered height to 32 so that it fits better with the built-in textAPI font (which is 30 height)
-                    fontInfo.Parser.Height = 32;
-
-                    // HACK: it's the same font as vanilla but outlined, using this to generate character width dictionary aswell
-                    foreach(FontParser.Glyph glyph in fontInfo.Parser.Glyphs)
+                    // TODO multi-XML support of sorts?
+                    using(TextReader file = MyAPIGateway.Utilities.ReadFileInModLocation(fontInfo.XMLPath, Main.Session.ModContext.ModItem))
                     {
-                        CharSize[glyph.Ch] = glyph.Aw;
+                        xml = file.ReadToEnd();
                     }
+
+                    fontInfo.Parser = new FontParser();
+                    fontInfo.Parser.Parse(xml);
+
+                    Log.Info($"Parsed font '{fontInfo.Name}' - bitmaps: {fontInfo.Parser.Bitmaps.Count}; glyphs: {fontInfo.Parser.Glyphs.Count}; kernpairs: {fontInfo.Parser.Kernpairs.Count}");
+
+                    if(fontInfo.Name == SEOutlined)
+                    {
+                        // HACK: altered height to 32 so that it fits better with the built-in textAPI font (which is 30 height)
+                        fontInfo.Parser.Height = 32;
+
+                        // HACK: it's the same font as vanilla but outlined, using this to generate character width dictionary aswell
+                        foreach(FontParser.Glyph glyph in fontInfo.Parser.Glyphs)
+                        {
+                            CharSize[glyph.Ch] = glyph.Aw;
+                        }
+                    }
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error parsing font '{fontInfo?.Name}'; xml={xml != null}: {e.ToString()}");
                 }
             }
         }
@@ -137,30 +145,43 @@ namespace Digi.BuildInfo.Features
         {
             foreach(FontInfo fontInfo in Fonts)
             {
-                HudAPIv2.FontDefinition font = HudAPIv2.APIinfo.GetFontDefinition(MyStringId.GetOrCompute(fontInfo.Name));
-                FontParser data = fontInfo.Parser;
-
-                foreach(FontParser.Bitmap bitmap in data.Bitmaps)
+                try
                 {
-                    MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_TransparentMaterialDefinition), bitmap.MaterialId.String));
-                    if(def == null)
-                        Log.Error($"Font '{fontInfo.Name}' for textAPI does not have the transparent material '{bitmap.MaterialId.String}' declared in SBC!");
+                    HudAPIv2.FontDefinition font = HudAPIv2.APIinfo.GetFontDefinition(MyStringId.GetOrCompute(fontInfo.Name));
+                    FontParser data = fontInfo.Parser;
+
+                    foreach(FontParser.Bitmap bitmap in data.Bitmaps)
+                    {
+                        MyDefinitionBase def = MyDefinitionManager.Static.GetDefinition(new MyDefinitionId(typeof(MyObjectBuilder_TransparentMaterialDefinition), bitmap.MaterialId.String));
+                        if(def == null)
+                            Log.Error($"Font '{fontInfo.Name}' for textAPI does not have the transparent material '{bitmap.MaterialId.String}' declared in SBC!");
+                    }
+
+                    font.DefineFont(data.Base, data.Height, data.Size);
+
+                    foreach(FontParser.Glyph glyph in data.Glyphs)
+                    {
+                        if(glyph.Bitmap < 0 || glyph.Bitmap >= data.Bitmaps.Count)
+                        {
+                            Log.Error($"Font '{fontInfo.Name}' has glyph '{glyph.Ch}'/'{glyph.Code}' with inexistent bitmap index: {glyph.Bitmap}; max bitmap index: {data.Bitmaps.Count - 1}");
+                            continue;
+                        }
+
+                        FontParser.Bitmap bitmap = data.Bitmaps[glyph.Bitmap];
+                        font.AddCharacter(glyph.Ch, bitmap.MaterialId, bitmap.SizeX, glyph.Code, glyph.OriginX, glyph.OriginY, glyph.SizeX, glyph.SizeY, glyph.Aw, glyph.Lsb, glyph.ForceWhite);
+                    }
+
+                    foreach(FontParser.Kernpair kp in data.Kernpairs)
+                    {
+                        font.AddKerning(kp.Adjust, kp.Right, kp.Left);
+                    }
+
+                    FontAdded(font, fontInfo);
                 }
-
-                font.DefineFont(data.Base, data.Height, data.Size);
-
-                foreach(FontParser.Glyph glyph in data.Glyphs)
+                catch(Exception e)
                 {
-                    FontParser.Bitmap bitmap = data.Bitmaps[glyph.Bitmap];
-                    font.AddCharacter(glyph.Ch, bitmap.MaterialId, bitmap.SizeX, glyph.Code, glyph.OriginX, glyph.OriginY, glyph.SizeX, glyph.SizeY, glyph.Aw, glyph.Lsb, glyph.ForceWhite);
+                    Log.Error($"Error adding font '{fontInfo?.Name}': {e.ToString()}");
                 }
-
-                foreach(FontParser.Kernpair kp in data.Kernpairs)
-                {
-                    font.AddKerning(kp.Adjust, kp.Right, kp.Left);
-                }
-
-                FontAdded(font, fontInfo);
             }
 
             Fonts = null;
@@ -186,20 +207,48 @@ namespace Digi.BuildInfo.Features
             int gridX = 0;
             int gridY = 0;
 
-            for(int i = 0; i < totalIcons; i++)
+            TextWriter writer = null;
+            try
             {
-                if(gridX >= maxGridX)
+                int iconBitmapId = 1;
+                bool export = BuildInfoMod.IsDevMod && DoExportSpecialChars;
+                if(export)
                 {
-                    gridY++;
-                    gridX = 0;
+                    writer = MyAPIGateway.Utilities.WriteFileInLocalStorage("font special characters.txt", typeof(FontsHandler));
+
+                    writer.WriteLine($"<bitmap id=\"{iconBitmapId}\" name=\"{material.String}.dds\" size=\"{materialSizeX}x{materialSizeX}\" />");
+                    writer.WriteLine();
                 }
 
-                char c = (char)(startingChar + i);
-                string charCode = ((int)c).ToString("X");
+                for(int i = 0; i < totalIcons; i++)
+                {
+                    if(gridX >= maxGridX)
+                    {
+                        gridY++;
+                        gridX = 0;
+                    }
 
-                font.AddCharacter(c, material, materialSizeX, charCode, (gridX * iconSize), (gridY * iconSize) - offset, iconSize, iconSize + offset, iconAw, iconLsb, !recolorable);
+                    char c = (char)(startingChar + i);
+                    string charCode = ((int)c).ToString("X");
 
-                gridX++;
+                    int x = (gridX * iconSize);
+                    int y = (gridY * iconSize);
+                    int sizeX = iconSize;
+                    int sizeY = iconSize;
+
+                    font.AddCharacter(c, material, materialSizeX, charCode, x, y - offset, sizeX, sizeY + offset, iconAw, iconLsb, !recolorable);
+
+                    if(export)
+                    {
+                        writer.WriteLine($"<glyph ch=\"{c}\" code=\"{charCode.ToLower()}\" bm=\"{iconBitmapId}\" origin=\"{x},{y}\" size=\"{sizeX}x{sizeY}\" aw=\"17\" lsb=\"-4\" forcewhite=\"{(recolorable ? "false" : "true")}\" />");
+                    }
+
+                    gridX++;
+                }
+            }
+            finally
+            {
+                writer?.Dispose();
             }
         }
     }

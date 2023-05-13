@@ -313,12 +313,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             List = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
             ListColumn2 = new TextAPI.TextPackage(SBCapacity, useShadow: UseShadowMessage);
 
-            List.Text.Font = TextFont;
-
-            if(List.Shadow != null)
-            {
-                List.Shadow.Font = TextFont;
-            }
+            List.Font = TextFont;
+            ListColumn2.Font = TextFont;
 
             WereVisible = null;
 
