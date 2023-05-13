@@ -314,7 +314,7 @@ namespace Digi.BuildInfo.Features.Config
             });
             TextAPIScale.AddCompatibilityNames("TextAPI: Scale");
 
-            TextAPIBackgroundOpacity = new BackgroundOpacitySetting(Handler, "TextBox: Background Opacity", -0.1f,
+            TextAPIBackgroundOpacity = new BackgroundOpacitySetting(Handler, "TextBox: Background Opacity", BackgroundOpacitySetting.ValueHUD,
                 "Set background opacity where 1.0 is fully opaque and 0.0 is fully transparent, or set to HUD to use game HUD opacity.");
             TextAPIBackgroundOpacity.AddCompatibilityNames("TextAPI: Background Opacity");
 

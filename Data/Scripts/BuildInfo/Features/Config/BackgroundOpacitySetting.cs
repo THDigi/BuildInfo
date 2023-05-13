@@ -7,6 +7,8 @@ namespace Digi.BuildInfo.Features.Config
 {
     public class BackgroundOpacitySetting : FloatSetting
     {
+        public const float ValueHUD = -0.1f;
+
         public BackgroundOpacitySetting(ConfigHandler configInstance, string name, float defaultValue, params string[] commentLines)
             : base(configInstance, name, defaultValue, min: 0f, max: 1f, commentLines: commentLines)
         {
@@ -18,7 +20,7 @@ namespace Digi.BuildInfo.Features.Config
 
             if(valueString.ContainsIgnoreCase("HUD"))
             {
-                Value = -1;
+                Value = ValueHUD;
                 return;
             }
 
@@ -26,7 +28,7 @@ namespace Digi.BuildInfo.Features.Config
             if(float.TryParse(valueString, out tmp))
             {
                 if(tmp < 0)
-                    Value = -1;
+                    Value = ValueHUD;
                 else
                     Value = MathHelper.Clamp(tmp, Min, Max);
                 return;

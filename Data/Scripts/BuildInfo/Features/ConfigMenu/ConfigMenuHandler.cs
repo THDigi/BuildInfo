@@ -322,12 +322,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
         private void ItemAdd_BackgroundOpacity(MenuCategoryBase category)
         {
-            ItemSlider item = new ItemSlider(category, "Background Opacity", min: -0.1f, max: Main.Config.TextAPIBackgroundOpacity.Max, defaultValue: Main.Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
+            ItemSlider item = new ItemSlider(category, "Background Opacity", min: BackgroundOpacitySetting.ValueHUD, max: Main.Config.TextAPIBackgroundOpacity.Max, defaultValue: Main.Config.TextAPIBackgroundOpacity.DefaultValue, rounding: 2,
                 getter: () => Main.Config.TextAPIBackgroundOpacity.Value,
                 setter: (val) =>
                 {
                     if(val < 0)
-                        val = -0.1f;
+                        val = BackgroundOpacitySetting.ValueHUD;
 
                     Main.Config.TextAPIBackgroundOpacity.Value = val;
                     UpdateTextBox(redraw: false);
