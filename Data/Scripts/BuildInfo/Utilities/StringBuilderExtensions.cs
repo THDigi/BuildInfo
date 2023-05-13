@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
+using Digi.BuildInfo.VanillaData;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -975,7 +976,19 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder DefinitionName(this StringBuilder s, MyDefinitionBase def)
+        public static StringBuilder CleanPlayerName(this StringBuilder s, string playerName)
+        {
+            for(int i = 0; i < playerName.Length; i++)
+            {
+                char c = playerName[i];
+                if(!Hardcoded.PlatformIcon.List.Contains(c))
+                    s.Append(c);
+            }
+
+            return s;
+        }
+
+        public static StringBuilder DefinitionName(this StringBuilder s, MyDefinitionBase def, MyDefinitionId? idIfDefNull = null)
         {
             if(def == null)
             {

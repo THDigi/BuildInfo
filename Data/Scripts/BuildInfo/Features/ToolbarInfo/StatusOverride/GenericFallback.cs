@@ -175,7 +175,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     else
                     {
                         IMyPlayer player = GetPlayerFromIdentityId(identityId);
-                        sb.Append("Control:\n").Append(player == null ? "(Unk)" : player.DisplayName);
+                        sb.Append("Control:\n").CleanPlayerName(player == null ? "(Unk)" : player.DisplayName);
                     }
 
                     return true;
@@ -186,7 +186,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 IMyPlayer player = MyAPIGateway.Players.GetPlayerControllingEntity(item.Block);
                 if(player != null)
                 {
-                    sb.Append("Control:\n").Append(player.DisplayName);
+                    sb.Append("Control:\n").CleanPlayerName(player.DisplayName);
                     return true;
                 }
             }

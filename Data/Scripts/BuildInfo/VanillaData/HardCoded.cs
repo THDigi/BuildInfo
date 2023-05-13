@@ -25,6 +25,15 @@ namespace Digi.BuildInfo.VanillaData
     /// </summary>
     public static class Hardcoded
     {
+        // from VRage.GameServices.PlatformIcon
+        public static class PlatformIcon
+        {
+            public static readonly char PC = '\ue030';
+            public static readonly char PS = '\ue031';
+            public static readonly char XBOX = '\ue032';
+            public static readonly List<char> List = new List<char>() { PC, PS, XBOX };
+        }
+
         // from MyGravityProviderSystem.G
         public const float EarthGravity = 9.81f;
 
