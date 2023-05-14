@@ -25,6 +25,26 @@
         <Font>
             <Id>
                 <TypeId>FontDefinition</TypeId>
+                <SubtypeId>BI_Monospace</SubtypeId>
+            </Id>
+            <Public>false</Public>
+            <Path>Fonts\BI_Monospace\BIMonospace.xml</Path>
+            <LanguageSpecificDefinitions>
+                <LanguageDefinition Language="ChineseChina">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataCH.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedCH.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+                <LanguageDefinition Language="Japanese">
+                    <Resources>
+                        <Resource Path="Fonts\white_shadow\FontDataJP.xml" SwappedPath="Fonts\white_shadow\FontDataSwappedJP.xml"/>
+                    </Resources>
+                </LanguageDefinition>
+            </LanguageSpecificDefinitions>
+        </Font>
+        <Font>
+            <Id>
+                <TypeId>FontDefinition</TypeId>
                 <SubtypeId>BI_Green</SubtypeId>
             </Id>
             <Public>false</Public>

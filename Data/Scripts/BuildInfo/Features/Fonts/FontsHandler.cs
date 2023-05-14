@@ -39,6 +39,7 @@ namespace Digi.BuildInfo.Features
         List<FontInfo> Fonts = new List<FontInfo>()
         {
             new FontInfo(SEOutlined, $@"Fonts\{SEOutlined}\FontDataPA.xml"),
+            new FontInfo(Monospace, $@"Fonts\{Monospace}\BIMonospace.xml"),
         };
 
         class FontInfo
