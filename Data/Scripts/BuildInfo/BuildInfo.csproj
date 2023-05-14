@@ -425,7 +425,7 @@
     <Compile Include="Systems\DefenseShieldsDetector.cs" />
     <Compile Include="Systems\RichHudFrameworkHandler.cs" />
     <Compile Include="Systems\CoreSystemsAPIHandler.cs" />
-    <Compile Include="Utilities\BoxDragging.cs" />
+    <Compile Include="Features\GUI\BoxDragging.cs" />
     <Compile Include="Utilities\Caches.cs" />
     <Compile Include="Libraries\DefinitionEditingToolset.cs" />
     <Compile Include="Utilities\DevProfiler.cs" />

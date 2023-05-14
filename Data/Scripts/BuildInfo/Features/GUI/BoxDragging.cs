@@ -1,4 +1,5 @@
 ﻿using System;
+using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Input;
@@ -6,7 +7,7 @@ using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
-namespace Digi.BuildInfo.Utilities
+namespace Digi.BuildInfo.Features
 {
     /// <summary>
     /// Box dragging handler for on-screen elements.
