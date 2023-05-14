@@ -976,13 +976,20 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder CleanPlayerName(this StringBuilder s, string playerName)
+        public static StringBuilder CleanPlayerName(this StringBuilder s, string playerName, int maxChars = int.MaxValue)
         {
+            int appended = 0;
             for(int i = 0; i < playerName.Length; i++)
             {
                 char c = playerName[i];
-                if(!Hardcoded.PlatformIcon.List.Contains(c))
-                    s.Append(c);
+
+                if(Hardcoded.PlatformIcon.List.Contains(c))
+                    continue;
+
+                s.Append(c);
+
+                if(++appended >= maxChars)
+                    break;
             }
 
             return s;

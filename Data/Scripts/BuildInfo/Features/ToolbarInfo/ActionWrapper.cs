@@ -591,6 +591,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "OffensiveCombatCircleOrbit_FacingRight":
                 case "OffensiveCombatCircleOrbit_FacingUp":
                 case "OffensiveCombatCircleOrbit_FacingDown":
+                // RC, others?
+                case "Forward":
+                case "Backward":
+                case "Left":
+                case "Right":
+                case "Up":
+                case "Down":
                     return Utils.GetModFullPath(@"Textures\ActionIcons\Jump.dds"); // TODO: directional icons?
 
                 // MyPathRecorderComponent
@@ -667,20 +674,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetEnemies":
                 case "TargetEnemies_On":
                 case "TargetEnemies_Off":
-
-                // RC and a few others?
-                case "Forward":
-                case "Backward":
-                case "Left":
-                case "Right":
-                case "Up":
-                case "Down":
                     return null;
             }
             #endregion
 
             if(BuildInfoMod.IsDevMod)
-                Log.Info($"[DEV] Generic for actionId='{action.Id}'; name={action.Name}; icon={action.Icon}; debugSource={debugSource}");
+                Log.Info($"[DEV] Generic for actionId='{action.Id}'; name='{action.Name}'; icon={action.Icon}; debugSource={debugSource}");
 
             #region replace by icon path
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))

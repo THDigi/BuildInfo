@@ -41,8 +41,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(block == null)
                 return false;
 
+            // doesn't need IsFunctional check, slot grayed out
+
             // to differentiate at a glance between block on/off and other toggle.
-            sb.Append("Turned\n").Append(block.Enabled ? "ON" : "OFF");
+            sb.Append(block.Enabled ? IconPowerOn : IconPowerOff).Append(block.Enabled ? "ON" : "OFF");
             return true;
         }
 
@@ -52,27 +54,37 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return false;
 
             int on = 0;
+            int broken = 0;
 
             foreach(IMyFunctionalBlock b in groupData.Blocks)
             {
-                if(b.Enabled)
+                if(!b.IsFunctional)
+                    broken++;
+                else if(b.Enabled)
                     on++;
             }
 
             int total = groupData.Blocks.Count;
 
+            if(Processor.AnimFlip)
+            {
+                sb.NumberCapped(on, MaxChars - 4).Append(IconBroken); //.Append("dmg");
+                sb.Append('\n');
+            }
+
             if(on == total)
             {
-                sb.Append("All on");
+                sb.Append("All").Append(IconPowerOn); //.Append("on");
             }
             else if(on == 0)
             {
-                sb.Append("All off");
+                sb.Append("All").Append(IconPowerOff); //.Append("off");
             }
             else
             {
-                sb.NumberCapped(on).Append(" on\n");
-                sb.NumberCapped(total - on).Append(" off");
+                sb.NumberCapped(on, MaxChars - 3).Append(IconPowerOn); //.Append("on");
+                sb.Append('\n');
+                sb.NumberCapped(total - on, MaxChars - 3).Append(IconPowerOff); //.Append("off");
             }
 
             return true;
@@ -175,7 +187,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     else
                     {
                         IMyPlayer player = GetPlayerFromIdentityId(identityId);
-                        sb.Append("Control:\n").CleanPlayerName(player == null ? "(Unk)" : player.DisplayName);
+                        sb.Append("Control:\n");
+
+                        if(player == null)
+                            sb.Append("(Unk)");
+                        else
+                            sb.CleanPlayerName(player.DisplayName, MaxChars);
                     }
 
                     return true;
@@ -186,7 +203,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 IMyPlayer player = MyAPIGateway.Players.GetPlayerControllingEntity(item.Block);
                 if(player != null)
                 {
-                    sb.Append("Control:\n").CleanPlayerName(player.DisplayName);
+                    sb.Append("Control:\n").CleanPlayerName(player.DisplayName, MaxChars);
                     return true;
                 }
             }

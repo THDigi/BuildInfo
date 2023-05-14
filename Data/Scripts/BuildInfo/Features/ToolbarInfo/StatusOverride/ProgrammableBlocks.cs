@@ -96,24 +96,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     else
                     {
                         // append this max amount of lines from PB detailedinfo/echo
-                        int allowedLines = 2;
-                        int width = 0;
+                        int allowedLines = 3;
+                        int lineLen = 0;
 
                         for(int i = 0; i < detailInfo.Length; ++i)
                         {
                             char chr = detailInfo[i];
                             if(chr == '\n')
                             {
-                                width = 0;
+                                lineLen = 0;
                                 if(--allowedLines == 0)
                                     break;
                             }
-
-                            int chrSize = BuildInfoMod.Instance.FontsHandler.CharSize.GetValueOrDefault(chr, FontsHandler.DefaultCharSize);
-                            width += chrSize;
+                            else
+                            {
+                                lineLen++;
+                            }
 
                             // don't add characters beyond line width limit because it erases all lines below it
-                            if(width <= ToolbarStatusProcessor.MaxLineSize)
+                            if(lineLen <= ToolbarStatusProcessor.MaxChars)
                             {
                                 sb.Append(chr);
                             }

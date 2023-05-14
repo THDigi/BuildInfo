@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -51,16 +52,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
     public class ToolbarStatusProcessor : ModComponent
     {
-        // NOTE: this is not reliable in any way to prevent the next lines from vanishing, but it'll do for now
-        // NOTE: only supports English because MyLanguagesEnum is prohibited and some languages scale the text smaller or larger.
-        public const int MaxLineSize = 120;
-
-        public const char LeftAlignChar = ' ';
-        public const int LeftAlignCount = 16;
+        public const int MaxChars = 8;
+        public const int MaxLines = 3;
 
         public const string CustomStatusTag = "c";
-        public const int CustomTagPrefixSpaces = 8;
-        public const int CustomTagPrefixSpacesNoActionIcons = 13;
+        public const int CustomTagPrefixSpaces = 4;
+        public const int CustomTagPrefixSpacesNoActionIcons = 6;
+        public const char AlternateSpace = '\ue13f'; // a space that's not space character to maintain line height
 
         public bool Enabled { get; private set; } = true;
         public string DisableReason = "(unknown)";
@@ -82,7 +80,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         Dictionary<string, StatusDel> GenericFallback = new Dictionary<string, StatusDel>();
         Dictionary<string, GroupStatusDel> GenericGroupFallback = new Dictionary<string, GroupStatusDel>();
 
-        StringBuilder StatusSB = new StringBuilder(128);
+        StringBuilder StatusSB = new StringBuilder(MaxChars * 6);
 
         public ToolbarStatusProcessor(BuildInfoMod main) : base(main)
         {
@@ -233,6 +231,21 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         public override void UpdateAfterSim(int tick)
         {
+            // quick prototyping of text scale
+            //if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            //{
+            //    int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+            //    if(scroll != 0)
+            //    {
+            //        if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+            //            Main.Config.ToolbarStatusTextScaleOverride.Value = (float)Dev.GetValueScroll("textscale", Main.Config.ToolbarStatusTextScaleOverride.Value, 0.001, notifyTime: 16);
+            //        else
+            //            Main.Config.ToolbarStatusTextScaleOverride.Value = (float)Dev.GetValueScroll("textscale", Main.Config.ToolbarStatusTextScaleOverride.Value, 0.01, notifyTime: 16);
+            //    }
+            //    else
+            //        MyAPIGateway.Utilities.ShowNotification($"textscale = {Main.Config.ToolbarStatusTextScaleOverride.Value:0.######}", 16);
+            //}
+
             if(tick % (Constants.TicksPerSecond / 2) == 0)
             {
                 AnimFlip = !AnimFlip;
@@ -335,7 +348,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                         }
 
                         // tag custom statuses with something
-                        if(StatusSB.Length > 0)
+                        if(overrideStatus)
                         {
                             // need to know how many lines have been appended to keep the tag at a certain height
                             int lines = 0;
@@ -346,10 +359,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                     lines++;
                             }
 
-                            const int TotalLines = 3;
-                            int emptyLines = TotalLines - lines;
-
-                            sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align text to left
+                            int emptyLines = MaxLines - lines;
+                            sb.Append(' ', MaxChars).Append('\n'); // align text to left
 
                             if(emptyLines > 0)
                             {
@@ -359,14 +370,69 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                     sb.Append(' ', CustomTagPrefixSpaces);
 
                                 sb.Append(CustomStatusTag);
-                                sb.Append('\n', TotalLines - lines);
-                            }
-                            else if(BuildInfoMod.IsDevMod)
-                            {
-                                Log.Error($"[DEV] {(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {TotalLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
+
+                                for(int i = 0; i < (MaxLines - lines); i++)
+                                {
+                                    sb.Append(AlternateSpace).Append('\n');
+                                }
                             }
 
-                            sb.AppendStringBuilder(StatusSB);
+                            if(emptyLines < 0 && BuildInfoMod.IsDevMod)
+                            {
+                                Log.Error($"[DEV] {(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {MaxLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
+                            }
+
+                            if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
+                            {
+                                sb.AppendStringBuilder(StatusSB);
+                            }
+                            else
+                            {
+                                int line = 0;
+                                int lineLen = 0;
+                                int lineStartIdx = 0;
+
+                                // right-align stuff
+                                for(int i = 0; i < StatusSB.Length; i++)
+                                {
+                                    char c = StatusSB[i];
+                                    if(c == '\n')
+                                    {
+                                        int spacing = MaxChars - (i - lineStartIdx);
+                                        sb.Append(AlternateSpace, spacing);
+
+                                        for(int j = lineStartIdx; j < i; j++)
+                                        {
+                                            sb.Append(StatusSB[j]);
+                                        }
+
+                                        sb.Append(c);
+
+                                        lineStartIdx = i + 1;
+                                        lineLen = 0;
+                                        line++;
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        lineLen++;
+                                    }
+
+                                    if(lineLen == MaxChars + 1)
+                                        Log.Error($"{(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has >{MaxChars} chars on line {line}; full status:\n{StatusSB}", Log.PRINT_MESSAGE);
+                                }
+
+                                {
+                                    int maxLen = StatusSB.Length;
+                                    int spacing = MaxChars - (maxLen - lineStartIdx);
+                                    sb.Append(' ', spacing);
+
+                                    for(int j = lineStartIdx; j < maxLen; j++)
+                                    {
+                                        sb.Append(StatusSB[j]);
+                                    }
+                                }
+                            }
                         }
                     }
                     catch(Exception e)
@@ -380,10 +446,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 if(!overrideStatus)
                 {
                     sb.Clear(); // erase any partial appends
-
-                    if(Main.Config.ToolbarActionStatus.Value)
-                        sb.Append(LeftAlignChar, LeftAlignCount).Append('\n'); // align all to the left, unless feature is turned off
-
                     item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
                 }
 

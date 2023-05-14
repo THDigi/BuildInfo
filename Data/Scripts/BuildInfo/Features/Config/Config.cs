@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 9;
+        public const int ConfigVersion = 10;
 
         public BoolSetting Killswitch;
 
@@ -264,6 +264,16 @@ namespace Digi.BuildInfo.Features.Config
                     TerminalButtonsPosition.ResetToDefault();
 
                     Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.715, -0.986), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
+                }
+            }
+
+            if(cfgv <= 9)
+            {
+                if(Math.Abs(ToolbarStatusTextScaleOverride.Value - 0.46f) < 0.0001f)
+                {
+                    ToolbarStatusTextScaleOverride.ResetToDefault();
+
+                    Log.Info($"NOTE: '{ToolbarStatusTextScaleOverride.Name}' is the previous default (0.46), resetting to new default ({ToolbarStatusTextScaleOverride.Value.ToString()}).");
                 }
             }
         }
@@ -525,17 +535,16 @@ namespace Digi.BuildInfo.Features.Config
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
 
             ToolbarStatusFontOverride = new BoolSetting(Handler, "Toolbar: Action Status Font Override", true,
-                "Replaces HUD definition's font for toolbar status with a white font with black outline (BI_SEOutlined), this will affect modded HUDs aswell.",
-                "This greatly helps readability of text on the blueish block icons in the toolbar."
+               $"Replaces HUD definition's font for toolbar status with a white monospace font with black outline ({HUDEditor.SetFont}), this will affect modded HUDs aswell.",
+               $"This is required for '{ToolbarActionStatus.Name}' to work properly, aside from greatly helping readability of text on the blueish block icons in the toolbar."
             );
 
             ToolbarStatusTextScaleOverride = new FloatSetting(Handler, "Toolbar: Action Status Text Scale Override", defaultValue: HUDEditor.CustomToolbarTextScale, min: 0, max: 2f, commentLines: new string[]
             {
                 "Overrides the HUD definition's toolbar status text scale because custom status overrides rely on a consistent size to not bug out.",
-                $"Set to 0 to not edit the HUD definition at all, default: {HUDEditor.CustomToolbarTextScale.ToString("0.######")}",
-                $"Not recommended to go higher than {HUDEditor.VanillaToolbarTextScale.ToString("0.######")} (vanilla size), but if you do and you don't get status texts, you'll need to turn off '{ToolbarActionStatus.Name}' (which is also not recommended)."
+               $"Not recommended to go higher than {HUDEditor.VanillaToolbarTextScale.ToString("0.######")} because full wide status text will vanish if it's longer than the box.",
+                "Set to 0 to not edit the HUD definition at all (not recommended)."
             });
-            //ToolbarStatusTextScaleOverride.AddDefaultValueComment = false;
 
             ToolbarActionIcons = new EnumSetting<ActionIconsMode>(Handler, "Toolbar: Action Icons", ActionIconsMode.Custom, new string[]
             {
