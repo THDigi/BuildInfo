@@ -21,17 +21,20 @@ namespace Digi.BuildInfo.Features
         public const string GraySh = "BI_Gray";
 
         public const string SEOutlined = "BI_SEOutlined";
+        public const string Monospace = "BI_Monospace";
 
-        public const char IconExplode = '\ue100';
-        public const char IconCharacter = '\ue101';
-        public const char IconCharacterHead = '\ue102';
-        public const char IconBlock = '\ue103';
-        public const char IconProjectileGravity = '\ue104';
-        public const char IconProjectileNoGravity = '\ue105';
-        public const char IconBlockPenetration = '\ue106';
-        public const char IconMaxSpeed = '\ue107';
-        public const char IconMissile = '\ue108';
-        public const char IconSphere = '\ue109';
+        // these are all only in textAPI version of SEOutlined
+        public const int IconStartingChar = '\ue200';
+        public const char IconExplode = '\ue200';
+        public const char IconCharacter = '\ue201';
+        public const char IconCharacterHead = '\ue202';
+        public const char IconBlock = '\ue203';
+        public const char IconProjectileGravity = '\ue204';
+        public const char IconProjectileNoGravity = '\ue205';
+        public const char IconBlockPenetration = '\ue206';
+        public const char IconMaxSpeed = '\ue207';
+        public const char IconMissile = '\ue208';
+        public const char IconSphere = '\ue209';
 
         static readonly bool DoExportSpecialChars = false;
 
@@ -200,7 +203,6 @@ namespace Digi.BuildInfo.Features
             const int iconLsb = 0;
             const bool recolorable = true;
 
-            const int startingChar = '\ue100';
             const int offset = 6; // HACK: hardcoded offset in textAPI which is there to fix something else
             const int maxGridX = materialSizeX / iconSize;
             const int totalIcons = maxGridX * maxGridX;
@@ -229,7 +231,7 @@ namespace Digi.BuildInfo.Features
                         gridX = 0;
                     }
 
-                    char c = (char)(startingChar + i);
+                    char c = (char)(IconStartingChar + i);
                     string charCode = ((int)c).ToString("X");
 
                     int x = (gridX * iconSize);

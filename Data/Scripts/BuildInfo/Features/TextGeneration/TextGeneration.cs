@@ -3859,8 +3859,18 @@ namespace Digi.BuildInfo.Features
             //            sb = AddLine().Append("  ");
             //        }
             //
-            //        char c = (char)('\ue100' + i);
+            //        char c = (char)(FontsHandler.IconStartingChar + i);
             //
+            //        sb.Append(c).Append(" # ");
+            //
+            //        gridX++;
+            //    }
+            //
+            //    AddLine();
+            //    sb = AddLine().Append("  ");
+            //    for(int i = 0; i < 8; i++)
+            //    {
+            //        char c = (char)('\ue100' + i);
             //        sb.Append(c).Append(" # ");
             //
             //        gridX++;
