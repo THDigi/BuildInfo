@@ -94,7 +94,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.Config.ToolbarStyleMode.ValueAssigned += ConfigIntChanged;
             Main.Config.ToolbarItemNameMode.ValueAssigned += ConfigIntChanged;
             Main.Config.ToolbarLabels.ValueAssigned += ConfigIntChanged;
-            Main.GameConfig.OptionsMenuClosed += UpdateFromConfig;
+            Main.GUIMonitor.OptionsMenuClosed += UpdateFromConfig;
 
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
 
@@ -143,7 +143,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.Config.ToolbarStyleMode.ValueAssigned -= ConfigIntChanged;
             Main.Config.ToolbarItemNameMode.ValueAssigned -= ConfigIntChanged;
             Main.Config.ToolbarLabels.ValueAssigned -= ConfigIntChanged;
-            Main.GameConfig.OptionsMenuClosed -= UpdateFromConfig;
+            Main.GUIMonitor.OptionsMenuClosed -= UpdateFromConfig;
 
             Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
 

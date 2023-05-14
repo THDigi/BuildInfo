@@ -33,8 +33,8 @@ namespace Digi.BuildInfo
 
         // Systems
         public readonly TextAPI TextAPI;
-        public readonly GameConfig GameConfig;
         public readonly GUIMonitor GUIMonitor;
+        public readonly GameConfig GameConfig;
         public readonly BlockMonitor BlockMonitor;
         public readonly InputLibHandler InputLibHandler;
         public readonly EquipmentMonitor EquipmentMonitor;
@@ -118,8 +118,8 @@ namespace Digi.BuildInfo
             // Systems
             TextAPI = new TextAPI(this);
             InputLibHandler = new InputLibHandler(this);
-            GameConfig = new GameConfig(this);
             GUIMonitor = new GUIMonitor(this);
+            GameConfig = new GameConfig(this);
             BlockMonitor = new BlockMonitor(this);
             EquipmentMonitor = new EquipmentMonitor(this);
             GameBlockInfoHandler = new GameBlockInfoHandler(this);

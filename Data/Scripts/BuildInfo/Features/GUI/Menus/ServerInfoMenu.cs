@@ -335,7 +335,7 @@ namespace Digi.BuildInfo.Features.GUI
 
         public override void Update()
         {
-            Vector2D mousePos = Main.MenuHandler.MousePosition;
+            Vector2D mousePos = MenuHandler.GetMousePositionGUI();
 
             CloseButton.Draw(mousePos, directDraw: false);
 

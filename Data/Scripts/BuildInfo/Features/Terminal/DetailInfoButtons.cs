@@ -46,7 +46,7 @@ namespace Digi.BuildInfo.Features.Terminal
             Main.Config.Handler.SettingsLoaded += RefreshPositions;
             Main.Config.TerminalButtonsScale.ValueAssigned += TerminalButtonsScale_ValueAssigned;
             Main.Config.TerminalButtonsPosition.ValueAssigned += TerminalButtonsPosition_ValueAssigned;
-            Main.GameConfig.OptionsMenuClosed += RefreshPositions;
+            Main.GUIMonitor.OptionsMenuClosed += RefreshPositions;
         }
 
         public override void UnregisterComponent()
@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features.Terminal
             Main.Config.Handler.SettingsLoaded -= RefreshPositions;
             Main.Config.TerminalButtonsScale.ValueAssigned -= TerminalButtonsScale_ValueAssigned;
             Main.Config.TerminalButtonsPosition.ValueAssigned -= TerminalButtonsPosition_ValueAssigned;
-            Main.GameConfig.OptionsMenuClosed -= RefreshPositions;
+            Main.GUIMonitor.OptionsMenuClosed -= RefreshPositions;
         }
 
         void TerminalButtonsScale_ValueAssigned(float oldValue, float newValue, ConfigLib.SettingBase<float> setting)
@@ -240,8 +240,9 @@ namespace Digi.BuildInfo.Features.Terminal
                 RefreshPositions();
             }
 
-            Vector2 screenSize = MyAPIGateway.Session.Camera.ViewportSize;
-            Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize;
+            // using GUI size because this is a real UI where we're tracking mouse
+            Vector2 guiSize = MyAPIGateway.Input.GetMouseAreaSize();
+            Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / guiSize;
             MousePos = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
 
             RefreshButton.Visible = (Main.TerminalInfo.SelectedInTerminal.Count <= 1);
@@ -255,7 +256,7 @@ namespace Digi.BuildInfo.Features.Terminal
             if(DragOffset.HasValue && MyAPIGateway.Input.IsRightMousePressed())
             {
                 // using this instead of MousePos because this works after mouse is at the edge of screen
-                Vector2D deltaMouse = new Vector2D(MyAPIGateway.Input.GetMouseX() / screenSize.X, -MyAPIGateway.Input.GetMouseY() / screenSize.Y);
+                Vector2D deltaMouse = new Vector2D(MyAPIGateway.Input.GetMouseX() / guiSize.X, -MyAPIGateway.Input.GetMouseY() / guiSize.Y);
 
                 Vector2D newPos = Main.Config.TerminalButtonsPosition.Value;
 

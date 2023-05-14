@@ -25,16 +25,37 @@ namespace Digi.BuildInfo.Features
         ServerInfoMenu _serverInfo;
         public ServerInfoMenu ServerInfo => _serverInfo ?? (_serverInfo = new ServerInfoMenu());
 
-        /// <summary>
-        /// Only gets updated if there's a blocker (and therefore this class draws the cursor).
-        /// In textAPI coordinate space (-1 to 1).
-        /// </summary>
-        public Vector2D MousePosition;
-
         Dictionary<string, Action> Blockers = new Dictionary<string, Action>();
         List<Menu> Menus = new List<Menu>();
         HudAPIv2.BillBoardHUDMessage Cursor;
         HudState? RevertHud;
+
+        /// <summary>
+        /// Scalar (-1 to 1) mouse position for real GUI cursor.
+        /// </summary>
+        public static Vector2D GetMousePositionGUI()
+        {
+            Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
+
+            Vector2 guiSize = MyAPIGateway.Input.GetMouseAreaSize();
+            Vector2 mousePosGUI = Vector2.Min(mousePx, guiSize) / guiSize; // pixels to scalar
+
+            return new Vector2D(mousePosGUI.X * 2 - 1, 1 - 2 * mousePosGUI.Y); // turn from 0~1 to -1~1
+        }
+
+        // bad idea xD
+        /// <summary>
+        /// Scalar (-1 to 1) mouse position for fake GUI/textAPI cursor.
+        /// </summary>
+        //public static Vector2D GetMousePositionRender()
+        //{
+        //    Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
+        //
+        //    Vector2 renderSize = MyAPIGateway.Session.Camera.ViewportSize;
+        //    Vector2 mousePos3D = Vector2.Min(mousePx, renderSize) / renderSize; // pixels to scalar
+        //
+        //    return new Vector2D(mousePos3D.X * 2 - 1, 1 - 2 * mousePos3D.Y); // turn from 0~1 to -1~1
+        //}
 
         public MenuHandler(BuildInfoMod main) : base(main)
         {
@@ -160,21 +181,19 @@ namespace Digi.BuildInfo.Features
                 Cursor.Options = HudAPIv2.Options.Pixel | HudAPIv2.Options.HideHud;
                 Cursor.SkipLinearRGB = false;
 
-                const float CursorSize = 64; // in pixels because of the above option flag
-                Cursor.Width = CursorSize;
-                Cursor.Height = CursorSize;
-                Cursor.Offset = new Vector2D(CursorSize / -2); // textures has center as cursor clicing point, not sure why this offset is necessary but it is
+                const float CursorSize = 64;
+
+                Vector2 mouseSizePx = MyAPIGateway.Session.Camera.ViewportSize / MyAPIGateway.Input.GetMouseAreaSize();
+                Cursor.Width = mouseSizePx.X * CursorSize;
+                Cursor.Height = mouseSizePx.Y * CursorSize;
+                Cursor.Offset = new Vector2D(Cursor.Width / -2, Cursor.Height / -2); // textures has center as cursor clicing point, not sure why this offset is necessary but it is
             }
 
             // mouse position only updates in HandleInput() so there's no point in moving this later
 
-            Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
-
+            Vector2 mousePx = MyAPIGateway.Input.GetMousePosition() / MyAPIGateway.Input.GetMouseAreaSize();
+            mousePx *= MyAPIGateway.Session.Camera.ViewportSize;
             Cursor.Origin = mousePx; // in pixels because of the above option flag
-
-            Vector2 screenSize = MyAPIGateway.Session.Camera.ViewportSize;
-            Vector2 mousePos = mousePx / screenSize; // pixels to scalar
-            MousePosition = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
         }
     }
 }

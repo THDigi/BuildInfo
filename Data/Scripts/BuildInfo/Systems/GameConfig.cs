@@ -1,5 +1,4 @@
-﻿using System;
-using Digi.ComponentLib;
+﻿using Digi.ComponentLib;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -21,8 +20,6 @@ namespace Digi.BuildInfo.Systems
         public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);
         public event EventHandlerHudStateChanged HudStateChanged;
 
-        public event Action OptionsMenuClosed;
-
         public HudState HudState;
         public float HudBackgroundOpacity;
         public float UIBackgroundOpacity;
@@ -36,14 +33,17 @@ namespace Digi.BuildInfo.Systems
 
         public override void RegisterComponent()
         {
-            MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
+            Main.GUIMonitor.OptionsMenuClosed += UpdateConfigValues;
 
             UpdateConfigValues();
         }
 
         public override void UnregisterComponent()
         {
-            MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.GUIMonitor.OptionsMenuClosed += UpdateConfigValues;
         }
 
         public override void UpdateAfterSim(int tick)
@@ -52,21 +52,6 @@ namespace Digi.BuildInfo.Systems
             if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
             {
                 UpdateHudState();
-            }
-        }
-
-        void GuiControlRemoved(object obj)
-        {
-            try
-            {
-                if(obj.ToString().EndsWith("ScreenOptionsSpace")) // closing options menu just assumes you changed something so it'll re-check config settings
-                {
-                    UpdateConfigValues();
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
             }
         }
 
@@ -82,14 +67,6 @@ namespace Digi.BuildInfo.Systems
 
             Vector2 viewportSize = MyAPIGateway.Session.Camera.ViewportSize;
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
-
-            Vector2 mouseAreaSize = MyAPIGateway.Input.GetMouseAreaSize();
-            Log.Info($"UpdateConfigValues()" +
-                $"\nCamera.ViewportSize = {viewportSize.X} x {viewportSize.Y}" +
-                $"\nConfig.Screen = {cfg.ScreenWidth} x {cfg.ScreenHeight}" +
-                $"\nInput.GetMouseAreaSize() = {mouseAreaSize.X} x {mouseAreaSize.Y}");
-
-            OptionsMenuClosed?.Invoke();
         }
 
         void UpdateHudState()

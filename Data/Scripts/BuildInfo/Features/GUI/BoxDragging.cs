@@ -79,9 +79,7 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            Vector2 screenSize = MyAPIGateway.Session.Camera.ViewportSize;
-            Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / screenSize; // pixels to scalar
-            Vector2D mouseOnScreen = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
+            Vector2D mouseOnScreen = MenuHandler.GetMousePositionGUI();
 
             if(DragHitbox.Contains(mouseOnScreen) == ContainmentType.Contains)
             {

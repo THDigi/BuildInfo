@@ -138,7 +138,7 @@ namespace Digi.BuildInfo.Features
 
             Main.TextAPI.Detected += TextAPI_APIDetected;
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
-            Main.GameConfig.OptionsMenuClosed += GameConfig_OptionsMenuClosed;
+            Main.GUIMonitor.OptionsMenuClosed += GUIMonitor_OptionsMenuClosed;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
 
             ReCheckSide();
@@ -148,7 +148,7 @@ namespace Digi.BuildInfo.Features
         {
             Main.TextAPI.Detected -= TextAPI_APIDetected;
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
-            Main.GameConfig.OptionsMenuClosed -= GameConfig_OptionsMenuClosed;
+            Main.GUIMonitor.OptionsMenuClosed -= GUIMonitor_OptionsMenuClosed;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
@@ -168,7 +168,7 @@ namespace Digi.BuildInfo.Features
             ReCheckSide();
         }
 
-        private void GameConfig_OptionsMenuClosed()
+        private void GUIMonitor_OptionsMenuClosed()
         {
             ReCheckSide();
 

@@ -60,7 +60,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Main.Config.EventToolbarInfoPosition.ValueAssigned += ConfigPositionChanged;
             Main.Config.EventToolbarInfoScale.ValueAssigned += ConfigFloatChanged;
-            Main.GameConfig.OptionsMenuClosed += UpdateFromConfig;
+            Main.GUIMonitor.OptionsMenuClosed += UpdateFromConfig;
 
             DrawInstance = new OverlayDrawInstance(Main.Overlays, GetType().Name);
             DrawInstance.LabelRender.ForceDrawLabel = true;
@@ -101,7 +101,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             Main.Config.EventToolbarInfoPosition.ValueAssigned -= ConfigPositionChanged;
             Main.Config.EventToolbarInfoScale.ValueAssigned -= ConfigFloatChanged;
-            Main.GameConfig.OptionsMenuClosed -= UpdateFromConfig;
+            Main.GUIMonitor.OptionsMenuClosed -= UpdateFromConfig;
 
             DrawInstance = null;
             BoxDrag = null;
