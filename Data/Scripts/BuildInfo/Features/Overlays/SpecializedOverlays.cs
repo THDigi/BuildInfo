@@ -26,6 +26,7 @@ namespace Digi.BuildInfo.Features.Overlays
             new Merge(this);
             new Motor(this);
             new Piston(this);
+            new Searchlight(this);
             new ShipDrill(this);
             new ShipTool(this);
             new Suspension(this);

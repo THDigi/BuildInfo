@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.VanillaData;
+using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -58,6 +59,8 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_Motor>(typeof(MyObjectBuilder_MotorStator));
             AddType<BData_Motor>(typeof(MyObjectBuilder_MotorAdvancedStator));
 
+            AddType<BData_Searchlight>(typeof(MyObjectBuilder_Searchlight));
+
             AddType<BData_Suspension>(typeof(MyObjectBuilder_MotorSuspension));
 
             AddType<BData_Wheel>(typeof(MyObjectBuilder_RealWheel));
@@ -65,12 +68,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Thrust>(typeof(MyObjectBuilder_Thrust));
 
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallGatlingGun));
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallMissileLauncher));
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_SmallMissileLauncherReload));
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeGatlingTurret));
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_LargeMissileTurret));
-            AddType<BData_Weapon>(typeof(MyObjectBuilder_InteriorTurret));
+            AddType<BData_GatlingGun>(typeof(MyObjectBuilder_SmallGatlingGun));
+            AddType<BData_MissileLauncher>(typeof(MyObjectBuilder_SmallMissileLauncher));
+            AddType<BData_MissileLauncher>(typeof(MyObjectBuilder_SmallMissileLauncherReload));
+            AddType<BData_GatlingTurret>(typeof(MyObjectBuilder_LargeGatlingTurret));
+            AddType<BData_MissileTurret>(typeof(MyObjectBuilder_LargeMissileTurret));
+            AddType<BData_InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
 
             AddType<BData_TargetDummy>(Hardcoded.TargetDummyType);
 
@@ -173,11 +176,59 @@ namespace Digi.BuildInfo.Features.LiveData
             if(success && Main.TextGeneration != null)
             {
                 // reset caches and force block text recalc
-                Main.TextGeneration.CachedBuildInfoTextAPI.Remove(slimBlock.BlockDefinition.Id);
-                Main.TextGeneration.CachedBuildInfoNotification.Remove(slimBlock.BlockDefinition.Id);
+                Main.TextGeneration.CachedBuildInfoTextAPI.Remove(defId);
+                Main.TextGeneration.CachedBuildInfoNotification.Remove(defId);
                 Main.TextGeneration.LastDefId = default(MyDefinitionId);
             }
+
+            //BlocksToCheck.Add(new CheckBlock()
+            //{
+            //    Block = slimBlock,
+            //    CheckAtTick = Main.Tick + 10
+            //});
+            //
+            //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
+
+        //struct CheckBlock
+        //{
+        //    public IMySlimBlock Block;
+        //    public int CheckAtTick;
+        //}
+        //
+        //List<CheckBlock> BlocksToCheck = new List<CheckBlock>();
+        //HashSet<IMyCubeGrid> GridsToDelete = new HashSet<IMyCubeGrid>();
+        //
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    for(int i = BlocksToCheck.Count - 1; i >= 0; i--)
+        //    {
+        //        CheckBlock check = BlocksToCheck[i];
+        //        if(check.CheckAtTick <= tick)
+        //        {
+        //            BlocksToCheck.RemoveAtFast(i);
+        //            DoCheck(check.Block);
+        //        }
+        //    }
+        //
+        //    if(BlocksToCheck.Count == 0)
+        //    {
+        //        foreach(IMyCubeGrid grid in GridsToDelete)
+        //        {
+        //            grid.Close();
+        //        }
+        //        GridsToDelete.Clear();
+        //
+        //        SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+        //    }
+        //}
+        //
+        //void DoCheck(IMySlimBlock slimBlock)
+        //{
+        //    IMyCubeBlock block = slimBlock.FatBlock;
+        //    MyDefinitionId defId = slimBlock.BlockDefinition.Id;
+        //
+        //}
 
         void CheckConveyorSupport(IMyCubeBlock block)
         {

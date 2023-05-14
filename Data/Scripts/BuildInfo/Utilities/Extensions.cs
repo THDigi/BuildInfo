@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -108,5 +109,16 @@ namespace Digi.BuildInfo.Utilities
         /// Hopefully boxless getter, must be fed MyPhysics.HitInfo.
         /// </summary>
         public static Vector3D GetHitPos<T>(this T val) where T : IHitInfo => val.Position;
+
+        /// <summary>
+        /// WARNING: uses one reusable dictionary, do not stack.
+        /// </summary>
+        public static Dictionary<string, IMyModelDummy> GetDummies(this IMyModel model)
+        {
+            Dictionary<string, IMyModelDummy> dict = BuildInfoMod.Instance.Caches.Dummies;
+            dict.Clear();
+            model.GetDummies(dict);
+            return dict;
+        }
     }
 }

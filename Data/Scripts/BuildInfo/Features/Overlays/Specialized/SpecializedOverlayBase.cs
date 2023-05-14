@@ -9,25 +9,25 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public abstract class SpecializedOverlayBase
     {
-        protected const float LaserOverlayAlpha = 0.8f;
-        protected const float SolidOverlayAlpha = 0.5f;
-        protected static readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
-        protected static readonly MyStringId MaterialLaser = MyStringId.GetOrCompute("BuildInfo_Laser");
-        protected static readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
-        protected static readonly MyStringId MaterialGradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
-        protected const BlendTypeEnum BlendType = BlendTypeEnum.SDR;
+        public const float LaserOverlayAlpha = 0.8f;
+        public const float SolidOverlayAlpha = 0.5f;
+        public static readonly MyStringId MaterialDot = MyStringId.GetOrCompute("WhiteDot");
+        public static readonly MyStringId MaterialLaser = MyStringId.GetOrCompute("BuildInfo_Laser");
+        public static readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
+        public static readonly MyStringId MaterialGradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
+        public const BlendTypeEnum BlendType = BlendTypeEnum.SDR;
 
         /// <summary>
         /// lowest usable for spheres and such
         /// </summary>
-        protected const int RoundedQualityLow = 18;
+        public const int RoundedQualityLow = 18;
 
-        protected const int RoundedQualityMed = 15;
+        public const int RoundedQualityMed = 15;
 
         /// <summary>
         /// mainly for circles, not spheres or anything complex
         /// </summary>
-        protected const int RoundedQualityHigh = 6;
+        public const int RoundedQualityHigh = 6;
 
         protected readonly BuildInfoMod Main;
         protected readonly Overlays Overlays;

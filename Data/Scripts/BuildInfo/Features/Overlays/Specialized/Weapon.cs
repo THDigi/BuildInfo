@@ -8,8 +8,8 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Weapons;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -24,13 +24,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
         Vector4 ColorBarrel = Vector4.One; // white
         Vector4 ColorFlash = new Vector4(10, 10, 10, 1); // just like hand rifle
-
-        Color ColorPitch = (Color.Red * SolidOverlayAlpha).ToVector4();
-        Vector4 ColorPitchLine = Color.Red.ToVector4();
-        Color ColorYaw = (Color.Lime * SolidOverlayAlpha).ToVector4();
-        Vector4 ColorYawLine = Color.Lime.ToVector4();
-        const int LimitsLineEveryDegrees = RoundedQualityHigh;
-        const float LimitsLineThick = 0.03f;
 
         Color ColorCamera = new Color(55, 155, 255);
 
@@ -66,11 +59,60 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
 
-            IMyGunObject<MyGunBase> weaponBlock = block?.FatBlock as IMyGunObject<MyGunBase>;
-
-            IMyEntity muzzleEntity = null;
             bool hasMuzzles = (data.Muzzles != null && data.Muzzles.Count > 0);
 
+            MyLargeTurretBaseDefinition turretDef = def as MyLargeTurretBaseDefinition;
+            BData_Turret dataTurret = data as BData_Turret;
+            bool isTurret = (turretDef != null && dataTurret != null);
+
+            IMyGunObject<MyGunBase> weaponBlock = block?.FatBlock as IMyGunObject<MyGunBase>;
+            bool isRealBlock = weaponBlock != null;
+
+            MatrixD barrelMatrix = drawMatrix;
+            MatrixD matrixBase2 = drawMatrix;
+
+            if(isRealBlock)
+            {
+                MyEntity barrelPart;
+
+                if(isTurret)
+                {
+                    MyEntity subpartBase1;
+                    MyEntity subpartBase2;
+
+                    if(!dataTurret.GetTurretParts(block.FatBlock, out subpartBase1, out subpartBase2, out barrelPart))
+                        return;
+
+                    matrixBase2 = subpartBase2.WorldMatrix;
+
+                    //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color.Lime, subpartBase1.WorldMatrix.Translation, subpartBase1.WorldMatrix.Forward, 3, 0.1f, blendType: BlendTypeEnum.AdditiveTop);
+                    //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color.Red, subpartBase2.WorldMatrix.Translation, subpartBase2.WorldMatrix.Forward, 3, 0.1f, blendType: BlendTypeEnum.AdditiveTop);
+                }
+                else // not turret
+                {
+                    if(!data.GetBarrelPart(block.FatBlock, out barrelPart))
+                        return;
+                }
+
+                barrelMatrix = barrelPart.WorldMatrix;
+
+                //MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorBarrel, barrelMatrix.Translation, barrelMatrix.Forward, 25, 0.2f, blendType: BlendTypeEnum.AdditiveTop);
+            }
+            //else // preview block
+            //{
+            //    if(isTurret)
+            //    {
+            //        Vector3D posBase1 = Vector3D.Transform(dataTurret.YawLocalPos, drawMatrix);
+            //        Vector3D centerBase1 = Vector3D.Transform(dataTurret.YawModelCenter, drawMatrix);
+            //        Vector3D posBase2 = Vector3D.Transform(dataTurret.PitchLocalPos, drawMatrix);
+            //
+            //        MyTransparentGeometry.AddPointBillboard(MaterialDot, Color.Lime, posBase1, 0.1f, 0, blendType: BlendTypeEnum.AdditiveTop);
+            //        MyTransparentGeometry.AddPointBillboard(MaterialDot, Color.Cyan, centerBase1, 0.1f, 0, blendType: BlendTypeEnum.AdditiveTop);
+            //        MyTransparentGeometry.AddPointBillboard(MaterialDot, Color.Red, posBase2, 0.1f, 0, blendType: BlendTypeEnum.AdditiveTop);
+            //    }
+            //}
+
+            // TODO: bring it closer and animate shots on it?
             // TODO: include current gravity estimated trajectory? or just mention that it gets affected by it...
             #region Accuracy cone
             if(hasMuzzles)
@@ -82,42 +124,18 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     ammoDef = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
                 }
 
-                MatrixD barrelMatrix;
-                if(weaponBlock != null)
-                {
-                    muzzleEntity = BData_Weapon.GetAimSubpart(block.FatBlock);
-                    barrelMatrix = muzzleEntity.WorldMatrix;
-                }
-                else
-                {
-                    barrelMatrix = drawMatrix;
-                }
-
-                // for debugging barrel ent orientation
-                //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Red, barrelMatrix.Translation, barrelMatrix.Right, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
-                //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Green, barrelMatrix.Translation, barrelMatrix.Up, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
-                //MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Blue, barrelMatrix.Translation, barrelMatrix.Forward, 3f, 0.005f, blendType: BlendTypeEnum.AdditiveTop);
-
                 MuzzleData md = data.Muzzles[0];
-                MatrixD accMatrix = (muzzleEntity != null ? md.MatrixForSubpart : md.MatrixForBlock) * barrelMatrix;
+                MatrixD accMatrix = (isRealBlock ? md.Matrix_RelativeBarrel : md.Matrix_RelativePreview) * barrelMatrix;
 
                 float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
                 float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
                 float projectileMaxTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Max;
-                bool randomizedRange = weaponDef.UseRandomizedRange;
-
-                // TODO accuracy circle closer instead?
 
                 if(weaponDef.DeviateShotAngle > 0)
                 {
                     float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
                     float radiusAtMaxRange = tanShotAngle * projectileMaxTravel;
                     Utils.DrawTransparentCone(ref accMatrix, radiusAtMaxRange, projectileMaxTravel, ref ColorAccuracy, MySimpleObjectRasterizer.Solid, (360 / AccuracyConeLinePerDeg), lineThickness: AccLineThick, material: MaterialSquare, blendType: BlendType);
-
-                    //var colorAtMinRange = Color.Lime.ToVector4();
-                    //var radiusAtMinRange = tanShotAngle * projectileMinTravel;
-                    //var circleMatrix = MatrixD.CreateWorld(accMatrix.Translation + accMatrix.Forward * projectileMinTravel, accMatrix.Down, accMatrix.Forward);
-                    //MySimpleObjectDraw.DrawTransparentCylinder(ref circleMatrix, radiusAtMinRange, radiusAtMinRange, 0.1f, ref colorAtMinRange, true, ConeWireDivideRatio, 0.05f, OVERLAY_SQUARE_MATERIAL);
                 }
                 else
                 {
@@ -132,7 +150,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     Vector3D labelDir = accMatrix.Up;
                     Vector3D labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
 
-                    if(randomizedRange)
+                    if(weaponDef.UseRandomizedRange)
                         drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceRangeFormat(projectileMinTravel, projectileMaxTravel);
                     else
                         drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceFormat(projectileMaxTravel);
@@ -140,32 +158,25 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelLineStart, labelDir, ColorAccuracy);
                 }
             }
-            #endregion Accuracy cone
+            #endregion
 
             #region Barrels
             if(hasMuzzles)
             {
-                if(muzzleEntity == null && weaponBlock != null)
-                    muzzleEntity = BData_Weapon.GetAimSubpart(block.FatBlock);
-
-                bool haveSubpart = (muzzleEntity != null);
-
                 foreach(MuzzleData md in data.Muzzles)
                 {
-                    MatrixD wm = (haveSubpart ? md.MatrixForSubpart * muzzleEntity.WorldMatrix : md.MatrixForBlock * drawMatrix);
+                    MatrixD wm = (isRealBlock ? md.Matrix_RelativeBarrel : md.Matrix_RelativePreview) * barrelMatrix;
 
                     MyTransparentGeometry.AddPointBillboard(MaterialMuzzleflash, ColorFlash, wm.Translation, 0.15f, 0, blendType: BlendTypeEnum.AdditiveBottom);
 
-                    float size = (md.Missile ? 0.06f : 0.025f);
-                    float len = (md.Missile ? 2f : 5f);
+                    float size = (md.IsMissile ? 0.06f : 0.025f);
+                    float len = (md.IsMissile ? 2f : 5f);
                     MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorBarrel, wm.Translation, (Vector3)wm.Forward, len, size, BlendType);
                 }
             }
             #endregion Barrels
 
             #region Turret pitch/yaw limits
-            MyLargeTurretBaseDefinition turretDef = def as MyLargeTurretBaseDefinition;
-            bool isTurret = (turretDef != null && data.Turret != null);
             if(isTurret)
             {
                 float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
@@ -176,63 +187,42 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 int minYaw = turretDef.MinAzimuthDegrees;
                 int maxYaw = turretDef.MaxAzimuthDegrees;
 
-                // pitch limit indicator
+                MatrixD pitchMatrix;
+                if(weaponBlock != null)
                 {
-                    MatrixD pitchMatrix;
-                    if(weaponBlock != null)
-                    {
-                        pitchMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
-                        pitchMatrix.Translation = drawMatrix.Translation;
-                    }
-                    else
-                    {
-                        pitchMatrix = drawMatrix;
-                    }
-
-                    // only yaw rotation
-                    MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
-                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
-
-                    // only yaw rotation but for cylinder
-                    pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
-
-                    Vector3D firstOuterRimVec, lastOuterRimVec;
-                    drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                        ref pitchMatrix, radius, minPitch, maxPitch, LimitsLineEveryDegrees,
-                        ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
-
-                    if(canDrawLabel)
-                    {
-                        Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
-                        drawInstance.LabelRender.DrawLineLabel(LabelType.PitchLimit, lastOuterRimVec, labelDir, ColorPitchLine, "Pitch limit");
-                    }
+                    pitchMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
+                    pitchMatrix.Translation = drawMatrix.Translation;
+                }
+                else
+                {
+                    pitchMatrix = drawMatrix;
                 }
 
-                // yaw limit indicator
-                {
-                    Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawModelCenter, drawMatrix);
-
-                    MatrixD yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
-
-                    Vector3D firstOuterRimVec, lastOuterRimVec;
-                    drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                        ref yawMatrix, radius, minYaw, maxYaw, LimitsLineEveryDegrees,
-                        ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
-
-                    if(canDrawLabel)
-                    {
-                        Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
-                        drawInstance.LabelRender.DrawLineLabel(LabelType.YawLimit, firstOuterRimVec, labelDir, ColorYawLine, "Yaw limit");
-                    }
-                }
-
-                // camera position indicator
-                {
-                    MatrixD turretCamMatrix = (muzzleEntity == null ? data.Turret.CameraForBlock * drawMatrix : data.Turret.CameraForSubpart * muzzleEntity.WorldMatrix);
-                    MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, turretCamMatrix.Translation, (Vector3)turretCamMatrix.Forward, 3, 0.01f, BlendType);
-                }
+                drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, dataTurret.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
             }
             #endregion Turret pitch/yaw limits
+
+            #region Camera viewpoint
+            if(isTurret)
+            {
+                MatrixD view;
+                Matrix? local = (isRealBlock ? dataTurret.Camera.RelativeSubpart : dataTurret.Camera.RelativePreview);
+                if(local != null)
+                {
+                    view = local.Value * matrixBase2;
+                }
+                else
+                {
+                    view = dataTurret.Camera.SubpartRelativePreview * drawMatrix;
+
+                    // MyLargeTurretBase.GetViewMatrix()
+                    view.Translation += view.Forward * turretDef.ForwardCameraOffset;
+                    view.Translation += view.Up * turretDef.UpCameraOffset;
+                }
+
+                MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.01f, BlendType);
+            }
+            #endregion
         }
     }
 }

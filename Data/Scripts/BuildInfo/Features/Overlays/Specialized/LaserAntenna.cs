@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -13,13 +12,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class LaserAntenna : SpecializedOverlayBase
     {
-        Vector4 ColorPitch = (Color.Red * SolidOverlayAlpha).ToVector4();
-        Vector4 ColorPitchLine = (Color.Red * LaserOverlayAlpha).ToVector4();
-        Vector4 ColorYaw = (Color.Lime * SolidOverlayAlpha).ToVector4();
-        Vector4 ColorYawLine = (Color.Lime * LaserOverlayAlpha).ToVector4();
-        const int LimitsLineEveryDegrees = RoundedQualityHigh;
-        const float LimitsLineThick = 0.03f;
-
         Vector4 ColorLaser = (new Color(255, 155, 0) * 1f).ToVector4();
         const float LaserThick = 0.02f;
         const float LaserLength = 15f;
@@ -49,66 +41,33 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             int minYaw = antennaDef.MinAzimuthDegrees;
             int maxYaw = antennaDef.MaxAzimuthDegrees;
 
+            MatrixD pitchMatrix = drawMatrix;
+            if(block?.FatBlock != null)
             {
-                MatrixD pitchMatrix = drawMatrix;
-                if(block?.FatBlock != null)
-                {
-                    MyCubeBlock internalBlock = (MyCubeBlock)block.FatBlock;
+                MyEntity subpartBase1;
+                MyEntity subpartBase2;
+                MyEntity barrelPart;
+                if(!data.GetTurretParts((MyCubeBlock)block.FatBlock, out subpartBase1, out subpartBase2, out barrelPart))
+                    return;
 
-                    // from MyLaserAntenna.OnModelChange()
-                    MyEntitySubpart subpartYaw = internalBlock.Subparts?.GetValueOrDefault("LaserComTurret", null);
-                    MyEntitySubpart subpartPitch = subpartYaw?.Subparts?.GetValueOrDefault("LaserCom", null);
+                // HACK: grid matrix because subpart is parented to grid, see MyLaserAntenna.SetParent()
+                pitchMatrix = subpartBase2.PositionComp.LocalMatrixRef * block.CubeGrid.WorldMatrix;
+                pitchMatrix.Translation = drawMatrix.Translation;
+            }
 
-                    if(subpartPitch != null)
-                    {
-                        // NOTE: grid matrix because subpart is parented to grid, see MyLaserAntenna.SetParent()
-                        pitchMatrix = subpartPitch.PositionComp.LocalMatrixRef * internalBlock.CubeGrid.WorldMatrix;
-                        pitchMatrix.Translation = drawMatrix.Translation;
-                    }
-                }
+            drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, data.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
 
-                // only yaw rotation
+            // laser visualization
+            {
                 MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
-                Vector3D rotationPivot = Vector3D.Transform(data.Turret.PitchLocalPos, m);
+                Vector3D rotationPivot = Vector3D.Transform(data.TurretInfo.PitchLocalPos, m);
 
-                // laser visualization
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLaser, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, BlendType);
 
                 if(canDrawLabel)
                 {
                     Vector3D labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
                     drawInstance.LabelRender.DrawLineLabel(LabelType.Laser, labelPos, pitchMatrix.Up, ColorLaser, "Laser");
-                }
-
-                // only yaw rotation but for cylinder
-                pitchMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
-
-                Vector3D firstOuterRimVec, lastOuterRimVec;
-                drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                    ref pitchMatrix, radius, minPitch, maxPitch, LimitsLineEveryDegrees,
-                    ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
-
-                if(canDrawLabel)
-                {
-                    Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
-                    drawInstance.LabelRender.DrawLineLabel(LabelType.PitchLimit, lastOuterRimVec, labelDir, ColorPitchLine, "Pitch limit");
-                }
-            }
-
-            {
-                Vector3D rotationPivot = Vector3D.Transform(data.Turret.YawLocalPos, drawMatrix);
-
-                MatrixD yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
-
-                Vector3D firstOuterRimVec, lastOuterRimVec;
-                drawInstance.DrawTurretAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
-                    ref yawMatrix, radius, minYaw, maxYaw, LimitsLineEveryDegrees,
-                    ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LimitsLineThick, BlendType);
-
-                if(canDrawLabel)
-                {
-                    Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
-                    drawInstance.LabelRender.DrawLineLabel(LabelType.YawLimit, firstOuterRimVec, labelDir, ColorYawLine, "Yaw limit");
                 }
             }
         }

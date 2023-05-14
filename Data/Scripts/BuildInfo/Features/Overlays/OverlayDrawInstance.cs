@@ -656,10 +656,60 @@ namespace Digi.BuildInfo.Features.Overlays
             return DepthRatioF;
         }
 
-        public void DrawTurretAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
-           ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
-           Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
-           BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        public void DrawTurretLimits(ref MatrixD drawMatrix, ref MatrixD pitchMatrix, TurretInfo turretInfo,
+            float radius, int minPitch, int maxPitch, int minYaw, int maxYaw, bool canDrawLabel)
+        {
+            Color ColorPitch = (Color.Red * SpecializedOverlayBase.SolidOverlayAlpha).ToVector4();
+            Vector4 ColorPitchLine = Color.Red.ToVector4();
+            Color ColorYaw = (Color.Lime * SpecializedOverlayBase.SolidOverlayAlpha).ToVector4();
+            Vector4 ColorYawLine = Color.Lime.ToVector4();
+            const int LimitsLineEveryDegrees = SpecializedOverlayBase.RoundedQualityHigh;
+            const float LimitsLineThick = 0.03f;
+
+            // pitch limit indicator
+            {
+                // only yaw rotation
+                MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
+                Vector3D rotationPivot = Vector3D.Transform(turretInfo.PitchLocalPos, m);
+
+                // only yaw rotation but for cylinder
+                MatrixD yawOnlyMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Down, pitchMatrix.Left);
+
+                Vector3D firstOuterRimVec, lastOuterRimVec;
+                DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                    ref yawOnlyMatrix, radius, minPitch, maxPitch, LimitsLineEveryDegrees,
+                    ColorPitch, ColorPitchLine, MaterialSquare, MaterialLaser, LimitsLineThick, SpecializedOverlayBase.BlendType);
+
+                if(canDrawLabel)
+                {
+                    Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
+                    LabelRender.DrawLineLabel(LabelType.PitchLimit, lastOuterRimVec, labelDir, ColorPitchLine, "Pitch limit");
+                }
+            }
+
+            // yaw limit indicator
+            {
+                Vector3D rotationPivot = Vector3D.Transform(turretInfo.YawModelCenter, drawMatrix);
+
+                MatrixD yawMatrix = MatrixD.CreateWorld(rotationPivot, drawMatrix.Right, drawMatrix.Down);
+
+                Vector3D firstOuterRimVec, lastOuterRimVec;
+                DrawAxisLimit(out firstOuterRimVec, out lastOuterRimVec,
+                    ref yawMatrix, radius, minYaw, maxYaw, LimitsLineEveryDegrees,
+                    ColorYaw, ColorYawLine, MaterialSquare, MaterialLaser, LimitsLineThick, SpecializedOverlayBase.BlendType);
+
+                if(canDrawLabel)
+                {
+                    Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
+                    LabelRender.DrawLineLabel(LabelType.YawLimit, firstOuterRimVec, labelDir, ColorYawLine, "Yaw limit");
+                }
+            }
+        }
+
+        public void DrawAxisLimit(out Vector3D firstOuterRimVec, out Vector3D lastOuterRimVec,
+            ref MatrixD worldMatrix, float radius, int startAngle, int endAngle, int lineEveryDegrees,
+            Vector4 faceColor, Vector4 lineColor, MyStringId? faceMaterial = null, MyStringId? lineMaterial = null, float lineThickness = 0.01f,
+            BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
             int wireDivRatio = (360 / lineEveryDegrees); // quality
 
