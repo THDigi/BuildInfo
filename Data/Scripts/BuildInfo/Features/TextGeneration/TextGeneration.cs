@@ -35,6 +35,7 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 // FIXME: internal info not vanishing on older cached blocks text when resetting config
 // FIXME: box size gets cached from overlay lock on or something
 // TODO: needs redesign to be more flexible and allow hotkey to show block definition info while aiming at a real one
+// TODO change color scheme to indicate default vs changed with blue vs yellow, then other colors for "HEY LOOK AT ME" ...?
 
 namespace Digi.BuildInfo.Features
 {
@@ -1850,6 +1851,25 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Overlay hints
 
+            //{
+            //    MyContainerDefinition containerDef;
+            //    if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            //    {
+            //        foreach(MyContainerDefinition.DefaultComponent compInfo in containerDef.DefaultComponents)
+            //        {
+            //            AddLine().Append($"{compInfo.BuilderType} / {compInfo.InstanceType} / {compInfo.SubtypeId}; forceCreate={compInfo.ForceCreate}");
+            //
+            //            MyStringHash subtype = compInfo.SubtypeId.GetValueOrDefault(def.Id.SubtypeId);
+            //
+            //            MyComponentDefinitionBase compBase;
+            //            if(MyComponentContainerExtension.TryGetComponentDefinition(compInfo.BuilderType, subtype, out compBase))
+            //            {
+            //                GetLine().Append($" - {compBase}");
+            //            }
+            //        }
+            //    }
+            //}
+
             EndAddedLines();
         }
         #endregion Equipped block info generation
@@ -2247,15 +2267,21 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Searchlight), Format_Searchlight);
 
-            //Add(typeof(MyObjectBuilder_HeatVentBlock), Format_HeatVent);
+            Add(typeof(MyObjectBuilder_FlightMovementBlock), Format_AIBlocks);
+            Add(typeof(MyObjectBuilder_DefensiveCombatBlock), Format_AIBlocks);
+            Add(typeof(MyObjectBuilder_OffensiveCombatBlock), Format_AIBlocks);
+            Add(typeof(MyObjectBuilder_BasicMissionBlock), Format_AIBlocks);
+            Add(typeof(MyObjectBuilder_PathRecorderBlock), Format_AIBlocks);
+
+            Add(typeof(MyObjectBuilder_EventControllerBlock), Format_EventController);
+            Add(typeof(MyObjectBuilder_EmotionControllerBlock), Format_EmotionController);
+
+            Add(typeof(MyObjectBuilder_HeatVentBlock), Format_HeatVent);
 
             Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
-            //Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
+            Add(typeof(MyObjectBuilder_ContractBlock), Format_ContractBlock);
             Add(typeof(MyObjectBuilder_StoreBlock), Format_StoreBlock);
             Add(typeof(MyObjectBuilder_VendingMachine), Format_StoreBlock);
-
-            // TODO: emotion, event and a few other new blocks, they have at least power usage.
-            //Add(typeof(MyObjectBuilder_EmotionControllerBlock), Format_EmotionController);
         }
 
         private void Add(MyObjectBuilderType blockType, TextGenerationCall call)
@@ -4619,6 +4645,9 @@ namespace Digi.BuildInfo.Features
             }
 
             // PlayerInputDivider is making player rotate it slower when manually controlling, doesn't seem relevant
+
+            bool hasSunTracker = Utils.IsEntityComponentPresent(def.Id, typeof(MyObjectBuilder_SunTrackingComponent));
+            AddLine().Color(hasSunTracker ? COLOR_NORMAL : COLOR_WARNING).Label("Can track Sun").BoolFormat(hasSunTracker);
         }
 
         private void Format_Searchlight(MyCubeBlockDefinition def)
@@ -4662,35 +4691,153 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        //private void Format_HeatVent(MyCubeBlockDefinition def)
-        //{
-        //    MyHeatVentBlockDefinition ventDef = def as MyHeatVentBlockDefinition;
-        //    if(ventDef == null)
-        //        return;
+        private void Format_AIBlocks(MyCubeBlockDefinition def)
+        {
+            MyObjectBuilder_AiBlockPowerComponentDefinition powerCompOB = null;
+            //MyObjectBuilder_SearchEnemyComponentDefinition searchCompOB = null;
+            MyTargetLockingBlockComponentDefinition tlbDef = null;
+            MyPathRecorderComponentDefinition pathRecordDef = null;
 
-        //    // TODO: stats?
+            MyContainerDefinition containerDef;
+            if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            {
+                foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
+                {
+                    MyComponentDefinitionBase compDefBase;
+                    if(!MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId.GetValueOrDefault(def.Id.SubtypeId), out compDefBase))
+                        continue;
 
-        //    /*
-        //    AddLine().Label("PowerDependency").Number(ventDef.PowerDependency);
-        //    AddLine().Label("RequiredPowerInput").Number(ventDef.RequiredPowerInput);
+                    if(tlbDef == null) // && compPointer.BuilderType == typeof(MyObjectBuilder_TargetLockingBlockComponent))
+                    {
+                        tlbDef = compDefBase as MyTargetLockingBlockComponentDefinition;
+                    }
 
-        //    //AddLine().Label("ColorMinimalPower").Color(ventDef.ColorMinimalPower).AppendRGBA(ventDef.ColorMinimalPower);
-        //    //AddLine().Label("ColorMaximalPower").Color(ventDef.ColorMaximalPower).AppendRGBA(ventDef.ColorMaximalPower);
+                    if(pathRecordDef == null)
+                    {
+                        pathRecordDef = compDefBase as MyPathRecorderComponentDefinition;
+                    }
 
-        //    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
-        //    {
-        //        MyBounds radius = ventDef.LightRadiusBounds;
-        //        MyBounds intensity = ventDef.LightIntensityBounds;
-        //        MyBounds falloff = ventDef.LightFalloffBounds;
-        //        MyBounds offset = ventDef.LightOffsetBounds;
+                    if(powerCompOB == null && compPointer.BuilderType == typeof(MyObjectBuilder_AiBlockPowerComponent))
+                    {
+                        // HACK: MyAiBlockPowerComponentDefinition is not whitelisted...
+                        powerCompOB = compDefBase.GetObjectBuilder() as MyObjectBuilder_AiBlockPowerComponentDefinition;
+                    }
 
-        //        AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
-        //        AddLine().Append("Intensity: ").RoundedNumber(intensity.Min, 2).Append(" to ").RoundedNumber(intensity.Max, 2).Separator().Append("Default: ").RoundedNumber(intensity.Default, 2);
-        //        AddLine().Append("Falloff: ").RoundedNumber(falloff.Min, 2).Append(" to ").RoundedNumber(falloff.Max, 2).Separator().Append("Default: ").RoundedNumber(falloff.Default, 2);
-        //        AddLine().Append("Offset: ").RoundedNumber(offset.Min, 2).Append(" to ").RoundedNumber(offset.Max, 2).Separator().Append("Default: ").RoundedNumber(offset.Default, 2);
-        //    }
-        //    */
-        //}
+                    //if(searchCompOB == null && compPointer.BuilderType == typeof(MyObjectBuilder_SearchEnemyComponent))
+                    //{
+                    //    // HACK: MySearchEnemyComponentDefinition is not whitelisted...
+                    //    searchCompOB = compDefBase.GetObjectBuilder() as MyObjectBuilder_SearchEnemyComponentDefinition;
+                    //}
+                }
+            }
+
+            // MyFlightMovementBlockDefinition has power stuff but they're not used
+
+            if(powerCompOB != null)
+            {
+                PowerRequired(powerCompOB.RequiredPowerInput, powerCompOB.ResourceSinkGroup);
+            }
+
+            // can't print as it's inaccurate, SearchRadius is never assigned by GetOB()
+            //if(searchCompOB != null)
+            //{
+            //    AddLine().Label("Target search radius").DistanceFormat(searchCompOB.SearchRadius);
+            //}
+
+            if(tlbDef != null)
+            {
+                AddLine().Label("Target locking - Max distance").DistanceFormat(tlbDef.FocusSearchMaxDistance);
+
+                foreach(MyCubeSize size in MyEnum<MyCubeSize>.Values)
+                {
+                    float sizeModifier = (size == MyCubeSize.Large ? tlbDef.LockingModifierLargeGrid : tlbDef.LockingModifierSmallGrid);
+                    float modifiers = (tlbDef.LockingModifierDistance * sizeModifier);
+
+                    if(modifiers == 0)
+                    {
+                        float lockTime = Hardcoded.TargetLocking_SecondsToLock(Vector3D.Zero, Vector3D.Forward * tlbDef.FocusSearchMaxDistance, size, tlbDef);
+                        AddLine().Append("| ").Append(size == MyCubeSize.Large ? "Largegrid" : "Smallgrid").Append(" lock time: ").TimeFormat(lockTime);
+                    }
+                    else
+                    {
+                        float distanceRatioForMin = tlbDef.LockingTimeMin / modifiers;
+                        float minTimeDistance = tlbDef.FocusSearchMaxDistance * distanceRatioForMin;
+
+                        float distanceRatioForMax = tlbDef.LockingTimeMax / modifiers;
+                        float maxTimeDistance = tlbDef.FocusSearchMaxDistance * distanceRatioForMax;
+
+                        AddLine().Append("| ").Append(size == MyCubeSize.Large ? "Largegrid" : "Smallgrid").Append(" - Min: ")
+                            .TimeFormat(tlbDef.LockingTimeMin).Append(" at <").DistanceFormat(minTimeDistance)
+                            .Separator().Append("Max: ").TimeFormat(tlbDef.LockingTimeMax).Append(" at >").DistanceFormat(maxTimeDistance);
+                    }
+                }
+            }
+
+            // TODO: print MyBasicMissionFollowPlayerDefinition's stuff when it gets whitelisted
+
+            if(pathRecordDef != null)
+            {
+                AddLine().Label("Max record time").TimeFormat(pathRecordDef.MaxRecordTime);
+
+                // HACK: update is a UpdateAfterSimulation100() and larger numbers skip runs, hence each being 1.66s
+                AddLine().Label("Record interval").TimeFormat(pathRecordDef.MinUpdateBetweenRecords * 100f / 60f).Append(" ~ ").TimeFormat(pathRecordDef.MaxUpdateBetweenRecords * 100f / 60f);
+
+                AddLine().Label("Distance between records").DistanceFormat(pathRecordDef.MinDistanceBetweenRecords).Append(" ~ ").DistanceFormat(pathRecordDef.MaxDistanceBetweenRecords);
+            }
+        }
+
+        private void Format_EventController(MyCubeBlockDefinition def)
+        {
+            var eventDef = def as MyEventControllerBlockDefinition;
+            if(eventDef == null)
+                return;
+
+            PowerRequired(eventDef.RequiredPowerInput, eventDef.ResourceSinkGroup);
+        }
+
+        private void Format_EmotionController(MyCubeBlockDefinition def)
+        {
+            var emoDef = def as MyEmotionControllerBlockDefinition;
+            if(emoDef == null)
+                return;
+
+            PowerRequired(emoDef.RequiredPowerInput, emoDef.ResourceSinkGroup);
+        }
+
+        private void Format_HeatVent(MyCubeBlockDefinition def)
+        {
+            MyHeatVentBlockDefinition ventDef = def as MyHeatVentBlockDefinition;
+            if(ventDef == null)
+                return;
+
+            // RequiredPowerInput is not used
+
+            PowerRequired(0, MyStringHash.NullOrEmpty, powerHardcoded: true, groupHardcoded: true);
+
+
+            // TODO: stats?
+
+            /*
+            AddLine().Label("PowerDependency").Number(ventDef.PowerDependency);
+            AddLine().Label("RequiredPowerInput").Number(ventDef.RequiredPowerInput);
+
+            //AddLine().Label("ColorMinimalPower").Color(ventDef.ColorMinimalPower).AppendRGBA(ventDef.ColorMinimalPower);
+            //AddLine().Label("ColorMaximalPower").Color(ventDef.ColorMaximalPower).AppendRGBA(ventDef.ColorMaximalPower);
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                MyBounds radius = ventDef.LightRadiusBounds;
+                MyBounds intensity = ventDef.LightIntensityBounds;
+                MyBounds falloff = ventDef.LightFalloffBounds;
+                MyBounds offset = ventDef.LightOffsetBounds;
+
+                AddLine().Append("Radius: ").DistanceFormat(radius.Min).Append(" to ").DistanceFormat(radius.Max).Separator().Append("Default: ").DistanceFormat(radius.Default);
+                AddLine().Append("Intensity: ").RoundedNumber(intensity.Min, 2).Append(" to ").RoundedNumber(intensity.Max, 2).Separator().Append("Default: ").RoundedNumber(intensity.Default, 2);
+                AddLine().Append("Falloff: ").RoundedNumber(falloff.Min, 2).Append(" to ").RoundedNumber(falloff.Max, 2).Separator().Append("Default: ").RoundedNumber(falloff.Default, 2);
+                AddLine().Append("Offset: ").RoundedNumber(offset.Min, 2).Append(" to ").RoundedNumber(offset.Max, 2).Separator().Append("Default: ").RoundedNumber(offset.Default, 2);
+            }
+            */
+        }
 
         private void Format_SafeZone(MyCubeBlockDefinition def)
         {
@@ -4725,6 +4872,11 @@ namespace Digi.BuildInfo.Features
                     InventoryConstraints(invComp.Volume, invComp.InputConstraint, invComp);
                 }
             }
+        }
+
+        private void Format_ContractBlock(MyCubeBlockDefinition def)
+        {
+            PowerRequired(0, MyStringHash.NullOrEmpty, powerHardcoded: true, groupHardcoded: true);
         }
 
         private void Format_StoreBlock(MyCubeBlockDefinition def)

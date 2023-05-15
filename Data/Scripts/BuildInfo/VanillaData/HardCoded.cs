@@ -342,6 +342,14 @@ namespace Digi.BuildInfo.VanillaData
             return list;
         }
 
+        // MyTargetLockingBlockComponent.GetTimeToLockIsSec
+        public static float TargetLocking_SecondsToLock(Vector3D shooter, Vector3D target, MyCubeSize targetSize, MyTargetLockingBlockComponentDefinition def)
+        {
+            double distanceRatio = Vector3D.Distance(shooter, target) / def.FocusSearchMaxDistance;
+            double targetSizeModifier = (targetSize == MyCubeSize.Small) ? def.LockingModifierSmallGrid : def.LockingModifierLargeGrid;
+            return (float)MathHelper.Clamp(distanceRatio * def.LockingModifierDistance * targetSizeModifier, def.LockingTimeMin, def.LockingTimeMax);
+        }
+
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
         public const float LaserAntenna_RotationSpeedMul = 1000f;
 

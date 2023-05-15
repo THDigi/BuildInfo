@@ -364,7 +364,7 @@ namespace Digi.BuildInfo.Utilities
         public static TDef GetEntityComponentFromDef<TDef>(MyDefinitionId defId, MyObjectBuilderType componentObType) where TDef : MyComponentDefinitionBase
         {
             MyContainerDefinition containerDef;
-            if(MyDefinitionManager.Static.TryGetContainerDefinition(defId, out containerDef) && containerDef.DefaultComponents != null)
+            if(MyComponentContainerExtension.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
             {
                 foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
                 {
@@ -382,6 +382,21 @@ namespace Digi.BuildInfo.Utilities
             }
 
             return null;
+        }
+
+        public static bool IsEntityComponentPresent(MyDefinitionId defId, MyObjectBuilderType componentObType)
+        {
+            MyContainerDefinition containerDef;
+            if(MyComponentContainerExtension.TryGetContainerDefinition(defId.TypeId, defId.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+            {
+                foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
+                {
+                    if(compPointer.BuilderType == componentObType)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         public static MyInventoryComponentDefinition GetInventoryFromComponent(MyDefinitionBase def) => GetEntityComponentFromDef<MyInventoryComponentDefinition>(def.Id, typeof(MyObjectBuilder_Inventory));
