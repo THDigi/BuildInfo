@@ -26,6 +26,7 @@ namespace Digi.BuildInfo.Utilities
         public readonly Dictionary<string, int> NamedSums = new Dictionary<string, int>();
         public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3
         public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
+        public readonly List<IMyPlayer> Players = new List<IMyPlayer>();
 
         //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
 

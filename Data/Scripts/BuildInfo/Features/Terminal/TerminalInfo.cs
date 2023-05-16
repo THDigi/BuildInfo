@@ -26,6 +26,11 @@ using VRage.Utils;
 using VRageMath;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
+using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
+using IMyControllableEntityInternal = Sandbox.Game.Entities.IMyControllableEntity;
+using Digi.BuildInfo.Systems;
+using CoreSystems.Api;
+using VRage.ModAPI;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
@@ -153,9 +158,13 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_LargeGatlingTurret), action);
             Add(typeof(MyObjectBuilder_LargeMissileTurret), action);
 
+            Add(typeof(MyObjectBuilder_TurretControlBlock), Format_CTC);
+
+            Add(typeof(MyObjectBuilder_Searchlight), Format_Searchlight);
+
             // nothing useful to add, it also has a huge detail info text when a projection is loaded
-            //Add(typeof(MyObjectBuilder_Projector),Format_Projector);
-            //Add(typeof(MyObjectBuilder_ProjectorBase),Format_Projector);
+            //Add(typeof(MyObjectBuilder_Projector), Format_Projector);
+            //Add(typeof(MyObjectBuilder_ProjectorBase), Format_Projector);
 
             Add(typeof(MyObjectBuilder_OreDetector), Format_OreDetector);
 
@@ -500,9 +509,10 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Current Input: <n> W
 
             // Conveyor sorters can be used as a base block for WeaponCore.
-            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            List<CoreSystemsDef.WeaponDefinition> csDefs;
+            if(Main.CoreSystemsAPIHandler.Weapons.TryGetValue(block.BlockDefinition, out csDefs))
             {
-                Format_WeaponCore(block, info);
+                Format_WeaponCore(block, info, csDefs);
                 return;
             }
 
@@ -569,14 +579,17 @@ namespace Digi.BuildInfo.Features.Terminal
             // Vanilla info in 1.189.041:
             //      (nothing)
 
-            if(Main.CoreSystemsAPIHandler.Weapons.ContainsKey(block.BlockDefinition))
+            List<CoreSystemsDef.WeaponDefinition> csDefs;
+            if(Main.CoreSystemsAPIHandler.Weapons.TryGetValue(block.BlockDefinition, out csDefs))
             {
-                Format_WeaponCore(block, info);
+                Format_WeaponCore(block, info, csDefs);
                 return;
             }
 
             info.DetailInfo_Type(block);
             info.DetailInfo_InputPower(Sink);
+
+            Suffix_ControlledBy(block, info);
 
             MyWeaponBlockDefinition weaponBlockDef = block?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
             if(weaponBlockDef == null || Inv == null)
@@ -643,8 +656,73 @@ namespace Digi.BuildInfo.Features.Terminal
             }
         }
 
-        void Format_WeaponCore(IMyTerminalBlock block, StringBuilder info)
+        void Format_WeaponCore(IMyTerminalBlock block, StringBuilder info, List<CoreSystemsDef.WeaponDefinition> csDefs)
         {
+            // TODO: test with WC first
+            /*
+            bool isControlled = false;
+            long identityId = Main.CoreSystemsAPIHandler.API.GetPlayerController(block);
+
+            info.Append("Control: ");
+
+            if(identityId == -1 || identityId == 0) // WC for some reason has -1 as no identity
+            {
+                MyTuple<bool, bool, bool, IMyEntity> targetInfo = Main.CoreSystemsAPIHandler.API.GetWeaponTarget(block);
+
+                //bool hasTarget = targetInfo.Item1;
+                //bool isTargetProjectile = targetInfo.Item2;
+                bool isManualOrPainter = targetInfo.Item3;
+
+                if(!isManualOrPainter)
+                {
+                    info.Append("<AI>");
+                    isControlled = true;
+                }
+            }
+            else
+            {
+                IMyPlayer player = Utils.GetPlayerFromIdentityId(identityId);
+                if(player != null)
+                {
+                    info.AppendMaxLength(player.DisplayName, 24);
+                    isControlled = true;
+                }
+            }
+
+            if(!isControlled)
+                info.Append("-");
+
+            info.Append('\n');
+            */
+        }
+
+        void Format_CTC(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.202.112:
+            //      Status:
+            //      <errors and stuff>
+
+            Suffix_ControlledBy(block, info);
+
+            //IMyTurretControlBlock ctc = (IMyTurretControlBlock)block;
+
+            // ctc.Target is always itself xD
+            //info.Append("Target: ");
+            //if(ctc.HasTarget && ctc.Target != null)
+            //    info.Append($"{ctc.Target.DisplayName} / {ctc.Target.GetType()} / self={ctc.Target == ctc}");
+            //else
+            //    info.Append("-");
+            //info.Append('\n');
+        }
+
+        void Format_Searchlight(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.202.112:
+            //      (nothing)
+
+            Suffix_ControlledBy(block, info);
+
+            // target inaccessible
         }
 
         void Format_Production(IMyTerminalBlock block, StringBuilder info)
@@ -851,6 +929,8 @@ namespace Digi.BuildInfo.Features.Terminal
             if(cockpit.OxygenCapacity > 0)
                 info.Append("Oxygen: ").ProportionToPercent(cockpit.OxygenFilledRatio).Append(" (").VolumeFormat(cockpit.OxygenCapacity * cockpit.OxygenFilledRatio).Append(" / ").VolumeFormat(cockpit.OxygenCapacity).Append(")\n");
 
+            Suffix_ControlledBy(block, info, "In seat: ");
+
             Suffix_ShipController(block, info);
         }
 
@@ -862,7 +942,27 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_CurrentPowerUsage(Sink);
 
+            Suffix_ControlledBy(block, info);
+
             Suffix_ShipController(block, info);
+        }
+
+        void Suffix_ControlledBy(IMyTerminalBlock block, StringBuilder info, string label = "Control: ")
+        {
+            IMyControllableEntityModAPI ctrl = block as IMyControllableEntityModAPI;
+            if(ctrl != null)
+            {
+                info.Append(label);
+
+                IMyPlayer player = MyAPIGateway.Players.GetPlayerControllingEntity(block);
+                if(player != null)
+                    info.AppendMaxLength(player.DisplayName, 24);
+                else
+                    info.Append("-");
+
+                info.Append('\n');
+                return;
+            }
         }
 
         #region ShipController extra stuff
@@ -1437,6 +1537,13 @@ namespace Digi.BuildInfo.Features.Terminal
 
             IMyLaserAntenna antenna = (IMyLaserAntenna)block;
             MyLaserAntennaDefinition def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
+
+            info.Append("Distance:");
+            if(antenna.Other != null)
+                info.DistanceFormat((float)Vector3D.Distance(antenna.GetPosition(), antenna.Other.GetPosition()));
+            else
+                info.Append("N/A");
+            info.Append('\n');
 
             info.Append("Power Usage:\n");
 

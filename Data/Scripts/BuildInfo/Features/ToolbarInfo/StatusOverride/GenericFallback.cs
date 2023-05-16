@@ -140,28 +140,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return true;
         }
 
-        readonly List<IMyPlayer> TempPlayers = new List<IMyPlayer>();
-
-        public IMyPlayer GetPlayerFromIdentityId(long identityId)
-        {
-            TempPlayers.Clear();
-            MyAPIGateway.Players.GetPlayers(TempPlayers);
-
-            IMyPlayer returnPlayer = null;
-
-            foreach(IMyPlayer player in TempPlayers)
-            {
-                if(player.IdentityId == identityId)
-                {
-                    returnPlayer = player;
-                    break;
-                }
-            }
-
-            TempPlayers.Clear();
-            return returnPlayer;
-        }
-
         bool Control(StringBuilder sb, ToolbarItem item)
         {
             {
@@ -186,7 +164,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     }
                     else
                     {
-                        IMyPlayer player = GetPlayerFromIdentityId(identityId);
+                        IMyPlayer player = Utils.GetPlayerFromIdentityId(identityId);
                         sb.Append("Control:\n");
 
                         if(player == null)

@@ -262,6 +262,27 @@ namespace Digi.BuildInfo.Utilities
                 return Math.Acos(MathHelper.Clamp(a.Dot(b) / Math.Sqrt(a.LengthSquared() * b.LengthSquared()), -1, 1));
         }
 
+        public static IMyPlayer GetPlayerFromIdentityId(long identityId)
+        {
+            List<IMyPlayer> players = BuildInfoMod.Instance.Caches.Players;
+            players.Clear();
+            MyAPIGateway.Players.GetPlayers(players);
+
+            IMyPlayer returnPlayer = null;
+
+            foreach(IMyPlayer player in players)
+            {
+                if(player.IdentityId == identityId)
+                {
+                    returnPlayer = player;
+                    break;
+                }
+            }
+
+            players.Clear();
+            return returnPlayer;
+        }
+
         /// <summary>
         /// Chat message with the sender name being colored.
         /// NOTE: this is synchronized to all players but only the intended player(s) will see it.
