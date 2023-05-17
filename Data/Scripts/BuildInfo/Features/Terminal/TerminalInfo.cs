@@ -1588,6 +1588,8 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.DetailInfo_CurrentPowerUsage(Sink);
 
+            MyInventory inv = block.GetInventory(0) as MyInventory;
+
             MyResourceSourceComponent source = Source;
             if(source != null)
             {
@@ -1602,10 +1604,9 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
 
                 MyDefinitionId? consumedItemDefId = null;
-                MyInventory inv = block.GetInventory(0) as MyInventory;
                 if(inv != null)
                 {
-                    // like in ConsumeFuel(), gas generator just grabs any non-bottle item, no point in going through definition then
+                    // HACK: like in ConsumeFuel(), gas generator just grabs any non-bottle item, no point in going through definition then
                     foreach(MyPhysicalInventoryItem item in inv.GetItems())
                     {
                         if(item.Content == null || item.Content is MyObjectBuilder_GasContainerObject)
@@ -1623,6 +1624,50 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 info.DetailInfo_OutputGasList(source);
             }
+
+            if(inv != null)
+            {
+                int bottlesFull = 0;
+                int bottlesToFill = 0;
+
+                foreach(MyPhysicalInventoryItem item in inv.GetItems())
+                {
+                    var bottleOB = item.Content as MyObjectBuilder_GasContainerObject;
+                    if(bottleOB != null)
+                    {
+                        if(bottleOB.GasLevel < 1f)
+                            bottlesToFill++;
+                        else
+                            bottlesFull++;
+                    }
+                }
+
+                info.Append("Bottles: ");
+
+                if(bottlesToFill == 0 && bottlesFull == 0)
+                {
+                    info.Append('0');
+                }
+                else
+                {
+                    if(bottlesToFill > 0)
+                    {
+                        info.Append(bottlesToFill).Append(" empty");
+                    }
+
+                    if(bottlesFull > 0)
+                    {
+                        if(bottlesToFill > 0)
+                            info.Append(", ");
+
+                        info.Append(bottlesFull).Append(" full");
+                    }
+                }
+
+                info.Append('\n');
+            }
+
+            info.DetailInfo_Inventory(Inv);
         }
 
         void Format_GasTank(IMyTerminalBlock block, StringBuilder info)
