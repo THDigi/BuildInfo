@@ -331,7 +331,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                     default:
                         if(BuildInfoMod.IsDevMod)
-                            Log.Info($"Action id '{action.Id}' has no icon"); break;
+                            Log.Info($"[DEV] Action id '{action.Id}' has no icon!"); break;
                 }
 
                 return null;
@@ -339,22 +339,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             // don't change other mod's custom icons
             if(!action.Icon.StartsWith(@"Textures\GUI\Icons\Actions\", StringComparison.OrdinalIgnoreCase))
+            {
+                if(BuildInfoMod.IsDevMod)
+                    Log.Info($"[DEV] Ignoring action id '{action.Id}' because it's got a custom icon");
+
                 return null;
+            }
 
             // emotion controller has textures as ids, so why not give the same as icon
             if(action.Id.StartsWith(@"Textures\", StringComparison.OrdinalIgnoreCase))
                 return action.Id;
-
-            #region replace by id prefix
-            if(action.Id.StartsWith("Increase"))
-                return Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds");
-
-            if(action.Id.StartsWith("Decrease"))
-                return Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.dds");
-
-            if(action.Id.StartsWith("Reset"))
-                return Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
-            #endregion
 
             #region replace by action id
             switch(action.Id)
@@ -481,22 +475,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 case "AutoPilot":
                 case "AutoPilot_On":
-                case "AutoPilot_Off":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
+                case "AutoPilot_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
 
                 case "CollisionAvoidance":
                 case "CollisionAvoidance_On":
-                case "CollisionAvoidance_Off":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\CollisionAvoidance.dds");
+                case "CollisionAvoidance_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\CollisionAvoidance.dds");
 
                 case "DockingMode": // called "precision mode" ingame
                 case "DockingMode_On":
-                case "DockingMode_Off":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\Attach.dds"); // TODO needs better icon
+                case "DockingMode_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\Dock.dds");
 
                 case "MainCockpit":
-                case "MainRemoteControl":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\CharacterHelmet.dds");
+                case "MainRemoteControl": return Utils.GetModFullPath(@"Textures\ActionIcons\Favorite.dds");
 
                 case "HorizonIndicator": return Utils.GetModFullPath(@"Textures\ActionIcons\HorizonIndicator.dds");
 
@@ -531,23 +521,21 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "KeepProjection": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds");
                 case "SpawnProjection": return Utils.GetModFullPath(@"Textures\ActionIcons\Paste.dds");
 
-                case "PreserveAspectRatio": return Utils.GetModFullPath(@"Textures\ActionIcons\AspectRatio.dds");
-
                 // event controller
-                case "ANDCheckbox": return Utils.GetModFullPath(@"Textures\ActionIcons\Detach.dds"); // TODO: custom icon showing: &&  ?
+                case "ANDCheckbox": return Utils.GetModFullPath(@"Textures\ActionIcons\AND.dds");
 
                 // cockpit (RC?, other blocks?)
-                case "TargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds"); // TODO: custom icon?
+                case "TargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetLock.dds");
 
                 // turrets
-                case "EnableTargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds"); // TODO: custom icon?
+                case "EnableTargetLocking": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetLock.dds");
 
                 // flight movement
-                case "AlignToGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\HorizonIndicator.dds"); // TODO: custom icon?
+                case "AlignToGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\Gravity.dds");
 
                 // basic mission
-                case "SetCurrentPositionHome": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds"); // TODO: custom icon?
-                case "Wander": return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds"); // TODO: custom icon?
+                case "SetCurrentPositionHome": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds");
+                case "Wander": return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds");
                 case "FollowMe": return Utils.GetModFullPath(@"Textures\ActionIcons\CharacterHelmet.dds");
                 case "StopFollowing": return Utils.GetModFullPath(@"Textures\ActionIcons\StopButton.dds");
 
@@ -557,11 +545,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "TargetingGroup_PowerSystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPower.dds");
                 case "TargetingGroup_CycleSubsystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetCycle.dds");
 
+                // CTC
+                case "AI":
+                case "AI_On":
+                case "AI_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\AI.dds");
+                case "SunTracking":
+                case "SunTracking_On":
+                case "SunTracking_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\Sun.dds");
+
                 // combat blocks
                 case "SetAttackMode_EnemiesOnly": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemies.dds");
                 case "SetAttackMode_EnemiesAndNeutrals": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemiesAndNeutrals.dds");
                 case "LockTarget": return Utils.GetModFullPath(@"Textures\ActionIcons\ToggleLock.dds");
-                case "CanTargetCharacters": return Utils.GetModFullPath(@"Textures\ActionIcons\CharacterHelmet.dds");
+                case "CanTargetCharacters": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetCharacters.dds");
                 case "SetTargetingGroup_Weapons": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetWeapons.dds");
                 case "SetTargetingGroup_Propulsion": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPropulsion.dds");
                 case "SetTargetingGroup_PowerSystems": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetPower.dds");
@@ -576,7 +572,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 // offensive combat
                 case "OffensiveCombatIntercept_OverrideCollisionAvoidance": return Utils.GetModFullPath(@"Textures\ActionIcons\CollisionAvoidance.dds");
-                case "OffensiveCombatCircleOrbit_CircleInPGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\AutoDeploy.dds"); // TODO: custom icon?
+                case "OffensiveCombatCircleOrbit_CircleInPGravity": return Utils.GetModFullPath(@"Textures\ActionIcons\Gravity.dds");
                 case "OffensiveCombatStayAtRange_EvasiveManeuvers": return Utils.GetModFullPath(@"Textures\ActionIcons\Rotation.dds");
 
                 case "OffensiveCombatStayAtRange_FacingFront":
@@ -597,8 +593,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Left":
                 case "Right":
                 case "Up":
-                case "Down":
-                    return Utils.GetModFullPath(@"Textures\ActionIcons\Jump.dds"); // TODO: directional icons?
+                case "Down": return Utils.GetModFullPath(@"Textures\ActionIcons\Jump.dds"); // TODO: directional icons?
 
                 // MyPathRecorderComponent
                 case "ID_PLAY_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\PlayButton.dds");
@@ -609,77 +604,114 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "ID_RECORD_CHECKBOX": return Utils.GetModFullPath(@"Textures\ActionIcons\Save.dds");
                 case "ID_ADD_WAYPOINT": return Utils.GetModFullPath(@"Textures\ActionIcons\ShowOnHud_On.dds");
 
-                // TODO: unchanged icons
+                // weapons, CTC?, combat?
+                case "TargetMeteors":
+                case "TargetMeteors_On":
+                case "TargetMeteors_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetMeteors.dds");
+                case "TargetMissiles":
+                case "TargetMissiles_On":
+                case "TargetMissiles_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetMissiles.dds");
+                case "TargetSmallShips":
+                case "TargetSmallShips_On":
+                case "TargetSmallShips_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetSmallShips.dds");
+                case "TargetLargeShips":
+                case "TargetLargeShips_On":
+                case "TargetLargeShips_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetLargeShips.dds");
+                case "TargetCharacters":
+                case "TargetCharacters_On":
+                case "TargetCharacters_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetCharacters.dds");
+                case "TargetStations":
+                case "TargetStations_On":
+                case "TargetStations_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetStations.dds");
+                case "TargetNeutrals":
+                case "TargetNeutrals_On":
+                case "TargetNeutrals_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetNeutrals.dds");
+                case "TargetFriends":
+                case "TargetFriends_On":
+                case "TargetFriends_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetFriends.dds");
+                case "TargetEnemies":
+                case "TargetEnemies_On":
+                case "TargetEnemies_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemies.dds");
+
+                // sensor
+                //case "IncreaseLeft": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirLeftIncrease.dds");
+                //case "IncreaseRight": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirRightIncrease.dds");
+                //case "IncreaseBottom": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirDownIncrease.dds");
+                //case "IncreaseTop": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirUpIncrease.dds");
+                //case "IncreaseBack": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirBackIncrease.dds");
+                //case "IncreaseFront": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirFrontIncrease.dds");
+                //case "DecreaseLeft": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirLeftDecrease.dds");
+                //case "DecreaseRight": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirRightDecrease.dds");
+                //case "DecreaseBottom": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirDownDecrease.dds");
+                //case "DecreaseTop": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirUpDecrease.dds");
+                //case "DecreaseBack": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirBackDecrease.dds");
+                //case "DecreaseFront": return Utils.GetModFullPath(@"Textures\ActionIcons\SensorDirFrontDecrease.dds");
+
+                // various blocks
+                case "IncreaseRange": return Utils.GetModFullPath(@"Textures\ActionIcons\RadiusIncrease.dds");
+                case "DecreaseRange": return Utils.GetModFullPath(@"Textures\ActionIcons\RadiusDecrease.dds");
+                case "IncreaseRadius": return Utils.GetModFullPath(@"Textures\ActionIcons\RadiusIncrease.dds");
+                case "DecreaseRadius": return Utils.GetModFullPath(@"Textures\ActionIcons\RadiusDecrease.dds");
+
+                // all blocks with LCDs
+                case "PreserveAspectRatio": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_AspectRatio.dds");
+                case "IncreaseFontSize": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_FontSize.dds");
+                case "DecreaseFontSize": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_FontSize.dds");
+                case "IncreaseTextPaddingSlider": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_TextPadding.dds");
+                case "DecreaseTextPaddingSlider": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_TextPadding.dds");
+                case "IncreaseChangeIntervalSlider": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_ImageChange.dds");
+                case "DecreaseChangeIntervalSlider": return Utils.GetModFullPath(@"Textures\ActionIcons\LCD_ImageChange.dds");
 
                 // sensor (only?)
                 case "Detect Players":
                 case "Detect Players_On":
-                case "Detect Players_Off":
+                case "Detect Players_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetCharacters.dds");
                 case "Detect Floating Objects":
                 case "Detect Floating Objects_On":
-                case "Detect Floating Objects_Off":
+                case "Detect Floating Objects_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetFloatingObjects.dds");
                 case "Detect Small Ships":
                 case "Detect Small Ships_On":
-                case "Detect Small Ships_Off":
+                case "Detect Small Ships_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetSmallShips.dds");
                 case "Detect Large Ships":
                 case "Detect Large Ships_On":
-                case "Detect Large Ships_Off":
+                case "Detect Large Ships_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetLargeShips.dds");
                 case "Detect Stations":
                 case "Detect Stations_On":
-                case "Detect Stations_Off":
+                case "Detect Stations_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetStations.dds");
                 case "Detect Subgrids":
                 case "Detect Subgrids_On":
-                case "Detect Subgrids_Off":
+                case "Detect Subgrids_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetSubgrids.dds");
                 case "Detect Asteroids":
                 case "Detect Asteroids_On":
-                case "Detect Asteroids_Off":
+                case "Detect Asteroids_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetAsteroids.dds");
                 case "Detect Owner":
                 case "Detect Owner_On":
-                case "Detect Owner_Off":
+                case "Detect Owner_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetOwner.dds");
                 case "Detect Friendly":
                 case "Detect Friendly_On":
-                case "Detect Friendly_Off":
+                case "Detect Friendly_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetFriends.dds");
                 case "Detect Neutral":
                 case "Detect Neutral_On":
-                case "Detect Neutral_Off":
+                case "Detect Neutral_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetNeutrals.dds");
                 case "Detect Enemy":
                 case "Detect Enemy_On":
-                case "Detect Enemy_Off":
-
-                // weapons, CTC?, combat?
-                case "TargetMeteors":
-                case "TargetMeteors_On":
-                case "TargetMeteors_Off":
-                case "TargetMissiles":
-                case "TargetMissiles_On":
-                case "TargetMissiles_Off":
-                case "TargetSmallShips":
-                case "TargetSmallShips_On":
-                case "TargetSmallShips_Off":
-                case "TargetLargeShips":
-                case "TargetLargeShips_On":
-                case "TargetLargeShips_Off":
-                case "TargetCharacters":
-                case "TargetCharacters_On":
-                case "TargetCharacters_Off":
-                case "TargetStations":
-                case "TargetStations_On":
-                case "TargetStations_Off":
-                case "TargetNeutrals":
-                case "TargetNeutrals_On":
-                case "TargetNeutrals_Off":
-                case "TargetFriends":
-                case "TargetFriends_On":
-                case "TargetFriends_Off":
-                case "TargetEnemies":
-                case "TargetEnemies_On":
-                case "TargetEnemies_Off":
-                    return null;
+                case "Detect Enemy_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemies.dds");
             }
             #endregion
 
             if(BuildInfoMod.IsDevMod)
-                Log.Info($"[DEV] Generic for actionId='{action.Id}'; name='{action.Name}'; icon={action.Icon}; debugSource={debugSource}");
+                Log.Info($"[DEV] Generic icon for actionId='{action.Id}'; name='{action.Name}'; icon={action.Icon}; debugSource={debugSource}");
+
+            #region replace by id prefix
+            if(action.Id.StartsWith("Increase"))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Add.dds");
+
+            if(action.Id.StartsWith("Decrease"))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Subtract.dds");
+
+            if(action.Id.StartsWith("Reset"))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\Reset.dds");
+            #endregion
 
             #region replace by icon path
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\Increase.dds", StringComparison.OrdinalIgnoreCase))
