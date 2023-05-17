@@ -393,13 +393,13 @@ namespace Digi.BuildInfo.Features.Terminal
                             const string label = "( BuildInfo )";
 
                             // TODO: colored detailed info separators
-                            //#if VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201 // HACK: backwards compatible
-                            const string separatorColor = "";
+#if VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201 // HACK: backwards compatible
+                            const string separatorColor = ""; 
                             const string separatorColorEnd = "";
-                            //#else
-                            //const string separatorColor = "{color=#55999999}"; // ARGB
-                            //const string separatorColorEnd = "{/color}";
-                            //#endif
+#else
+                            const string separatorColor = "[color=#55999999]"; // ARGB
+                            const string separatorColorEnd = "[/color]";
+#endif
 
                             info.Append(separatorColor).Append(text, 0, 3).Append(label).Append(text, 3, 3).Append(separatorColorEnd).Append('\n');
 
