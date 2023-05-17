@@ -1136,18 +1136,19 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(value, 1);
         }
 
-        public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxDigits = 2)
+        public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxLength = 2)
         {
             if(value < 0) throw new Exception("negative values not supported");
-            if(maxDigits <= 0) throw new Exception("max digits can't be 0 or lower");
-            if(maxDigits > 6) throw new Exception("max digits supported up to 6");
+            if(maxLength <= 1) throw new Exception("max digits can't be 1 or lower");
+            if(maxLength > 8) throw new Exception("max digits supported up to 8");
 
-            if(maxDigits == 1 && value > 9) return s.Append("9+");
-            if(maxDigits == 2 && value > 99) return s.Append("99+");
-            if(maxDigits == 3 && value > 999) return s.Append("999+");
-            if(maxDigits == 4 && value > 9999) return s.Append("9999+");
-            if(maxDigits == 5 && value > 99999) return s.Append("99999+");
-            if(maxDigits == 6 && value > 999999) return s.Append("999999+");
+            if(maxLength == 2 && value > 9) return s.Append("9+");
+            if(maxLength == 3 && value > 99) return s.Append("99+");
+            if(maxLength == 4 && value > 999) return s.Append("999+");
+            if(maxLength == 5 && value > 9999) return s.Append("9999+");
+            if(maxLength == 6 && value > 99999) return s.Append("99999+");
+            if(maxLength == 7 && value > 999999) return s.Append("999999+");
+            if(maxLength == 8 && value > 9999999) return s.Append("9999999+");
 
             return s.Append(value);
         }
