@@ -222,6 +222,32 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             AddSpacer(Category_Toolbar);
 
+            groupToolbarLabels.Add(new ItemButton(Category_Toolbar, "ToolbarInfo preset - Default (centered)",
+                () =>
+                {
+                    Main.Config.ToolbarStyleMode.ResetToDefault();
+                    Main.Config.ToolbarLabelsPosition.ResetToDefault();
+                    Main.Config.ToolbarLabelsOffsetForInvBar.ResetToDefault();
+                    Main.Config.ToolbarLabelsHeader.ResetToDefault();
+                    Main.Config.Save();
+                    ShowNotify($"Set ToolbarInfo box to Default (centered) preset.", 3000);
+                    RefreshAll();
+                }));
+
+            groupToolbarLabels.Add(new ItemButton(Category_Toolbar, "ToolbarInfo preset - Left Side HUD",
+                () =>
+                {
+                    Main.Config.ToolbarStyleMode.Value = (int)ToolbarStyle.SingleList;
+                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.716, -0.707);
+                    Main.Config.ToolbarLabelsOffsetForInvBar.Value = new Vector2D(0, 0);
+                    Main.Config.ToolbarLabelsHeader.Value = false;
+                    Main.Config.Save();
+                    ShowNotify($"Set ToolbarInfo box to Left Side HUD preset.", 3000);
+                    RefreshAll();
+                }));
+
+            AddSpacer(Category_Toolbar);
+
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             groupToolbarLabels.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition),
