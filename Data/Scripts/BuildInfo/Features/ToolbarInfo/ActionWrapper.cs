@@ -699,8 +699,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             }
             #endregion
 
-            if(BuildInfoMod.IsDevMod)
-                Log.Info($"[DEV] Generic icon for actionId='{action.Id}'; name='{action.Name}'; icon={action.Icon}; debugSource={debugSource}");
+            //if(BuildInfoMod.IsDevMod)
+            //    Log.Info($"[DEV] Generic icon for actionId='{action.Id}'; name='{action.Name}'; icon={action.Icon}; debugSource={debugSource}");
 
             #region replace by id prefix
             if(action.Id.StartsWith("Increase"))

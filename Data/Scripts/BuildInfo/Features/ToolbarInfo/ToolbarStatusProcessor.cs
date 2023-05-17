@@ -89,6 +89,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         Dictionary<string, StatusDel> GenericFallback = new Dictionary<string, StatusDel>();
         Dictionary<string, GroupStatusDel> GenericGroupFallback = new Dictionary<string, GroupStatusDel>();
 
+        HashSet<string> NotifiedTooLong = new HashSet<string>();
+
         StringBuilder StatusSB = new StringBuilder(MaxChars * 6);
 
         public ToolbarStatusProcessor(BuildInfoMod main) : base(main)
@@ -392,11 +394,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                 Log.Error($"[DEV] {(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has too many lines={lines.ToString()} / {MaxLines.ToString()}; \n{StatusSB.ToString().Replace("\n", "\\ ")}", Log.PRINT_MESSAGE);
                             }
 
-                            if(MyAPIGateway.Input.IsAnyShiftKeyPressed())
-                            {
-                                sb.AppendStringBuilder(StatusSB);
-                            }
-                            else
                             {
                                 int line = 0;
                                 int lineLen = 0;
@@ -409,9 +406,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                     if(c == '\n')
                                     {
                                         int spacing = MaxChars - (i - lineStartIdx);
-                                        sb.Append(AlternateSpace, spacing);
+                                        if(spacing > 0)
+                                            sb.Append(AlternateSpace, spacing);
 
-                                        for(int j = lineStartIdx; j < i; j++)
+                                        int maxAppend = Math.Min(i, lineStartIdx + MaxChars);
+                                        for(int j = lineStartIdx; j < maxAppend; j++)
                                         {
                                             sb.Append(StatusSB[j]);
                                         }
@@ -428,14 +427,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                                         lineLen++;
                                     }
 
-                                    if(lineLen == MaxChars + 1)
+                                    if(lineLen == MaxChars + 1 && NotifiedTooLong.Add(item.ActionId))
+                                    {
                                         Log.Error($"{(item.GroupId == null ? "Single" : "Group")} status for '{item.ActionId}' has >{MaxChars} chars on line {line}; full status:\n{StatusSB}", Log.PRINT_MESSAGE);
+                                    }
                                 }
 
                                 {
                                     int maxLen = StatusSB.Length;
                                     int spacing = MaxChars - (maxLen - lineStartIdx);
-                                    sb.Append(' ', spacing);
+                                    if(spacing > 0)
+                                        sb.Append(' ', spacing);
 
                                     for(int j = lineStartIdx; j < maxLen; j++)
                                     {
@@ -448,7 +450,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     catch(Exception e)
                     {
                         Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupId}\n{e.ToString()}");
-                        sb.Clear().Append("ERROR!\nSeeMod\nLog");
+                        sb.Clear().Append(IconBad).Append("ERROR!\nsee\nlog");
                         overrideStatus = true;
                     }
                 }
