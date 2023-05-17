@@ -42,6 +42,11 @@ namespace Digi.BuildInfo.Utilities
             if(relativePath.StartsWith("\\") || relativePath.StartsWith("/"))
                 relativePath = relativePath.Substring(1); // remove leading slashes
 
+            if(!MyAPIGateway.Utilities.FileExistsInModLocation(relativePath, BuildInfoMod.Instance.Session.ModContext.ModItem))
+            {
+                Log.Error($"File not found in mod folder: {relativePath}");
+            }
+
             return Path.Combine(BuildInfoMod.Instance.Session.ModContext.ModPath, relativePath);
         }
 
