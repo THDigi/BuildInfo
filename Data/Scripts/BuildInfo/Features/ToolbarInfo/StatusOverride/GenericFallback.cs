@@ -18,19 +18,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
     {
         public GenericFallback(ToolbarStatusProcessor processor) : base(processor)
         {
-            ToolbarStatusProcessor.StatusDel funcShowIn = new ToolbarStatusProcessor.StatusDel(ShowIn);
-
             processor.AddFallback(OnOff, "OnOff", "OnOff_On", "OnOff_Off");
             processor.AddGroupFallback(GroupOnOff, "OnOff", "OnOff_On", "OnOff_Off");
 
             processor.AddFallback(UseConveyor, "UseConveyor");
             processor.AddGroupFallback(GroupUseConveyor, "UseConveyor");
 
-            processor.AddFallback(funcShowIn, "ShowOnHUD", "ShowOnHUD_On", "ShowOnHUD_Off");
+            processor.AddFallback(ShowOnHUD, "ShowOnHUD", "ShowOnHUD_On", "ShowOnHUD_Off");
             // these don't seem to have actions
-            //processor.AddFallback(funcShowIn, "ShowInTerminal", "ShowInTerminal_On", "ShowInTerminal_Off");
-            //processor.AddFallback(funcShowIn, "ShowInInventory", "ShowInInventory_On", "ShowInInventory_Off");
-            //processor.AddFallback(funcShowIn, "ShowInToolbarConfig", "ShowInToolbarConfig_On", "ShowInToolbarConfig_Off");
+            //processor.AddFallback(ShowInTerminal, "ShowInTerminal", "ShowInTerminal_On", "ShowInTerminal_Off");
+            //processor.AddFallback(ShowInInventory, "ShowInInventory", "ShowInInventory_On", "ShowInInventory_Off");
+            //processor.AddFallback(ShowInToolbarConfig, "ShowInToolbarConfig", "ShowInToolbarConfig_On", "ShowInToolbarConfig_Off");
 
             processor.AddFallback(Control, "Control");
         }
@@ -66,25 +64,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int total = groupData.Blocks.Count;
 
-            if(Processor.AnimFlip)
+            if(broken > 0 && Processor.AnimFlip)
             {
-                sb.NumberCapped(on, MaxChars - 4).Append(IconBroken); //.Append("dmg");
+                sb.NumberCapped(broken, MaxChars - 4).Append(IconBroken).Append("DMG");
                 sb.Append('\n');
             }
 
             if(on == total)
             {
-                sb.Append("All").Append(IconPowerOn); //.Append("on");
+                sb.Append("All").Append(IconPowerOn).Append("ON");
             }
             else if(on == 0)
             {
-                sb.Append("All").Append(IconPowerOff); //.Append("off");
+                sb.Append("All").Append(IconPowerOff).Append("OFF");
             }
             else
             {
-                sb.NumberCapped(on, MaxChars - 3).Append(IconPowerOn); //.Append("on");
+                sb.NumberCapped(on, MaxChars - 3).Append(IconPowerOn).Append("ON");
                 sb.Append('\n');
-                sb.NumberCapped(total - on, MaxChars - 3).Append(IconPowerOff); //.Append("off");
+                sb.NumberCapped(total - on, MaxChars - 3).Append(IconPowerOff).Append("OFF");
             }
 
             return true;
@@ -119,22 +117,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(useConveyor == total)
             {
-                sb.Append("All share");
+                sb.Append("All shr");
             }
             else if(noConveyor == total)
             {
-                sb.Append("All isolate");
+                sb.Append("All iso");
             }
             else
             {
-                sb.NumberCapped(noConveyor).Append(" iso\n");
-                sb.NumberCapped(useConveyor).Append(" share"); // NOTE: this line is too wide with "99+ share", must be last.
+                sb.NumberCapped(noConveyor, MaxChars - 3).Append("iso\n");
+                sb.NumberCapped(useConveyor, MaxChars - 3).Append("shr");
             }
 
             return true;
         }
 
-        bool ShowIn(StringBuilder sb, ToolbarItem item)
+        bool ShowOnHUD(StringBuilder sb, ToolbarItem item)
         {
             sb.Append(item.Block.ShowOnHUD ? "Shown" : "Hidden");
             return true;
@@ -142,6 +140,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool Control(StringBuilder sb, ToolbarItem item)
         {
+            Processor.AppendSingleStats(sb, item.Block);
+
             {
                 CoreSystemsAPIHandler CSHandler = Processor.Main.CoreSystemsAPIHandler;
                 List<CoreSystemsDef.WeaponDefinition> csDefs;
@@ -178,6 +178,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
 
             {
+                // when controlling CTC the action status goes blank, outside of the mod's control
+
                 IMyPlayer player = MyAPIGateway.Players.GetPlayerControllingEntity(item.Block);
                 if(player != null)
                 {
@@ -197,14 +199,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 //    return true;
                 //}
 
+                if(controllable.IsAutopilotControlled)
                 {
-                    IMyRemoteControl rc = item.Block as IMyRemoteControl;
-                    if(rc != null && rc.IsAutoPilotEnabled)
-                    {
-                        sb.Append("AutoPilot");
-                        return true;
-                    }
+                    sb.Append("A-pilot");
+                    return true;
                 }
+
+                //{
+                //    IMyRemoteControl rc = item.Block as IMyRemoteControl;
+                //    if(rc != null && rc.IsAutoPilotEnabled)
+                //    {
+                //        sb.Append("A-pilot");
+                //        return true;
+                //    }
+                //}
 
                 {
                     IMyLargeTurretBase turret = item.Block as IMyLargeTurretBase;
@@ -222,7 +230,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     IMyTurretControlBlock tcb = item.Block as IMyTurretControlBlock;
                     if(tcb != null)
                     {
-                        if(tcb.AIEnabled)  // set in terminal
+                        if(tcb.IsSunTrackerEnabled)
+                        {
+                            sb.Append("Aim@Sun");
+                            return true;
+                        }
+                        else if(tcb.AIEnabled)  // set in terminal
                         {
                             sb.Append("AI");
                             return true;

@@ -89,7 +89,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else // only one in list, meaning all blocks have same mode
             {
-                sb.Append("All\n");
+                sb.Append("All:\n");
 
                 AttackModeEnum mode = (AttackModeEnum)TempUniqueInt.FirstElement();
                 switch(mode)

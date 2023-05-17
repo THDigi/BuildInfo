@@ -169,6 +169,7 @@
     <Compile Include="Features\ModelPreview\ConstructionModelPreview.cs" />
     <Compile Include="Features\Overlays\ShipOverlays.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\CombatBase.cs" />
+    <Compile Include="Features\ToolbarInfo\StatusOverride\LaserAntennas.cs" />
     <Compile Include="Features\ToolbarInfo\StatusOverride\TargetSearchShared.cs" />
     <Compile Include="Features\ModderHelp.cs" />
     <Compile Include="Features\IconOverlays.cs" />

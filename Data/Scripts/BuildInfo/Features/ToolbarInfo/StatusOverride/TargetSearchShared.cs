@@ -103,7 +103,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else // only one in set, meaning all of them are using the same value
             {
-                sb.Append("All\n");
+                sb.Append("All:\n");
 
                 string targetGroup = TempUniqueString.FirstElement();
 

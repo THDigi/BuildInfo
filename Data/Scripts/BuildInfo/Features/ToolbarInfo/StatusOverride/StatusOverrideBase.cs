@@ -12,14 +12,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         protected const int MaxChars = ToolbarStatusProcessor.MaxChars;
         protected const int MaxLines = ToolbarStatusProcessor.MaxLines;
 
-        protected const char IconPowerOn = '\ue100';
-        protected const char IconPowerOff = '\ue101';
-        protected const char IconBroken = '\ue102';
-        protected const char IconUnk3 = '\ue103';
-        protected const char IconUnk4 = '\ue104';
-        protected const char IconUnk5 = '\ue105';
-        protected const char IconUnk6 = '\ue106';
-        protected const char IconUnk7 = '\ue107';
+        protected const char IconPowerOn = ToolbarStatusProcessor.IconPowerOn;
+        protected const char IconPowerOff = ToolbarStatusProcessor.IconPowerOff;
+        // TODO better damage icon
+        protected const char IconBroken = ' '; // ToolbarStatusProcessor.IconBroken;
+        protected const char IconGood = ToolbarStatusProcessor.IconGood;
+        protected const char IconBad = ToolbarStatusProcessor.IconBad;
+        protected const char IconAlert = ToolbarStatusProcessor.IconAlert;
 
         public StatusOverrideBase(ToolbarStatusProcessor processor)
         {

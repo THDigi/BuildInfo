@@ -60,6 +60,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         public const int CustomTagPrefixSpacesNoActionIcons = 6;
         public const char AlternateSpace = '\ue13f'; // a space that's not space character to maintain line height
 
+        public const char IconPowerOn = '\ue100';
+        public const char IconPowerOff = '\ue101';
+        public const char IconBroken = '\ue102';
+        public const char IconGood = '\ue103';
+        public const char IconBad = '\ue104';
+        public const char IconAlert = '\ue105';
+        //public const char IconUnk6 = '\ue106';
+        //public const char IconUnk7 = '\ue107';
+
         public bool Enabled { get; private set; } = true;
         public string DisableReason = "(unknown)";
 
@@ -96,7 +105,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             IMyFunctionalBlock toggleable = block as IMyFunctionalBlock;
             if(toggleable != null && !toggleable.Enabled)
             {
-                sb.Append("OFF\n");
+                sb.Append(IconPowerOff).Append("OFF\n");
                 return true;
             }
 
@@ -110,12 +119,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(broken > 0)
             {
-                sb.Append("BROKEN\n");
+                sb.NumberCapped(broken, MaxChars - 4).Append(IconBroken).Append("DMG\n");
                 return true;
             }
             else if(off > 0)
             {
-                sb.Append("OFF\n");
+                sb.NumberCapped(off, MaxChars - 4).Append(IconPowerOff).Append("OFF\n");
                 return true;
             }
 
@@ -141,6 +150,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             new StatusOverride.Thrusters(this);
             new StatusOverride.TargetSearchShared(this);
             new StatusOverride.CombatBase(this);
+            new StatusOverride.LaserAntennas(this);
 
             Main.ToolbarMonitor.ToolbarPageChanged += ToolbarPageChanged;
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
