@@ -2,7 +2,10 @@
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Localization;
+using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
@@ -25,54 +28,82 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Processor.AppendSingleStats(sb, item.Block);
 
-            if(timer.IsCountingDown)
-            {
-                // HACK must parse detailedInfo because there's no getter of the current time.
-                string detailedInfo = timer.DetailedInfo;
-                if(!string.IsNullOrEmpty(detailedInfo))
-                {
-                    // expected format "<Whatever language>: 00:00:00" in first line
-
-                    int lineStartIndex = 0;
-
-                    int endLineIndex = detailedInfo.IndexOf('\n');
-                    if(endLineIndex == -1)
-                        endLineIndex = detailedInfo.Length;
-
-                    int separatorIndex = detailedInfo.IndexOf(':', lineStartIndex, endLineIndex - lineStartIndex);
-                    if(separatorIndex != -1)
-                    {
-                        separatorIndex += 2; // move past ": "
-                        separatorIndex += 3; // move past "00:"
-
-                        if(separatorIndex < endLineIndex)
-                        {
-                            bool working = timer.IsWorking;
-                            if(working && Processor.AnimFlip)
-                                sb.Append("ˇ ");
-                            else
-                                sb.Append("  ");
-
-                            sb.Append(detailedInfo, separatorIndex, endLineIndex - separatorIndex);
-
-                            if(working && Processor.AnimFlip)
-                                sb.Append(" ˇ");
-                            else
-                                sb.Append("  ");
-
-                            return true;
-                        }
-                    }
-                }
-
-                // fallback to vanilla status if detailinfo couldn't be parsed
-                return false;
-            }
-            else
+            if(!timer.IsCountingDown)
             {
                 sb.Append("Stopped");
                 return true;
             }
+
+            // HACK: must parse detailedInfo because there's no getter of the current time.
+            string detailedInfo = timer.DetailedInfo;
+            if(string.IsNullOrEmpty(detailedInfo))
+                return false;
+
+            // expected format "<Whatever language>: [Dd ]00:00:00" as in MyValueFormatter.AppendTimeExact()
+
+            string labelPrefix = MyTexts.GetString(MySpaceTexts.BlockPropertyTitle_TimerToTrigger);
+
+            int startIndex = detailedInfo.IndexOf(labelPrefix);
+            if(startIndex == -1)
+                return false;
+
+            startIndex += labelPrefix.Length; // move past the label prefix
+
+            int endIndex = detailedInfo.IndexOf('\n', startIndex);
+            if(endIndex == -1)
+                endIndex = detailedInfo.Length;
+
+            int days = 0;
+            int daysIndex = detailedInfo.IndexOf("d ", startIndex);
+            if(daysIndex != -1 && daysIndex < endIndex)
+            {
+                string daysString = detailedInfo.Substring(startIndex, daysIndex - startIndex);
+
+                if(!int.TryParse(daysString, out days))
+                {
+                    //Log.Error($"can't parse days: '{daysString}' - entire string: '{detailedInfo}'");
+                    return false;
+                }
+
+                startIndex = daysIndex + 2; // move past "d "
+            }
+
+            if(days > 0)
+                sb.NumberCapped(days, MaxChars - 4).Append("d ");
+
+            if(detailedInfo.IndexOf(':', startIndex) != startIndex + 2)
+            {
+                //Log.Error($"Unexpected format! expected ':' at 3rd char in '{detailedInfo.Substring(startIndex, endIndex - startIndex)}'; entire string: '{detailedInfo}'");
+                return false;
+            }
+
+            string hoursString = detailedInfo.Substring(startIndex, 2);
+            int hours;
+            if(!int.TryParse(hoursString, out hours))
+            {
+                //Log.Error($"can't parse hours: '{hoursString}' - entire string: '{detailedInfo}'");
+                return false;
+            }
+
+            if(days > 0 || hours > 0)
+                sb.Append(hours).Append("h\n");
+
+            startIndex += 3; // move past "00:"
+
+            bool working = timer.IsWorking;
+            if(working && Processor.AnimFlip)
+                sb.Append("ˇ");
+            else
+                sb.Append(" ");
+
+            sb.Append(detailedInfo, startIndex, endIndex - startIndex);
+
+            if(working && Processor.AnimFlip)
+                sb.Append("ˇ");
+            else
+                sb.Append(" ");
+
+            return true;
         }
 
         bool Silent(StringBuilder sb, ToolbarItem item)
@@ -117,8 +148,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
-                sb.NumberCapped(counting).Append(" run\n");
-                sb.NumberCapped(total - counting).Append(" stop");
+                sb.NumberCappedSpaced(counting, MaxChars - 3).Append("run\n");
+                sb.NumberCappedSpaced(total - counting, MaxChars - 4).Append("stop");
             }
 
             return true;
@@ -141,16 +172,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(silent == total)
             {
-                sb.Append("All silent");
+                sb.Append("All:\nSilent");
             }
             else if(silent == 0)
             {
-                sb.Append("All loud");
+                sb.Append("All:\nLoud");
             }
             else
             {
-                sb.NumberCapped(silent).Append(" silent\n");
-                sb.NumberCapped(total - silent).Append(" loud");
+                sb.NumberCappedSpaced(silent, MaxChars - 5).Append("quiet\n");
+                sb.NumberCappedSpaced(total - silent, MaxChars - 4).Append("loud");
             }
 
             return true;

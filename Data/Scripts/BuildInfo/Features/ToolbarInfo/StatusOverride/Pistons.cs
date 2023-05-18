@@ -71,8 +71,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
-                sb.NumberCapped(attached).Append(" att\n");
-                sb.NumberCapped(total - attached).Append(" det");
+                sb.NumberCappedSpaced(attached, MaxChars - 3).Append("att\n");
+                sb.NumberCappedSpaced(total - attached, MaxChars - 3).Append("det");
             }
 
             return true;

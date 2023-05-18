@@ -372,22 +372,32 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                             }
 
                             int emptyLines = MaxLines - lines;
-                            sb.Append(' ', MaxChars).Append('\n'); // align text to left
-
                             if(emptyLines > 0)
                             {
+                                int startIdx = sb.Length;
+
                                 if(Main.Config.ToolbarActionIcons.ValueEnum == Config.ActionIconsMode.Hidden)
-                                    sb.Append(' ', CustomTagPrefixSpacesNoActionIcons);
+                                    sb.Append(AlternateSpace, CustomTagPrefixSpacesNoActionIcons);
                                 else
-                                    sb.Append(' ', CustomTagPrefixSpaces);
+                                    sb.Append(AlternateSpace, CustomTagPrefixSpaces);
 
                                 sb.Append(CustomStatusTag);
 
-                                for(int i = 0; i < (MaxLines - lines); i++)
+                                int leftovers = MaxChars - (sb.Length - startIdx);
+                                if(leftovers > 0)
+                                    sb.Append(AlternateSpace, leftovers);
+
+                                sb.Append('\n');
+
+                                for(int i = 1; i < (MaxLines - lines); i++)
                                 {
                                     sb.Append(AlternateSpace).Append('\n');
                                 }
                             }
+                            //else
+                            //{
+                            //    sb.Append(AlternateSpace, MaxChars).Append('\n');
+                            //}
 
                             if(emptyLines < 0 && BuildInfoMod.IsDevMod)
                             {

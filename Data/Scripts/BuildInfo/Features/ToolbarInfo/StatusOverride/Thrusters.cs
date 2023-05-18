@@ -2,6 +2,7 @@
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
@@ -22,7 +23,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             Processor.AppendSingleStats(sb, item.Block);
 
-            sb.Append((int)(thrust.ThrustOverridePercentage * 100)).Append(" %");
+            sb.Append(MathHelper.Clamp((int)(thrust.ThrustOverridePercentage * 100), 0, 100)).Append("%");
             return true;
         }
 
@@ -53,7 +54,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(averagePercentage > 0)
                 averagePercentage /= total;
 
-            sb.Append((int)(averagePercentage * 100)).Append(" %");
+            sb.Append(MathHelper.Clamp((int)(averagePercentage * 100), 0, 100)).Append("%");
 
             return true;
         }

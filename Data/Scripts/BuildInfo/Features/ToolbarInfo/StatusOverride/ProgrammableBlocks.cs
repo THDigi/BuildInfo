@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
@@ -35,7 +34,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
-                sb.Append("ERROR:\nNotAllowed");
+                sb.Append("ERROR:\nNotAllow");
                 return true;
             }
 
@@ -73,7 +72,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 {
                     if(detailInfo.StartsWith(PBDIE_NoMain))
                     {
-                        sb.Append("ERROR:\nNo Main()");
+                        sb.Append("ERROR:\nNoMain()");
                     }
                     else if(detailInfo.StartsWith(PBDIE_NoValidCtor))
                     {
@@ -82,21 +81,21 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     else if(detailInfo.StartsWith(PBDIE_NoAssembly)
                          || detailInfo.StartsWith(PBDIE_OwnershipChanged))
                     {
-                        sb.Append("ERROR:\nCompile");
+                        sb.Append("ERROR:\nCompile!");
                     }
                     else if(detailInfo.StartsWith(PBDIE_TooComplex)
                          || detailInfo.StartsWith(PBDIE_NestedTooComplex))
                     {
-                        sb.Append("ERROR:\nTooComplex");
+                        sb.Append("ERROR:\nComplex!");
                     }
                     else if(detailInfo.StartsWith(PBDIE_Caught))
                     {
-                        sb.Append("ERROR:\nException");
+                        sb.Append("ERROR:\nError!");
                     }
                     else
                     {
                         // append this max amount of lines from PB detailedinfo/echo
-                        int allowedLines = 3;
+                        int allowedLines = ToolbarStatusProcessor.MaxLines;
                         int lineLen = 0;
 
                         for(int i = 0; i < detailInfo.Length; ++i)
@@ -119,9 +118,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                                 sb.Append(chr);
                             }
                         }
-
-                        if(sb.Length > 0 && sb[sb.Length - 1] == '\n')
-                            sb.Length -= 1; // strip last newline
                     }
                 }
                 else
@@ -137,7 +133,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
-                sb.Append("ERROR:\nNotAllowed");
+                sb.Append("ERROR:\nNotAllow");
                 return true;
             }
 
@@ -191,7 +187,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(errors == 0)
             {
-                sb.NumberCapped(echo).Append(" msg");
+                sb.NumberCappedSpaced(echo, MaxChars - 3).Append("msg");
             }
             else if(errors == total)
             {
@@ -199,8 +195,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
-                sb.NumberCapped(echo).Append(" msg\n");
-                sb.NumberCapped(errors).Append(" error");
+                sb.NumberCappedSpaced(echo, MaxChars - 3).Append("msg\n");
+                sb.NumberCappedSpaced(errors, MaxChars - 4).Append(IconBad).Append("err");
             }
 
             return true;

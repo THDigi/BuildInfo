@@ -1136,7 +1136,7 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(value, 1);
         }
 
-        public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxLength = 2)
+        public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxLength)
         {
             if(value < 0) throw new Exception("negative values not supported");
             if(maxLength <= 1) throw new Exception("max digits can't be 1 or lower");
@@ -1151,6 +1151,23 @@ namespace Digi.BuildInfo.Utilities
             if(maxLength == 8 && value > 9999999) return s.Append("9999999+");
 
             return s.Append(value);
+        }
+
+        public static StringBuilder NumberCappedSpaced(this StringBuilder s, int value, int maxLength)
+        {
+            if(value < 0) throw new Exception("negative values not supported");
+            if(maxLength <= 1) throw new Exception("max digits can't be 1 or lower");
+            if(maxLength > 8) throw new Exception("max digits supported up to 8");
+
+            if(maxLength == 2 && value > 9) return s.Append("9+");
+            if(maxLength == 3 && value > 99) return s.Append("99+");
+            if(maxLength == 4 && value > 999) return s.Append("999+");
+            if(maxLength == 5 && value > 9999) return s.Append("9999+");
+            if(maxLength == 6 && value > 99999) return s.Append("99999+");
+            if(maxLength == 7 && value > 999999) return s.Append("999999+");
+            if(maxLength == 8 && value > 9999999) return s.Append("9999999+");
+
+            return s.Append(value).Append(' ');
         }
 
         public static StringBuilder AppendUpgrade(this StringBuilder s, MyUpgradeModuleInfo upgrade)

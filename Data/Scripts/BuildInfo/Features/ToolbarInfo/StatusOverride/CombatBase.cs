@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using VRage;
@@ -57,7 +58,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             switch(mode)
             {
                 case AttackModeEnum.Enemies: sb.Append("Enemies"); return true;
-                case AttackModeEnum.EnemiesAndNeutrals: sb.Append("E+Neutral"); return true;
+                case AttackModeEnum.EnemiesAndNeutrals: sb.Append("Enemy&\nNeutral"); return true;
             }
 
             return false;
@@ -94,8 +95,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 AttackModeEnum mode = (AttackModeEnum)TempUniqueInt.FirstElement();
                 switch(mode)
                 {
-                    case AttackModeEnum.Enemies: sb.Append("Enemies"); break;
-                    case AttackModeEnum.EnemiesAndNeutrals: sb.Append("E+Neutral"); break;
+                    case AttackModeEnum.Enemies: sb.Append("Enemies"); return true;
+                    case AttackModeEnum.EnemiesAndNeutrals: sb.Append("Enemy&\nNeutral"); return true;
                 }
             }
 
@@ -138,53 +139,54 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             IMyOffensiveCombatBlock oc = item.Block as IMyOffensiveCombatBlock;
             if(oc != null)
             {
-                sb.Append(GetTargetPriorityName(oc.TargetPriority));
+                AppendTargetPriorityName(sb, oc.TargetPriority);
                 return true;
             }
 
             return false;
         }
 
-        readonly HashSet<OffensiveCombatTargetPriority> TempPriority = new HashSet<OffensiveCombatTargetPriority>();
         bool GroupTargetPriority(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
             if(!groupData.GetGroupBlocks<IMyOffensiveCombatBlock>())
                 return false;
 
-            TempPriority.Clear();
+            TempUniqueInt.Clear();
 
             foreach(IMyOffensiveCombatBlock oc in groupData.Blocks)
             {
-                TempPriority.Add(oc.TargetPriority);
+                TempUniqueInt.Add((int)oc.TargetPriority);
             }
 
-            if(TempPriority.Count == 0)
+            if(TempUniqueInt.Count == 0)
             {
                 sb.Append("Unknown");
             }
-            else if(TempPriority.Count > 1)
+            else if(TempUniqueInt.Count > 1)
             {
                 sb.Append("Mixed");
             }
             else // only one in set, meaning all of them are using the same value
             {
-                sb.Append("All\n");
-                sb.Append(GetTargetPriorityName(TempPriority.FirstElement()));
+                sb.Append("All:\n");
+                AppendTargetPriorityName(sb, (OffensiveCombatTargetPriority)TempUniqueInt.FirstElement());
             }
 
             return true;
         }
 
-        static string GetTargetPriorityName(OffensiveCombatTargetPriority value)
+        static void AppendTargetPriorityName(StringBuilder sb, OffensiveCombatTargetPriority value)
         {
-            string enumName = MyEnum<OffensiveCombatTargetPriority>.GetName(value);
-            string langKey = "TargetPriority_" + enumName;
-            string translated = MyTexts.GetString(langKey);
+            //string enumName = MyEnum<OffensiveCombatTargetPriority>.GetName(value);
+            //string langKey = "TargetPriority_" + enumName;
+            //string translated = MyTexts.GetString(langKey);
 
-            if(translated == langKey)
-                return enumName;
-            else
-                return translated;
+            //if(translated == langKey)
+            //    return enumName;
+            //else
+            //    return translated;
+
+            sb.AppendMaxLength(MyEnum<OffensiveCombatTargetPriority>.GetName(value), MaxChars, addDots: false);
         }
         #endregion
     }

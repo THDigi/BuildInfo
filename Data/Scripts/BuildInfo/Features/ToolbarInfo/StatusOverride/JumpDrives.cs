@@ -4,7 +4,6 @@ using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRageMath;
 using MyJumpDriveStatus = Sandbox.ModAPI.Ingame.MyJumpDriveStatus;
@@ -42,8 +41,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 case MyJumpDriveStatus.Charging:
                 {
-                    bool recharge = jd.GetValue<bool>("Recharge");
-                    if(recharge)
+                    if(jd.Recharge)
                         AppendPercentage(sb, jd);
                     else
                         sb.Append("Stop");
@@ -76,6 +74,14 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                         //    break;
                         //}
 
+                        //double min = jd.CubeGrid.JumpSystem.GetMinJumpDistance(jd.OwnerId);
+                        //double max = jd.CubeGrid.JumpSystem.GetMaxJumpDistance(jd.OwnerId);
+                        //if(max < min)
+                        //{
+                        //    sb.Append("Short!");
+                        //    break;
+                        //}
+
                         // TODO: enable when there's a way to access all that stuff
                         //if(!IsJumpValid(userId, out MyJumpFailReason reason))
                         //{
@@ -99,17 +105,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             IMyJumpDrive jd = (IMyJumpDrive)item.Block;
 
-            bool recharge = jd.GetValue<bool>("Recharge");
-            sb.Append("Chrg:").Append(recharge ? "On" : "Off").Append('\n');
+            if(!Processor.AppendSingleStats(sb, jd))
+            {
+                AppendPercentage(sb, jd);
+                sb.Append('\n');
+            }
 
-            AppendPercentage(sb, jd);
+            sb.Append("Charge:").Append(jd.Recharge ? IconPowerOn : IconPowerOff);
             return true;
         }
 
         void AppendPercentage(StringBuilder sb, IMyJumpDrive jd)
         {
             int filledPercent = (int)((jd.CurrentStoredPower / jd.MaxStoredPower) * 100);
-            sb.Append(filledPercent).Append("% ");
+            sb.Append(filledPercent).Append("%");
 
             MyResourceSinkComponent sink = jd.Components.Get<MyResourceSinkComponent>();
             if(sink != null)
@@ -121,13 +130,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
 
                 if(input > 0)
-                    sb.Append(highFlow ? "++" : "+   ");
-                else
-                    sb.Append("     ");
+                    sb.Append(highFlow ? "++" : "+");
+                //else
+                //    sb.Append("");
             }
         }
 
-        StringBuilder tempSb = new StringBuilder(32);
         bool JumpDistance(StringBuilder sb, ToolbarItem item)
         {
             IMyJumpDrive jd = (IMyJumpDrive)item.Block;
@@ -139,38 +147,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 IMyTerminalControlSlider prop = jd.GetProperty("JumpDistance") as IMyTerminalControlSlider;
                 if(prop?.Enabled != null && !prop.Enabled.Invoke(jd))
                 {
-                    sb.Append("GPS!\n");
+                    sb.Append("GPS\n");
                 }
             }
 
-            bool addedDistance = false;
+            const float LightYear = 9.460730473E+15f;
+            const float LightSecond = 299792458.00013667f;
 
-            if(item.ActionWrapper.OriginalWriter != null)
-            {
-                // vanilla writer but with some alterations as it's easier than re-doing the entire math for jump distance.
-                tempSb.Clear();
-                item.ActionWrapper.OriginalWriter.Invoke(jd, tempSb);
+            float distance = jd.JumpDistanceMeters;
 
-                for(int i = 0; i < tempSb.Length; i++)
-                {
-                    char c = tempSb[i];
-                    if(c == '(')
-                    {
-                        tempSb[i] = '\n'; // replace starting paranthesis with newline
-                        tempSb.Length -= 1; // remove ending paranthesis
-
-                        sb.AppendStringBuilder(tempSb);
-                        addedDistance = true;
-                        break;
-                    }
-                }
-            }
-
-            if(!addedDistance)
-            {
-                float ratio = jd.GetValue<float>("JumpDistance");
-                sb.Append((int)(ratio * 100)).Append("%");
-            }
+            if(distance > LightYear)
+                sb.NumberCapped((int)(distance / LightYear), MaxChars - 2).Append("ly");
+            else if(distance > LightSecond)
+                sb.NumberCapped((int)(distance / LightSecond), MaxChars - 2).Append("ls");
+            else if(distance > 999)
+                sb.NumberCapped((int)(distance / 1000), MaxChars - 2).Append("km");
+            else
+                sb.NumberCapped((int)distance, MaxChars - 1).Append("m");
 
             return true;
         }
@@ -222,9 +215,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 averageFilled *= 100;
             }
 
-            float averageInput = 0;
-            if(input > 0)
-                averageInput = input / total;
+            //float averageInput = 0;
+            //if(input > 0)
+            //    averageInput = input / total;
 
             if(ready == total)
                 sb.Append("Ready\n");
@@ -233,15 +226,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             else
                 sb.Append("(Mixed)\n");
 
-            sb.Append((int)averageFilled).Append("% ");
+            sb.Append(MathHelper.Clamp((int)averageFilled, 0, 100)).Append("%");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
             bool highFlow = (input > (maxInput * RatioOfMaxForDoubleArrows));
 
             if(input > 0)
-                sb.Append(highFlow ? "++" : "+   ");
-            else
-                sb.Append("     ");
+                sb.Append(highFlow ? "++" : "+");
+            //else
+            //    sb.Append("  ");
 
             return true;
         }

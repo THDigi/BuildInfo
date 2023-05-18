@@ -82,7 +82,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 sb.NumberCapped(on, MaxChars - 3).Append(IconPowerOn).Append("ON");
                 sb.Append('\n');
-                sb.NumberCapped(total - on, MaxChars - 3).Append(IconPowerOff).Append("OFF");
+                sb.NumberCapped(total - on, MaxChars - 4).Append(IconPowerOff).Append("OFF");
             }
 
             return true;

@@ -4,8 +4,6 @@ using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
 
@@ -44,8 +42,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             switch(parachute.Status)
             {
-                case DoorStatus.Opening: sb.Append("Deploying..."); break;
-                case DoorStatus.Closing: sb.Append("Closing..."); break;
+                case DoorStatus.Opening: sb.Append("Opening"); break;
+                case DoorStatus.Closing: sb.Append("Closing"); break;
                 case DoorStatus.Open: sb.Append("Deployed"); break;
                 case DoorStatus.Closed: sb.Append("Ready"); break;
                 default: return false;
@@ -57,20 +55,19 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         bool AutoDeploy(StringBuilder sb, ToolbarItem item)
         {
             IMyParachute parachute = (IMyParachute)item.Block;
-            bool autoDeploy = parachute.GetValue<bool>("AutoDeploy"); // HACK: no interface members for this
 
-            if(autoDeploy)
+            if(parachute.AutoDeploy)
             {
                 if(!Processor.AppendSingleStats(sb, item.Block))
                     sb.Append("Auto\n");
 
-                float deployHeight = parachute.GetValue<float>("AutoDeployHeight");
-                sb.DistanceFormat(deployHeight, 1);
+                sb.DistanceFormat(parachute.AutoDeployHeight, 2);
             }
             else
             {
                 sb.Append("Manual");
             }
+
             return true;
         }
 
@@ -98,8 +95,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     MyInventory inv = parachute.GetInventory() as MyInventory;
                     if(inv != null)
                     {
-                        // HACK: block cast needed because modAPI IMyParachute implements ingame interfaces instead of modAPI ones.
-                        MyParachuteDefinition def = (MyParachuteDefinition)((IMyTerminalBlock)parachute).SlimBlock.BlockDefinition;
+                        MyParachuteDefinition def = (MyParachuteDefinition)parachute.SlimBlock.BlockDefinition;
                         float foundItems = (float)inv.GetItemAmount(def.MaterialDefinitionId);
                         if(foundItems < def.MaterialDeployCost)
                             allAmmo = false;
@@ -130,8 +126,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             }
             else
             {
-                sb.NumberCapped(open).Append(" open\n");
-                sb.NumberCapped(ready).Append(" rdy");
+                sb.NumberCappedSpaced(open, MaxChars - 4).Append("open\n");
+                sb.NumberCappedSpaced(ready, MaxChars - 3).Append("rdy");
             }
 
             return true;
@@ -157,12 +153,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(!parachute.Enabled)
                     off++;
 
-                bool autoDeploy = parachute.GetValue<bool>("AutoDeploy");
-                if(autoDeploy)
+                if(parachute.AutoDeploy)
                 {
                     auto++;
 
-                    float deployHeight = parachute.GetValue<float>("AutoDeployHeight");
+                    float deployHeight = parachute.AutoDeployHeight;
                     if(deployHeight > highestDeploy)
                     {
                         if(highestDeploy != 0)
@@ -193,6 +188,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(hasSmallerDeploy)
                 sb.Append('<');
+
             sb.DistanceFormat(highestDeploy, 1);
 
             return true;

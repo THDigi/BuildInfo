@@ -2,6 +2,7 @@
 using System.Text;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
+using VRageMath;
 using ChargeMode = Sandbox.ModAPI.Ingame.ChargeMode;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -32,8 +33,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             sb.Append("\n");
 
-            int filledPercent = (int)((battery.CurrentStoredPower / battery.MaxStoredPower) * 100);
-            sb.Append(filledPercent).Append("% ");
+            int filledPercent = MathHelper.Clamp((int)((battery.CurrentStoredPower / battery.MaxStoredPower) * 100), 0, 100);
+
+            sb.Append(filledPercent).Append("%");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
 
@@ -45,11 +47,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 highFlow = (Math.Abs(powerFlow) > battery.MaxOutput * RatioOfMaxForDoubleArrows);
 
             if(powerFlow > 0)
-                sb.Append(highFlow ? "++" : "+   ");
+                sb.Append(highFlow ? "++" : "+");
             else if(powerFlow < 0)
-                sb.Append(highFlow ? "--" : "-   ");
-            else
-                sb.Append("     ");
+                sb.Append(highFlow ? "--" : "-");
+            //else
+            //    sb.Append("  ");
 
             return true;
         }
@@ -111,7 +113,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 averageFilled *= 100;
             }
 
-            sb.Append((int)averageFilled).Append("% ");
+            sb.Append(MathHelper.Clamp((int)averageFilled, 0, 100)).Append("%");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
 
@@ -125,11 +127,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 highFlow = (Math.Abs(averageFlow) > maxOutput * RatioOfMaxForDoubleArrows);
 
             if(averageFlow > 0)
-                sb.Append(highFlow ? "++" : "+   ");
+                sb.Append(highFlow ? "++" : "+");
             else if(averageFlow < 0)
-                sb.Append(highFlow ? "--" : "-   ");
-            else
-                sb.Append("     ");
+                sb.Append(highFlow ? "--" : "-");
+            //else
+            //    sb.Append("  ");
 
             return true;
         }

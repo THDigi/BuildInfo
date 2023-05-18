@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
+using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using VRageMath;
 using DoorStatus = Sandbox.ModAPI.Ingame.DoorStatus;
@@ -40,20 +41,22 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 case DoorStatus.Opening:
                 {
                     float ratio = MathHelper.Clamp(door.OpenRatio, 0f, 1f);
-                    sb.Append("Opening\n").Append((int)(ratio * 100)).Append("%");
+                    sb.Append("Opening\n");
+                    sb.Append((int)(ratio * 100)).Append('%');
                     break;
                 }
 
                 case DoorStatus.Closing:
                 {
                     float ratio = 1f - MathHelper.Clamp(door.OpenRatio, 0f, 1f);
-                    sb.Append("Closing\n").Append((int)(ratio * 100)).Append("%");
+                    sb.Append("Closing\n");
+                    sb.Append((int)(ratio * 100)).Append('%');
                     break;
                 }
 
                 case DoorStatus.Open: sb.Append("Open"); break;
                 case DoorStatus.Closed: sb.Append("Closed"); break;
-                default: return false;
+                default: sb.AppendMaxLength(MyEnum<DoorStatus>.GetName(door.Status), MaxChars, addDots: false); break;
             }
 
             return true;
@@ -102,52 +105,46 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             int doors = groupData.Blocks.Count;
             int moving = (closing + opening);
-            bool tooMany = (doors > 99);
 
             if(moving == 0)
             {
                 if(closed > 0 && open > 0)
                 {
-                    sb.NumberCapped(open).Append(" open\n");
-                    sb.NumberCapped(closed).Append(" closed");
+                    sb.NumberCapped(open, MaxChars - 4).Append("open\n");
+                    sb.NumberCapped(closed, MaxChars - 5).Append("close");
                     return true;
                 }
                 else if(open > 0)
                 {
-                    sb.Append("All open");
+                    sb.Append("All:\nopen");
                     return true;
                 }
                 else if(closed > 0)
                 {
-                    sb.Append("All closed");
+                    sb.Append("All:\nclosed");
                     return true;
                 }
             }
-            else if(moving > 0)
+            else
             {
                 averageOpenRatio /= moving;
 
                 if(closing == 0 && opening > 0)
                 {
-                    sb.Append("Opening\n").Append((int)(averageOpenRatio * 100)).Append("%");
+                    sb.Append("Opening\n");
+                    sb.Append((int)(averageOpenRatio * 100)).Append('%');
                     return true;
                 }
                 else if(opening == 0 && closing > 0)
                 {
-                    sb.Append('\n').Append("Closing\n").Append((int)((1 - averageOpenRatio) * 100)).Append("%");
+                    sb.Append("Closing\n");
+                    sb.Append((int)((1 - averageOpenRatio) * 100)).Append('%');
                     return true;
                 }
             }
 
-            if(tooMany)
-            {
-                sb.Append("(Mixed)");
-            }
-            else
-            {
-                sb.Append(opening).Append("/").Append(opening + open).Append(" o\n");
-                sb.Append(closing).Append("/").Append(closing + closed).Append(" c");
-            }
+            sb.NumberCapped(opening, 3).Append('/').NumberCappedSpaced(opening + open, 3).Append("o\n");
+            sb.NumberCapped(closing, 3).Append('/').NumberCappedSpaced(closing + closed, 3).Append("c");
 
             return true;
         }

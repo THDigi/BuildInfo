@@ -3,6 +3,7 @@ using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
+using VRage.Library.Utils;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
@@ -27,8 +28,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             switch(connector.Status)
             {
                 case MyShipConnectorStatus.Connected: sb.Append("Locked"); break;
-                case MyShipConnectorStatus.Connectable: sb.Append("Proximity"); break;
+                case MyShipConnectorStatus.Connectable: sb.Append("Proxy"); break;
                 case MyShipConnectorStatus.Unconnected: sb.Append("Unlocked"); break;
+                default: sb.AppendMaxLength(MyEnum<MyShipConnectorStatus>.GetName(connector.Status), MaxChars, addDots: false); break;
             }
 
             return true;
@@ -80,23 +82,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             else
             {
                 if(connected > 0)
-                    sb.NumberCapped(connected).Append(" lock");
+                    sb.NumberCapped(connected, MaxChars - 4).Append("lock\n");
 
                 if(ready > 0)
-                {
-                    if(connected > 0)
-                        sb.Append('\n');
-
-                    sb.NumberCapped(ready).Append(" prox");
-                }
+                    sb.NumberCapped(ready, MaxChars - 4).Append("prox\n");
 
                 if(disconnected > 0)
-                {
-                    if(ready > 0 || connected > 0)
-                        sb.Append('\n');
+                    sb.NumberCapped(disconnected, MaxChars - 4).Append("unlk\n");
 
-                    sb.NumberCapped(disconnected).Append(" unlk");
-                }
+                sb.TrimEndWhitespace();
             }
 
             return true;

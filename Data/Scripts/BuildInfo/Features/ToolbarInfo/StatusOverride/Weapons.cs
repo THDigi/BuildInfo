@@ -40,7 +40,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(item.ActionId != "ShootOnce")
                 {
                     bool shoot = item.Block.GetValue<bool>("Shoot");
-                    sb.Append(shoot ? "Fire" : "No fire").Append('\n');
+                    if(shoot)
+                        sb.Append("Fire");
+                    else
+                        sb.Append("No fire");
+                    sb.Append('\n');
                 }
             }
 
@@ -51,7 +55,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(ammo == 0)
             {
-                sb.Append("NoAmmo"); // just about fits
+                sb.Append(IconAlert).Append("NoAmmo");
                 return true;
             }
 
@@ -59,7 +63,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
             {
                 float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
-                sb.Append("Rld:").TimeFormat(seconds);
+                sb.Append("R:").TimeFormat(seconds);
             }
             else
             {
@@ -148,7 +152,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(firing == total)
                     sb.Append("All fire");
                 else
-                    sb.NumberCapped(firing, 2).Append(" fire");
+                    sb.NumberCappedSpaced(firing, MaxChars - 4).Append("fire");
 
                 sb.Append('\n');
             }
@@ -156,18 +160,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             if(noAmmo == total)
             {
                 // TODO: what if the weapon has multiple magazines and it's only out of this type but has other types in inv?
-                sb.Append("NoAmmo"); // just about fits
+                sb.Append(IconAlert).Append("NoAmmo");
                 return true;
             }
 
             if(reloading == total)
             {
-                sb.Append("Rld:").TimeFormat(minReloadTimeLeft);
+                sb.Append("R:").TimeFormat(minReloadTimeLeft);
                 return true;
             }
 
             if(reloading > 0)
-                sb.Append("Rld:").TimeFormat(minReloadTimeLeft).Append('\n');
+                sb.Append("R:").TimeFormat(minReloadTimeLeft).Append('\n');
 
             if(mostAmmo > leastAmmo)
                 sb.Append(Math.Min(leastAmmo, 99999)).Append('+');

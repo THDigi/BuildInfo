@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game.Localization;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
-using VRage;
+using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using static Digi.BuildInfo.Features.ToolbarInfo.ToolbarStatusProcessor;
 
@@ -13,74 +15,132 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
     internal class TargetSearchShared : StatusOverrideBase
     {
-        struct IdInfo
-        {
-            public readonly string Id;
-            public readonly StatusDel Func;
-            public readonly GroupStatusDel GroupFunc;
-
-            public IdInfo(string id, StatusDel func = null, GroupStatusDel groupFunc = null)
-            {
-                Id = id;
-                Func = func;
-                GroupFunc = groupFunc;
-            }
-        }
-
         public TargetSearchShared(ToolbarStatusProcessor processor) : base(processor)
         {
-            List<MyObjectBuilderType> blockTypes = new List<MyObjectBuilderType>(8)
-            {
-                typeof(MyObjectBuilder_InteriorTurret),
-                typeof(MyObjectBuilder_LargeGatlingTurret),
-                typeof(MyObjectBuilder_LargeMissileTurret),
-                typeof(MyObjectBuilder_TurretControlBlock),
-                typeof(MyObjectBuilder_Searchlight),
-                typeof(MyObjectBuilder_OffensiveCombatBlock),
-                typeof(MyObjectBuilder_DefensiveCombatBlock),
-            };
-
-            StatusDel func = CycleTarget;
-            GroupStatusDel funcGroup = GroupCycleTarget;
-
-            List<IdInfo> ids = new List<IdInfo>(8);
+            StatusDel cycleFunc = CycleTarget;
+            GroupStatusDel groupCycleFunc = GroupCycleTarget;
 
             foreach(MyTargetingGroupDefinition def in Processor.Main.Caches.OrderedTargetGroups)
             {
                 // turrets, searchlight, CTC
-                ids.Add(new IdInfo($"TargetingGroup_{def.Id.SubtypeName}", func, funcGroup));
+                RegisterFor($"TargetingGroup_{def.Id.SubtypeName}", cycleFunc, groupCycleFunc);
 
                 // used by combat blocks, MySearchEnemyComponent.CreateTerminalControls_CombatBlockTargetGroup()
-                ids.Add(new IdInfo($"SetTargetingGroup_{def.Id.SubtypeName}", func, funcGroup));
+                RegisterFor($"SetTargetingGroup_{def.Id.SubtypeName}", cycleFunc, groupCycleFunc);
             }
 
-            ids.Add(new IdInfo("TargetingGroup_CycleSubsystems", func, funcGroup));
+            RegisterFor("TargetingGroup_CycleSubsystems", cycleFunc, groupCycleFunc);
 
-            foreach(IdInfo info in ids)
-            {
-                foreach(MyObjectBuilderType type in blockTypes)
-                {
-                    if(info.Func != null)
-                        Processor.AddStatus(type, info.Func, info.Id);
-
-                    if(info.GroupFunc != null)
-                        Processor.AddGroupStatus(type, info.GroupFunc, info.Id);
-                }
-            }
+            //RegisterFor("FocusLockedTarget", FocusLocked, GroupFocusLocked);
         }
+
+        void RegisterFor(string actionId, StatusDel func, GroupStatusDel funcGroup)
+        {
+            RegisterFor(typeof(MyObjectBuilder_InteriorTurret), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_LargeGatlingTurret), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_LargeMissileTurret), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_TurretControlBlock), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_Searchlight), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_OffensiveCombatBlock), actionId, func, funcGroup);
+            RegisterFor(typeof(MyObjectBuilder_DefensiveCombatBlock), actionId, func, funcGroup);
+        }
+
+        void RegisterFor(MyObjectBuilderType obType, string actionId, StatusDel func, GroupStatusDel funcGroup)
+        {
+            if(func != null)
+                Processor.AddStatus(obType, func, actionId);
+
+            if(funcGroup != null)
+                Processor.AddGroupStatus(obType, funcGroup, actionId);
+        }
+
+        //bool FocusLocked(StringBuilder sb, ToolbarItem item)
+        //{
+        //    if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+        //        return false;
+
+        //    Processor.AppendSingleStats(sb, item.Block);
+
+        //    return AppendTargetInfo(sb);
+        //}
+
+        //bool GroupFocusLocked(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        //{
+        //    if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
+        //        return false;
+
+        //    if(!groupData.GetGroupBlocks<IMyFunctionalBlock>())
+        //        return false;
+
+        //    int off = 0;
+        //    int broken = 0;
+
+        //    foreach(IMyFunctionalBlock fb in groupData.Blocks)
+        //    {
+        //        if(!fb.IsFunctional)
+        //            broken++;
+
+        //        if(!fb.Enabled)
+        //            off++;
+        //    }
+
+        //    Processor.AppendGroupStats(sb, broken, off);
+
+        //    return AppendTargetInfo(sb);
+        //}
+
+        // TODO: needs to show turret's target
+
+        //bool AppendTargetInfo(StringBuilder sb)
+        //{
+        //    MyTargetLockingComponent targetLockComp = MyAPIGateway.Session?.Player?.Character?.Components?.Get<MyTargetLockingComponent>();
+        //    if(targetLockComp == null)
+        //        return false;
+
+        //    if(targetLockComp.Target == null)
+        //    {
+        //        sb.Append("NoTarget");
+        //    }
+        //    else if(!targetLockComp.IsTargetLocked)
+        //    {
+        //        sb.Append("Wait...");
+        //    }
+        //    else
+        //    {
+        //        long gridOwner = targetLockComp.Target.BigOwners.FirstOrDefault();
+        //        IMyFaction faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(gridOwner);
+
+        //        if(faction != null)
+        //            sb.AppendMaxLength(faction.Tag, 4, addDots: false).Append('\n');
+        //        else
+        //            sb.Append("NoAffil");
+
+        //        sb.AppendMaxLength(targetLockComp.Target.DisplayName, MaxChars, addDots: false);
+
+        //        sb.TrimEndWhitespace();
+        //    }
+
+        //    return true;
+        //}
 
         bool CycleTarget(StringBuilder sb, ToolbarItem item)
         {
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+                return false;
+
             string targetGroup = GetTargetGroupSubtypeId(item.Block);
             if(targetGroup == null)
                 return false;
 
-            sb.Append(GetTargetGroupName(targetGroup));
+            AppendTargetGroupName(sb, targetGroup);
             return true;
         }
 
         bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
+            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
+                return false;
+
             if(!groupData.GetGroupBlocks<IMyTerminalBlock>())
                 return false;
 
@@ -106,8 +166,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 sb.Append("All:\n");
 
                 string targetGroup = TempUniqueString.FirstElement();
-
-                sb.Append(GetTargetGroupName(targetGroup));
+                AppendTargetGroupName(sb, targetGroup);
             }
 
             return true;
@@ -148,21 +207,30 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             return null;
         }
 
-        string GetTargetGroupName(string subtypeId)
+        void AppendTargetGroupName(StringBuilder sb, string subtypeId)
         {
-            if(subtypeId == null)
-                return "Unknown";
-
             if(string.IsNullOrEmpty(subtypeId))
-                return MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default);
+            {
+                //sb.AppendMaxLength(MyTexts.GetString(MySpaceTexts.BlockPropertyItem_TargetOptions_Default), MaxChars, addDots: false);
+                sb.Append("Default");
+                return;
+            }
+
+            switch(subtypeId)
+            {
+                case "Weapons": sb.Append("Weapons"); return;
+                case "Propulsion": sb.Append("Thrust"); return;
+                case "PowerSystems": sb.Append("Power"); return;
+            }
 
             MyTargetingGroupDefinition def;
             if(Processor.Main.Caches.TargetGroups.TryGetValue(subtypeId, out def))
             {
-                return def.DisplayNameText;
+                sb.AppendMaxLength(def.DisplayNameText, MaxChars, addDots: false);
+                return;
             }
 
-            return subtypeId;
+            sb.AppendMaxLength(subtypeId, MaxChars, addDots: false);
         }
     }
 }
