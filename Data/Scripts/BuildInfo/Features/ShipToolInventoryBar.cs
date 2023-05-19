@@ -219,11 +219,12 @@ namespace Digi.BuildInfo.Features
             Shown = true;
 
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            float scaleFOV = Main.DrawUtils.ScaleFOV;
             Vector3D worldPos = Main.DrawUtils.TextAPIHUDtoWorld(Main.Config.ShipToolInvBarPosition.Value);
 
             Vector2D size = DefaultSize * Main.Config.ShipToolInvBarScale.Value;
-            float w = (float)(size.X * Main.DrawUtils.ScaleFOV);
-            float h = (float)(size.Y * Main.DrawUtils.ScaleFOV);
+            float w = (float)(size.X * scaleFOV);
+            float h = (float)(size.Y * scaleFOV);
 
             MyTransparentGeometry.AddBillboardOriented(BarMaterial, BgColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
             MyTransparentGeometry.AddBillboardOriented(BarIcon, IconColor, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, Vector2.Zero, blendType: BlendType);
@@ -250,7 +251,7 @@ namespace Digi.BuildInfo.Features
                 float barFill = min + ((max - min) * FilledRatio);
                 Vector2 uv = new Vector2(-(1 - barFill), 0);
 
-                worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * Main.DrawUtils.ScaleFOV);
+                worldPos += camMatrix.Left * ((1 - barFill) * size.X * 2 * scaleFOV);
 
                 MyTransparentGeometry.AddBillboardOriented(BarMaterial, color, worldPos, (Vector3)camMatrix.Left, (Vector3)camMatrix.Up, w, h, uv, blendType: BlendType);
             }

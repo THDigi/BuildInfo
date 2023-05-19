@@ -122,10 +122,11 @@ namespace Digi.BuildInfo.Features
 
                 Vector2 viewport = MyAPIGateway.Session.Camera.ViewportSize;
                 float aspectRatio = viewport.X / viewport.Y;
+                float scaleFOV = drawUtils.ScaleFOV;
 
                 const float Magic = 0.025f; // needed to match textAPI box...
-                float width = (float)DragHitbox.Width * Magic * aspectRatio * drawUtils.ScaleFOV;
-                float height = (float)DragHitbox.Height * Magic * drawUtils.ScaleFOV;
+                float width = (float)DragHitbox.Width * Magic * aspectRatio * scaleFOV;
+                float height = (float)DragHitbox.Height * Magic * scaleFOV;
 
                 MyTransparentGeometry.AddBillboardOriented(DrawMaterial, (Hovered ? DrawColorSelected : DrawColor), pos, camMatrix.Left, camMatrix.Up, width, height, Vector2.Zero, blendType: BlendTypeEnum.PostPP);
             }
