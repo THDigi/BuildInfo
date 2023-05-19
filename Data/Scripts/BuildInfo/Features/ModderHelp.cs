@@ -30,8 +30,11 @@ namespace Digi.BuildInfo.Features
             Main.GUIMonitor.ScreenAdded += GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved += GUIScreenRemoved;
 
-            CheckErrors();
-            CheckMods();
+            if(Main.Config.ModderHelpAlerts.Value)
+            {
+                CheckErrors();
+                CheckMods();
+            }
         }
 
         public override void RegisterComponent()

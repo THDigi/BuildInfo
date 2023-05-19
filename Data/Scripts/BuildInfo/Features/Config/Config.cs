@@ -110,6 +110,7 @@ namespace Digi.BuildInfo.Features.Config
         public InputCombinationSetting ShowCubeBuilderSelectionInfoBind;
         public InputCombinationSetting ConstructionModelPreviewBind;
 
+        public BoolSetting ModderHelpAlerts;
         public BoolSetting InternalInfo;
 
         public BoolSetting Debug;
@@ -660,6 +661,10 @@ namespace Digi.BuildInfo.Features.Config
             AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
                 "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
                 "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
+
+            ModderHelpAlerts = new BoolSetting(Handler, "ModderHelp: Show problems/hints", true,
+                "Toggles wether this mod looks at definitions from local mods for sneaky problems or hints." +
+                "Also if any mod has compile errors it shows F11 menu in offline mode or shows a chat message in non-offline worlds.");
 
             InternalInfo = new BoolSetting(Handler, "Internal Info", false,
                 "Enables various info useful for server admins, PB scripters and modders.",

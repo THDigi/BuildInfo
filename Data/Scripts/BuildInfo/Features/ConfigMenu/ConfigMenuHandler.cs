@@ -320,6 +320,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
             SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
             SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
+            SimpleToggle(Category_Misc, null, Main.Config.ModderHelpAlerts);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Reset, are you sure?");
             new ItemButton(Category_ConfirmReset, "<color=255,200,0>I am sure!", () =>
