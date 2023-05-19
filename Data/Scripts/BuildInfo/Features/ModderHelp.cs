@@ -166,7 +166,7 @@ namespace Digi.BuildInfo.Features
             string message = $"Local mod hint: {GetDefId(def)} from '{GetModName(def)}' {text}";
 
             Log.Info(message);
-            MyDefinitionErrors.Add(def.Context, $"[BuildInfo] {message}", TErrorSeverity.Error);
+            MyDefinitionErrors.Add(def.Context, $"[BuildInfo] {message}", TErrorSeverity.Notice);
             ModHints++;
         }
 
