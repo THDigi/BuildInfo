@@ -30,6 +30,17 @@ namespace Digi.ComponentLib
 
         void LoadMod()
         {
+            // HACK: game bug check, DS side
+            if(MyAPIGateway.Session.IsServer && !ModContext.ModPath.StartsWith(Path.GetFullPath(ModContext.ModPath)))
+            {
+                const string Error = "ERROR: Mod scripts cannot read from mod folders!\n" +
+                                     "This is a game bug with not cleaning paths properly.\n" +
+                                     "You work around it by removing trailing slashes from '-path' launch command.\n" +
+                                     "(message given by BuildInfo mod)";
+
+                MyLog.Default.WriteLineAndConsole(Error);
+            }
+
             GetOrComputeIsKilled();
 
             if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
