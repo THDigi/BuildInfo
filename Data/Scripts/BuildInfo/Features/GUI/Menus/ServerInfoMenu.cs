@@ -429,10 +429,20 @@ namespace Digi.BuildInfo.Features.GUI
             CurrentColumn.SetTooltip(0, "Mods at the top are loaded last therefore they override other ones below them." +
                                        "\nNote: in files like sandbox_config.sbc the mods order is the load order, flipped compared to the GUI and here.");
 
-            ScrollableModsList.Reset();
-            int sbIndex = sb.Length;
-
             List<MyObjectBuilder_Checkpoint.ModItem> mods = MyAPIGateway.Session.Mods;
+
+            if(mods.Count == 0)
+            {
+                sb.Append("<color=gray>(No mods)");
+
+                CurrentColumn.AddTooltip(sb, "No mods in the actual server/world, but clearly this mod is here which means it's brought in by PluginLoader.");
+
+                sb.Append('\n');
+            }
+            else
+            {
+                ScrollableModsList.Reset();
+                int sbIndex = sb.Length;
 
 #if false // for testing mods list
             {
@@ -466,49 +476,50 @@ namespace Digi.BuildInfo.Features.GUI
             }
 #endif
 
-            bool scrollMods = mods.Count > ScrollableModsList.DisplayLines;
+                bool scrollMods = mods.Count > ScrollableModsList.DisplayLines;
 
-            mods.Reverse(); // to match the GUI
+                mods.Reverse(); // to match the GUI
 
-            for(int i = 0; i < mods.Count; i++)
-            {
-                MyObjectBuilder_Checkpoint.ModItem mod = mods[i];
-
-                string tooltip = mod.FriendlyName + "\n"
-                               + (mod.PublishedFileId != 0 ? $"{mod.PublishedServiceName}:{mod.PublishedFileId}\nClick to open workshop page" : "Local mod")
-                               + (mod.IsDependency ? "\n(Mod added by another mod as dependency)" : "");
-
-                Action clickAction = null;
-
-                if(mod.PublishedFileId > 0)
+                for(int i = 0; i < mods.Count; i++)
                 {
-                    clickAction = () =>
+                    MyObjectBuilder_Checkpoint.ModItem mod = mods[i];
+
+                    string tooltip = mod.FriendlyName + "\n"
+                                   + (mod.PublishedFileId != 0 ? $"{mod.PublishedServiceName}:{mod.PublishedFileId}\nClick to open workshop page" : "Local mod")
+                                   + (mod.IsDependency ? "\n(Mod added by another mod as dependency)" : "");
+
+                    Action clickAction = null;
+
+                    if(mod.PublishedFileId > 0)
                     {
-                        // TODO: mod.io? unknown link format to reach a mod by its id...
-                        string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + mod.PublishedFileId;
-                        MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
-                        Utils.ShowColoredChatMessage("serverinfo", $"Opened overlay with {link}", FontsHandler.GreenSh);
-                    };
+                        clickAction = () =>
+                        {
+                            // TODO: mod.io? unknown link format to reach a mod by its id...
+                            string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + mod.PublishedFileId;
+                            MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
+                            Utils.ShowColoredChatMessage("serverinfo", $"Opened overlay with {link}", FontsHandler.GreenSh);
+                        };
+                    }
+
+                    int startIdx = sb.Length;
+                    sb.Append(LabelPrefix).Append(i + 1).Append(". ").AppendMaxLength(mod.FriendlyName, 32);
+
+                    if(scrollMods)
+                    {
+                        int len = sb.Length - startIdx;
+                        ScrollableModsList.Add(sb.ToString(startIdx, len), tooltip, clickAction);
+                        sb.Length -= len; // erase!
+                    }
+                    else
+                    {
+                        CurrentColumn.AddTooltip(sb, tooltip, clickAction);
+
+                        sb.Append('\n');
+                    }
                 }
 
-                int startIdx = sb.Length;
-                sb.Append(LabelPrefix).Append(i + 1).Append(". ").AppendMaxLength(mod.FriendlyName, 32);
-
-                if(scrollMods)
-                {
-                    int len = sb.Length - startIdx;
-                    ScrollableModsList.Add(sb.ToString(startIdx, len), tooltip, clickAction);
-                    sb.Length -= len; // erase!
-                }
-                else
-                {
-                    CurrentColumn.AddTooltip(sb, tooltip, clickAction);
-
-                    sb.Append('\n');
-                }
+                ScrollableModsList.Finish(CurrentColumn, sbIndex);
             }
-
-            ScrollableModsList.Finish(CurrentColumn, sbIndex);
 
             FinishColumnFormat();
         }
