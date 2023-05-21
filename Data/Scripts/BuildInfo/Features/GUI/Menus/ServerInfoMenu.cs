@@ -18,6 +18,7 @@ using VRage.Utils;
 using VRageMath;
 using VRageRender;
 using ExperimentalReason = VRage.Game.MyObjectBuilder_SessionSettings.ExperimentalReason;
+using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity on this, probably linux or such
 
 namespace Digi.BuildInfo.Features.GUI
 {
