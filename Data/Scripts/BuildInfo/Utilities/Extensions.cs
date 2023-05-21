@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -30,7 +29,10 @@ namespace Digi.BuildInfo.Utilities
 
         public static string GetNameAndId(this MyObjectBuilder_Checkpoint.ModItem modItem)
         {
-            return $"{modItem.FriendlyName} ({modItem.PublishedServiceName}:{modItem.PublishedServiceName})";
+            if(modItem.PublishedFileId == 0)
+                return $"{modItem.Name} (local)";
+            else
+                return $"{modItem.FriendlyName} ({modItem.PublishedServiceName}:{modItem.PublishedFileId})";
         }
 
         public static bool ContainsIgnoreCase(this string str, string find)
