@@ -46,6 +46,7 @@ namespace Digi.ComponentLib
         {
             try
             {
+                UnloadMod();
                 ModBase?.WorldExit();
             }
             catch(Exception e)

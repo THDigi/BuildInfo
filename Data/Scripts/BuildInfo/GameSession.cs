@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo;
+using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage;
-using VRage.Game;
 using VRage.Utils;
 
 namespace Digi.ComponentLib
@@ -18,67 +16,105 @@ namespace Digi.ComponentLib
     public partial class BuildInfo_GameSession
     {
         public static bool IsKilled = false;
-
-        static bool IsKilledComputed;
         static string CustomReason;
         static BuildInfo_GameSession Instance;
+
+        string KilledBySignal = null;
+
+        const long InterModId = InterModAPI.MOD_API_ID - 1;
 
         public BuildInfo_GameSession()
         {
             Instance = this;
+
+            // for kill signal from other versions
+            MyAPIGateway.Utilities = MyAPIUtilities.Static;
+            MyAPIGateway.Utilities.RegisterMessageHandler(InterModId, ModMessageReceived);
         }
 
         void LoadMod()
         {
-            // HACK: game bug check, DS side
+            // time's up xD
+            MyAPIGateway.Utilities.UnregisterMessageHandler(InterModId, ModMessageReceived);
+
+            // HACK: game bug check, usually on DS side
             if(MyAPIGateway.Session.IsServer && !ModContext.ModPath.StartsWith(Path.GetFullPath(ModContext.ModPath)))
             {
                 const string Error = "ERROR: Mod scripts cannot read from mod folders!\n" +
                                      "This is a game bug with not cleaning paths properly.\n" +
-                                     "You work around it by removing trailing slashes from '-path' launch command.\n" +
+                                     "You can work around it by removing trailing slashes from '-path' launch command.\n" +
                                      "(message given by BuildInfo mod)";
 
                 MyLog.Default.WriteLineAndConsole(Error);
             }
 
-            GetOrComputeIsKilled();
-
             if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
-                return; // this mod does nothing server side (with no render), no reason to allocate any more memory.
+            {
+                IsKilled = true;
+                return; // this mod does nothing else server side (with no render), no reason to allocate any more memory.
+            }
+
+            IsKilled = CheckKilled();
 
             // just making sure it's not too far
             MyCubeBuilder.IntersectionDistance = 12f;
 
             if(IsKilled)
             {
-                string text = $"No script components loaded. Mod has been killed, reason: {CustomReason ?? "Unknown"}";
+                string text = $"No script components loaded, mod intentionally killed. Reason:\n{CustomReason ?? "Unknown"}";
                 Log.Info(text);
-                MyLog.Default.WriteLine($"### {ModContext.ModName} mod NOTICE: {text}");
+                MyLog.Default.WriteLine($"### Mod {ModContext.ModItem.GetNameAndId()} NOTICE: {text}");
                 return;
             }
 
             ModBase = new BuildInfoMod(this);
         }
 
-        public static bool GetOrComputeIsKilled()
+        void UnloadMod()
         {
-            if(!IsKilledComputed)
+            MyAPIGateway.Utilities.UnregisterMessageHandler(InterModId, ModMessageReceived);
+        }
+
+        // This called by IMyHudStat classes would trigger between this constructor and LoadData().
+        public static bool GetOrComputeIsKilled(string source)
+        {
+            try
             {
-                IsKilledComputed = true;
-
-                try
+                if(Instance.KilledBySignal == null)
                 {
-                    IsKilled = CheckKilled();
+#if PLUGIN_LOADER
+                    MyAPIGateway.Utilities.SendModMessage(InterModId, Instance.ModContext.ModId);
+#else
+                    // HACK: mods brought by plugin loader have empty name
+                    if(string.IsNullOrEmpty(Instance.ModContext.ModItem.FriendlyName))
+                    {
+                        MyAPIGateway.Utilities.SendModMessage(InterModId, Instance.ModContext.ModId);
+                    }
+#endif
                 }
-                catch(Exception e)
-                {
-                    Log.Error(e);
-                }
-
-                Instance = null; // no longer needed
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
             }
 
             return IsKilled;
+        }
+
+        void ModMessageReceived(object obj)
+        {
+            try
+            {
+                string modId = obj as string;
+                if(modId != null && modId != ModContext.ModId)
+                {
+                    KilledBySignal = modId;
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         static bool CheckKilled()
@@ -90,22 +126,18 @@ namespace Digi.ComponentLib
             }
 
             if(MyAPIGateway.Utilities == null)
-                MyAPIGateway.Utilities = MyAPIUtilities.Static; // HACK: avoid MyAPIGateway.Utilities being null
-
-            if(MyAPIGateway.Utilities == null)
             {
                 CustomReason = "MyAPIGateway.Utilities is still null after manually assigning it...";
                 return true;
             }
 
-            // leverage this feature to turn off things DS-side
-            if(MyAPIGateway.Utilities.IsDedicated)
+            if(Instance.KilledBySignal != null)
+            {
+                CustomReason = $"Another BuildInfo version ({Instance.KilledBySignal}) sent a kill signal (brought in by plugin loader for example).";
                 return true;
+            }
 
             if(CheckKilledByConfig())
-                return true;
-
-            if(CheckKilledByPriority())
                 return true;
 
             return false;
@@ -144,86 +176,6 @@ namespace Digi.ComponentLib
                             CustomReason = $"'{Config.KillswitchName}' setting in '{Config.FileName}'";
                         return on;
                     }
-                }
-            }
-
-            return false;
-        }
-
-        static bool CheckKilledByPriority()
-        {
-            const string FileName = "buildinfo-priority.txt";
-
-            if(Instance?.Session?.Mods == null)
-            {
-                CustomReason = "Instance?.Session?.Mods is null :(";
-                return true;
-            }
-
-            // HACK: fallback way of finding current mod because ModContext might be null at this time
-            MyObjectBuilder_Checkpoint.ModItem? thisMod = null;
-            string scopeName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
-
-            if(Instance?.ModContext != null)
-                thisMod = Instance.ModContext.ModItem;
-
-            List<MyTuple<int, MyObjectBuilder_Checkpoint.ModItem>> biMods = new List<MyTuple<int, MyObjectBuilder_Checkpoint.ModItem>>();
-
-            foreach(MyObjectBuilder_Checkpoint.ModItem mod in Instance.Session.Mods)
-            {
-                if(!MyAPIGateway.Utilities.FileExistsInModLocation(FileName, mod))
-                    continue; // not a relevant mod
-
-                if(thisMod == null)
-                {
-                    // HACK: adding the _ separator so that it cannot be mistaken for another mod; e.g. BuildInfo_Unimportant vs BuildInfo.dev_Unimportant;
-                    string modNameTest = mod.Name + "_";
-
-                    if(scopeName.StartsWith(modNameTest))
-                        thisMod = mod;
-                }
-
-                string firstLine;
-
-                using(TextReader reader = MyAPIGateway.Utilities.ReadFileInModLocation(FileName, mod))
-                {
-                    firstLine = reader.ReadLine();
-                }
-
-                int priority;
-                if(!int.TryParse(firstLine, out priority))
-                {
-                    priority = int.MinValue;
-                    //Log.Error($"Couldn't parse {FileName} first line, not an integer. Mod: {mod.FriendlyName} ({mod.PublishedServiceName}:{mod.PublishedFileId})");
-                    //continue;
-                }
-
-                biMods.Add(MyTuple.Create(priority, mod));
-            }
-
-            if(thisMod == null)
-            {
-                CustomReason = $"thisMod == null";
-                return true;
-            }
-
-            //MyLog.Default.WriteLine($"### {thisMod.Value.GetNameAndId()}: found other buildinfo mods:");
-            //foreach(var tuple in biMods)
-            //{
-            //    MyLog.Default.WriteLine($" - {tuple.Item2.GetNameAndId()}; priority={tuple.Item1}");
-            //}
-
-            if(biMods.Count > 1)
-            {
-                // sort descending
-                biMods.Sort((a, b) => b.Item1.CompareTo(a.Item1));
-
-                MyObjectBuilder_Checkpoint.ModItem priorityMod = biMods[0].Item2;
-
-                if(thisMod.Value.Name != priorityMod.Name)
-                {
-                    CustomReason = $"a higher priority mod is present: {priorityMod.GetNameAndId()}";
-                    return true;
                 }
             }
 

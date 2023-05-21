@@ -19,7 +19,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public GridControlStat()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 Id = MyStringHash.GetOrCompute("controlled_is_grid");
         }
 

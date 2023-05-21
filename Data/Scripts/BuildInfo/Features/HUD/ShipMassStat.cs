@@ -39,7 +39,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public ShipMassStat()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 Id = MyStringHash.GetOrCompute("controlled_mass");
         }
 
@@ -136,7 +136,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public ShipIsStatic()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 Id = MyStringHash.GetOrCompute("controlled_is_static");
         }
 

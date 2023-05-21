@@ -24,16 +24,4 @@ rem Write the modinfo.sbmi for normal release workshop ID
 
 echo Generated modinfo.sbmi
 
-rem Write buildinfo-priority.txt for normal buildinfo
-
-(
-  echo 100
-  echo.
-  echo first line of this file must be a number.
-  echo when multiple buildinfo mods exist, the one with the highest number gets to run.
-  echo feature provided by this mod ^(GameSession.cs file^) not by SE.
-) > "%REPLACE_IN_PATH%\buildinfo-priority.txt"
-
-echo Generated buildinfo-priority.txt
-
 pause

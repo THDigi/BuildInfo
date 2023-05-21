@@ -48,7 +48,7 @@ namespace Digi.BuildInfo.Features.HUD
 
         public BackpackBarStat()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
             {
                 Id = MyStringHash.GetOrCompute("player_inventory_capacity");
             }

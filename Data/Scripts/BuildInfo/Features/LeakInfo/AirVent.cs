@@ -27,7 +27,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            if(BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 return;
 
             block = (IMyAirVent)Entity;

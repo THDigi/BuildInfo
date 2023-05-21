@@ -17,7 +17,7 @@ namespace Digi.BuildInfo.Features.HUD
     {
         public HydrogenBottleStat()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
             {
                 Id = MyStringHash.GetOrCompute("player_hydrogen_bottles");
                 Gas = MyResourceDistributorComponent.HydrogenId;
@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Features.HUD
     {
         public OxygenBottleStat()
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled())
+            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
             {
                 Id = MyStringHash.GetOrCompute("player_oxygen_bottles");
                 Gas = MyResourceDistributorComponent.OxygenId;
