@@ -228,6 +228,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     Main.Config.ToolbarStyleMode.ResetToDefault();
                     Main.Config.ToolbarLabelsPosition.ResetToDefault();
                     Main.Config.ToolbarLabelsOffsetForInvBar.ResetToDefault();
+                    Main.Config.ToolbarLabelsScale.ResetToDefault();
                     Main.Config.ToolbarLabelsHeader.ResetToDefault();
                     Main.Config.Save();
                     ShowNotify($"Set ToolbarInfo box to Default (centered) preset.", 3000);
@@ -238,8 +239,9 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 () =>
                 {
                     Main.Config.ToolbarStyleMode.Value = (int)ToolbarStyle.SingleList;
-                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.716, -0.707);
+                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.715, -0.7069); // DEBUG < tweak for 720p and 4k too
                     Main.Config.ToolbarLabelsOffsetForInvBar.Value = new Vector2D(0, 0);
+                    Main.Config.ToolbarLabelsScale.Value = 0.9f;
                     Main.Config.ToolbarLabelsHeader.Value = false;
                     Main.Config.Save();
                     ShowNotify($"Set ToolbarInfo box to Left Side HUD preset.", 3000);
