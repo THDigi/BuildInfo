@@ -24,12 +24,4 @@ rem Write the modinfo.sbmi for pre-release workshop ID
 
 echo Generated modinfo.sbmi
 
-rem Write buildinfo.txt for bleeding edge buildinfo
-
-(
-  echo Yep.
-) > "%REPLACE_IN_PATH%\prerelease.txt"
-
-echo Generated prerelease.txt
-
 pause

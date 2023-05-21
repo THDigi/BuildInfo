@@ -25,9 +25,7 @@ namespace Digi.BuildInfo.Features.LiveData
             if(StatorDef != null)
                 displacement -= StatorDef.RotorDisplacementInModel;
 
-            // DEBUG TODO: StatorDef.MechanicalTopInitialPlacementOffset?
-            // seems to be used by 2x2 suspension but does not seem to be necessary for this preview... odd.
-            // test 4x4 electronics panel's preview then
+            // TODO: StatorDef.MechanicalTopInitialPlacementOffset?
 
             Vector3 offset = Vector3.Zero;
             if(DummyLocalPos.LengthSquared() > 0f)

@@ -239,7 +239,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 () =>
                 {
                     Main.Config.ToolbarStyleMode.Value = (int)ToolbarStyle.SingleList;
-                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.715, -0.7069); // DEBUG < tweak for 720p and 4k too
+                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.715, -0.7069);
                     Main.Config.ToolbarLabelsOffsetForInvBar.Value = new Vector2D(0, 0);
                     Main.Config.ToolbarLabelsScale.Value = 0.9f;
                     Main.Config.ToolbarLabelsHeader.Value = false;
