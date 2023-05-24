@@ -96,6 +96,7 @@ namespace Digi.BuildInfo.Features
 
         void CheckErrors(HashSet<string> localMods)
         {
+#if false // TODO needs more testing/fixing
             #region Check cloud layer textures
             Dictionary<string, CloudLayerInfo> cloudLayerTextureMessage = new Dictionary<string, CloudLayerInfo>();
 
@@ -168,6 +169,7 @@ namespace Digi.BuildInfo.Features
                 Log.Error("Couldn't get planets from DefinitionSet O.o");
             }
             #endregion
+#endif
 
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
@@ -202,6 +204,7 @@ namespace Digi.BuildInfo.Features
                         MyDefinitionErrors.ShouldShowModErrors = true;
                 }
 
+#if false
                 // HACK MyDefinitionManager.ProcessContentFilePath() + cloudlayer stuff from above
                 string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
                 if(error.Message.StartsWith(resourceNotFoundPrefix))
@@ -217,6 +220,7 @@ namespace Digi.BuildInfo.Features
                         error.Message += $"\n{Signature}{info.Message}";
                     }
                 }
+#endif
             }
         }
 
