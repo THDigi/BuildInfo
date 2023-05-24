@@ -224,7 +224,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void CheckErrorsContinuous() // called per 3 seconds by update method
+        void CheckErrorsOnF11() // called when pressing F11 in offline world
         {
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
@@ -442,10 +442,13 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            if(tick % (Constants.TicksPerSecond * 3) != 0)
-                return;
+            if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11))
+            {
+                CheckErrorsOnF11();
+            }
 
-            CheckErrorsContinuous();
+            if(tick % Constants.TicksPerSecond != 0)
+                return;
 
             if(!FirstSpawnChecked)
             {
@@ -453,6 +456,12 @@ namespace Digi.BuildInfo.Features
                 if(character != null) // wait until first spawn
                 {
                     FirstSpawnChecked = true;
+
+                    // relevant to CheckErrorsOnF11() above
+                    if(MyAPIGateway.Session.OnlineMode != MyOnlineModeEnum.OFFLINE)
+                    {
+                        SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+                    }
 
                     if(CompileErrors)
                         Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: Other mod(s) have compile errors! See SE log for details.", FontsHandler.RedSh);
