@@ -374,6 +374,18 @@ namespace Digi.BuildInfo.Features.Terminal
                 bool addedCustomInfo = false;
                 bool header = Main.Config.TerminalDetailInfoHeader.Value;
 
+                const string separatorColor = "";
+                const string separatorColorEnd = "";
+
+                // FIXME: turned off coloring because it's extremely unreliable in that it causes auto-scroll issue
+                //#if VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201 // HACK: backwards compatible
+                // const string separatorColor = ""; 
+                // const string separatorColorEnd = "";
+                //#else
+                // const string separatorColor = "[color=#55999999]"; // ARGB
+                // const string separatorColorEnd = "[/color]";
+                //#endif
+
                 if(Main.Config.TerminalDetailInfoAdditions.Value)
                 {
                     info.EnsureCapacity(TextCharsExpected + (otherModInfo == null ? 0 : otherModInfo.Length));
@@ -390,18 +402,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                             string text = TickerText[ticker];
 
-                            const string label = "( BuildInfo )";
-
-                            // TODO: colored detailed info separators
-#if VERSION_195 || VERSION_196 || VERSION_197 || VERSION_198 || VERSION_199 || VERSION_200 || VERSION_201 // HACK: backwards compatible
-                            const string separatorColor = ""; 
-                            const string separatorColorEnd = "";
-#else
-                            const string separatorColor = "[color=#55999999]"; // ARGB
-                            const string separatorColorEnd = "[/color]";
-#endif
-
-                            info.Append(separatorColor).Append(text, 0, 3).Append(label).Append(text, 3, 3).Append(separatorColorEnd).Append('\n');
+                            info.Append(separatorColor).Append(text, 0, 3).Append("( BuildInfo )").Append(text, 3, 3).Append(separatorColorEnd).Append('\n');
 
                             info.AppendStringBuilder(tmpInfo);
 
@@ -429,7 +430,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 // if no header, add the ticker at the very end to still be able to tell when detailed info refreshes.
                 if(!header && addedCustomInfo)
                 {
-                    info.Append('\n').Append(TickerText[ticker]);
+                    info.Append('\n').Append(separatorColor).Append(TickerText[ticker]).Append(separatorColorEnd);
                 }
 
                 if(tickerUpdateAt <= Main.Tick)
