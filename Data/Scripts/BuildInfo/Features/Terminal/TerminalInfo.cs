@@ -391,6 +391,8 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.EnsureCapacity(TextCharsExpected + (otherModInfo == null ? 0 : otherModInfo.Length));
                     capacity = info.Capacity;
 
+                    string text = TickerText[ticker];
+
                     if(header)
                     {
                         tmpInfo.Clear();
@@ -400,14 +402,9 @@ namespace Digi.BuildInfo.Features.Terminal
                         {
                             addedCustomInfo = true;
 
-                            string text = TickerText[ticker];
-
                             info.Append(separatorColor).Append(text, 0, 3).Append("( BuildInfo )").Append(text, 3, 3).Append(separatorColorEnd).Append('\n');
 
                             info.AppendStringBuilder(tmpInfo);
-
-                            info.TrimEndWhitespace().Append('\n');
-                            info.Append(separatorColor).Append(text).Append(separatorColorEnd).Append('\n');
                         }
                     }
                     else
@@ -416,14 +413,15 @@ namespace Digi.BuildInfo.Features.Terminal
                         addedCustomInfo = (info.Length > 0);
                     }
 
-                    info.TrimEndWhitespace();
+                    if(addedCustomInfo)
+                    {
+                        info.TrimEndWhitespace().Append('\n');
+                        info.Append(separatorColor).Append(text).Append(separatorColorEnd);
+                    }
                 }
 
                 if(otherModInfo != null)
                 {
-                    if(addedCustomInfo)
-                        info.Append('\n');
-
                     // skip leading newlines
                     int startIdx = 0;
                     for(int i = 0; i < otherModInfo.Length; i++)
@@ -436,14 +434,18 @@ namespace Digi.BuildInfo.Features.Terminal
                         }
                     }
 
-                    info.Append(otherModInfo, startIdx, otherModInfo.Length - startIdx);
-                }
+                    if(startIdx < otherModInfo.Length)
+                    {
+                        if(addedCustomInfo)
+                        {
+                            info.Append('\n');
 
-                // if no header, add the ticker at the very end to still be able to tell when detailed info refreshes.
-                if(!header && addedCustomInfo)
-                {
-                    info.TrimEndWhitespace();
-                    info.Append('\n').Append(separatorColor).Append(TickerText[ticker]).Append(separatorColorEnd);
+                            if(!header)
+                                info.Append('\n'); // separator missing, have at least an empty line
+                        }
+
+                        info.Append(otherModInfo, startIdx, otherModInfo.Length - startIdx);
+                    }
                 }
 
                 if(tickerUpdateAt <= Main.Tick)
