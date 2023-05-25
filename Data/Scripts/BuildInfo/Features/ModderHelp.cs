@@ -306,6 +306,8 @@ namespace Digi.BuildInfo.Features
             if(f11MenuAccessible)
                 cloudLayerInfo = GrabCloudLayers();
 
+            string phase6error = "MOD PARTIALLY SKIPPED, LOADED ONLY 6/6 PHASES, Following Error occured:" + Environment.NewLine + "Object reference not set to an instance of an object.";
+
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
             for(int i = 0; i < errors.Count; i++)
@@ -389,6 +391,16 @@ namespace Digi.BuildInfo.Features
                     {
                         error.Message += $"\n{Signature}Very vague one indeed, it means you have a <TypeId> that is made up, you have to use an existing one.";
                     }
+
+                    // MyDefinitionManager.FailModLoading(), specifically a NRE
+                    if(error.Message.StartsWith(phase6error))
+                    {
+                        error.Message += $"\n{Signature}Potential causes:"
+                                      + "\n - Mod does not have a Data folder, common for mod.io if zipping mod folder instead of mod contents;"
+                                      + "\n - Local mod folder was renamed;"
+                                      + "\n - Download corruption (fix: exit game, un-sub, wait for steam to 'download update', re-sub);"
+                                      + "\n...and other unknown reasons.";
+                    }
                 }
             }
         }
@@ -441,6 +453,8 @@ namespace Digi.BuildInfo.Features
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
 
+            bool includePublishedMods = false; // = BuildInfoMod.IsDevMod;
+
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 if(def == null)
@@ -455,7 +469,7 @@ namespace Digi.BuildInfo.Features
                     continue;
                 }
 
-                if(!BuildInfoMod.IsDevMod)
+                if(!includePublishedMods)
                 {
                     // ignore untouched definitions
                     if(def.Context.IsBaseGame)
