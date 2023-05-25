@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using Digi.BuildInfo.Systems;
@@ -15,6 +16,7 @@ using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 
@@ -36,6 +38,10 @@ namespace Digi.BuildInfo.Features
 
         public ModderHelp(BuildInfoMod main) : base(main)
         {
+        }
+
+        public override void RegisterComponent()
+        {
             Main.GUIMonitor.ScreenAdded += GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved += GUIScreenRemoved;
 
@@ -49,27 +55,31 @@ namespace Digi.BuildInfo.Features
                         localMods.Add(modItem.Name);
                 }
 
-                CheckErrors(localMods);
+                CheckErrors(localMods, MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE);
 
                 if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && localMods.Count > 0)
                 {
                     CheckMods();
                 }
 
+                // show chat alerts on first spawn, if applicable
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
         }
 
-        public override void RegisterComponent()
-        {
-        }
-
         public override void UnregisterComponent()
         {
+            try
+            {
+                RevertHUDBack();
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+
             Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
-
-            RevertHUDBack();
         }
 
         [ProtoContract]
@@ -90,15 +100,175 @@ namespace Digi.BuildInfo.Features
 
         struct CloudLayerInfo
         {
-            public string Message;
+            public string AppendMessage;
             public TErrorSeverity? SetSeverity;
         }
 
-        void CheckErrors(HashSet<string> localMods)
+        enum FileExists { Missing, Mod, Game }
+        static string ExistsString(FileExists exists)
         {
-#if false // TODO needs more testing/fixing
-            #region Check cloud layer textures
-            Dictionary<string, CloudLayerInfo> cloudLayerTextureMessage = new Dictionary<string, CloudLayerInfo>();
+            switch(exists)
+            {
+                case FileExists.Mod: return "Exists in Mod";
+                case FileExists.Game: return "Exists in Game";
+                default: return "MISSING";
+            }
+        }
+
+        void CheckCloudLayer(Dictionary<string, CloudLayerInfo> cloudLayerInfo, MyPlanetGeneratorDefinition def, int layerIndex)
+        {
+            // HACK: MyCloudLayerSettings is not whitelisted
+            byte[] binary = MyAPIGateway.Utilities.SerializeToBinary(def.CloudLayers[layerIndex]);
+            HackCloudLayerSettings hackLayer = MyAPIGateway.Utilities.SerializeFromBinary<HackCloudLayerSettings>(binary);
+
+            if(hackLayer.Textures == null || hackLayer.Textures.Count <= 0)
+                return;
+
+            int layerNum = layerIndex + 1;
+
+            // HACK: from MyCloudRenderer.CreateCloudLayer()
+
+            if(hackLayer.Textures.Count > 1)
+            {
+                MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: "
+                    + "More than 1 texture, game only uses the first Texture tag! (and gives it _cm and _alphamask suffix to read 2 textures)", TErrorSeverity.Warning);
+            }
+
+            string filePath = hackLayer.Textures[0];
+
+            // HACK: depending on definition style it can behave differently:
+            //   <Definition xsi:type="PlanetGeneratorDefinition">:
+            //     it doesn't force mod path to cloudlayer textures and textures can be in game folder too.
+            //   <PlanetGeneratorDefinitions>:
+            //     it adds mod path to cloudlayer textures, can't be referenced in game folder and can result in double-added mod paths if texture exists.
+            // in more words: https://github.com/THDigi/SE-ModScript-Examples/wiki/Hidden-SBC-tags-features#planet-cloudlayers
+
+            try
+            {
+                Path.GetFullPath(filePath);
+                // if path is not valid, throws a System.NotSupportedException: The given path's format is not supported.
+                // might have other exceptions, anything that makes this throw should be coverted by this custom error.
+            }
+            catch(Exception e)
+            {
+                // game is not gonna add an error for this file path so I gotta add one myself
+                MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: Invalid path: '{filePath}'"
+                    + "\nIf the mod path is added twice then the problem is that the texture exists AND using a new planet generator definition style (compare EarthLike and Pertram start/end tags)."
+                    + "\nEither modify definition to use the old style (recommended) or make it so the <Texture> tag doesn't point to an existing file while also having _cm and _alphamask prefixed ones with same name nearby.",
+                    TErrorSeverity.Error);
+                return;
+            }
+
+            bool startsWithModPath = filePath.StartsWith(def.Context.ModPath);
+
+            // HACK: path not always has mod folder in it here, but in errors list it does.
+            string pathKey = filePath;
+            if(!startsWithModPath)
+                pathKey = Path.Combine(def.Context.ModPath, pathKey);
+
+            cloudLayerInfo[pathKey] = new CloudLayerInfo()
+            {
+                AppendMessage = "Game looks for this texture with _cm and _alphamask suffix, if those exist and they show up in game then this error can be ignored.",
+            };
+
+            // FIXME: same texture used in multiple planets on the same mod collide.
+            // this is a problem if those different planets use different definition styles, changing the checks and errors significantly.
+
+#if false
+            string pathAlphaMask;
+            string pathCM;
+            try
+            {
+                pathAlphaMask = filePath.Insert(filePath.LastIndexOf('.'), "_alphamask");
+                pathCM = filePath.Insert(filePath.LastIndexOf('.'), "_cm");
+            }
+            catch(Exception e)
+            {
+                cloudLayerInfo[filePath] = new CloudLayerInfo()
+                {
+                    AppendMessage = "Error processing texture name to add _alphamask and _cm in it, game will probably crash too.",
+                    SetSeverity = TErrorSeverity.Error,
+                };
+                return;
+            }
+
+            FileExists existsCM = FileExists.Missing;
+            FileExists existsAlphaMask = FileExists.Missing;
+
+            if(startsWithModPath) // game added mod path, so either old definition + fake texture or new definition without fake texture (because we checked if path is valid above)
+            {
+                try
+                {
+                    if(MyAPIGateway.Utilities.FileExistsInModLocation(pathCM, def.Context.ModItem))
+                        existsCM = FileExists.Mod;
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error reading planet '{def.Id.SubtypeName}' cloudlayer #{layerNum}: '{pathCM}'\nOriginal path: '{filePath}'\n{e}");
+                }
+
+                try
+                {
+                    if(MyAPIGateway.Utilities.FileExistsInModLocation(pathAlphaMask, def.Context.ModItem))
+                        existsAlphaMask = FileExists.Mod;
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error reading planet '{def.Id.SubtypeName}' cloudlayer #{layerNum}: '{pathAlphaMask}'\nOriginal path: '{filePath}'\n{e}");
+                }
+            }
+
+            if(!startsWithModPath) // AKA using old definition without fake texture, meaning it didn't append mod folder to path
+            {
+                try
+                {
+                    if(existsCM == FileExists.Missing && MyAPIGateway.Utilities.FileExistsInGameContent(pathCM))
+                        existsCM = FileExists.Game;
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error reading planet '{def.Id.SubtypeName}' cloudlayer #{layerNum}: '{pathCM}'\nOriginal path: '{filePath}'\n{e}");
+                }
+
+                try
+                {
+                    if(existsAlphaMask == FileExists.Missing && MyAPIGateway.Utilities.FileExistsInGameContent(pathAlphaMask))
+                        existsAlphaMask = FileExists.Game;
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"Error reading planet '{def.Id.SubtypeName}' cloudlayer #{layerNum}: '{pathAlphaMask}'\nOriginal path: '{filePath}'\n{e}");
+                }
+            }
+
+            CloudLayerInfo info = new CloudLayerInfo();
+
+            info.AppendMessage = $"From planet '{def.Id.SubtypeName}' cloudlayer #{layerNum}: Can be ignored as long as the textures with the '_cm' and '_alphamask' suffixes exist and they work in game."
+                               + $"\n - ColorMetal {ExistsString(existsCM)}: '{(startsWithModPath ? "" : "<SE Content>")}{pathCM}'"
+                               + $"\n - AlphaMask {ExistsString(existsAlphaMask)}: '{(startsWithModPath ? "" : "<SE Content>")}{pathAlphaMask}'";
+
+            if(!startsWithModPath)
+                info.AppendMessage += "\nNote: relative path detected, if you want the textures to be used from your mod, add a fake texture without the suffixes so the game finds it and uses your mod path.";
+
+            if(existsCM != FileExists.Missing && existsAlphaMask != FileExists.Missing)
+                info.SetSeverity = TErrorSeverity.Notice; // reduce severity if both textures are found
+            else if(existsCM == FileExists.Missing && existsAlphaMask == FileExists.Missing)
+                info.SetSeverity = TErrorSeverity.Error; // elevate severity if both are missing
+            else
+                info.SetSeverity = TErrorSeverity.Warning; // middleground if only one is missing
+
+            // HACK: planets with <Definition xsi:type="PlanetGeneratorDefinition"> do not forcefully add mod path but then in errors it'll have the mod path, so gotta add it here to link it to the error properly
+            string pathKey = filePath;
+            if(!startsWithModPath)
+                pathKey = Path.Combine(def.Context.ModPath, pathKey);
+
+            cloudLayerInfo[pathKey] = info;
+#endif
+        }
+
+        Dictionary<string, CloudLayerInfo> GrabCloudLayers()
+        {
+            Dictionary<string, CloudLayerInfo> cloudLayerInfo = new Dictionary<string, CloudLayerInfo>();
 
             Dictionary<MyStringHash, MyDefinitionBase> planets;
             if(MyDefinitionManager.Static.Definitions.Definitions.TryGetValue(typeof(MyObjectBuilder_PlanetGeneratorDefinition), out planets))
@@ -110,57 +280,14 @@ namespace Digi.BuildInfo.Features
 
                     for(int i = 0; i < def.CloudLayers.Count; i++)
                     {
-                        // HACK: MyCloudLayerSettings is not whitelisted
-                        byte[] binary = MyAPIGateway.Utilities.SerializeToBinary(def.CloudLayers[i]);
-                        HackCloudLayerSettings hackLayer = MyAPIGateway.Utilities.SerializeFromBinary<HackCloudLayerSettings>(binary);
-
-                        if(hackLayer.Textures == null || hackLayer.Textures.Count <= 0)
-                            continue;
-
-                        // HACK: from MyCloudRenderer.CreateCloudLayer()
-
-                        if(hackLayer.Textures.Count > 1)
-                        {
-                            MyDefinitionErrors.Add(def.Context, $"{Signature}Found more than 1 texture in CloudLayer #{(i + 1)}; Game only uses the first texture!", TErrorSeverity.Warning);
-                        }
-
-                        string filePath = hackLayer.Textures[0];
-                        string pathAM;
-                        string pathCM;
                         try
                         {
-                            pathAM = filePath.Insert(filePath.LastIndexOf('.'), "_alphamask");
-                            pathCM = filePath.Insert(filePath.LastIndexOf('.'), "_cm");
+                            CheckCloudLayer(cloudLayerInfo, def, i);
                         }
                         catch(Exception e)
                         {
-                            Log.Error($"[ModderHelp] Error processing planet texture '{filePath}' from '{GetModName(def.Context)}' into _alphamask and _cm parts, render will likely crash too.\n{e.ToString()}");
-                            cloudLayerTextureMessage[filePath] = new CloudLayerInfo()
-                            {
-                                Message = "Error processing texture name to add _alphamask and _cm in it, render will likely crash too.",
-                                SetSeverity = TErrorSeverity.Error,
-                            };
-                            continue;
+                            Log.Error($"Error reading planet '{def.Id.SubtypeName}' cloudlayer #{(i + 1)}': {e}");
                         }
-
-                        // HACK: game forcefully adds mod path to cloudlayer textures, requiring them to be in mod path; from: MyDefinitionManager.InitPlanetGeneratorDefinitions()
-                        bool existsAM = MyAPIGateway.Utilities.FileExistsInModLocation(pathAM, def.Context.ModItem);
-                        bool existsCM = MyAPIGateway.Utilities.FileExistsInModLocation(pathCM, def.Context.ModItem);
-
-                        CloudLayerInfo info = new CloudLayerInfo()
-                        {
-                            Message = "Can be ignored as long as the textures with the '_cm' and '_alphamask' suffixes exist and they work in game."
-                                    + $"\n - File {(existsCM ? "exists" : "does NOT exist")}: '{pathCM}'"
-                                    + $"\n - File {(existsAM ? "exists" : "does NOT exist")}: '{pathAM}'"
-                                    + "\nNote: textures must be in the mod folder, game forecefully appends mod's path to the texture!",
-                        };
-
-                        if(existsAM && existsCM)
-                            info.SetSeverity = TErrorSeverity.Notice;
-                        else if(!existsAM && !existsCM)
-                            info.SetSeverity = TErrorSeverity.Error;
-
-                        cloudLayerTextureMessage[filePath] = info;
                     }
                 }
             }
@@ -168,8 +295,16 @@ namespace Digi.BuildInfo.Features
             {
                 Log.Error("Couldn't get planets from DefinitionSet O.o");
             }
-            #endregion
-#endif
+
+            return cloudLayerInfo;
+        }
+
+        void CheckErrors(HashSet<string> localMods, bool f11MenuAccessible)
+        {
+            Dictionary<string, CloudLayerInfo> cloudLayerInfo = null;
+
+            if(f11MenuAccessible)
+                cloudLayerInfo = GrabCloudLayers();
 
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
@@ -193,34 +328,68 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
-                bool isCompileError = error.Message.StartsWith("Compilation of");
-                if(isCompileError)
+                if(!CompileErrors)
                 {
-                    // chat message when ANY mod has compile errors (published too)
-                    CompileErrors = true;
-
-                    // pop up F11 menu if there's compile errors with local mods
-                    if(isLocal)
-                        MyDefinitionErrors.ShouldShowModErrors = true;
-                }
-
-#if false
-                // HACK MyDefinitionManager.ProcessContentFilePath() + cloudlayer stuff from above
-                string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
-                if(error.Message.StartsWith(resourceNotFoundPrefix))
-                {
-                    string filePath = error.Message.Substring(resourceNotFoundPrefix.Length, error.Message.Length - resourceNotFoundPrefix.Length);
-
-                    CloudLayerInfo info;
-                    if(cloudLayerTextureMessage.TryGetValue(filePath, out info))
+                    // from MyScriptManager.Compile()
+                    if(error.Message.StartsWith("Compilation of")
+                    || (error.Message.StartsWith("Cannot load ") && error.Message.EndsWith(".cs")))
                     {
-                        if(info.SetSeverity.HasValue)
-                            error.Severity = info.SetSeverity.Value;
+                        // chat message when ANY mod has compile errors (published too)
+                        CompileErrors = true;
 
-                        error.Message += $"\n{Signature}{info.Message}";
+                        // pop up F11 menu if there's compile errors with local mods
+                        if(isLocal && f11MenuAccessible)
+                            MyDefinitionErrors.ShouldShowModErrors = true;
                     }
                 }
-#endif
+
+                if(f11MenuAccessible)
+                {
+                    // HACK: hardcoded various MyDefinitionErrors
+
+                    // MyDefinitionManager.ProcessContentFilePath() + cloudlayer stuff from above
+                    string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
+                    if(error.Message.StartsWith(resourceNotFoundPrefix))
+                    {
+                        string filePath = error.Message.Substring(resourceNotFoundPrefix.Length, error.Message.Length - resourceNotFoundPrefix.Length);
+
+                        CloudLayerInfo info;
+                        if(cloudLayerInfo.TryGetValue(filePath, out info))
+                        {
+                            if(!string.IsNullOrEmpty(info.AppendMessage))
+                                error.Message += $"\n{Signature}{info.AppendMessage}";
+
+                            if(info.SetSeverity.HasValue)
+                                error.Severity = info.SetSeverity.Value;
+                        }
+                    }
+
+                    // MyDefinitionManager.PostprocessBlueprints()
+                    if(error.Message.StartsWith("Following blueprints could not be post-processed"))
+                    {
+                        error.Message += $"\n{Signature}Usually means a result item was not found.";
+                    }
+
+                    // MyDefinitionManager.InitSpawnGroups()
+                    if(error.Message.StartsWith("Error loading spawn group"))
+                    {
+                        error.Message += $"\n{Signature}Means the spawn group has no prefabs or 0 spawn radius or 0 frequency.";
+                    }
+
+                    // MyDefinitionManager.MakeBlueprintFromComponentStack()
+                    if(error.Message.StartsWith("Could not find component blueprint for"))
+                    {
+                        error.Message += $"\n{Signature}All components must have a blueprint otherwise game crashes when using tools on the block using the component."
+                                       + "\nYou can have a blueprint without it being used though, just don't add it to a BlueprintClass."
+                                       + "\nSee ZoneChip's blueprint as an example.";
+                    }
+
+                    // MyDefinitionManager.DefinitionDictionary<V>
+                    if(error.Message == "Invalid definition id")
+                    {
+                        error.Message += $"\n{Signature}Very vague one indeed, it means you have a <TypeId> that is made up, you have to use an existing one.";
+                    }
+                }
             }
         }
 
@@ -232,12 +401,20 @@ namespace Digi.BuildInfo.Features
             {
                 MyDefinitionErrors.Error error = errors[i];
 
+                // NOTE: use == or some other way to prevent detection after it was already appended-to.
+
                 // HACK MyCubeGrid.TestBlockPlacementArea(), falsely triggered by MyModel.LoadData() via m_loadingErrorProcessed=false
-                // reminder that this executes per 3 seconds so it has to not catch the same messages multiple times.
                 if(error.Severity == TErrorSeverity.Error && error.Message == "There was error during loading of model, please check log file.")
                 {
                     error.Severity = TErrorSeverity.Notice; // reduce its severity
                     error.Message += $"\n{Signature}This is a meaningless error that always happens in a certain context, ignore it.";
+                }
+
+                // from MyScriptManager.TryAddEntityScripts()
+                if(error.Message == "Possible entity type script logic collision")
+                {
+                    error.Message += $"\n{Signature}This just means multiple mods have GameLogic components on the same blocks, it's not very useful nor does it mean they collide."
+                                    + "\nIgnore this and test the mod functions themselves if you are worried they're colliding.";
                 }
             }
         }
@@ -345,6 +522,21 @@ namespace Digi.BuildInfo.Features
                             }
                         }
                     }
+
+                    continue;
+                }
+
+                MyRespawnShipDefinition respawnShipDef = def as MyRespawnShipDefinition;
+                if(respawnShipDef != null)
+                {
+                    // game does not alert if this is the case, you only find out when you try to use it and it infinitely streams.
+                    if(respawnShipDef.Prefab == null)
+                    {
+                        MyDefinitionErrors.Add(def.Context, $"{Signature}RespawnShip '{def.Id.SubtypeName}' does not point to a valid prefab!"
+                                                           + "\nMake sure to input the SubtypeId from inside the prefab file. Like all SBCs, the file name does not matter!", TErrorSeverity.Error);
+                    }
+
+                    continue;
                 }
             }
 
