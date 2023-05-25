@@ -424,12 +424,25 @@ namespace Digi.BuildInfo.Features.Terminal
                     if(addedCustomInfo)
                         info.Append('\n');
 
-                    info.Append(otherModInfo);
+                    // skip leading newlines
+                    int startIdx = 0;
+                    for(int i = 0; i < otherModInfo.Length; i++)
+                    {
+                        char c = otherModInfo[i];
+                        if(c != '\n' && c != '\r')
+                        {
+                            startIdx = i;
+                            break;
+                        }
+                    }
+
+                    info.Append(otherModInfo, startIdx, otherModInfo.Length - startIdx);
                 }
 
                 // if no header, add the ticker at the very end to still be able to tell when detailed info refreshes.
                 if(!header && addedCustomInfo)
                 {
+                    info.TrimEndWhitespace();
                     info.Append('\n').Append(separatorColor).Append(TickerText[ticker]).Append(separatorColorEnd);
                 }
 
