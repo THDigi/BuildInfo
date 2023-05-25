@@ -29,6 +29,7 @@ namespace Digi.BuildInfo.Features
         bool DefinitionErrors = false;
         bool CompileErrors = false;
         bool FirstSpawnChecked = false;
+        bool F11MenuShownOnLoad = false;
 
         HudState? RevertHud;
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
@@ -60,6 +61,8 @@ namespace Digi.BuildInfo.Features
                 if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && localMods.Count > 0)
                 {
                     CheckMods();
+
+                    F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
                 }
 
                 // show chat alerts on first spawn, if applicable
@@ -641,14 +644,10 @@ namespace Digi.BuildInfo.Features
             return def.Id.ToString().Replace("MyObjectBuilder_", "");
         }
 
-        static string GetModName(MyModContext modContext)
-        {
-            return (modContext != null ? (modContext.IsBaseGame ? "(base game)" : modContext.ModName) : "(unknown)");
-        }
-
         public override void UpdateAfterSim(int tick)
         {
-            if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11))
+            bool f11MenuAccessible = MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
+            if(f11MenuAccessible && Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11))
             {
                 CheckErrorsOnF11();
             }
@@ -663,19 +662,19 @@ namespace Digi.BuildInfo.Features
                 {
                     FirstSpawnChecked = true;
 
-                    // relevant to CheckErrorsOnF11() above
-                    if(MyAPIGateway.Session.OnlineMode != MyOnlineModeEnum.OFFLINE)
-                    {
+                    if(!f11MenuAccessible)
                         SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+
+                    // F11 menu auto-popped up, don't bother writing to chat
+                    if(!(f11MenuAccessible && F11MenuShownOnLoad))
+                    {
+                        if(CompileErrors) // online for published mods
+                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Mods have compile errors! See game log for details.", FontsHandler.RedSh);
+                        else if(ModProblems > 0) // offline+local mods
+                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Problems with local mods! See F11 menu.", FontsHandler.YellowSh);
+                        else if(DefinitionErrors) // offline+local mods
+                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Definition errors with mods! See F11 menu.", FontsHandler.YellowSh);
                     }
-
-                    if(CompileErrors)
-                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: Other mod(s) have compile errors! See SE log for details.", FontsHandler.RedSh);
-
-                    if(ModHints > 0 || ModProblems > 0)
-                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There's problems or hints with local mod(s), see F11 menu.", FontsHandler.YellowSh);
-                    else if(DefinitionErrors)
-                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "ModderHelp: There are definition errors, see F11 menu.", FontsHandler.YellowSh);
                 }
             }
         }
