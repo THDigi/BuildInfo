@@ -319,15 +319,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void RefreshDetailInfo(IMyTerminalBlock block)
         {
-            // HACK forcing refresh of detailed info panel
-
             // only trigger it for player that is viewing this block in terminal
             if(LastViewedTerminalEntId == block.EntityId && MyAPIGateway.Gui.IsCursorVisible && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {
-                // this sends network messages
-                bool original = block.ShowInToolbarConfig;
-                block.ShowInToolbarConfig = !original;
-                block.ShowInToolbarConfig = original;
+                block.RefreshCustomInfo();
+                block.SetDetailedInfoDirty();
             }
         }
 

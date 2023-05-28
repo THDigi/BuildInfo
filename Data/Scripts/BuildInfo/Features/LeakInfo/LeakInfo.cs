@@ -177,11 +177,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
             if(different && VentInTerminal != null)
             {
                 VentInTerminal.RefreshCustomInfo();
-
-                // HACK: force refresh
-                bool orig = VentInTerminal.ShowInToolbarConfig;
-                VentInTerminal.ShowInToolbarConfig = !orig;
-                VentInTerminal.ShowInToolbarConfig = orig;
+                VentInTerminal.SetDetailedInfoDirty();
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using CoreSystems.Api;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
@@ -24,19 +25,15 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 using MyAssemblerMode = Sandbox.ModAPI.Ingame.MyAssemblerMode;
 using MyShipConnectorStatus = Sandbox.ModAPI.Ingame.MyShipConnectorStatus;
-using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
-using IMyControllableEntityInternal = Sandbox.Game.Entities.IMyControllableEntity;
-using Digi.BuildInfo.Systems;
-using CoreSystems.Api;
-using VRage.ModAPI;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
     public class TerminalInfo : ModComponent
     {
-        public const int RefreshMinTicks = 15; // minimum amount of ticks between refresh calls
+        public const int RefreshMinTicks = 30; // minimum amount of ticks between refresh calls
         private readonly string[] TickerText = { "––––––", "•–––––", "–•––––", "––•–––", "–––•––", "––––•–", "–––––•" };
 
         public const int TextCharsExpected = 400; // used in calling EnsureCapacity() for CustomInfo event's StringBuilder
@@ -233,9 +230,10 @@ namespace Digi.BuildInfo.Features.Terminal
                 {
                     ViewedBlockChanged(viewedInTerminal, LastSelected);
 
-                    if(viewedInTerminal != null)
+                    // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
+                    if(viewedInTerminal != null && SelectingList.Count > 1)
                     {
-                        // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
+                        // Note: cannot be replaced by SetDetailedInfoDirty()
                         bool orig = viewedInTerminal.ShowInToolbarConfig;
                         viewedInTerminal.ShowInToolbarConfig = !orig;
                         viewedInTerminal.ShowInToolbarConfig = orig;
@@ -284,7 +282,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             LastSelected = block;
 
-            UpdateMethods |= UpdateFlags.UPDATE_AFTER_SIM;
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
 
         void ViewedBlockChanged(IMyTerminalBlock oldBlock, IMyTerminalBlock newBlock)
@@ -345,6 +343,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             //refreshWaitForTick = (Main.Tick + RefreshMinTicks);
             viewedInTerminal.RefreshCustomInfo();
+            viewedInTerminal.SetDetailedInfoDirty();
         }
 
         void PropertiesChanged(IMyTerminalBlock block)
@@ -1554,7 +1553,7 @@ namespace Digi.BuildInfo.Features.Terminal
             IMyLaserAntenna antenna = (IMyLaserAntenna)block;
             MyLaserAntennaDefinition def = (MyLaserAntennaDefinition)block.SlimBlock.BlockDefinition;
 
-            info.Append("Distance:");
+            info.Append("Distance: ");
             if(antenna.Other != null)
                 info.DistanceFormat((float)Vector3D.Distance(antenna.GetPosition(), antenna.Other.GetPosition()));
             else
