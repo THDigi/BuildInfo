@@ -21,7 +21,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 10;
+        public const int ConfigVersion = 11;
 
         public BoolSetting Killswitch;
 
@@ -260,12 +260,12 @@ namespace Digi.BuildInfo.Features.Config
 
             if(cfgv <= 8)
             {
-                if(TerminalButtonsPosition.Value == new Vector2D(0.715, -0.986))
-                {
-                    TerminalButtonsPosition.ResetToDefault();
-
-                    Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.715, -0.986), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
-                }
+                //if(TerminalButtonsPosition.Value == new Vector2D(0.715, -0.986))
+                //{
+                //    TerminalButtonsPosition.ResetToDefault();
+                //
+                //    Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.715, -0.986), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
+                //}
             }
 
             if(cfgv <= 9)
@@ -275,6 +275,16 @@ namespace Digi.BuildInfo.Features.Config
                     ToolbarStatusTextScaleOverride.ResetToDefault();
 
                     Log.Info($"NOTE: '{ToolbarStatusTextScaleOverride.Name}' is the previous default (0.46), resetting to new default ({ToolbarStatusTextScaleOverride.Value.ToString()}).");
+                }
+            }
+
+            if(cfgv <= 10)
+            {
+                if(Vector2D.DistanceSquared(TerminalButtonsPosition.Value, new Vector2D(0.731, -0.988)) < 0.0001)
+                {
+                    TerminalButtonsPosition.ResetToDefault();
+
+                    Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.731, -0.988), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
                 }
             }
         }
@@ -434,8 +444,8 @@ namespace Digi.BuildInfo.Features.Config
             TerminalDetailInfoHeader = new BoolSetting(Handler, "Terminal: Detail Info Header", true,
                 "Adds a \"--- (BuildInfo | /bi) ---\" before this mod's detail info additions to more easily identify them.");
 
-            TerminalButtonsPosition = new Vector2DSetting(Handler, "Terminal: Detail Info Buttons Position", new Vector2D(0.731, -0.988), -Vector2D.One, Vector2D.One,
-                "UI position of the Refresh and Copy buttons in the terminal.",
+            TerminalButtonsPosition = new Vector2DSetting(Handler, "Terminal: Detail Info Buttons Position", new Vector2D(0.761458, -0.922222), -Vector2D.One, Vector2D.One,
+                "UI position of the Refresh and Copy buttons in the terminal (top-right corner of the right-most button)",
                 "Can also be moved in the menu by holding right mouse button on it.");
             TerminalButtonsPosition.AddCompatibilityNames("Terminal: Refresh Info Button Position");
 
