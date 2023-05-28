@@ -252,8 +252,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
-            groupToolbarLabels.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition),
-                () => ShowNotify("ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", 7000)));
+            SimplePositionRedirect(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition), "ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
@@ -262,8 +261,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             SimpleToggle(Category_Toolbar, null, Main.Config.EventToolbarInfo, setGroupInteractable: groupEventToolbar);
             SimpleSlider(Category_Toolbar, null, Main.Config.EventToolbarInfoScale, groupEventToolbar);
-            groupEventToolbar.Add(new ItemButton(Category_Toolbar, GetLabelFromSetting(null, Main.Config.EventToolbarInfoPosition),
-                () => ShowNotify("Event toolbar info box can be moved in menu by holding LMB on it and dragging.", 7000)));
+            SimplePositionRedirect(Category_Toolbar, GetLabelFromSetting(null, Main.Config.EventToolbarInfoPosition), "Event toolbar info box can be moved in menu by holding LMB on it and dragging.", Main.Config.EventToolbarInfoPosition, groupEventToolbar);
             SimplePositionReset(Category_Toolbar, Main.Config.EventToolbarInfoPosition, groupEventToolbar);
 
             AddSpacer(Category_Toolbar);
@@ -285,13 +283,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             #region Terminal
             SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
-            new ItemButton(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition),
-                () => ShowNotify("Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", 7000));
+            SimplePositionRedirect(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition), "Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", Main.Config.TerminalButtonsPosition);
             SimplePositionReset(Category_GUI, Main.Config.TerminalButtonsPosition);
             SimpleSlider(Category_GUI, null, Main.Config.TerminalButtonsScale);
 
-            new ItemButton(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition),
-                () => ShowNotify("Multi-select info is always movable with RMB on the vertical line.", 7000));
+            SimplePositionRedirect(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition), "Multi-select info is always movable with RMB on the vertical line.", Main.Config.TerminalMultiDetailedInfoPosition);
             SimplePositionReset(Category_GUI, Main.Config.TerminalMultiDetailedInfoPosition);
 
             AddSpacer(Category_GUI);
@@ -698,6 +694,14 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     callOnSet?.Invoke(v);
                 },
                 defaultValue: setting.DefaultValue);
+
+            group?.Add(item);
+            groupAll.Add(item);
+        }
+
+        private void SimplePositionRedirect(MenuCategoryBase category, string label, string denialText, Vector2DSetting setting, ItemGroup group = null)
+        {
+            ItemPositionRedirect item = new ItemPositionRedirect(category, label, denialText, setting.DefaultValue, rounding: 4, getter: () => setting.Value);
 
             group?.Add(item);
             groupAll.Add(item);
