@@ -181,15 +181,18 @@ namespace Digi.BuildInfo.Features.GUI
                 section.CreateUIObjects();
             }
 
-            CloseButton = new Button("Close", null, null,
+            CloseButton = new Button("Close",
+                tooltip: null, tooltipHandler: null,
                 hover: (button) =>
                 {
                     if(MyAPIGateway.Input.IsNewLeftMouseReleased())
                         CloseMenu();
                 },
-                hoverEnd: null);
+                hoverEnd: null,
+                pivot: Align.BottomRight);
             //CloseButton.DefaultColor = new Color(155, 155, 155);
-            CloseButton.Refresh(Vector2D.Zero, CloseButtonScale);
+            CloseButton.Scale = CloseButtonScale;
+            CloseButton.Refresh(Vector2D.Zero);
 
             TooltipRender = new TextAPI.TextPackage(256, false, material);
             TooltipRender.Background.BillBoardColor = new Color(70, 83, 90);
@@ -292,10 +295,9 @@ namespace Digi.BuildInfo.Features.GUI
                 //}
                 //ButtonDebug.Origin = closePos;
 
-                CloseButton.Refresh(closePos, CloseButtonScale);
-
-                CloseButton.Visible = true;
-                CloseButton.Label.Visible = true;
+                CloseButton.Scale = CloseButtonScale;
+                CloseButton.Refresh(closePos);
+                CloseButton.SetVisible(true);
 
                 Main.MenuHandler.SetInMenu(nameof(ServerInfoMenu), true, () => CloseMenu(escPressed: true));
                 Main.MenuHandler.SetUpdateMenu(this, true);
@@ -320,8 +322,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             WindowBG.Visible = false;
             TooltipRender.Visible = false;
-            CloseButton.Visible = false;
-            CloseButton.Label.Visible = false;
+            CloseButton.SetVisible(false);
 
             foreach(ScrollableSection section in ScrollableSections)
             {
@@ -338,7 +339,7 @@ namespace Digi.BuildInfo.Features.GUI
         {
             Vector2D mousePos = MenuHandler.GetMousePositionGUI();
 
-            CloseButton.Draw(mousePos, directDraw: false);
+            CloseButton.Update(mousePos);
 
             bool scrolled = false;
 

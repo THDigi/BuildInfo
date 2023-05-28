@@ -43,6 +43,8 @@ namespace Digi.BuildInfo.Features.Terminal
         private HashSet<IMyTerminalBlock> SelectingSet = new HashSet<IMyTerminalBlock>();
         private IMyTerminalBlock LastSelected;
 
+        public bool AutoRefresh = true;
+
         public event Action SelectedChanged;
 
         public readonly HashSet<MyDefinitionId> IgnoreModBlocks = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
@@ -263,7 +265,8 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             // only actively refresh if viewing the block list
-            if(Main.Tick % RefreshMinTicks == 0
+            if(AutoRefresh
+            && Main.Tick % RefreshMinTicks == 0
             && !Main.GUIMonitor.InAnyToolbarGUI
             && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.ControlPanel)
             {

@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features.Terminal
 {
     public class DetailInfoButtons : ModComponent
     {
-        const float ButtonScaleOffset = 1.2f;
+        const float ButtonScale = 1f;
         const float TooltipScaleOffset = 1f;
 
         IMyTerminalBlock ViewedInTerminal;
@@ -32,7 +32,7 @@ namespace Digi.BuildInfo.Features.Terminal
         int CopyClickHighlightTicks;
         bool CopyCopied;
 
-        int RefreshCooldown;
+        int RefreshClickHighlightTicks;
 
         public DetailInfoButtons(BuildInfoMod main) : base(main)
         {
@@ -85,31 +85,35 @@ namespace Digi.BuildInfo.Features.Terminal
 
             string moveHint = $"\nHold RMB to move. Added by {BuildInfoMod.ModName} mod.";
 
-            Buttons[0] = CopyButton = new Button("Copy", tooltip: "Copies the detailed info text to clipboard." + moveHint, tooltipHandler: Tooltip,
-                hover: CopyHover, hoverEnd: CopyHoverEnd);
+            Buttons[0] = CopyButton = new Button("Copy",
+                tooltip: "Copies the detailed info text to clipboard." + moveHint, tooltipHandler: Tooltip,
+                hover: CopyHover, hoverEnd: CopyHoverEnd,
+                pivot: Align.TopRight,
+                directDraw: true);
 
-            Buttons[1] = RefreshButton = new Button("Refresh",
-                tooltip: "Force refresh of the detailed info box." + moveHint, tooltipHandler: Tooltip,
-                hover: RefreshHover, hoverEnd: RefreshHoverEnd);
+            Buttons[1] = RefreshButton = new Button("Auto-Refresh: On",
+                tooltip: "Toggle if the detailed info area is forced to self-refresh twice a second." +
+                         "\nValue not saved to config as it is meant as a temporary thing to mess with." + moveHint, tooltipHandler: Tooltip,
+                hover: RefreshHover, hoverEnd: RefreshHoverEnd,
+                pivot: Align.TopRight,
+                directDraw: true);
         }
 
         void RefreshHover(Button button)
         {
             CheckForDragInput();
 
-            if(MyAPIGateway.Input.IsLeftMousePressed())
+            if(MyAPIGateway.Input.IsNewLeftMousePressed())
             {
-                if(--RefreshCooldown <= 0)
-                {
-                    RefreshCooldown = TerminalInfo.RefreshMinTicks;
-                    button.Label.Background.Material = Button.MaterialBgActivate;
+                RefreshClickHighlightTicks = 30;
 
-                    // HACK: one way to refresh detail info and consequently terminal controls, causes network spam though.
-                    bool orig = ViewedInTerminal.ShowInToolbarConfig;
-                    ViewedInTerminal.ShowInToolbarConfig = !orig;
-                    ViewedInTerminal.ShowInToolbarConfig = orig;
-                }
+                Main.TerminalInfo.AutoRefresh = !Main.TerminalInfo.AutoRefresh;
 
+                button.Label.TextStringBuilder.Clear().Append("Auto-Refresh: ").Append(Main.TerminalInfo.AutoRefresh ? "On" : "Off");
+            }
+
+            if(RefreshClickHighlightTicks > 0 && --RefreshClickHighlightTicks > 0)
+            {
                 button.Label.Background.Material = Button.MaterialBgActivate;
                 button.Label.Background.BillBoardColor = Color.Lime;
             }
@@ -117,7 +121,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void RefreshHoverEnd(Button button)
         {
-            RefreshCooldown = 0;
+            RefreshClickHighlightTicks = 0;
         }
 
         void CopyHover(Button button)
@@ -189,7 +193,7 @@ namespace Digi.BuildInfo.Features.Terminal
             if(MyAPIGateway.Input.IsNewRightMousePressed())
             {
                 DragOffset = Main.Config.TerminalButtonsPosition.Value - MousePos;
-                DragShowTooltipTicks = 60;
+                DragShowTooltipTicks = 60 * 3;
             }
         }
 
@@ -200,12 +204,13 @@ namespace Digi.BuildInfo.Features.Terminal
 
             Vector2D pos = Main.Config.TerminalButtonsPosition.Value;
             float scale = Main.Config.TerminalButtonsScale.Value;
-            float buttonScale = scale * ButtonScaleOffset;
+            float buttonScale = scale * ButtonScale;
 
             for(int i = 0; i < Buttons.Length; i++)
             {
                 Button button = Buttons[i];
-                button.Refresh(pos, buttonScale, badPivot: true); // HACK: a way to fix this?
+                button.Scale = buttonScale;
+                button.Refresh(pos);
                 pos -= new Vector2D(button.Label.Background.Width + ((Button.EdgePadding * buttonScale) / 4), 0);
             }
 
@@ -245,12 +250,12 @@ namespace Digi.BuildInfo.Features.Terminal
             Vector2 mousePos = MyAPIGateway.Input.GetMousePosition() / guiSize;
             MousePos = new Vector2D(mousePos.X * 2 - 1, 1 - 2 * mousePos.Y); // turn from 0~1 to -1~1
 
-            RefreshButton.Visible = (Main.TerminalInfo.SelectedInTerminal.Count <= 1);
+            RefreshButton.SetVisible(Main.TerminalInfo.SelectedInTerminal.Count <= 1);
 
             for(int i = 0; i < Buttons.Length; i++)
             {
                 Button button = Buttons[i];
-                button.Draw(MousePos);
+                button.Update(MousePos);
             }
 
             if(DragOffset.HasValue && MyAPIGateway.Input.IsRightMousePressed())

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Text;
 using Digi.BuildInfo.Systems;
+using Draygo.API;
 using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.GUI
 {
+    public enum Align { TopLeft, TopRight, BottomLeft, BottomRight }
+
     public class Button
     {
         public static readonly MyStringId MaterialBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBg");
@@ -14,11 +17,20 @@ namespace Digi.BuildInfo.Features.GUI
         public const float EdgePadding = 0.025f;
 
         public bool Selected { get; private set; }
-        public bool Visible { get; set; } = true;
+        public bool Visible { get; private set; } = true;
 
+        /// <summary>
+        /// If all elements are Draw() in <see cref="Update(Vector2D)"/>, false are rendered by TextAPI.
+        /// </summary>
+        public readonly bool DirectDraw;
+
+        public Align Pivot = Align.TopLeft;
+        public float Scale { get; set; }
         public Color DefaultColor = Color.White;
 
         public readonly TextAPI.TextPackage Label;
+
+        HudAPIv2.BillBoardHUDMessage DebugPivot;
 
         readonly Action<Button> HoverAction;
         readonly Action<Button> HoverEndAction;
@@ -29,10 +41,15 @@ namespace Digi.BuildInfo.Features.GUI
         BoundingBox2D ButtonBB;
 
         public Button(string label,
-            string tooltip = null,
-            ITooltipHandler tooltipHandler = null,
-            Action<Button> hover = null, Action<Button> hoverEnd = null)
+            string tooltip = null, ITooltipHandler tooltipHandler = null,
+            Action<Button> hover = null, Action<Button> hoverEnd = null,
+            Align pivot = Align.TopLeft,
+            bool directDraw = false,
+            bool debugPivot = false)
         {
+            DirectDraw = directDraw;
+            Pivot = pivot;
+
             Label = new TextAPI.TextPackage(new StringBuilder(label), backgroundTexture: MaterialBg);
 
             Tooltip = tooltip;
@@ -40,26 +57,41 @@ namespace Digi.BuildInfo.Features.GUI
 
             HoverAction = hover;
             HoverEndAction = hoverEnd;
+
+            if(debugPivot)
+            {
+                Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
+                DebugPivot = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("WhiteDot"), Vector2D.Zero, Color.Red);
+                DebugPivot.Width = pxSize.X * 2;
+                DebugPivot.Height = pxSize.Y * 2;
+                DebugPivot.Visible = false;
+            }
         }
 
-        public void Refresh(Vector2D pos, float scale, bool badPivot = false)
+        public void Refresh(Vector2D pos)
         {
             Label.Background.BillBoardColor = DefaultColor;
             Label.Background.Origin = pos;
-            Label.Text.Scale = scale;
+            Label.Text.Scale = Scale;
             Label.Text.Origin = pos;
+
+            if(DebugPivot != null)
+                DebugPivot.Origin = pos;
 
             Vector2D textSize = Label.Text.GetTextLength();
 
-            if(badPivot)
-                // original "bottom-right" pivot which is just middle-ish bottom
-                Label.Text.Offset = -textSize + new Vector2D((EdgePadding / 2) * scale);
-            else
-                // proper bottom-right pivot
-                Label.Text.Offset = -textSize + new Vector2D((EdgePadding / 2) * -scale, (EdgePadding / 2) * scale);
+            float scaledEdge = EdgePadding / 2 * Scale;
 
-            Label.Background.Width = (float)Math.Abs(textSize.X) + (EdgePadding * scale);
-            Label.Background.Height = (float)Math.Abs(textSize.Y) + (EdgePadding * scale);
+            switch(Pivot)
+            {
+                case Align.TopLeft: Label.Text.Offset = new Vector2D(scaledEdge, -scaledEdge); break;
+                case Align.TopRight: Label.Text.Offset = new Vector2D(-textSize.X - scaledEdge, -scaledEdge); break;
+                case Align.BottomLeft: Label.Text.Offset = new Vector2D(scaledEdge, -textSize.Y + scaledEdge); break;
+                case Align.BottomRight: Label.Text.Offset = new Vector2D(-textSize.X - scaledEdge, -textSize.Y + scaledEdge); break;
+            }
+
+            Label.Background.Width = (float)Math.Abs(textSize.X) + (EdgePadding * Scale);
+            Label.Background.Height = (float)Math.Abs(textSize.Y) + (EdgePadding * Scale);
             Label.Background.Offset = Label.Text.Offset + (textSize / 2);
 
             Vector2D centerPos = Label.Background.Origin + Label.Background.Offset;
@@ -67,7 +99,20 @@ namespace Digi.BuildInfo.Features.GUI
             ButtonBB = new BoundingBox2D(centerPos - halfSize, centerPos + halfSize);
         }
 
-        public void Draw(Vector2D mouseOnScreen, bool directDraw = true)
+        public void SetVisible(bool visible)
+        {
+            Visible = visible;
+
+            if(!DirectDraw)
+            {
+                Label.Visible = visible;
+
+                if(DebugPivot != null)
+                    DebugPivot.Visible = visible;
+            }
+        }
+
+        public void Update(Vector2D mouseOnScreen)
         {
             if(!Visible)
                 return;
@@ -91,10 +136,10 @@ namespace Digi.BuildInfo.Features.GUI
                 HoverEndAction?.Invoke(this);
             }
 
-            if(directDraw)
+            if(DirectDraw)
             {
-                Label.Background.Draw();
-                Label.Text.Draw();
+                Label.Draw();
+                DebugPivot?.Draw();
             }
         }
     }
