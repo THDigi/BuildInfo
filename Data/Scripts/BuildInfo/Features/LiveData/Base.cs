@@ -28,6 +28,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public ConveyorInfo(Matrix localMatrix, ConveyorFlags flags = ConveyorFlags.None)
         {
+            Utils.MatrixMinSize(ref localMatrix, BData_Base.MatrixAllMinScale, BData_Base.MatrixIndividualMinScale);
+
             LocalMatrix = localMatrix;
             Flags = flags;
         }
@@ -41,6 +43,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public InteractionInfo(Matrix localMatrix, string name, Color color)
         {
+            Utils.MatrixMinSize(ref localMatrix, BData_Base.MatrixAllMinScale, BData_Base.MatrixIndividualMinScale);
+
             LocalMatrix = localMatrix;
             Name = name;
             Color = color;
@@ -100,6 +104,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public class BData_Base
     {
+        public const float MatrixAllMinScale = 0.2f;
+        public const float MatrixIndividualMinScale = 0.05f;
+
         public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
         public List<ConveyorInfo> InteractableConveyorPorts;
@@ -281,6 +288,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     if(UpgradePorts == null)
                         UpgradePorts = new List<Matrix>();
 
+                    Utils.MatrixMinSize(ref matrix, MatrixAllMinScale, MatrixIndividualMinScale);
                     UpgradePorts.Add(matrix);
                 }
                 // from classes that use MyUseObjectAttribute

@@ -218,6 +218,49 @@ namespace Digi.BuildInfo.Utilities
             return MyCameraControllerEnum.Spectator;
         }
 
+        /// <summary>
+        /// If all 3 axis are less than <paramref name="allMinScale"/> then the whole matrix gets resized to that value.
+        /// Otherwise each axis cannot go smaller than <paramref name="individualMinScale"/>.
+        /// </summary>
+        public static void MatrixMinSize(ref Matrix matrix, float allMinScale, float individualMinScale)
+        {
+            float rightScale = matrix.Right.Length();
+            float upScale = matrix.Up.Length();
+            float backScale = matrix.Backward.Length();
+
+            if(rightScale < allMinScale && upScale < allMinScale && backScale < allMinScale)
+            {
+                matrix.Right *= (allMinScale / rightScale);
+                matrix.Up *= (allMinScale / upScale);
+                matrix.Backward *= (allMinScale / backScale);
+            }
+            else
+            {
+                if(rightScale < individualMinScale)
+                    matrix.Right *= (individualMinScale / rightScale);
+
+                if(upScale < individualMinScale)
+                    matrix.Up *= (individualMinScale / upScale);
+
+                if(backScale < individualMinScale)
+                    matrix.Backward *= (individualMinScale / backScale);
+            }
+
+            // iterate Right,Up,Back
+            //for(int i = 0; i < 3; i++)
+            //{
+            //    Base6Directions.Direction dirEnum = Base6Directions.GetBaseAxisDirection((Base6Directions.Axis)i);
+            //    Vector3 dirVec = matrix.GetDirectionVector(dirEnum);
+            //
+            //    float dirScaleSq = dirVec.LengthSquared();
+            //    if(dirScaleSq < minScale * minScale)
+            //    {
+            //        float dirScale = (float)Math.Sqrt(dirScaleSq);
+            //        matrix.SetDirectionVector(dirEnum, dirVec * (minScale / dirScale));
+            //    }
+            //}
+        }
+
         public static IMyModelDummy GetDummy(IMyModel model, string name)
         {
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
