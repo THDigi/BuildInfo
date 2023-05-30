@@ -26,6 +26,7 @@ namespace Digi.BuildInfo
         public const string ModName = "Build Info";
 
         // Utils
+        public readonly CheckVSLPEvents CheckVSLPEvents;
         public readonly Caches Caches;
         public readonly Constants Constants;
         public readonly DrawUtils DrawUtils;
@@ -110,6 +111,7 @@ namespace Digi.BuildInfo
             IsDevMod = (IsLocalMod && session?.ModContext?.ModId == "BuildInfo.dev");
 
             // Utils
+            CheckVSLPEvents = new CheckVSLPEvents(this);
             Caches = new Caches(this);
             Constants = new Constants(this);
             DrawUtils = new DrawUtils(this);
