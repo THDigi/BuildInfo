@@ -295,7 +295,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(!assetDef.Context.IsBaseGame)
                     {
-                        ArmorSkinMods.Add(assetDef.Id.SubtypeId, new ModId(assetDef.Context.GetWorkshopID(), assetDef.Context.ModServiceName, assetDef.Context.ModName));
+                        ArmorSkinMods.Add(assetDef.Id.SubtypeId, new ModId(assetDef.Context.ModItem.PublishedFileId, assetDef.Context.ModServiceName, assetDef.Context.ModName));
                     }
                 }
             }
@@ -425,7 +425,7 @@ namespace Digi.BuildInfo.Features
 
             if(!def.Context.IsBaseGame)
             {
-                ModId modId = new ModId(def.Context.GetWorkshopID(), def.Context.ModServiceName, def.Context.ModName);
+                ModId modId = new ModId(def.Context.ModItem.PublishedFileId, def.Context.ModServiceName, def.Context.ModName);
 
                 if(Main.VanillaDefinitions.Definitions.Contains(def.Id))
                 {

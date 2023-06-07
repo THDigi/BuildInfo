@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -11,20 +10,9 @@ namespace Digi.BuildInfo.Utilities
 {
     public static class Extensions
     {
-        /// <summary>
-        /// Gets the workshop id from the mod context by iterating the mods to find it.
-        /// Returns 0 if not found.
-        /// NOTE: workaround for MyModContext not having the actual workshop ID number.
-        /// </summary>
-        public static ulong GetWorkshopID(this MyModContext modContext)
+        public static bool IsLocal(this MyModContext modContext)
         {
-            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
-            {
-                if(mod.Name == modContext.ModId)
-                    return mod.PublishedFileId;
-            }
-
-            return 0;
+            return modContext != null && !modContext.IsBaseGame && modContext.ModItem.PublishedFileId == 0;
         }
 
         public static string GetNameAndId(this MyObjectBuilder_Checkpoint.ModItem modItem)
@@ -72,6 +60,16 @@ namespace Digi.BuildInfo.Utilities
             {
                 set.Add(read[i]);
             }
+        }
+
+        public static bool ArrayContains<T>(this T[] array, T contains) where T : IEquatable<T>
+        {
+            for(int i = 0; i < array.Length; ++i)
+            {
+                if(array[i].Equals(contains))
+                    return true;
+            }
+            return false;
         }
 
         public static int GetDigitCount(this int value, bool includeSign = true)

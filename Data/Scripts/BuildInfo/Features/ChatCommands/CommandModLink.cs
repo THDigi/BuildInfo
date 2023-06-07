@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 if(!Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                 {
-                    ulong id = Main.EquipmentMonitor.BlockDef.Context.GetWorkshopID();
+                    ulong id = Main.EquipmentMonitor.BlockDef.Context.ModItem.PublishedFileId;
 
                     if(id > 0)
                     {
