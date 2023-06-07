@@ -45,8 +45,10 @@ namespace Digi.BuildInfo.Systems
         public ListReader<string> Screens { get; }
         readonly List<string> _screens = new List<string>();
 
-        public event Action<string> ScreenAdded;
-        public event Action<string> ScreenRemoved;
+        public delegate void ScreenDel(string screenName);
+
+        public event ScreenDel ScreenAdded;
+        public event ScreenDel ScreenRemoved;
 
         public event Action FirstScreenOpen;
         public event Action LastScreenClose;
