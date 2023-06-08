@@ -7,6 +7,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Utils;
 
 namespace Digi.ComponentLib
@@ -64,10 +65,33 @@ namespace Digi.ComponentLib
                 string text = $"No script components loaded, mod intentionally killed. Reason:\n{CustomReason ?? "Unknown"}";
                 Log.Info(text);
                 MyLog.Default.WriteLine($"### Mod {ModContext.ModItem.GetNameAndId()} NOTICE: {text}");
+                MyDefinitionErrors.Add((MyModContext)ModContext, $"Mod intentionally killed. Reason:\n{CustomReason ?? "Unknown"}", TErrorSeverity.Notice, false);
                 return;
             }
 
-            ModBase = new BuildInfoMod(this);
+            try
+            {
+                ModBase = new BuildInfoMod(this);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+                IsKilled = true;
+                MyLog.Default.WriteLine($"### Mod {ModContext.ModItem.GetNameAndId()} NOTICE: Error during initialization, killed the rest of the mod to prevent issues. Report to author!");
+
+                // this shows F11 in offline or a prompt that a mod failed to load in online, pointing people to the log.
+                MyDefinitionErrors.Add((MyModContext)ModContext, $"Error during initialization, killed the rest of the mod to prevent issues. Report to author! Stacktrace: {e.ToString()}", TErrorSeverity.Critical, false);
+
+                try
+                {
+                    ModBase?.WorldExit();
+                    ModBase = null;
+                }
+                catch(Exception)
+                {
+                    // HACK: any errors here are not important as they're side effects
+                }
+            }
         }
 
         void UnloadMod()
