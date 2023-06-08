@@ -25,10 +25,11 @@ set DS_PATH=%APPDATA%\SpaceEngineersDedicated\content\244850\%WORKSHOP_ID%
 rmdir "%CLIENT_PATH%" /S /Q
 rem rmdir "%DS_PATH%" /S /Q
 
-robocopy.exe .\ "%CLIENT_PATH%" *.* /S /xd .git bin obj .vs ignored /xf *.exe *.dll *.lnk *.git* *.bat *.zip *.7z *.blend* *.png *.md *.log *.sln *.csproj *.csproj.user *.ruleset desktop.ini
+robocopy.exe .\ "%CLIENT_PATH%" *.* /S /xd .git bin obj .vs ignored /xf *.exe *.dll *.lnk *.git* *.bat *.zip *.7z *.blend* *.png *.md *.log *.sln *.csproj *.csproj.user *.ruleset desktop.ini >nul
 
 rem client path is junctioned to DS path too, less copying
 rem -------robocopy.exe "%CLIENT_PATH%" "%DS_PATH%" *.* /S
 rem mklink /J "%DS_PATH%" "%CLIENT_PATH%"
 
+echo Done!
 pause
