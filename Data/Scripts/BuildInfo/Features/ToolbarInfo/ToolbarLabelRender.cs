@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         HudAPIv2.BillBoardHUDMessage Background;
         HudAPIv2.BillBoardHUDMessage BackgroundBottom;
-        HudAPIv2.BillBoardHUDMessage CornerBotomLeft;
+        HudAPIv2.BillBoardHUDMessage CornerBottomLeft;
         HudAPIv2.BillBoardHUDMessage BackgroundTop;
         HudAPIv2.BillBoardHUDMessage CornerTopRight;
         List<HudAPIv2.BillBoardHUDMessage> Backgrounds;
@@ -292,14 +292,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Backgrounds.Add(BackgroundTop);
 
             CornerTopRight = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
-            CornerTopRight.Rotation = MathHelper.ToRadians(180);
+            CornerTopRight.Rotation = MathHelper.ToRadians(90);
             Backgrounds.Add(CornerTopRight);
 
             BackgroundBottom = TextAPI.CreateHUDTexture(squareMaterial, Color.White, PosOnHUD);
             Backgrounds.Add(BackgroundBottom);
 
-            CornerBotomLeft = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
-            Backgrounds.Add(CornerBotomLeft);
+            CornerBottomLeft = TextAPI.CreateHUDTexture(cornerMaterial, Color.White, PosOnHUD);
+            CornerBottomLeft.Rotation = MathHelper.ToRadians(-90);
+            Backgrounds.Add(CornerBottomLeft);
 
             foreach(HudAPIv2.BillBoardHUDMessage bg in Backgrounds)
             {
@@ -720,9 +721,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             BackgroundBottom.Height = cornerHeight;
             BackgroundBottom.Offset = new Vector2D((bgWidth + cornerWidth) / 2, (cornerHeight) / 2);
 
-            CornerBotomLeft.Width = cornerWidth;
-            CornerBotomLeft.Height = cornerHeight;
-            CornerBotomLeft.Offset = new Vector2D((cornerWidth) / 2, (cornerHeight) / 2);
+            CornerBottomLeft.Width = cornerWidth;
+            CornerBottomLeft.Height = cornerHeight;
+            CornerBottomLeft.Offset = new Vector2D((cornerWidth) / 2, (cornerHeight) / 2);
 
             // TODO: better math needed!
             float topRightCornerScale = 2f; // (float)MathHelper.Clamp((1f - (topLinesWidth / TextSize.X)) * 4, 1, 3);

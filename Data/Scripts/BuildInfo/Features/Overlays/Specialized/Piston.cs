@@ -76,7 +76,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             cylinderMatrix.Translation += cylinderMatrix.Up * (length / 2); // cylinder has its pivot in center
             Utils.DrawTransparentCylinder(ref cylinderMatrix, cellSizeHalf, length, ref colorCylinder, MySimpleObjectRasterizer.Wireframe, (360 / LinePerDeg), MaterialSquare, MaterialLaser, LineWidth, drawCaps: false, blendType: BlendType);
 
-            // wire box at botom
+            // wire box at bottom
             BoundingBoxD boxLocalBB = new BoundingBoxD(new Vector3D(-cellSizeHalf), new Vector3D(cellSizeHalf));
             MySimpleObjectDraw.DrawTransparentBox(ref boxMatrix, ref boxLocalBB, ref colorLines, MySimpleObjectRasterizer.Wireframe, 1, BoxLineWidth, MaterialSquare, MaterialLaser, blendType: BlendType);
 
