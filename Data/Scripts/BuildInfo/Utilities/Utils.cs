@@ -510,6 +510,11 @@ namespace Digi.BuildInfo.Utilities
             color.A = (byte)(opacity * 255);
         }
 
+        public static Color GetIndexColor(int index, int maxIndex)
+        {
+            return new Vector3((index % maxIndex) / (float)maxIndex, 0.75f, 1f).HSVtoColor();
+        }
+
         // Optimized wireframe draw
         public static void DrawTransparentSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1f, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {

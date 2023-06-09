@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Digi.BuildInfo.Features.GUI;
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Draygo.API;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Input;
 using VRage.Utils;
@@ -25,36 +23,11 @@ namespace Digi.BuildInfo.Features
         ServerInfoMenu _serverInfo;
         public ServerInfoMenu ServerInfo => _serverInfo ?? (_serverInfo = new ServerInfoMenu());
 
-        Dictionary<string, Action> Blockers = new Dictionary<string, Action>();
         List<Menu> Menus = new List<Menu>();
+
+        Dictionary<string, Request> CursorRequests = new Dictionary<string, Request>();
+        bool InEscapeLoop = false;
         HudAPIv2.BillBoardHUDMessage Cursor;
-
-        /// <summary>
-        /// Scalar (-1 to 1) mouse position for real GUI cursor.
-        /// </summary>
-        public static Vector2D GetMousePositionGUI()
-        {
-            Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
-
-            Vector2 guiSize = MyAPIGateway.Input.GetMouseAreaSize();
-            Vector2 mousePosGUI = Vector2.Min(mousePx, guiSize) / guiSize; // pixels to scalar
-
-            return new Vector2D(mousePosGUI.X * 2 - 1, 1 - 2 * mousePosGUI.Y); // turn from 0~1 to -1~1
-        }
-
-        // bad idea xD
-        /// <summary>
-        /// Scalar (-1 to 1) mouse position for fake GUI/textAPI cursor.
-        /// </summary>
-        //public static Vector2D GetMousePositionRender()
-        //{
-        //    Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
-        //
-        //    Vector2 renderSize = MyAPIGateway.Session.Camera.ViewportSize;
-        //    Vector2 mousePos3D = Vector2.Min(mousePx, renderSize) / renderSize; // pixels to scalar
-        //
-        //    return new Vector2D(mousePos3D.X * 2 - 1, 1 - 2 * mousePos3D.Y); // turn from 0~1 to -1~1
-        //}
 
         public MenuHandler(BuildInfoMod main) : base(main)
         {
@@ -87,22 +60,39 @@ namespace Digi.BuildInfo.Features
         /// <summary>
         /// Adds (<paramref name="inMenu"/>=true) or removes (<paramref name="inMenu"/>=false) the given id from the input blockers list.
         /// </summary>
-        public void SetInMenu(string id, bool inMenu, Action escapeCallback = null)
+        public void AddCursorRequest(string id, Action escapeCallback = null, bool blockViewXY = false, bool blockMoveAndRoll = false)
         {
-            if(inMenu)
-                Blockers.Add(id, escapeCallback);
-            else
-                Blockers.Remove(id);
+            if(InEscapeLoop)
+            {
+                Log.Error($"CursorRequest id={id} is being added in escape callback, which will be ignored because it gets cleared after the event!");
+                return;
+            }
 
+            if(CursorRequests.ContainsKey(id))
+            {
+                Log.Error($"CursorRequest id={id} was already added!");
+                return;
+            }
+
+            CursorRequests.Add(id, new Request(escapeCallback, blockViewXY, blockMoveAndRoll));
+            RecheckUpdates();
+        }
+
+        public void RemoveCursorRequest(string id)
+        {
+            if(InEscapeLoop)
+                return; // silently ignore
+
+            CursorRequests.Remove(id);
             RecheckUpdates();
         }
 
         void RecheckUpdates()
         {
-            bool inMenu = (Blockers.Count > 0);
-            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, inMenu);
+            bool requestedCursor = (CursorRequests.Count > 0);
+            SetUpdateMethods(UpdateFlags.UPDATE_INPUT, requestedCursor);
 
-            if(!inMenu && Cursor != null)
+            if(!requestedCursor && Cursor != null)
             {
                 // HACK: doing this so cursor is always created over any fake UI
                 Cursor?.DeleteMessage();
@@ -124,22 +114,23 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
-            if(Blockers.Count <= 0)
+            if(CursorRequests.Count <= 0)
                 return;
 
             if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.Escape))
             {
                 try
                 {
-                    List<Action> copy = Blockers.Values.ToList(); // HACK: copying it because it might get modified 
-                    foreach(Action action in copy)
+                    InEscapeLoop = true; // prevent removals from working which would cause collection modified exception
+                    foreach(Request request in CursorRequests.Values)
                     {
-                        action?.Invoke();
+                        request.EscapeAction?.Invoke();
                     }
                 }
                 finally
                 {
-                    Blockers.Clear();
+                    CursorRequests.Clear();
+                    InEscapeLoop = false;
                     RecheckUpdates();
                 }
 
@@ -149,7 +140,18 @@ namespace Digi.BuildInfo.Features
             var ctrl = MyAPIGateway.Session.ControlledObject;
             if(ctrl != null)
             {
-                ctrl.MoveAndRotate(Vector3.Zero, Vector2.Zero, 0);
+                bool blockView = false;
+                bool blockMove = false;
+
+                foreach(Request request in CursorRequests.Values)
+                {
+                    blockView |= request.BlockViewXY;
+                    blockMove |= request.BlockMovementAndRoll;
+                }
+
+                ctrl.MoveAndRotate(blockMove ? Vector3.Zero : ctrl.LastMotionIndicator,
+                                   blockView ? Vector2.Zero : new Vector2(ctrl.LastRotationIndicator.X, ctrl.LastRotationIndicator.Y),
+                                   blockMove ? 0 : ctrl.LastRotationIndicator.Z);
             }
 
             if(Cursor == null)
@@ -172,6 +174,35 @@ namespace Digi.BuildInfo.Features
             Vector2 mousePx = MyAPIGateway.Input.GetMousePosition() / MyAPIGateway.Input.GetMouseAreaSize();
             mousePx *= MyAPIGateway.Session.Camera.ViewportSize;
             Cursor.Origin = mousePx; // in pixels because of the above option flag
+        }
+
+
+
+        /// <summary>
+        /// Scalar (-1 to 1) mouse position for real GUI cursor.
+        /// </summary>
+        public static Vector2D GetMousePositionGUI()
+        {
+            Vector2 mousePx = MyAPIGateway.Input.GetMousePosition();
+
+            Vector2 guiSize = MyAPIGateway.Input.GetMouseAreaSize();
+            Vector2 mousePosGUI = Vector2.Min(mousePx, guiSize) / guiSize; // pixels to scalar
+
+            return new Vector2D(mousePosGUI.X * 2 - 1, 1 - 2 * mousePosGUI.Y); // turn from 0~1 to -1~1
+        }
+
+        struct Request
+        {
+            public readonly Action EscapeAction;
+            public readonly bool BlockViewXY;
+            public readonly bool BlockMovementAndRoll;
+
+            public Request(Action escapeAction = null, bool blockViewXY = false, bool blockMovementAndRoll = false)
+            {
+                EscapeAction = escapeAction;
+                BlockViewXY = blockViewXY;
+                BlockMovementAndRoll = blockMovementAndRoll;
+            }
         }
     }
 }

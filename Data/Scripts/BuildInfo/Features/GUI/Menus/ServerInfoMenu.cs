@@ -299,7 +299,11 @@ namespace Digi.BuildInfo.Features.GUI
                 CloseButton.Refresh(closePos);
                 CloseButton.SetVisible(true);
 
-                Main.MenuHandler.SetInMenu(nameof(ServerInfoMenu), true, () => CloseMenu(escPressed: true));
+                Main.MenuHandler.AddCursorRequest(nameof(ServerInfoMenu),
+                    escapeCallback: () => CloseMenu(escPressed: true),
+                    blockViewXY: true,
+                    blockMoveAndRoll: false);
+
                 Main.MenuHandler.SetUpdateMenu(this, true);
                 Visible = true;
             }
@@ -314,7 +318,7 @@ namespace Digi.BuildInfo.Features.GUI
         void CloseMenu(bool escPressed = false)
         {
             Visible = false;
-            Main.MenuHandler.SetInMenu(nameof(ServerInfoMenu), false);
+            Main.MenuHandler.RemoveCursorRequest(nameof(ServerInfoMenu));
             Main.MenuHandler.SetUpdateMenu(this, false);
 
             if(WindowBG == null)
