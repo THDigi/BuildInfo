@@ -235,6 +235,32 @@ namespace Digi.BuildInfo.Features
                         Edits.Add(DefinitionEdit.Create(hudDef, (d, v) => d.Toolbar.ItemStyle.TextScale = v, hudDef.Toolbar.ItemStyle.TextScale, scaleOverride));
                     }
                 }
+
+                // TODO: option to use high contrast font on entire HUD?
+                //if(false)
+                //{
+                //    if(hudDef.StatControls != null)
+                //    {
+                //        foreach(MyObjectBuilder_StatControls control in hudDef.StatControls)
+                //        {
+                //            ModifyFontsOf(hudDef, control.StatStyles);
+                //        }
+                //    }
+                //
+                //    if(hudDef.Toolbar != null)
+                //    {
+                //        foreach(var control in hudDef.Toolbar.StatControls)
+                //        {
+                //            ModifyFontsOf(hudDef, control.StatStyles);
+                //        }
+                //    }
+                //
+                //    if(hudDef.Crosshair != null)
+                //        ModifyFontsOf(hudDef, hudDef.Crosshair.StatStyles);
+                //
+                //    if(hudDef.TargetingMarkers != null)
+                //        ModifyFontsOf(hudDef, hudDef.TargetingMarkers.StatStyles);
+                //}
             }
 
             // force reload if it's mid-game change
@@ -254,6 +280,22 @@ namespace Digi.BuildInfo.Features
                 }
             }
         }
+
+        //void ModifyFontsOf(MyHudDefinition hudDef, MyObjectBuilder_StatVisualStyle[] styles)
+        //{
+        //    if(styles == null)
+        //        return;
+        //
+        //    foreach(MyObjectBuilder_StatVisualStyle style in styles)
+        //    {
+        //        // not shared variable, can be safely captured
+        //        var styleText = style as MyObjectBuilder_TextStatVisualStyle;
+        //        if(styleText != null)
+        //        {
+        //            Edits.Add(DefinitionEdit.Create(hudDef, (d, v) => styleText.Font = v, styleText.Font, FontsHandler.Monospace));
+        //        }
+        //    }
+        //}
 
         // HACK: HUD refresh hackery
         #region
