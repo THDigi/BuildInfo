@@ -24,7 +24,7 @@
 <glyph ch="*" code="002a" bm="0" origin="233,0" size="25x45" aw="17" lsb="-4" />
 <glyph ch="+" code="002b" bm="0" origin="258,0" size="25x45" aw="17" lsb="-4" />
 <glyph ch="," code="002c" bm="0" origin="283,0" size="25x45" aw="17" lsb="-4" />
-<glyph ch="-" code="002d" bm="0" origin="40,675" size="25x45" aw="17" lsb="-12" />
+<glyph ch="-" code="002d" bm="0" origin="308,0" size="25x45" aw="17" lsb="-4" />
 <glyph ch="." code="002e" bm="0" origin="333,0" size="25x45" aw="17" lsb="-4" />
 <glyph ch="/" code="002f" bm="0" origin="358,0" size="25x45" aw="17" lsb="-4" />
 <glyph ch="0" code="0030" bm="0" origin="383,0" size="25x45" aw="17" lsb="-4" />
@@ -728,7 +728,7 @@
 <glyph ch="⃰" code="20f0" bm="0" origin="570,765" size="9x45" aw="17" lsb="-4" />
 <glyph ch="™" code="2122" bm="0" origin="579,765" size="25x45" aw="17" lsb="-4" />
 <glyph ch="−" code="2212" bm="0" origin="604,765" size="25x45" aw="17" lsb="-4" />
-<glyph ch="∙" code="2219" bm="0" origin="629,765" size="25x45" aw="17" lsb="-8" />
+<glyph ch="∙" code="2219" bm="0" origin="629,765" size="25x45" aw="17" lsb="-4" />
 <glyph ch="□" code="25a1" bm="0" origin="654,765" size="25x45" aw="17" lsb="-4" />
 
 <!-- add alert/etc icons from monospace? -->
