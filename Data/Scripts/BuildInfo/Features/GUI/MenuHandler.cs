@@ -28,7 +28,6 @@ namespace Digi.BuildInfo.Features
         Dictionary<string, Action> Blockers = new Dictionary<string, Action>();
         List<Menu> Menus = new List<Menu>();
         HudAPIv2.BillBoardHUDMessage Cursor;
-        HudState? RevertHud;
 
         /// <summary>
         /// Scalar (-1 to 1) mouse position for real GUI cursor.
@@ -68,7 +67,6 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
-            RevertHUDBack();
         }
 
         public void SetUpdateMenu(Menu menu, bool on)
@@ -113,27 +111,7 @@ namespace Digi.BuildInfo.Features
 
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (Menus.Count > 0));
 
-            if(Menus.Count > 0)
-            {
-                if(RevertHud == null)
-                {
-                    RevertHud = Main.GameConfig.HudState;
-                    MyVisualScriptLogicProvider.SetHudState((int)HudState.OFF, playerId: 0); // playerId=0 shorcircuits to calling it locally
-                }
-            }
-            else
-            {
-                RevertHUDBack();
-            }
-        }
-
-        void RevertHUDBack()
-        {
-            if(RevertHud != null)
-            {
-                MyVisualScriptLogicProvider.SetHudState((int)RevertHud, playerId: 0);
-                RevertHud = null;
-            }
+            Main.GameConfig.TempHideHUD(nameof(MenuHandler), Menus.Count > 0);
         }
 
         public override void UpdateAfterSim(int tick)

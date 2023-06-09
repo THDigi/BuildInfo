@@ -1,4 +1,5 @@
-﻿using Digi.ComponentLib;
+﻿using System.Collections.Generic;
+using Digi.ComponentLib;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -26,6 +27,9 @@ namespace Digi.BuildInfo.Systems
         public double AspectRatio;
         public bool RotationHints;
 
+        HudState? PreviousHudState;
+        HashSet<string> HideHudRequests = new HashSet<string>();
+
         public GameConfig(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
@@ -44,6 +48,13 @@ namespace Digi.BuildInfo.Systems
                 return;
 
             Main.GUIMonitor.OptionsMenuClosed += UpdateConfigValues;
+
+            if(PreviousHudState != null)
+            {
+                SetHudState(PreviousHudState.Value, callEvents: false);
+                PreviousHudState = null;
+                HideHudRequests.Clear();
+            }
         }
 
         public override void UpdateAfterSim(int tick)
@@ -53,6 +64,45 @@ namespace Digi.BuildInfo.Systems
             {
                 UpdateHudState();
             }
+        }
+
+        /// <summary>
+        /// Adds/removes an id to keep HUD hidden, once all IDs are removed the HUD is automatically unhidden.
+        /// When world unloads it also automatically unhides it.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="hide"></param>
+        public void TempHideHUD(string id, bool hide)
+        {
+            if(hide)
+            {
+                // TODO: what about if HUD is already hidden? and what if player manually un-hides after this?
+                if(HideHudRequests.Count == 0)
+                {
+                    PreviousHudState = this.HudState;
+                    SetHudState(HudState.OFF);
+                }
+
+                HideHudRequests.Add(id);
+            }
+            else
+            {
+                HideHudRequests.Remove(id);
+
+                if(HideHudRequests.Count == 0 && PreviousHudState != null)
+                {
+                    SetHudState(PreviousHudState.Value);
+                    PreviousHudState = null;
+                }
+            }
+        }
+
+        public void SetHudState(HudState state, bool callEvents = true)
+        {
+            MyVisualScriptLogicProvider.SetHudState((int)state, playerId: 0); // gets called locally, because of playerId 0
+
+            if(callEvents)
+                UpdateHudState();
         }
 
         void UpdateConfigValues()
@@ -72,10 +122,10 @@ namespace Digi.BuildInfo.Systems
         void UpdateHudState()
         {
             HudState prevState = HudState;
-
             HudState = (HudState)(MyAPIGateway.Session.Config?.HudState ?? (int)HudState.HINTS);
 
-            HudStateChanged?.Invoke(prevState, HudState);
+            if(prevState != HudState)
+                HudStateChanged?.Invoke(prevState, HudState);
         }
     }
 }

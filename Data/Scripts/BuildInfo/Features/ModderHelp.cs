@@ -31,7 +31,6 @@ namespace Digi.BuildInfo.Features
         bool FirstSpawnChecked = false;
         bool F11MenuShownOnLoad = false;
 
-        HudState? RevertHud;
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
 
         const string ErrorsGUITypeName = "MyGuiScreenDebugErrors";
@@ -72,15 +71,6 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
-            try
-            {
-                RevertHUDBack();
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-
             Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
         }
@@ -697,11 +687,7 @@ namespace Digi.BuildInfo.Features
 
                 ErrorsMenuBackdrop.Visible = true;
 
-                if(RevertHud == null)
-                {
-                    RevertHud = Main.GameConfig.HudState;
-                    MyVisualScriptLogicProvider.SetHudState((int)HudState.OFF, playerId: 0); // playerId=0 shorcircuits to calling it locally
-                }
+                Main.GameConfig.TempHideHUD(nameof(ModderHelp), true);
             }
         }
 
@@ -710,16 +696,7 @@ namespace Digi.BuildInfo.Features
             if(ErrorsMenuBackdrop != null && screenType.EndsWith(ErrorsGUITypeName))
             {
                 ErrorsMenuBackdrop.Visible = false;
-                RevertHUDBack();
-            }
-        }
-
-        void RevertHUDBack()
-        {
-            if(RevertHud != null)
-            {
-                MyVisualScriptLogicProvider.SetHudState((int)RevertHud, playerId: 0);
-                RevertHud = null;
+                Main.GameConfig.TempHideHUD(nameof(ModderHelp), false);
             }
         }
         #endregion
