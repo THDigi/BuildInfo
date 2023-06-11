@@ -640,6 +640,38 @@ namespace Digi.BuildInfo.VanillaData
 
         public static readonly byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
 
+        // clone of MyCubeBlockDefinition.UntransformMountPointPosition() because it's internal
+        /// <summary>
+        /// Ignore Z on result.
+        /// </summary>
+        public static void UntransformMountPointPosition(ref Vector3 position, int wallIndex, Vector3I cubeSize, out Vector3 result)
+        {
+            Vector3 newPos = position - MountPointWallOffsets[wallIndex] * cubeSize;
+            Matrix matrixInv = MountPointTransformsInverted[wallIndex];
+            Vector3.Transform(ref newPos, ref matrixInv, out result);
+            result.Z = 0;
+        }
+
+        static Vector3[] MountPointWallOffsets = new Vector3[6]
+        {
+            new Vector3(1f, 0f, 1f),
+            new Vector3(0f, 1f, 1f),
+            new Vector3(1f, 0f, 0f),
+            new Vector3(0f, 0f, 0f),
+            new Vector3(0f, 0f, 0f),
+            new Vector3(0f, 0f, 1f)
+        };
+
+        static Matrix[] MountPointTransformsInverted = new Matrix[6]
+        {
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Right, Vector3.Up) * Matrix.CreateScale(1f, 1f, -1f)),
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Up, Vector3.Forward) * Matrix.CreateScale(-1f, 1f, 1f)),
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Forward, Vector3.Up) * Matrix.CreateScale(-1f, 1f, 1f)),
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Left, Vector3.Up) * Matrix.CreateScale(1f, 1f, -1f)),
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Down, Vector3.Backward) * Matrix.CreateScale(-1f, 1f, 1f)),
+            Matrix.Invert(Matrix.CreateFromDir(Vector3.Backward, Vector3.Up) * Matrix.CreateScale(-1f, 1f, 1f))
+        };
+
         // from MyCubeGrid.UpgradeCubeBlock()
         public static bool IsBlockReplaced(MyDefinitionId id, out MyCubeBlockDefinition newDef)
         {

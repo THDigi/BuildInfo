@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
-using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Draygo.API;
 using ProtoBuf;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Collections;
@@ -24,6 +22,8 @@ namespace Digi.BuildInfo.Features
 {
     public class ModderHelp : ModComponent
     {
+        static readonly bool CheckEverything = false;
+
         int ModProblems = 0;
         int ModHints = 0;
         bool DefinitionErrors = false;
@@ -57,7 +57,7 @@ namespace Digi.BuildInfo.Features
 
                 CheckErrors(localMods, MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE);
 
-                if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && localMods.Count > 0)
+                if(CheckEverything || (MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && localMods.Count > 0))
                 {
                     CheckMods();
 
@@ -307,7 +307,7 @@ namespace Digi.BuildInfo.Features
             {
                 MyDefinitionErrors.Error error = errors[i];
 
-                bool isLocal = localMods.Contains(error.ModName);
+                bool isLocal = CheckEverything || localMods.Contains(error.ModName);
 
                 if(isLocal)
                 {
@@ -446,8 +446,6 @@ namespace Digi.BuildInfo.Features
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
 
-            bool includePublishedMods = false; // = BuildInfoMod.IsDevMod;
-
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 if(def == null)
@@ -462,7 +460,7 @@ namespace Digi.BuildInfo.Features
                     continue;
                 }
 
-                if(!includePublishedMods)
+                if(!CheckEverything)
                 {
                     // ignore untouched definitions
                     if(def.Context.IsBaseGame)
@@ -496,6 +494,22 @@ namespace Digi.BuildInfo.Features
                         ModProblem(def, "has too high values for MirroringCenter tag! It should be at most Size - 1.");
                     }
 
+                    {
+                        if(blockDef.BuildProgressModels != null && blockDef.BuildProgressModels.Length > 0)
+                        {
+                            for(int i = 0; i < blockDef.BuildProgressModels.Length; i++)
+                            {
+                                MyCubeBlockDefinition.BuildProgressModel bpm = blockDef.BuildProgressModels[i];
+                                CheckMountpoints(blockDef, bpm.MountPoints, $"buildstage #{i + 1}, mountpoint");
+                            }
+                        }
+
+                        if(blockDef.MountPoints != null && blockDef.MountPoints.Length > 0)
+                        {
+                            CheckMountpoints(blockDef, blockDef.MountPoints, "mountpoint");
+                        }
+                    }
+
                     MyComponentStack comps = new MyComponentStack(blockDef, MyComponentStack.MOUNT_THRESHOLD, MyComponentStack.MOUNT_THRESHOLD);
                     MyComponentStack.GroupInfo firstComp = comps.GetGroupInfo(0);
                     if(firstComp.TotalCount > 1 && firstComp.MountedCount > 1)
@@ -504,19 +518,19 @@ namespace Digi.BuildInfo.Features
                                         "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
-                    // the basegame condition is for IsDevMod=true case to not spam myself
-                    if(!blockDef.IsAirTight.HasValue && !def.Context.IsBaseGame)
+                    if(blockDef.IsAirTight == null)
                     {
                         int airTightFaces, totalFaces;
                         AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
 
                         if(airTightFaces == 0 || airTightFaces == totalFaces)
                         {
+                            string modId = def.Context.IsBaseGame ? "<BaseGame>" : (def.Context.ModId ?? "Unknown");
                             ModHintData hintData;
-                            if(!modHints.TryGetValue(def.Context.ModId, out hintData))
+                            if(!modHints.TryGetValue(modId, out hintData))
                             {
                                 hintData = new ModHintData(blockDef.Context); // clones modcontext without file data
-                                modHints[def.Context.ModId] = hintData;
+                                modHints[modId] = hintData;
                             }
 
                             if(airTightFaces == 0)
@@ -555,6 +569,48 @@ namespace Digi.BuildInfo.Features
                 {
                     CombineIsAirTightHints(sb, modData, true);
                     CombineIsAirTightHints(sb, modData, false);
+                }
+            }
+        }
+
+        void CheckMountpoints(MyCubeBlockDefinition blockDef, MyCubeBlockDefinition.MountPoint[] mountpoints, string identifier = "mountpoint")
+        {
+            if(mountpoints == null || mountpoints.Length == 0)
+                return;
+
+            for(int i = 0; i < mountpoints.Length; i++)
+            {
+                MyCubeBlockDefinition.MountPoint mp = mountpoints[i];
+                if(!mp.Enabled)
+                    continue;
+
+                // TODO: also check these in overlays to color them different? maybe gray since it's not supposed to be used...
+
+                BlockSideEnum side = MyCubeBlockDefinition.NormalToBlockSide(mp.Normal);
+                Vector2I sizeRelative;
+                switch(side)
+                {
+                    // only accurate for the purposes of seeing if mountpoint is out of bounds
+                    case BlockSideEnum.Front:
+                    case BlockSideEnum.Back: sizeRelative = new Vector2I(blockDef.Size.X, blockDef.Size.Y); break;
+                    case BlockSideEnum.Left:
+                    case BlockSideEnum.Right: sizeRelative = new Vector2I(blockDef.Size.Z, blockDef.Size.Y); break;
+                    case BlockSideEnum.Top:
+                    case BlockSideEnum.Bottom: sizeRelative = new Vector2I(blockDef.Size.X, blockDef.Size.Z); break;
+                    default: ModProblem(blockDef, $"{identifier} #{i + 1} has unknown side: {side}"); continue;
+                }
+
+                Vector3 start, end; // ignore Z on these
+                Hardcoded.UntransformMountPointPosition(ref mp.Start, (int)side, blockDef.Size, out start);
+                Hardcoded.UntransformMountPointPosition(ref mp.End, (int)side, blockDef.Size, out end);
+
+                // MyCubeBlockDefinition.SetMountPoints() does some offsets making mountpoints ever so slightly smaller, this is good here so we don't need to undo
+
+                if(start.X < 0 || start.Y < 0 || end.X < 0 || end.Y < 0
+                || start.X > sizeRelative.X || start.Y > sizeRelative.Y || end.X > sizeRelative.X || end.Y > sizeRelative.Y)
+                {
+                    ModProblem(blockDef, $"{identifier} #{i + 1} is outside of the block! Start or End are either below 0 or above Size." +
+                                         "\nBlock can be placed but get detached when grid updates from any block being removed.");
                 }
             }
         }
@@ -620,6 +676,13 @@ namespace Digi.BuildInfo.Features
             string message = $"Problem with '{GetDefId(def)}': {text}";
             MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error);
             ModProblems++;
+        }
+
+        void ModHint(MyDefinitionBase def, string text)
+        {
+            string message = $"Hint for '{GetDefId(def)}': {text}";
+            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Notice);
+            ModHints++;
         }
 
         void ModHint(MyModContext context, string text)
