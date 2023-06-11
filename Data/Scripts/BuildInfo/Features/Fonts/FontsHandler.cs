@@ -28,13 +28,15 @@ namespace Digi.BuildInfo.Features
         public const char IconExplode = '\ue200';
         public const char IconCharacter = '\ue201';
         public const char IconCharacterHead = '\ue202';
-        public const char IconBlock = '\ue203';
+        public const char IconBlockDamage = '\ue203';
         public const char IconProjectileGravity = '\ue204';
         public const char IconProjectileNoGravity = '\ue205';
         public const char IconBlockPenetration = '\ue206';
         public const char IconMaxSpeed = '\ue207';
         public const char IconMissile = '\ue208';
         public const char IconSphere = '\ue209';
+        public const char IconRicochet = '\ue20A';
+        public const char IconDice = '\ue20B';
 
         static readonly bool DoExportSpecialChars = false;
 

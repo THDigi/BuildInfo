@@ -3837,6 +3837,7 @@ namespace Digi.BuildInfo.Features
         public readonly Color COLOR_STAT_PENETRATIONDMG = new Color(100, 155, 255);
         public readonly Color COLOR_STAT_CHARACTERDMG = new Color(255, 220, 100);
         public readonly Color COLOR_STAT_EXPLOSION = new Color(255, 100, 0);
+        public readonly Color COLOR_STAT_RICOCHET = new Color(230, 100, 100);
 
         readonly List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>> AmmoBullets = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
         readonly List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>> AmmoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
@@ -4149,8 +4150,8 @@ namespace Digi.BuildInfo.Features
                 {
                     const int MaxMagNameLength = 20;
                     const string MagazineSeparator = ": ";
-                    const string DamageSeparator = "; ";
-                    const string ColumnSeparator = "; ";
+                    const string ColumnSeparator = " <color=gray>|<reset> ";
+                    const string DamageSeparator = ColumnSeparator;
 
                     if(hasBullets)
                     {
@@ -4191,13 +4192,13 @@ namespace Digi.BuildInfo.Features
                                 line.Color(COLOR_BAD);
                             else
                                 line.Color(COLOR_STAT_SHIPDMG);
-                            line.Number(projectile.ProjectileMassDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconBlock).Append(DamageSeparator);
+                            line.Number(projectile.ProjectileMassDamage * wpDef.DamageMultiplier).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
 
                             if(projectile.ProjectileHealthDamage == 0)
                                 line.Color(COLOR_BAD);
                             else
                                 line.Color(COLOR_STAT_CHARACTERDMG);
-                            line.Number(projectile.ProjectileHealthDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconCharacter).Append(DamageSeparator);
+                            line.Number(projectile.ProjectileHealthDamage * wpDef.DamageMultiplier).Icon(FontsHandler.IconCharacter).Append(DamageSeparator);
 
                             if(projectile.HeadShot)
                             {
@@ -4205,19 +4206,19 @@ namespace Digi.BuildInfo.Features
                                     line.Color(COLOR_BAD);
                                 else
                                     line.Color(COLOR_STAT_CHARACTERDMG);
-                                line.Number(projectile.ProjectileHeadShotDamage * wpDef.DamageMultiplier).ResetFormatting().Append(FontsHandler.IconCharacterHead).Append(DamageSeparator);
+                                line.Number(projectile.ProjectileHeadShotDamage * wpDef.DamageMultiplier).Icon(FontsHandler.IconCharacterHead).Append(DamageSeparator);
                             }
 
                             if(projectile.ProjectileExplosionRadius > 0 && projectile.ProjectileExplosionDamage != 0)
                             {
                                 // HACK: wpDef.DamageMultiplier is not used for this explosion
-                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(projectile.ProjectileExplosionRadius).ResetFormatting().Append(FontsHandler.IconSphere);
-                                line.Color(COLOR_STAT_EXPLOSION).Number(projectile.ProjectileExplosionDamage).ResetFormatting().Append(FontsHandler.IconExplode).Append(DamageSeparator);
+                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(projectile.ProjectileExplosionRadius).Icon(FontsHandler.IconSphere);
+                                line.Color(COLOR_STAT_EXPLOSION).Number(projectile.ProjectileExplosionDamage).Icon(FontsHandler.IconExplode).Append(DamageSeparator);
                             }
 
                             line.Length -= DamageSeparator.Length;
 
-                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+                            line.Append(ColumnSeparator);
 
                             // from MyProjectile.Start()
                             if(projectile.SpeedVar > 0)
@@ -4225,7 +4226,7 @@ namespace Digi.BuildInfo.Features
                             else
                                 line.SpeedFormat(projectile.DesiredSpeed);
 
-                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+                            line.Append(ColumnSeparator);
 
                             float range = wpDef.RangeMultiplier * projectile.MaxTrajectory;
                             if(wpDef.UseRandomizedRange)
@@ -4234,7 +4235,7 @@ namespace Digi.BuildInfo.Features
                                 line.DistanceFormat(range);
 
                             // projectiles always have gravity
-                            line.Append(" ").Color(COLOR_WARNING).Append(FontsHandler.IconProjectileGravity).ResetFormatting();
+                            line.Append(" ").Icon(COLOR_WARNING, FontsHandler.IconProjectileGravity).ResetFormatting();
 
                             // TODO: include ProjectileTrailProbability? only if it has some visible values...
                         }
@@ -4272,45 +4273,140 @@ namespace Digi.BuildInfo.Features
 
                             StringBuilder line = AddLine().Append("| ").Color(COLOR_STAT_TYPE).AppendMaxLength(mag.DisplayNameText, MaxMagNameLength).ResetFormatting().Append(MagazineSeparator);
 
-                            // HACK: wpDef.DamageMultiplier is not used for missile explosions nor healthpool
+                            float penetrationDamage = missile.MissileHealthPool;
+                            bool showPenetrationDamage = penetrationDamage > 0;
 
-                            if(missile.MissileHealthPool > 0)
+                            float explosiveDamage = missile.MissileExplosionRadius > 0 ? missile.MissileExplosionDamage : 0;
+                            bool showExplosiveDamage = explosiveDamage > 0;
+
+                            // ricochet system is activated
+                            // how it normally works: https://steamcommunity.com/sharedfiles/filedetails/?id=2963715247
+                            // but it can be changed into bonus damage or can prevent penetration entirely, going through those scenarios below
+                            if(missile.MissileRicochetAngle >= 0 && missile.MissileRicochetProbability > 0)
                             {
-                                line.Color(COLOR_STAT_PENETRATIONDMG).Number(missile.MissileHealthPool).ResetFormatting().Append(FontsHandler.IconBlockPenetration).Append(DamageSeparator);
+                                int ricochetChance = (int)Math.Round(missile.MissileRicochetProbability * 100);
+
+                                bool ricochetAllAngles = missile.MissileRicochetAngle == 0f;
+                                float ricochetSurfaceAngle = 90 - missile.MissileRicochetAngle; // swapped normal angle to surface angle
+
+                                line.Color(COLOR_STAT_RICOCHET).Append(ricochetChance).Append("% ")
+                                    .AngleFormatDeg(ricochetSurfaceAngle).Icon(FontsHandler.IconRicochet)
+                                    .Append(" ").Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage)
+                                    .Append(DamageSeparator);
+
+                                // TODO: expand to include all the non-ricochet uses of this feature
+
+                                /*
+                                bool ricochetCanOverridePenetration = penetrationDamage <= missile.MissileRicochetDamage;
+
+                                if(ricochetCanOverridePenetration)
+                                {
+                                    showPenetrationDamage = false;
+
+                                    if(ricochetAllAngles && ricochetChance >= 100) // penetration damage completely ignored
+                                    {
+                                        if(penetrationDamage > 0)
+                                            line.Color(COLOR_WARNING);
+                                        else
+                                            line.Color(COLOR_STAT_SHIPDMG);
+
+                                        line.Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
+                                    }
+                                    else
+                                    {
+                                        if(ricochetAllAngles && ricochetChance < 100) // only depends on chance
+                                        {
+                                            if(penetrationDamage > 0)
+                                                line.Append(100 - ricochetChance).Append("%: ").Color(COLOR_STAT_PENETRATIONDMG).Number(penetrationDamage).Icon(FontsHandler.IconBlockPenetration).Append(DamageSeparator);
+
+                                            line.Append(ricochetChance).Append("%: ").Color(COLOR_STAT_SHIPDMG).Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
+                                        }
+                                        else if(!ricochetAllAngles && ricochetChance >= 100) // only depends on angle
+                                        {
+                                            if(penetrationDamage > 0)
+                                                line.AngleFormatDeg(ricochetSurfaceAngle).Append(": ").Color(COLOR_STAT_PENETRATIONDMG).Number(penetrationDamage).Icon(FontsHandler.IconBlockPenetration).Append(DamageSeparator);
+
+                                            line.AngleFormatDeg(ricochetSurfaceAngle).Append(": ").Color(COLOR_STAT_SHIPDMG).Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
+                                        }
+                                        else // variable chance and angle...
+                                        {
+                                            line.Append(ricochetChance).Append("% ").AngleFormatDeg(ricochetSurfaceAngle);
+
+                                            line.Append(": ").Color(COLOR_STAT_SHIPDMG).Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage);
+
+                                            if(penetrationDamage > 0)
+                                                line.Color(COLOR_BAD).Append(" or ").Color(COLOR_STAT_PENETRATIONDMG).Number(penetrationDamage).Icon(FontsHandler.IconBlockPenetration);
+
+                                            line.Append(DamageSeparator);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    line.Append(ricochetChance).Append("% ").AngleFormatDeg(ricochetSurfaceAngle).Icon(FontsHandler.IconRicochet).Append(": ").Color(COLOR_STAT_SHIPDMG).Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
+
+                                    // TODO add OR with penetration and explosion afterwards
+                                }
+
+                                //line.Color(COLOR_STAT_RICOCHET).Append(ricochetChance).Append("% ").AngleFormatDeg(ricochetSurfaceAngle).Icon(FontsHandler.IconRicochet).Color(COLOR_STAT_RICOCHET).Append(": ").Number(missile.MissileRicochetDamage).Icon(FontsHandler.IconBlockDamage).Append(DamageSeparator);
+                                */
                             }
 
-                            if(missile.MissileExplosionRadius > 0 && missile.MissileExplosionDamage != 0)
+                            // HACK: wpDef.DamageMultiplier is not used for missile explosions nor healthpool
+
+                            if(showPenetrationDamage)
                             {
-                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(missile.MissileExplosionRadius).ResetFormatting().Append(FontsHandler.IconSphere);
-                                line.Color(COLOR_STAT_EXPLOSION).Number(missile.MissileExplosionDamage).ResetFormatting().Append(FontsHandler.IconExplode).Append(DamageSeparator);
+                                line.Color(COLOR_STAT_PENETRATIONDMG).Number(penetrationDamage).Icon(FontsHandler.IconBlockPenetration).Append(DamageSeparator);
+                            }
+
+                            if(showExplosiveDamage)
+                            {
+                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(missile.MissileExplosionRadius).Icon(FontsHandler.IconSphere);
+                                line.Color(COLOR_STAT_EXPLOSION).Number(missile.MissileExplosionDamage).Icon(FontsHandler.IconExplode).Append(DamageSeparator);
                             }
 
                             line.Length -= DamageSeparator.Length;
 
-                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+                            line.Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
 
                             // HACK: ammo.SpeedVar is not used for missiles
                             // HACK: wepDef.RangeMultiplier and wepDef.UseRandomizedRange are not used for missiles
+                            float maxTravel = missile.MaxTrajectory;
+                            float maxSpeed = missile.DesiredSpeed;
+                            float spawnSpeed = missile.MissileInitialSpeed;
+                            float accel = missile.MissileAcceleration;
 
-                            // no initial speed printing
-                            if(!missile.MissileSkipAcceleration && missile.MissileAcceleration != 0)
+                            if(!missile.MissileSkipAcceleration && accel != 0)
                             {
-                                float accel = missile.MissileAcceleration;
-                                float maxSpeed = missile.DesiredSpeed;
-                                line.Append("+").AccelerationFormat(accel).ResetFormatting().Append(FontsHandler.IconMissile).Color(COLOR_UNIMPORTANT).SpeedFormat(maxSpeed);
+                                if(accel > 0)
+                                {
+                                    float time = (maxSpeed - spawnSpeed) / accel;
+                                    line.TimeFormat(time).Icon(FontsHandler.IconMissile).SpeedFormat(maxSpeed);
+                                }
+                                else // negative acceleration
+                                {
+                                    line.AccelerationFormat(accel).Icon(FontsHandler.IconMissile).SpeedFormat(maxSpeed);
+                                }
                             }
                             else
                             {
-                                float speed = Math.Min(missile.MissileInitialSpeed, missile.DesiredSpeed);
+                                float speed = Math.Min(spawnSpeed, maxSpeed);
                                 line.SpeedFormat(speed);
                             }
 
-                            line.ResetFormatting().Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
+                            line.Append(ColumnSeparator).Color(COLOR_UNIMPORTANT);
 
-                            line.DistanceFormat(missile.MaxTrajectory);
+                            line.DistanceFormat(maxTravel);
 
-                            line.Append(" ").Color(missile.MissileGravityEnabled ? COLOR_WARNING : COLOR_GOOD).Append(missile.MissileGravityEnabled ? FontsHandler.IconProjectileGravity : FontsHandler.IconProjectileNoGravity).ResetFormatting();
-                        }
+                            line.Append(" ");
+                            if(missile.MissileGravityEnabled)
+                                line.Icon(COLOR_WARNING, FontsHandler.IconProjectileGravity);
+                            else
+                                line.Icon(COLOR_GOOD, FontsHandler.IconProjectileNoGravity);
+                            line.ResetFormatting();
+
+                            //line.MoreInfoInHelp(5);
+                        };
                     }
                 }
 

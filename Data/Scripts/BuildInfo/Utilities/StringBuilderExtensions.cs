@@ -314,6 +314,39 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        /// <summary>
+        /// White icon, restores text color after
+        /// </summary>
+        public static StringBuilder Icon(this StringBuilder s, char icon)
+        {
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                s.Append("<reset>");
+
+            s.Append(icon);
+
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                s.Color(CurrentColor);
+
+            return s;
+        }
+
+        /// <summary>
+        /// Colored icon, restores text color after.
+        /// </summary>
+        public static StringBuilder Icon(this StringBuilder s, Color color, char icon)
+        {
+            Color prevColor = CurrentColor;
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                s.Color(color);
+
+            s.Append(icon);
+
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                s.Color(prevColor);
+
+            return s;
+        }
+
         public static StringBuilder AppendSanitized(this StringBuilder sb, string text)
         {
             for(int i = 0; i < text.Length; i++)

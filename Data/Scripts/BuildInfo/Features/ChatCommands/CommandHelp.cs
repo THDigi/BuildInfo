@@ -38,6 +38,14 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n [4] What is camera raycast?" +
             "\n  Programmable Block can use Camera blocks to rangefind objects using physics raycast, for more info see the PB API (on MDK wiki maybe)." +
             "\n" +
+            // TODO explain ammo stats... or do the tooltip thingie first
+            //"\n [5] Ammo stats expanded" +
+            //"\n  This mod prints per magazine this format: P%: A° D" +
+            //"\n    P = chance for the ricochet to happen at all." +
+            //"\n    A = max angle of approach to allow a ricochet (in SBC it's angle from surface normal, I changed it to angle of approach, 90 - angle, because it's faster to mentally compute)" +
+            //"\n    D = damage dealt to the hit block and also subtracted from the damage pool the round has going onwards." +
+            //"\n  Mind that ricochet only works if it hits destroyable grids, gitting anything immune (even grids) will explode on impact regardless." +
+            //"\n  For the explanation in more words, see Projectile Ricochet Feature Guide on steam workshop." +
             "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Blueprint's stock build time" + SegmentSuffix +
