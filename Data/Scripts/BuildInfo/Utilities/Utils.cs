@@ -865,5 +865,19 @@ namespace Digi.BuildInfo.Utilities
                 vertices.Add(new Vector3D(v.X, v.Y, 0.0 - v.Z));
             }
         }
+
+        /// <summary>
+        /// Pulse between <paramref name="min"/> to <paramref name="max"/> and back to <paramref name="min"/>, <paramref name="freq"/> times per second.
+        /// <para><paramref name="seconds"/> is optional, if not provided it will use game time (affected by sim speed and pause).</para>
+        /// </summary>
+        public static float Pulse(float min, float max, float freq, float seconds = -1)
+        {
+            if(seconds <= 0)
+                seconds = MyAPIGateway.Session.GameplayFrameCounter / 60f;
+
+            float sin = (float)Math.Sin(Math.PI * 2 * seconds * freq);
+            float ratio = (sin + 1) * 0.5f;
+            return MathHelper.Lerp(min, max, ratio);
+        }
     }
 }

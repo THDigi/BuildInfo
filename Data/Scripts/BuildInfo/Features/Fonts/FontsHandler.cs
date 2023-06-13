@@ -37,6 +37,7 @@ namespace Digi.BuildInfo.Features
         public const char IconSphere = '\ue209';
         public const char IconRicochet = '\ue20A';
         public const char IconDice = '\ue20B';
+        public const char IconTooltip = '\ue20C';
 
         static readonly bool DoExportSpecialChars = false;
 

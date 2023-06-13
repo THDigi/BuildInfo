@@ -279,6 +279,13 @@ namespace Digi.BuildInfo.Utilities
             return s.Color(BuildInfoMod.Instance.TextGeneration.COLOR_UNIMPORTANT).Append(" ([").Append(num).Append("] @ /bi)");
         }
 
+        public static StringBuilder MarkTooltip(this StringBuilder s)
+        {
+            if(BuildInfoMod.Instance.TextAPI.IsEnabled)
+                return s.Append("<reset> ").Append(FontsHandler.IconTooltip).Color(CurrentColor);
+            return s;
+        }
+
         /// <summary>
         /// Assigned by Color methods as well as Reset ones.
         /// </summary>

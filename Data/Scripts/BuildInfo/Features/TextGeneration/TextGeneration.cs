@@ -274,6 +274,11 @@ namespace Digi.BuildInfo.Features
 
         private bool UpdateWithDef(MyCubeBlockDefinition def)
         {
+            LocalTooltips.Clear();
+
+            bool processTooltips = false;
+
+            // TODO: separate quick menu!
             if(Main.QuickMenu.Shown)
             {
                 if(Main.QuickMenu.NeedsUpdate)
@@ -304,8 +309,12 @@ namespace Digi.BuildInfo.Features
 
                     if(Main.Config.TextShow.ShouldShowText)
                     {
+                        Main.ScreenTooltips.ClearTooltips(nameof(TextGeneration));
+                        processTooltips = true;
+
                         if(hasAimedBlock)
                         {
+                            cache = null;
                             try
                             {
                                 aimInfoNeedsUpdate = false;
@@ -338,6 +347,7 @@ namespace Digi.BuildInfo.Features
                         }
                         else
                         {
+                            cache = null;
                             try
                             {
                                 aimInfoNeedsUpdate = false;
@@ -355,8 +365,85 @@ namespace Digi.BuildInfo.Features
 
             UpdateVisualText();
 
+            if(processTooltips)
+                FinalizeTooltips();
+
             return true;
         }
+
+        #region Tooltips
+        public struct LocalTooltip
+        {
+            public int Line;
+            public StringBuilder Text;
+            public Action Action;
+        }
+
+        List<LocalTooltip> LocalTooltips = new List<LocalTooltip>();
+        bool LineHadTooltip = false;
+
+        /// <summary>
+        /// If line not defined, automatically uses current line and automatically calls <see cref="Utilities.StringBuilderExtensions.MarkTooltip(StringBuilder)"/> when it ends.
+        /// </summary>
+        StringBuilder CreateTooltip(Action action = null, int line = -1)
+        {
+            if(!Main.TextAPI.IsEnabled)
+                return null;
+
+            if(line < 0)
+            {
+                LineHadTooltip = true;
+                line = this.line;
+            }
+
+            StringBuilder sb = new StringBuilder(256);
+
+            LocalTooltips.Add(new LocalTooltip()
+            {
+                Text = sb,
+                Line = line,
+                Action = action,
+            });
+
+            return sb;
+        }
+
+        void FinalizeTooltips()
+        {
+            if(!Main.TextAPI.IsEnabled)
+                return;
+
+            List<LocalTooltip> localTooltips;
+            CacheTextAPI cacheTextAPI = cache as CacheTextAPI;
+            if(cacheTextAPI != null)
+                localTooltips = cacheTextAPI.Tooltips; // this can also be null and that is a valid state
+            else
+                localTooltips = LocalTooltips;
+
+            if(localTooltips != null && localTooltips.Count > 0)
+            {
+                Vector2D textSize = cacheTextAPI?.TextSize ?? textObject?.Text?.GetTextLength() ?? Vector2D.Zero;
+
+                float lineHeight = (float)(Math.Abs(textSize.Y) / lines);
+
+                Vector2 textMin = (Vector2)(textObject.Text.Origin + textObject.Text.Offset);
+                Vector2 addMax = new Vector2((float)textSize.X, -lineHeight);
+
+                //DebugLog.PrintHUD(this, $"FinalizeTooltips() :: lineH={lineHeight:0.#####}; lines={lines}; textMin={textMin}; addMax={addMax}", log: true); // DEBUG log
+
+                foreach(LocalTooltip lt in localTooltips)
+                {
+                    Vector2 min = textMin + new Vector2(0, -lineHeight * lt.Line);
+                    Vector2 max = min + addMax;
+                    BoundingBox2 bb = new BoundingBox2(Vector2.Min(min, max), Vector2.Max(min, max));
+
+                    //DebugLog.PrintHUD(this, $"FinalizeTooltips() :: tooltip added: bb={bb.Min} to {bb.Max}; line={lt.Line}; text={lt.Text.ToString()}", log: true); // DEBUG log
+
+                    Main.ScreenTooltips.AddTooltip(nameof(TextGeneration), bb, lt.Text.TrimEndWhitespace().ToString(), lt.Action);
+                }
+            }
+        }
+        #endregion
 
         #region Text handling
         public void PostProcessText(MyDefinitionId id, bool useCache)
@@ -369,12 +456,9 @@ namespace Digi.BuildInfo.Features
 
                 if(useCache)
                 {
-                    cache = new CacheTextAPI(textAPIlines, textSize);
+                    cache = new CacheTextAPI(textAPIlines, textSize, LocalTooltips);
 
-                    if(CachedBuildInfoTextAPI.ContainsKey(id))
-                        CachedBuildInfoTextAPI[id] = cache;
-                    else
-                        CachedBuildInfoTextAPI.Add(id, cache);
+                    CachedBuildInfoTextAPI[id] = cache;
                 }
             }
             else
@@ -401,10 +485,7 @@ namespace Digi.BuildInfo.Features
                 {
                     cache = new CacheNotifications(notificationLines);
 
-                    if(CachedBuildInfoNotification.ContainsKey(id))
-                        CachedBuildInfoNotification[id] = cache;
-                    else
-                        CachedBuildInfoNotification.Add(id, cache);
+                    CachedBuildInfoNotification[id] = cache;
                 }
             }
         }
@@ -424,7 +505,7 @@ namespace Digi.BuildInfo.Features
             #region Update text and count lines
             StringBuilder msg = textObject.Text.Message;
             msg.Clear().EnsureCapacity(msg.Length + textSB.Length);
-            lines = 0;
+            lines = 1;
 
             for(int i = 0; i < textSB.Length; i++)
             {
@@ -728,6 +809,8 @@ namespace Digi.BuildInfo.Features
                     textShown = false;
                     LastDefId = default(MyDefinitionId);
 
+                    Main.ScreenTooltips.ClearTooltips(nameof(TextGeneration));
+
                     // text API hide
                     //if(textObject != null)
                     //{
@@ -793,6 +876,24 @@ namespace Digi.BuildInfo.Features
 
             if(Main.TextAPI.IsEnabled)
             {
+                // for testing tooltip lines lining up
+                //{
+                //    string lastLine = textAPIlines.ToString();
+                //    int lastLineIdx = lastLine.LastIndexOf('\n');
+                //    if(lastLineIdx != -1)
+                //    {
+                //        lastLineIdx += 1;
+                //        lastLine = lastLine.Substring(lastLineIdx, lastLine.Length - lastLineIdx);
+                //    }
+                //
+                //    CreateTooltip().Append($"line #{line} == {lastLine}");
+                //}
+
+                if(LineHadTooltip)
+                {
+                    textAPIlines.MarkTooltip();
+                }
+
                 textAPIlines.NewCleanLine();
             }
             else
@@ -802,6 +903,8 @@ namespace Digi.BuildInfo.Features
 
                 largestLineWidth = Math.Max(largestLineWidth, hudLine.lineWidthPx);
             }
+
+            LineHadTooltip = false;
         }
 
         private StringBuilder GetLine()
@@ -5316,13 +5419,15 @@ namespace Digi.BuildInfo.Features
         {
             public readonly StringBuilder Text;
             public readonly Vector2D TextSize;
+            public readonly List<LocalTooltip> Tooltips;
 
-            public CacheTextAPI(StringBuilder textSB, Vector2D textSize)
+            public CacheTextAPI(StringBuilder textSB, Vector2D textSize, List<LocalTooltip> tooltips)
             {
                 ResetExpiry();
                 Text = new StringBuilder(textSB.Length);
                 Text.AppendStringBuilder(textSB);
                 TextSize = textSize;
+                Tooltips = tooltips.Count > 0 ? new List<LocalTooltip>(tooltips) : null;
             }
         }
 

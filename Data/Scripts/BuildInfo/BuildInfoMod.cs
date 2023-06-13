@@ -53,6 +53,7 @@ namespace Digi.BuildInfo
         public readonly ConfigMenuHandler ConfigMenuHandler;
         public readonly MenuHandler MenuHandler;
         public readonly HUDEditor HUDEditor;
+        public readonly ScreenTooltips ScreenTooltips;
         public readonly JumpDriveMonitor JumpDriveMonitor;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly LeakInfo LeakInfo;
@@ -139,6 +140,7 @@ namespace Digi.BuildInfo
             MenuHandler = new MenuHandler(this);
             JumpDriveMonitor = new JumpDriveMonitor(this);
             HUDEditor = new HUDEditor(this);
+            ScreenTooltips = new ScreenTooltips(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             ShipOverlays = new ShipOverlays(this);

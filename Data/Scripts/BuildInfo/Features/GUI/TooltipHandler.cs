@@ -24,6 +24,9 @@ namespace Digi.BuildInfo.Features.GUI
         string PrevTooltipRef;
         bool DrawThisTick;
 
+        /// <summary>
+        /// Requires TextAPI to've been initialized!
+        /// </summary>
         public TooltipHandler()
         {
             Label = new TextAPI.TextPackage(256, backgroundTexture: TooltipBg);
