@@ -549,7 +549,7 @@ namespace Digi.BuildInfo.Features.Overlays
                                 Vector3D labelDir = Vector3D.Normalize(cm.Up + cm.Right * 0.5);
 
                                 if(closestPort.Value.Message == null)
-                                    LabelRender.DynamicLabel.Clear().Append("Unknown port").MoreInfoInHelp(3);
+                                    LabelRender.DynamicLabel.Clear().Append("Unknown port");
                                 else
                                     LabelRender.DynamicLabel.Clear().Append(closestPort.Value.Message);
 

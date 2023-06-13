@@ -21,32 +21,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Blocks in construction stages are never airtight." +
             "\n" +
             "\n" +
-            "\n" + SegmentPrefix + "Explaining numbered markings in text info and overlays" + SegmentSuffix +
-            "\n" +
-            "\n [1] Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation." +
-            "\n  To calculate it at your needed distance, hold a laser antenna and type in chat: /bi laserpower <km>" +
-            "\n" +
-            "\n [2] No standalone means the block can't exist as the only block in the grid." +
-            "\n  Blocks with no collisions also have this limitation." +
-            "\n  Also no-collision blocks provide no mass to the grid." +
-            "\n" +
-            "\n [3] Unknown ports:" +
-            "\n  These ports are upgrade ports but the block has no upgrades declared in code." +
-            "\n  They can have custom functionality provided by a mod or no functionality at all, can't tell from code." +
-            "\n  They're shown in overlays because their position is still useful if you can identify their purpose." +
-            "\n" +
-            "\n [4] What is camera raycast?" +
-            "\n  Programmable Block can use Camera blocks to rangefind objects using physics raycast, for more info see the PB API (on MDK wiki maybe)." +
-            "\n" +
-            // TODO explain ammo stats... or do the tooltip thingie first
-            //"\n [5] Ammo stats expanded" +
-            //"\n  This mod prints per magazine this format: P%: A° D" +
-            //"\n    P = chance for the ricochet to happen at all." +
-            //"\n    A = max angle of approach to allow a ricochet (in SBC it's angle from surface normal, I changed it to angle of approach, 90 - angle, because it's faster to mentally compute)" +
-            //"\n    D = damage dealt to the hit block and also subtracted from the damage pool the round has going onwards." +
-            //"\n  Mind that ricochet only works if it hits destroyable grids, gitting anything immune (even grids) will explode on impact regardless." +
-            //"\n  For the explanation in more words, see Projectile Ricochet Feature Guide on steam workshop." +
-            "\n" +
             "\n" +
             "\n" + SegmentPrefix + "Blueprint's stock build time" + SegmentSuffix +
             "\n  First off, it is impossible to tell which production block you're looking at from modAPI." +

@@ -274,11 +274,6 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(b ? "Yes" : "No");
         }
 
-        public static StringBuilder MoreInfoInHelp(this StringBuilder s, int num)
-        {
-            return s.Color(BuildInfoMod.Instance.TextGeneration.COLOR_UNIMPORTANT).Append(" ([").Append(num).Append("] @ /bi)");
-        }
-
         public static StringBuilder MarkTooltip(this StringBuilder s)
         {
             if(BuildInfoMod.Instance.TextAPI.IsEnabled)

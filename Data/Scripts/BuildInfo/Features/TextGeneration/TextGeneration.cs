@@ -408,6 +408,11 @@ namespace Digi.BuildInfo.Features
             return sb;
         }
 
+        void SimpleTooltip(string text)
+        {
+            CreateTooltip()?.Append(text);
+        }
+
         void FinalizeTooltips()
         {
             if(!Main.TextAPI.IsEnabled)
@@ -1901,7 +1906,11 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(upgradePorts > 0)
                     {
-                        AddLine().Label("Unknown ports").Append(upgradePorts).MoreInfoInHelp(3);
+                        AddLine().Label("Unknown ports").Append(upgradePorts);
+
+                        SimpleTooltip("These ports are upgrade ports but the block has no upgrades declared in code."
+                                    + "\nThey can have custom functionality provided by a mod or no functionality at all."
+                                    + "\nThey're shown in ports overlay mode if you need to see them.");
                     }
                 }
             }
@@ -2169,7 +2178,10 @@ namespace Digi.BuildInfo.Features
                     if(!def.HasPhysics)
                         GetLine().Separator();
 
-                    GetLine().Color(COLOR_WARNING).Append("No standalone").MoreInfoInHelp(2);
+                    GetLine().Color(COLOR_WARNING).Append("No standalone");
+
+                    SimpleTooltip("'No standalone' means grid will self-delete if it's entirely made of blocks with this tag."
+                                + "\nBlocks with 'No collisions' also have this behavior while also not providing any mass to the grid.");
                 }
             }
 
@@ -3597,7 +3609,11 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km").MoreInfoInHelp(1);
+                AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km");
+
+                SimpleTooltip("Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation."
+                            + "\nTo calculate it at your needed distance, hold a laser antenna block and type in chat: <color=0,255,155>/bi laserpower <km>");
+
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
@@ -3828,7 +3844,10 @@ namespace Digi.BuildInfo.Features
                 else
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2).MoreInfoInHelp(4);
+                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
+
+                SimpleTooltip("Programmable Block can use Camera blocks to rangefind objects using physics raycast."
+                            + "\nFor more info see the PB API (on MDK wiki for example).");
             }
         }
 
