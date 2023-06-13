@@ -544,6 +544,12 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
+                    if(!blockDef.HasPhysics && blockDef.IsStandAlone)
+                    {
+                        ModProblem(def, "uses HasPhysics=false and IsStandAlone=true which allows player to place free-floating and then can't be grinded anymore!"
+                                      + "\nGenerally recommended for both of these tags to have the same value. Can also have IsStandAlone=false and HasPhysics=true.");
+                    }
+
                     continue;
                 }
 
