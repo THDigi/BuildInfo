@@ -408,6 +408,13 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             if(magDef.Capacity > 1)
                 s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
+
+            MyAmmoDefinition ammoDef = MyDefinitionManager.Static.GetAmmoDefinition(magDef.AmmoDefinitionId);
+            if(ammoDef != null)
+            {
+                if(ammoDef.ExplosiveDamageMultiplier > 0)
+                    s.Append("\n/!\\ Container holding this ammo explodes when destroyed!");
+            }
         }
 
         public void TooltipUsedIn(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
@@ -539,7 +546,6 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 Crafting_Ingredient(s, physDef, detailed: true);
                 Crafting_BlockComponent(s, physDef, detailed: true);
-
             }
             else
             {
