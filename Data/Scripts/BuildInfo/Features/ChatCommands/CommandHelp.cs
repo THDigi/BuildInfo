@@ -8,11 +8,18 @@ namespace Digi.BuildInfo.Features.ChatCommands
     public class CommandHelp : Command
     {
         private const string Footer =
-            SegmentPrefix + "Asterisk in labels explained" + SegmentSuffix +
+            SegmentPrefix + "TextInfo: Asterisk in labels explained" + SegmentSuffix +
             "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means that the value is calculated from hardcoded values taken from the game source, they might become inaccurate with updates." +
             "\n" +
             "\n" +
-            "\n" + SegmentPrefix + " Mount points & airtightness" + SegmentSuffix +
+            "\n" +
+            "\n" + SegmentPrefix + "TextInfo: [i] at end of lines" + SegmentSuffix +
+            "\n  Indicates that the line has a tooltip with a more detailed explanation or even more stats." +
+            "\n  Open chat and the mouse appears, now you can aim at the line and the tooltip appears!" +
+            "\n" +
+            "\n" +
+            "\n" +
+            "\n" + SegmentPrefix + "Mount points & airtightness" + SegmentSuffix +
             "\n  Mount points define areas that can be attached to other block's mount points." +
             "\n  Blue wireframe over mountpoint is the side and point used for auto-rotation." +
             "\n  Red mountpoint has special rules attached to it and might not attach to other red mounts." +
