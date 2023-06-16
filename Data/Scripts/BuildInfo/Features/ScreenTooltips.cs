@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Features.GUI;
+using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
@@ -16,6 +17,8 @@ namespace Digi.BuildInfo.Features
 
         bool WasChatVisible = false;
         ITooltipHandler TooltipHandler;
+
+        HudAPIv2.BillBoardHUDMessage SelectedBox;
 
         readonly Dictionary<string, List<Tooltip>> Tooltips = new Dictionary<string, List<Tooltip>>();
 
@@ -62,12 +65,24 @@ namespace Digi.BuildInfo.Features
             Tooltips.Remove(groupId);
 
             if(Tooltips.Count == 0)
+            {
+                Hide();
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+            }
+        }
+
+        void Hide()
+        {
+            if(TooltipHandler != null)
+            {
+                TooltipHandler.HoverEnd();
+                SelectedBox.Visible = false;
+            }
         }
 
         public override void UpdateDraw()
         {
-            TooltipHandler?.HoverEnd();
+            Hide();
 
             if(!Main.TextAPI.IsEnabled)
                 return;
@@ -89,7 +104,10 @@ namespace Digi.BuildInfo.Features
             if(chatVisible)
             {
                 if(TooltipHandler == null)
+                {
                     TooltipHandler = new TooltipHandler();
+                    SelectedBox = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.Lime * 0.2f, Vector2D.Zero);
+                }
 
                 Vector2 mousePos = (Vector2)MenuHandler.GetMousePositionGUI();
                 Tooltip? found = null;
@@ -121,7 +139,12 @@ namespace Digi.BuildInfo.Features
                 if(found != null)
                 {
                     TooltipHandler.Hover(found.Value.Text);
-                    TooltipHandler.Draw(mousePos);
+                    TooltipHandler.Draw(mousePos, drawNow: true);
+
+                    SelectedBox.Origin = found.Value.Area.Center;
+                    SelectedBox.Width = found.Value.Area.Width;
+                    SelectedBox.Height = found.Value.Area.Height;
+                    SelectedBox.Visible = true;
 
                     if(found.Value.Action != null && MyAPIGateway.Input.IsNewLeftMousePressed())
                     {

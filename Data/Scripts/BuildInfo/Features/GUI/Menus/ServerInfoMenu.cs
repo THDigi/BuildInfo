@@ -51,9 +51,9 @@ namespace Digi.BuildInfo.Features.GUI
         HudAPIv2.BillBoardHUDMessage WindowBG;
         Button CloseButton;
         //HudAPIv2.BillBoardHUDMessage ButtonDebug;
-        TextAPI.TextPackage TooltipRender;
         Vector2D PrevMousePos;
         Column.Tooltip? HoveredTooltip = null;
+        ITooltipHandler TooltipHandler;
 
         Column[] Columns = new Column[4];
         Column CurrentColumn;
@@ -194,8 +194,7 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Scale = CloseButtonScale;
             CloseButton.Refresh(Vector2D.Zero);
 
-            TooltipRender = new TextAPI.TextPackage(256, false, material);
-            TooltipRender.Background.BillBoardColor = new Color(70, 83, 90);
+            TooltipHandler = new TooltipHandler();
         }
 
         public void ToggleMenu()
@@ -299,10 +298,11 @@ namespace Digi.BuildInfo.Features.GUI
                 CloseButton.Refresh(closePos);
                 CloseButton.SetVisible(true);
 
-                Main.MenuHandler.AddCursorRequest(nameof(ServerInfoMenu),
+                Main.MenuHandler.AddCursorRequest(GetType().Name,
                     escapeCallback: () => CloseMenu(escPressed: true),
                     blockViewXY: true,
-                    blockMoveAndRoll: false);
+                    blockMoveAndRoll: false,
+                    unequip: true);
 
                 Main.MenuHandler.SetUpdateMenu(this, true);
                 Visible = true;
@@ -318,15 +318,15 @@ namespace Digi.BuildInfo.Features.GUI
         void CloseMenu(bool escPressed = false)
         {
             Visible = false;
-            Main.MenuHandler.RemoveCursorRequest(nameof(ServerInfoMenu));
+            Main.MenuHandler.RemoveCursorRequest(GetType().Name);
             Main.MenuHandler.SetUpdateMenu(this, false);
 
             if(WindowBG == null)
                 return;
 
             WindowBG.Visible = false;
-            TooltipRender.Visible = false;
             CloseButton.SetVisible(false);
+            TooltipHandler.SetVisible(false);
 
             foreach(ScrollableSection section in ScrollableSections)
             {
@@ -339,7 +339,7 @@ namespace Digi.BuildInfo.Features.GUI
             }
         }
 
-        public override void Update()
+        public override void UpdateDraw()
         {
             Vector2D mousePos = MenuHandler.GetMousePositionGUI();
 
@@ -400,25 +400,14 @@ namespace Digi.BuildInfo.Features.GUI
 
             if(HoveredTooltip != null)
             {
-                TooltipRender.TextStringBuilder.Clear().Append(HoveredTooltip.Value.Text);
-
-                const float Padding = 0.01f; // scalar
-                const double Offset = 32; // in px
-                Vector2D px = HudAPIv2.APIinfo.ScreenPositionOnePX;
-                Vector2D pos = mousePos + new Vector2D(px.X * Offset, px.Y * -Offset);
-                Vector2D textLen = TooltipRender.Text.GetTextLength();
-
-                pos.X = MathHelper.Clamp(pos.X, -1 + Padding, 1 - textLen.X - Padding);
-                pos.Y = MathHelper.Clamp(pos.Y, -1 + Padding + Math.Abs(textLen.Y), 1 - Padding);
-
-                TooltipRender.UpdateBackgroundSize(Padding, textLen);
-
-                TooltipRender.Position = pos;
-                TooltipRender.Visible = true;
+                TooltipHandler.Hover(HoveredTooltip.Value.Text);
+                TooltipHandler.Draw(mousePos, drawNow: false);
+                TooltipHandler.SetVisible(true);
             }
             else
             {
-                TooltipRender.Visible = false;
+                TooltipHandler.HoverEnd();
+                TooltipHandler.SetVisible(false);
             }
         }
 

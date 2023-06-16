@@ -7,14 +7,14 @@ namespace Digi.BuildInfo.Features.GUI
 {
     public interface ITooltipHandler
     {
-        void Draw(Vector2D mouseOnScreen);
+        void Draw(Vector2D mouseOnScreen, bool drawNow);
         void Hover(string tooltip);
+        void SetVisible(bool visible);
         void HoverEnd();
     }
 
     public class TooltipHandler : ITooltipHandler
     {
-        static readonly MyStringId TooltipBg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
         const float TooltipBgEdge = 0.01f;
         const float TooltipOffset = 0.05f;
 
@@ -29,7 +29,14 @@ namespace Digi.BuildInfo.Features.GUI
         /// </summary>
         public TooltipHandler()
         {
-            Label = new TextAPI.TextPackage(256, backgroundTexture: TooltipBg);
+            //MyStringId bg = MyStringId.GetOrCompute("BuildInfo_UI_ButtonBgHover");
+            //Color bgColor = Color.White;
+
+            MyStringId bg = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+            Color bgColor = new Color(70, 83, 90);
+
+            Label = new TextAPI.TextPackage(256, backgroundTexture: bg);
+            Label.Background.BillBoardColor = bgColor;
         }
 
         public void Refresh(float scale)
@@ -56,7 +63,15 @@ namespace Digi.BuildInfo.Features.GUI
             DrawThisTick = false;
         }
 
-        public void Draw(Vector2D mouseOnScreen)
+        public void SetVisible(bool visible)
+        {
+            if(Label != null)
+            {
+                Label.Visible = visible;
+            }
+        }
+
+        public void Draw(Vector2D mouseOnScreen, bool drawNow)
         {
             if(!DrawThisTick)
                 return;
@@ -91,10 +106,13 @@ namespace Digi.BuildInfo.Features.GUI
             Label.Background.Offset = offset + (TextSize / 2);
 
             Label.Background.Origin = pos;
-            Label.Background.Draw();
-
             Label.Text.Origin = pos;
-            Label.Text.Draw();
+
+            if(drawNow)
+            {
+                Label.Background.Draw();
+                Label.Text.Draw();
+            }
         }
     }
 }

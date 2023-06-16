@@ -32,7 +32,9 @@ namespace Digi.BuildInfo.Features.LiveData
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3D spawnPos = camMatrix.Translation + camMatrix.Backward * 100;
 
-            MyObjectBuilder_CubeBlock blockOB = CreateBlockOB(def.Id);
+            MyObjectBuilder_CubeBlock blockOB = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(def.Id);
+            blockOB.EntityId = 0;
+            blockOB.Min = Vector3I.Zero;
 
             MyObjectBuilder_CubeGrid gridOB = new MyObjectBuilder_CubeGrid()
             {
@@ -58,48 +60,6 @@ namespace Digi.BuildInfo.Features.LiveData
             grid.Save = false;
             grid.Flags = EntityFlags.None;
             grid.Render.Visible = false;
-        }
-
-        MyObjectBuilder_CubeBlock CreateBlockOB(MyDefinitionId defId)
-        {
-            MyObjectBuilder_CubeBlock blockObj = (MyObjectBuilder_CubeBlock)MyObjectBuilderSerializer.CreateNewObject(defId);
-
-            blockObj.EntityId = 0;
-            blockObj.Min = Vector3I.Zero;
-
-#if false
-            // NOTE these types do not check if their fields are null in their Remap() method.
-            MyObjectBuilder_TimerBlock timer = blockObj as MyObjectBuilder_TimerBlock;
-            if(timer != null)
-            {
-                timer.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
-                return blockObj;
-            }
-
-            MyObjectBuilder_ButtonPanel button = blockObj as MyObjectBuilder_ButtonPanel;
-            if(button != null)
-            {
-                button.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
-                return blockObj;
-            }
-
-            MyObjectBuilder_SensorBlock sensor = blockObj as MyObjectBuilder_SensorBlock;
-            if(sensor != null)
-            {
-                sensor.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
-                return blockObj;
-            }
-
-            // prohibited...
-            //MyObjectBuilder_TargetDummyBlock targetDummy = blockObj as MyObjectBuilder_TargetDummyBlock;
-            //if(targetDummy != null)
-            //{
-            //    targetDummy.Toolbar = BuildInfoMod.Instance.Caches.EmptyToolbarOB;
-            //    return blockObj;
-            //}
-#endif
-
-            return blockObj;
         }
 
         void SpawnCompleted(IMyEntity ent)

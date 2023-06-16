@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Digi.BuildInfo.Features.GUI;
-using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
@@ -13,7 +15,7 @@ namespace Digi.BuildInfo.Features
 {
     public abstract class Menu
     {
-        public virtual void Update()
+        public virtual void UpdateDraw()
         {
         }
     }
@@ -28,6 +30,7 @@ namespace Digi.BuildInfo.Features
         Dictionary<string, Request> CursorRequests = new Dictionary<string, Request>();
         bool InEscapeLoop = false;
         HudAPIv2.BillBoardHUDMessage Cursor;
+        int CursorRecreatedAtSec = 0;
 
         public MenuHandler(BuildInfoMod main) : base(main)
         {
@@ -60,12 +63,21 @@ namespace Digi.BuildInfo.Features
         /// <summary>
         /// Adds (<paramref name="inMenu"/>=true) or removes (<paramref name="inMenu"/>=false) the given id from the input blockers list.
         /// </summary>
-        public void AddCursorRequest(string id, Action escapeCallback = null, bool blockViewXY = false, bool blockMoveAndRoll = false)
+        public void AddCursorRequest(string id, Action escapeCallback = null, bool blockViewXY = false, bool blockMoveAndRoll = false, bool unequip = false)
         {
             if(InEscapeLoop)
             {
                 Log.Error($"CursorRequest id={id} is being added in escape callback, which will be ignored because it gets cleared after the event!");
                 return;
+            }
+
+            if(unequip)
+            {
+                // TODO: find a way to unequip character tools/weapons as well as deselect weapons in cockpits/RC/etc
+                // not sure what to do while controlling turrets...
+
+                if(MyCubeBuilder.Static.IsActivated)
+                    MyCubeBuilder.Static.Deactivate();
             }
 
             if(CursorRequests.ContainsKey(id))
@@ -99,16 +111,16 @@ namespace Digi.BuildInfo.Features
                 Cursor = null;
             }
 
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (Menus.Count > 0));
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (Menus.Count > 0));
 
             Main.GameConfig.TempHideHUD(nameof(MenuHandler), Menus.Count > 0);
         }
 
-        public override void UpdateAfterSim(int tick)
+        public override void UpdateDraw()
         {
             for(int i = Menus.Count - 1; i >= 0; i--)
             {
-                Menus[i].Update();
+                Menus[i].UpdateDraw();
             }
         }
 
@@ -152,6 +164,14 @@ namespace Digi.BuildInfo.Features
                 ctrl.MoveAndRotate(blockMove ? Vector3.Zero : ctrl.LastMotionIndicator,
                                    blockView ? Vector2.Zero : new Vector2(ctrl.LastRotationIndicator.X, ctrl.LastRotationIndicator.Y),
                                    blockMove ? 0 : ctrl.LastRotationIndicator.Z);
+            }
+
+            // HACK: re-creating cursor roughly every realtime second to avoid newly spawned UIs being over it.
+            if(Cursor != null && DateTime.Now.Second != CursorRecreatedAtSec)
+            {
+                CursorRecreatedAtSec = DateTime.Now.Second;
+                Cursor.DeleteMessage();
+                Cursor = null;
             }
 
             if(Cursor == null)

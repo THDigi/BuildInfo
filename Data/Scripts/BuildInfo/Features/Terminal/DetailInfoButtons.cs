@@ -298,12 +298,12 @@ namespace Digi.BuildInfo.Features.Terminal
                 if(DragShowTooltipTicks > 0 && --DragShowTooltipTicks > 0)
                 {
                     Tooltip?.Hover("Hold Shift to slow down.\nScroll to rescale (and Shift rescale slower).");
-                    Tooltip?.Draw(newPos);
+                    Tooltip?.Draw(newPos, drawNow: true);
                 }
             }
             else
             {
-                Tooltip?.Draw(MousePos);
+                Tooltip?.Draw(MousePos, drawNow: true);
             }
         }
     }
