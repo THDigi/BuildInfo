@@ -118,11 +118,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(open == total)
             {
-                sb.Append("All open");
+                sb.Append("AllOpen");
             }
             else if(open == 0)
             {
-                sb.Append("All ready");
+                sb.Append("AllReady");
             }
             else
             {
