@@ -446,31 +446,28 @@ namespace Digi.BuildInfo.Features.Overlays
                     {
                         if(data.ConveyorPorts != null)
                         {
-                            Color color = new Color(255, 255, 0);
+                            Color portColor = new Color(255, 255, 0);
+                            Color interactivePortColor = new Color(155, 255, 0);
 
                             foreach(ConveyorInfo info in data.ConveyorPorts)
                             {
                                 MatrixD matrix = info.LocalMatrix * drawMatrix;
+                                bool isSmall = (info.Flags & ConveyorFlags.Small) != 0;
 
-                                if((info.Flags & ConveyorFlags.Small) != 0)
-                                    DrawPort("       Small\nConveyor port", matrix, color);
+                                if((info.Flags & ConveyorFlags.Interactive) != 0)
+                                {
+                                    if(isSmall)
+                                        DrawPort("        Interactive\nSmall conveyor port", matrix, interactivePortColor);
+                                    else
+                                        DrawPort("        Interactive\nLarge conveyor port", matrix, interactivePortColor, largeShip: true);
+                                }
                                 else
-                                    DrawPort("       Large\nConveyor port", matrix, color, largeShip: true);
-                            }
-                        }
-
-                        if(data.InteractableConveyorPorts != null)
-                        {
-                            Color color = new Color(155, 255, 0);
-
-                            foreach(ConveyorInfo info in data.InteractableConveyorPorts)
-                            {
-                                MatrixD matrix = info.LocalMatrix * drawMatrix;
-
-                                if((info.Flags & ConveyorFlags.Small) != 0)
-                                    DrawPort("        Interactive\nSmall conveyor port", matrix, color);
-                                else
-                                    DrawPort("        Interactive\nLarge conveyor port", matrix, color, largeShip: true);
+                                {
+                                    if(isSmall)
+                                        DrawPort("       Small\nConveyor port", matrix, portColor);
+                                    else
+                                        DrawPort("       Large\nConveyor port", matrix, portColor, largeShip: true);
+                                }
                             }
                         }
 

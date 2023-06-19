@@ -1833,8 +1833,19 @@ namespace Digi.BuildInfo.Features
                 data = data ?? Main.LiveDataHandler.Get<BData_Base>(def);
                 if(data != null)
                 {
-                    int conveyors = (data.ConveyorPorts?.Count ?? 0);
-                    int interactiveConveyors = (data.InteractableConveyorPorts?.Count ?? 0);
+                    int conveyors = 0;
+                    int interactiveConveyors = 0;
+
+                    if(data.ConveyorPorts != null)
+                    {
+                        foreach(ConveyorInfo port in data.ConveyorPorts)
+                        {
+                            if((port.Flags & ConveyorFlags.Interactive) != 0)
+                                interactiveConveyors++;
+                        }
+
+                        conveyors = data.ConveyorPorts.Count - interactiveConveyors;
+                    }
 
                     bool hasCustomLogic = false; // (data.Has & BlockHas.CustomLogic) != 0;
                     bool hasTerminal = (data.Has & BlockHas.Terminal) != 0;

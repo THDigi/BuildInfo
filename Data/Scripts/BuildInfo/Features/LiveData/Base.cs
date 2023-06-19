@@ -19,6 +19,7 @@ namespace Digi.BuildInfo.Features.LiveData
         Small = (1 << 0),
         In = (1 << 1),
         Out = (1 << 2),
+        Interactive = (1 << 3),
     }
 
     public struct ConveyorInfo
@@ -109,7 +110,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public BlockHas Has = BlockHas.Nothing;
         public List<ConveyorInfo> ConveyorPorts;
-        public List<ConveyorInfo> InteractableConveyorPorts;
         public List<InteractionInfo> Interactive;
         public List<Matrix> UpgradePorts;
         public List<string> Upgrades;
@@ -267,21 +267,16 @@ namespace Digi.BuildInfo.Features.LiveData
                     else if(part1.EqualsIgnoreCase("in") || part2.EqualsIgnoreCase("in"))
                         flags |= ConveyorFlags.In;
 
-                    if(detectorPtr.StartsWith("conveyorline"))
+                    if(!detectorPtr.StartsWith("conveyorline"))
                     {
-                        if(ConveyorPorts == null)
-                            ConveyorPorts = new List<ConveyorInfo>();
-
-                        ConveyorPorts.Add(new ConveyorInfo(matrix, flags));
-                    }
-                    else
-                    {
-                        if(InteractableConveyorPorts == null)
-                            InteractableConveyorPorts = new List<ConveyorInfo>();
-
-                        InteractableConveyorPorts.Add(new ConveyorInfo(matrix, flags));
+                        flags |= ConveyorFlags.Interactive;
                         Has |= BlockHas.PhysicalTerminalAccess;
                     }
+
+                    if(ConveyorPorts == null)
+                        ConveyorPorts = new List<ConveyorInfo>();
+
+                    ConveyorPorts.Add(new ConveyorInfo(matrix, flags));
                 }
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
                 {
@@ -380,7 +375,6 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
 
             TrimList(ref ConveyorPorts);
-            TrimList(ref InteractableConveyorPorts);
             TrimList(ref UpgradePorts);
             TrimList(ref Interactive);
         }
