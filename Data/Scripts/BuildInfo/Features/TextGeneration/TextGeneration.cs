@@ -2039,9 +2039,12 @@ namespace Digi.BuildInfo.Features
                     DamageMultiplierAsResistance(dmgMul);
                 }
 
+                // .DamageThreshold and .DetonateChance are for cargo+ammo detonation but are NOT used
+
                 // TODO: improve formatting?
+                // HACK: DamageMultiplierExplosion is only used if block has a FatBlock and it's applied after the damage event.
                 float expDmgMul = def.DamageMultiplierExplosion;
-                if(expDmgMul != 1f)
+                if(expDmgMul != 1f && !string.IsNullOrEmpty(def.Model)) // having an independent model makes it have a fatblock
                 {
                     GetLine().Separator();
                     DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
