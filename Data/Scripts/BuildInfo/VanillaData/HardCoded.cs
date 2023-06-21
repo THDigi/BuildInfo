@@ -50,6 +50,9 @@ namespace Digi.BuildInfo.VanillaData
             return physicalItemDefinition.Size.AbsMax() > 0.25f;
         }
 
+        public const string BuildPlanner_BPClassSubtype = "BuildPlanner";
+        public const string BuildPlanner_BPSubtypePrefix = "BuildPlanItem_";
+
         // from MyAssembler.CalculateBlueprintProductionTime()
         public static float Assembler_BpProductionTime(MyBlueprintDefinitionBase bp, MyAssemblerDefinition assemblerDef, IMyAssembler assembler = null)
         {
@@ -184,6 +187,20 @@ namespace Digi.BuildInfo.VanillaData
         // from MyLandingGear.LoadDummies()
         public static string LandingGear_DummyName = "gear_lock"; // see BData_LandingGear too!
 
+        // from MyCharacter.GetOnLadder_Implementation()/ProceedLadderMovement()/UpdateLadder()
+        /// <summary>
+        /// in m/s
+        /// </summary>
+        public static float LadderClimbSpeed(float distanceBetweenPoles)
+        {
+            const float ladderSpeed = 2f;
+            const float stepsPerAnimation = 59;
+            //float stepIncrement = ladderSpeed * distanceBetweenPoles / stepsPerAnimation;
+            //float speed = stepIncrement * stepsPerAnimation;
+
+            return distanceBetweenPoles * ladderSpeed;
+        }
+
         // from MyDoor.Init()
         public const float Door_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_DOOR; // 3E-05f
 
@@ -192,9 +209,6 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyAdvancedDoor.DisassembleRatio
         public const float AdvDoor_Closed_DisassembleRatioMultiplier = 3.3f; // MyAdvancedDoor override DisassembleRatio and multiplies definition by this when closed
-
-        public const string BuildPlanner_BPClassSubtype = "BuildPlanner";
-        public const string BuildPlanner_BPSubtypePrefix = "BuildPlanItem_";
 
         // simplified from MyDoor.UpdateCurrentOpening()
         public static float Door_MoveSpeed(float openingSpeed, float travelDistance = 1f)

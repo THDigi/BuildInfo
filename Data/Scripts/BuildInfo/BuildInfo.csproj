@@ -148,6 +148,7 @@
     <Compile Include="Features\CheckVSLPEvents.cs" />
     <Compile Include="Features\ConfigMenu\ItemPositionRedirect.cs" />
     <Compile Include="Features\Config\TextShowModeSetting.cs" />
+    <Compile Include="Features\LiveData\Ladder.cs" />
     <Compile Include="Features\ScreenTooltips.cs" />
     <Compile Include="Features\Fonts\FontParser.cs" />
     <Compile Include="Features\GUI\Menus\ServerInfoMenu.cs" />

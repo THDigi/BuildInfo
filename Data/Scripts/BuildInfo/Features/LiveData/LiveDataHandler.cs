@@ -50,6 +50,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Merge>(typeof(MyObjectBuilder_MergeBlock));
 
+            AddType<BData_Ladder>(typeof(MyObjectBuilder_Ladder2));
+
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipWelder));
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipGrinder));
 

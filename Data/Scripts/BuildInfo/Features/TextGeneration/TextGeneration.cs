@@ -2313,6 +2313,8 @@ namespace Digi.BuildInfo.Features
 
             Add(typeof(MyObjectBuilder_Door), Format_Door);
 
+            Add(typeof(MyObjectBuilder_Ladder2), Format_Ladder);
+
             action = Format_AirtightDoor;
             Add(typeof(MyObjectBuilder_AirtightDoorGeneric), action);
             Add(typeof(MyObjectBuilder_AirtightHangarDoor), action);
@@ -3022,6 +3024,18 @@ namespace Digi.BuildInfo.Features
             }
         }
         #endregion Doors
+
+        private void Format_Ladder(MyCubeBlockDefinition def)
+        {
+            PowerRequired(0, null, powerHardcoded: true);
+
+            BData_Ladder data = Main.LiveDataHandler.Get<BData_Ladder>(def);
+            if(data != null)
+            {
+                float climbSpeed = Hardcoded.LadderClimbSpeed(data.DistanceBetweenPoles);
+                AddLine().Label("Climb speed").SpeedFormat(climbSpeed);
+            }
+        }
 
         private void Format_Parachute(MyCubeBlockDefinition def)
         {
