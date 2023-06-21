@@ -375,53 +375,6 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// Returns true if specified definition has all faces fully airtight.
-        /// The referenced arguments are assigned with the said values which should only really be used if it returns false (due to the quick escape return true).
-        /// An fully airtight face means it keeps the grid airtight when the face is the only obstacle between empty void and the ship's interior.
-        /// Due to the complexity of airtightness when connecting blocks, this method simply can not indicate that, that's what the mount points view is for.
-        /// </summary>
-        public static AirTightMode GetAirTightFaces(MyCubeBlockDefinition def, out int airTightFaces, out int totalFaces)
-        {
-            airTightFaces = 0;
-            totalFaces = 0;
-
-            if(def.IsAirTight.HasValue)
-                return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
-
-            HashSet<Vector3I> cubes = BuildInfoMod.Instance.Caches.Vector3ISet;
-            cubes.Clear();
-
-            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
-            {
-                cubes.Add(kv.Key);
-            }
-
-            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
-            {
-                foreach(KeyValuePair<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark> kv2 in kv.Value)
-                {
-                    if(cubes.Contains(kv.Key + kv2.Key))
-                        continue;
-
-                    if(kv2.Value != MyCubeBlockDefinition.MyCubePressurizationMark.NotPressurized)
-                        airTightFaces++;
-
-                    totalFaces++;
-                }
-            }
-
-            cubes.Clear();
-
-            if(airTightFaces == 0)
-                return AirTightMode.NOT_SEALED;
-
-            if(airTightFaces == totalFaces)
-                return AirTightMode.SEALED;
-
-            return AirTightMode.USE_MOUNTS;
-        }
-
-        /// <summary>
         /// Get entity component of specified <typeparamref name="TDef"/> type (inhereting <see cref="MyComponentDefinitionBase"/>) from given definitionId.
         /// <para>NOTE: <paramref name="componentObType"/> must be MyObjectBuilder_TheTypeHere, without Definition suffix!</para>
         /// </summary>

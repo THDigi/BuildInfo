@@ -1,4 +1,5 @@
-﻿using Sandbox.Definitions;
+﻿using System.Collections.Generic;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -138,6 +139,63 @@ namespace Digi.BuildInfo.VanillaData
 
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Gets if the block is fully airtight or not, as well as how many faces are of each kind.
+        /// </summary>
+        public static AirTightMode GetAirTightFaces(MyCubeBlockDefinition def, out int airTightFaces, out int toggledAirtightFaces, out int totalFaces)
+        {
+            airTightFaces = 0;
+            toggledAirtightFaces = 0;
+            totalFaces = 0;
+
+            if(def.IsAirTight.HasValue)
+                return (def.IsAirTight.Value ? AirTightMode.SEALED : AirTightMode.NOT_SEALED);
+
+            HashSet<Vector3I> cubes = BuildInfoMod.Instance.Caches.Vector3ISet;
+            cubes.Clear();
+
+            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
+            {
+                cubes.Add(kv.Key);
+            }
+
+            foreach(KeyValuePair<Vector3I, Dictionary<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark>> kv in def.IsCubePressurized)
+            {
+                foreach(KeyValuePair<Vector3I, MyCubeBlockDefinition.MyCubePressurizationMark> kv2 in kv.Value)
+                {
+                    if(cubes.Contains(kv.Key + kv2.Key))
+                        continue;
+
+                    switch(kv2.Value)
+                    {
+                        case MyCubeBlockDefinition.MyCubePressurizationMark.NotPressurized:
+                            break;
+
+                        case MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedAlways:
+                            airTightFaces++;
+                            break;
+
+                        case MyCubeBlockDefinition.MyCubePressurizationMark.PressurizedClosed:
+                            if(def is MyDoorDefinition)
+                                toggledAirtightFaces++;
+                            break;
+                    }
+
+                    totalFaces++;
+                }
+            }
+
+            cubes.Clear();
+
+            if(airTightFaces == 0)
+                return AirTightMode.NOT_SEALED;
+
+            if(airTightFaces == totalFaces)
+                return AirTightMode.SEALED;
+
+            return AirTightMode.USE_MOUNTS;
         }
     }
 }

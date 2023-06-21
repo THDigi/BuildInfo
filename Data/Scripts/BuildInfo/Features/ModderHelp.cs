@@ -520,8 +520,8 @@ namespace Digi.BuildInfo.Features
 
                     if(blockDef.IsAirTight == null)
                     {
-                        int airTightFaces, totalFaces;
-                        AirTightMode airTight = Utils.GetAirTightFaces(blockDef, out airTightFaces, out totalFaces);
+                        int airTightFaces, toggledAirTightFaces, totalFaces;
+                        AirTightMode airTight = Pressurization.GetAirTightFaces(blockDef, out airTightFaces, out toggledAirTightFaces, out totalFaces);
 
                         if(airTightFaces == 0 || airTightFaces == totalFaces)
                         {
