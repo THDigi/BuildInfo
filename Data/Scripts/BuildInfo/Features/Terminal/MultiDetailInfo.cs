@@ -24,8 +24,7 @@ namespace Digi.BuildInfo.Features.Terminal
 {
     public class MultiDetailInfo : ModComponent
     {
-        const string TextFont = FontsHandler.SEOutlined;
-        const bool UseShadowMessage = false;
+        const string TextFont = FontsHandler.BI_SEOutlined;
 
         public readonly StringBuilder InfoText = new StringBuilder(512);
 
@@ -139,6 +138,7 @@ namespace Digi.BuildInfo.Features.Terminal
             if(Label == null)
             {
                 Label = new TextAPI.TextPackage(InfoText);
+                Label.Font = TextFont;
 
                 MoveIcon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.White, Vector2D.Zero, hideWithHud: false);
 

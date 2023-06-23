@@ -519,7 +519,7 @@ namespace Digi.BuildInfo.Features
                 if(debugMode)
                 {
                     if(!MyParticlesManager.Paused)
-                        MyAPIGateway.Utilities.ShowNotification($"maxVisibleComps={maxVisibleComps}; total={totalComps}; scrollIdxOffset={scrollIdxOffset}; scrollIdx={scrollIdx}; maxScrollIdx={maxScrollIdx}", 16, FontsHandler.SEOutlined);
+                        MyAPIGateway.Utilities.ShowNotification($"maxVisibleComps={maxVisibleComps}; total={totalComps}; scrollIdxOffset={scrollIdxOffset}; scrollIdx={scrollIdx}; maxScrollIdx={maxScrollIdx}", 16, FontsHandler.BI_SEOutlined);
 
                     if(MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.F))
                     {
@@ -572,7 +572,7 @@ namespace Digi.BuildInfo.Features
 
                     if(debugMode)
                         if(!MyParticlesManager.Paused)
-                            MyAPIGateway.Utilities.ShowNotification($"redLineVisualIdx={redLineVisualIdx}", 16, FontsHandler.SEOutlined);
+                            MyAPIGateway.Utilities.ShowNotification($"redLineVisualIdx={redLineVisualIdx}", 16, FontsHandler.BI_SEOutlined);
                 }
                 #endregion
 
@@ -594,7 +594,7 @@ namespace Digi.BuildInfo.Features
 
                     if(debugMode)
                         if(!MyParticlesManager.Paused)
-                            MyAPIGateway.Utilities.ShowNotification($"blueLineVisualIdx={blueLineVisualIdx}", 16, FontsHandler.SEOutlined);
+                            MyAPIGateway.Utilities.ShowNotification($"blueLineVisualIdx={blueLineVisualIdx}", 16, FontsHandler.BI_SEOutlined);
                 }
                 #endregion
 
@@ -675,7 +675,7 @@ namespace Digi.BuildInfo.Features
                     if(Main.TextAPI.IsEnabled)
                     {
                         const double LeftOffset = 0.0183;
-                        const string TextFont = FontsHandler.SEOutlined;
+                        const string TextFont = FontsHandler.BI_SEOutlined;
                         const int NameMaxChars = 24;
                         double textScale = 0.0012 * scaleFOV;
 

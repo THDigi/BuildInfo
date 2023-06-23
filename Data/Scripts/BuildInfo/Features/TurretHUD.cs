@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.Features
         readonly Vector2D ShadowOffset = new Vector2D(0.002, -0.002);
 
         const bool UseShadowMessage = false;
-        const string TextFont = FontsHandler.SEOutlined;
+        const string TextFont = FontsHandler.BI_SEOutlined;
 
         const int SkipTicks = 6; // ticks between text updates, min value 1.
 

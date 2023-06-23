@@ -16,7 +16,7 @@ namespace Digi.BuildInfo.Features
     {
         public const float VanillaToolbarTextScale = 0.46f;
         public const float CustomToolbarTextScale = 0.45f; // also the default for ToolbarStatusTextScaleOverride setting
-        public const string SetFont = FontsHandler.Monospace;
+        public const string SetFont = FontsHandler.BI_Monospace;
         public const string HudDefForRefresh = "BI_HudForReload";
 
         readonly List<IDefinitionEdit> Edits = new List<IDefinitionEdit>();

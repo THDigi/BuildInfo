@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public static readonly Vector4 ShadowColor = Color.Black * 0.9f;
 
-        public const string TextFont = FontsHandler.SEOutlined;
+        public const string TextFont = FontsHandler.BI_SEOutlined;
         public const bool UseShadowMessage = false;
 
         public const BlendTypeEnum TextBlendType = BlendTypeEnum.PostPP;

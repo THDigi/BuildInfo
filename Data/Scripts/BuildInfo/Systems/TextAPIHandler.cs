@@ -18,7 +18,7 @@ namespace Digi.BuildInfo.Systems
         public static readonly ProfileMeasure DrawCost = new ProfileMeasure();
         internal static double PerFrameDrawCostMs;
 
-        public const string DefaultFont = FontsHandler.SEOutlined;
+        public const string DefaultFont = FontsHandler.BI_SEOutlined;
         public const bool DefaultUseShadow = false;
         public const BlendTypeEnum DefaultHUDBlendType = BlendTypeEnum.PostPP;
         public const BlendTypeEnum DefaultWorldBlendType = BlendTypeEnum.Standard;

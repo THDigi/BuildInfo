@@ -20,8 +20,8 @@ namespace Digi.BuildInfo.Features
         public const string YellowSh = "BI_Yellow";
         public const string GraySh = "BI_Gray";
 
-        public const string SEOutlined = "BI_SEOutlined";
-        public const string Monospace = "BI_Monospace";
+        public const string BI_SEOutlined = "BI_SEOutlined";
+        public const string BI_Monospace = "BI_Monospace";
 
         // these are all only in textAPI version of SEOutlined
         public const int IconStartingChar = '\ue200';
@@ -44,8 +44,8 @@ namespace Digi.BuildInfo.Features
         // single-use for parsing, do not make public
         List<FontInfo> Fonts = new List<FontInfo>()
         {
-            new FontInfo(SEOutlined, $@"Fonts\{SEOutlined}\FontDataPA.xml"),
-            new FontInfo(Monospace, $@"Fonts\{Monospace}\BIMonospace.xml"),
+            new FontInfo(BI_SEOutlined, $@"Fonts\{BI_SEOutlined}\FontDataPA.xml"),
+            new FontInfo(BI_Monospace, $@"Fonts\{BI_Monospace}\BIMonospace.xml"),
         };
 
         class FontInfo
@@ -120,7 +120,7 @@ namespace Digi.BuildInfo.Features
 
                     Log.Info($"Parsed font '{fontInfo.Name}' - bitmaps: {fontInfo.Parser.Bitmaps.Count}; glyphs: {fontInfo.Parser.Glyphs.Count}; kernpairs: {fontInfo.Parser.Kernpairs.Count}");
 
-                    if(fontInfo.Name == SEOutlined)
+                    if(fontInfo.Name == BI_SEOutlined)
                     {
                         // HACK: altered height to 32 so that it fits better with the built-in textAPI font (which is 30 height)
                         fontInfo.Parser.Height = 32;
@@ -196,7 +196,7 @@ namespace Digi.BuildInfo.Features
 
         void FontAdded(HudAPIv2.FontDefinition font, FontInfo fontInfo)
         {
-            if(fontInfo.Name != SEOutlined)
+            if(fontInfo.Name != BI_SEOutlined)
                 return;
 
             MyStringId material = MyStringId.GetOrCompute("BI_FontIcons");

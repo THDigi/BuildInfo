@@ -41,7 +41,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const float OpacityInMenu = 0.75f;
 
-        const string TextFont = FontsHandler.SEOutlined;
+        const string TextFont = FontsHandler.BI_SEOutlined;
         const bool UseShadowMessage = false;
         const double TextScaleMultiplier = 0.75;
         const double ShadowOffset = 0.002;

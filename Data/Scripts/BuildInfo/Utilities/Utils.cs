@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Utilities
 
                     if(DebugMessages)
                         if(!MyParticlesManager.Paused)
-                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; no hit ent", 16, FontsHandler.SEOutlined);
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; no hit ent", 16, FontsHandler.BI_SEOutlined);
                 }
                 else if(hitEnt is IMyVoxelBase)
                 {
@@ -142,7 +142,7 @@ namespace Digi.BuildInfo.Utilities
 
                     if(DebugMessages)
                         if(!MyParticlesManager.Paused)
-                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit voxel: {hitEnt}", 16, FontsHandler.SEOutlined);
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit voxel: {hitEnt}", 16, FontsHandler.BI_SEOutlined);
                 }
                 else // if(hitEnt is IMyCubeGrid)
                 {
@@ -151,7 +151,7 @@ namespace Digi.BuildInfo.Utilities
 
                     if(DebugMessages)
                         if(!MyParticlesManager.Paused)
-                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit grid(?): {hitEnt}", 16, FontsHandler.SEOutlined);
+                            MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: Dynamic; hit grid(?): {hitEnt}", 16, FontsHandler.BI_SEOutlined);
                 }
             }
             else
@@ -167,7 +167,7 @@ namespace Digi.BuildInfo.Utilities
                     if(!MyParticlesManager.Paused)
                     {
                         IMyEntity hitEnt = MyCubeBuilder.Static.HitInfo?.GetHitEnt();
-                        MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: grid-locked: {hitEnt}", 16, FontsHandler.SEOutlined);
+                        MyAPIGateway.Utilities.ShowNotification($"EquippedBlockMatrix: grid-locked: {hitEnt}", 16, FontsHandler.BI_SEOutlined);
                     }
             }
 
