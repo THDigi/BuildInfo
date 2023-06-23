@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Game;
-using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Utils;
@@ -41,6 +39,7 @@ namespace Digi.BuildInfo.Features
 
         static void CreateHooks(CheckContainer container)
         {
+            new Check_PlayerConnectRequest(container);
             new Check_PlayerLeftCockpit(container);
             new Check_PlayerEnteredCockpit(container);
             new Check_RespawnShipSpawned(container);
@@ -97,10 +96,7 @@ namespace Digi.BuildInfo.Features
             new Check_ContractAbandoned(container);
             new Check_MatchStateEnding(container);
 
-            // HACK: PlayerConnectRequest cannot be hooked by mods because of prohibited enum with ref
-            //new Check_PlayerConnectRequest();
-            container.Ignore.Add("PlayerConnectRequest");
-
+            // this is a regular bool field
             container.Ignore.Add("GameIsReady");
         }
 
@@ -128,7 +124,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            if(Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && MyAPIGateway.Session.Mods.Any(m => m.PublishedFileId == 0))
+            if(Main.Config.ModderHelpAlerts.Value) // && MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && MyAPIGateway.Session.Mods.Any(m => m.PublishedFileId == 0))
             {
                 // to wait a few seconds and then check hooks
                 UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
@@ -198,7 +194,9 @@ namespace Digi.BuildInfo.Features
             if(preAssigned > 0 || erased > 0)
             {
                 MyLog.Default.WriteLine($"### {BuildInfoMod.ModName}.{nameof(CheckVSLPEvents)}: If the above involve your mod, you need to use += to hook and -= to unhook the events, don't use ="
-                                      + "\nIf they are not your mods, send this info to the author if you can identify the mods, otherwise contact BuildInfo's author to track down the problematic mod(s).");
+                                      + "\nIf they are not your mods, send this info to the author if you can identify the mods, otherwise contact BuildInfo's author for help tracking down the problematic mod(s).");
+
+                MyDefinitionErrors.Add((MyModContext)BuildInfoMod.Instance.Session.ModContext, "Script mods might have issues from VSLP events being leaked or unhooked by other mods, see SE log for details.", TErrorSeverity.Error);
 
                 Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Script mods might have issues from VSLP events being leaked or unhooked by other mods, see SE log for details.", FontsHandler.YellowSh);
             }
@@ -227,73 +225,74 @@ namespace Digi.BuildInfo.Features
                 Log.Error($"[Dev] {GetType().Name}: new events found", Log.PRINT_MESSAGE);
         }
 
-        //void DevTestOverwrittenEvents()
-        //{
-        //    // NOTE: these don't get unhooked, gotta kill game after using this test
-        //    MyVisualScriptLogicProvider.BlockDamaged = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.BlockBuilt = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.BlockFunctionalityChanged = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.ButtonPressedEntityName = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.ButtonPressedTerminalName = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.ConnectorStateChanged = (a, b, c, d, e, f, g, h, i) => { };
-        //    MyVisualScriptLogicProvider.ContractAbandoned = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.ContractAccepted = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.ContractFailed = (a, b, c, d, e, f, g, h) => { };
-        //    MyVisualScriptLogicProvider.ContractFinished = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.CutsceneNodeEvent = (a) => { };
-        //    MyVisualScriptLogicProvider.CutsceneEnded = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerLeftCockpit = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.PlayerEnteredCockpit = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.PlayerPickedUp = (a, b, c, d, e) => { };
-        //    MyVisualScriptLogicProvider.GridJumped = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.GridPowerGenerationStateChanged = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.ItemSpawned = (a, b, c, d, e) => { };
-        //    MyVisualScriptLogicProvider.LandingGearUnlocked = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.MatchStateChanged = (a, b) => { };
-        //    MyVisualScriptLogicProvider.MatchStateEnded = (a) => { };
-        //    MyVisualScriptLogicProvider.MatchStateEnding = (string a, ref bool b) => { };
-        //    MyVisualScriptLogicProvider.MatchStateStarted = (a) => { };
-        //    MyVisualScriptLogicProvider.NewItemBuilt = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.PlayerHealthRecharging = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.PlayerDropped = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.PlayerSuitRecharging = (a, b) => { };
-        //    MyVisualScriptLogicProvider.PrefabSpawnedDetailed = (a, b) => { };
-        //    MyVisualScriptLogicProvider.RemoteControlChanged = (a, b, c, d, e, f) => { };
-        //    MyVisualScriptLogicProvider.RespawnShipSpawned = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.RoomFullyPressurized = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.ScreenAdded = (a) => { };
-        //    MyVisualScriptLogicProvider.ScreenRemoved = (a) => { };
-        //    MyVisualScriptLogicProvider.ShipDrillCollected = (a, b, c, d, e, f, g) => { };
-        //    MyVisualScriptLogicProvider.NPCDied = (a) => { };
-        //    MyVisualScriptLogicProvider.PrefabSpawned = (a) => { };
-        //    MyVisualScriptLogicProvider.GridSpawned = (a) => { };
-        //    MyVisualScriptLogicProvider.TimerBlockTriggered = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.TimerBlockTriggeredEntityName = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.BlockDestroyed = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.BlockIntegrityChanged = (a, b, c, d) => { };
-        //    MyVisualScriptLogicProvider.PlayerSpawned = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerRequestsRespawn = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerDied = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerConnected = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerDisconnected = (a) => { };
-        //    MyVisualScriptLogicProvider.PlayerRespawnRequest = (a) => { };
-        //    MyVisualScriptLogicProvider.AreaTrigger_Left = (a, b) => { };
-        //    MyVisualScriptLogicProvider.AreaTrigger_Entered = (a, b) => { };
-        //    MyVisualScriptLogicProvider.TeamBalancerPlayerSorted = (a, b) => { };
-        //    MyVisualScriptLogicProvider.ToolbarItemChanged = (a, b, c, d, e) => { };
-        //    MyVisualScriptLogicProvider.ToolEquipped = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.AreaTrigger_EntityLeft = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.AreaTrigger_EntityEntered = (a, b, c) => { };
-        //    MyVisualScriptLogicProvider.WeaponBlockActivated = (a, b, c, d, e, f) => { };
-        //
-        //    //MyVisualScriptLogicProvider.PlayerConnectRequest = (a, b) => { };
-        //}
+#if false
+        void DevTestOverwrittenEvents()
+        {
+            // NOTE: these don't get unhooked, gotta kill game after using this test
+
+            //MyVisualScriptLogicProvider.PlayerConnectRequest = (a, b) => { };
+            MyVisualScriptLogicProvider.BlockDamaged = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.BlockBuilt = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.BlockFunctionalityChanged = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.ButtonPressedEntityName = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.ButtonPressedTerminalName = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.ConnectorStateChanged = (a, b, c, d, e, f, g, h, i) => { };
+            MyVisualScriptLogicProvider.ContractAbandoned = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.ContractAccepted = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.ContractFailed = (a, b, c, d, e, f, g, h) => { };
+            MyVisualScriptLogicProvider.ContractFinished = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.CutsceneNodeEvent = (a) => { };
+            MyVisualScriptLogicProvider.CutsceneEnded = (a) => { };
+            MyVisualScriptLogicProvider.PlayerLeftCockpit = (a, b, c) => { };
+            MyVisualScriptLogicProvider.PlayerEnteredCockpit = (a, b, c) => { };
+            MyVisualScriptLogicProvider.PlayerPickedUp = (a, b, c, d, e) => { };
+            MyVisualScriptLogicProvider.GridJumped = (a, b, c) => { };
+            MyVisualScriptLogicProvider.GridPowerGenerationStateChanged = (a, b, c) => { };
+            MyVisualScriptLogicProvider.ItemSpawned = (a, b, c, d, e) => { };
+            MyVisualScriptLogicProvider.LandingGearUnlocked = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.MatchStateChanged = (a, b) => { };
+            MyVisualScriptLogicProvider.MatchStateEnded = (a) => { };
+            MyVisualScriptLogicProvider.MatchStateEnding = (string a, ref bool b) => { };
+            MyVisualScriptLogicProvider.MatchStateStarted = (a) => { };
+            MyVisualScriptLogicProvider.NewItemBuilt = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.PlayerHealthRecharging = (a, b, c) => { };
+            MyVisualScriptLogicProvider.PlayerDropped = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.PlayerSuitRecharging = (a, b) => { };
+            MyVisualScriptLogicProvider.PrefabSpawnedDetailed = (a, b) => { };
+            MyVisualScriptLogicProvider.RemoteControlChanged = (a, b, c, d, e, f) => { };
+            MyVisualScriptLogicProvider.RespawnShipSpawned = (a, b, c) => { };
+            MyVisualScriptLogicProvider.RoomFullyPressurized = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.ScreenAdded = (a) => { };
+            MyVisualScriptLogicProvider.ScreenRemoved = (a) => { };
+            MyVisualScriptLogicProvider.ShipDrillCollected = (a, b, c, d, e, f, g) => { };
+            MyVisualScriptLogicProvider.NPCDied = (a) => { };
+            MyVisualScriptLogicProvider.PrefabSpawned = (a) => { };
+            MyVisualScriptLogicProvider.GridSpawned = (a) => { };
+            MyVisualScriptLogicProvider.TimerBlockTriggered = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.TimerBlockTriggeredEntityName = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.BlockDestroyed = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.BlockIntegrityChanged = (a, b, c, d) => { };
+            MyVisualScriptLogicProvider.PlayerSpawned = (a) => { };
+            MyVisualScriptLogicProvider.PlayerRequestsRespawn = (a) => { };
+            MyVisualScriptLogicProvider.PlayerDied = (a) => { };
+            MyVisualScriptLogicProvider.PlayerConnected = (a) => { };
+            MyVisualScriptLogicProvider.PlayerDisconnected = (a) => { };
+            MyVisualScriptLogicProvider.PlayerRespawnRequest = (a) => { };
+            MyVisualScriptLogicProvider.AreaTrigger_Left = (a, b) => { };
+            MyVisualScriptLogicProvider.AreaTrigger_Entered = (a, b) => { };
+            MyVisualScriptLogicProvider.TeamBalancerPlayerSorted = (a, b) => { };
+            MyVisualScriptLogicProvider.ToolbarItemChanged = (a, b, c, d, e) => { };
+            MyVisualScriptLogicProvider.ToolEquipped = (a, b, c) => { };
+            MyVisualScriptLogicProvider.AreaTrigger_EntityLeft = (a, b, c) => { };
+            MyVisualScriptLogicProvider.AreaTrigger_EntityEntered = (a, b, c) => { };
+            MyVisualScriptLogicProvider.WeaponBlockActivated = (a, b, c, d, e, f) => { };
+        }
+#endif
 
         class CheckContainer
         {
             public Dictionary<string, CheckForEventBase> Events = new Dictionary<string, CheckForEventBase>();
             public HashSet<string> Ignore = new HashSet<string>();
-            public List<string> EarlyErrors = new List<string>();
         }
 
         abstract class CheckForEventBase
@@ -356,23 +355,26 @@ namespace Digi.BuildInfo.Features
         }
 
         #region Generated
-        //class Check_PlayerConnectRequest : CheckForEventBase
-        //{
-        //    public Check_PlayerConnectRequest(CheckContainer container) : base(container, nameof(MyVisualScriptLogicProvider), nameof(MyVisualScriptLogicProvider.PlayerConnectRequest))
-        //    {
-        //        PreCheck(MyVisualScriptLogicProvider.PlayerConnectRequest);
-        //        MyVisualScriptLogicProvider.PlayerConnectRequest += DummyCallback;
-        //    }
-        //
-        //    public override void Unhook()
-        //    {
-        //        MyVisualScriptLogicProvider.PlayerConnectRequest -= DummyCallback;
-        //    }
-        //
-        //    public override string Check() => CheckEvent(MyVisualScriptLogicProvider.PlayerConnectRequest, DummyCallback);
-        //
-        //    SingleKeyPlayerConnectRequestEvent DummyCallback = (a, b) => { };
-        //}
+        class Check_PlayerConnectRequest : CheckForEventBase
+        {
+            // HACK: event can't be hooked because of prohibited ref enum.
+            // but can still be checked for null when world loads.
+
+            public Check_PlayerConnectRequest(CheckContainer container) : base(container, nameof(MyVisualScriptLogicProvider), nameof(MyVisualScriptLogicProvider.PlayerConnectRequest))
+            {
+                PreCheck(MyVisualScriptLogicProvider.PlayerConnectRequest);
+                //MyVisualScriptLogicProvider.PlayerConnectRequest += DummyCallback;
+            }
+
+            public override void Unhook()
+            {
+                //MyVisualScriptLogicProvider.PlayerConnectRequest -= DummyCallback;
+            }
+
+            public override string Check() => null; // CheckEvent(MyVisualScriptLogicProvider.PlayerConnectRequest, DummyCallback);
+
+            //SingleKeyPlayerConnectRequestEvent DummyCallback = (a, b) => { };
+        }
 
         class Check_AreaTrigger_Left : CheckForEventBase
         {
