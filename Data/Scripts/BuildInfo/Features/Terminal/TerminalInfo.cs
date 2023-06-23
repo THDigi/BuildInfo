@@ -257,7 +257,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             // check if the block is still valid or if the player exited the menu
             // NOTE: IsCursorVisible reacts slowly to the menu being opened, an ignore period is needed
-            if(viewedInTerminal.MarkedForClose || (cursorCheckAfterTick <= Main.Tick && !MyAPIGateway.Gui.IsCursorVisible))
+            if(viewedInTerminal.Closed || viewedInTerminal.MarkedForClose || (cursorCheckAfterTick <= Main.Tick && !MyAPIGateway.Gui.IsCursorVisible))
             {
                 SelectedInTerminal.Clear();
                 ViewedBlockChanged(viewedInTerminal, null);
@@ -343,6 +343,19 @@ namespace Digi.BuildInfo.Features.Terminal
 
             //if(!force && refreshWaitForTick > Main.Tick)
             //    return;
+
+            // just to track down some edge case issues, although it shouldn't ever reach this for either of these.
+            if(viewedInTerminal == null)
+            {
+                Log.Error("[DEBUG] UpdateDetailInfo(): viewedInTerminal is null");
+                return;
+            }
+
+            if(viewedInTerminal.MarkedForClose || viewedInTerminal.Closed)
+            {
+                Log.Error($"[DEBUG] UpdateDetailInfo(): viewedInTerminal is closed! marked={viewedInTerminal.MarkedForClose}; closed={viewedInTerminal.Closed}");
+                return;
+            }
 
             //refreshWaitForTick = (Main.Tick + RefreshMinTicks);
             viewedInTerminal.RefreshCustomInfo();
