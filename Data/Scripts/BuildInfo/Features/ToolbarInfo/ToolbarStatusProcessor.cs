@@ -97,6 +97,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
         }
 
+        /// <summary>
+        /// Appends intermitent OFF if block is turned off.
+        /// Returns true if it was appended.
+        /// </summary>
         public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
         {
             if(!AnimFlip)

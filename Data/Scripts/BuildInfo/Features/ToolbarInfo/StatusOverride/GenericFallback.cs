@@ -11,6 +11,7 @@ using VRage;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
+using PB_TextSurfaceProvider = Sandbox.ModAPI.Ingame.IMyTextSurfaceProvider; // HACK: because modAPI one isn't implemented
 
 namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 {
@@ -31,6 +32,20 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             //processor.AddFallback(ShowInToolbarConfig, "ShowInToolbarConfig", "ShowInToolbarConfig_On", "ShowInToolbarConfig_Off");
 
             processor.AddFallback(Control, "Control");
+
+            string[] actionsForLCD = new[]
+            {
+                "IncreaseFontSize", "DecreaseFontSize",
+                "IncreaseTextPaddingSlider", "DecreaseTextPaddingSlider",
+                "IncreaseChangeIntervalSlider", "DecreaseChangeIntervalSlider",
+                "PreserveAspectRatio"
+            };
+
+            foreach(string actionId in actionsForLCD)
+            {
+                processor.AddFallback(LCDActions, actionId);
+                //processor.AddGroupFallback(LCDActionsGroup, actionId);
+            }
         }
 
         bool OnOff(StringBuilder sb, ToolbarItem item)
@@ -261,5 +276,36 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             return false;
         }
+
+        bool LCDActions(StringBuilder sb, ToolbarItem item)
+        {
+            var surfaceProvider = item.Block as PB_TextSurfaceProvider;
+            if(surfaceProvider == null)
+                return false;
+
+            SurfaceInfo surfaceInfo;
+            if(!BuildInfoMod.Instance.SelectedLCD.TryGetSelectedSurface(surfaceProvider, out surfaceInfo))
+                return false;
+
+            sb.Append("LCD ").NumberCapped(surfaceInfo.Index + 1, 4).Append('\n');
+
+            item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
+            return true;
+        }
+
+        //bool LCDActionsGroup(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        //{
+        //    if(!groupData.GetGroupBlocks<PB_TextSurfaceProvider>())
+        //        return false;
+        //
+        //    foreach(IMyTerminalBlock surfaceProvider in groupData.Blocks)
+        //    {
+        //        ITerminalAction action = surfaceProvider.GetActionWithName(groupToolbarItem.ActionId);
+        //
+        //        action.WriteValue();
+        //    }
+        //
+        //    return true;
+        //}
     }
 }

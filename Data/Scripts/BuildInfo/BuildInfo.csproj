@@ -178,6 +178,7 @@
     <Compile Include="Features\ModderHelp.cs" />
     <Compile Include="Features\IconOverlays.cs" />
     <Compile Include="Features\GUI\MenuHandler.cs" />
+    <Compile Include="Systems\SelectedLCD.cs" />
     <Compile Include="Systems\SplitChecking.cs" />
     <Compile Include="Features\HUD\HUDEditor.cs" />
     <Compile Include="Features\HUD\GridControlStat.cs" />
