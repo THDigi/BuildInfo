@@ -2000,9 +2000,6 @@ namespace Digi.BuildInfo.Features
         #region Shared generation methods
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
-            int airTightFaces, toggledAirTightFaces, totalFaces;
-            AirTightMode airTight = Pressurization.GetAirTightFaces(def, out airTightFaces, out toggledAirTightFaces, out totalFaces);
-
             bool deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
             int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
             bool buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
@@ -2203,49 +2200,62 @@ namespace Digi.BuildInfo.Features
             #region Airtightness
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Airtight))
             {
-                AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh))).Append(partPrefix);
+                int airTightFaces, toggledAirTightFaces, totalFaces;
+                AirTightMode airTight = Pressurization.GetAirTightFaces(def, out airTightFaces, out toggledAirTightFaces, out totalFaces);
+
+                StringBuilder sb = AddLine(font: (airTight == AirTightMode.SEALED ? FontsHandler.GreenSh : (airTight == AirTightMode.NOT_SEALED ? FontsHandler.YellowSh : FontsHandler.SkyBlueSh)));
+                sb.Append(partPrefix);
 
                 bool isDoor = (def is MyDoorDefinition || def is MyAdvancedDoorDefinition || def is MyAirtightDoorGenericDefinition);
-                bool sealsOnClose = false;
 
                 if(isDoor)
                 {
+                    int toggledSides = 0;
+
                     if(airTight == AirTightMode.SEALED)
                     {
-                        sealsOnClose = true;
+                        toggledSides = 0;
                     }
                     else
                     {
-                        for(int i = 0; i < 6; ++i)
+                        for(int i = 0; i < Base6Directions.IntDirections.Length; ++i)
                         {
                             Vector3I normal = Base6Directions.IntDirections[i];
-
                             if(Pressurization.IsDoorAirtight(def, ref normal, fullyClosed: true))
-                            {
-                                sealsOnClose = true;
-                                break;
-                            }
+                                toggledSides++;
                         }
                     }
-                }
 
-                if(isDoor && sealsOnClose)
-                {
                     if(airTight == AirTightMode.SEALED)
-                        GetLine().Color(COLOR_GOOD).Label("Air-tight").Append("Sealed, even if open");
-                    else if(airTight == AirTightMode.NOT_SEALED)
-                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append("Not sealed, unless closed (see overlay)");
+                        sb.Color(COLOR_WARNING).Label("Air-tight").Append("Fully sealed - Even when open!");
+                    else if(airTight == AirTightMode.NOT_SEALED && toggledSides == 0 && toggledAirTightFaces == 0)
+                        sb.Color(COLOR_WARNING).Label("Air-tight").Append("Passthrough - Even when closed!");
                     else
-                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed, unless closed (see overlay)");
+                    {
+                        sb.Color(COLOR_INFO).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces sealed");
+                        if(toggledAirTightFaces > 0 || toggledSides > 0)
+                            sb.Append(" - More if closed");
+                    }
                 }
                 else
                 {
                     if(airTight == AirTightMode.SEALED)
-                        GetLine().Color(COLOR_GOOD).Label("Air-tight").Append("Sealed");
+                        sb.Color(COLOR_GOOD).Label("Air-tight").Append("Fully sealed");
                     else if(airTight == AirTightMode.NOT_SEALED)
-                        GetLine().Color(isDoor ? COLOR_BAD : COLOR_WARNING).Label("Air-tight").Append("Not sealed").Append(isDoor ? ", even if closed" : "");
+                        sb.Color(COLOR_WARNING).Label("Air-tight").Append("Passthrough");
                     else
-                        GetLine().Color(COLOR_WARNING).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces are sealed");
+                        sb.Color(COLOR_INFO).Label("Air-tight").Append(airTightFaces).Append(" of ").Append(totalFaces).Append(" faces sealed");
+                }
+
+                StringBuilder tooltip = CreateTooltip();
+                if(tooltip != null)
+                {
+                    tooltip.Append("This is a very simplified summary of block's interaction with pressurization." +
+                                  "\nA 'face' is a side of a grid cell. A 1x1x1 block occupies only one grid cell, larger blocks occupy more cells." +
+                                  "\nOnly faces towards the exterior of the block can be airtight." +
+                                  "\nDoor block types can also have extra sides or faces that they seal when closed." +
+                                  "\nTo properly see airtightness of a block, turn on overlays using: ");
+                    Main.Config.CycleOverlaysBind.Value.GetBinds(tooltip);
                 }
             }
             #endregion Airtightness
