@@ -278,14 +278,21 @@ namespace Digi.BuildInfo.Features.Terminal
         // Used to know the currently viewed block in the terminal.
         void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
         {
-            if(SelectingSet.Add(block))
+            try
             {
-                SelectingList.Add(block);
+                if(SelectingSet.Add(block))
+                {
+                    SelectingList.Add(block);
+                }
+
+                LastSelected = block;
+
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
-
-            LastSelected = block;
-
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         void ViewedBlockChanged(IMyTerminalBlock oldBlock, IMyTerminalBlock newBlock)
@@ -819,6 +826,8 @@ namespace Digi.BuildInfo.Features.Terminal
                             totalTime += time;
 
                             tmp.Append("• ").ShortNumber(amount).Append("x ");
+
+                            // assembler.CurrentProgress is for the currently processed item but it can be confusing for most items as they build super fast and the number is going to be similar and drifting slightly
 
                             // need access to MyAssembler.CurrentItemIndex to determine which queue item is actually being built
                         }
