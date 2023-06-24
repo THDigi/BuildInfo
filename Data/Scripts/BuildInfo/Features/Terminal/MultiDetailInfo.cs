@@ -14,6 +14,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
+using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
@@ -733,17 +734,144 @@ namespace Digi.BuildInfo.Features.Terminal
             info.Append("Have script: ").Append(haveScript).Append('\n');
         }
 
+        readonly Vector3[] ThrustPerSide = new Vector3[6];
+
         void Info_Thrusters(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
         {
             int connected = 0;
+            float currentForce = 0;
+            float effectiveMax = 0;
+            float absoluteMax = 0;
+            string fuelType = null;
+            bool mixedFuels = false;
+            bool canBeSubOptimal = false;
+            bool allSameGrid = true;
+            IMyCubeGrid testGrid = blocks[0].CubeGrid;
+
+            for(int i = 0; i < ThrustPerSide.Length; i++)
+            {
+                ThrustPerSide[i] = Vector3.Zero;
+            }
 
             foreach(MyThrust thrust in blocks)
             {
+                if(thrust.CubeGrid != testGrid)
+                    allSameGrid = false;
+
                 if(thrust.IsPowered)
                     connected++;
+
+                IMyThrust apiThrust = (IMyThrust)thrust;
+                currentForce += apiThrust.CurrentThrust;
+                effectiveMax += apiThrust.MaxEffectiveThrust;
+                absoluteMax += apiThrust.MaxThrust;
+
+                if(!canBeSubOptimal)
+                {
+                    MyThrustDefinition def = thrust.BlockDefinition;
+                    if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
+                    {
+                        canBeSubOptimal = true;
+                    }
+                }
+
+                if(!mixedFuels)
+                {
+                    string fuel = thrust.FuelDefinition?.Id.SubtypeName ?? MyResourceDistributorComponent.ElectricityId.SubtypeName;
+
+                    if(fuelType == null)
+                        fuelType = fuel;
+                    else if(fuelType != fuel)
+                        mixedFuels = true;
+                }
+
+                ThrustPerSide[(int)thrust.Orientation.Forward] += new Vector3(apiThrust.CurrentThrust, apiThrust.MaxEffectiveThrust, apiThrust.MaxThrust);
             }
 
-            info.Append("Connected to fuel: ").Append(connected).Append('\n');
+            info.Append("Requires: ").Append(mixedFuels ? "Mixed" : fuelType).Append('\n');
+
+            info.Append("Connected to fuel: ");
+            if(connected >= blocks.Count)
+                info.Append("All");
+            else
+                info.Append(connected).Append(" / ").Append(blocks.Count);
+            info.Append('\n');
+
+            info.Append("Current Thrust: ").ForceFormat(currentForce).Append('\n');
+
+            if(canBeSubOptimal)
+            {
+                info.Append("Effective Max Thrust: ").ForceFormat(effectiveMax).Append('\n');
+                info.Append("Optimal Max Thrust: ").ForceFormat(absoluteMax).Append('\n');
+            }
+            else
+            {
+                info.Append("Max Thrust: ").ForceFormat(absoluteMax).Append('\n');
+            }
+
+            if(allSameGrid)
+            {
+                int activeSides = 0;
+
+                for(int i = 0; i < ThrustPerSide.Length; i++)
+                {
+                    Vector3 data = ThrustPerSide[i];
+                    if(data.Z > 0)
+                        activeSides++;
+                }
+
+                if(activeSides > 1)
+                {
+                    var shipCtrl = testGrid.ControlSystem?.CurrentShipController?.Entity as IMyShipController;
+                    if(shipCtrl != null)
+                    {
+                        info.Append("Relative to '").AppendMaxLength(shipCtrl.CustomName, 32).Append("':\n");
+
+                        AppendThrustPerSide(info, Base6Directions.Direction.Backward, canBeSubOptimal, shipCtrl);
+                        AppendThrustPerSide(info, Base6Directions.Direction.Forward, canBeSubOptimal, shipCtrl);
+                        AppendThrustPerSide(info, Base6Directions.Direction.Down, canBeSubOptimal, shipCtrl);
+                        AppendThrustPerSide(info, Base6Directions.Direction.Up, canBeSubOptimal, shipCtrl);
+                        AppendThrustPerSide(info, Base6Directions.Direction.Left, canBeSubOptimal, shipCtrl);
+                        AppendThrustPerSide(info, Base6Directions.Direction.Right, canBeSubOptimal, shipCtrl);
+                    }
+                    else
+                    {
+                        info.Append("(Control ship to see per-direction forces)\n");
+                    }
+                }
+            }
+        }
+
+        void AppendThrustPerSide(StringBuilder info, Base6Directions.Direction dir, bool canBeSubOptimal, IMyShipController shipCtrl)
+        {
+            Base6Directions.Direction dataDir = dir;
+            if(shipCtrl != null)
+                dataDir = shipCtrl.Orientation.TransformDirection(dir); // aka "get direction"
+
+            Vector3 data = ThrustPerSide[(int)dataDir];
+            if(data.Z <= 0)
+                return;
+
+            string dirName;
+            switch(dir) // shorter names with eyeballed padding
+            {
+                case Base6Directions.Direction.Forward: dirName = "Front  "; break;
+                case Base6Directions.Direction.Backward: dirName = "Back  "; break;
+                case Base6Directions.Direction.Left: dirName = "Left     "; break;
+                case Base6Directions.Direction.Right: dirName = "Right  "; break;
+                case Base6Directions.Direction.Up: dirName = "Up      "; break;
+                case Base6Directions.Direction.Down: dirName = "Down"; break;
+                default: throw new ArgumentException($"Invalid direction given: {dir}");
+            }
+
+            info.Append("•").Append(dirName).Append(": ");
+
+            if(canBeSubOptimal)
+                info.ForceFormat(data.Y).Append(" effective, ").ForceFormat(data.Z).Append(" max");
+            else
+                info.ForceFormat(data.Z).Append(" max");
+
+            info.Append('\n');
         }
         #endregion
     }
