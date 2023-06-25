@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
@@ -35,7 +36,7 @@ namespace Digi.BuildInfo
             typeof(MyObjectBuilder_Component)
         };
 
-        public static readonly Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
+        public static Dictionary<MyObjectBuilderType, string> TypeToFriendlyName = new Dictionary<MyObjectBuilderType, string>()
         {
             [typeof(MyObjectBuilder_GasProperties)] = "Gas",
 
@@ -171,6 +172,8 @@ namespace Digi.BuildInfo
 
         public override void UnregisterComponent()
         {
+            TypeToFriendlyName = null;
+            Hardcoded.CleanRefs();
         }
 
         public override void UpdateAfterSim(int tick)
@@ -230,6 +233,7 @@ namespace Digi.BuildInfo
         {
             public readonly MyResourceDistributionGroupDefinition Def;
             public readonly int Priority;
+            public bool IsSource => Def.IsSource;
 
             public ResourceGroupData(MyResourceDistributionGroupDefinition def, int priority)
             {

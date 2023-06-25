@@ -10,6 +10,7 @@ using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.Definitions;
 using VRage.Game.ModAPI;
 using VRage.Library.Utils;
 using VRage.ModAPI;
@@ -25,13 +26,25 @@ namespace Digi.BuildInfo.VanillaData
     /// </summary>
     public static class Hardcoded
     {
+        public static void CleanRefs()
+        {
+            GameDefinition = null;
+            NoReloadTypes = null;
+            PlatformIcon.List = null;
+            ProgrammableBlock_DefaultScript = null;
+            CustomTargetingOptionName = null;
+            TargetOptionsSorted = null;
+            MountPointMaskNames = null;
+            MountPointMaskValues = null;
+        }
+
         // from VRage.GameServices.PlatformIcon
         public static class PlatformIcon
         {
             public static readonly char PC = '\ue030';
             public static readonly char PS = '\ue031';
             public static readonly char XBOX = '\ue032';
-            public static readonly List<char> List = new List<char>() { PC, PS, XBOX };
+            public static List<char> List = new List<char>() { PC, PS, XBOX };
         }
 
         // from MyGravityProviderSystem.G
@@ -92,11 +105,11 @@ namespace Digi.BuildInfo.VanillaData
 
         // from MyWelder.WeldAmount
         public static float HandWelder_GetWeldPerSec(float speedMultiplier) => MyAPIGateway.Session.WelderSpeedMultiplier * speedMultiplier * HandWelder_WeldAmountPerSecond;
-        private const float HandWelder_WeldAmountPerSecond = 1f;
+        const float HandWelder_WeldAmountPerSecond = 1f;
 
         // from MyAngleGrinder.GrinderAmount
         public static float HandGrinder_GetGrindPerSec(float speedMultiplier) => MyAPIGateway.Session.GrinderSpeedMultiplier * speedMultiplier * HandGrinder_GrindAmountPerSecond;
-        private const float HandGrinder_GrindAmountPerSecond = 2f;
+        const float HandGrinder_GrindAmountPerSecond = 2f;
 
         // from MyShipDrill
         public const float ShipDrill_Power = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_DRILL;
@@ -196,7 +209,7 @@ namespace Digi.BuildInfo.VanillaData
         public static float LadderClimbSpeed(float distanceBetweenPoles)
         {
             const float ladderSpeed = 2f;
-            const float stepsPerAnimation = 59;
+            //const float stepsPerAnimation = 59;
             //float stepIncrement = ladderSpeed * distanceBetweenPoles / stepsPerAnimation;
             //float speed = stepIncrement * stepsPerAnimation;
 
@@ -263,7 +276,7 @@ namespace Digi.BuildInfo.VanillaData
         public const float ProgrammableBlock_PowerReq = 0.0005f;
 
         // from MyProgrammableBlock.OpenEditor()
-        public static readonly string ProgrammableBlock_DefaultScript = PB_ComputeDefaultScript();
+        public static string ProgrammableBlock_DefaultScript = PB_ComputeDefaultScript();
         static string PB_ComputeDefaultScript()
         {
             string ctorComment = PB_ToIndentedComment(MyTexts.GetString(MySpaceTexts.ProgrammableBlock_DefaultScript_Constructor).Trim());
@@ -286,11 +299,46 @@ namespace Digi.BuildInfo.VanillaData
         public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK; // 0.0002f
 
         // from <weapon>.CanShoot() taking ShotsInBurst into account.
-        public static readonly HashSet<MyObjectBuilderType> NoReloadTypes = new HashSet<MyObjectBuilderType>()
+        public static HashSet<MyObjectBuilderType> NoReloadTypes = new HashSet<MyObjectBuilderType>()
         {
             typeof(MyObjectBuilder_InteriorTurret), // MyLargeInteriorBarrel.StartShooting()
             typeof(MyObjectBuilder_SmallGatlingGun), // MySmallGatlingGun.CanShoot()
         };
+
+        public static MyGameDefinition GameDefinition = GetGameDefinition();
+
+        // from MySession.LoadGameDefinition()
+        static MyGameDefinition GetGameDefinition()
+        {
+            MyDefinitionId? defId = null; // TODO: need to get definition from session... maybe GetCheckpoint() in LoadData().
+            if(!defId.HasValue)
+                defId = MyGameDefinition.Default;
+
+            MyGameDefinition def = MyDefinitionManager.Static.GetDefinition<MyGameDefinition>(defId.Value);
+            if(def == null)
+                def = MyGameDefinition.DefaultDefinition;
+
+            return def;
+        }
+
+        // from MyCubeBlock.CalculateStoredExplosiveDamage() and CalculateStoredExplosiveRadius()
+        public static bool GetAmmoInventoryExplosion(MyPhysicalItemDefinition magazineDef, MyAmmoDefinition ammoDef, int amount, out float damage) //, out float radius)
+        {
+            if(ammoDef.ExplosiveDamageMultiplier == 0)
+            {
+                damage = 0;
+                //radius = 0;
+                return false;
+            }
+
+            float volume = amount * magazineDef.Volume * 1000f;
+            damage = volume * GameDefinition.ExplosionDamagePerLiter * ammoDef.ExplosiveDamageMultiplier;
+
+            //float volumeCap = MyMath.Clamp((volume - gameDef.ExplosionAmmoVolumeMin) / gameDef.ExplosionAmmoVolumeMax, 0f, 1f);
+            //radius = GameDefinition.ExplosionRadiusMin + volumeCap * (gameDef.ExplosionRadiusMax - gameDef.ExplosionRadiusMin);
+
+            return true;
+        }
 
         // from MyReflectorLight.CreateTerminalControls()
         public const float Spotlight_RotationSpeedToRPM = 20f;
@@ -331,7 +379,7 @@ namespace Digi.BuildInfo.VanillaData
         // from MySearchlight.RotationAndElevation()
         public const float Searchlight_RotationSpeedMul = Turret_RotationSpeedMul;
 
-        public static readonly Dictionary<MyTurretTargetingOptions, string> CustomTargetingOptionName = new Dictionary<MyTurretTargetingOptions, string>()
+        public static Dictionary<MyTurretTargetingOptions, string> CustomTargetingOptionName = new Dictionary<MyTurretTargetingOptions, string>()
         {
             [MyTurretTargetingOptions.Asteroids] = "Meteors",
             [MyTurretTargetingOptions.Missiles] = "Missiles",
@@ -340,7 +388,7 @@ namespace Digi.BuildInfo.VanillaData
             [MyTurretTargetingOptions.LargeShips] = "LargeGrids",
         };
 
-        public static readonly List<MyTurretTargetingOptions> TargetOptionsSorted = SortTargetOptions();
+        public static List<MyTurretTargetingOptions> TargetOptionsSorted = SortTargetOptions();
         static List<MyTurretTargetingOptions> SortTargetOptions()
         {
             List<MyTurretTargetingOptions> list = new List<MyTurretTargetingOptions>(MyEnum<MyTurretTargetingOptions>.Values);
@@ -583,29 +631,6 @@ namespace Digi.BuildInfo.VanillaData
             return new TextSurfaceInfo(textureRes, aspectRatio, textureRes * aspectFactor);
         }
 
-        // from MyGasTank.CalculateGasExplosionRadius() and CalculateGasExplosionDamage()
-        //public static GasTankExplosionInfo GasTank_ExplosionInfo(MyGasTankDefinition def, float volume)
-        //{
-        //    float damage = volume * def.GasExplosionDamageMultiplier;
-        //    float radius = (0f - def.GasExplosionMaxRadius) * ((def.GasExplosionNeededVolumeToReachMaxRadius / 40f) - volume) / ((def.GasExplosionNeededVolumeToReachMaxRadius / 40f) + volume);
-        //    if(radius <= 0f)
-        //        radius = 1f;
-        //
-        //    return new GasTankExplosionInfo(damage, radius);
-        //}
-        //
-        //public struct GasTankExplosionInfo
-        //{
-        //    public readonly float Damage;
-        //    public readonly float Radius;
-        //
-        //    public GasTankExplosionInfo(float damage, float radius)
-        //    {
-        //        Damage = damage;
-        //        Radius = radius;
-        //    }
-        //}
-
         // from MyEntityThrustComponent.MAX_DISTANCE_RELATIVE_DAMPENING and MAX_DISTANCE_RELATIVE_DAMPENING_SQ
         public const double RelativeDampeners_MaxDistance = 100f;
         public const double RelativeDampeners_MaxDistanceSq = RelativeDampeners_MaxDistance * RelativeDampeners_MaxDistance;
@@ -623,9 +648,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyBlockBuilderRenderData.Transparency
         public const float CubeBuilderTransparency = 0.25f;
 
-        // from MyUseObjectsComponent.CreateInteractiveObject()
         public static bool DetectorIsOpenCloseDoor(string detectorName, IMyEntity entity)
         {
+            // from MyUseObjectsComponent.CreateInteractiveObject()
             // can't use `is IMyDoor` because it's implemented by all doors, while MyDoor is just the classic door.
             return entity is MyDoor && detectorName == "terminal";
         }
@@ -652,9 +677,9 @@ namespace Digi.BuildInfo.VanillaData
             CustomBit8 = (1 << 7),
         }
 
-        public static readonly string[] MountPointMaskNames = Enum.GetNames(typeof(MountPointMask));
+        public static string[] MountPointMaskNames = Enum.GetNames(typeof(MountPointMask));
 
-        public static readonly byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
+        public static byte[] MountPointMaskValues = (byte[])Enum.GetValues(typeof(MountPointMask));
 
         // clone of MyCubeBlockDefinition.UntransformMountPointPosition() because it's internal
         /// <summary>
