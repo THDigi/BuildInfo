@@ -71,9 +71,6 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void AddDescriptions()
         {
-            //SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_OxygenContainerObject), "OxygenBottle"), "Recharges your life support oxygen automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.");
-            //SetDescription(new MyDefinitionId(typeof(MyObjectBuilder_GasContainerObject), "HydrogenBottle"), "Recharges your jetpack hydrogen fuel automatically when low, if held in inventory.\nFill the bottle by placing it in the inventory of H2/O2 generators or Hydrogen Tanks.");
-
             string oxygenBottleDesc = "Recharges your life support oxygen automatically when low, if held in inventory." +
                "\nFill the bottle by placing it in the inventory of H2/O2 generators or Oxygen Tanks.";
 
@@ -104,15 +101,6 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
         }
-
-        //void SetDescription(MyDefinitionId id, string description)
-        //{
-        //    MyDefinitionBase def;
-        //    if(MyDefinitionManager.Static.TryGetDefinition(id, out def) && string.IsNullOrWhiteSpace(def.DescriptionText))
-        //    {
-        //        def.DescriptionString = description;
-        //    }
-        //}
 
         void Setup(bool generate)
         {
@@ -412,8 +400,18 @@ namespace Digi.BuildInfo.Features.Tooltips
             MyAmmoDefinition ammoDef = MyDefinitionManager.Static.GetAmmoDefinition(magDef.AmmoDefinitionId);
             if(ammoDef != null)
             {
-                if(ammoDef.ExplosiveDamageMultiplier > 0)
-                    s.Append("\n/!\\ Container holding this ammo explodes when destroyed!");
+                float damagePerMag;
+                if(Hardcoded.GetAmmoInventoryExplosion(magDef, ammoDef, 1, out damagePerMag))
+                {
+                    if(damagePerMag > 0)
+                    {
+                        s.Append("\nOn container destroyed: explodes by ").Number(damagePerMag).Append("dmg/mag");
+                    }
+                    else if(damagePerMag < 0)
+                    {
+                        s.Append("\nOn container destroyed: reduces other ammo explosion by ").Number(damagePerMag).Append("dmg/mag");
+                    }
+                }
             }
         }
 
