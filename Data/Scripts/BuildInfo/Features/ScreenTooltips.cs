@@ -11,6 +11,8 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features
 {
+    // TODO: highlight mass to explain it's real physical mass and point to info tab for old value
+
     public class ScreenTooltips : ModComponent
     {
         static readonly bool DebugDraw = false;
@@ -138,6 +140,10 @@ namespace Digi.BuildInfo.Features
 
                 if(found != null)
                 {
+                    // TODO: hide hud while tooltips hovered --- or better yet, hide HUD if mouse is over entire text box to aid readability regardless of tooltip presence
+                    // problem is text info hides too and flickers, needs some special case...
+                    //Main.GameConfig.TempHideHUD(nameof(ScreenTooltips), true);
+
                     TooltipHandler.Hover(found.Value.Text);
                     TooltipHandler.Draw(mousePos, drawNow: true);
 
@@ -150,6 +156,10 @@ namespace Digi.BuildInfo.Features
                     {
                         found.Value.Action.Invoke();
                     }
+                }
+                else
+                {
+                    //Main.GameConfig.TempHideHUD(nameof(ScreenTooltips), false);
                 }
             }
             else if(DebugDraw)

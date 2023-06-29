@@ -15,6 +15,8 @@ namespace Digi.BuildInfo.Features.Tooltips
     // TODO hold <key> to show more tooltip as it apparently updates in realtime
     // ... or don't and have that ingame wiki instead.
 
+    // TODO: add range for handheld weapons
+
     public class ItemTooltips : ModComponent
     {
         public const string ReqLargeConveyorSymbol = "Ф";
