@@ -34,9 +34,10 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void DisposeTempObjects()
         {
-            TmpBpsMakingThis = null;
-            TmpBpsRequiringThis = null;
-            TmpNameAndSize = null;
+            //TmpBpsMakingThis = null;
+            //TmpBpsRequiringThis = null;
+            //TmpNameAndSize = null;
+
             TmpStringSet = null;
         }
 
@@ -498,7 +499,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             // TODO find if it's sold by NPC stations?
         }
 
-        public void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false)
+        public void TooltipCrafting(StringBuilder s, MyPhysicalItemDefinition physDef, bool forBlueprint = false, bool forTextBoxTooltip = false)
         {
             TmpBpsMakingThis.Clear();
             TmpBpsRequiringThis.Clear();
@@ -540,7 +541,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
             }
 
-            if(forBlueprint)
+            if(forTextBoxTooltip)
+            {
+                Crafting_Sources(s, physDef);
+            }
+            else if(forBlueprint)
             {
                 Crafting_Ingredient(s, physDef, detailed: true);
                 Crafting_BlockComponent(s, physDef, detailed: true);
@@ -552,7 +557,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 Crafting_BlockComponent(s, physDef, detailed: false);
             }
 
-            if(!forBlueprint)
+            if(!forBlueprint && !forTextBoxTooltip)
             {
                 HashSet<MyCubeBlockDefinition> blockDefs;
                 if(Main.TooltipHandler.TmpComponentFromGrindingBlocks.TryGetValue(physDef.Id, out blockDefs))

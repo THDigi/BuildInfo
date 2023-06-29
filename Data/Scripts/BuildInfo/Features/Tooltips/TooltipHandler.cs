@@ -42,7 +42,9 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         void DisposeTempObjects()
         {
-            TmpBpUsedIn = null;
+            //TmpComponentFromGrindingBlocks = null;
+            //TmpBpUsedIn = null;
+
             TmpItemRefillIn = null;
             TmpMagUsedIn = null;
             TmpHasBP = null;
@@ -50,7 +52,6 @@ namespace Digi.BuildInfo.Features.Tooltips
             TmpVendingBuy = null;
             TmpVendingSell = null;
             TmpComponentInBlocks = null;
-            TmpComponentFromGrindingBlocks = null;
             TmpStatDisplayNames = null;
         }
 

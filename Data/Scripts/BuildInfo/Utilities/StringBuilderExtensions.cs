@@ -238,9 +238,20 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        const string LineInfoSeparator = ", ";
+
         public static StringBuilder Separator(this StringBuilder s)
         {
-            return s.Append(", ");
+            return s.Append(LineInfoSeparator);
+        }
+
+        public static StringBuilder RemoveLastSeparator(this StringBuilder s)
+        {
+            if(s.Length >= LineInfoSeparator.Length
+            && s[s.Length - 2] == ','
+            && s[s.Length - 1] == ' ')
+                s.Length -= LineInfoSeparator.Length;
+            return s;
         }
 
         public static StringBuilder NewLine(this StringBuilder s)
