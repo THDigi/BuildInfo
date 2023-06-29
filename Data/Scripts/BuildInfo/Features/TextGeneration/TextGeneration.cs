@@ -2254,7 +2254,7 @@ namespace Digi.BuildInfo.Features
                                   "\nA 'face' is a side of a grid cell. A 1x1x1 block occupies only one grid cell, larger blocks occupy more cells." +
                                   "\nOnly faces towards the exterior of the block can be airtight." +
                                   "\nDoor block types can also have extra sides or faces that they seal when closed." +
-                                  "\nTo properly see airtightness of a block, turn on overlays using: ");
+                                  "\nTo properly see airtightness of a block, turn on overlays using: <color=0,255,155>");
                     Main.Config.CycleOverlaysBind.Value.GetBinds(tooltip);
                 }
             }
@@ -3225,6 +3225,7 @@ namespace Digi.BuildInfo.Features
 
                 if(gasTank.GasExplosionDamageMultiplier > 0)
                 {
+                    // HACK: from MyGasTank.CalculateGasExplosionRadius() and CalculateGasExplosionDamage()
                     AddLine().Color(COLOR_WARNING).Label("Destroyed Explosion - Max Damage").ExponentNumber(gasTank.GasExplosionDamageMultiplier * gasTank.Capacity)
                         .Separator().Label("Max Radius").DistanceFormat(gasTank.GasExplosionMaxRadius);
                 }
@@ -3640,6 +3641,8 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius);
             }
+
+            // TODO: lightning catch area? also for decoy blocks...
         }
 
         private void Format_LaserAntenna(MyCubeBlockDefinition def)
@@ -4078,7 +4081,7 @@ namespace Digi.BuildInfo.Features
                     float powerUsage = turretWWF?.IdlePowerDrawMax ?? gunWWF.IdlePowerDrawBase;
                     StringBuilder sb = AddLine().Label("Power - Idle").PowerFormat(powerUsage).Separator().Label("Recharge").PowerFormat(gunWWF.ReloadPowerDraw).Append(" (adaptable)");
 
-                    // HACK: hardcoded like in https://gitlab.com/whiplash141/Revived-Railgun-Mod/-/blob/develop/Data/Scripts/WeaponFramework/WhipsWeaponFramework/WeaponBlockBase.cs#L566
+                    // HACK: hardcoded like in https://gitlab.com/whiplash141/Revived-Railgun-Mod/-/blob/develop/Data/Scripts/WeaponFramework/WhipsWeaponFramework/WeaponBlockBase.cs#L608
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         sb.Separator().ResourcePriority("Thrust", true);
                 }
@@ -4204,10 +4207,10 @@ namespace Digi.BuildInfo.Features
             }
             #endregion
 
-            if(gunWWF == null)
+            if(gunWWF == null) // vanilla weapon system
             {
                 bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
-                bool validWeapon = (wpDef.DamageMultiplier != 0);
+                bool validWeapon = false;
                 bool hasAmmo = true;
                 bool hasBullets = false;
                 bool hasMissiles = false;
@@ -4231,9 +4234,9 @@ namespace Digi.BuildInfo.Features
                             hasBullets = true;
 
                             MyProjectileAmmoDefinition bullet = (MyProjectileAmmoDefinition)ammo;
-                            if(bullet.ProjectileMassDamage != 0
-                            || bullet.ProjectileHealthDamage != 0
-                            || (bullet.HeadShot && bullet.ProjectileHeadShotDamage != 0)
+                            if(bullet.ProjectileMassDamage * wpDef.DamageMultiplier != 0
+                            || bullet.ProjectileHealthDamage * wpDef.DamageMultiplier != 0
+                            || (bullet.HeadShot && bullet.ProjectileHeadShotDamage * wpDef.DamageMultiplier != 0)
                             || bullet.ProjectileExplosionDamage != 0)
                             {
                                 validWeapon = true;
@@ -4574,12 +4577,11 @@ namespace Digi.BuildInfo.Features
                 if(!validWeapon)
                 {
                     StringBuilder sb = AddLine().Color(COLOR_WARNING);
-                    if(wpDef.DamageMultiplier == 0f)
-                        sb.Append("Weapon has 0 damage multiplier!");
-                    else if(!hasAmmo)
-                        sb.Append("Has no ammo!");
+                    if(!hasAmmo)
+                        sb.Append("Has no ammo magazines.");
                     else
-                        sb.Append("Ammo deals no vanilla damage!");
+                        sb.Append("Ammo deals no vanilla damage.");
+
                     sb.Append(" Might have custom behavior.");
                 }
             }
@@ -4841,8 +4843,8 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
             {
-                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius);
-                AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##"));
+                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).Icon(FontsHandler.IconSphere);
+                AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##")).Icon(FontsHandler.IconExplode);
             }
         }
 
