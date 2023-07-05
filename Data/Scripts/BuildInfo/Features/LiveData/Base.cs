@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
@@ -20,19 +21,39 @@ namespace Digi.BuildInfo.Features.LiveData
         In = (1 << 1),
         Out = (1 << 2),
         Interactive = (1 << 3),
+        Unreachable = (1 << 4),
     }
 
     public struct ConveyorInfo
     {
-        public readonly Matrix LocalMatrix;
         public readonly ConveyorFlags Flags;
+        public readonly Matrix LocalMatrix;
+        Vector3I CellPosition;
+        Base6Directions.Direction Direction;
 
-        public ConveyorInfo(Matrix localMatrix, ConveyorFlags flags = ConveyorFlags.None)
+        public ConveyorInfo(ConveyorFlags flags, Matrix localMatrix, Vector3I cellPos, Base6Directions.Direction dir)
         {
             Utils.MatrixMinSize(ref localMatrix, BData_Base.MatrixAllMinScale, BData_Base.MatrixIndividualMinScale);
 
-            LocalMatrix = localMatrix;
             Flags = flags;
+            LocalMatrix = localMatrix;
+            CellPosition = cellPos;
+            Direction = dir;
+        }
+
+        public void TransformToGrid(IMySlimBlock block, out Vector3I gridPos, out Base6Directions.Direction gridDir)
+        {
+            // from MyConveyorConnector.PositionToGridCoords()
+
+            //Matrix localOrientation;
+            //block.Orientation.GetMatrix(out localOrientation);
+            //gridPos = Vector3I.Round(Vector3.TransformNormal(new Vector3(CellPosition), localOrientation)) + block.Position;
+
+            // optimized with integer transform
+            MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
+            Vector3I.Transform(ref CellPosition, ref matrix, out gridPos);
+
+            gridDir = block.Orientation.TransformDirection(Direction);
         }
     }
 
@@ -232,12 +253,14 @@ namespace Digi.BuildInfo.Features.LiveData
                 return;
             }
 
-            Color colorTerminalOnly = new Color(55, 255, 220);
-            Color colorInteractiveAndTerminal = new Color(50, 255, 150);
-            Color colorInteractiveOnly = new Color(25, 100, 155);
             const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
 
             Interactive = new List<InteractionInfo>(dummies.Values.Count);
+
+            // supergridding might break this?
+            float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            float cellSizeHalf = cellSize / 2f;
+            Vector3 sizeMetric = new Vector3(def.Size) * cellSizeHalf;
 
             foreach(IMyModelDummy dummy in dummies.Values)
             {
@@ -262,6 +285,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     if(part1.EqualsIgnoreCase("small"))
                         flags |= ConveyorFlags.Small;
 
+                    // same logic order: 'out' overrides 'in'
                     if(part1.EqualsIgnoreCase("out") || part2.EqualsIgnoreCase("out"))
                         flags |= ConveyorFlags.Out;
                     else if(part1.EqualsIgnoreCase("in") || part2.EqualsIgnoreCase("in"))
@@ -273,10 +297,51 @@ namespace Digi.BuildInfo.Features.LiveData
                         Has |= BlockHas.PhysicalTerminalAccess;
                     }
 
+                    Vector3 portLocalPos = matrix.Translation + sizeMetric; // + blockDef.ModelOffset  (already done to port matrix)
+                    Vector3I clamped = Vector3I.Clamp(Vector3I.Floor(portLocalPos / cellSize), Vector3I.Zero, def.Size - Vector3I.One);
+                    Vector3I portCellPos = clamped - def.Center;
+
+                    Vector3 cellV3 = (new Vector3(clamped) + Vector3.Half) * cellSize;
+                    Vector3 dirVec = Vector3.DominantAxisProjection((portLocalPos - cellV3) / cellSize);
+                    dirVec.Normalize();
+                    Base6Directions.Direction portDir = Base6Directions.GetDirection(dirVec);
+
+                    ConveyorInfo port = new ConveyorInfo(flags, matrix, portCellPos, portDir);
+
+                    // some blocks like classic large turrets have their interactive ports as real conveyor ports but they are not reachable because they start from middle cell.
+                    {
+                        Vector3I gridPos;
+                        Base6Directions.Direction gridDir;
+                        port.TransformToGrid(block.SlimBlock, out gridPos, out gridDir);
+
+                        IMySlimBlock slimCheck = block.CubeGrid.GetCubeBlock(gridPos + Base6Directions.GetIntVector(gridDir));
+                        if(slimCheck == block.SlimBlock)
+                        {
+                            flags |= ConveyorFlags.Unreachable;
+                            port = new ConveyorInfo(flags, matrix, portCellPos, portDir);
+                        }
+                    }
+
                     if(ConveyorPorts == null)
                         ConveyorPorts = new List<ConveyorInfo>();
 
-                    ConveyorPorts.Add(new ConveyorInfo(matrix, flags));
+                    ConveyorPorts.Add(port);
+
+                    // less memory to just compute it in overlay, not much added overhead
+                    //if((flags & ConveyorFlags.Interactive) != 0)
+                    //{
+                    //    if((flags & ConveyorFlags.Unreachable) != 0)
+                    //    {
+                    //        Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", colorTerminalOnly));
+                    //    }
+                    //    else
+                    //    {
+                    //        if((flags & ConveyorFlags.Small) != 0)
+                    //            Interactive.Add(new InteractionInfo(matrix, "        Interactive\nSmall conveyor port", interactivePortColor));
+                    //        else
+                    //            Interactive.Add(new InteractionInfo(matrix, "        Interactive\nLarge conveyor port", interactivePortColor));
+                    //    }
+                    //}
                 }
                 else if(detectorType.EqualsIgnoreCase("upgrade"))
                 {
@@ -290,9 +355,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 else if(detectorType.EqualsIgnoreCase("terminal"))
                 {
                     if(Hardcoded.DetectorIsOpenCloseDoor("terminal", block))
-                        Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
+                        Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     else
-                        Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
+                        Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", OverlayDrawInstance.InteractiveTerminalColor));
 
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
@@ -300,51 +365,51 @@ namespace Digi.BuildInfo.Features.LiveData
                      || detectorType.EqualsIgnoreCase("vendingMachine") // excluding vendingMachineBuy/vendingMachineNext/vendingMachinePrevious; clicking this one just opens terminal
                      || detectorType.EqualsIgnoreCase("jukebox")) // excluding jukeboxNext/jukeboxPrevious/jukeboxPause; clicking this one just opens terminal
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Terminal/inventory access", colorTerminalOnly));
+                    Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
                 }
                 else if(detectorType.EqualsIgnoreCase("textpanel"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Edit LCD\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Edit LCD\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                 }
                 else if(detectorType.EqualsIgnoreCase("advanceddoor")
                      || detectorType.EqualsIgnoreCase("door"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Open/Close\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("block")) // medical room/survival kit heal
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Recharge\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Recharge\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("contract"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Open Contracts\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Open Contracts\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("store"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Open Store\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Open Store\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 else if(detectorType.EqualsIgnoreCase("ATM"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Open Transactions\n+Terminal access", colorInteractiveAndTerminal));
+                    Interactive.Add(new InteractionInfo(matrix, "Open Transactions\n+Terminal access", OverlayDrawInstance.InteractiveActionOrTerminalColor));
                     Has |= BlockHas.PhysicalTerminalAccess;
                 }
                 // from here only interactive things that can't open terminal
                 else if(detectorType.EqualsIgnoreCase("cockpit")
                      || detectorType.EqualsIgnoreCase("cryopod"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Entrance", colorInteractiveOnly));
+                    Interactive.Add(new InteractionInfo(matrix, "Entrance", OverlayDrawInstance.InteractiveColor));
                 }
                 else if(detectorType.EqualsIgnoreCase("connector"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Connector (large)", colorInteractiveOnly));
+                    Interactive.Add(new InteractionInfo(matrix, "Connector (large)", OverlayDrawInstance.InteractiveColor));
                 }
                 else if(detectorType.EqualsIgnoreCase("small") && part1.EqualsIgnoreCase("connector"))
                 {
-                    Interactive.Add(new InteractionInfo(matrix, "Connector (small)", colorInteractiveOnly));
+                    Interactive.Add(new InteractionInfo(matrix, "Connector (small)", OverlayDrawInstance.InteractiveColor));
                 }
                 else if(detectorType.EqualsIgnoreCase("wardrobe")
                      || detectorType.EqualsIgnoreCase("ladder")
@@ -394,7 +459,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 list.Capacity = list.Count;
         }
 
-        void ComputeUseObjects(IMyCubeBlock block, MyCubeBlockDefinition def)
+        void ComputeGamelogic(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
 #if false
             // block has 2+ gamelogic components

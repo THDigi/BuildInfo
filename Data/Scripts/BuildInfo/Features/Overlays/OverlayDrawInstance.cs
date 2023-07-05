@@ -73,6 +73,14 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public static float SideBrightnessChange = 0.1f; // some sides are darkened or brightened by this amount to give it perspective
 
+        public static readonly Color ConveyorPortColor = new Color(255, 255, 0);
+        public static readonly Color InteractiveConveyorPortColor = new Color(155, 255, 0);
+        public static readonly Color InteractiveTerminalColor = new Color(55, 255, 220);
+        public static readonly Color InteractiveActionOrTerminalColor = new Color(50, 255, 150);
+        public static readonly Color InteractiveColor = new Color(25, 100, 155);
+        public static readonly Color UpgradePortColor = new Color(200, 55, 255);
+        public static readonly Color UnknownPortColor = new Color(0, 0, 200);
+
         public const BlendTypeEnum PortBlendType = BlendTypeEnum.SDR;
         public const BlendTypeEnum PortAimedBlendType = BlendTypeEnum.SDR;
 
@@ -446,27 +454,28 @@ namespace Digi.BuildInfo.Features.Overlays
                     {
                         if(data.ConveyorPorts != null)
                         {
-                            Color portColor = new Color(255, 255, 0);
-                            Color interactivePortColor = new Color(155, 255, 0);
-
                             foreach(ConveyorInfo info in data.ConveyorPorts)
                             {
                                 MatrixD matrix = info.LocalMatrix * drawMatrix;
                                 bool isSmall = (info.Flags & ConveyorFlags.Small) != 0;
 
-                                if((info.Flags & ConveyorFlags.Interactive) != 0)
+                                if((info.Flags & ConveyorFlags.Unreachable) != 0)
+                                {
+                                    DrawPort("Inventory/Terminal access", matrix, InteractiveTerminalColor);
+                                }
+                                else if((info.Flags & ConveyorFlags.Interactive) != 0)
                                 {
                                     if(isSmall)
-                                        DrawPort("        Interactive\nSmall conveyor port", matrix, interactivePortColor);
+                                        DrawPort("        Interactive\nSmall conveyor port", matrix, InteractiveConveyorPortColor);
                                     else
-                                        DrawPort("        Interactive\nLarge conveyor port", matrix, interactivePortColor, largeShip: true);
+                                        DrawPort("        Interactive\nLarge conveyor port", matrix, InteractiveConveyorPortColor, largePort: true);
                                 }
                                 else
                                 {
                                     if(isSmall)
-                                        DrawPort("       Small\nConveyor port", matrix, portColor);
+                                        DrawPort("       Small\nConveyor port", matrix, ConveyorPortColor);
                                     else
-                                        DrawPort("       Large\nConveyor port", matrix, portColor, largeShip: true);
+                                        DrawPort("       Large\nConveyor port", matrix, ConveyorPortColor, largePort: true);
                                 }
                             }
                         }
@@ -483,17 +492,15 @@ namespace Digi.BuildInfo.Features.Overlays
                         if(data.UpgradePorts != null)
                         {
                             bool hasUpgrades = (data.Upgrades != null && data.Upgrades.Count > 0);
-                            Color upgradePortColor = new Color(200, 55, 255);
-                            Color unknownPortColor = new Color(0, 0, 200);
 
                             foreach(Matrix localMatrix in data.UpgradePorts)
                             {
                                 MatrixD matrix = localMatrix * drawMatrix;
 
                                 if(hasUpgrades)
-                                    DrawPort("Upgrade port", matrix, upgradePortColor);
+                                    DrawPort("Upgrade port", matrix, UpgradePortColor);
                                 else
-                                    DrawPort(null, matrix, unknownPortColor); // special treatment message
+                                    DrawPort(null, matrix, UnknownPortColor); // special treatment message
                             }
                         }
 
@@ -575,7 +582,7 @@ namespace Digi.BuildInfo.Features.Overlays
         #region Draw ports
         readonly List<PortInfo> AimedPorts = new List<PortInfo>();
 
-        void DrawPort(string message, MatrixD portMatrix, Color color, bool largeShip = false)
+        void DrawPort(string message, MatrixD portMatrix, Color color, bool largePort = false)
         {
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             float lineWidth = 0.01f;
@@ -594,7 +601,7 @@ namespace Digi.BuildInfo.Features.Overlays
             MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref UnitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: MaterialLaser, blendType: PortAimedBlendType);
 
             // TODO: some kind of large conveyor indicator?
-            //if(largeShip)
+            //if(largePort)
             //{
             //    var middleMatrix = closeRenderMatrix;
             //    var originalScale = middleMatrix.Scale;

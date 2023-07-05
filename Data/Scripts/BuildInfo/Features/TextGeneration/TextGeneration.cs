@@ -1835,6 +1835,7 @@ namespace Digi.BuildInfo.Features
                 {
                     int conveyors = 0;
                     int interactiveConveyors = 0;
+                    int unreachableConveyors = 0;
 
                     if(data.ConveyorPorts != null)
                     {
@@ -1842,9 +1843,12 @@ namespace Digi.BuildInfo.Features
                         {
                             if((port.Flags & ConveyorFlags.Interactive) != 0)
                                 interactiveConveyors++;
+
+                            if((port.Flags & ConveyorFlags.Unreachable) != 0)
+                                unreachableConveyors++;
                         }
 
-                        conveyors = data.ConveyorPorts.Count - interactiveConveyors;
+                        conveyors = data.ConveyorPorts.Count - interactiveConveyors - unreachableConveyors;
                     }
 
                     bool hasCustomLogic = false; // (data.Has & BlockHas.CustomLogic) != 0;
