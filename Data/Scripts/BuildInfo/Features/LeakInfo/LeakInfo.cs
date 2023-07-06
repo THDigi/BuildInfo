@@ -250,7 +250,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         #region Pathfinding
         /// <summary>
-        /// <para>A* Pathfinding - Credit for the original code to Roy T. - http://roy-t.nl/2011/09/24/another-faster-version-of-a-2d3d-in-c.html</para>
+        /// <para>A* Pathfinding - Credit for the original code to Roy T. - http://roy-t.nl/2011/09/24/another-faster-version-of-a-2d3d-in-c.html </para>
         /// <para>This was modified and adapted to suit the needs of this mod, which changes the specific end vector to an "outside of grid" target.</para>
         /// <para>Also made into a separate thread.</para>
         /// </summary>

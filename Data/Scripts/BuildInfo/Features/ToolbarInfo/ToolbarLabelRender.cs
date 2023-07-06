@@ -16,6 +16,7 @@ using VRage.Utils;
 using VRageMath;
 
 // TODO: alternate rendering for gamepad HUD mode
+// TODO: gotta split it into a generic box of list strings, supporting 2 columns (maybe more?)
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {

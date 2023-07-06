@@ -301,6 +301,8 @@ namespace Digi.BuildInfo.Features
 
             string phase6error = "MOD PARTIALLY SKIPPED, LOADED ONLY 6/6 PHASES, Following Error occured:" + Environment.NewLine + "Object reference not set to an instance of an object.";
 
+            CheckErrorsOnF11(); // to reduce severity on errors before setting DefinitionErrors
+
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
             for(int i = 0; i < errors.Count; i++)
@@ -312,7 +314,8 @@ namespace Digi.BuildInfo.Features
                 if(isLocal)
                 {
                     // chat message when LOCAL mods have definition errors
-                    DefinitionErrors = true;
+                    if(error.Severity >= TErrorSeverity.Error)
+                        DefinitionErrors = true;
 
                     // HACK: MyCubeBlockDefinition.InitMountPoints() has double standards on undefined mountpoints
                     if(error.Message.StartsWith("Obsolete default definition of mount points in"))

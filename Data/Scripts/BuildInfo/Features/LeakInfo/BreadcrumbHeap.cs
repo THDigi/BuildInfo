@@ -25,7 +25,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
         public void Add(Vector3I position, int cost = 0, int pathCost = 0, Crumb next = null)
         {
-            Crumb item = null;
+            Crumb item;
             if(LinearPool.Count <= PoolIndex)
             {
                 item = new Crumb();
