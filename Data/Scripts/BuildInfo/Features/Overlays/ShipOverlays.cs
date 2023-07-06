@@ -1,13 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Draygo.API;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
+using VRageRender;
+using static VRage.Game.MyObjectBuilder_ConveyorLine;
+using static VRageRender.MyBillboard;
 
 namespace Digi.BuildInfo.Features.Overlays
 {
@@ -30,11 +38,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
         LabelRendering LabelRender;
 
-        readonly List<MyEntity> Entities = new List<MyEntity>();
-        readonly HashSet<IMyGridGroupData> Ships = new HashSet<IMyGridGroupData>();
-        readonly List<IMyCubeGrid> Grids = new List<IMyCubeGrid>();
-        readonly List<IHitInfo> Hits = new List<IHitInfo>();
-        readonly HashSet<long> Owners = new HashSet<long>();
+        readonly List<MyEntity> TempEntities = new List<MyEntity>();
+        readonly HashSet<IMyGridGroupData> TempShips = new HashSet<IMyGridGroupData>();
+        readonly List<IMyCubeGrid> TempGrids = new List<IMyCubeGrid>();
 
         public ShipOverlays(BuildInfoMod main) : base(main)
         {
@@ -64,7 +70,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
         void GridGroupDestroyed(IMyGridGroupData ship)
         {
-            Ships.Remove(ship);
+            TempShips.Remove(ship);
         }
 
         void ScreenRemoved(string name)
@@ -90,11 +96,11 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 BoundingSphereD sphere = new BoundingSphereD(MyAPIGateway.Session.Camera.Position, ScanRadius);
 
-                Ships.Clear();
-                Entities.Clear();
-                MyGamePruningStructure.GetAllTopMostEntitiesInSphere(ref sphere, Entities, MyEntityQueryType.Both);
+                TempShips.Clear();
+                TempEntities.Clear();
+                MyGamePruningStructure.GetAllTopMostEntitiesInSphere(ref sphere, TempEntities, MyEntityQueryType.Both);
 
-                foreach(MyEntity ent in Entities)
+                foreach(MyEntity ent in TempEntities)
                 {
                     IMyCubeGrid grid = ent as IMyCubeGrid;
                     if(grid?.Physics == null)
@@ -109,11 +115,11 @@ namespace Digi.BuildInfo.Features.Overlays
                     if(group == null)
                         throw new System.Exception($"{grid} ({grid.EntityId.ToString()}) returns null physical grid-group for some reason.");
 
-                    Ships.Add(group);
+                    TempShips.Add(group);
                 }
             }
 
-            if(Ships.Count > 0)
+            if(TempShips.Count > 0)
             {
                 long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
 
@@ -125,41 +131,13 @@ namespace Digi.BuildInfo.Features.Overlays
                 Vector3D camPos = MyAPIGateway.Session.Camera.Position;
                 Vector3D camForward = MyAPIGateway.Session.Camera.WorldMatrix.Forward;
 
-                foreach(IMyGridGroupData ship in Ships)
+                foreach(IMyGridGroupData ship in TempShips)
                 {
-                    Grids.Clear();
-                    ship.GetGrids(Grids);
+                    TempGrids.Clear();
+                    ship.GetGrids(TempGrids);
 
                     // TODO: optimize by checking more rarely
-                    // gather all unique owners to reduce the calls on GetRelationPlayerPlayer()
-                    Owners.Clear();
-                    foreach(IMyCubeGrid grid in Grids)
-                    {
-                        foreach(long owner in grid.BigOwners)
-                        {
-                            Owners.Add(owner);
-                        }
-                    }
-
-                    bool shipFriendly = false;
-                    if(Owners.Count == 0)
-                    {
-                        shipFriendly = true;
-                    }
-                    else
-                    {
-                        foreach(long owner in Owners)
-                        {
-                            MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(owner, localIdentityId);
-                            if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
-                            {
-                                shipFriendly = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(!shipFriendly)
+                    if(!Utils.ShipIsFriendly(TempGrids))
                         continue;
 
                     // has known weird issues so I'd rather just compute it myself when I can
@@ -170,7 +148,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     float biggestGridVolume = 0;
                     IMyCubeGrid biggestGrid = null;
 
-                    foreach(IMyCubeGrid grid in Grids)
+                    foreach(IMyCubeGrid grid in TempGrids)
                     {
                         float mass = grid.Physics.Mass;
                         if(mass <= 0)
@@ -191,28 +169,6 @@ namespace Digi.BuildInfo.Features.Overlays
                             biggestGrid = grid;
                             biggestGridVolume = volume;
                         }
-
-                        // TODO: optimize by checking more rarely
-                        bool gridFriendly = false;
-                        if(grid.BigOwners == null || grid.BigOwners.Count == 0)
-                        {
-                            gridFriendly = true;
-                        }
-                        else
-                        {
-                            foreach(long owner in grid.BigOwners)
-                            {
-                                MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(grid.BigOwners[0], localIdentityId);
-                                if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
-                                {
-                                    gridFriendly = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if(!gridFriendly)
-                            continue;
 
                         {
                             MatrixD matrix = biggestGrid.WorldMatrix;
@@ -244,7 +200,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         }
                     }
 
-                    if(Grids.Count <= 1)
+                    if(TempGrids.Count <= 1)
                         continue; // don't show ship CoM as there's only one grid
 
                     shipCoM /= totalMass; // important to get an actual world-space vector
@@ -284,7 +240,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     }
                 }
 
-                Grids.Clear();
+                TempGrids.Clear();
 
                 if(drawLabel && closestCoM.HasValue)
                 {

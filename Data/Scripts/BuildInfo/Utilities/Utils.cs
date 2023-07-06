@@ -80,6 +80,42 @@ namespace Digi.BuildInfo.Utilities
 
         public static T CastHax<T>(T typeRef, object castObj) => (T)castObj;
 
+        static readonly HashSet<long> TempOwners = new HashSet<long>();
+
+        public static bool ShipIsFriendly(ICollection<IMyCubeGrid> grids)
+        {
+            // gather all unique owners to reduce the calls on GetRelationPlayerPlayer()
+            TempOwners.Clear();
+
+            foreach(IMyCubeGrid grid in grids)
+            {
+                if(grid.BigOwners != null)
+                {
+                    foreach(long owner in grid.BigOwners)
+                    {
+                        TempOwners.Add(owner);
+                    }
+                }
+            }
+
+            if(TempOwners.Count == 0)
+                return true;
+
+            if(MyAPIGateway.Session?.Player == null)
+                return false;
+
+            long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
+
+            foreach(long owner in TempOwners)
+            {
+                MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(owner, localIdentityId);
+                if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
+                    return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Because <see cref="Vector3D.Reject(Vector3D, Vector3D)"/> is broken.
         /// </summary>
