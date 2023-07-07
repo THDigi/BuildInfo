@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using VRageMath;
@@ -64,10 +65,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int broken = 0;
             int off = 0;
             float averageFilled = 0f;
-            float averageFlow = 0f;
             float totalFlow = 0f;
-            float maxInput = 0f;
-            float maxOutput = 0f;
+            float avgInput = 0f;
+            float avgOutput = 0f;
             int auto = 0;
             int recharge = 0;
             int discharge = 0;
@@ -83,8 +83,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 averageFilled += (battery.CurrentStoredPower / battery.MaxStoredPower);
                 totalFlow += (battery.CurrentInput - battery.CurrentOutput);
 
-                maxInput += battery.MaxInput;
-                maxOutput += battery.MaxOutput;
+                avgInput += battery.MaxInput;
+                avgOutput += battery.MaxOutput;
 
                 switch(battery.ChargeMode)
                 {
@@ -113,18 +113,25 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 averageFilled *= 100;
             }
 
-            sb.Append(MathHelper.Clamp((int)averageFilled, 0, 100)).Append("%");
+            sb.NumberCapped((int)averageFilled, 4).Append("%");
 
             const float RatioOfMaxForDoubleArrows = 0.9f;
 
+            float averageFlow = 0f;
             if(totalFlow != 0) // can be negative too
                 averageFlow = totalFlow / total;
 
+            if(avgInput != 0)
+                avgInput /= total;
+
+            if(avgOutput != 0)
+                avgOutput /= total;
+
             bool highFlow = false;
             if(averageFlow > 0)
-                highFlow = (averageFlow > maxInput * RatioOfMaxForDoubleArrows);
+                highFlow = (averageFlow > avgInput * RatioOfMaxForDoubleArrows);
             else if(averageFlow < 0)
-                highFlow = (Math.Abs(averageFlow) > maxOutput * RatioOfMaxForDoubleArrows);
+                highFlow = (Math.Abs(averageFlow) > avgOutput * RatioOfMaxForDoubleArrows);
 
             if(averageFlow > 0)
                 sb.Append(highFlow ? "++" : "+");
