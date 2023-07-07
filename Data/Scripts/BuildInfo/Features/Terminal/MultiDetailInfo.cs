@@ -315,10 +315,17 @@ namespace Digi.BuildInfo.Features.Terminal
                     MyResourceSinkComponent sink = block.Components.Get<MyResourceSinkComponent>();
                     if(sink != null)
                     {
+                        IMyJumpDrive jd = block as IMyJumpDrive;
+
                         foreach(MyDefinitionId resId in sink.AcceptedResources)
                         {
                             MyStringHash key = resId.SubtypeId;
                             IncrementResInfo(ResInput, key, sink.CurrentInputByType(resId), sink.MaxRequiredInputByType(resId));
+
+                            if(jd != null && key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                            {
+                                IncrementResInfo(ResStorage, key, jd.CurrentStoredPower, jd.MaxStoredPower);
+                            }
                         }
                     }
 
