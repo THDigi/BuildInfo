@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
 using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -80,10 +81,10 @@ namespace Digi.BuildInfo.Features.GUI
         const bool DebugDrawBoxes = false;
         const float CloseButtonScale = 1.2f;
 
-        const string TooltipSettingModdable = "<color=gray>This is only changeable using mods.<reset>";
-        //const string TooltipSettingGameUI = "<color=gray>This is a world setting. This in particular can be changed in the world options screen.<reset>";
-        //const string TooltipSettingDSUI = "<color=gray>This is a world setting. This in particular can be changed in dedicated server UI or in sandbox_config.sbc file.<reset>";
-        //const string TooltipSettingSaveFile = "<color=gray>This is a world setting. This in particular can only be changed in the sandbox_config.sbc file.<reset>";
+        const string TooltipSettingModdable = "\n<color=gray>This is only changeable using mods.<reset>";
+        //const string TooltipSettingGameUI = "\n<color=gray>This is a world setting. This in particular can be changed in the world options screen.<reset>";
+        //const string TooltipSettingDSUI = "\n<color=gray>This is a world setting. This in particular can be changed in dedicated server UI or in sandbox_config.sbc file.<reset>";
+        //const string TooltipSettingSaveFile = "\n<color=gray>This is a world setting. This in particular can only be changed in the sandbox_config.sbc file.<reset>";
 
         public ServerInfoMenu(bool testMode = false)
         {
@@ -734,7 +735,7 @@ namespace Digi.BuildInfo.Features.GUI
 
             MyEnvironmentDefinition envDef = MyDefinitionManager.Static.EnvironmentDefinition;
 
-            const string ShipSpeedTooltipAdd = "\nCharacter max speed is usually largest of the ship speeds + 10m/s (largest of character's on-foot speeds)\n" + TooltipSettingModdable;
+            const string ShipSpeedTooltipAdd = "\nCharacter max speed is usually largest of the ship speeds + 10m/s (largest of character's on-foot speeds)" + TooltipSettingModdable;
 
             if(envDef.LargeShipMaxSpeed == envDef.SmallShipMaxSpeed)
             {
@@ -826,7 +827,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Assembler Speed", "x", "Speed multiplier for reducing all assembler crafting times, including survival kit.");
             PrintFormattedNumber(sb, nameof(settings.RefinerySpeedMultiplier), settings.RefinerySpeedMultiplier, DefaultSettings.RefinerySpeedMultiplier, true,
                 "Refinery Speed", "x", "Speed multiplier for all refineries.");
-
+            PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
+                "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
 
             Header(sb, "Environment");
 

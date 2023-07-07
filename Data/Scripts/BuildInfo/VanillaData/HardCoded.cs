@@ -202,6 +202,8 @@ namespace Digi.BuildInfo.VanillaData
         // from MyLandingGear.LoadDummies()
         public static string LandingGear_DummyName = "gear_lock"; // see BData_LandingGear too!
 
+        public const float DefaultCharacterGravityMultiplier = 2f; // from SpaceEngineersGame.SetupPerGameSettings()
+
         // from MyCharacter.GetOnLadder_Implementation()/ProceedLadderMovement()/UpdateLadder()
         /// <summary>
         /// in m/s
