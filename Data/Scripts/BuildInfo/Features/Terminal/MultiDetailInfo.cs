@@ -540,7 +540,7 @@ namespace Digi.BuildInfo.Features.Terminal
         static void AppendStorageFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
         {
             if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                info.Append(resInfo.Blocks).Append("x Power Storage: ").PowerStorageFormat(resInfo.Current);
+                info.Append(resInfo.Blocks).Append("x Power Storage: ").PowerStorageFormat(resInfo.Current).Append(" (max: ").PowerStorageFormat(resInfo.Max).Append(")");
             else
                 info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Storage: ").VolumeFormat(resInfo.Current).Append(" (max: ").VolumeFormat(resInfo.Max).Append(")");
             info.Append('\n');
