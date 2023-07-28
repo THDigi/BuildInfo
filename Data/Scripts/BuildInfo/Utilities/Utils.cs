@@ -50,6 +50,38 @@ namespace Digi.BuildInfo.Utilities
             return Path.Combine(BuildInfoMod.Instance.Session.ModContext.ModPath, relativePath);
         }
 
+        /// <summary>
+        /// Reason this exists is that MyDefinitionManager.Static.GetAmmoDefinition() does not check if it exists.
+        /// </summary>
+        public static MyAmmoDefinition TryGetAmmoDefinition(MyDefinitionId defId)
+        {
+            try
+            {
+                return MyDefinitionManager.Static.GetAmmoDefinition(defId);
+            }
+            catch
+            {
+                //Log.Error($"Ammo definition id '{defId}' does not exist.", null);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Reason this exists is that MyDefinitionManager.Static.GetAmmoMagazineDefinition() does not check if it exists.
+        /// </summary>
+        public static MyAmmoMagazineDefinition TryGetMagazineDefinition(MyDefinitionId defId)
+        {
+            try
+            {
+                return MyDefinitionManager.Static.GetAmmoMagazineDefinition(defId);
+            }
+            catch
+            {
+                //Log.Error($"AmmoMagazine definition id '{defId}' does not exist.", null);
+                return null;
+            }
+        }
+
         // from MySafeZoneAction
         public static readonly object SZADamage = 0x1;
         public static readonly object SZAShooting = 0x2;

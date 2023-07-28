@@ -152,7 +152,7 @@ namespace Digi.BuildInfo.Features.LiveData
             ComputeUpgrades(block);
             ComputeHas(block);
             ComputeDummies(block, def, dummies);
-            //ComputeUseObjects(block, def);
+            //ComputeGamelogic(block, def)
 
             dummies.Clear();
 
@@ -459,9 +459,11 @@ namespace Digi.BuildInfo.Features.LiveData
                 list.Capacity = list.Count;
         }
 
+#if false
+        static readonly List<IMyUseObject> TempUseObjects = new List<IMyUseObject>();
+
         void ComputeGamelogic(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
-#if false
             // block has 2+ gamelogic components
             if(block.GameLogic is MyCompositeGameLogicComponent)
             {
@@ -486,13 +488,12 @@ namespace Digi.BuildInfo.Features.LiveData
             MyUseObjectsComponentBase comp = internalBlock.UseObjectsComponent;
             if(comp != null)
             {
-                List<IMyUseObject> useObjects = BuildInfoMod.Instance.Caches.UseObjects;
-                useObjects.Clear();
-                comp.GetInteractiveObjects(useObjects);
+                TempUseObjects.Clear();
+                comp.GetInteractiveObjects(TempUseObjects);
 
-                if(useObjects.Count > 0)
+                if(TempUseObjects.Count > 0)
                 {
-                    foreach(IMyUseObject useObject in useObjects)
+                    foreach(IMyUseObject useObject in TempUseObjects)
                     {
                         // HACK: not very reliable but it'll do
                         string classFullName = useObject.GetType().FullName;
@@ -505,11 +506,11 @@ namespace Digi.BuildInfo.Features.LiveData
                         }
                     }
 
-                    useObjects.Clear();
+                    TempUseObjects.Clear();
                 }
             }
-#endif
         }
+#endif
 
         static StringSegment GetNextSection(string text, ref int startIndex)
         {

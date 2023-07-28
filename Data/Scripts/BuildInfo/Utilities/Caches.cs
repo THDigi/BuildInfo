@@ -4,7 +4,6 @@ using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using VRage.Game;
-using VRage.Game.Entity.UseObject;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using VRageMath;
@@ -13,19 +12,21 @@ namespace Digi.BuildInfo.Utilities
 {
     public class Caches : ModComponent
     {
+        // caches/lookups
+        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
+        public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
+        public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3
+        public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
+        public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
+
+        // re-usables
         public readonly Dictionary<string, IMyModelDummy> Dummies = new Dictionary<string, IMyModelDummy>();
-        public readonly List<IMyUseObject> UseObjects = new List<IMyUseObject>();
         public readonly HashSet<Vector3I> Vector3ISet = new HashSet<Vector3I>(Vector3I.Comparer);
         public readonly StringBuilder WordWrapTempSB = new StringBuilder(512);
         public readonly StringBuilder StatusTempSB = new StringBuilder(512);
         public readonly MyObjectBuilder_Toolbar EmptyToolbarOB = new MyObjectBuilder_Toolbar();
         public readonly List<Vector3D> Vertices = new List<Vector3D>();
-        public readonly Dictionary<int, List<Vector3D>> GeneratedSphereData = new Dictionary<int, List<Vector3D>>();
-        public readonly List<MyPhysicalItemDefinition> ItemDefs = new List<MyPhysicalItemDefinition>(128); // vanilla has ~107
-        public readonly List<MyCubeBlockDefinition> BlockDefs = new List<MyCubeBlockDefinition>(1024); // vanilla has ~637
         public readonly Dictionary<string, int> NamedSums = new Dictionary<string, int>();
-        public readonly Dictionary<string, MyTargetingGroupDefinition> TargetGroups = new Dictionary<string, MyTargetingGroupDefinition>(4); // vanilla has 3
-        public readonly List<MyTargetingGroupDefinition> OrderedTargetGroups = new List<MyTargetingGroupDefinition>(4);
         public readonly List<IMyPlayer> Players = new List<IMyPlayer>();
 
         //public readonly Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>> MountRestrictions = new Dictionary<MyCubeBlockDefinition, Dictionary<int, List<string>>>();
@@ -59,7 +60,7 @@ namespace Digi.BuildInfo.Utilities
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 {
-                    MyPhysicalItemDefinition physDef = def as MyPhysicalItemDefinition;
+                    var physDef = def as MyPhysicalItemDefinition;
                     if(physDef != null)
                     {
                         ItemDefs.Add(physDef);
@@ -67,7 +68,7 @@ namespace Digi.BuildInfo.Utilities
                     }
                 }
                 {
-                    MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
+                    var blockDef = def as MyCubeBlockDefinition;
                     if(blockDef != null)
                     {
                         BlockDefs.Add(blockDef);

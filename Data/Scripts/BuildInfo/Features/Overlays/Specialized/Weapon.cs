@@ -120,42 +120,46 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MyAmmoDefinition ammoDef = weaponBlock?.GunBase?.CurrentAmmoDefinition;
                 if(ammoDef == null)
                 {
-                    MyAmmoMagazineDefinition mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
-                    ammoDef = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
+                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
+                    if(mag != null)
+                        ammoDef = Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId);
                 }
 
-                MuzzleData md = data.Muzzles[0];
-                MatrixD accMatrix = (isRealBlock ? md.Matrix_RelativeBarrel : md.Matrix_RelativePreview) * barrelMatrix;
-
-                float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
-                float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
-                float projectileMaxTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Max;
-
-                if(weaponDef.DeviateShotAngle > 0)
+                if(ammoDef != null)
                 {
-                    float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
-                    float radiusAtMaxRange = tanShotAngle * projectileMaxTravel;
-                    Utils.DrawTransparentCone(ref accMatrix, radiusAtMaxRange, projectileMaxTravel, ref ColorAccuracy, MySimpleObjectRasterizer.Solid, (360 / AccuracyConeLinePerDeg), lineThickness: AccLineThick, material: MaterialSquare, blendType: BlendType);
-                }
-                else
-                {
-                    MyTransparentGeometry.AddLineBillboard(MaterialSquare, ColorAccuracy, accMatrix.Translation, (Vector3)accMatrix.Forward, projectileMaxTravel, AccLineThick, blendType: BlendType);
-                }
+                    MuzzleData md = data.Muzzles[0];
+                    MatrixD accMatrix = (isRealBlock ? md.Matrix_RelativeBarrel : md.Matrix_RelativePreview) * barrelMatrix;
 
-                //const float PointRadius = 0.025f;
-                //MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, accColor, accMatrix.Translation, PointRadius, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
+                    float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
+                    float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
+                    float projectileMaxTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Max;
 
-                if(canDrawLabel)
-                {
-                    Vector3D labelDir = accMatrix.Up;
-                    Vector3D labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
-
-                    if(weaponDef.UseRandomizedRange)
-                        drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceRangeFormat(projectileMinTravel, projectileMaxTravel);
+                    if(weaponDef.DeviateShotAngle > 0)
+                    {
+                        float tanShotAngle = (float)Math.Tan(weaponDef.DeviateShotAngle);
+                        float radiusAtMaxRange = tanShotAngle * projectileMaxTravel;
+                        Utils.DrawTransparentCone(ref accMatrix, radiusAtMaxRange, projectileMaxTravel, ref ColorAccuracy, MySimpleObjectRasterizer.Solid, (360 / AccuracyConeLinePerDeg), lineThickness: AccLineThick, material: MaterialSquare, blendType: BlendType);
+                    }
                     else
-                        drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceFormat(projectileMaxTravel);
+                    {
+                        MyTransparentGeometry.AddLineBillboard(MaterialSquare, ColorAccuracy, accMatrix.Translation, (Vector3)accMatrix.Forward, projectileMaxTravel, AccLineThick, blendType: BlendType);
+                    }
 
-                    drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelLineStart, labelDir, ColorAccuracy);
+                    //const float PointRadius = 0.025f;
+                    //MyTransparentGeometry.AddPointBillboard(OVERLAY_DOT_MATERIAL, accColor, accMatrix.Translation, PointRadius, 0, blendType: OVERLAY_BLEND_TYPE); // this is drawn always on top on purpose
+
+                    if(canDrawLabel)
+                    {
+                        Vector3D labelDir = accMatrix.Up;
+                        Vector3D labelLineStart = accMatrix.Translation + accMatrix.Forward * 3;
+
+                        if(weaponDef.UseRandomizedRange)
+                            drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceRangeFormat(projectileMinTravel, projectileMaxTravel);
+                        else
+                            drawInstance.LabelRender.DynamicLabel.Clear().Append("Accuracy cone\n").DistanceFormat(projectileMaxTravel);
+
+                        drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelLineStart, labelDir, ColorAccuracy);
+                    }
                 }
             }
             #endregion

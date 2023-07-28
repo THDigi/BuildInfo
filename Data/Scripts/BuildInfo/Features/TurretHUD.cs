@@ -345,7 +345,7 @@ namespace Digi.BuildInfo.Features
                     if(otherMagId == magDef.Id)
                         continue;
 
-                    MyAmmoMagazineDefinition otherMagDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(otherMagId);
+                    MyAmmoMagazineDefinition otherMagDef = Utils.TryGetMagazineDefinition(otherMagId);
                     if(otherMagDef != null)
                         hudSB.Append("   ").Append(otherMagDef.DisplayNameText).NewLine();
                 }

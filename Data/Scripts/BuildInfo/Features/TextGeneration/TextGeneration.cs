@@ -4176,8 +4176,9 @@ namespace Digi.BuildInfo.Features
                     // only supports one magazine so no point in trying to show all.
                     if(wpDef.AmmoMagazinesId.Length > 0)
                     {
-                        MyAmmoMagazineDefinition magDef = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[0]);
-                        AddLine().Label("| Ammo Magazine").Color(COLOR_STAT_TYPE).AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).ResetFormatting();
+                        MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[0]);
+                        if(magDef != null)
+                            AddLine().Label("| Ammo Magazine").Color(COLOR_STAT_TYPE).AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).ResetFormatting();
                     }
 
                     AddLine().Label("| Projectile - Velocity").SpeedFormat(gunWWF.MuzzleVelocity).Separator().Label("Max range").DistanceFormat(gunWWF.MaxRange).Separator().Label("Impact force").ForceFormat(gunWWF.HitImpulse);
@@ -4225,8 +4226,11 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = 0; i < wpDef.AmmoMagazinesId.Length; i++)
                 {
-                    MyAmmoMagazineDefinition mag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(wpDef.AmmoMagazinesId[i]);
-                    MyAmmoDefinition ammo = MyDefinitionManager.Static.GetAmmoDefinition(mag.AmmoDefinitionId);
+                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[i]);
+                    MyAmmoDefinition ammo = (mag != null ? Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId) : null);
+
+                    if(ammo == null)
+                        continue;
 
                     int ammoTypeIdx = (int)ammo.AmmoType;
                     if(wpDef.WeaponAmmoDatas[ammoTypeIdx] == null)
@@ -4256,8 +4260,10 @@ namespace Digi.BuildInfo.Features
 
                             MyMissileAmmoDefinition missile = (MyMissileAmmoDefinition)ammo;
                             if(missile.MissileExplosionDamage != 0
-                            || missile.MissileHealthPool != 0
-                            || missile.MissileRicochetDamage != 0)
+#if VERSION_202
+                            || missile.MissileRicochetDamage != 0
+#endif
+                            || missile.MissileHealthPool != 0)
                             {
                                 validWeapon = true;
                                 AmmoMissiles.Add(MyTuple.Create(mag, missile));
@@ -4537,6 +4543,7 @@ namespace Digi.BuildInfo.Features
                             float explosiveDamage = missile.MissileExplosionRadius > 0 ? missile.MissileExplosionDamage : 0;
                             bool showExplosiveDamage = explosiveDamage > 0;
 
+#if VERSION_202
                             // ricochet system is activated
                             // how it normally works: https://steamcommunity.com/sharedfiles/filedetails/?id=2963715247
                             // but it can be changed into bonus damage or can prevent penetration entirely, going through those scenarios below
@@ -4673,6 +4680,7 @@ namespace Digi.BuildInfo.Features
                                     tooltip.Color(COLOR_STAT_RICOCHET).Append("Ricochet<reset> (none)\n");
                                 }
                             }
+#endif
 
                             if(showPenetrationDamage)
                             {
