@@ -326,7 +326,7 @@ namespace Digi.BuildInfo.Features
                     sb.Append("\nHooks:");
                     foreach(Delegate del in eventField.GetInvocationList())
                     {
-                        sb.Append($"\n - target={del.Target} / method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1}");
+                        sb.Append(GetMethodDetails(del));
                     }
 
                     PreCheckMessage = sb.ToString();
@@ -347,10 +347,22 @@ namespace Digi.BuildInfo.Features
                 sb.Append("\nHooks (first one is likely the culprit):");
                 foreach(Delegate del in eventField.GetInvocationList())
                 {
-                    sb.Append($"\n - target={del.Target} / method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1}");
+                    sb.Append(GetMethodDetails(del));
                 }
 
                 return sb.ToString();
+            }
+
+            static string GetMethodDetails(Delegate del)
+            {
+                if(del.Target == null) // static method
+                {
+                    return $"\n - static method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1} (can't get more details on static methods, do a find-in-files for this method name)";
+                }
+                else
+                {
+                    return $"\n - target={del.Target} / method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1}";
+                }
             }
         }
 
