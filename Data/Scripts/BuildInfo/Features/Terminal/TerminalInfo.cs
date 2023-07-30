@@ -365,7 +365,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             //refreshWaitForTick = (Main.Tick + RefreshMinTicks);
-            //viewedInTerminal.RefreshCustomInfo(); // breaks some mods that ignore refresh calls, like nanite - mods should call this themselves anyway, but they're doing it wrong by ignoring calls xD
+            viewedInTerminal.RefreshCustomInfo();
             viewedInTerminal.SetDetailedInfoDirty();
         }
 
