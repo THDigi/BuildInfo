@@ -4176,7 +4176,7 @@ namespace Digi.BuildInfo.Features
                     // only supports one magazine so no point in trying to show all.
                     if(wpDef.AmmoMagazinesId.Length > 0)
                     {
-                        MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[0]);
+                        MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[0], wpDef.Context);
                         if(magDef != null)
                             AddLine().Label("| Ammo Magazine").Color(COLOR_STAT_TYPE).AppendMaxLength(magDef.DisplayNameText, MaxMagNameLength).ResetFormatting();
                     }
@@ -4226,8 +4226,8 @@ namespace Digi.BuildInfo.Features
 
                 for(int i = 0; i < wpDef.AmmoMagazinesId.Length; i++)
                 {
-                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[i]);
-                    MyAmmoDefinition ammo = (mag != null ? Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId) : null);
+                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(wpDef.AmmoMagazinesId[i], wpDef.Context);
+                    MyAmmoDefinition ammo = (mag != null ? Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId, mag.Context) : null);
 
                     if(ammo == null)
                         continue;

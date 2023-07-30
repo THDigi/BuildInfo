@@ -379,7 +379,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     s.Append("\n  ");
 
-                    MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(magId);
+                    MyAmmoMagazineDefinition magDef = Utils.TryGetMagazineDefinition(magId, weaponDef.Context);
                     if(magDef == null)
                         s.Append("(NotFound=").Append(magId.ToString()).Append(")");
                     else
@@ -400,7 +400,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             if(magDef.Capacity > 1)
                 s.Append("\nMagazine Capacity: ").Append(magDef.Capacity);
 
-            MyAmmoDefinition ammoDef = Utils.TryGetAmmoDefinition(magDef.AmmoDefinitionId);
+            MyAmmoDefinition ammoDef = Utils.TryGetAmmoDefinition(magDef.AmmoDefinitionId, magDef.Context);
             if(ammoDef != null)
             {
                 float damagePerMag;

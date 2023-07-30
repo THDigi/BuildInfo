@@ -687,7 +687,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     if(otherMagId == magDef.Id)
                         continue;
 
-                    MyAmmoMagazineDefinition otherMagDef = Utils.TryGetMagazineDefinition(otherMagId);
+                    MyAmmoMagazineDefinition otherMagDef = Utils.TryGetMagazineDefinition(otherMagId, weaponDef.Context);
                     if(otherMagDef != null)
                         info.Append("  ").AppendMaxLength(otherMagDef.DisplayNameText, MaxMagNameLength).Append('\n');
                 }

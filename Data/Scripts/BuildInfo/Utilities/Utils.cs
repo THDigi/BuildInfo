@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Reason this exists is that MyDefinitionManager.Static.GetAmmoDefinition() does not check if it exists.
         /// </summary>
-        public static MyAmmoDefinition TryGetAmmoDefinition(MyDefinitionId defId)
+        public static MyAmmoDefinition TryGetAmmoDefinition(MyDefinitionId defId, IMyModContext context)
         {
             try
             {
@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.Utilities
             }
             catch
             {
-                //Log.Error($"Ammo definition id '{defId}' does not exist.", null);
+                Log.Error($"Ammo definition id '{defId}' does not exist. Context={GetContextName(context)}", null);
                 return null;
             }
         }
@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Reason this exists is that MyDefinitionManager.Static.GetAmmoMagazineDefinition() does not check if it exists.
         /// </summary>
-        public static MyAmmoMagazineDefinition TryGetMagazineDefinition(MyDefinitionId defId)
+        public static MyAmmoMagazineDefinition TryGetMagazineDefinition(MyDefinitionId defId, IMyModContext context)
         {
             try
             {
@@ -77,9 +77,20 @@ namespace Digi.BuildInfo.Utilities
             }
             catch
             {
-                //Log.Error($"AmmoMagazine definition id '{defId}' does not exist.", null);
+                Log.Error($"AmmoMagazine definition id '{defId}' does not exist. Context={GetContextName(context)}", null);
                 return null;
             }
+        }
+
+        public static string GetContextName(IMyModContext context)
+        {
+            if(context == null)
+                return "<NULL>";
+
+            if(context.IsBaseGame)
+                return "<BaseGame>";
+
+            return $"{context.ModName} ({context.ModItem.PublishedFileId})";
         }
 
         // from MySafeZoneAction

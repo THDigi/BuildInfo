@@ -120,9 +120,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MyAmmoDefinition ammoDef = weaponBlock?.GunBase?.CurrentAmmoDefinition;
                 if(ammoDef == null)
                 {
-                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(weaponDef.AmmoMagazinesId[0]);
+                    MyAmmoMagazineDefinition mag = Utils.TryGetMagazineDefinition(weaponDef.AmmoMagazinesId[0], weaponDef.Context);
                     if(mag != null)
-                        ammoDef = Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId);
+                        ammoDef = Utils.TryGetAmmoDefinition(mag.AmmoDefinitionId, mag.Context);
                 }
 
                 if(ammoDef != null)
