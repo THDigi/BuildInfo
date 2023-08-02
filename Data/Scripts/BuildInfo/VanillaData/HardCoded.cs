@@ -74,12 +74,12 @@ namespace Digi.BuildInfo.VanillaData
             return result / 1000f;
         }
 
-        // from MyRefinery.ProcessQueueItems
+        // from MyRefinery.ProcessQueueItems()
         public static float Refinery_BpProductionTime(MyBlueprintDefinitionBase bp, MyRefineryDefinition refineryDef, IMyRefinery refinery = null)
         {
-            float upgrades = refinery?.UpgradeValues["Productivity"] ?? 0; // defsults to 0 in MyRefinery.Init()
-            float result = (refineryDef.RefineSpeed + upgrades) * MyAPIGateway.Session.RefinerySpeedMultiplier / (bp.BaseProductionTimeInSeconds * 1000f);
-            return result / 1000f;
+            float upgrades = refinery?.UpgradeValues["Productivity"] ?? 0; // defaults to 0 in MyRefinery.Init()
+            float refineSpeed = ((refineryDef.RefineSpeed + upgrades) * MyAPIGateway.Session.RefinerySpeedMultiplier);
+            return bp.BaseProductionTimeInSeconds / refineSpeed;
         }
 
         // from MyShipConnector.Init()
