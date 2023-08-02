@@ -366,7 +366,20 @@ namespace Digi.BuildInfo.Features.Terminal
 
             //refreshWaitForTick = (Main.Tick + RefreshMinTicks);
             viewedInTerminal.RefreshCustomInfo();
-            viewedInTerminal.SetDetailedInfoDirty();
+
+            if(viewedInTerminal is IMyProgrammableBlock) // HACK: PB clears its detailed info if asked to refresh it (like it does when you click it in terminal)
+            {
+                StringBuilder echo = viewedInTerminal.GetDetailedInfo();
+
+                if(echo == null || echo.Length == 0) // for custominfo to refresh if detailedinfo is empty
+                {
+                    viewedInTerminal.SetDetailedInfoDirty();
+                }
+            }
+            else
+            {
+                viewedInTerminal.SetDetailedInfoDirty();
+            }
         }
 
         void PropertiesChanged(IMyTerminalBlock block)
