@@ -1,30 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using Digi.ComponentLib;
+using System.Text;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 
 namespace Digi.BuildInfo.Features
 {
-    public struct PBData
+    public struct PBEcho
     {
-        public readonly string EchoText;
-        public readonly int SavedAtTick;
-
-        public PBData(string echoText, int savedAtTick)
-        {
-            EchoText = echoText;
-            SavedAtTick = savedAtTick;
-        }
+        public string EchoText;
+        public int AtTick;
     }
 
     public class PBMonitor : ModComponent
     {
-        public Dictionary<long, PBData> PBData = new Dictionary<long, PBData>();
+        public Dictionary<long, PBEcho> PBEcho = new Dictionary<long, PBEcho>();
 
         readonly HashSet<long> EventHookedPBs = new HashSet<long>();
-        readonly HashSet<IMyProgrammableBlock> MonitorPBs = new HashSet<IMyProgrammableBlock>();
+        readonly HashSet<long> MonitorPBs = new HashSet<long>();
 
         public PBMonitor(BuildInfoMod main) : base(main)
         {
@@ -101,51 +95,68 @@ namespace Digi.BuildInfo.Features
 
         void MonitorPB(IMyProgrammableBlock pb)
         {
-            if(MonitorPBs.Add(pb)) // set.Add() returns true if it was added, false if it existed already
+            if(MonitorPBs.Add(pb.EntityId)) // set.Add() returns true if it was added, false if it existed already
             {
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
-
-                //pb.PropertiesChanged += PBPropertiesChanged;
+                pb.PropertiesChanged += PBPropertiesChanged;
             }
         }
 
         void UnmonitorPB(IMyProgrammableBlock pb)
         {
-            //pb.PropertiesChanged -= PBPropertiesChanged;
+            pb.PropertiesChanged -= PBPropertiesChanged;
 
-            MonitorPBs.Remove(pb);
-            PBData.Remove(pb.EntityId);
-
-            if(MonitorPBs.Count == 0)
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
+            MonitorPBs.Remove(pb.EntityId);
+            PBEcho.Remove(pb.EntityId);
         }
 
-        public override void UpdateAfterSim(int tick)
+        void PBPropertiesChanged(IMyTerminalBlock tb)
         {
-            foreach(IMyProgrammableBlock pb in MonitorPBs)
+            IMyProgrammableBlock pb = tb as IMyProgrammableBlock;
+            if(pb == null || pb.MarkedForClose || string.IsNullOrEmpty(pb.ProgramData))
+                return;
+
+            StringBuilder echoSB = pb.GetDetailedInfo();
+            if(echoSB == null || echoSB.Length == 0)
+                return; // ignore empty detailed info, likely the bug we're trying to overcome
+
+            bool updateStoredEcho = true;
+
+            PBEcho pbe;
+            if(PBEcho.TryGetValue(pb.EntityId, out pbe))
             {
-                if(pb.MarkedForClose)
-                    continue; // skip deleted/destroyed/un-streamed PBs, gets removed elsewhere
+                // StringBuilderExtensions.EqualsStrFast() inlined (because prohibited and mod profiler)
+                bool equals = true;
+                string prevEcho = pbe.EchoText;
 
-                if(string.IsNullOrEmpty(pb.ProgramData))
-                    continue; // skip PBs with nothing in them
-
-                string echoText = pb.DetailedInfo; // allocates, so only call once
-                if(!string.IsNullOrEmpty(echoText))
+                if(echoSB.Length != prevEcho.Length)
                 {
-                    PBData[pb.EntityId] = new PBData(echoText, tick);
+                    equals = false;
                 }
-            }
-        }
+                else
+                {
+                    for(int i = 0; i < prevEcho.Length; i++)
+                    {
+                        if(echoSB[i] != prevEcho[i])
+                        {
+                            equals = false;
+                            break;
+                        }
+                    }
+                }
 
-        // doesn't seem reliable, like editing a PB with a script that instantly throws isn't captured
-        //void PBPropertiesChanged(IMyTerminalBlock tb)
-        //{
-        //    string echoText = tb.DetailedInfo; // allocates, so only call once
-        //    if(!string.IsNullOrEmpty(echoText))
-        //    {
-        //        PBData[tb.EntityId] = new PBData(echoText, Main.Tick);
-        //    }
-        //}
+                updateStoredEcho = !equals;
+            }
+
+            if(updateStoredEcho)
+            {
+                PBEcho[pb.EntityId] = new PBEcho()
+                {
+                    EchoText = echoSB.ToString(),
+                    AtTick = Main.Tick,
+                };
+            }
+
+            pb.RefreshCustomInfo(); // fix for previous custominfo lingering when PB actually has detailed info
+        }
     }
 }

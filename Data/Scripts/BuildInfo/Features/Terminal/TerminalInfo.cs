@@ -1851,8 +1851,11 @@ namespace Digi.BuildInfo.Features.Terminal
 
         void Format_ProgrammableBlock(IMyTerminalBlock block, StringBuilder info)
         {
-            // Vanilla info in 1.189.041 (and probably forever):
-            //     (nothing)
+            // Vanilla info is empty, only the actual scripts print to detailed info.
+
+            StringBuilder echoText = block.GetDetailedInfo();
+            if(echoText != null && echoText.Length > 0)
+                return; // only print something if PB itself doesn't
 
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
@@ -1860,26 +1863,20 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
             }
 
-            // FIXME: this is detected as empty when it's not actually empty in the frame that it updates (PB with manual run only).
-            string echoText = block.DetailedInfo;
-            if(!string.IsNullOrEmpty(echoText))
-                return; // only print something if PB itself doesn't
+            //if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+            //{
+            //    info.Append("Scripter role is required to use in-game scripts.\n");
+            //}
 
-            if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
+            // janky fix for PB clearing its detailed info for player-host/SP; non-issue for MP clients (because of the message arriving after the clear)
+            PBEcho pbe;
+            if(MyAPIGateway.Multiplayer.IsServer && Main.PBMonitor.PBEcho.TryGetValue(block.EntityId, out pbe))
             {
-                info.Append("Scripter role is required to use in-game scripts.\n");
-            }
-
-            if(!block.GetPlayerRelationToOwner().IsFriendly())
-                return;
-
-            // HACK: MP clients only get PB detailed info when in terminal, making this feature even more unreliable for tracking last info.
-            PBData pbd;
-            if(MyAPIGateway.Multiplayer.IsServer && Main.PBMonitor.PBData.TryGetValue(block.EntityId, out pbd))
-            {
-                float sec = (float)Math.Round((Main.Tick - pbd.SavedAtTick) / 60f);
+                float sec = (float)Math.Round((Main.Tick - pbe.AtTick) / 60f);
                 info.Append(Main.Config.TerminalDetailInfoHeader.Value ? "(Text from " : "(BuildInfo: text from ").TimeFormat(sec).Append(" ago)\n\n");
-                info.Append(pbd.EchoText).Append('\n');
+                info.Append(pbe.EchoText).Append('\n');
+
+                //echoText.Append(pbe.EchoText);
             }
         }
 

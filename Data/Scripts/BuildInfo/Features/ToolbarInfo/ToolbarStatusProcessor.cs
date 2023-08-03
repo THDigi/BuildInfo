@@ -464,7 +464,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     catch(Exception e)
                     {
                         Log.Error($"Error in status override :: block={item.Block.BlockDefinition.ToString()}; action={item.ActionId}; index={item.Index.ToString()}; group={item.GroupId}\n{e.ToString()}");
-                        sb.Clear().Append(IconBad).Append("ERROR!\nsee\nlog");
+                        sb.Clear().Append(IconBad).Append("Mod\nError\nSee Log");
                         overrideStatus = true;
                     }
                 }

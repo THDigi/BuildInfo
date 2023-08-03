@@ -18,6 +18,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         string PBDIE_NestedTooComplex;
         string PBDIE_TooComplex;
         string PBDIE_Caught;
+        const int LimitCheckChars = 16;
+        const string ErrorPrefix = "\ue104Error:\n"; // IconBad
 
         public ProgrammableBlocks(ToolbarStatusProcessor processor) : base(processor)
         {
@@ -44,7 +46,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             {
                 if(string.IsNullOrEmpty(pb.ProgramData))
                 {
-                    sb.Append("ERROR:\nEmpty");
+                    sb.Append(ErrorPrefix).Append("Empty");
                     return true;
                 }
 
@@ -56,41 +58,53 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     return true;
                 }
 
-                string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
+                if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
+                {
+                    sb.Append(ErrorPrefix).Append("Syntax!");
+                    return true;
+                }
 
-                if(string.IsNullOrEmpty(detailInfo))
+                string detailedInfo = null;
+
+                StringBuilder detailedInfoSB = pb.GetDetailedInfo();
+                if(detailedInfoSB != null && detailedInfoSB.Length > 0)
+                {
+                    // get a limited amount of characters for fast checking
+                    detailedInfo = detailedInfoSB.ToString(0, Math.Min(detailedInfoSB.Length, LimitCheckChars));
+                }
+                else
                 {
                     // grab last known echo text
-                    PBData pbd;
-                    if(BuildInfoMod.Instance.PBMonitor.PBData.TryGetValue(pb.EntityId, out pbd))
+                    PBEcho pbe;
+                    if(BuildInfoMod.Instance.PBMonitor.PBEcho.TryGetValue(pb.EntityId, out pbe))
                     {
-                        detailInfo = pbd.EchoText;
+                        detailedInfo = pbe.EchoText;
                     }
                 }
 
-                if(!string.IsNullOrEmpty(detailInfo))
+                if(!string.IsNullOrEmpty(detailedInfo))
                 {
-                    if(detailInfo.StartsWith(PBDIE_NoMain))
+                    if(detailedInfo.StartsWith(PBDIE_NoMain))
                     {
-                        sb.Append("ERROR:\nNoMain()");
+                        sb.Append(ErrorPrefix).Append("No Main");
                     }
-                    else if(detailInfo.StartsWith(PBDIE_NoValidCtor))
+                    else if(detailedInfo.StartsWith(PBDIE_NoValidCtor))
                     {
-                        sb.Append("ERROR:\nInvalid");
+                        sb.Append(ErrorPrefix).Append("Invalid");
                     }
-                    else if(detailInfo.StartsWith(PBDIE_NoAssembly)
-                         || detailInfo.StartsWith(PBDIE_OwnershipChanged))
+                    else if(detailedInfo.StartsWith(PBDIE_NoAssembly)
+                         || detailedInfo.StartsWith(PBDIE_OwnershipChanged))
                     {
-                        sb.Append("ERROR:\nCompile!");
+                        sb.Append(ErrorPrefix).Append("Compile!");
                     }
-                    else if(detailInfo.StartsWith(PBDIE_TooComplex)
-                         || detailInfo.StartsWith(PBDIE_NestedTooComplex))
+                    else if(detailedInfo.StartsWith(PBDIE_TooComplex)
+                         || detailedInfo.StartsWith(PBDIE_NestedTooComplex))
                     {
-                        sb.Append("ERROR:\nComplex!");
+                        sb.Append(ErrorPrefix).Append("Complex!");
                     }
-                    else if(detailInfo.StartsWith(PBDIE_Caught))
+                    else if(detailedInfo.StartsWith(PBDIE_Caught))
                     {
-                        sb.Append("ERROR:\nError!");
+                        sb.Append(ErrorPrefix).Append("Excep.");
                     }
                     else
                     {
@@ -98,24 +112,51 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                         int allowedLines = ToolbarStatusProcessor.MaxLines;
                         int lineLen = 0;
 
-                        for(int i = 0; i < detailInfo.Length; ++i)
+                        // get full echo for proper parsing
+                        if(detailedInfoSB != null && detailedInfoSB.Length > 0)
                         {
-                            char chr = detailInfo[i];
-                            if(chr == '\n')
+                            for(int i = 0; i < detailedInfoSB.Length; ++i)
                             {
-                                lineLen = 0;
-                                if(--allowedLines == 0)
-                                    break;
-                            }
-                            else
-                            {
-                                lineLen++;
-                            }
+                                char chr = detailedInfoSB[i];
+                                if(chr == '\n')
+                                {
+                                    lineLen = 0;
+                                    if(--allowedLines == 0)
+                                        break;
+                                }
+                                else
+                                {
+                                    lineLen++;
+                                }
 
-                            // don't add characters beyond line width limit because it erases all lines below it
-                            if(lineLen <= ToolbarStatusProcessor.MaxChars)
+                                // don't add characters beyond line width limit because it erases all lines below it
+                                if(lineLen <= ToolbarStatusProcessor.MaxChars)
+                                {
+                                    sb.Append(chr);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for(int i = 0; i < detailedInfo.Length; ++i)
                             {
-                                sb.Append(chr);
+                                char chr = detailedInfo[i];
+                                if(chr == '\n')
+                                {
+                                    lineLen = 0;
+                                    if(--allowedLines == 0)
+                                        break;
+                                }
+                                else
+                                {
+                                    lineLen++;
+                                }
+
+                                // don't add characters beyond line width limit because it erases all lines below it
+                                if(lineLen <= ToolbarStatusProcessor.MaxChars)
+                                {
+                                    sb.Append(chr);
+                                }
                             }
                         }
                     }
@@ -133,7 +174,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             if(!MyAPIGateway.Session.SessionSettings.EnableIngameScripts)
             {
-                sb.Append("ERROR:\nNotAllow");
+                sb.Append(ErrorPrefix).Append("NotAllow");
                 return true;
             }
 
@@ -160,17 +201,44 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(!pb.Enabled)
                     off++;
 
-                string detailInfo = pb.DetailedInfo; // allocates a string so best to not call this unnecessarily
-
-                if(!string.IsNullOrEmpty(detailInfo))
+                if(string.IsNullOrEmpty(pb.ProgramData))
                 {
-                    if(detailInfo.StartsWith(PBDIE_NoMain)
-                    || detailInfo.StartsWith(PBDIE_NoValidCtor)
-                    || detailInfo.StartsWith(PBDIE_NoAssembly)
-                    || detailInfo.StartsWith(PBDIE_OwnershipChanged)
-                    || detailInfo.StartsWith(PBDIE_TooComplex)
-                    || detailInfo.StartsWith(PBDIE_NestedTooComplex)
-                    || detailInfo.StartsWith(PBDIE_Caught))
+                    errors++;
+                    continue;
+                }
+
+                if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
+                {
+                    errors++;
+                    continue;
+                }
+
+                string detailedInfo = null;
+
+                StringBuilder detailedInfoSB = pb.GetDetailedInfo();
+                if(detailedInfoSB != null && detailedInfoSB.Length > 0)
+                {
+                    detailedInfo = detailedInfoSB.ToString(0, Math.Min(detailedInfoSB.Length, LimitCheckChars));
+                }
+                else
+                {
+                    // grab last known echo text
+                    PBEcho pbe;
+                    if(BuildInfoMod.Instance.PBMonitor.PBEcho.TryGetValue(pb.EntityId, out pbe))
+                    {
+                        detailedInfo = pbe.EchoText;
+                    }
+                }
+
+                if(!string.IsNullOrEmpty(detailedInfo))
+                {
+                    if(detailedInfo.StartsWith(PBDIE_NoMain)
+                    || detailedInfo.StartsWith(PBDIE_NoValidCtor)
+                    || detailedInfo.StartsWith(PBDIE_NoAssembly)
+                    || detailedInfo.StartsWith(PBDIE_OwnershipChanged)
+                    || detailedInfo.StartsWith(PBDIE_TooComplex)
+                    || detailedInfo.StartsWith(PBDIE_NestedTooComplex)
+                    || detailedInfo.StartsWith(PBDIE_Caught))
                     {
                         errors++;
                     }
@@ -213,7 +281,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             PBDIE_Caught = GetTranslatedLimited(MySpaceTexts.ProgrammableBlock_Exception_ExceptionCaught);
         }
 
-        string GetTranslatedLimited(MyStringId langKey, int maxLength = 10)
+        string GetTranslatedLimited(MyStringId langKey, int maxLength = LimitCheckChars)
         {
             string text = MyTexts.GetString(langKey);
             return text.Substring(0, Math.Min(text.Length, maxLength));
