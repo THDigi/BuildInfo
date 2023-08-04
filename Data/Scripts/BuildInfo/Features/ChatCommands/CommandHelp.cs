@@ -109,6 +109,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             sb.NewLine();
             sb.Append("  ");
+            Main.Config.ConstructionModelPreviewBind.Value.GetBinds(sb, specialChars: false);
+            sb.Append("   (with block equipped)").NewLine();
+            sb.Append("     Shows construction models.").NewLine();
+
+            sb.NewLine();
+            sb.Append("  ");
             Main.Config.ToggleTransparencyBind.Value.GetBinds(sb, specialChars: false);
             sb.Append("   (with block equipped or aimed)").NewLine();
             sb.Append("     Toggle transparent model").NewLine();
