@@ -159,6 +159,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                                 }
                             }
                         }
+
+                        sb.TrimEndWhitespace();
                     }
                 }
                 else
