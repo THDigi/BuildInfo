@@ -3623,7 +3623,7 @@ namespace Digi.BuildInfo.Features
                     float sideMin = windTurbine.RaycasterSize * windTurbine.MinRaycasterClearance;
                     float sideMax = windTurbine.RaycasterSize;
 
-                    AddLine().Label("Clearence - Terrain").DistanceRangeFormat(groundMin, groundMax).Separator().Label("Sides").DistanceRangeFormat(sideMin, sideMax);
+                    AddLine().Label("Clearance - Terrain").DistanceRangeFormat(groundMin, groundMax).Separator().Label("Sides").DistanceRangeFormat(sideMin, sideMax);
 
                     AddLine().Label("Optimal wind speed").RoundedNumber(windTurbine.OptimalWindSpeed, 2);
                     // TODO: wind speed unit? noone knows...

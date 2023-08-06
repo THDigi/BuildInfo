@@ -630,11 +630,13 @@ namespace Digi.BuildInfo.Features
                     }
                     catch(Exception e)
                     {
+                        Log.Error(e, null);
                         Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Failed to export ship info! Exception: {e.Message}; see SE log for details.", FontsHandler.RedSh);
-                        Log.Error(e);
                     }
-
-                    writer?.Dispose();
+                    finally
+                    {
+                        writer?.Dispose();
+                    }
                 }
             }
             catch(Exception e)
