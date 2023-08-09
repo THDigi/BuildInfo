@@ -20,6 +20,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandChangelog CommandChangelog;
         public CommandGetBlock CommandGetBlock;
         public CommandShipMods CommandShipMods;
+        public CommandSort CommandSort;
         public CommandQuickMenu CommandQuickMenu;
         public CommandToolbarCustomLabel CommandToolbarCustomLabel;
         public CommandToolbarErasePrefix CommandToolbarErasePrefix;
@@ -48,6 +49,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             CommandChangelog = new CommandChangelog();
             CommandGetBlock = new CommandGetBlock();
             CommandShipMods = new CommandShipMods();
+            CommandSort = new CommandSort();
             CommandQuickMenu = new CommandQuickMenu();
             CommandToolbarCustomLabel = new CommandToolbarCustomLabel();
             CommandToolbarErasePrefix = new CommandToolbarErasePrefix();

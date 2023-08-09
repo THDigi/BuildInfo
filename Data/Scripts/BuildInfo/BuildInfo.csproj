@@ -142,6 +142,7 @@
     <Compile Include="Features\AnalyseShip.cs" />
     <Compile Include="Features\ChatCommands\CommandProfile.cs" />
     <Compile Include="Features\ChatCommands\CommandServerInfo.cs" />
+    <Compile Include="Features\ChatCommands\CommandSort.cs" />
     <Compile Include="Features\ChatCommands\CommandToolbarCustomLabel.cs" />
     <Compile Include="Features\ChatCommands\CommandToolbarErasePrefix.cs" />
     <Compile Include="Features\ChatCommands\CommandLCDResolution.cs" />
