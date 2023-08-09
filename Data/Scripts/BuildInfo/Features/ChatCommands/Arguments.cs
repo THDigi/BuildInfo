@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using VRage.Game.ModAPI.Ingame.Utilities;
 
 namespace Digi.BuildInfo.Features.ChatCommands
@@ -21,9 +20,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         /// </summary>
         public int IndexOffset { get; set; }
 
-        private readonly List<StringSegment> Args = new List<StringSegment>();
-
-        private static readonly StringBuilder TempSB = new StringBuilder();
+        readonly List<StringSegment> Args = new List<StringSegment>();
 
         /// <summary>
         /// Gets argument at specified index.
@@ -41,7 +38,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         /// <summary>
         /// Gets the remaining arguments at specified index (0 being first arg) as a single string.
-        /// Returns null if no args are after that index.
+        /// Returns null if no args are at or after that index.
         /// </summary>
         public string GetRestAsText(int index)
         {
@@ -50,18 +47,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
             if(index < 0 || index >= Args.Count)
                 return null;
 
-            TempSB.Clear();
-
-            for(int i = index; i < Args.Count; i++)
-            {
-                StringSegment segment = Args[i];
-                TempSB.Append(segment.Text, segment.Start, segment.Length).Append(' ');
-            }
-
-            if(TempSB.Length > 0)
-                TempSB.Length -= 1; // remove last space
-
-            return TempSB.ToString();
+            // this works because each segment references the entire string command with indexes as segment pointers
+            StringSegment segment = Args[index];
+            return segment.Text.Substring(segment.Start);
         }
 
         public bool TryParse(string message)
@@ -88,7 +76,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             return Args.Count > 0;
         }
 
-        private StringSegment ParseQuoted(ref TextPtr ptr)
+        StringSegment ParseQuoted(ref TextPtr ptr)
         {
             TextPtr textPtr = ptr;
 

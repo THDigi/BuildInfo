@@ -1284,7 +1284,10 @@ namespace Digi.BuildInfo.Features.Terminal
             MyResourceSinkComponent sink = Sink;
             info.DetailInfo_CurrentPowerUsage(sink);
 
-            IMyAirVent airVent = (IMyAirVent)block;
+            IMyAirVent airVent = block as IMyAirVent;
+            if(airVent == null)
+                return;
+
             if(airVent.Depressurize)
             {
                 info.Append("Depressurizing:\n");
@@ -1295,6 +1298,8 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append("Pressurizing:\n");
                 info.DetailInfo_InputGasList(sink, "  ");
             }
+
+            // can't use block.CubeGrid.GasSystem clientside as it is null.
         }
 
         void Format_Reactor(IMyTerminalBlock block, StringBuilder info)

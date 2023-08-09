@@ -30,6 +30,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
         public CommandMeasureText CommandMeasureText;
         public CommandProfile CommandProfile;
 
+        public const StringComparison StringCompare = StringComparison.OrdinalIgnoreCase;
+
         private readonly Arguments args = new Arguments();
 
         public ChatCommandHandler(BuildInfoMod main) : base(main)
@@ -68,13 +70,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             try
             {
-                if(text.StartsWith(HelpAlternative))
+                if(text.StartsWith(HelpAlternative, StringCompare))
                 {
                     CommandHelp.ExecuteNoArgs();
                     return;
                 }
 
-                if(!text.StartsWith(MainCommandPrefix))
+                if(!text.StartsWith(MainCommandPrefix, StringCompare))
                     return;
 
                 if(!args.TryParse(text))
