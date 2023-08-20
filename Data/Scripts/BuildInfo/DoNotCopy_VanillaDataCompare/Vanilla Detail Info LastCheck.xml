@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-16"?>
 <VanillaDetailInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <GameVersion>1.198.27</GameVersion>
+  <GameVersion>1.203.21</GameVersion>
   <Blocks>
     <InfoEntry>
       <Id>MyObjectBuilder_Projector/LargeProjector</Id>
@@ -16,6 +16,41 @@ Current Input: 0 W</DetailInfo>
     <InfoEntry>
       <Id>MyObjectBuilder_TimerBlock/TimerBlockLarge</Id>
       <DetailInfo>Time to trigger: 00:00:00</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_PathRecorderBlock/LargePathRecorderBlock</Id>
+      <DetailInfo>Status: Block disabled
+[Color=#FFFF0000]ERROR: Grid has no active Move type block! Please add and/or enable a Move type block.[/Color]
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_TurretControlBlock/LargeTurretControlBlock</Id>
+      <DetailInfo>Status:
+   ERROR: Missing elevation or azimuth rotor/hinge
+   ERROR: Must have a linked weapon, tool or camera
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_BasicMissionBlock/LargeBasicMission</Id>
+      <DetailInfo>Status: Block disabled
+[Color=#FFFF0000]ERROR: Grid has no active Move type block! Please add and/or enable a Move type block.[/Color]
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_FlightMovementBlock/LargeFlightMovement</Id>
+      <DetailInfo>Status: Block disabled
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_DefensiveCombatBlock/LargeDefensiveCombat</Id>
+      <DetailInfo>Status: Block disabled
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_OffensiveCombatBlock/LargeOffensiveCombat</Id>
+      <DetailInfo>Status: Block disabled
+[Color=#FFFF0000]ERROR: Grid has no active Move type block! Please add and/or enable a Move type block.[/Color]
+</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_Beacon/LargeBlockBeacon</Id>
@@ -46,17 +81,25 @@ Idle</DetailInfo>
 Max Required Input: 10.00 kW</DetailInfo>
     </InfoEntry>
     <InfoEntry>
+      <Id>MyObjectBuilder_SolarPanel/LargeBlockColorableSolarPanel</Id>
+      <DetailInfo>Type: Colorable Solar Panel
+Max Output: 12.34 kW
+Current Output: 0 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_WindTurbine/LargeBlockWindTurbineReskin</Id>
+      <DetailInfo>Type: Twin-blade Wind Turbine
+Max Output: 0 W
+Current Output: 0 W
+Wind Clearance: None</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
       <Id>MyObjectBuilder_SafeZoneBlock/SafeZoneBlock</Id>
       <DetailInfo>Type: Safe Zone
 Current Input: 0 W
 Safe Zone: Disabled
 Zone Chips:0</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_TextPanel/TransparentLCDLarge</Id>
-      <DetailInfo>Type: Transparent LCD
-Max Required Input: 20 W
-Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_BatteryBlock/LargeBlockBatteryBlock</Id>
@@ -65,9 +108,9 @@ Max Output: 12.00 MW
 Max Required Input: 12.00 MW
 Max Stored Power: 3.00 MWh
 Current Input: 0 W
-Current Output: 1 W
+Current Output: 0 W
 Stored power: 900.00 kWh
-Fully depleted in: 108 years</DetailInfo>
+Fully depleted in: -</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_Reactor/SmallBlockSmallGenerator</Id>
@@ -84,29 +127,15 @@ Current Output: 0 W
 Filled: 0.0% (0L/100000L)</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_WindTurbine/LargeBlockWindTurbine</Id>
-      <DetailInfo>Type: Wind Turbine
-Max Output: 0 W
-Current Output: 0 W
-Wind Clearance: None</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_SolarPanel/LargeBlockSolarPanel</Id>
-      <DetailInfo>Type: Solar Panel
-Max Output: 12.34 kW
-Current Output: 1 W
-</DetailInfo>
+      <Id>MyObjectBuilder_GravityGenerator/</Id>
+      <DetailInfo>Type: Gravity Generator
+Max Required Input: 567.13 kW
+Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_GravityGeneratorSphere/</Id>
       <DetailInfo>Type: Spherical Gravity Generator
 Max Required Input: 1.60 MW
-Current Input: 0 W</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_GravityGenerator/</Id>
-      <DetailInfo>Type: Gravity Generator
-Max Required Input: 567.13 kW
 Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -117,21 +146,75 @@ Required Input: 600.00 kW
 Current Input: 0 W</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_OxygenTank/OxygenTankSmall</Id>
-      <DetailInfo>Type: Oxygen Tank
-Max Required Input: 1.00 kW
-Filled: 0.0% (0L/50000L)</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_AirVent/</Id>
-      <DetailInfo>Type: Air Vent
+      <Id>MyObjectBuilder_AirVent/AirVentFan</Id>
+      <DetailInfo>Type: Air Vent Fan
 Max Required Input: 100.00 kW
 Room pressure: Not pressurized</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_ConveyorSorter/LargeBlockConveyorSorter</Id>
-      <DetailInfo>Type: Conveyor Sorter
+      <Id>MyObjectBuilder_CameraBlock/LargeCameraTopMounted</Id>
+      <DetailInfo>Type: Top Mounted Camera
+Max Required Input: 30 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_TextPanel/TransparentLCDLarge</Id>
+      <DetailInfo>Type: Transparent LCD
+Max Required Input: 20 W
+Current Input: 0 W</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_LandingGear/LargeBlockMagneticPlate</Id>
+      <DetailInfo>Type: Large Magnetic Plate
+Lock State: Unlocked</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_OxygenTank/LargeHydrogenTankIndustrial</Id>
+      <DetailInfo>Type: Industrial Hydrogen Tank
+Max Required Input: 1.00 kW
+Filled: 0.0% (0L/15000000L)</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Assembler/LargeAssemblerIndustrial</Id>
+      <DetailInfo>Type: Industrial Assembler
+Max Required Input: 560.00 kW
+Required Input: 1.00 kW
+
+Productivity: 100%
+Power Efficiency: 100%
+
+Used upgrade module slots: 0 / 8
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_EmotionControllerBlock/EmotionControllerLarge</Id>
+      <DetailInfo>Currently selected emotion : 
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Refinery/LargeRefineryIndustrial</Id>
+      <DetailInfo>Type: Industrial Refinery
+Max Required Input: 560.00 kW
+Required Input: 1.00 kW
+
+Productivity: 100%
+Effectiveness: 100%
+Power Efficiency: 100%
+
+Used upgrade module slots: 0 / 8
+
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_ConveyorSorter/LargeBlockConveyorSorterIndustrial</Id>
+      <DetailInfo>Type: Industrial Conveyor Sorter
 Current Input: 0 W
+</DetailInfo>
+    </InfoEntry>
+    <InfoEntry>
+      <Id>MyObjectBuilder_Thrust/LargeBlockLargeHydrogenThrustIndustrial</Id>
+      <DetailInfo>Type: Industrial Large Hydrogen Thruster
+Max Required Input: 4.8 m³
 </DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -145,36 +228,9 @@ Current position: 0.0m</DetailInfo>
 Current position: 0.0m</DetailInfo>
     </InfoEntry>
     <InfoEntry>
-      <Id>MyObjectBuilder_Refinery/LargeRefinery</Id>
-      <DetailInfo>Type: Refinery
-Max Required Input: 560.00 kW
-Required Input: 1.00 kW
-
-Productivity: 100%
-Effectiveness: 100%
-Power Efficiency: 100%
-
-Used upgrade module slots: 0 / 8
-
-</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
       <Id>MyObjectBuilder_OxygenGenerator/</Id>
       <DetailInfo>Type: O2/H2 Generator
 Max Required Input: 500.00 kW</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_Assembler/LargeAssembler</Id>
-      <DetailInfo>Type: Assembler
-Max Required Input: 560.00 kW
-Required Input: 1.00 kW
-
-Productivity: 100%
-Power Efficiency: 100%
-
-Used upgrade module slots: 0 / 8
-
-</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_OxygenFarm/LargeBlockOxygenFarm</Id>
@@ -184,19 +240,13 @@ Oxygen Output: 0.00 L/min</DetailInfo>
     </InfoEntry>
     <InfoEntry>
       <Id>MyObjectBuilder_SurvivalKit/SurvivalKitLarge</Id>
-      <DetailInfo>Type: Survival kit
+      <DetailInfo>Type: Survival Kit
 Max Required Input: 200.00 kW
 Required Input: 15.00 kW
 
 Productivity: 100%
 Power Efficiency: 100%
 
-</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_Thrust/SmallBlockSmallThrustSciFi</Id>
-      <DetailInfo>Type: Sci-Fi Ion Thruster
-Max Required Input: 200.00 kW
 </DetailInfo>
     </InfoEntry>
     <InfoEntry>
@@ -210,20 +260,10 @@ Max Required Input: 2.00 kW
       <DetailInfo>Type: Jump Drive
 Max Required Input: 32.00 MW
 Max Stored Power: 3.00 MWh
-Current Input: 0 W
+Current Input: 0 W (80%)
 Stored power: 0 Wh
 Fully recharged in: 0 sec
 Max jump distance:0 km</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_CameraBlock/SmallCameraBlock</Id>
-      <DetailInfo>Type: Camera
-Max Required Input: 30 W</DetailInfo>
-    </InfoEntry>
-    <InfoEntry>
-      <Id>MyObjectBuilder_LandingGear/LargeBlockLandingGear</Id>
-      <DetailInfo>Type: Landing Gear
-Lock State: Unlocked</DetailInfo>
     </InfoEntry>
   </Blocks>
 </VanillaDetailInfo>

@@ -1097,7 +1097,7 @@ namespace Digi.BuildInfo.Features.GUI
                 if(!KnownFields.Contains(member.Name))
                 {
                     foundNewSettings = true;
-                    Log.Info($"new setting: {member.Name}");
+                    Log.Info($"New setting: {member.Name}");
                 }
             }
 

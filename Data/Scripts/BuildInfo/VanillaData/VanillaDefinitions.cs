@@ -7,7 +7,9 @@ using Digi.ComponentLib;
 using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.ObjectBuilders;
 
@@ -57,7 +59,11 @@ namespace Digi.BuildInfo.VanillaData
                 if(!Definitions.Contains(blockDef.Id))
                 {
                     needsRegen = true;
-                    Log.Info($"New vanilla block: {blockDef.Id}");
+
+                    if(blockDef.DLCs != null && blockDef.DLCs.Length > 0)
+                        Log.Info($"New vanilla block: {blockDef.Id} - DLC: {string.Join(", ", blockDef.DLCs.Select(dlc => MyTexts.GetString(MyDLCs.GetDLC(dlc).DisplayName)))}");
+                    else
+                        Log.Info($"New vanilla block: {blockDef.Id}");
                     //break;
                 }
 

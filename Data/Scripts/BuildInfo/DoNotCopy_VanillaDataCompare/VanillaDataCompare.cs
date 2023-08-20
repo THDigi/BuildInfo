@@ -78,8 +78,9 @@ namespace Digi.BuildInfo
         }
 
         #region Vanilla detail info check
-        Dictionary<MyDefinitionId, string> vanillaDetailInfo;
-        List<IMyTerminalBlock> spawnedBlocks;
+        Dictionary<MyDefinitionId, string> LastDetailedInfo;
+        List<IMyTerminalBlock> SpawnedBlocks;
+        List<MyCubeBlockDefinition> ResetStandalone;
 
         [ProtoContract]
         public class VanillaDetailInfo
@@ -106,11 +107,11 @@ namespace Digi.BuildInfo
             if(!ReadAndBackup())
                 return;
 
-            spawnedBlocks = new List<IMyTerminalBlock>();
+            SpawnedBlocks = new List<IMyTerminalBlock>();
 
             SpawnVanillaBlocks();
 
-            Log.Info($"{NAME}: Starting timer and waiting...");
+            Log.Info($"[{NAME}] Starting timer and waiting...");
 
             Timer timer = new Timer(3000);
             timer.Elapsed += Timer_Elapsed;
@@ -119,7 +120,7 @@ namespace Digi.BuildInfo
 
         bool ReadAndBackup()
         {
-            Log.Info($"{NAME}: Reading 'Storage/{readFile}'...");
+            Log.Info($"[{NAME}] Reading 'Storage/{readFile}'...");
 
             if(MyAPIGateway.Utilities.FileExistsInLocalStorage(readFile, typeof(VanillaDataCompare)))
             {
@@ -132,25 +133,25 @@ namespace Digi.BuildInfo
 
                     if(info == null)
                     {
-                        Log.Error($"{NAME}: info = null");
+                        Log.Error($"[{NAME}] info = null");
                         return false;
                     }
 
                     if(info.Blocks == null)
                     {
-                        Log.Error($"{NAME}: info.Blocks = null");
+                        Log.Error($"[{NAME}] info.Blocks = null");
                         return false;
                     }
 
-                    vanillaDetailInfo = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
+                    LastDetailedInfo = new Dictionary<MyDefinitionId, string>(MyDefinitionId.Comparer);
 
                     foreach(InfoEntry block in info.Blocks)
                     {
-                        vanillaDetailInfo.Add(MyDefinitionId.Parse(block.Id), block.DetailInfo);
+                        LastDetailedInfo.Add(MyDefinitionId.Parse(block.Id), block.DetailInfo);
                     }
                 }
 
-                Log.Info($"{NAME}: Backing up {readFile} as {backupFile}.");
+                Log.Info($"[{NAME}] Backing up {readFile} as {backupFile}.");
 
                 using(TextWriter writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(backupFile, typeof(VanillaDataCompare)))
                 {
@@ -159,7 +160,7 @@ namespace Digi.BuildInfo
             }
             else
             {
-                Log.Info($"{NAME}: {readFile} not found.");
+                Log.Info($"[{NAME}] {readFile} not found.");
                 MyAPIGateway.Utilities.ShowMessage(NAME, $"{BuildInfoMod.ModName} WARNING: missing 'Storage/{readFile}' file, nothing to compare to!");
             }
 
@@ -171,9 +172,11 @@ namespace Digi.BuildInfo
             DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> definitions = MyDefinitionManager.Static.GetAllDefinitions();
             HashSet<MyObjectBuilderType> spawned = new HashSet<MyObjectBuilderType>(MyObjectBuilderType.Comparer);
 
-            Log.Info($"{NAME}: Spawning blocks...");
+            Log.Info($"[{NAME}] Spawning blocks...");
 
             MatrixD matrix = MatrixD.Identity;
+
+            ResetStandalone = new List<MyCubeBlockDefinition>();
 
             foreach(MyDefinitionBase def in definitions)
             {
@@ -189,6 +192,21 @@ namespace Digi.BuildInfo
                     if(blockDef == null)
                         continue;
 
+                    if(!MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_TerminalBlock), def.Id.TypeId))
+                    {
+                        Log.Info($"[{NAME}] skipping non-terminal block {def.Id}");
+                        continue;
+                    }
+
+                    if(!blockDef.IsStandAlone)
+                    {
+                        ResetStandalone.Add(blockDef);
+                        blockDef.IsStandAlone = true;
+
+                        //Log.Info($"[{NAME}] WARNING: skipping {def.Id} because IsStandAlone=false");
+                        //continue;
+                    }
+
                     if(!spawned.Add(def.Id.TypeId)) // if Add() returns false it means the entry already exists
                         continue;
 
@@ -198,13 +216,13 @@ namespace Digi.BuildInfo
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Error in definition loop: {def?.Id}");
+                    Log.Error($"[{NAME}] Error in definition loop: {def?.Id}");
                     Log.Error(e);
                 }
             }
         }
 
-        private void GridSpawned(MyEntity ent)
+        void GridSpawned(MyEntity ent)
         {
             try
             {
@@ -214,23 +232,22 @@ namespace Digi.BuildInfo
                 if(block == null)
                 {
                     RemoveConnectedGrids(grid);
-                    Log.Error($"Can't get block from spawned entity for some unknown block...");
+                    Log.Error($"[{NAME}] Can't get block from spawned entity for some unknown block...");
                     //Log.Error($"Can't get block from spawned entity for block: {def.Id} (mod workshopId={def.Context.GetWorkshopID()})");
                     return;
                 }
 
                 IMyTerminalBlock terminalBlock = block as IMyTerminalBlock;
-
                 if(terminalBlock == null)
                 {
-                    Log.Info($"Spawned block is not a terminal block: {block.BlockDefinition}");
+                    Log.Error($"[{NAME}] non-terminal block got spawned! {block.BlockDefinition} - it should've been filtered before, something is wrong.");
                     RemoveConnectedGrids(grid);
                     return;
                 }
 
                 block.OnBuildSuccess(0, true);
 
-                spawnedBlocks.Add(terminalBlock);
+                SpawnedBlocks.Add(terminalBlock);
             }
             catch(Exception e)
             {
@@ -238,7 +255,7 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void RemoveConnectedGrids(IMyCubeGrid grid)
+        void RemoveConnectedGrids(IMyCubeGrid grid)
         {
             List<IMyCubeGrid> grids = null;
             try
@@ -256,7 +273,7 @@ namespace Digi.BuildInfo
             }
         }
 
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             MyAPIGateway.Utilities.InvokeOnGameThread(CompareDetailInfo);
 
@@ -264,7 +281,7 @@ namespace Digi.BuildInfo
             timer.Stop();
         }
 
-        private void CompareDetailInfo()
+        void CompareDetailInfo()
         {
             try
             {
@@ -277,11 +294,13 @@ namespace Digi.BuildInfo
 
                 try
                 {
-                    Log.Info($"{NAME}: Iterating blocks...");
+                    Log.Info($"[{NAME}] Iterating blocks...");
                     Log.IncreaseIndent();
 
-                    foreach(IMyTerminalBlock block in spawnedBlocks)
+                    foreach(IMyTerminalBlock block in SpawnedBlocks)
                     {
+                        block.SetDetailedInfoDirty();
+
                         string detailInfo = block.DetailedInfo;
                         bool hasInfo = !string.IsNullOrWhiteSpace(detailInfo);
 
@@ -296,20 +315,20 @@ namespace Digi.BuildInfo
                             });
                         }
 
-                        if(vanillaDetailInfo != null)
+                        if(LastDetailedInfo != null)
                         {
                             string prevInfo;
-                            if(vanillaDetailInfo.TryGetValue(block.BlockDefinition, out prevInfo))
+                            if(LastDetailedInfo.TryGetValue(block.BlockDefinition, out prevInfo))
                             {
                                 if(string.Compare(prevInfo, detailInfo, true) != 0)
                                 {
-                                    Log.Info($"{NAME}: {block.BlockDefinition} has different info now\nOld: {ToLiteral(prevInfo)}\nNew: {ToLiteral(detailInfo)}\n");
+                                    Log.Info($"{block.BlockDefinition} has different info now\nOld: {ToLiteral(prevInfo)}\nNew: {ToLiteral(detailInfo)}\n");
                                     newDetected = true;
                                 }
                             }
                             else if(hasInfo)
                             {
-                                Log.Info($"{NAME}: {block.BlockDefinition} did not have info but now it does!\nInfo: {ToLiteral(detailInfo)}\n");
+                                Log.Info($"{block.BlockDefinition} did not have info but now it does!\nInfo: {ToLiteral(detailInfo)}\n");
                                 newDetected = true;
                             }
                         }
@@ -322,7 +341,7 @@ namespace Digi.BuildInfo
                     Log.ResetIndent();
                 }
 
-                Log.Info($"{NAME}: Writing 'Storage/{writeFile}'...");
+                Log.Info($"[{NAME}] Writing 'Storage/{writeFile}'...");
 
                 string xml = MyAPIGateway.Utilities.SerializeToXML(data);
 
@@ -332,10 +351,10 @@ namespace Digi.BuildInfo
                     writer.Flush();
                 }
 
-                Log.Info($"{NAME}: Finished.");
+                Log.Info($"[{NAME}] Finished.");
 
-                if(vanillaDetailInfo == null)
-                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, nothing to compare to.");
+                if(LastDetailedInfo == null)
+                    MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, nothing to compare to!!");
                 else if(newDetected)
                     MyAPIGateway.Utilities.ShowMessage(NAME, $"Checks finished for {BuildInfoMod.ModName}, NEW STUFF DETECTED!!!!!!");
                 else
@@ -347,12 +366,21 @@ namespace Digi.BuildInfo
             }
             finally
             {
-                spawnedBlocks = null;
-                vanillaDetailInfo = null;
+                if(ResetStandalone != null)
+                {
+                    foreach(MyCubeBlockDefinition def in ResetStandalone)
+                    {
+                        def.IsStandAlone = false;
+                    }
+                }
+
+                SpawnedBlocks = null;
+                LastDetailedInfo = null;
+                ResetStandalone = null;
             }
         }
 
-        private static string ToLiteral(string input)
+        static string ToLiteral(string input)
         {
             StringBuilder literal = new StringBuilder(input.Length);
 
@@ -369,7 +397,7 @@ namespace Digi.BuildInfo
                     case '\t': literal.Append(@"\t"); break;
                     case '\v': literal.Append(@"\v"); break;
                     default:
-                        if(Char.GetUnicodeCategory(c) != UnicodeCategory.Control)
+                        if(char.GetUnicodeCategory(c) != UnicodeCategory.Control)
                             literal.Append(c);
                         else
                             literal.Append(@"\u").Append(((int)c).ToString("x4"));

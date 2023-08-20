@@ -1,10 +1,9 @@
-// 01_198_031
+// 01_202_124
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using ParallelTasks;
 using Sandbox.Definitions;
-using Sandbox.Engine.Multiplayer;
 using Sandbox.Engine.Platform;
 using Sandbox.Engine.Utils;
 using Sandbox.Game.Entities;
@@ -17,38 +16,14 @@ using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
-using VRage.Network;
 using VRage.Utils;
 using VRageMath;
 using VRageRender;
 
 namespace Sandbox.Game.GameSystems
 {
-	public class MyGridGasSystem : MyUpdateableGridSystem
+	public class MyGridGasSystem : MyUpdateableGridSystem, IMyGridGasSystem
 	{
-		[CompilerGenerated]
-		[Serializable]
-		private sealed class <>c
-		{
-			public static readonly MyGridGasSystem.<>c <>9 = new MyGridGasSystem.<>c();
-
-			public static Func<IMyEventOwner, Action<long, Vector3I, Vector3I>> <>9__74_0;
-
-			// Note: this type is marked as 'beforefieldinit'.
-			static <>c()
-			{
-			}
-
-			public <>c()
-			{
-			}
-
-			internal Action<long, Vector3I, Vector3I> <RemoveBlocks>b__74_0(IMyEventOwner x)
-			{
-				return new Action<long, Vector3I, Vector3I>(MyCubeGrid.DepressurizeEffect);
-			}
-		}
-
 		private static bool DEBUG_MODE = false;
 
 		public const float OXYGEN_UNIFORMIZATION_TIME_MS = 1500f;
@@ -126,6 +101,12 @@ namespace Sandbox.Game.GameSystems
 
 		private IMyCubeGrid m_cubeGrid;
 
+		private bool m_forcePressurize;
+
+		private bool m_forcePressurizeBlockAddChanged;
+
+		private bool m_forcePressurizeBlockRemoveChanged;
+
 		private readonly float m_debugTextlineSize = 17f;
 
 		private bool m_debugShowTopRoom;
@@ -142,6 +123,15 @@ namespace Sandbox.Game.GameSystems
 
 		private bool m_debugToggleView;
 
+		[CompilerGenerated]
+		private Action <OnProcessingDataStart>k__BackingField;
+
+		[CompilerGenerated]
+		private Action <OnProcessingDataComplete>k__BackingField;
+
+		/// <summary>
+		/// Gets cube grid, for unit tests it has to be interface
+		/// </summary>
 		internal IMyCubeGrid CubeGrid
 		{
 			get
@@ -202,6 +192,9 @@ namespace Sandbox.Game.GameSystems
 			this.m_initializedBlocks.Clear();
 		}
 
+		/// <summary>
+		/// Implements schedule, unit tests don't use schedule system and so m_grid is null
+		/// </summary>
 		private void ScheduleUpdate()
 		{
 			if (base.Grid == null)
@@ -235,6 +228,16 @@ namespace Sandbox.Game.GameSystems
 				{
 					this.m_generatedDataPending = true;
 				}
+				this.ScheduleUpdate();
+				return;
+			}
+			if (this.m_forcePressurize)
+			{
+				if (this.m_rooms == null)
+				{
+					this.m_generatedDataPending = true;
+				}
+				this.m_forcePressurizeBlockAddChanged = true;
 				this.ScheduleUpdate();
 			}
 		}
@@ -272,6 +275,12 @@ namespace Sandbox.Game.GameSystems
 			{
 				this.m_deletedBlocks.Add(deletedBlock);
 				this.ScheduleUpdate();
+				return;
+			}
+			if (this.m_forcePressurize)
+			{
+				this.m_forcePressurizeBlockRemoveChanged = true;
+				this.ScheduleUpdate();
 			}
 		}
 
@@ -303,6 +312,10 @@ namespace Sandbox.Game.GameSystems
 		{
 			if (this.m_gasBlocks.Count == 0)
 			{
+				if (this.m_forcePressurize)
+				{
+					this.ScheduleUpdate();
+				}
 				return;
 			}
 			MySlimBlock mySlimBlock = door.SlimBlock as MySlimBlock;
@@ -330,6 +343,10 @@ namespace Sandbox.Game.GameSystems
 			{
 				this.m_gridShrinked = true;
 			}
+			if (this.m_forcePressurize)
+			{
+				this.m_generatedDataPending = true;
+			}
 			this.ScheduleUpdate();
 		}
 
@@ -338,6 +355,7 @@ namespace Sandbox.Game.GameSystems
 			this.Update();
 		}
 
+		/// <inheritdoc />
 		protected override void Update()
 		{
 			if (!MyFakes.BACKGROUND_OXYGEN || this.m_isProcessingData)
@@ -360,13 +378,15 @@ namespace Sandbox.Game.GameSystems
 				this.StartShrinkData();
 				flag = true;
 			}
-			if (this.m_addedBlocks.Count > 0)
+			if (this.m_addedBlocks.Count > 0 || this.m_forcePressurizeBlockAddChanged)
 			{
+				this.m_forcePressurizeBlockAddChanged = false;
 				this.StartRefreshRoomData();
 				flag = true;
 			}
-			if (this.m_deletedBlocks.Count > 0)
+			if (this.m_deletedBlocks.Count > 0 || this.m_forcePressurizeBlockRemoveChanged)
 			{
+				this.m_forcePressurizeBlockRemoveChanged = false;
 				this.StartRemoveBlocks();
 				flag = true;
 			}
@@ -395,6 +415,10 @@ namespace Sandbox.Game.GameSystems
 			if (this.CubeGrid.Physics == null)
 			{
 				return false;
+			}
+			if (this.m_forcePressurize)
+			{
+				return true;
 			}
 			if (this.m_gasBlocks.Count > 0)
 			{
@@ -729,12 +753,22 @@ namespace Sandbox.Game.GameSystems
 		private void OnBackgroundTaskFinished()
 		{
 			this.m_isProcessingData = false;
+			Action onProcessingDataComplete = this.OnProcessingDataComplete;
+			if (onProcessingDataComplete != null)
+			{
+				onProcessingDataComplete();
+			}
 			this.ScheduleUpdate();
 		}
 
 		private void StartGenerateAirtightData()
 		{
 			this.m_isProcessingData = true;
+			Action onProcessingDataStart = this.OnProcessingDataStart;
+			if (onProcessingDataStart != null)
+			{
+				onProcessingDataStart();
+			}
 			if (base.Grid != null)
 			{
 				base.DeSchedule();
@@ -1038,7 +1072,7 @@ namespace Sandbox.Game.GameSystems
 				if (myEntity3DSoundEmitter != null)
 				{
 					myEntity3DSoundEmitter.SetPosition(new Vector3D?(vector3D));
-					myEntity3DSoundEmitter.PlaySound(MyGridGasSystem.m_airleakSound, false, false, false, false, false, null);
+					myEntity3DSoundEmitter.PlaySound(MyGridGasSystem.m_airleakSound, false, false, false, false, false, null, false);
 					if (grid.Physics != null)
 					{
 						myEntity3DSoundEmitter.SetVelocity(new Vector3?(grid.Physics.LinearVelocity));
@@ -1183,11 +1217,11 @@ namespace Sandbox.Game.GameSystems
 			{
 				return;
 			}
-			if (this.m_gasBlocks.Count == 0)
+			if (this.m_gasBlocks.Count == 0 && !this.m_forcePressurize)
 			{
 				this.Clear();
 			}
-			if (this.m_rooms == null)
+			if (this.m_rooms == null && !this.m_forcePressurize)
 			{
 				this.m_deletedBlocks.Clear();
 				return;
@@ -1202,8 +1236,8 @@ namespace Sandbox.Game.GameSystems
 		private void RemoveBlocks()
 		{
 			bool flag = false;
-			Vector3I arg = Vector3I.Zero;
-			Vector3I arg2 = Vector3I.Zero;
+			Vector3I from = Vector3I.Zero;
+			Vector3I to = Vector3I.Zero;
 			foreach (IMySlimBlock mySlimBlock in this.m_deletedBlocksSwap)
 			{
 				Vector3I min = mySlimBlock.Min;
@@ -1217,19 +1251,26 @@ namespace Sandbox.Game.GameSystems
 					if (this.RemoveBlock(min, out vector3I, out vector3I2))
 					{
 						flag = true;
-						arg = vector3I;
-						arg2 = vector3I2;
+						from = vector3I;
+						to = vector3I2;
 					}
 					vector3I_RangeIterator.GetNext(out min);
 				}
 			}
 			if (flag)
 			{
-				MyMultiplayer.RaiseStaticEvent<long, Vector3I, Vector3I>((IMyEventOwner x) => new Action<long, Vector3I, Vector3I>(MyCubeGrid.DepressurizeEffect), this.CubeGrid.EntityId, arg, arg2, default(EndpointId), null);
+				this.CubeGrid.InvokeDepressurizeEffect(from, to);
 			}
 			this.m_deletedBlocksSwap.Clear();
 		}
 
+		/// <summary>
+		/// Returns true if depressurization should be played
+		/// </summary>
+		/// <param name="deletedBlockPosition"></param>
+		/// <param name="depressFrom"></param>
+		/// <param name="depressTo"></param>
+		/// <returns></returns>
 		private bool RemoveBlock(Vector3I deletedBlockPosition, out Vector3I depressFrom, out Vector3I depressTo)
 		{
 			bool result = false;
@@ -1603,6 +1644,7 @@ namespace Sandbox.Game.GameSystems
 			this.m_savedRooms = oxygenAmount;
 		}
 
+		/// <inheritdoc />
 		public override MyCubeGrid.UpdateQueue Queue
 		{
 			get
@@ -1616,6 +1658,78 @@ namespace Sandbox.Game.GameSystems
 			get
 			{
 				return 12;
+			}
+		}
+
+		public bool GetRooms(List<IMyOxygenRoom> list)
+		{
+			if (!this.m_isProcessingData && this.m_rooms != null && this.m_rooms.Count > 0)
+			{
+				list.EnsureCapacity(this.m_rooms.Count);
+				foreach (MyOxygenRoom item in this.m_rooms)
+				{
+					list.Add(item);
+				}
+				return true;
+			}
+			return false;
+		}
+
+		IMyOxygenRoom IMyGridGasSystem.GetOxygenRoomForCubeGridPosition(ref Vector3I gridPosition)
+		{
+			return this.GetOxygenRoomForCubeGridPosition(ref gridPosition);
+		}
+
+		IMyOxygenBlock IMyGridGasSystem.GetOxygenBlock(Vector3D worldPosition)
+		{
+			return this.GetOxygenBlock(worldPosition);
+		}
+
+		bool IMyGridGasSystem.IsProcessingData
+		{
+			get
+			{
+				return this.m_isProcessingData;
+			}
+		}
+
+		bool IMyGridGasSystem.ForcePressurize
+		{
+			get
+			{
+				return this.m_forcePressurize;
+			}
+			set
+			{
+				this.m_forcePressurize = value;
+			}
+		}
+
+		public Action OnProcessingDataStart
+		{
+			[CompilerGenerated]
+			get
+			{
+				return this.<OnProcessingDataStart>k__BackingField;
+			}
+			[CompilerGenerated]
+			set
+			{
+				this.<OnProcessingDataStart>k__BackingField = value;
+			}
+		}
+
+		public Action OnProcessingDataComplete
+		{
+			[CompilerGenerated]
+			get
+			{
+				return this.<OnProcessingDataComplete>k__BackingField;
+			}
+			[CompilerGenerated]
+			set
+			{
+				this.<OnProcessingDataComplete>k__BackingField = value;
 			}
 		}
 
