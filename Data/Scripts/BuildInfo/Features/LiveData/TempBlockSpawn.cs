@@ -12,7 +12,7 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
-    public struct TempBlockSpawn
+    public class TempBlockSpawn
     {
         public static void Spawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
         {
@@ -36,34 +36,31 @@ namespace Digi.BuildInfo.Features.LiveData
             blockOB.EntityId = 0;
             blockOB.Min = Vector3I.Zero;
 
-            MyObjectBuilder_CubeGrid gridOB = new MyObjectBuilder_CubeGrid()
-            {
-                CreatePhysics = false,
-                GridSizeEnum = def.CubeSize,
-                PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up),
-                PersistentFlags = MyPersistentEntityFlags2.InScene,
-                IsStatic = true,
-                Editable = false,
-                DestructibleBlocks = false,
-                IsRespawnGrid = false,
-                Name = "BuildInfo_TemporaryGrid",
-            };
-
+            MyObjectBuilder_CubeGrid gridOB = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_CubeGrid>();
+            gridOB.EntityId = 0;
+            gridOB.DisplayName = gridOB.Name = "BuildInfo_TemporaryGrid";
+            gridOB.CreatePhysics = false;
+            gridOB.GridSizeEnum = def.CubeSize;
+            gridOB.PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up);
+            gridOB.PersistentFlags = MyPersistentEntityFlags2.InScene;
+            gridOB.IsStatic = true;
+            gridOB.Editable = false;
+            gridOB.DestructibleBlocks = false;
+            gridOB.IsRespawnGrid = false;
             gridOB.CubeBlocks.Add(blockOB);
 
-            // not really required for a single grid.
-            //MyAPIGateway.Entities.RemapObjectBuilder(gridOB);
-
             MyCubeGrid grid = (MyCubeGrid)MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridOB, true, SpawnCompleted);
-            grid.DisplayName = grid.Name;
+
             grid.IsPreview = true;
             grid.Save = false;
-            grid.Flags = EntityFlags.None;
-            grid.Render.Visible = false;
         }
 
         void SpawnCompleted(IMyEntity ent)
         {
+            // has to be here if wanna do this, but not really important anyway
+            // if done before it fully initializes, it can crash for certain blocks, like Holo LCD
+            //ent.Render.Visible = false;
+
             IMyCubeGrid grid = ent as IMyCubeGrid;
 
             try
