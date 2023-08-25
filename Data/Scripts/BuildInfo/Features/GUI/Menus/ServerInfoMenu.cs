@@ -623,6 +623,11 @@ namespace Digi.BuildInfo.Features.GUI
                 KnownFields.Add("OptimalSpawnDistance"); // it's not ok for players to know this
                 KnownFields.Add("SyncDistance"); // server owners would not like this exposed
 
+                // unknown purpose, used in MySpaceRespawnComponent.UpdateBeforeSimulation()
+                //PrintSetting(sb, nameof(settings.UpdateRespawnDictionary), settings.UpdateRespawnDictionary, DefaultSettings.UpdateRespawnDictionary, false,
+                //    "UpdateRespawnDictionary", "", () => settings.EnableMatchComponent);
+                KnownFields.Add("UpdateRespawnDictionary");
+
                 // obsolete/unused
                 KnownFields.Add("Scenario");
                 KnownFields.Add("ScenarioEditMode");
@@ -683,7 +688,10 @@ namespace Digi.BuildInfo.Features.GUI
             //    "Network type", null);
             //PrintDSSetting(sb, dsConfig?.ConsoleCompatibility, dsConfigDefault.ConsoleCompatibility,
             //    "Console Compatibility", null);
-
+            PrintSetting(sb, nameof(settings.BlueprintShare), settings.BlueprintShare, DefaultSettings.BlueprintShare, false,
+                "Blueprint Share", "Allows players to send local blueprints to a specific player in this server using the blueprint menu (F10).");
+            PrintFormattedNumber(sb, nameof(settings.BlueprintShareTimeout), settings.BlueprintShareTimeout, DefaultSettings.BlueprintShareTimeout, false,
+                "Blueprint Share Timeout", " sec", "Time until player can send another blueprint.", () => settings.BlueprintShare);
 
             //Header(sb, "Chat");
 
@@ -790,6 +798,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Post-Match Duration", " min", "Duration of PostMatch phase of the match.", () => settings.EnableMatchComponent);
             PrintSetting(sb, nameof(settings.EnableTeamScoreCounters), settings.EnableTeamScoreCounters, DefaultSettings.EnableTeamScoreCounters, false,
                 "Team Score Counters", "Show team scores at the top of the screen.", () => settings.EnableMatchComponent);
+
+
             PrintSetting(sb, nameof(settings.EnableFriendlyFire), settings.EnableFriendlyFire, DefaultSettings.EnableFriendlyFire, false,
                 "Friendly Fire", "If disabled, character damage from friendlies is reduced.");
             PrintSetting(sb, nameof(settings.EnableFactionVoiceChat), settings.EnableFactionVoiceChat, DefaultSettings.EnableFactionVoiceChat, false,
@@ -802,6 +812,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Show teammate names", "Shows player names above their head if they're in the same faction even if personal broadcast is off.");
             PrintSetting(sb, nameof(settings.EnableGamepadAimAssist), settings.EnableGamepadAimAssist, DefaultSettings.EnableGamepadAimAssist, false,
                 "Gamepad Aim Assist", "Enable aim assist for gamepad.");
+            PrintFormattedNumber(sb, nameof(settings.EnemyTargetIndicatorDistance), settings.EnemyTargetIndicatorDistance, DefaultSettings.EnemyTargetIndicatorDistance, false,
+                "Aimed Enemy Indicator Distance", " m", "Max distance to show enemy indicator when aiming at a character.");
 
 
             sb = NextColumn(); // ------------------------------------------------------------------------------------------------------------------------------
@@ -1074,7 +1086,8 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.MaxProductionQueueLength), settings.MaxProductionQueueLength, DefaultSettings.MaxProductionQueueLength, false,
                 "Max Production Queue Length ", "Maximum assembler production queue size." +
                                                 "\nIt becomes a problem when assemblers with no resources have lots of queued stacks, each requesting items through conveyor system.");
-
+            PrintFormattedNumber(sb, nameof(settings.PrefetchShapeRayLengthLimit), settings.PrefetchShapeRayLengthLimit, DefaultSettings.PrefetchShapeRayLengthLimit, false,
+                "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels.\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this.\nThis call is used by bullet projectiles, targetting systems and mods can use it too.");
         }
 
         void CheckSettings()
