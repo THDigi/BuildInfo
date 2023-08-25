@@ -316,7 +316,7 @@ namespace Digi.BuildInfo.Systems
             if(block == null)
                 return false;
 
-            if(!Utils.CheckSafezoneAction(block, Utils.SZAWelding))
+            if(!Utils.CheckSafezoneAction(block, SafeZoneAction.Welding))
                 return false;
 
             if(!block.IsFullIntegrity || block.HasDeformation)
@@ -414,7 +414,7 @@ namespace Digi.BuildInfo.Systems
                     targetBlock = slim;
 
                     // HACK: doesn't check for welding, also must be here because it must target the same thing as vanilla.
-                    if(!Utils.CheckSafezoneAction(slim, Utils.SZAWelding))
+                    if(!Utils.CheckSafezoneAction(slim, SafeZoneAction.Welding))
                         canBuild = BuildCheckResult.IntersectedWithSomethingElse;
 
                     targetStatus = canBuild;

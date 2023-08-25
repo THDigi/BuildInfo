@@ -156,7 +156,7 @@ namespace Digi.BuildInfo.Features
                 {
                     if(Main.EquipmentMonitor.IsAnyGrinder)
                     {
-                        if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, Utils.SZAGrinding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAGrinding))
+                        if(grid.Immune || !grid.Editable || !Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.Grinding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, SafeZoneAction.Grinding))
                         {
                             color = Color.DarkRed;
                         }
@@ -181,7 +181,7 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZAWelding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, Utils.SZAWelding))
+                        if(!Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.Welding) || !Utils.CheckSafezoneAction(aimedBlock.CubeGrid, SafeZoneAction.Welding))
                             color = Color.DarkRed;
                         else if(aimedBlock.IsFullIntegrity && !aimedBlock.HasDeformation)
                             color = Color.White;

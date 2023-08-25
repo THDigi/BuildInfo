@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features;
-using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
@@ -19,6 +18,23 @@ using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Utilities
 {
+    // values from MySafeZoneAction, cloned as object for CastHax.
+    public static class SafeZoneAction
+    {
+        public static readonly object Damage = 0x1;
+        public static readonly object Shooting = 0x2;
+        public static readonly object Drilling = 0x4;
+        public static readonly object Welding = 0x8;
+        public static readonly object Grinding = 0x10;
+        public static readonly object VoxelHand = 0x20;
+        public static readonly object Building = 0x40;
+        public static readonly object LandingGearLock = 0x80;
+        public static readonly object ConvertToStation = 0x100;
+        public static readonly object BuildingProjections = 0x200;
+        public static readonly object All = 0x3FF;
+        public static readonly object AdminIgnore = 0x37E;
+    }
+
     /// <summary>
     /// Various random utility methods
     /// </summary>
@@ -93,20 +109,9 @@ namespace Digi.BuildInfo.Utilities
             return $"{context.ModName} ({context.ModItem.PublishedFileId})";
         }
 
-        // from MySafeZoneAction
-        public static readonly object SZADamage = 0x1;
-        public static readonly object SZAShooting = 0x2;
-        public static readonly object SZADrilling = 0x4;
-        public static readonly object SZAWelding = 0x8;
-        public static readonly object SZAGrinding = 0x10;
-        public static readonly object SZAVoxelHand = 0x20;
-        public static readonly object SZABuilding = 0x40;
-        public static readonly object SZALandingGearLock = 0x80;
-        public static readonly object SZAConvertToStation = 0x100;
-        public static readonly object SZABuildingProjections = 0x200;
-        public static readonly object SZAAll = 0x3FF;
-        public static readonly object SZAAdminIgnore = 0x37E;
-
+        /// <summary>
+        /// Use <see cref="SafeZoneAction"></see> for actionId.
+        /// </summary>
         public static bool CheckSafezoneAction(IMySlimBlock block, object actionId, long sourceEntityId = 0)
         {
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;
@@ -115,6 +120,9 @@ namespace Digi.BuildInfo.Utilities
             return MySessionComponentSafeZones.IsActionAllowed(box, CastHax(MySessionComponentSafeZones.AllowedActions, actionId), sourceEntityId, steamId);
         }
 
+        /// <summary>
+        /// Use <see cref="SafeZoneAction"></see> for actionId.
+        /// </summary>
         public static bool CheckSafezoneAction(IMyEntity ent, object actionId, long sourceEntityId = 0)
         {
             ulong steamId = MyAPIGateway.Session?.Player?.SteamUserId ?? 0;

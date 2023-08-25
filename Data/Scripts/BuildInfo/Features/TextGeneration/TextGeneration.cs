@@ -1170,9 +1170,9 @@ namespace Digi.BuildInfo.Features
                         GetLine().Color(COLOR_BAD).Append("Other block in the way");
                         break;
                     case BuildCheckResult.IntersectedWithSomethingElse:
-                        if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZABuildingProjections))
+                        if(!Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.BuildingProjections))
                             GetLine().Color(COLOR_BAD).Append("Can't build projections in this SafeZone");
-                        else if(!Utils.CheckSafezoneAction(aimedBlock, Utils.SZAWelding))
+                        else if(!Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.Welding))
                             GetLine().Color(COLOR_BAD).Append("Can't weld in this SafeZone");
                         else
                             GetLine().Color(COLOR_WARNING).Append("Something in the way");
