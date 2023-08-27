@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using SpaceEngineers.Game.ModAPI;
+using VRage;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -19,11 +21,11 @@ namespace Digi.BuildInfo.Features.LeakInfo
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_AirVent), useEntityUpdate: false)]
     public class AirVent : MyGameLogicComponent
     {
-        private IMyAirVent block;
-        private bool init = false;
-        private byte skip = 0;
-        private bool dummyIsSet = false;
-        private Vector3 dummyLocalPosition;
+        IMyAirVent block;
+        bool init = false;
+        byte skip = 0;
+        bool dummyIsSet = false;
+        Vector3 dummyLocalPosition;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -32,6 +34,33 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
             block = (IMyAirVent)Entity;
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
+        }
+
+        bool _roomSealed;
+        int _roomSealedExpires;
+        public bool IsRoomSealed()
+        {
+            if(MyAPIGateway.Session.IsServer)
+                return block.CanPressurize;
+
+            // HACK: cannot use CanPressurize net-client-side because it uses grid GasSystem that is only available serverside.
+
+            int tick = MyAPIGateway.Session.GameplayFrameCounter;
+
+            if(_roomSealedExpires > tick)
+                return _roomSealed;
+
+            block.SetDetailedInfoDirty();
+            string detailedInfo = block.DetailedInfo;
+
+            if(string.IsNullOrEmpty(detailedInfo))
+                return false; // unknown state, assume not pressurized
+
+            string notPressurized = MyTexts.GetString(MySpaceTexts.Oxygen_NotPressurized);
+            _roomSealed = !detailedInfo.Contains(notPressurized);
+            _roomSealedExpires = tick + Constants.TicksPerSecond * 1;
+
+            return _roomSealed;
         }
 
         public override void UpdateAfterSimulation10()
@@ -97,7 +126,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                     // if room is sealed and the leak info is running then clear it
                     LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
-                    if(leakInfo.UsedFromVent == block && leakInfo.Status != InfoStatus.None && block.CanPressurize)
+                    if(leakInfo.UsedFromVent == block && leakInfo.Status != InfoStatus.None && IsRoomSealed())
                     {
                         leakInfo.ClearStatus();
                     }
@@ -143,7 +172,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 }
                 else
                 {
-                    if(!block.IsWorking || vent.CanPressurize)
+                    if(!block.IsWorking || logic.IsRoomSealed())
                     {
                         leakInfo.TerminalControl.UpdateVisual();
                         return;
@@ -197,7 +226,7 @@ namespace Digi.BuildInfo.Features.LeakInfo
                     case InfoStatus.None:
                         if(!vent.IsWorking)
                             str.Append("Air vent not working.");
-                        else if(vent.CanPressurize)
+                        else if(logic.IsRoomSealed())
                             str.Append("Area is sealed.");
                         else
                             str.Append("Ready.");
