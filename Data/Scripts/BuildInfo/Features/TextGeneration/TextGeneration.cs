@@ -4260,9 +4260,7 @@ namespace Digi.BuildInfo.Features
 
                             MyMissileAmmoDefinition missile = (MyMissileAmmoDefinition)ammo;
                             if(missile.MissileExplosionDamage != 0
-#if VERSION_202
                             || missile.MissileRicochetDamage != 0
-#endif
                             || missile.MissileHealthPool != 0)
                             {
                                 validWeapon = true;
@@ -4543,19 +4541,20 @@ namespace Digi.BuildInfo.Features
                             float explosiveDamage = missile.MissileExplosionRadius > 0 ? missile.MissileExplosionDamage : 0;
                             bool showExplosiveDamage = explosiveDamage > 0;
 
-#if VERSION_202
                             // ricochet system is activated
                             // how it normally works: https://steamcommunity.com/sharedfiles/filedetails/?id=2963715247
                             // but it can be changed into bonus damage or can prevent penetration entirely, going through those scenarios below
-                            if(missile.MissileRicochetAngle >= 0 && missile.MissileRicochetProbability > 0)
+                            if(missile.MissileMinRicochetAngle >= 0 && missile.MissileMinRicochetProbability > 0)
                             {
-                                int ricochetChance = (int)Math.Round(missile.MissileRicochetProbability * 100);
-                                float ricochetSurfaceAngle = 90 - missile.MissileRicochetAngle; // swapped normal angle to surface angle
+                                // TODO: display MaxAngle and MaxProbability somehow?
+
+                                int ricochetChance = (int)Math.Round(missile.MissileMinRicochetProbability * 100);
+                                float ricochetSurfaceAngle = 90 - missile.MissileMinRicochetAngle; // swapped normal angle to surface angle
                                 float ricochetDamage = missile.MissileRicochetDamage;
 
                                 bool detonatesOnRicochet = missile.MissileRicochetDamage >= penetrationPool;
-                                bool ricochetAllChances = missile.MissileRicochetProbability >= 1f;
-                                bool ricochetAllAngles = missile.MissileRicochetAngle == 0f;
+                                bool ricochetAllChances = missile.MissileMinRicochetProbability >= 1f;
+                                bool ricochetAllAngles = missile.MissileMinRicochetAngle == 0f;
                                 bool alwaysRicochets = ricochetAllChances && ricochetAllAngles;
 
                                 bool isNormalRicochet = true;
@@ -4680,7 +4679,6 @@ namespace Digi.BuildInfo.Features
                                     tooltip.Color(COLOR_STAT_RICOCHET).Append("Ricochet<reset> (none)\n");
                                 }
                             }
-#endif
 
                             if(showPenetrationDamage)
                             {
