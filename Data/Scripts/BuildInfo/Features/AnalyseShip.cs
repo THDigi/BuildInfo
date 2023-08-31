@@ -390,7 +390,7 @@ namespace Digi.BuildInfo.Features
         {
             if(def == null)
             {
-                Objects objects = Inexistent.GetOrAdd(defId);
+                Objects objects = Inexistent.GetValueOrNew(defId);
                 objects.Blocks++;
                 return;
             }
@@ -400,7 +400,7 @@ namespace Digi.BuildInfo.Features
                 string dlc;
                 if(ArmorSkinDLC.TryGetValue(skin, out dlc))
                 {
-                    Objects objects = DLCs.GetOrAdd(dlc);
+                    Objects objects = DLCs.GetValueOrNew(dlc);
                     objects.SkinnedBlocks++;
                 }
                 else
@@ -408,7 +408,7 @@ namespace Digi.BuildInfo.Features
                     ModId modId;
                     if(ArmorSkinMods.TryGetValue(skin, out modId))
                     {
-                        Objects objects = Mods.GetOrAdd(modId);
+                        Objects objects = Mods.GetValueOrNew(modId);
                         objects.SkinnedBlocks++;
                     }
                 }
@@ -418,7 +418,7 @@ namespace Digi.BuildInfo.Features
             {
                 foreach(string dlc in def.DLCs)
                 {
-                    Objects objects = DLCs.GetOrAdd(dlc);
+                    Objects objects = DLCs.GetValueOrNew(dlc);
                     objects.Blocks++;
                 }
             }
@@ -431,13 +431,13 @@ namespace Digi.BuildInfo.Features
                 {
                     if(!Mods.ContainsKey(modId))
                     {
-                        Objects objects = ModsChangingVanilla.GetOrAdd(modId);
+                        Objects objects = ModsChangingVanilla.GetValueOrNew(modId);
                         objects.Blocks++;
                     }
                 }
                 else
                 {
-                    Objects objects = Mods.GetOrAdd(modId);
+                    Objects objects = Mods.GetValueOrNew(modId);
                     objects.Blocks++;
                 }
             }

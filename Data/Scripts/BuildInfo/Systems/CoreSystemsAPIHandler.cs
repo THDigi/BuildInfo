@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using CoreSystems.Api;
-using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
@@ -64,7 +63,7 @@ namespace Digi.BuildInfo.Systems
             {
                 if(blockDef is MyWeaponBlockDefinition || blockDef is MyConveyorSorterDefinition)
                 {
-                    weaponSubtypes.GetOrAdd(blockDef.Id.SubtypeName).Add(blockDef.Id.TypeId);
+                    weaponSubtypes.GetValueOrNew(blockDef.Id.SubtypeName).Add(blockDef.Id.TypeId);
                 }
             }
 
@@ -95,10 +94,10 @@ namespace Digi.BuildInfo.Systems
                         // HACK: vanilla replacement, SessionSupport.LoadVanillaData() https://github.com/sstixrud/WeaponCore/blob/master/Data/Scripts/CoreSystems/Session/SessionSupport.cs#L1104
                         switch(mount.SubtypeId)
                         {
-                            case "LargeGatlingTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
-                            case "LargeMissileTurret": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)).Add(weaponDef); continue;
-                            case "SmallGatlingGun": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)).Add(weaponDef); continue;
-                            case "SmallMissileLauncher": Weapons.GetOrAdd(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)).Add(weaponDef); continue;
+                            case "LargeGatlingTurret": Weapons.GetValueOrNew(new MyDefinitionId(typeof(MyObjectBuilder_LargeGatlingTurret), null)).Add(weaponDef); continue;
+                            case "LargeMissileTurret": Weapons.GetValueOrNew(new MyDefinitionId(typeof(MyObjectBuilder_LargeMissileTurret), null)).Add(weaponDef); continue;
+                            case "SmallGatlingGun": Weapons.GetValueOrNew(new MyDefinitionId(typeof(MyObjectBuilder_SmallGatlingGun), null)).Add(weaponDef); continue;
+                            case "SmallMissileLauncher": Weapons.GetValueOrNew(new MyDefinitionId(typeof(MyObjectBuilder_SmallMissileLauncher), null)).Add(weaponDef); continue;
                         }
 
                         List<MyObjectBuilderType> types;
@@ -107,7 +106,7 @@ namespace Digi.BuildInfo.Systems
                             foreach(MyObjectBuilderType type in types)
                             {
                                 MyDefinitionId defId = new MyDefinitionId(type, subtype);
-                                Weapons.GetOrAdd(defId).Add(weaponDef);
+                                Weapons.GetValueOrNew(defId).Add(weaponDef);
                             }
                         }
                         else
@@ -126,7 +125,7 @@ namespace Digi.BuildInfo.Systems
                         MyPhysicalItemDefinition physDef;
                         if(MyDefinitionManager.Static.TryGetPhysicalItemDefinition(defId, out physDef))
                         {
-                            Weapons.GetOrAdd(defId).Add(weaponDef);
+                            Weapons.GetValueOrNew(defId).Add(weaponDef);
                         }
                         else
                         {

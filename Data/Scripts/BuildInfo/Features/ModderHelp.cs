@@ -538,11 +538,11 @@ namespace Digi.BuildInfo.Features
 
                             if(airTightFaces == 0)
                             {
-                                hintData.RecommendIsAirTightFalse.GetOrAdd(blockDef.Context.CurrentFile).Add(blockDef);
+                                hintData.RecommendIsAirTightFalse.GetValueOrNew(blockDef.Context.CurrentFile).Add(blockDef);
                             }
                             else if(airTightFaces == totalFaces)
                             {
-                                hintData.RecommendIsAirTightTrue.GetOrAdd(blockDef.Context.CurrentFile).Add(blockDef);
+                                hintData.RecommendIsAirTightTrue.GetValueOrNew(blockDef.Context.CurrentFile).Add(blockDef);
                             }
                         }
                     }

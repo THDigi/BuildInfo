@@ -125,7 +125,7 @@ namespace Digi.BuildInfo.VanillaData
 
                 if(blockDef.Context.IsBaseGame)
                 {
-                    perType.GetOrAdd(def.Id.TypeId).Add(def.Id.SubtypeName);
+                    perType.GetValueOrNew(def.Id.TypeId).Add(def.Id.SubtypeName);
                 }
             }
 

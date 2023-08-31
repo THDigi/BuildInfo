@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                             Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(screen.ScreenWidth, screen.ScreenHeight, screen.TextureResolution);
 
                             Vector2I key = Vector2I.Round(info.SurfaceSize);
-                            grouped.GetOrAdd(key).Add(new LCDDefInfo(fd, i, info));
+                            grouped.GetValueOrNew(key).Add(new LCDDefInfo(fd, i, info));
                         }
                     }
 

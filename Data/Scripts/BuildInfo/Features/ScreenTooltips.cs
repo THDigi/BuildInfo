@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.Features.GUI;
 using Digi.BuildInfo.Systems;
-using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.ModAPI;
@@ -46,7 +45,7 @@ namespace Digi.BuildInfo.Features
             if(Tooltips.Count == 0)
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
 
-            Tooltips.GetOrAdd(groupId).Add(new Tooltip(area, tooltip, action));
+            Tooltips.GetValueOrNew(groupId).Add(new Tooltip(area, tooltip, action));
         }
 
         public void AddTooltips(string groupId, List<Tooltip> tooltips)
@@ -54,7 +53,7 @@ namespace Digi.BuildInfo.Features
             if(Tooltips.Count == 0)
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
 
-            List<Tooltip> list = Tooltips.GetOrAdd(groupId);
+            List<Tooltip> list = Tooltips.GetValueOrNew(groupId);
 
             foreach(Tooltip tooltip in tooltips)
             {

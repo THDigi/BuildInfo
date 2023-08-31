@@ -28,24 +28,6 @@ namespace Digi.BuildInfo.Utilities
             return str.IndexOf(find, StringComparison.InvariantCultureIgnoreCase) > -1;
         }
 
-        /// <summary>
-        /// Get value at key if it exists, otherwise create an instance of TValue, add it to dictionary and return it.
-        /// </summary>
-        public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> instancer = null) where TValue : class, new()
-        {
-            TValue value;
-            if(dictionary.TryGetValue(key, out value))
-                return value;
-
-            if(instancer != null)
-                value = instancer.Invoke();
-            else
-                value = new TValue();
-
-            dictionary.Add(key, value);
-            return value;
-        }
-
         public static void AddSetReader<T>(this HashSet<T> set, HashSetReader<T> read)
         {
             foreach(T item in read)

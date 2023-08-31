@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Utilities
                 if(b1.MountPoints == null || b1.MountPoints.Length == 0)
                     continue;
 
-                var b1dict = MountRestrictions.GetOrAdd(b1);
+                var b1dict = MountRestrictions.GetValueOrNew(b1);
 
                 for(int b2idx = 0; b2idx < BlockDefs.Count; b2idx++)
                 {
@@ -126,7 +126,7 @@ namespace Digi.BuildInfo.Utilities
                             if(!((b1m.ExclusionMask & b2m.PropertiesMask) == 0 && (b1m.PropertiesMask & b2m.ExclusionMask) == 0))
                             {
                                 string name = b2.DisplayNameText;
-                                var list = b1dict.GetOrAdd(b1mIndex);
+                                var list = b1dict.GetValueOrNew(b1mIndex);
                                 if(!list.Contains(name))
                                     list.Add(name);
                             }

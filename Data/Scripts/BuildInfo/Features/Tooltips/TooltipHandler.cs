@@ -110,11 +110,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                         if(comp.Definition == null)
                             continue;
 
-                        TmpComponentInBlocks.GetOrAdd(comp.Definition.Id).Add(blockDef);
+                        TmpComponentInBlocks.GetValueOrNew(comp.Definition.Id).Add(blockDef);
 
                         if(comp.Definition != comp.DeconstructItem)
                         {
-                            TmpComponentFromGrindingBlocks.GetOrAdd(comp.DeconstructItem.Id).Add(blockDef);
+                            TmpComponentFromGrindingBlocks.GetValueOrNew(comp.DeconstructItem.Id).Add(blockDef);
                         }
                     }
                 }
@@ -133,7 +133,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                         {
                             foreach(MyDefinitionId magId in wpDef.AmmoMagazinesId)
                             {
-                                TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponBlockDef, wpDef));
+                                TmpMagUsedIn.GetValueOrNew(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponBlockDef, wpDef));
                             }
                         }
                     }
@@ -154,7 +154,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                             foreach(MyBlueprintDefinitionBase bp in bpClass)
                             {
-                                TmpBpUsedIn.GetOrAdd(bp.Id).Add(prodDef);
+                                TmpBpUsedIn.GetValueOrNew(bp.Id).Add(prodDef);
 
                                 if(isGasGenOrTank)
                                 {
@@ -163,7 +163,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                                         // is it a bottle item?
                                         if(MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_GasContainerObject), preReq.Id.TypeId))
                                         {
-                                            TmpItemRefillIn.GetOrAdd(preReq.Id).Add(prodDef);
+                                            TmpItemRefillIn.GetValueOrNew(preReq.Id).Add(prodDef);
                                         }
                                     }
                                 }
@@ -185,7 +185,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     {
                         foreach(MyReactorDefinition.FuelInfo fuelInfo in reactorDef.FuelInfos)
                         {
-                            TmpBlockFuel.GetOrAdd(fuelInfo.FuelId).Add(reactorDef);
+                            TmpBlockFuel.GetValueOrNew(fuelInfo.FuelId).Add(reactorDef);
                         }
                     }
                 }
@@ -193,7 +193,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     MyParachuteDefinition parachuteDef = blockDef as MyParachuteDefinition;
                     if(parachuteDef != null)
                     {
-                        TmpBlockFuel.GetOrAdd(parachuteDef.MaterialDefinitionId).Add(parachuteDef);
+                        TmpBlockFuel.GetValueOrNew(parachuteDef.MaterialDefinitionId).Add(parachuteDef);
                     }
                 }
                 {
@@ -206,9 +206,9 @@ namespace Digi.BuildInfo.Features.Tooltips
                                 continue;
 
                             if(offer.StoreItemType == StoreItemTypes.Offer)
-                                TmpVendingBuy.GetOrAdd(offer.Item.Value).Add(vendingDef);
+                                TmpVendingBuy.GetValueOrNew(offer.Item.Value).Add(vendingDef);
                             else
-                                TmpVendingSell.GetOrAdd(offer.Item.Value).Add(vendingDef);
+                                TmpVendingSell.GetValueOrNew(offer.Item.Value).Add(vendingDef);
                         }
                     }
                 }
@@ -229,7 +229,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                     {
                         foreach(MyDefinitionId magId in wpDef.AmmoMagazinesId)
                         {
-                            TmpMagUsedIn.GetOrAdd(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponItemDef, wpDef));
+                            TmpMagUsedIn.GetValueOrNew(magId).Add(new MyTuple<MyDefinitionBase, MyWeaponDefinition>(weaponItemDef, wpDef));
                         }
                     }
                 }
