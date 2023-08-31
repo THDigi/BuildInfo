@@ -4,11 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Digi.BuildInfo.Utilities;
+using Digi.BuildInfo.VanillaData;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
+using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Utils;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -18,29 +22,25 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
-        void GetFlags(string arg, ref string sizeName, ref MyCubeSize? sizeFilter, ref bool isDescending)
+        public override void PrintHelp(StringBuilder sb)
         {
-            if(arg == null)
-                return;
+            sb.Append(MainAlias).Append(" blocks <mass|hp|volume> [sg|lg] [desc]").NewLine();
+            sb.Append(MainAlias).Append(" comps <mass|hp|volume> [desc]").NewLine();
+            sb.Append(MainAlias).Append(" lcds [group]").NewLine();
+            sb.Append("  Shows a sorted list of the specified things; can be exported to file.").NewLine();
+        }
 
-            if(arg.Equals("sg", ChatCommandHandler.StringCompare))
-            {
-                sizeName = "smallgrid ";
-                sizeFilter = MyCubeSize.Small;
-                return;
-            }
+        struct LCDDefInfo
+        {
+            public readonly MyFunctionalBlockDefinition Definition;
+            public readonly int ScreenIndex;
+            public readonly Hardcoded.TextSurfaceInfo Info;
 
-            if(arg.Equals("lg", ChatCommandHandler.StringCompare))
+            public LCDDefInfo(MyFunctionalBlockDefinition definition, int screenIndex, Hardcoded.TextSurfaceInfo info)
             {
-                sizeName = "largegrid ";
-                sizeFilter = MyCubeSize.Large;
-                return;
-            }
-
-            if(arg.Equals("desc", ChatCommandHandler.StringCompare))
-            {
-                isDescending = true;
-                return;
+                Definition = definition;
+                ScreenIndex = screenIndex;
+                Info = info;
             }
         }
 
@@ -49,9 +49,121 @@ namespace Digi.BuildInfo.Features.ChatCommands
             string type = args.Get(0);
             string sort = args.Get(1);
 
+            if(args.Count < 1 || type == null)
+            {
+                PrintChat("Sort what?", FontsHandler.RedSh);
+                PrintHelpToChat();
+                return;
+            }
+
+            if(type.Equals("lcds", ChatCommandHandler.StringCompare))
+            {
+                IEnumerable<MyFunctionalBlockDefinition> defs = Main.Caches.BlockDefs.OfType<MyFunctionalBlockDefinition>().Where(d => d.ScreenAreas != null && d.ScreenAreas.Count > 0);
+
+                if(sort != null && sort.Equals("group", ChatCommandHandler.StringCompare))
+                {
+                    Dictionary<Vector2I, List<LCDDefInfo>> grouped = new Dictionary<Vector2I, List<LCDDefInfo>>();
+
+                    foreach(MyFunctionalBlockDefinition fd in defs)
+                    {
+                        for(int i = 0; i < fd.ScreenAreas.Count; i++)
+                        {
+                            ScreenArea screen = fd.ScreenAreas[i];
+                            Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(screen.ScreenWidth, screen.ScreenHeight, screen.TextureResolution);
+
+                            Vector2I key = Vector2I.Round(info.SurfaceSize);
+                            grouped.GetOrAdd(key).Add(new LCDDefInfo(fd, i, info));
+                        }
+                    }
+
+                    StringBuilder sb = new StringBuilder(1024);
+
+                    foreach(KeyValuePair<Vector2I, List<LCDDefInfo>> kv in grouped)
+                    {
+                        Vector2I size = kv.Key;
+                        sb.Append(" === ").Append(size.X).Append(" x ").Append(size.Y).Append(" ").Append('=', 30).Append('\n');
+
+                        sb.Append('\n');
+
+                        foreach(LCDDefInfo defInfo in kv.Value.OrderBy(d => d.Definition.DisplayNameText))
+                        {
+                            sb.Append(defInfo.Definition.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ")
+                                .Append(defInfo.Definition.DisplayNameText)
+                                .Append(" | surface #").Append(defInfo.ScreenIndex)
+                                .Append(" | surfacesize: ").RoundedNumber(defInfo.Info.SurfaceSize.X, 3).Append("x").RoundedNumber(defInfo.Info.SurfaceSize.Y, 3)
+                                .Append(" | texturesize: ").RoundedNumber(defInfo.Info.TextureSize.X, 3).Append("x").RoundedNumber(defInfo.Info.TextureSize.Y, 3)
+                                .Append(" | aspectratio: ").RoundedNumber(defInfo.Info.AspectRatio.X, 3).Append(":").RoundedNumber(defInfo.Info.AspectRatio.Y, 3)
+                                .Append('\n');
+                        }
+
+                        sb.Append('\n');
+                        sb.Append('\n');
+                    }
+
+                    Display("LCDs grouped by size", sb.ToString());
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder(1024);
+
+                    Dictionary<Vector2I, int> uniqueSizes = new Dictionary<Vector2I, int>();
+
+                    foreach(MyFunctionalBlockDefinition fd in defs)
+                    {
+                        sb.Append(fd.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ")
+                            .Append(fd.DisplayNameText)
+                            .Append('\n');
+
+                        if(fd is MyTextPanelDefinition && fd.ScreenAreas.Count == 4)
+                        {
+                            sb.Append("    (these surfaces are used based on the LCD rotation slider)\n");
+                        }
+
+                        for(int i = 0; i < fd.ScreenAreas.Count; i++)
+                        {
+                            ScreenArea screen = fd.ScreenAreas[i];
+                            Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(screen.ScreenWidth, screen.ScreenHeight, screen.TextureResolution);
+
+                            Vector2I key = Vector2I.Round(info.SurfaceSize);
+                            uniqueSizes[key] = uniqueSizes.GetValueOrDefault(key, 0) + 1;
+
+                            sb.Append("    #").Append(i)
+                                .Append(" | surface: ").RoundedNumber(info.SurfaceSize.X, 3).Append(" x ").RoundedNumber(info.SurfaceSize.Y, 3)
+                                .Append(" | texture: ").RoundedNumber(info.TextureSize.X, 3).Append(" x ").RoundedNumber(info.TextureSize.Y, 3)
+                                .Append(" | aspect: ").RoundedNumber(info.AspectRatio.X, 3).Append(":").RoundedNumber(info.AspectRatio.Y, 3)
+                                .Append(" | name: ").Append(MyTexts.GetString(screen.DisplayName));
+
+                            if(!string.IsNullOrEmpty(screen.Script))
+                                sb.Append(" | TSS: ").Append(screen.Script);
+
+                            //.Append(" | material: ").Append(screen.Name) // this is material name, not useful to anyone reading this
+
+                            sb.Append('\n');
+                        }
+
+                        sb.Append('\n');
+                    }
+
+                    sb.Append('\n');
+                    sb.Append('\n');
+                    sb.Append("=== Unique surface sizes (rounded to integer) ===").Append('\n');
+
+                    foreach(KeyValuePair<Vector2I, int> kv in uniqueSizes.OrderByDescending(kv => kv.Value)) // sorted by popularity
+                    {
+                        Vector2I size = kv.Key;
+                        sb.Append("  ").Append(size.X).Append(" x ").Append(size.Y).Append("  (").Append(kv.Value).Append(" surfaces)").Append('\n');
+                    }
+
+                    Display("LCDs", sb.ToString());
+                }
+
+                return;
+            }
+
             if(args.Count < 2 || type == null || sort == null)
             {
-                PrintChat("Requires 2 arguments! First is the kind of things to list and second is what to sort them by.", FontsHandler.RedSh);
+                PrintChat("Sort what?", FontsHandler.RedSh);
+                PrintHelpToChat();
                 return;
             }
 
@@ -100,13 +212,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     sb.Append(num++).Append(". ");
 
                     if(sizeFilter == null)
-                        sb.Append(blockDef.CubeSize == MyCubeSize.Large ? "[LargeGrid] " : "[SmallGrid] ");
+                        sb.Append(blockDef.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ");
 
                     sb.Append(blockDef.DisplayNameText)
                         .Append(" | ").MassFormat(blockDef.HasPhysics ? blockDef.Mass : 0)
                         .Append(" | ").Number(blockDef.MaxIntegrity).Append(" hp")
                         .Append(" | ").VolumeFormat((blockDef.Size * cellSize).Volume)
-                        .Append("\n");
+                        .Append('\n');
                 }
 
                 Display(title, sb.ToString());
@@ -147,7 +259,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                         .Append(" | ").MassFormat(compDef.Mass)
                         .Append(" | ").Number(compDef.MaxIntegrity).Append(" hp")
                         .Append(" | ").VolumeFormat(compDef.Volume)
-                        .Append("\n");
+                        .Append('\n');
                 }
 
                 Display(title, sb.ToString());
@@ -157,11 +269,30 @@ namespace Digi.BuildInfo.Features.ChatCommands
             PrintChat($"Unknown type arg (1st): {type}", FontsHandler.RedSh);
         }
 
-        public override void PrintHelp(StringBuilder sb)
+        void GetFlags(string arg, ref string sizeName, ref MyCubeSize? sizeFilter, ref bool isDescending)
         {
-            sb.Append(MainAlias).Append(" <blocks|comps> <mass|hp|volume> [sg|lg] [desc]").NewLine();
-            sb.Append("  Shows a list of arg1 sorted by arg2 ascending.").NewLine();
-            sb.Append("  Optionally can filter by grid size and/or sort descending (desc can be 3rd arg too).").NewLine();
+            if(arg == null)
+                return;
+
+            if(arg.Equals("sg", ChatCommandHandler.StringCompare))
+            {
+                sizeName = "smallgrid ";
+                sizeFilter = MyCubeSize.Small;
+                return;
+            }
+
+            if(arg.Equals("lg", ChatCommandHandler.StringCompare))
+            {
+                sizeName = "largegrid ";
+                sizeFilter = MyCubeSize.Large;
+                return;
+            }
+
+            if(arg.Equals("desc", ChatCommandHandler.StringCompare))
+            {
+                isDescending = true;
+                return;
+            }
         }
 
         void Display(string title, string text)
@@ -175,32 +306,46 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         void Export(string title, string text)
         {
-            StringBuilder FileNameSB = new StringBuilder(256);
-            FileNameSB.Append(title);
-            FileNameSB.Append(" ");
-            FileNameSB.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
-            FileNameSB.Append(".txt");
+            StringBuilder tempSB = new StringBuilder(4096);
+
+            tempSB.Clear();
+            tempSB.Append(title);
+            tempSB.Append(" ");
+            tempSB.Append(DateTime.Now.ToString("yyyy-MM-dd HHmm"));
+            tempSB.Append(".txt");
 
             foreach(char invalidChar in MyUtils.GetFixedInvalidFileNameChars())
             {
-                FileNameSB.Replace(invalidChar, '_');
+                tempSB.Replace(invalidChar, '_');
             }
 
-            while(FileNameSB.IndexOf("__") != -1)
+            while(tempSB.IndexOf("__") != -1)
             {
-                FileNameSB.Replace("__", "_");
+                tempSB.Replace("__", "_");
             }
 
-            string fileName = FileNameSB.ToString();
-            string modStorageName = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+            string fileName = tempSB.ToString();
+
+
+            tempSB.Clear();
+            tempSB.Append("Date: ").Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")).Append('\n');
+            tempSB.Append("Session name: ").Append(MyAPIGateway.Session.Name).Append('\n');
+            tempSB.Append("Game version: ").Append(MyAPIGateway.Session.Version.ToString()).Append('\n');
+            tempSB.Append("Mods: ").Append(MyAPIGateway.Session.Mods.Count).Append('\n');
+            tempSB.Append('\n');
+            tempSB.Append(title);
+            tempSB.Append('\n');
+            tempSB.Append(text);
+
 
             TextWriter writer = null;
             try
             {
                 writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(fileName, typeof(AnalyseShip));
-                writer.Write(text);
+                writer.Write(tempSB);
                 writer.Flush();
 
+                string modStorageName = MyAPIGateway.Utilities?.GamePaths?.ModScopeName ?? "(ERROR)";
                 Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Exported to: %appdata%/SpaceEngineers/Storage/{modStorageName}/{fileName}", FontsHandler.GreenSh);
             }
             catch(Exception e)

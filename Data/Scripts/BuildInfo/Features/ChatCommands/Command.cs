@@ -26,6 +26,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
             Utils.ShowColoredChatMessage(MainAlias, message, senderFont: commandFont);
         }
 
+        public void PrintHelpToChat()
+        {
+            StringBuilder sb = new StringBuilder(256);
+            PrintHelp(sb);
+            PrintChat(sb.ToString());
+        }
+
         /// <summary>
         /// Execute the command with given args.
         /// NOTE: <paramref name="parser"/> can be null.
