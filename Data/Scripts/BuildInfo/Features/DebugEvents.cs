@@ -34,6 +34,47 @@ using VRage.Game.Entity;
 
 namespace Digi.BuildInfo.Features
 {
+    //[MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipWelder), false)]
+    //public class ShipWelderHpTest : MyGameLogicComponent
+    //{
+    //    IMyCubeBlock Block;
+
+    //    public override void Init(MyObjectBuilder_EntityBase objectBuilder)
+    //    {
+    //        Block = (IMyCubeBlock)Entity;
+    //        NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+    //    }
+
+    //    float PrevHp = -1;
+
+    //    IMyHudNotification Notify;
+
+    //    public override void UpdateAfterSimulation()
+    //    {
+    //        float hp = Block.SlimBlock.Integrity;
+
+    //        if(PrevHp < 0)
+    //        {
+    //            PrevHp = hp;
+    //            return;
+    //        }
+
+    //        float deltaHp = hp - PrevHp;
+
+    //        if(Math.Abs(deltaHp) > 0.01f)
+    //        {
+    //            if(Notify == null)
+    //                Notify = MyAPIGateway.Utilities.CreateNotification("", 500, "Debug");
+
+    //            Notify.Hide();
+    //            Notify.Text = $"{Block}: {(deltaHp < 0 ? "" : "+")}{deltaHp}";
+    //            Notify.Show();
+    //        }
+
+    //        PrevHp = hp;
+    //    }
+    //}
+
     public class DebugEvents : ModComponent
     {
         // cross reference/testing
@@ -78,7 +119,27 @@ namespace Digi.BuildInfo.Features
 
             //DumpActions();
             //DumpTerminalProperties();
+
+            //MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(0, (obj, info) =>
+            //{
+            //    DamagePerEnt[obj] = DamagePerEnt.GetValueOrDefault(obj, 0) + 1;
+            //});
+
+            //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
+
+        //Dictionary<object, int> DamagePerEnt = new Dictionary<object, int>();
+
+        //public override void UpdateAfterSim(int tick)
+        //{
+        //    foreach(var kv in DamagePerEnt)
+        //    {
+        //        MyAPIGateway.Utilities.ShowNotification($"{kv.Key}: {kv.Value}x", 16);
+        //    }
+
+        //    DamagePerEnt.Clear();
+        //}
+
 
         public override void UnregisterComponent()
         {

@@ -2063,6 +2063,15 @@ namespace Digi.BuildInfo.Features
                     DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
                 }
 
+                if(!Hardcoded.CanThrustDamageBlock(MyCubeSize.Small, def))
+                {
+                    GetLine().Separator().Color(COLOR_GOOD).Append("Resists small thrust flame");
+
+                    SimpleTooltip("Large-grid thrusts damage all blocks." +
+                        "\nSmall-grid thrusts only damage blocks with DeformationRatio larger than 0.25." +
+                        "\nCaution: Thrust flames penetrate and will damage blocks behind resistant blocks.");
+                }
+
                 if(buildModels)
                 {
                     bool customBuildMounts = false;

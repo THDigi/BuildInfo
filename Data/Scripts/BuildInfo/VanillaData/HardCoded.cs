@@ -543,6 +543,12 @@ namespace Digi.BuildInfo.VanillaData
         public const string Thrust_DummyNoDamageSuffix = "_nodamage";
         public const string Thrust_DummyGlareSuffix = "_glare";
 
+        // from MyThrust.DamageGrid()
+        public static bool CanThrustDamageBlock(MyCubeSize thrustSize, MyCubeBlockDefinition victimDef)
+        {
+            return (thrustSize == MyCubeSize.Large || victimDef.DeformationRatio > 0.25);
+        }
+
         // from MyAirVent.VentDummy
         public const string AirVent_DummyName = "vent_001";
 
