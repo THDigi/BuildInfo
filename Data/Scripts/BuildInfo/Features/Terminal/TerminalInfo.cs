@@ -217,9 +217,31 @@ namespace Digi.BuildInfo.Features.Terminal
             //Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
         }
 
-        private void Add(MyObjectBuilderType blockType, CustomInfoCall call)
+        void Add(MyObjectBuilderType blockType, CustomInfoCall call)
         {
             formatLookup.Add(blockType, call);
+        }
+
+        // Gets called when local client clicks on a block in the terminal.
+        // Used to know the currently viewed block in the terminal.
+        void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
+        {
+            try
+            {
+                if(SelectingSet.Add(block))
+                {
+                    SelectingList.Add(block);
+                }
+
+                LastSelected = block;
+
+                // can't know when this event stops being called in rapid succession (for multi-select), so have to check next tick.
+                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         public override void UpdateAfterSim(int tick)
@@ -232,10 +254,11 @@ namespace Digi.BuildInfo.Features.Terminal
                 {
                     ViewedBlockChanged(viewedInTerminal, LastSelected);
 
-                    // HACK: required to avoid getting 2 blocks as selected when starting from a fast-refreshing block (e.g. airvent) and selecting a non-refreshing one (e.g. cargo container)
+                    // HACK: required to avoid false-multiselect from a block that just updated.
+                    // Repro: airvent in sealed room, selecting it makes it trigger CustomControlGetter every tick; then select a cargo container.
                     if(viewedInTerminal != null && SelectingList.Count > 1)
                     {
-                        // Note: cannot be replaced by SetDetailedInfoDirty()
+                        // NOTE: cannot be replaced by SetDetailedInfoDirty()
                         bool orig = viewedInTerminal.ShowInToolbarConfig;
                         viewedInTerminal.ShowInToolbarConfig = !orig;
                         viewedInTerminal.ShowInToolbarConfig = orig;
@@ -274,27 +297,6 @@ namespace Digi.BuildInfo.Features.Terminal
             }
         }
 
-        // Gets called when local client clicks on a block in the terminal.
-        // Used to know the currently viewed block in the terminal.
-        void TerminalCustomControlGetter(IMyTerminalBlock block, List<IMyTerminalControl> controls)
-        {
-            try
-            {
-                if(SelectingSet.Add(block))
-                {
-                    SelectingList.Add(block);
-                }
-
-                LastSelected = block;
-
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
-        }
-
         void ViewedBlockChanged(IMyTerminalBlock oldBlock, IMyTerminalBlock newBlock)
         {
             if(oldBlock != null)
@@ -310,17 +312,17 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(newBlock != null)
             {
-                if(!formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
-                    return; // ignore blocks that don't need stats
-
                 viewedInTerminal = newBlock;
 
                 cursorCheckAfterTick = Main.Tick + 10;
 
-                newBlock.AppendingCustomInfo += CustomInfo;
-                newBlock.PropertiesChanged += PropertiesChanged;
+                if(formatLookup.TryGetValue(newBlock.BlockDefinition.TypeId, out currentFormatCall))
+                {
+                    newBlock.AppendingCustomInfo += CustomInfo;
+                    newBlock.PropertiesChanged += PropertiesChanged;
 
-                UpdateDetailInfo(force: true);
+                    UpdateDetailInfo(force: true);
+                }
 
                 if(oldBlock == null || oldBlock.CubeGrid != newBlock.CubeGrid)
                 {
@@ -332,7 +334,8 @@ namespace Digi.BuildInfo.Features.Terminal
                 ResourceStats.Reset("deselected");
             }
 
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (viewedInTerminal != null));
+            bool needsUpdate = (viewedInTerminal != null);
+            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, needsUpdate);
         }
 
         int RefreshedAtTick = 0;
