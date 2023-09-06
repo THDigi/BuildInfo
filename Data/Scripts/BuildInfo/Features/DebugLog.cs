@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
@@ -22,14 +23,13 @@ namespace Digi.BuildInfo.Features
 
         struct LogMsg
         {
-            public readonly int ExpiresAtTick;
+            public readonly int LoggedAtTick;
             public readonly string CallerName;
             public readonly string Message;
 
             public LogMsg(string callerName, string message)
             {
-                // NOTE: not designed for this to be configurable per-message!
-                ExpiresAtTick = BuildInfoMod.Instance.Tick + (Constants.TicksPerSecond * MessageExpireSeconds);
+                LoggedAtTick = BuildInfoMod.Instance.Tick;
                 CallerName = callerName;
                 Message = message;
             }
@@ -103,7 +103,11 @@ namespace Digi.BuildInfo.Features
 
             foreach(LogMsg line in LogList)
             {
-                sb.Color(new Color(55, 200, 155)).Append(line.CallerName).Append(": ").Color(Color.White).Append(line.Message).Append('\n');
+                TimeSpan time = TimeSpan.FromSeconds(line.LoggedAtTick / 60);
+
+                sb.Color(Color.Gray).Append(time.ToString(@"hh\:mm\:ss")).Append("  ")
+                  .Color(new Color(55, 200, 155)).Append(line.CallerName).Append(": ")
+                  .Color(Color.White).Append(line.Message).Append('\n');
             }
 
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, (LogList.Count > 0));
@@ -114,7 +118,10 @@ namespace Digi.BuildInfo.Features
             if(LogList == null || LogList.Count == 0)
                 return;
 
-            while(LogList.Count > 0 && LogList.Peek().ExpiresAtTick <= tick)
+            // NOTE: not designed for this to be configurable per-message!
+            int messageLife = (Constants.TicksPerSecond * MessageExpireSeconds);
+
+            while(LogList.Count > 0 && (LogList.Peek().LoggedAtTick + messageLife) <= tick)
             {
                 LogList.Dequeue();
             }
