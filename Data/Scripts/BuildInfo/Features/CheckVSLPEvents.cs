@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features
 {
     public class CheckVSLPEvents : ModComponent
     {
-        [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
+        [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: -10000)] // priority is sort order, ascending
         class CheckVSLPEventsSession : MySessionComponentBase
         {
             public CheckVSLPEventsSession()
@@ -318,19 +318,44 @@ namespace Digi.BuildInfo.Features
 
             protected void PreCheck(Delegate eventField)
             {
-                if(eventField != null)
+                if(eventField == null)
+                    return; // not assigned, all good
+
+                Delegate[] invocations = eventField.GetInvocationList();
+
+                #region // HACK: checking if the hooks are from other versions of this mod
+                bool allMine = true;
+                foreach(Delegate del in invocations)
                 {
-                    StringBuilder sb = new StringBuilder(256);
-                    sb.Clear();
-                    sb.Append($"Warning: '{ClassName}.{FieldName}' was assigned before mods loaded. If hooks are from plugins or game itself then you can ignore this.");
-                    sb.Append("\nHooks:");
-                    foreach(Delegate del in eventField.GetInvocationList())
+                    if(del.Target == null) // static method, isn't from this mod
                     {
-                        sb.Append(GetMethodDetails(del));
+                        allMine = false;
+                        break;
                     }
 
-                    PreCheckMessage = sb.ToString();
+                    string target = del.Target.ToString();
+                    if(!target.StartsWith("Digi.BuildInfo."))
+                    {
+                        allMine = false;
+                        break;
+                    }
                 }
+
+                if(allMine)
+                    return; // all invocations are from this mod or other versions of this mod.
+                #endregion
+
+                StringBuilder sb = new StringBuilder(256);
+                sb.Clear();
+                sb.Append($"Warning: '{ClassName}.{FieldName}' was assigned before mods loaded. If hooks are from plugins or game itself then you can ignore this.");
+                sb.Append("\nHooks:");
+
+                foreach(Delegate del in invocations)
+                {
+                    sb.Append(GetMethodDetails(del));
+                }
+
+                PreCheckMessage = sb.ToString();
             }
 
             protected string CheckEvent(Delegate eventField, Delegate callback)
