@@ -1126,7 +1126,22 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, value))
                 return s;
 
-            return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##########"));
+            if(digits <= 2)
+            {
+                // no need for zero-fill if 2 or less as it can't be mistaken with thousands
+                return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##"));
+            }
+
+            if(digits == 3)
+            {
+                if(BuildInfoMod.IsDevMod)
+                    Log.Error("Used 3-digit rounding! that's ambiguous, overriding to 4.");
+
+                digits = 4;
+            }
+
+            // use zero-fill up to 4 digits to avoid mistaking it with thousands
+            return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########"));
         }
 
         static char[] SplitExponent = new char[] { 'e' };

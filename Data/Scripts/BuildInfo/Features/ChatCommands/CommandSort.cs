@@ -90,9 +90,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
                             sb.Append(defInfo.Definition.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ")
                                 .Append(defInfo.Definition.DisplayNameText)
                                 .Append(" | surface #").Append(defInfo.ScreenIndex)
-                                .Append(" | surfacesize: ").RoundedNumber(defInfo.Info.SurfaceSize.X, 3).Append("x").RoundedNumber(defInfo.Info.SurfaceSize.Y, 3)
-                                .Append(" | texturesize: ").RoundedNumber(defInfo.Info.TextureSize.X, 3).Append("x").RoundedNumber(defInfo.Info.TextureSize.Y, 3)
-                                .Append(" | aspectratio: ").RoundedNumber(defInfo.Info.AspectRatio.X, 3).Append(":").RoundedNumber(defInfo.Info.AspectRatio.Y, 3)
+                                .Append(" | surfacesize: ").RoundedNumber(defInfo.Info.SurfaceSize.X, 4).Append("x").RoundedNumber(defInfo.Info.SurfaceSize.Y, 4)
+                                .Append(" | texturesize: ").RoundedNumber(defInfo.Info.TextureSize.X, 4).Append("x").RoundedNumber(defInfo.Info.TextureSize.Y, 4)
+                                .Append(" | aspectratio: ").RoundedNumber(defInfo.Info.AspectRatio.X, 4).Append(":").RoundedNumber(defInfo.Info.AspectRatio.Y, 4)
                                 .Append('\n');
                         }
 
@@ -128,9 +128,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
                             uniqueSizes[key] = uniqueSizes.GetValueOrDefault(key, 0) + 1;
 
                             sb.Append("    #").Append(i)
-                                .Append(" | surface: ").RoundedNumber(info.SurfaceSize.X, 3).Append(" x ").RoundedNumber(info.SurfaceSize.Y, 3)
-                                .Append(" | texture: ").RoundedNumber(info.TextureSize.X, 3).Append(" x ").RoundedNumber(info.TextureSize.Y, 3)
-                                .Append(" | aspect: ").RoundedNumber(info.AspectRatio.X, 3).Append(":").RoundedNumber(info.AspectRatio.Y, 3)
+                                .Append(" | surface: ").RoundedNumber(info.SurfaceSize.X, 4).Append(" x ").RoundedNumber(info.SurfaceSize.Y, 4)
+                                .Append(" | texture: ").RoundedNumber(info.TextureSize.X, 4).Append(" x ").RoundedNumber(info.TextureSize.Y, 4)
+                                .Append(" | aspect: ").RoundedNumber(info.AspectRatio.X, 4).Append(":").RoundedNumber(info.AspectRatio.Y, 4)
                                 .Append(" | name: ").Append(MyTexts.GetString(screen.DisplayName));
 
                             if(!string.IsNullOrEmpty(screen.Script))
