@@ -125,7 +125,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Error setting up tooltips for {physDef.Id}", Log.PRINT_MESSAGE);
+                    Log.Error($"Error setting up tooltips for {physDef.Id.ToString()}", Log.PRINT_MESSAGE);
                     Log.Error(e, null);
                 }
             }
@@ -408,11 +408,11 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     if(damagePerMag > 0)
                     {
-                        s.Append("\nOn container destroyed: explodes by ").Number(damagePerMag).Append("dmg/mag");
+                        s.Append("\nOn container destroyed: explodes by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag");
                     }
                     else if(damagePerMag < 0)
                     {
-                        s.Append("\nOn container destroyed: reduces other ammo explosion by ").Number(damagePerMag).Append("dmg/mag");
+                        s.Append("\nOn container destroyed: reduces other ammo explosion by ").RoundedNumber(damagePerMag, 5).Append("dmg/mag");
                     }
                 }
             }

@@ -1500,7 +1500,7 @@ namespace Digi.BuildInfo.Features
                     float hackMultiplier = 1f;
                     if(Main.EquipmentMonitor.HandTool != null && aimedBlock?.FatBlock != null) // HACK: HackSpeedMultiplier seems to be only used for hand-grinder
                     {
-                        MyRelationsBetweenPlayerAndBlock relation = aimedBlock.FatBlock.GetPlayerRelationToOwner();
+                        MyRelationsBetweenPlayerAndBlock relation = aimedBlock.FatBlock.GetUserRelationToOwner(localPlayer.IdentityId);
                         if(relation == MyRelationsBetweenPlayerAndBlock.Enemies || relation == MyRelationsBetweenPlayerAndBlock.Neutral)
                         {
                             hackMultiplier = MyAPIGateway.Session.HackSpeedMultiplier;
@@ -4280,7 +4280,7 @@ namespace Digi.BuildInfo.Features
                         }
                         default:
                         {
-                            Log.Error($"Warning: Unknown ammo type: {ammo.AmmoType} (#{ammoTypeIdx})");
+                            Log.Error($"Warning: Unknown ammo type: {MyEnum<MyAmmoType>.GetName(ammo.AmmoType)} (#{ammoTypeIdx.ToString()})");
                             break;
                         }
                     }
@@ -4869,7 +4869,7 @@ namespace Digi.BuildInfo.Features
                     tooltip.Append("On container destroyed: ").Color(COLOR_GOOD).Append("reduces other ammo explosion by ");
                 }
 
-                tooltip.Number(damagePerMag).Append(FontsHandler.IconExplode).Append("/mag<reset>\n");
+                tooltip.RoundedNumber(damagePerMag, 5).Append(FontsHandler.IconExplode).Append("/mag<reset>\n");
             }
 
             tooltip.TrimEndWhitespace();
@@ -4960,7 +4960,7 @@ namespace Digi.BuildInfo.Features
                 case CoreSystemsDef.ArmorDefinition.ArmorType.Heavy: sb.Append("Heavy"); break;
                 case CoreSystemsDef.ArmorDefinition.ArmorType.Light: sb.Append("Light"); break;
                 case CoreSystemsDef.ArmorDefinition.ArmorType.NonArmor: sb.Append("None"); break;
-                default: sb.Append(armorDef.Kind.ToString()); break;
+                default: sb.Append(MyEnum<CoreSystemsDef.ArmorDefinition.ArmorType>.GetName(armorDef.Kind)); break;
             }
 
             sb.Separator();
