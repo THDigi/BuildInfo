@@ -316,7 +316,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 bool overrideStatus = false;
 
-                if(Enabled && Main.Config.ToolbarActionStatus.Value)
+                if(Enabled && Main.Config.ToolbarActionStatus.Value && Main.Config.ToolbarStatusFontOverride.Value)
                 {
                     try
                     {
