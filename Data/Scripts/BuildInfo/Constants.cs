@@ -11,6 +11,7 @@ using Sandbox.ModAPI;
 using VRage;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Game.Definitions.SessionComponents;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
@@ -158,7 +159,7 @@ namespace Digi.BuildInfo
             "0.000000",
         };
 
-        public static string CurrencySuffix = "SC";
+        public static string CurrencyShortName { get; private set; } = "SC";
 
         public Constants(BuildInfoMod main) : base(main)
         {
@@ -167,7 +168,7 @@ namespace Digi.BuildInfo
 
         public override void RegisterComponent()
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+            GetBankingInfo();
         }
 
         public override void UnregisterComponent()
@@ -176,21 +177,18 @@ namespace Digi.BuildInfo
             Hardcoded.CleanRefs();
         }
 
-        public override void UpdateAfterSim(int tick)
+        void GetBankingInfo()
         {
-            // HACK: because it can be null in MP: https://support.keenswh.com/spaceengineers/pc/topic/01-190-101modapi-myapigateway-session-player-is-null-for-first-3-ticks-for-mp-clients
-            IMyPlayer localPlayer = MyAPIGateway.Session?.Player;
-            if(localPlayer != null)
+            var bankingId = MyDefinitionId.Parse("MyObjectBuilder_BankingSystemDefinition/BankingSystem");
+            var bankingDef = MyDefinitionManager.Static.GetDefinition(bankingId) as MyBankingSystemDefinition;
+            if(bankingDef != null)
             {
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
-
-                // HACK: only way to get currency short name is by getting it from a player or faction's balance string...
-                string balanceText = localPlayer.GetBalanceShortString();
-                if(balanceText != null)
-                {
-                    string[] parts = balanceText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    CurrencySuffix = parts[parts.Length - 1]; // last thing in the string must be the currency name
-                }
+                CurrencyShortName = bankingDef.CurrencyShortName.String;
+                Log.Info($"Found banking system definition, currency name: '{bankingDef.CurrencyFullName}', short name: '{bankingDef.CurrencyShortName}'");
+            }
+            else
+            {
+                Log.Error($"Can't find banking definition from id: {bankingId}");
             }
         }
 

@@ -431,13 +431,14 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder CurrencyFormat(this StringBuilder s, long money)
         {
             // game does this too, so why not.
+            // from MyBankingSystem.GetFormatedValue()
             if(money > 1000000000000L || money < -1000000000000L)
             {
                 money /= 1000000000000L;
-                return s.Append(money.ToString("N0")).Append(" T ").Append(Constants.CurrencySuffix);
+                return s.Append(money.ToString("N0")).Append(" T ").Append(Constants.CurrencyShortName);
             }
 
-            return s.Append(money.ToString("N0")).Append(" ").Append(Constants.CurrencySuffix);
+            return s.Append(money.ToString("N0")).Append(" ").Append(Constants.CurrencyShortName);
         }
 
         private static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
