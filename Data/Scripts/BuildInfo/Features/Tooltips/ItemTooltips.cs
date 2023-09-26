@@ -125,8 +125,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                 }
                 catch(Exception e)
                 {
-                    Log.Error($"Error setting up tooltips for {physDef.Id.ToString()}", Log.PRINT_MESSAGE);
-                    Log.Error(e, null);
+                    string msg = $"Error setting up tooltips for item: {physDef.Id.ToString()}";
+                    Log.Error($"{msg}\n{e}", msg);
                 }
             }
 
@@ -707,6 +707,12 @@ namespace Digi.BuildInfo.Features.Tooltips
 
         static void AddToList(Dictionary<string, Sizes> dict, string key, MyCubeSize cubeSize)
         {
+            if(key == null)
+            {
+                Log.Error("ItemTooltips.AddToList() :: Given key is null!");
+                return;
+            }
+
             Sizes currentSize = (cubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
             Sizes existingSize;
             if(dict.TryGetValue(key, out existingSize))

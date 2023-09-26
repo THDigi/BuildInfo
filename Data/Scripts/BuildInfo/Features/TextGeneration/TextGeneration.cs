@@ -4872,9 +4872,17 @@ namespace Digi.BuildInfo.Features
                 tooltip.RoundedNumber(damagePerMag, 5).Append(FontsHandler.IconExplode).Append("/mag<reset>\n");
             }
 
-            tooltip.TrimEndWhitespace();
-            Main.ItemTooltips.TooltipCrafting(tooltip, magDef, forTextBoxTooltip: true);
-            tooltip.TrimEndWhitespace().Append('\n');
+            try
+            {
+                tooltip.TrimEndWhitespace();
+                Main.ItemTooltips.TooltipCrafting(tooltip, magDef, forTextBoxTooltip: true);
+                tooltip.TrimEndWhitespace().Append('\n');
+            }
+            catch(Exception e)
+            {
+                string msg = $"Error generating tooltip for magazine: {magDef?.Id.ToString()}";
+                Log.Error($"{msg}\n{e}", msg);
+            }
 
             tooltip.Append('\n'); // empty line to separate magazine stats from ammo stats
 

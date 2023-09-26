@@ -148,7 +148,15 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             foreach(MyBlueprintDefinitionBase bpBaseDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
-                HandleTooltip(bpBaseDef, generate);
+                try
+                {
+                    HandleTooltip(bpBaseDef, generate);
+                }
+                catch(Exception e)
+                {
+                    string msg = $"Error setting up tooltips for blueprint: {bpBaseDef?.Id.ToString()}";
+                    Log.Error($"{msg}\n{e}", msg);
+                }
             }
 
             if(generate)

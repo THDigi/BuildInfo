@@ -72,64 +72,72 @@ namespace Digi.BuildInfo.Features.Tooltips
 
                 foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
                 {
-                    MyProductionBlockDefinition productionDef = blockDef as MyProductionBlockDefinition;
-                    if(productionDef != null)
+                    try
                     {
-                        // non-standard definition constraint, let's not mess with it.
-                        if(productionDef.InputInventoryConstraint == null || productionDef.OutputInventoryConstraint == null
-                        || !productionDef.InputInventoryConstraint.IsWhitelist || !productionDef.OutputInventoryConstraint.IsWhitelist)
-                            continue;
-
-                        InputTypes.Clear();
-                        OutputTypes.Clear();
-
-                        if(DebugLog)
-                            Log.Info($"{blockDef.Id}:");
-
-                        // HACK: getting items types for icon from here instead of the constraint because the constraint contains things it cannot build
-                        // for example, it allows ZoneChip in assembler inventory, but it cannot build it nor deconstruct it, it's from the LargeBlocks having SafeZone and does not check.
-                        foreach(MyBlueprintClassDefinition bpClassDef in productionDef.BlueprintClasses)
+                        MyProductionBlockDefinition productionDef = blockDef as MyProductionBlockDefinition;
+                        if(productionDef != null)
                         {
+                            // non-standard definition constraint, let's not mess with it.
+                            if(productionDef.InputInventoryConstraint == null || productionDef.OutputInventoryConstraint == null
+                            || !productionDef.InputInventoryConstraint.IsWhitelist || !productionDef.OutputInventoryConstraint.IsWhitelist)
+                                continue;
+
+                            InputTypes.Clear();
+                            OutputTypes.Clear();
+
                             if(DebugLog)
-                                Log.Info($"  {bpClassDef.Id} - type={bpClassDef.GetType().Name}");
+                                Log.Info($"{blockDef.Id}:");
 
-                            foreach(MyBlueprintDefinitionBase bp in bpClassDef)
+                            // HACK: getting items types for icon from here instead of the constraint because the constraint contains things it cannot build
+                            // for example, it allows ZoneChip in assembler inventory, but it cannot build it nor deconstruct it, it's from the LargeBlocks having SafeZone and does not check.
+                            foreach(MyBlueprintClassDefinition bpClassDef in productionDef.BlueprintClasses)
                             {
-                                // likely block blueprints which we don't care for
-                                if(bp is MyCompositeBlueprintDefinition)
-                                    continue;
-
-                                foreach(MyBlueprintDefinitionBase.Item item in bp.Prerequisites)
-                                {
-                                    if(IgnoreItems.Contains(item.Id))
-                                        continue;
-
-                                    InputTypes.Add(item.Id.TypeId);
-                                }
-
-                                foreach(MyBlueprintDefinitionBase.Item item in bp.Results)
-                                {
-                                    if(IgnoreItems.Contains(item.Id))
-                                        continue;
-
-                                    OutputTypes.Add(item.Id.TypeId);
-                                }
-
                                 if(DebugLog)
-                                    Log.Info($"    {bp.Id} type={bp.GetType().Name} - req: {string.Join(",", bp.Prerequisites)}; results: {string.Join(",", bp.Results)}");
+                                    Log.Info($"  {bpClassDef.Id} - type={bpClassDef.GetType().Name}");
+
+                                foreach(MyBlueprintDefinitionBase bp in bpClassDef)
+                                {
+                                    // likely block blueprints which we don't care for
+                                    if(bp is MyCompositeBlueprintDefinition)
+                                        continue;
+
+                                    foreach(MyBlueprintDefinitionBase.Item item in bp.Prerequisites)
+                                    {
+                                        if(IgnoreItems.Contains(item.Id))
+                                            continue;
+
+                                        InputTypes.Add(item.Id.TypeId);
+                                    }
+
+                                    foreach(MyBlueprintDefinitionBase.Item item in bp.Results)
+                                    {
+                                        if(IgnoreItems.Contains(item.Id))
+                                            continue;
+
+                                        OutputTypes.Add(item.Id.TypeId);
+                                    }
+
+                                    if(DebugLog)
+                                        Log.Info($"    {bp.Id} type={bp.GetType().Name} - req: {string.Join(",", bp.Prerequisites)}; results: {string.Join(",", bp.Results)}");
+                                }
                             }
+
+                            if(DebugLog)
+                                Log.Info("----------------------------------------------------------------");
+
+                            SetTooltip(blockDef, ref productionDef.InputInventoryConstraint, productionDef.BlueprintClasses, true);
+                            SetTooltip(blockDef, ref productionDef.OutputInventoryConstraint, productionDef.BlueprintClasses, false);
+
+                            SetIcon(productionDef, productionDef.InputInventoryConstraint, InputTypes, true);
+                            SetIcon(productionDef, productionDef.OutputInventoryConstraint, OutputTypes, false);
+
+                            continue;
                         }
-
-                        if(DebugLog)
-                            Log.Info("----------------------------------------------------------------");
-
-                        SetTooltip(blockDef, ref productionDef.InputInventoryConstraint, productionDef.BlueprintClasses, true);
-                        SetTooltip(blockDef, ref productionDef.OutputInventoryConstraint, productionDef.BlueprintClasses, false);
-
-                        SetIcon(productionDef, productionDef.InputInventoryConstraint, InputTypes, true);
-                        SetIcon(productionDef, productionDef.OutputInventoryConstraint, OutputTypes, false);
-
-                        continue;
+                    }
+                    catch(Exception e)
+                    {
+                        string msg = $"Error setting up inventory icons&tooltip for block: {blockDef?.Id.ToString()}";
+                        Log.Error($"{msg}\n{e}", msg);
                     }
                 }
             }

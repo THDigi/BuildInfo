@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
@@ -45,7 +46,15 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
             {
-                HandleDescription(blockDef, generate);
+                try
+                {
+                    HandleDescription(blockDef, generate);
+                }
+                catch(Exception e)
+                {
+                    string msg = $"Error modifying description for block: {blockDef?.Id.ToString()}";
+                    Log.Error($"{msg}\n{e}", msg);
+                }
             }
 
             if(generate)

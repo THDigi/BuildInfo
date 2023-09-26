@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Digi.BuildInfo.Utilities;
@@ -256,7 +257,14 @@ namespace Digi.BuildInfo.Features.Tooltips
                 PreTooltipGeneration();
             }
 
-            Setup?.Invoke(generate);
+            try
+            {
+                Setup?.Invoke(generate);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
 
             if(generate)
             {
