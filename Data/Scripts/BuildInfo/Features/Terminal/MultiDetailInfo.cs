@@ -529,18 +529,18 @@ namespace Digi.BuildInfo.Features.Terminal
         static void AppendInputFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
         {
             if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                info.Append(resInfo.Blocks).Append("x Power Consumers: ").PowerFormat(resInfo.Current);
+                info.Append(resInfo.Blocks).Append("x Power Input: ").PowerFormat(resInfo.Current);
             else
-                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Consumers: ").VolumeFormat(resInfo.Current).Append("/s");
+                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Input: ").VolumeFormat(resInfo.Current).Append("/s");
             info.Append('\n');
         }
 
         static void AppendOutputFormat(StringBuilder info, MyStringHash resource, ResInfo resInfo)
         {
             if(resource == MyResourceDistributorComponent.ElectricityId.SubtypeId)
-                info.Append(resInfo.Blocks).Append("x Power Producers: ").PowerFormat(resInfo.Current);
+                info.Append(resInfo.Blocks).Append("x Power Output: ").PowerFormat(resInfo.Current);
             else
-                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Producers: ").VolumeFormat(resInfo.Current).Append("/s");
+                info.Append(resInfo.Blocks).Append("x ").Append(resource.String).Append(" Output: ").VolumeFormat(resInfo.Current).Append("/s");
             info.Append('\n');
         }
 
