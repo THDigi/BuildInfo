@@ -15,6 +15,8 @@ using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
+using VRage.Library.Utils;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
 
@@ -34,7 +36,8 @@ namespace Digi.BuildInfo.Features
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
 
         const string ErrorsGUITypeName = "MyGuiScreenDebugErrors";
-        const string Signature = "[BuildInfo] ";
+        const string Signature = "> [BuildInfo] ";
+        const string LineSignature = "\n> ";
 
         public ModderHelp(BuildInfoMod main) : base(main)
         {
@@ -146,8 +149,8 @@ namespace Digi.BuildInfo.Features
             {
                 // game is not gonna add an error for this file path so I gotta add one myself
                 MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: Invalid path: '{filePath}'"
-                    + "\nIf the mod path is added twice then the problem is that the texture exists AND using a new planet generator definition style (compare EarthLike and Pertram start/end tags)."
-                    + "\nEither modify definition to use the old style (recommended) or make it so the <Texture> tag doesn't point to an existing file while also having _cm and _alphamask prefixed ones with same name nearby.",
+                    + LineSignature + "If the mod path is added twice then the problem is that the texture exists AND using a new planet generator definition style (compare EarthLike and Pertram start/end tags)."
+                    + LineSignature + "Either modify definition to use the old style (recommended) or make it so the <Texture> tag doesn't point to an existing file while also having _cm and _alphamask prefixed ones with same name nearby.",
                     TErrorSeverity.Error);
                 return;
             }
@@ -300,6 +303,7 @@ namespace Digi.BuildInfo.Features
                 cloudLayerInfo = GrabCloudLayers();
 
             string phase6error = "MOD PARTIALLY SKIPPED, LOADED ONLY 6/6 PHASES, Following Error occured:" + Environment.NewLine + "Object reference not set to an instance of an object.";
+            string blockInitError = $"at {typeof(MyCubeBlockDefinition).FullName}.Init";
 
             CheckErrorsOnF11(); // to reduce severity on errors before setting DefinitionErrors
 
@@ -360,45 +364,151 @@ namespace Digi.BuildInfo.Features
                             if(info.SetSeverity.HasValue)
                                 error.Severity = info.SetSeverity.Value;
                         }
+
+                        continue;
                     }
 
                     // MyDefinitionManager.PostprocessBlueprints()
                     if(error.Message.StartsWith("Following blueprints could not be post-processed"))
                     {
-                        error.Message += $"\n{Signature}Usually means a result item was not found.";
+                        error.Message += $"\n{Signature}Usually means a result item was not found."
+                                      + LineSignature + "Also the file here is likely to be wrong so ignore it, focus on the blueprint ID instead.";
+                        continue;
                     }
 
                     // MyDefinitionManager.InitSpawnGroups()
                     if(error.Message.StartsWith("Error loading spawn group"))
                     {
                         error.Message += $"\n{Signature}Means the spawn group has no prefabs or 0 spawn radius or 0 frequency.";
+                        continue;
                     }
 
                     // MyDefinitionManager.MakeBlueprintFromComponentStack()
                     if(error.Message.StartsWith("Could not find component blueprint for"))
                     {
                         error.Message += $"\n{Signature}All components must have a blueprint otherwise game crashes when using tools on the block using the component."
-                                       + "\nYou can have a blueprint without it being used though, just don't add it to a BlueprintClass."
-                                       + "\nSee ZoneChip's blueprint as an example.";
+                                       + LineSignature + "You can have a blueprint without it being used though, just don't add it to a BlueprintClass."
+                                       + LineSignature + "See ZoneChip's blueprint as an example.";
+                        continue;
                     }
 
                     // MyDefinitionManager.DefinitionDictionary<V>
                     if(error.Message == "Invalid definition id")
                     {
                         error.Message += $"\n{Signature}Very vague one indeed, it means you have a <TypeId> that is made up, you have to use an existing one.";
+                        continue;
                     }
 
-                    // MyDefinitionManager.FailModLoading(), specifically a NRE
+                    // MyDefinitionManager.FailModLoading() without any stacktrace most likely means an XML syntax error.
+                    if(error.Message == "MOD SKIPPED, Cannot load definition file")
+                    {
+                        error.Message += $"\n{Signature}Most likely an XML syntax error. Look in the SpaceEngineers.log file for 'Exception during objectbuilder'";
+                        continue;
+                    }
+
+                    // MyDefinitionManager.FailModLoading() + a NRE stacktrace
                     if(error.Message.StartsWith(phase6error))
                     {
-                        error.Message += $"\n{Signature}Potential causes:"
-                                      + "\n - Mod does not have a Data folder, common for mod.io if zipping mod folder instead of mod contents;"
-                                      + "\n - Local mod folder was renamed;"
-                                      + "\n - Download corruption (fix: exit game, un-sub, wait for steam to 'download update', re-sub);"
-                                      + "\n...and other unknown reasons.";
+                        error.Message += $"\n{Signature}This error is caused by various issues, attempting to identify the issue...";
+
+                        MyObjectBuilder_Checkpoint.ModItem? mod = GetModItemFromName(error.ModName);
+
+                        if(mod == null)
+                        {
+                            //Log.Error($"Couldn't find mod '{error.ModName}' in worlds' mods list - was needed for getting details on a definition error about it.");
+                            error.Message += LineSignature + "Could not find the mod in the mods list.";
+                            continue;
+                        }
+
+                        string identified = null;
+
+                        if(mod.Value.PublishedFileId != 0)
+                        {
+                            error.Message += LineSignature + "Mod is published, no checks can be made. Possible issues are:"
+                                           + LineSignature + " - No 'Data' folder directly in the mod (zipping the mod requires the Data folder to be there as soon as you open it)."
+                                           + LineSignature + " - Download corruption, if the mod works fine for other people then re-download it by: exit game, unsub from mod, wait for steam to ''update SE'', re-sub and try again in game.";
+                        }
+                        else // local mod
+                        {
+                            string modPath = mod.Value.GetPath();
+
+                            if(identified == null && !DirectoryExists(modPath))
+                            {
+                                identified = "Mod folder not found, it was removed or renamed";
+                            }
+
+                            if(identified == null && !DirectoryExists(Path.Combine(modPath, "Data")))
+                            {
+                                identified = "'Data' folder does not exist in mod root folder";
+                            }
+
+                            if(identified == null)
+                            {
+                                error.Message += LineSignature + "Mod folder and Data folder seem to exist, no other known issues to check for.";
+                            }
+                        }
+
+                        if(identified != null)
+                        {
+                            error.Message += LineSignature + "The issue is: " + identified;
+                        }
+
+                        continue;
+                    }
+
+                    if(error.Message.Contains(blockInitError))
+                    {
+                        error.Message += $"\n{Signature}Issue is in the common tags on block definition, possible causes:"
+                                      + LineSignature + " - missing the <CriticalComponent tag"
+                                      + LineSignature + " - one or more components don't exist (if component is in another mod, ensure that mod loads first, lower in the mods window)";
+                        continue;
+                    }
+
+                    // MyDefinitionManager.InitCharacters()
+                    if(error.Message.StartsWith("Invalid character Id found in mod"))
+                    {
+                        error.Message += $"\n{Signature}Invalid TypeId in particular, it does not exist.";
+                        continue;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Only works in local mods folder or <Game>/Content/Data folder.
+        /// Relative paths will be assumed in local mods folder.
+        /// </summary>
+        static bool DirectoryExists(string path)
+        {
+            // HACK: no proper way to detect if a directory exists
+            try
+            {
+                string[] files = PathUtils.GetFilesRecursively(path, "dontcareaboutanyfiles");
+            }
+            catch(Exception e)
+            {
+                if(e.GetType().Name == "DirectoryNotFoundException") // because the class is prohibited
+                {
+                    return false;
+                }
+                else
+                {
+                    Log.Error(e);
+                }
+            }
+
+            return true;
+        }
+
+        static MyObjectBuilder_Checkpoint.ModItem? GetModItemFromName(string modName)
+        {
+            foreach(MyObjectBuilder_Checkpoint.ModItem modItem in MyAPIGateway.Session.Mods)
+            {
+                if(modItem.Name == modName)
+                    return modItem;
+            }
+
+            return null;
         }
 
         void CheckErrorsOnF11() // called when pressing F11 in offline world
@@ -422,8 +532,13 @@ namespace Digi.BuildInfo.Features
                 if(error.Message == "Possible entity type script logic collision")
                 {
                     error.Message += $"\n{Signature}This just means multiple mods have GameLogic components on the same blocks, it's not very useful nor does it mean they collide."
-                                    + "\nIgnore this and test the mod functions themselves if you are worried they're colliding.";
+                                    + LineSignature + "Ignore this and test the mod functions themselves if you are worried they're colliding.";
                 }
+
+                // from MyScriptManager.TryAddEntityScripts()
+                //if(error.Message.Contains("is using the obsolete MyEntityComponentDescriptor overload!"))
+                //{
+                //}
             }
         }
 
@@ -477,39 +592,47 @@ namespace Digi.BuildInfo.Features
                 MyCubeBlockDefinition blockDef = def as MyCubeBlockDefinition;
                 if(blockDef != null)
                 {
-                    Vector3I maxCenter = blockDef.Size - 1;
+                    if(blockDef.Size.X <= 0 || blockDef.Size.Y <= 0 || blockDef.Size.Z <= 0)
+                    {
+                        ModProblem(def, "has Size 0 or negative!");
+                    }
+                    else
+                    {
+                        Vector3I maxCenter = blockDef.Size - 1;
 
-                    if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
-                    {
-                        ModProblem(def, "has negative values for Center tag! This will break some mountpoints and various other weird issues.");
-                    }
-                    else if(blockDef.Center.X > maxCenter.X || blockDef.Center.Y > maxCenter.Y || blockDef.Center.Z > maxCenter.Z)
-                    {
-                        ModProblem(def, "has too high values for Center tag! It should be at most Size - 1. This will break some mountpoints and various other weird issues.");
-                    }
-
-                    if(blockDef.MirroringCenter.X < 0 || blockDef.MirroringCenter.Y < 0 || blockDef.MirroringCenter.Z < 0)
-                    {
-                        ModProblem(def, "has negative values for MirroringCenter tag!");
-                    }
-                    else if(blockDef.MirroringCenter.X > maxCenter.X || blockDef.MirroringCenter.Y > maxCenter.Y || blockDef.MirroringCenter.Z > maxCenter.Z)
-                    {
-                        ModProblem(def, "has too high values for MirroringCenter tag! It should be at most Size - 1.");
-                    }
-
-                    {
-                        if(blockDef.BuildProgressModels != null && blockDef.BuildProgressModels.Length > 0)
+                        if(blockDef.Center.X < 0 || blockDef.Center.Y < 0 || blockDef.Center.Z < 0)
                         {
-                            for(int i = 0; i < blockDef.BuildProgressModels.Length; i++)
-                            {
-                                MyCubeBlockDefinition.BuildProgressModel bpm = blockDef.BuildProgressModels[i];
-                                CheckMountpoints(blockDef, bpm.MountPoints, $"buildstage #{i + 1}, mountpoint");
-                            }
+                            ModProblem(def, "has negative values for Center tag! This will break some mountpoints and various other weird issues.");
+                        }
+                        else if(blockDef.Center.X > maxCenter.X || blockDef.Center.Y > maxCenter.Y || blockDef.Center.Z > maxCenter.Z)
+                        {
+                            ModProblem(def, "has too high values for Center tag! It should be at most Size - 1. This will break some mountpoints and various other weird issues.");
                         }
 
-                        if(blockDef.MountPoints != null && blockDef.MountPoints.Length > 0)
+                        if(blockDef.MirroringCenter.X < 0 || blockDef.MirroringCenter.Y < 0 || blockDef.MirroringCenter.Z < 0)
                         {
-                            CheckMountpoints(blockDef, blockDef.MountPoints, "mountpoint");
+                            ModProblem(def, "has negative values for MirroringCenter tag!");
+                        }
+                        else if(blockDef.MirroringCenter.X > maxCenter.X || blockDef.MirroringCenter.Y > maxCenter.Y || blockDef.MirroringCenter.Z > maxCenter.Z)
+                        {
+                            ModProblem(def, "has too high values for MirroringCenter tag! It should be at most Size - 1.");
+                        }
+
+                        // check mountpoints on the block itself and on the build progress models
+                        {
+                            if(blockDef.BuildProgressModels != null && blockDef.BuildProgressModels.Length > 0)
+                            {
+                                for(int i = 0; i < blockDef.BuildProgressModels.Length; i++)
+                                {
+                                    MyCubeBlockDefinition.BuildProgressModel bpm = blockDef.BuildProgressModels[i];
+                                    CheckMountpoints(blockDef, bpm.MountPoints, $"buildstage #{i + 1}, mountpoint");
+                                }
+                            }
+
+                            if(blockDef.MountPoints != null && blockDef.MountPoints.Length > 0)
+                            {
+                                CheckMountpoints(blockDef, blockDef.MountPoints, "mountpoint");
+                            }
                         }
                     }
 
@@ -517,8 +640,8 @@ namespace Digi.BuildInfo.Features
                     MyComponentStack.GroupInfo firstComp = comps.GetGroupInfo(0);
                     if(firstComp.TotalCount > 1 && firstComp.MountedCount > 1)
                     {
-                        ModProblem(def, $"exploitable! Block gets placed in survival with {firstComp.MountedCount}x {firstComp.Component?.DisplayNameText} (first componment), allowing players to grind it to gain those extra components." +
-                                        "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
+                        ModProblem(def, $"exploitable! Block gets placed in survival with {firstComp.MountedCount}x {firstComp.Component?.DisplayNameText} (first componment), allowing players to grind it to gain those extra components."
+                                      + "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
                     if(blockDef.IsAirTight == null)
