@@ -396,21 +396,46 @@ namespace Digi.BuildInfo.Utilities
         {
             List<IMyPlayer> players = BuildInfoMod.Instance.Caches.Players;
             players.Clear();
-            MyAPIGateway.Players.GetPlayers(players);
 
-            IMyPlayer returnPlayer = null;
-
-            foreach(IMyPlayer player in players)
+            try
             {
-                if(player.IdentityId == identityId)
+                MyAPIGateway.Players.GetPlayers(players);
+                foreach(IMyPlayer player in players)
                 {
-                    returnPlayer = player;
-                    break;
+                    if(player.IdentityId == identityId)
+                        return player;
                 }
-            }
 
+                return null;
+            }
+            finally
+            {
+                players.Clear();
+            }
+        }
+
+        // not using MyAPIGateway.Players.GetPlayerControllingEntity() because it only works if player is actively controlling the character.
+        // if they're RC-ing a ship or a turret or in a cockpit, it will not work.
+        public static IMyPlayer GetPlayerFromCharacter(IMyCharacter character)
+        {
+            List<IMyPlayer> players = BuildInfoMod.Instance.Caches.Players;
             players.Clear();
-            return returnPlayer;
+
+            try
+            {
+                MyAPIGateway.Players.GetPlayers(players);
+                foreach(IMyPlayer player in players)
+                {
+                    if(player.Character == character)
+                        return player;
+                }
+
+                return null;
+            }
+            finally
+            {
+                players.Clear();
+            }
         }
 
         /// <summary>

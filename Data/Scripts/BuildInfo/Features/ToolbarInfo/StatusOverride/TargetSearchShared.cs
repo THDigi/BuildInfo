@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
@@ -7,6 +6,7 @@ using Sandbox.Definitions;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 using static Digi.BuildInfo.Features.ToolbarInfo.ToolbarStatusProcessor;
@@ -31,7 +31,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             RegisterFor("TargetingGroup_CycleSubsystems", cycleFunc, groupCycleFunc);
 
-            //RegisterFor("FocusLockedTarget", FocusLocked, GroupFocusLocked);
+            RegisterFor("FocusLockedTarget", FocusLocked, GroupFocusLocked);
         }
 
         void RegisterFor(string actionId, StatusDel func, GroupStatusDel funcGroup)
@@ -54,78 +54,104 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 Processor.AddGroupStatus(obType, funcGroup, actionId);
         }
 
-        //bool FocusLocked(StringBuilder sb, ToolbarItem item)
-        //{
-        //    if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
-        //        return false;
+        bool FocusLocked(StringBuilder sb, ToolbarItem item)
+        {
+            if(Processor.Main.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+                return false;
 
-        //    Processor.AppendSingleStats(sb, item.Block);
+            Processor.AppendSingleStats(sb, item.Block);
 
-        //    return AppendTargetInfo(sb);
-        //}
+            return AppendTargetInfo(sb);
+        }
 
-        //bool GroupFocusLocked(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
-        //{
-        //    if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
-        //        return false;
+        bool GroupFocusLocked(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        {
+            if(Processor.Main.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
+                return false;
 
-        //    if(!groupData.GetGroupBlocks<IMyFunctionalBlock>())
-        //        return false;
+            if(!groupData.GetGroupBlocks<IMyFunctionalBlock>())
+                return false;
 
-        //    int off = 0;
-        //    int broken = 0;
+            int off = 0;
+            int broken = 0;
 
-        //    foreach(IMyFunctionalBlock fb in groupData.Blocks)
-        //    {
-        //        if(!fb.IsFunctional)
-        //            broken++;
+            foreach(IMyFunctionalBlock fb in groupData.Blocks)
+            {
+                if(!fb.IsFunctional)
+                    broken++;
 
-        //        if(!fb.Enabled)
-        //            off++;
-        //    }
+                if(!fb.Enabled)
+                    off++;
+            }
 
-        //    Processor.AppendGroupStats(sb, broken, off);
+            Processor.AppendGroupStats(sb, broken, off);
 
-        //    return AppendTargetInfo(sb);
-        //}
+            return AppendTargetInfo(sb);
+        }
 
-        // TODO: needs to show turret's target
+        bool AppendTargetInfo(StringBuilder sb)
+        {
+            MyTargetLockingComponent targetLockComp = MyAPIGateway.Session?.Player?.Character?.Components?.Get<MyTargetLockingComponent>();
+            if(targetLockComp == null)
+                return false;
 
-        //bool AppendTargetInfo(StringBuilder sb)
-        //{
-        //    MyTargetLockingComponent targetLockComp = MyAPIGateway.Session?.Player?.Character?.Components?.Get<MyTargetLockingComponent>();
-        //    if(targetLockComp == null)
-        //        return false;
+            MyEntity targetEnt = targetLockComp.TargetEntity;
 
-        //    if(targetLockComp.Target == null)
-        //    {
-        //        sb.Append("NoTarget");
-        //    }
-        //    else if(!targetLockComp.IsTargetLocked)
-        //    {
-        //        sb.Append("Wait...");
-        //    }
-        //    else
-        //    {
-        //        long gridOwner = targetLockComp.Target.BigOwners.FirstOrDefault();
-        //        IMyFaction faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(gridOwner);
+            if(targetEnt == null)
+            {
+                sb.Append("No Lock");
+                return true;
+            }
 
-        //        if(faction != null)
-        //            sb.AppendMaxLength(faction.Tag, 4, addDots: false).Append('\n');
-        //        else
-        //            sb.Append("NoAffil");
+            if(!targetLockComp.IsTargetLocked)
+            {
+                sb.Append("Wait...");
+                return true;
+            }
 
-        //        sb.AppendMaxLength(targetLockComp.Target.DisplayName, MaxChars, addDots: false);
+            IMyFaction faction = null;
+            string displayName = "(unk)";
 
-        //        sb.TrimEndWhitespace();
-        //    }
+            IMyCubeGrid targetGrid = targetEnt as IMyCubeGrid;
+            if(targetGrid != null)
+            {
+                displayName = targetGrid.CustomName;
 
-        //    return true;
-        //}
+                List<long> bigOwners = targetGrid.BigOwners;
+                if(bigOwners != null && bigOwners.Count > 0)
+                    faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(bigOwners[0]);
+            }
+            else
+            {
+                IMyCharacter targetChar = targetEnt as IMyCharacter;
+                if(targetChar != null)
+                {
+                    IMyPlayer player = Utils.GetPlayerFromCharacter(targetChar);
+                    if(player != null)
+                    {
+                        faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
+                        displayName = player.DisplayName;
+                    }
+                    else
+                    {
+                        displayName = targetChar.DisplayName;
+                    }
+                }
+            }
+
+            if(faction != null)
+                sb.AppendMaxLength(faction.Tag, 4, addDots: false).Append('\n');
+            else
+                sb.Append("(NoFac)\n");
+
+            sb.AppendMaxLength(displayName, MaxChars, addDots: false);
+            sb.TrimEndWhitespace();
+            return true;
+        }
 
         bool CycleTarget(StringBuilder sb, ToolbarItem item)
         {
-            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
+            if(Processor.Main.CoreSystemsAPIHandler.Weapons.ContainsKey(item.Block.BlockDefinition))
                 return false;
 
             string targetGroup = GetTargetGroupSubtypeId(item.Block);
@@ -138,7 +164,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool GroupCycleTarget(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
         {
-            if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
+            if(Processor.Main.CoreSystemsAPIHandler.Weapons.ContainsKey(groupToolbarItem.Block.BlockDefinition))
                 return false;
 
             if(!groupData.GetGroupBlocks<IMyTerminalBlock>())

@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
     public class ToolbarStatusProcessor : ModComponent
     {
-        public const int MaxChars = 8;
+        public const int MaxChars = 8; // must not be changed, the font size dictates this; if too many characters are than they visually fit, the lines will vanish (except last one).
         public const int MaxLines = 3;
 
         public const string CustomStatusTag = "c";
@@ -118,6 +118,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             return false;
         }
 
+        /// <summary>
+        /// Returns true if it appended something but only for half a second as these are blinking.
+        /// </summary>
         public bool AppendGroupStats(StringBuilder sb, int broken, int off)
         {
             if(!AnimFlip)
