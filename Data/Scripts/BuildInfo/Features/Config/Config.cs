@@ -39,22 +39,24 @@ namespace Digi.BuildInfo.Features.Config
         public EnumSetting<CubeBuilderSelectionInfo> CubeBuilderSelectionInfoMode;
         public BoolSetting UnderCrosshairMessages;
 
-        public BoolSetting ShipToolInvBarShow;
-        public Vector2DSetting ShipToolInvBarPosition;
-        public Vector2DSetting ShipToolInvBarScale;
-
-        public BoolSetting BackpackBarOverride;
-
-        public BoolSetting RelativeDampenerInfo;
-
         public BoolSetting ItemTooltipAdditions;
         public BoolSetting ItemSymbolAdditions;
 
         public BoolSetting BlockIconOverlays;
 
-        public BoolSetting HudStatOverrides;
-
         public BoolSetting TurretHUD;
+        public BoolSetting RelativeDampenerInfo;
+
+        public BoolSetting BackpackBarOverride;
+        public BoolSetting HealthOverride;
+        public EnumSetting<MassFormat> MassOverride;
+        public BoolSetting CockpitBuildHideRightHud;
+
+        public BoolSetting HudFontOverride;
+
+        public BoolSetting ShipToolInvBarShow;
+        public Vector2DSetting ShipToolInvBarPosition;
+        public Vector2DSetting ShipToolInvBarScale;
 
         public EnumSetting<ToolbarLabelsMode> ToolbarLabels;
         public FloatSetting ToolbarLabelsEnterCockpitTime;
@@ -401,6 +403,34 @@ namespace Digi.BuildInfo.Features.Config
                 "An opt-in feature for moving certain easily missable messages from text box to under the crosshair.",
                 $"Currently only 'Grid will split if block is removed' is affected by this, which sill requires {nameof(AimInfoFlags.GrindGridSplit)} to be enabled in '{AimInfo.Name}' setting.");
 
+            RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
+                "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
+                "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
+
+            TurretHUD = new BoolSetting(Handler, "HUD: Show HUD+Ammo in Turret", true,
+                "Shows HUD, ammo and ship orientation while controlling a turret.");
+            TurretHUD.AddCompatibilityNames("HUD: Turret Ammo", "HUD: Turret Info");
+
+            HudFontOverride = new BoolSetting(Handler, "HUD: Font override", false,
+                "Changes the font on all HUD elements to the black-outlined one from this mod. This offers better readability when bright things are behind the HUD.");
+
+            BackpackBarOverride = new BoolSetting(Handler, "HUD: Backpack Bar Override", true,
+                "This affects the vanilla inventory bar (with a backpack icon), if enabled:",
+                "When in a seat, it shows the filled ratio of ship's Cargo Containers.",
+                $"If a group named {BackpackBarStat.GroupName} exists, the bar will show filled ratio of all blocks there (regardless of type).");
+
+            HealthOverride = new BoolSetting(Handler, "HUD: Health stat override", true,
+                "Shows actual health instead of percentage. It also tries to maintain the number within 4 characters width by using k suffix if it makes it shorter.");
+
+            MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.RealCustomSuffix,
+                "Changes the ship mass format on the HUD.");
+            MassOverride.SetEnumComment(MassFormat.Vanilla, "Game's default inaccurate mass and no station mass (same as info tab), shown in kg.");
+            MassOverride.SetEnumComment(MassFormat.RealCustomSuffix, "Physical mass + station mass, formatted with unit multipliers (kg, t, kt, Mt, ...)");
+            MassOverride.SetEnumComment(MassFormat.RealKg, "Physical mass + station mass, shown only as kg.");
+
+            CockpitBuildHideRightHud = new BoolSetting(Handler, "HUD: Cockpit build mode hide right panel", true,
+                "Hide the bottom-right ship HUD panel when in cockpit build mode because the block info overlaps it.");
+
             ShipToolInvBarShow = new BoolSetting(Handler, "HUD: Ship Tool Inventory Bar", true,
                 "Shows an inventory bar when a ship grinder or ship drill is selected which represents the highest filled tool inventory.");
 
@@ -414,24 +444,6 @@ namespace Digi.BuildInfo.Features.Config
             {
                 "The width and height scale of the ship tool inventory bar.",
             });
-
-            BackpackBarOverride = new BoolSetting(Handler, "HUD: Backpack Bar Override", true,
-                "This affects the vanilla inventory bar (with a backpack icon), if enabled:",
-                "When in a seat, it shows the filled ratio of ship's Cargo Containers.",
-                $"If a group named {BackpackBarStat.GroupName} exists, the bar will show filled ratio of all blocks there (regardless of type).");
-
-            TurretHUD = new BoolSetting(Handler, "HUD: Show HUD+Ammo in Turret", true,
-                "Shows HUD, ammo and ship orientation while controlling a turret.");
-            TurretHUD.AddCompatibilityNames("HUD: Turret Ammo", "HUD: Turret Info");
-
-            HudStatOverrides = new BoolSetting(Handler, "HUD: Stat Overrides", true,
-                "Overrides some HUD values' behavior/format. Currently affecting:",
-                " - character health showing actual hit points instead of percentage.",
-                " - ship mass shows the physics mass, has thousands separator and includes static grid mass.");
-
-            RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
-                "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
-                "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
             #endregion
 
             new Comment(Handler, string.Format(SubHeaderFormat, "Terminal/Inventory/GUI"));
@@ -464,7 +476,9 @@ namespace Digi.BuildInfo.Features.Config
 
             ItemSymbolAdditions = new BoolSetting(Handler, "Terminal: Item Symbol Additions", true,
                 $"Currently adds the '{ItemTooltips.ReqLargeConveyorSymbol}' on top-right of item icons, only for items that require large conveyors (includes modded items too).");
+            #endregion
 
+            #region GUI
             BlockIconOverlays = new BoolSetting(Handler, "GUI: Block Icon Overlays", true,
                 $"Adds some overlays to blocks to improve identification, currently only adds a weight icon onto vanilla heavy armor blocks.");
             #endregion
@@ -538,14 +552,17 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsOffsetForInvBar.AddCompatibilityNames("Toolbar: Labels Box Offset for InvBar");
 
+            const string ToolbarStatusFontOverride_Label = "Toolbar: Action Status Font Override";
+
             ToolbarActionStatus = new BoolSetting(Handler, "Toolbar: Improve Action Status", true,
                 "Adds some statuses to some toolbar actions, overwrite some others.",
                 "Few examples of what this adds: PB's Run shows 2 lines of echo, timer block shows countdown, weapons shoot once/on/off shows ammo, on/off for groups show how many are on and off, and quite a few more.",
-                "This is independent of the ToolbarInfo or EventToolbar features."
+                "This is independent of the ToolbarInfo or EventToolbar features.",
+                $"Requires '{ToolbarStatusFontOverride_Label}' to be enabled to function, because of the custom characters as icons in the changed status."
             );
             ToolbarActionStatus.AddCompatibilityNames("HUD: Toolbar action status");
 
-            ToolbarStatusFontOverride = new BoolSetting(Handler, "Toolbar: Action Status Font Override", true,
+            ToolbarStatusFontOverride = new BoolSetting(Handler, ToolbarStatusFontOverride_Label, true,
                $"Replaces HUD definition's font for toolbar status with a white monospace font with black outline ({HUDEditor.SetFont}), this will affect modded HUDs aswell.",
                $"This is required for '{ToolbarActionStatus.Name}' to work properly, aside from greatly helping readability of text on the blueish block icons in the toolbar."
             );

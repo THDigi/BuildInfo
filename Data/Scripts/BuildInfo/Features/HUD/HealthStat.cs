@@ -10,7 +10,7 @@ namespace Digi.BuildInfo.Features.HUD
         {
         }
 
-        protected override void Update(int tick, bool enabled)
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
         {
             IMyCharacter chr = MyAPIGateway.Session?.Player?.Character;
             if(chr == null)
@@ -20,17 +20,26 @@ namespace Digi.BuildInfo.Features.HUD
             if(statComp == null)
                 return;
 
-            if(!enabled)
+            if(!Main.Config.HealthOverride.Value)
             {
-                MaxValue = 1f;
-                MinValue = 0f;
-                CurrentValue = statComp.HealthRatio;
-                return;
+                current = statComp.HealthRatio;
+                min = 0;
+                max = 1;
             }
+            else
+            {
+                current = statComp.Health.Value;
+                min = statComp.Health.MinValue;
+                max = statComp.Health.MaxValue;
+            }
+        }
 
-            MaxValue = statComp.Health.MaxValue; // NOTE: max must be set first to declare unit multipliers
-            MinValue = statComp.Health.MinValue;
-            CurrentValue = statComp.Health.Value;
+        protected override string ValueAsString()
+        {
+            if(!Main.Config.HealthOverride.Value)
+                return $"{CurrentValue * 100f:0}"; // as per MyStatPlayerHealth
+
+            return base.ValueAsString();
         }
     }
 }

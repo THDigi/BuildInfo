@@ -1,167 +1,136 @@
-﻿using System;
-using System.Collections.Generic;
-using Digi.ComponentLib;
+﻿using System.Collections.Generic;
+using System.Text;
+using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class ShipMassStat : IMyHudStat
+    public class ShipMassStat : HudStatBase
     {
         public const string NumberFormat = "###,###,###,###,###,###,##0";
+        public const int UpdateOffset = 29; // offset updates to spread things out more for things that run every second
 
-        public MyStringHash Id { get; private set; }
-        public float MinValue { get; } = 0f;
-        public float MaxValue { get; } = 1f;
-        public string GetValueString() => StringValueCache ?? ""; // must never be null
+        public static bool ShowCustomSuffix = false;
 
-        private float _currentValue = -1;
-        public float CurrentValue
+        long PrevGridId;
+        Config.MassFormat PrevFormatType;
+
+        static readonly HashSet<IMyCubeGrid> TempGrids = new HashSet<IMyCubeGrid>();
+        static readonly StringBuilder TempSB = new StringBuilder(32);
+
+        public ShipMassStat() : base("controlled_mass")
         {
-            get { return _currentValue; }
-            set
+        }
+
+        protected override string ValueAsString()
+        {
+            var format = Main.Config.MassOverride.ValueEnum;
+            if(format == Config.MassFormat.Vanilla)
+                return CurrentValue.ToString("0.00"); // as per MyStatControlledEntityMass
+
+            if(ShowCustomSuffix && format == Config.MassFormat.RealCustomSuffix)
+                return TempSB.Clear().MassFormat(CurrentValue).ToString();
+
+            return CurrentValue.ToString(NumberFormat);
+        }
+
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
+        {
+            IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+            if(controlled == null)
             {
-                if(_currentValue != value)
-                {
-                    _currentValue = value;
-                    StringValueCache = value.ToString(NumberFormat);
-                }
+                current = 0;
+                PrevGridId = 0;
+                return;
             }
-        }
 
-        private long PrevGridId;
-        private HashSet<IMyCubeGrid> Grids = new HashSet<IMyCubeGrid>();
-        private string StringValueCache = "...";
+            MyCubeGrid ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
 
-        public ShipMassStat()
-        {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                Id = MyStringHash.GetOrCompute("controlled_mass");
-        }
-
-        public void Update()
-        {
-            if(BuildInfo_GameSession.IsKilled)
+            // update once a second or if we've changed grids
+            if(Main.Tick % 60 != UpdateOffset && PrevGridId == ctrlGrid.EntityId)
                 return;
 
-            try
+            PrevGridId = ctrlGrid.EntityId;
+
+            Config.MassFormat formatType = Main.Config.MassOverride.ValueEnum;
+
+            if(formatType != PrevFormatType)
+                InvalidateStringCache();
+            PrevFormatType = formatType;
+
+            if(formatType == Config.MassFormat.Vanilla)
             {
-                IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
-                if(controlled == null)
+                current = ctrlGrid.IsStatic ? 0f : ctrlGrid.GetCurrentMass();
+                return;
+            }
+
+            // HACK: physics mass can be 0 if ship is landing gear'd to another ship and you're a MP client, and who knows what other cases.
+            // this gets the mass of non-static grids and works for MP clients, but it's affected by inventory multiplier so it's not real mass.
+            float baseMass;
+            float physMass;
+            float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
+
+            // remove the ship inventory multiplier from the number.
+            float invMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
+            if(invMultiplier != 1f)
+                mass = ((mass - baseMass) / invMultiplier) + baseMass;
+
+            // then add static grids' masses + remove pilot inv mass
+            TempGrids.Clear();
+            MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, TempGrids);
+
+            foreach(MyCubeGrid g in TempGrids)
+            {
+                if(g.Physics == null || !g.Physics.Enabled)
+                    continue;
+
+                // reminder that GetCurrentMass() ignores static grids
+                if(g.IsStatic)
                 {
-                    CurrentValue = 0f;
-                    PrevGridId = 0;
-                    return;
+                    mass += Main.GridMassCompute.GetGridMass(g);
                 }
-
-                BuildInfoMod Main = BuildInfoMod.Instance;
-                int tick = Main.Tick;
-                MyCubeGrid ctrlGrid = (MyCubeGrid)controlled.CubeGrid;
-
-                if(PrevGridId != ctrlGrid.EntityId || tick % 60 == 0)
+                else
                 {
-                    PrevGridId = ctrlGrid.EntityId;
-
-                    if(!Main.Config.HudStatOverrides.Value)
+                    // remove pilot's inventory mass
+                    foreach(MyCockpit block in g.OccupiedBlocks)
                     {
-                        if(!ctrlGrid.IsStatic)
-                            CurrentValue = ctrlGrid.GetCurrentMass();
-                        else
-                            CurrentValue = 0;
-                        return;
+                        MyInventory inv = block.Pilot?.GetInventory(0);
+                        if(inv != null)
+                            mass -= (float)inv.CurrentMass;
                     }
-
-                    // HACK: physics mass can be 0 if ship is landing gear'd to another ship and you're a MP client, and who knows what other cases.
-                    // this gets the mass of non-static grids and works for MP clients, but it's affected by inventory multiplier so it's not real mass.
-                    float baseMass;
-                    float physMass;
-                    float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
-
-                    // remove the ship inventory multiplier from the number.
-                    float invMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
-                    if(invMultiplier != 1f)
-                        mass = ((mass - baseMass) / invMultiplier) + baseMass;
-
-                    // then add static grids' masses + remove pilot inv mass
-                    Grids.Clear();
-                    MyAPIGateway.GridGroups.GetGroup(ctrlGrid, GridLinkTypeEnum.Physical, Grids);
-
-                    foreach(MyCubeGrid g in Grids)
-                    {
-                        if(g.Physics == null || !g.Physics.Enabled)
-                            continue;
-
-                        // reminder that GetCurrentMass() ignores static grids
-                        if(g.IsStatic)
-                        {
-                            mass += Main.GridMassCompute.GetGridMass(g);
-                        }
-                        else
-                        {
-                            // remove pilot's inventory mass
-                            foreach(MyCockpit block in g.OccupiedBlocks)
-                            {
-                                MyInventory inv = block.Pilot?.GetInventory(0);
-                                if(inv != null)
-                                    mass -= (float)inv.CurrentMass;
-                            }
-                        }
-                    }
-
-                    Grids.Clear();
-
-                    // must be kept as kg because of the "<value> Kg" format in the HUD definition.
-                    CurrentValue = mass;
                 }
             }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
+
+            TempGrids.Clear();
+
+            current = mass;
         }
     }
 
     // prevent HUD from showing "Station" and allows the ShipMassStat to show mass instead.
-    public class ShipIsStatic : IMyHudStat
+    public class ShipIsStatic : HudStatBase
     {
-        public MyStringHash Id { get; private set; }
-        public float CurrentValue { get; private set; }
-        public float MinValue { get; } = 0f;
-        public float MaxValue { get; } = 1f;
-        public string GetValueString() => (CurrentValue > 0.5f ? "1" : "0");
-
-        public ShipIsStatic()
+        public ShipIsStatic() : base("controlled_is_static")
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                Id = MyStringHash.GetOrCompute("controlled_is_static");
         }
 
-        public void Update()
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
         {
-            if(BuildInfo_GameSession.IsKilled)
-                return;
+            current = 0f;
 
-            try
+            if(Main.Config.MassOverride.ValueEnum == Config.MassFormat.Vanilla)
             {
-                CurrentValue = 0;
-
-                if(!BuildInfoMod.Instance.Config.HudStatOverrides.Value)
+                IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
+                if(controlled != null)
                 {
-                    IMyTerminalBlock controlled = MyAPIGateway.Session.ControlledObject as IMyTerminalBlock;
-                    if(controlled != null)
-                    {
-                        CurrentValue = (controlled.CubeGrid.IsStatic ? 1 : 0);
-                    }
+                    current = (controlled.CubeGrid.IsStatic ? 1 : 0);
                 }
             }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
         }
+
+        protected override string ValueAsString() => (CurrentValue > 0.5f ? "1" : "0");
     }
 }

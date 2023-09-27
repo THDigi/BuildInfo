@@ -106,4 +106,11 @@ namespace Digi.BuildInfo.Features.Config
         Custom = 1,
         Hidden = 2,
     }
+
+    public enum MassFormat
+    {
+        Vanilla = 0,
+        RealCustomSuffix = 1,
+        RealKg = 2,
+    }
 }

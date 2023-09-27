@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Digi.BuildInfo.Utilities;
+﻿using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -25,7 +24,7 @@ namespace Digi.BuildInfo.Features
         float CurrentMaxRange = -1;
         float? SwapAtDistance = 15f;
 
-        readonly List<IDefinitionEdit> Edits = new List<IDefinitionEdit>();
+        readonly DefinitionEdits DefEdits = new DefinitionEdits();
 
         public PlacementDistance(BuildInfoMod main) : base(main)
         {
@@ -44,10 +43,7 @@ namespace Digi.BuildInfo.Features
 
         public override void UnregisterComponent()
         {
-            foreach(IDefinitionEdit edit in Edits)
-            {
-                edit.Restore();
-            }
+            DefEdits.UndoAll();
 
             MyCubeBuilder.IntersectionDistance = 10f;
 
@@ -75,6 +71,8 @@ namespace Digi.BuildInfo.Features
 
         void EditDefinitions()
         {
+            DefEdits.UndoAll();
+
             MyCubeBuilderDefinition def = MyCubeBuilder.CubeBuilderDefinition;
             if(def == null)
             {
@@ -82,22 +80,15 @@ namespace Digi.BuildInfo.Features
                 return;
             }
 
-            foreach(IDefinitionEdit edit in Edits)
-            {
-                edit.Restore();
-            }
-
-            Edits.Clear();
-
             if(Main.Config.AdjustBuildDistanceSurvival.Value)
             {
-                //Edits.Add(DefinitionEdit.Create(def, (d, v) => d.DefaultBlockBuildingDistance = v, def.DefaultBlockBuildingDistance, 20f));
-                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.MinBlockBuildingDistance = v, def.MinBlockBuildingDistance, MinRange));
-                //Edits.Add(DefinitionEdit.Create(def, (d, v) => d.MaxBlockBuildingDistance = v, def.MaxBlockBuildingDistance, MaxRangeVanillaCreative));
-                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistLargeSurvivalCharacter = v, def.BuildingDistLargeSurvivalCharacter, SurvivalMaxRange));
-                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistSmallSurvivalCharacter = v, def.BuildingDistSmallSurvivalCharacter, SurvivalMaxRange));
-                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistLargeSurvivalShip = v, def.BuildingDistLargeSurvivalShip, SurvivalMaxRange));
-                Edits.Add(DefinitionEdit.Create(def, (d, v) => d.BuildingDistSmallSurvivalShip = v, def.BuildingDistSmallSurvivalShip, SurvivalMaxRange));
+                //DefEdits.MakeEdit(def, (d, v) => d.DefaultBlockBuildingDistance = v, def.DefaultBlockBuildingDistance, 20f);
+                DefEdits.MakeEdit(def, (d, v) => d.MinBlockBuildingDistance = v, def.MinBlockBuildingDistance, MinRange);
+                //DefEdits.MakeEdit(def, (d, v) => d.MaxBlockBuildingDistance = v, def.MaxBlockBuildingDistance, MaxRangeVanillaCreative);
+                DefEdits.MakeEdit(def, (d, v) => d.BuildingDistLargeSurvivalCharacter = v, def.BuildingDistLargeSurvivalCharacter, SurvivalMaxRange);
+                DefEdits.MakeEdit(def, (d, v) => d.BuildingDistSmallSurvivalCharacter = v, def.BuildingDistSmallSurvivalCharacter, SurvivalMaxRange);
+                DefEdits.MakeEdit(def, (d, v) => d.BuildingDistLargeSurvivalShip = v, def.BuildingDistLargeSurvivalShip, SurvivalMaxRange);
+                DefEdits.MakeEdit(def, (d, v) => d.BuildingDistSmallSurvivalShip = v, def.BuildingDistSmallSurvivalShip, SurvivalMaxRange);
             }
             else
             {

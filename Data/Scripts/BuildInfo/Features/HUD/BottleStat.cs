@@ -1,6 +1,4 @@
-﻿using System;
-using Digi.ComponentLib;
-using Sandbox.Common.ObjectBuilders.Definitions;
+﻿using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.EntityComponents;
@@ -8,85 +6,66 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.Utils;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    public class HydrogenBottleStat : BottleBaseStat
+    public class HydrogenBottleStat : BottleStatBase
     {
-        public HydrogenBottleStat()
+        public HydrogenBottleStat() : base("player_hydrogen_bottles", MyResourceDistributorComponent.HydrogenId)
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-            {
-                Id = MyStringHash.GetOrCompute("player_hydrogen_bottles");
-                Gas = MyResourceDistributorComponent.HydrogenId;
-                TargetTickDivision = 0;
-            }
+            UpdateAtTick = 14; // offset updates to spread things out more
         }
     }
 
-    public class OxygenBottleStat : BottleBaseStat
+    public class OxygenBottleStat : BottleStatBase
     {
-        public OxygenBottleStat()
+        public OxygenBottleStat() : base("player_oxygen_bottles", MyResourceDistributorComponent.OxygenId)
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-            {
-                Id = MyStringHash.GetOrCompute("player_oxygen_bottles");
-                Gas = MyResourceDistributorComponent.OxygenId;
-                TargetTickDivision = 30;
-            }
+            UpdateAtTick = 44;
         }
     }
 
-    public abstract class BottleBaseStat : IMyHudStat
+    public abstract class BottleStatBase : HudStatBase
     {
-        public MyStringHash Id { get; protected set; }
-        public float CurrentValue { get; protected set; }
-        public float MinValue { get; } = 0f;
-        public float MaxValue { get; } = 1f;
-        public string GetValueString() => CurrentValue.ToString();
-
         protected MyDefinitionId Gas { get; set; }
-        protected int TargetTickDivision = 0;
 
-        public void Update()
+        /// <summary>
+        /// Logic on this runs once per second regardless, but this field controls which tick it runs at.
+        /// Must not be larger than 59.
+        /// </summary>
+        protected int UpdateAtTick = 0;
+
+        protected BottleStatBase(string id, MyDefinitionId gas) : base(id)
         {
-            if(BuildInfo_GameSession.IsKilled)
+            Gas = gas;
+        }
+
+        protected override string ValueAsString() => CurrentValue.ToString();
+
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
+        {
+            if(Main.Tick % 60 != UpdateAtTick)
                 return;
 
-            try
+            IMyCharacter chr = MyAPIGateway.Session?.Player?.Character;
+            MyInventory inv = chr?.GetInventory() as MyInventory;
+
+            current = 0;
+
+            if(inv == null)
+                return;
+
+            foreach(MyPhysicalInventoryItem item in inv.GetItems())
             {
-                if(MyAPIGateway.Session == null)
-                    return;
-
-                if(MyAPIGateway.Session.GameplayFrameCounter % 60 != TargetTickDivision)
-                    return;
-
-                IMyCharacter chr = MyAPIGateway.Session?.Player?.Character;
-                MyInventory inv = chr?.GetInventory() as MyInventory;
-
-                CurrentValue = 0;
-
-                if(inv == null)
-                    return;
-
-                foreach(MyPhysicalInventoryItem item in inv.GetItems())
+                MyObjectBuilder_GasContainerObject gasContainer = item.Content as MyObjectBuilder_GasContainerObject;
+                if(gasContainer != null && gasContainer.GasLevel > 1e-06f)
                 {
-                    MyObjectBuilder_GasContainerObject gasContainer = item.Content as MyObjectBuilder_GasContainerObject;
-                    if(gasContainer != null && gasContainer.GasLevel > 1e-06f)
+                    MyOxygenContainerDefinition def = MyDefinitionManager.Static.GetPhysicalItemDefinition(item.Content.GetId()) as MyOxygenContainerDefinition;
+                    if(def != null && def.StoredGasId == Gas)
                     {
-                        MyOxygenContainerDefinition def = MyDefinitionManager.Static.GetPhysicalItemDefinition(item.Content.GetId()) as MyOxygenContainerDefinition;
-                        if(def != null && def.StoredGasId == Gas)
-                        {
-                            CurrentValue += 1f;
-                        }
+                        current += 1f;
                     }
                 }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
             }
         }
     }

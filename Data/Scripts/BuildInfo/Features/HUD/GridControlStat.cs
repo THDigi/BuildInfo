@@ -1,65 +1,40 @@
-﻿using System;
-using Digi.ComponentLib;
-using Digi.ConfigLib;
-using Sandbox.ModAPI;
-using VRage.ModAPI;
-using VRage.Utils;
+﻿using Sandbox.ModAPI;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features.HUD
 {
-    // hide right side HUD in certain cases (like cockpit build mode).
-    public class GridControlStat : IMyHudStat
+    // hide right side bottom HUD in certain cases (like cockpit build mode).
+    public class GridControlStat : HudStatBase
     {
-        public MyStringHash Id { get; private set; }
-        public float CurrentValue { get; private set; }
-        public float MinValue { get; } = 0f;
-        public float MaxValue { get; } = 1f;
-        public string GetValueString() => CurrentValue >= 0.5f ? "1" : "0";
-
-        public GridControlStat()
+        public GridControlStat() : base("controlled_is_grid")
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                Id = MyStringHash.GetOrCompute("controlled_is_grid");
         }
 
-        public void Update()
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
         {
-            if(BuildInfo_GameSession.IsKilled)
+            // if cubebuilder is used, hide the right side ship info.
+            if(Main.Config.CockpitBuildHideRightHud.Value && MyAPIGateway.CubeBuilder.IsActivated)
+            {
+                current = 0f;
                 return;
-
-            try
-            {
-                // if cubebuilder is used, hide the right side ship info.
-                if(MyAPIGateway.CubeBuilder.IsActivated)
-                {
-                    BoolSetting setting = BuildInfoMod.Instance?.Config?.HudStatOverrides;
-                    if(setting != null && setting.Value)
-                    {
-                        CurrentValue = 0f;
-                        return;
-                    }
-                }
-
-                // vanilla game's logic for this stat
-                IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
-                if(controlled == null)
-                {
-                    CurrentValue = 0f;
-                }
-                else if(controlled is IMyLargeTurretBase)
-                {
-                    CurrentValue = (MyAPIGateway.Session?.Player?.Character?.Parent is IMyShipController ? 1 : 0);
-                }
-                else
-                {
-                    CurrentValue = (controlled is IMyShipController ? 1 : 0);
-                }
             }
-            catch(Exception e)
+
+            // the rest is vanilla game's logic for this stat
+            IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
+            if(controlled == null)
             {
-                Log.Error(e);
+                current = 0f;
+            }
+            else if(controlled is IMyLargeTurretBase)
+            {
+                current = (MyAPIGateway.Session?.Player?.Character?.Parent is IMyShipController ? 1 : 0);
+            }
+            else
+            {
+                current = (controlled is IMyShipController ? 1 : 0);
             }
         }
+
+        protected override string ValueAsString() => CurrentValue >= 0.5f ? "1" : "0";
     }
 }

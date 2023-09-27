@@ -36,6 +36,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupTextInfo = new ItemGroup();
         private readonly ItemGroup groupCustomStyling = new ItemGroup();
         private readonly ItemGroup groupToolbarLabels = new ItemGroup();
+        private readonly ItemGroup groupToolbarStatusFont = new ItemGroup();
         private readonly ItemGroup groupEventToolbar = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
@@ -197,10 +198,13 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleEnumCycle(Category_HUD, null, Main.Config.CubeBuilderSelectionInfoMode);
             SimpleToggle(Category_HUD, null, Main.Config.UnderCrosshairMessages);
             AddSpacer(Category_HUD);
-            SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
-            SimpleToggle(Category_HUD, null, Main.Config.HudStatOverrides);
             SimpleToggle(Category_HUD, null, Main.Config.RelativeDampenerInfo);
+            SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
+            SimpleToggle(Category_HUD, null, Main.Config.HudFontOverride);
             SimpleToggle(Category_HUD, null, Main.Config.BackpackBarOverride);
+            SimpleToggle(Category_HUD, null, Main.Config.HealthOverride);
+            SimpleEnumCycle(Category_HUD, null, Main.Config.MassOverride);
+            SimpleToggle(Category_HUD, null, Main.Config.CockpitBuildHideRightHud);
             AddSpacer(Category_HUD);
             SimpleToggle(Category_HUD, null, Main.Config.ShipToolInvBarShow, setGroupInteractable: groupShipToolInvBar);
             ItemAdd_ShipInvBarPosition(Category_HUD, groupShipToolInvBar);
@@ -266,15 +270,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             AddSpacer(Category_Toolbar);
 
-            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, callOnSet: (v) =>
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarStatusFontOverride, setGroupInteractable: groupToolbarStatusFont);
+
+            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarActionStatus, groupToolbarStatusFont, callOnSet: (v) =>
             {
                 if(!Main.ToolbarStatusProcessor.Enabled)
                 {
-                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"NOTE: Toolbar action status is forced off, reason: {Main.ToolbarStatusProcessor.DisableReason}");
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"NOTE: Toolbar action status is forced off, reason: {Main.ToolbarStatusProcessor.DisableReason}", FontsHandler.YellowSh);
                 }
             });
 
-            SimpleToggle(Category_Toolbar, null, Main.Config.ToolbarStatusFontOverride);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarStatusTextScaleOverride);
 
             SimpleEnumCycle(Category_Toolbar, null, Main.Config.ToolbarActionIcons, execOnCycle: (v) => MyAPIGateway.Utilities.ShowNotification($"NOTE: Toolbar action icons can't be refreshed in real time, you'll need to rejoin world.", 3000, FontsHandler.YellowSh));

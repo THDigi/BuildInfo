@@ -1,95 +1,57 @@
-﻿using System;
-using Digi.ComponentLib;
-using Digi.ConfigLib;
-using Sandbox.ModAPI;
-using VRage.ModAPI;
-using VRage.Utils;
+﻿using Sandbox.ModAPI;
+using SpaceEngineers.Game.ModAPI;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features.HUD
 {
     // allow HUD to be shown when turret is controlled.
-    public class TurretControlStat : IMyHudStat
+    public class TurretControlStat : HudStatBase
     {
-        public MyStringHash Id { get; private set; }
-        public float CurrentValue { get; private set; }
-        public float MinValue { get; } = 0f;
-        public float MaxValue { get; } = 1f;
-        public string GetValueString() => CurrentValue >= 0.5f ? "1" : "0";
-
-        public TurretControlStat()
+        public TurretControlStat() : base("controlled_is_turret")
         {
-            if(!BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
-                Id = MyStringHash.GetOrCompute("controlled_is_turret");
         }
 
-        public void Update()
+        protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
         {
-            if(BuildInfo_GameSession.IsKilled)
+            if(Main.Config.TurretHUD.Value)
+            {
+                current = 0f;
                 return;
+            }
 
-            try
-            {
-                BoolSetting setting = BuildInfoMod.Instance?.Config?.TurretHUD;
-                if(setting != null && setting.Value)
-                {
-                    CurrentValue = 0f;
-                }
-                else
-                {
-                    // vanilla game's logic for this stat
-                    IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
-                    if(controlled == null)
-                        CurrentValue = 0f;
-                    else
-                        CurrentValue = (controlled is IMyUserControllableGun ? 1 : 0);
-                }
-            }
-            catch(Exception e)
-            {
-                Log.Error(e);
-            }
+            // vanilla game's logic for this stat
+            IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
+            if(controlled == null)
+                current = 0f;
+            else
+                current = (controlled is IMyUserControllableGun ? 1 : 0);
         }
+
+        protected override string ValueAsString() => CurrentValue >= 0.5f ? "1" : "0";
     }
 
-    // show gamepad HUD when turret or turretcontroller is controlled
-    //public class TurretGamepadHUD : IMyHudStat
+    // show gamepad HUD when turret or turretcontroller is controlled...
+    // would look cleaner, but disabled because it might cause weirdness and CTC allows your prev controlled's toolbar to be interactive so that's weird.
+    //public class TurretGamepadHUD : HudStatBase
     //{
-    //    public MyStringHash Id { get; private set; }
-    //    public float CurrentValue { get; private set; }
-    //    public float MinValue { get; } = 0f;
-    //    public float MaxValue { get; } = 1f;
-    //    public string GetValueString() => CurrentValue >= 0.5f ? "1" : "0";
-    //
-    //    public TurretGamepadHUD()
+    //    public TurretGamepadHUD() : base("controller_mode")
     //    {
-    //        if(!BuildInfo_GameSession.IsKilled)
-    //            Id = MyStringHash.GetOrCompute("controller_mode");
     //    }
     //
-    //    public void Update()
+    //    protected override string ValueAsString() => CurrentValue >= 0.5f ? "1" : "0";
+    //
+    //    protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)
     //    {
-    //        if(BuildInfo_GameSession.IsKilled)
-    //            return;
-    //
-    //        try
+    //        if(Main.Config.TurretHUD.Value)
     //        {
-    //            BoolSetting setting = BuildInfoMod.Instance?.Config?.TurretHUD;
-    //            if(setting != null && setting.Value)
-    //            {
-    //                IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
+    //            IMyControllableEntity controlled = MyAPIGateway.Session?.ControlledObject;
     //
-    //                CurrentValue = (MyAPIGateway.Input.IsJoystickLastUsed || controlled is IMyLargeTurretBase || controlled is IMyTurretControlBlock) ? 1f : 0f;
-    //            }
-    //            else
-    //            {
-    //                // vanilla game's logic for this stat
-    //                CurrentValue = (MyAPIGateway.Input.IsJoystickLastUsed ? 1 : 0);
-    //            }
+    //            current = (MyAPIGateway.Input.IsJoystickLastUsed || controlled is IMyLargeTurretBase || controlled is IMyTurretControlBlock) ? 1 : 0;
     //        }
-    //        catch(Exception e)
+    //        else
     //        {
-    //            Log.Error(e);
+    //            // vanilla game's logic for this stat
+    //            current = (MyAPIGateway.Input.IsJoystickLastUsed ? 1 : 0);
     //        }
     //    }
     //}

@@ -135,16 +135,28 @@ namespace Digi.BuildInfo
             '\ue013',
         };
 
-        // need to be static for StatBase as it gets instanced before LoadData()...
-        public static readonly MyTuple<float, string>[] UnitMulipliers = new MyTuple<float, string>[]
+        public struct UnitInfo
         {
-            new MyTuple<float, string>(1000000000000, "T"),
-            new MyTuple<float, string>(1000000000, "G"),
-            new MyTuple<float, string>(1000000, "M"),
-            new MyTuple<float, string>(1000, "k"),
-            new MyTuple<float, string>(1, ""),
-            new MyTuple<float, string>(1/1000f, "m"),
-            new MyTuple<float, string>(1/1000000f, "µ"),
+            public readonly float Multiplier;
+            public readonly string Suffix;
+
+            public UnitInfo(float multiplier, string suffix)
+            {
+                Multiplier = multiplier;
+                Suffix = suffix;
+            }
+        }
+
+        // need to be static for StatBase as it gets instanced before LoadData()...
+        public static readonly UnitInfo[] UnitMulipliers = new UnitInfo[] // NOTE: must be from largest to smallest
+        {
+            new UnitInfo(1000000000000, "T"),
+            new UnitInfo(1000000000, "G"),
+            new UnitInfo(1000000, "M"),
+            new UnitInfo(1000, "k"),
+            new UnitInfo(1, ""),
+            new UnitInfo(1/1000f, "m"),
+            new UnitInfo(1/1000000f, "µ"),
         };
 
         // need to be static for StatBase as it gets instanced before LoadData()...
