@@ -39,6 +39,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private readonly ItemGroup groupToolbarStatusFont = new ItemGroup();
         private readonly ItemGroup groupEventToolbar = new ItemGroup();
         private readonly ItemGroup groupShipToolInvBar = new ItemGroup();
+        private readonly ItemGroup groupWeaponModeIcon = new ItemGroup();
         private readonly ItemGroup groupOverlayLabelsShowWithLookaround = new ItemGroup();
         private readonly ItemGroup groupTerminalDetailInfo = new ItemGroup();
         private readonly ItemGroup groupBinds = new ItemGroup(); // for updating titles on bindings that use other bindings
@@ -61,6 +62,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupToolbarLabels.SetInteractable(Main.Config.ToolbarLabels.Value != (int)ToolbarLabelsMode.Off);
             //groupEventToolbar.SetInteractable(true);
             groupShipToolInvBar.SetInteractable(Main.Config.ShipToolInvBarShow.Value);
+            groupWeaponModeIcon.SetInteractable(Main.Config.WeaponModeIndicatorScale.Value > 0f);
             groupOverlayLabelsShowWithLookaround.SetInteractable(Main.Config.OverlayLabels.Value != int.MaxValue);
             groupTerminalDetailInfo.SetInteractable(Main.Config.TerminalDetailInfoAdditions.Value);
 
@@ -210,6 +212,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             ItemAdd_ShipInvBarPosition(Category_HUD, groupShipToolInvBar);
             SimplePositionReset(Category_HUD, Main.Config.ShipToolInvBarPosition, groupShipToolInvBar);
             SimpleDualSlider(Category_HUD, null, Main.Config.ShipToolInvBarScale, groupShipToolInvBar);
+            AddSpacer(Category_HUD);
+            SimplePercentWithOff(Category_HUD, null, Main.Config.WeaponModeIndicatorScale, onSet: (v) => groupWeaponModeIcon.SetInteractable(v > 0f));
+            SimplePositionRedirect(Category_HUD, null, "Weapon mode indicator (bottom-right while in a cockpit) can be simply dragged while in this config menu, and scroll to scale.", Main.Config.WeaponModeIndicatorPosition, groupWeaponModeIcon);
+            SimplePositionReset(Category_HUD, Main.Config.WeaponModeIndicatorPosition, groupWeaponModeIcon);
             #endregion
 
             #region Toolbar
@@ -256,7 +262,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
-            SimplePositionRedirect(Category_Toolbar, GetLabelFromSetting(null, Main.Config.ToolbarLabelsInMenuPosition), "ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
+            SimplePositionRedirect(Category_Toolbar, null, "ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
@@ -265,7 +271,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             SimpleToggle(Category_Toolbar, null, Main.Config.EventToolbarInfo, setGroupInteractable: groupEventToolbar);
             SimpleSlider(Category_Toolbar, null, Main.Config.EventToolbarInfoScale, groupEventToolbar);
-            SimplePositionRedirect(Category_Toolbar, GetLabelFromSetting(null, Main.Config.EventToolbarInfoPosition), "Event toolbar info box can be moved in menu by holding LMB on it and dragging.", Main.Config.EventToolbarInfoPosition, groupEventToolbar);
+            SimplePositionRedirect(Category_Toolbar, null, "Event toolbar info box can be moved in menu by holding LMB on it and dragging.", Main.Config.EventToolbarInfoPosition, groupEventToolbar);
             SimplePositionReset(Category_Toolbar, Main.Config.EventToolbarInfoPosition, groupEventToolbar);
 
             AddSpacer(Category_Toolbar);
@@ -288,11 +294,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             #region Terminal
             SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoAdditions, setGroupInteractable: groupTerminalDetailInfo);
             SimpleToggle(Category_GUI, null, Main.Config.TerminalDetailInfoHeader, groupTerminalDetailInfo);
-            SimplePositionRedirect(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalButtonsPosition), "Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", Main.Config.TerminalButtonsPosition);
+            SimplePositionRedirect(Category_GUI, null, "Refresh and Copy buttons can always be moved in terminal by holding RMB on either of them.", Main.Config.TerminalButtonsPosition);
             SimplePositionReset(Category_GUI, Main.Config.TerminalButtonsPosition);
             SimpleSlider(Category_GUI, null, Main.Config.TerminalButtonsScale);
 
-            SimplePositionRedirect(Category_GUI, GetLabelFromSetting(null, Main.Config.TerminalMultiDetailedInfoPosition), "Multi-select info is always movable with RMB on the vertical line.", Main.Config.TerminalMultiDetailedInfoPosition);
+            SimplePositionRedirect(Category_GUI, null, "Multi-select info is always movable with RMB on the vertical line.", Main.Config.TerminalMultiDetailedInfoPosition);
             SimplePositionReset(Category_GUI, Main.Config.TerminalMultiDetailedInfoPosition);
 
             AddSpacer(Category_GUI);
@@ -704,9 +710,12 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupAll.Add(item);
         }
 
+        /// <summary>
+        /// <paramref name="label"/> can be null but <paramref name="denialText"/> must be defined!
+        /// </summary>
         private void SimplePositionRedirect(MenuCategoryBase category, string label, string denialText, Vector2DSetting setting, ItemGroup group = null)
         {
-            ItemPositionRedirect item = new ItemPositionRedirect(category, label, denialText, setting.DefaultValue, rounding: 4, getter: () => setting.Value);
+            ItemPositionRedirect item = new ItemPositionRedirect(category, GetLabelFromSetting(label, setting), denialText, setting.DefaultValue, rounding: 4, getter: () => setting.Value);
 
             group?.Add(item);
             groupAll.Add(item);
@@ -773,6 +782,37 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     Main.Config.Save();
                     ShowNotify("Saved to config", 3000);
                 },
+                dialogTitle: dialogTitle);
+
+            group?.Add(item);
+            groupAll.Add(item);
+            return item;
+        }
+
+        private ItemSlider SimplePercentWithOff(MenuCategoryBase category, string label, FloatSetting setting, float smallerThanForOff = 0f, float offValue = -0.1f, string offText = "OFF", string dialogTitle = null, ItemGroup group = null, Action<float> onSet = null)
+        {
+            ItemSlider item = new ItemSlider(category, GetLabelFromSetting(label, setting), min: offValue, max: setting.Max, defaultValue: setting.DefaultValue, rounding: 2,
+                getter: () => setting.Value,
+                sliding: (val) =>
+                {
+                    setting.Value = val;
+                },
+                cancelled: (orig) =>
+                {
+                    setting.Value = orig;
+                    ShowNotify("Cancelled changes", 3000);
+                },
+                setter: (val) =>
+                {
+                    if(val < smallerThanForOff)
+                        val = offValue;
+
+                    setting.Value = val;
+                    Main.Config.Save();
+                    ShowNotify("Saved to config", 3000);
+                    onSet?.Invoke(val);
+                },
+                format: (v) => (v < smallerThanForOff ? offText : (v * 100).ToString() + "%"),
                 dialogTitle: dialogTitle);
 
             group?.Add(item);

@@ -76,6 +76,7 @@ namespace Digi.BuildInfo
         public readonly CrosshairMessages CrosshairMessages;
         public readonly LiveDataHandler LiveDataHandler;
         public readonly TurretHUD TurretHUD;
+        public readonly WeaponModeIndicator WeaponModeIndicator;
         public readonly PlacementDistance PlacementDistance;
         public readonly CubeBuilderAdditions CubeBuilderAdditions;
         public readonly BlockInfoAdditions BlockInfoAdditions;
@@ -170,6 +171,7 @@ namespace Digi.BuildInfo
             ShipToolInventoryBar = new ShipToolInventoryBar(this);
             BlockInfoScrollComponents = new BlockInfoScrollComponents(this);
             TurretHUD = new TurretHUD(this);
+            WeaponModeIndicator = new WeaponModeIndicator(this);
             WhatsNew = new WhatsNew(this);
             TooltipHandler = new TooltipHandler(this);
             BlueprintTooltips = new BlueprintTooltips(this);

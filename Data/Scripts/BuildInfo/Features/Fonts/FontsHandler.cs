@@ -23,6 +23,9 @@ namespace Digi.BuildInfo.Features
         public const string BI_SEOutlined = "BI_SEOutlined";
         public const string BI_Monospace = "BI_Monospace";
 
+        public const string TextAPI_NormalFont = "white";
+        public const string TextAPI_OutlinedFont = BI_SEOutlined;
+
         // these are all only in textAPI version of SEOutlined
         public const int IconStartingChar = '\ue200';
         public const char IconExplode = '\ue200';

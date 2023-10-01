@@ -58,6 +58,9 @@ namespace Digi.BuildInfo.Features.Config
         public Vector2DSetting ShipToolInvBarPosition;
         public Vector2DSetting ShipToolInvBarScale;
 
+        public Vector2DSetting WeaponModeIndicatorPosition;
+        public FloatSetting WeaponModeIndicatorScale;
+
         public EnumSetting<ToolbarLabelsMode> ToolbarLabels;
         public FloatSetting ToolbarLabelsEnterCockpitTime;
         public EnumSetting<ToolbarNameMode> ToolbarItemNameMode;
@@ -443,6 +446,17 @@ namespace Digi.BuildInfo.Features.Config
             ShipToolInvBarScale = new Vector2DSetting(Handler, "HUD: Ship Tool Inventory Bar Scale", defaultValue: new Vector2D(1, 1), min: new Vector2D(0.1, 0.1), max: new Vector2D(3, 3), commentLines: new string[]
             {
                 "The width and height scale of the ship tool inventory bar.",
+            });
+
+            WeaponModeIndicatorPosition = new Vector2DSetting(Handler, "HUD: Weapon Mode Indicator Position", defaultValue: new Vector2D(0.742708, -0.622223), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "Position for the weapon mode indicator on the HUD.",
+                "Weapon mode cycles between shooting a single weapon or all weapons, uses the same bind as 'Repaint Block' but while in a cockpit.",
+            });
+
+            WeaponModeIndicatorScale = new FloatSetting(Handler, "HUD: Weapon Mode Indicator Scale", defaultValue: 1, min: -1f, max: 5f, commentLines: new string[]
+            {
+                "Scale the weapon mode indicator icon. Set to 0 or lower to remove this icon entirely.",
             });
             #endregion
 
