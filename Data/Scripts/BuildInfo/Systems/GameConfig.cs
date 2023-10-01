@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Digi.ComponentLib;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -26,6 +27,8 @@ namespace Digi.BuildInfo.Systems
         public float UIBackgroundOpacity;
         public double AspectRatio;
         public bool RotationHints;
+        public bool UsingGamepad;
+        public event Action UsingGamepadChanged;
 
         HudState? PreviousHudState;
         HashSet<string> HideHudRequests = new HashSet<string>();
@@ -63,6 +66,14 @@ namespace Digi.BuildInfo.Systems
             if(MyAPIGateway.Input.IsNewGameControlPressed(MyControlsSpace.TOGGLE_HUD))
             {
                 UpdateHudState();
+            }
+
+            // since we're updating anyway, might as well provide an event for this
+            bool usingGamepadNew = MyAPIGateway.Input.IsJoystickLastUsed;
+            if(UsingGamepad != usingGamepadNew)
+            {
+                UsingGamepad = usingGamepadNew;
+                UsingGamepadChanged?.Invoke();
             }
         }
 

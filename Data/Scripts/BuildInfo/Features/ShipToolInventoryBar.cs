@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features
         public bool Shown { get; private set; } = false;
 
         bool ShouldUpdate;
-        bool UsingTool;
+        bool ShouldDraw;
         MyStringId BarIcon;
         float FilledRatio;
         int CanRefreshAfterTick;
@@ -53,6 +53,7 @@ namespace Digi.BuildInfo.Features
         public override void RegisterComponent()
         {
             Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.GameConfig.UsingGamepadChanged += GameConfig_UsingGamepadChanged;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
             Main.Config.ShipToolInvBarShow.ValueAssigned += ConfigBoolChanged;
@@ -64,6 +65,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.GameConfig.UsingGamepadChanged -= GameConfig_UsingGamepadChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
             Main.Config.ShipToolInvBarShow.ValueAssigned -= ConfigBoolChanged;
@@ -76,40 +78,57 @@ namespace Digi.BuildInfo.Features
 
         void GameConfig_HudStateChanged(HudState prevState, HudState newState)
         {
+            if(prevState == HudState.HINTS && newState == HudState.BASIC)
+                return; // ignore this state change
+
             UpdateShow();
         }
 
         void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
-            UpdateShow(force: true);
+            UpdateShow(forceComputeGrid: true);
         }
 
         void EquipmentMonitor_ControlledChanged(IMyControllableEntity controlled)
         {
-            UpdateShow(force: true);
+            UpdateShow(forceComputeGrid: true);
         }
 
-        void UpdateShow(bool force = false)
+        void GameConfig_UsingGamepadChanged()
         {
-            if(!force && Main.Tick < CanRefreshAfterTick)
-                return;
+            UpdateShow();
+        }
 
+        void UpdateShow(bool forceComputeGrid = false)
+        {
             IMyShipController ctrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
-            CanRefreshAfterTick = Main.Tick + FillComputeEveryTicks;
-            ShouldUpdate = ctrl != null && ctrl.CanControlShip && !MyAPIGateway.Input.IsJoystickLastUsed && Main.GameConfig.HudState != HudState.OFF && Main.Config.ShipToolInvBarShow.Value;
-            UsingTool = Main.EquipmentMonitor.ToolDefId.TypeId == TypeGrinder || Main.EquipmentMonitor.ToolDefId.TypeId == TypeDrill;
+
+            Shown = false;
+            ShouldUpdate = !Main.GameConfig.UsingGamepad
+                         && ctrl != null
+                         && ctrl.CanControlShip
+                         && Main.GameConfig.HudState != HudState.OFF
+                         && Main.Config.ShipToolInvBarShow.Value;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldUpdate);
+
+            MyObjectBuilderType toolType = Main.EquipmentMonitor.ToolDefId.TypeId;
+            ShouldDraw = ShouldUpdate && (toolType == TypeGrinder || toolType == TypeDrill);
+
+            // ShouldDraw can still be set to true if any tools are currently on
+
+            if(!forceComputeGrid && Main.Tick < CanRefreshAfterTick)
+                return;
+
+            CanRefreshAfterTick = Main.Tick + FillComputeEveryTicks;
 
             if(ShouldUpdate)
             {
                 TempGrids.Clear();
                 MyAPIGateway.GridGroups.GetGroup(ctrl.CubeGrid, GridLinkTypeEnum.Logical, TempGrids);
 
-                if(UsingTool)
+                if(ShouldDraw) // specific tool selected
                 {
-                    MyObjectBuilderType toolType = Main.EquipmentMonitor.ToolDefId.TypeId;
-
                     BarIcon = (toolType == TypeGrinder ? GrinderIconMaterial : DrillIconMaterial);
                     FilledRatio = 0;
 
@@ -137,7 +156,7 @@ namespace Digi.BuildInfo.Features
                         }
                     }
                 }
-                else
+                else // no tool selected, look for any welders or grinders that are turned on
                 {
                     float highestFilledGrinder = 0f;
                     float highestFilledDrill = 0f;
@@ -178,7 +197,13 @@ namespace Digi.BuildInfo.Features
                                 drillsOn |= functional.Enabled;
                                 highestFilledDrill = Math.Max(highestFilledDrill, filled);
                             }
+
+                            if(grindersOn && drillsOn)
+                                break;
                         }
+
+                        if(grindersOn && drillsOn)
+                            break;
                     }
 
                     if(grindersOn && drillsOn)
@@ -187,13 +212,13 @@ namespace Digi.BuildInfo.Features
                     }
                     else if(grindersOn)
                     {
-                        UsingTool = true;
+                        ShouldDraw = true;
                         FilledRatio = highestFilledGrinder;
                         BarIcon = GrinderIconMaterial;
                     }
                     else if(drillsOn)
                     {
-                        UsingTool = true;
+                        ShouldDraw = true;
                         FilledRatio = highestFilledDrill;
                         BarIcon = DrillIconMaterial;
                     }
@@ -211,9 +236,11 @@ namespace Digi.BuildInfo.Features
                 return;
 
             if(Main.Tick >= CanRefreshAfterTick)
+            {
                 UpdateShow();
+            }
 
-            if(!UsingTool)
+            if(!ShouldDraw)
                 return;
 
             Shown = true;
