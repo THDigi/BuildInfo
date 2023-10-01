@@ -25,6 +25,8 @@ namespace Digi.BuildInfo.Features
         HudAPIv2.HUDMessage UI_Bind;
         BoxDragging Drag;
 
+        bool SuppressNextSound = true;
+
         const float TextScale = 0.6f;
         readonly Color BackgroundColor = Color.White;
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
@@ -95,6 +97,8 @@ namespace Digi.BuildInfo.Features
             InCockpit = controlled as MyCockpit;
             SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, InCockpit != null);
 
+            SuppressNextSound = true;
+
             if(InCockpit != null)
             {
                 ShowOrUpdateIcon();
@@ -150,8 +154,14 @@ namespace Digi.BuildInfo.Features
             if(PrevModeSingle != singleWeaponMode)
             {
                 PrevModeSingle = singleWeaponMode;
+
                 ShowOrUpdateIcon();
+
+                if(!SuppressNextSound)
+                    Main.HUDSounds.PlayClick();
             }
+
+            SuppressNextSound = false;
 
             if(UI_IconBg != null)
             {

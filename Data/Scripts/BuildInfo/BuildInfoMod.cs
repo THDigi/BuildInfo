@@ -31,6 +31,7 @@ namespace Digi.BuildInfo
         public readonly Constants Constants;
         public readonly DrawUtils DrawUtils;
         public readonly VanillaDefinitions VanillaDefinitions;
+        public readonly HUDSounds HUDSounds;
 
         // Systems
         public readonly TextAPI TextAPI;
@@ -119,6 +120,7 @@ namespace Digi.BuildInfo
             Constants = new Constants(this);
             DrawUtils = new DrawUtils(this);
             VanillaDefinitions = new VanillaDefinitions(this);
+            HUDSounds = new HUDSounds(this);
 
             // Systems
             TextAPI = new TextAPI(this);
