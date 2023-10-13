@@ -29,7 +29,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         const float BackgroundOpacity = 0.75f;
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
-        const BlendTypeEnum BlendType = BlendTypeEnum.PostPP;
 
         const string TextFont = FontsHandler.BI_SEOutlined;
         const bool UseShadowMessage = false;
@@ -215,10 +214,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(!RenderBoxContent(sb, blocks))
                 return;
 
-            if(Main.Config.ToolbarLabelsHeader.Value)
-            {
-                sb.Color(ModNameColor).Append("<i>(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
-            }
+            //if(Main.Config.ToolbarLabelsHeader.Value)
+            //{
+            sb.Color(ModNameColor).Append("<i>(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
+            //}
 
             sb.TrimEndWhitespace();
 
