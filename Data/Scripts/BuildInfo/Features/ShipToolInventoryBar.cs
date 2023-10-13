@@ -52,7 +52,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.GameConfig.HudVisibleChanged += GameConfig_HudVisibleChanged;
             Main.GameConfig.UsingGamepadChanged += GameConfig_UsingGamepadChanged;
             Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.ControlledChanged += EquipmentMonitor_ControlledChanged;
@@ -64,7 +64,7 @@ namespace Digi.BuildInfo.Features
             if(!Main.ComponentsRegistered)
                 return;
 
-            Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.GameConfig.HudVisibleChanged -= GameConfig_HudVisibleChanged;
             Main.GameConfig.UsingGamepadChanged -= GameConfig_UsingGamepadChanged;
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.EquipmentMonitor.ControlledChanged -= EquipmentMonitor_ControlledChanged;
@@ -76,11 +76,8 @@ namespace Digi.BuildInfo.Features
             UpdateShow();
         }
 
-        void GameConfig_HudStateChanged(HudState prevState, HudState newState)
+        void GameConfig_HudVisibleChanged()
         {
-            if(prevState == HudState.HINTS && newState == HudState.BASIC)
-                return; // ignore this state change
-
             UpdateShow();
         }
 
@@ -104,10 +101,9 @@ namespace Digi.BuildInfo.Features
             IMyShipController ctrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
 
             Shown = false;
-            ShouldUpdate = !Main.GameConfig.UsingGamepad
-                         && ctrl != null
-                         && ctrl.CanControlShip
-                         && Main.GameConfig.HudState != HudState.OFF
+            ShouldUpdate = ctrl != null && ctrl.CanControlShip
+                         && !Main.GameConfig.UsingGamepad
+                         && Main.GameConfig.IsHudVisible
                          && Main.Config.ShipToolInvBarShow.Value;
 
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, ShouldUpdate);

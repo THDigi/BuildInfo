@@ -112,13 +112,16 @@ namespace Digi.BuildInfo.Utilities
         }
 
         /// <summary>
-        /// Transforms -1~1 textAPI screen coordinates to world coordinates.
+        /// Transforms -1~1 textAPI screen coordinates to screen pixel coordinates.
         /// </summary>
-        public Vector2D TextAPIHUDToPixels(Vector2D hud, Vector2D resolution)
+        public Vector2D TextAPIHUDToPixels(Vector2D hud, Vector2D? resolution = null)
         {
+            if(resolution == null)
+                resolution = MyAPIGateway.Session.Camera.ViewportSize;
+
             double x = (hud.X + 1) / 2;
             double y = 1f - (hud.Y + 1) / 2;
-            return resolution * new Vector2D(x, y);
+            return resolution.Value * new Vector2D(x, y);
         }
 
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)

@@ -19,15 +19,22 @@ namespace Digi.BuildInfo.Systems
 
     public class GameConfig : ModComponent
     {
+        public HudState HudState { get; private set; }
         public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);
         public event EventHandlerHudStateChanged HudStateChanged;
 
-        public HudState HudState;
-        public float HudBackgroundOpacity;
-        public float UIBackgroundOpacity;
-        public double AspectRatio;
-        public bool RotationHints;
-        public bool UsingGamepad;
+        /// <summary>
+        /// Returns false if HUD is hidden by menus or by <see cref="HudState"/> being off.
+        /// </summary>
+        public bool IsHudVisible { get; private set; }
+        public event Action HudVisibleChanged;
+
+        public float HudBackgroundOpacity { get; private set; }
+        public float UIBackgroundOpacity { get; private set; }
+        public double AspectRatio { get; private set; }
+        public bool RotationHints { get; private set; }
+
+        public bool UsingGamepad { get; private set; }
         public event Action UsingGamepadChanged;
 
         HudState? PreviousHudState;
@@ -68,12 +75,22 @@ namespace Digi.BuildInfo.Systems
                 UpdateHudState();
             }
 
-            // since we're updating anyway, might as well provide an event for this
+            // since we're updating anyway, might as well provide an event for these
+
             bool usingGamepadNew = MyAPIGateway.Input.IsJoystickLastUsed;
             if(UsingGamepad != usingGamepadNew)
             {
                 UsingGamepad = usingGamepadNew;
                 UsingGamepadChanged?.Invoke();
+            }
+
+            // TODO: proper checks to eliminate cases where HUD isn't hidden by this
+            // the first condition is the HUD fade-in
+            bool hudVisible = tick > Constants.TicksPerSecond * 5 && HudState != HudState.OFF && !MyAPIGateway.Gui.IsCursorVisible;
+            if(IsHudVisible != hudVisible)
+            {
+                IsHudVisible = hudVisible;
+                HudVisibleChanged?.Invoke();
             }
         }
 

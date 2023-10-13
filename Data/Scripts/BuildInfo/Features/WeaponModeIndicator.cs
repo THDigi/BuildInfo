@@ -4,9 +4,11 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
 using VRage.Utils;
@@ -65,7 +67,9 @@ namespace Digi.BuildInfo.Features
             Main.EquipmentMonitor.ControlledChanged += ControlledChanged;
             Main.GUIMonitor.OptionsMenuClosed += OptionsMenuClosed;
             Main.TextAPI.Detected += TextAPI_Detected;
-            Main.GameConfig.HudStateChanged += GameConfig_HudStateChanged;
+            Main.GameConfig.HudVisibleChanged += HudVisibleChanged;
+            Main.GameConfig.HudStateChanged += HudStateChanged;
+            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
             Main.Config.WeaponModeIndicatorScale.ValueAssigned += Config_ScaleChanged;
             Main.Config.WeaponModeIndicatorPosition.ValueAssigned += Config_PositionChanged;
             Main.Config.HudFontOverride.ValueAssigned += Config_FontOverrideChanged;
@@ -81,7 +85,9 @@ namespace Digi.BuildInfo.Features
             Main.EquipmentMonitor.ControlledChanged -= ControlledChanged;
             Main.GUIMonitor.OptionsMenuClosed -= OptionsMenuClosed;
             Main.TextAPI.Detected -= TextAPI_Detected;
-            Main.GameConfig.HudStateChanged -= GameConfig_HudStateChanged;
+            Main.GameConfig.HudVisibleChanged -= HudVisibleChanged;
+            Main.GameConfig.HudStateChanged -= HudStateChanged;
+            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
             Main.Config.WeaponModeIndicatorScale.ValueAssigned -= Config_ScaleChanged;
             Main.Config.WeaponModeIndicatorPosition.ValueAssigned -= Config_PositionChanged;
             Main.Config.HudFontOverride.ValueAssigned -= Config_FontOverrideChanged;
@@ -109,7 +115,22 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void GameConfig_HudStateChanged(HudState prevState, HudState state)
+        void OptionsMenuClosed()
+        {
+            RefreshIconIfVisible();
+        }
+
+        void HudVisibleChanged()
+        {
+            RefreshIconIfVisible();
+        }
+
+        void HudStateChanged(HudState prevState, HudState state)
+        {
+            RefreshIconIfVisible();
+        }
+
+        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             RefreshIconIfVisible();
         }
@@ -124,11 +145,6 @@ namespace Digi.BuildInfo.Features
             RefreshIconIfVisible();
         }
 
-        void OptionsMenuClosed()
-        {
-            RefreshIconIfVisible();
-        }
-
         void Config_FontOverrideChanged(bool oldValue, bool newValue, ConfigLib.SettingBase<bool> setting)
         {
             RefreshIconIfVisible();
@@ -136,7 +152,7 @@ namespace Digi.BuildInfo.Features
 
         void RefreshIconIfVisible()
         {
-            if(UI_IconBg != null && InCockpit != null)
+            if(InCockpit != null)
             {
                 ShowOrUpdateIcon();
             }
@@ -194,8 +210,7 @@ namespace Digi.BuildInfo.Features
         void ShowOrUpdateIcon()
         {
             float scale = Main.Config.WeaponModeIndicatorScale.Value;
-
-            if(!Main.TextAPI.IsEnabled || scale <= 0 || Main.GameConfig.HudState == HudState.OFF)
+            if(scale <= 0 || !Main.GameConfig.IsHudVisible || !Main.TextAPI.IsEnabled || (Main.Config.CockpitBuildHideRightHud.Value && MyCubeBuilder.Static.IsActivated))
             {
                 HideIcon();
                 return;
@@ -207,6 +222,8 @@ namespace Digi.BuildInfo.Features
                 UI_Icon = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_HudWeaponModeAll"), Color.White, Vector2D.Zero, hideWithHud: true);
                 UI_Bind = TextAPI.CreateHUDText(new StringBuilder(32), Vector2D.Zero, hideWithHud: true);
             }
+
+            bool showBind = Main.GameConfig.HudState == HudState.HINTS;
 
             Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
 
@@ -225,11 +242,16 @@ namespace Digi.BuildInfo.Features
             UI_Icon.Height = UI_IconBg.Height;
             UI_Icon.Scale = scale;
 
-            UI_Bind.Offset = UI_IconBg.Origin; // "parent" it to the bg
-            UI_Bind.Scale = scale * TextScale;
-            UI_Bind.Font = (Main.Config.HudFontOverride.Value ? FontsHandler.TextAPI_OutlinedFont : FontsHandler.TextAPI_NormalFont);
+            UI_IconBg.Visible = true;
+            UI_Icon.Visible = true;
+            UI_Bind.Visible = showBind;
 
+            if(showBind)
             {
+                UI_Bind.Offset = UI_IconBg.Origin; // "parent" it to the bg
+                UI_Bind.Scale = scale * TextScale;
+                UI_Bind.Font = (Main.Config.HudFontOverride.Value ? FontsHandler.TextAPI_OutlinedFont : FontsHandler.TextAPI_NormalFont);
+
                 StringBuilder sb = UI_Bind.Message.Clear();
 
                 IMyControl control = MyAPIGateway.Input.GetGameControl(MyControlsSpace.CUBE_COLOR_CHANGE);
@@ -248,17 +270,13 @@ namespace Digi.BuildInfo.Features
                     sb.Append(bindMouse);
                 else
                     sb.Append("(unk)");
+
+                Vector2D textSize = UI_Bind.GetTextLength();
+
+                UI_Bind.Origin = new Vector2D(
+                    textSize.X / -2, // centered
+                    pxSize.Y * 24 * scale); // px
             }
-
-            Vector2D textSize = UI_Bind.GetTextLength();
-
-            UI_Bind.Origin = new Vector2D(
-                textSize.X / -2, // centered
-                pxSize.Y * 24 * scale); // px
-
-            UI_IconBg.Visible = true;
-            UI_Icon.Visible = true;
-            UI_Bind.Visible = (Main.GameConfig.HudState == HudState.HINTS);
         }
     }
 }
