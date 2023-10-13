@@ -16,7 +16,7 @@ using VRage.Utils;
 using VRageMath;
 
 // TODO: alternate rendering for gamepad HUD mode
-// TODO: gotta split it into a generic box of list strings, supporting 2 columns (maybe more?)
+// TODO: convert this one to be the HUD-only one and use ToolbarInfoInMenu one for all in-menu ones (currently ship controller's is this)
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {
@@ -88,7 +88,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.TextAPI.Detected += TextAPIDetected;
 
             Main.Config.ToolbarLabelsHeader.ValueAssigned += ConfigBoolChanged;
-            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned += ConfigPositionChanged;
+            Main.Config.ToolbarLabelsMenuPosition.ValueAssigned += ConfigPositionChanged;
             Main.Config.ToolbarLabelsPosition.ValueAssigned += ConfigPositionChanged;
             Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned += ConfigPositionChanged;
             Main.Config.ToolbarLabelsScale.ValueAssigned += ConfigFloatChanged;
@@ -118,7 +118,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 }
 
                 if(InToolbarConfig)
-                    Main.Config.ToolbarLabelsInMenuPosition.Value = newPos;
+                    Main.Config.ToolbarLabelsMenuPosition.Value = newPos;
                 else
                     Main.Config.ToolbarLabelsPosition.Value = newPos;
             };
@@ -137,7 +137,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             Main.TextAPI.Detected -= TextAPIDetected;
 
             Main.Config.ToolbarLabelsHeader.ValueAssigned -= ConfigBoolChanged;
-            Main.Config.ToolbarLabelsInMenuPosition.ValueAssigned -= ConfigPositionChanged;
+            Main.Config.ToolbarLabelsMenuPosition.ValueAssigned -= ConfigPositionChanged;
             Main.Config.ToolbarLabelsPosition.ValueAssigned -= ConfigPositionChanged;
             Main.Config.ToolbarLabelsOffsetForInvBar.ValueAssigned -= ConfigPositionChanged;
             Main.Config.ToolbarLabelsScale.ValueAssigned -= ConfigFloatChanged;
@@ -180,7 +180,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             LabelsMode = (ToolbarLabelsMode)Main.Config.ToolbarLabels.Value;
             NamesMode = (ToolbarNameMode)Main.Config.ToolbarItemNameMode.Value;
             StyleMode = (ToolbarStyle)Main.Config.ToolbarStyleMode.Value;
-            PosInGUI = Main.Config.ToolbarLabelsInMenuPosition.Value;
+            PosInGUI = Main.Config.ToolbarLabelsMenuPosition.Value;
             PosOnHUD = Main.Config.ToolbarLabelsPosition.Value;
             Scale = (float)(TextScaleMultiplier * Main.Config.ToolbarLabelsScale.Value);
 
@@ -570,7 +570,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(splitMode)
                 sb2 = ListColumn2.Text.Message.Clear();
 
-            if(Main.Config.ToolbarLabelsHeader.Value)
+            if(InToolbarConfig || Main.Config.ToolbarLabelsHeader.Value)
             {
                 sb.ColorA(new Color(255, 240, 220) * opacity).Append("Toolbar Info - Page ").Append(toolbarPage + 1).Append(" <i>").ColorA(Color.Gray * opacity).Append("(").Append(BuildInfoMod.ModName).Append(" Mod)").NewCleanLine();
             }

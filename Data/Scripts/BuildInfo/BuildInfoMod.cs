@@ -9,6 +9,8 @@ using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.Terminal;
 using Digi.BuildInfo.Features.ToolbarInfo;
+using Digi.BuildInfo.Features.Toolbars;
+using Digi.BuildInfo.Features.Toolbars.FakeAPI;
 using Digi.BuildInfo.Features.Tooltips;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
@@ -92,6 +94,8 @@ namespace Digi.BuildInfo
         public readonly ItemTooltips ItemTooltips;
         public readonly IconOverlays IconOverlays;
         public readonly Inventories Inventories;
+        public readonly ToolbarTracker ToolbarTracker;
+        public readonly ToolbarInfoInMenu ToolbarInfoInMenu;
         public readonly ToolbarOverride ToolbarOverride;
         public readonly ToolbarMonitor ToolbarMonitor;
         public readonly ToolbarCustomLabels ToolbarCustomLabels;
@@ -181,6 +185,8 @@ namespace Digi.BuildInfo
             ItemTooltips = new ItemTooltips(this);
             IconOverlays = new IconOverlays(this);
             Inventories = new Inventories(this);
+            ToolbarTracker = new ToolbarTracker(this);
+            ToolbarInfoInMenu = new ToolbarInfoInMenu(this);
             ToolbarOverride = new ToolbarOverride(this);
             ToolbarMonitor = new ToolbarMonitor(this);
             ToolbarCustomLabels = new ToolbarCustomLabels(this);

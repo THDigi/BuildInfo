@@ -107,8 +107,7 @@ namespace Digi.BuildInfo
 
         public readonly MyStringId[] ToolbarSlotControlIds = new MyStringId[]
         {
-            MyControlsSpace.SLOT0, // do not edit order
-            MyControlsSpace.SLOT1,
+            MyControlsSpace.SLOT1, // do not edit order
             MyControlsSpace.SLOT2,
             MyControlsSpace.SLOT3,
             MyControlsSpace.SLOT4,
@@ -117,6 +116,7 @@ namespace Digi.BuildInfo
             MyControlsSpace.SLOT7,
             MyControlsSpace.SLOT8,
             MyControlsSpace.SLOT9,
+            MyControlsSpace.SLOT0,
         };
 
         public readonly MyJoystickButtonsEnum[] DPadValues = new MyJoystickButtonsEnum[]

@@ -344,17 +344,18 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
-            for(int i = 1; i < controlSlots.Length; ++i) // intentionally skipping SLOT0
+            // intentinoally skipping last (slot0)
+            for(int i = 0; i < controlSlots.Length - 1; ++i)
             {
                 if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
                 {
                     if(MyAPIGateway.Input.IsAnyCtrlKeyPressed())
                     {
-                        SetToolbarPage(ControlledBlock, i - 1);
+                        SetToolbarPage(ControlledBlock, i);
                     }
-                    else
+                    else if(i <= 9)
                     {
-                        TriggeredIndex = (ToolbarPage * SlotsPerPage) + (i - 1);
+                        TriggeredIndex = (ToolbarPage * SlotsPerPage) + i;
                         TriggeredAtTick = Main.Tick + 1; // refresh soon after, not exactly same tick
                         ToolbarSlotTriggered?.Invoke(TriggeredIndex);
                     }

@@ -67,9 +67,11 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting ToolbarLabelsHeader;
         public EnumSetting<ToolbarStyle> ToolbarStyleMode;
         public Vector2DSetting ToolbarLabelsPosition;
-        public Vector2DSetting ToolbarLabelsInMenuPosition;
         public FloatSetting ToolbarLabelsScale;
         public Vector2DSetting ToolbarLabelsOffsetForInvBar;
+
+        public Vector2DSetting ToolbarLabelsMenuPosition;
+        public FloatSetting ToolbarLabelsMenuScale;
 
         public BoolSetting ToolbarActionStatus;
         public EnumSetting<ActionIconsMode> ToolbarActionIcons;
@@ -235,11 +237,11 @@ namespace Digi.BuildInfo.Features.Config
                 Log.Info($"NOTE: Value for '{ShipToolInvBarPosition.Name}' was changed into a different space (the proper one), your setting was automatically calculated into it so no changes are necessary.");
 
                 // old in-menu default wasn't adjusted for recent title addition
-                if(Vector2D.DistanceSquared(ToolbarLabelsInMenuPosition.Value, new Vector2D(0.128, -0.957)) <= 0.001)
+                if(Vector2D.DistanceSquared(ToolbarLabelsMenuPosition.Value, new Vector2D(0.128, -0.957)) <= 0.001)
                 {
-                    ToolbarLabelsInMenuPosition.ResetToDefault();
+                    ToolbarLabelsMenuPosition.ResetToDefault();
 
-                    Log.Info($"NOTE: Default value for '{ToolbarLabelsInMenuPosition.Name}' changed and yours was the old default, setting reset to new default.");
+                    Log.Info($"NOTE: Default value for '{ToolbarLabelsMenuPosition.Name}' changed and yours was the old default, setting reset to new default.");
                 }
             }
 
@@ -545,14 +547,6 @@ namespace Digi.BuildInfo.Features.Config
             });
             ToolbarLabelsPosition.AddCompatibilityNames("Toolbar: Labels Box Position");
 
-            ToolbarLabelsInMenuPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarInfo In-Menu Position", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
-            {
-                "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
-                "Screen position in X and Y coordinates where 0,0 is the screen center.",
-                "Positive values are right and up, while negative ones are opposite of that.",
-            });
-            ToolbarLabelsInMenuPosition.AddCompatibilityNames("Toolbar: Labels Box Position In-Menu");
-
             ToolbarLabelsScale = new FloatSetting(Handler, "Toolbar: ToolbarInfo Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
             {
                 "The scale of the toolbar labels box."
@@ -565,6 +559,19 @@ namespace Digi.BuildInfo.Features.Config
                 "Useful when you want to place the labels box in the center over the toolbar.",
             });
             ToolbarLabelsOffsetForInvBar.AddCompatibilityNames("Toolbar: Labels Box Offset for InvBar");
+
+            ToolbarLabelsMenuPosition = new Vector2DSetting(Handler, "Toolbar: ToolbarInfo In-Menu Position", defaultValue: new Vector2D(0.128, -0.995), min: new Vector2D(-1, -1), max: new Vector2D(1, 1), commentLines: new string[]
+            {
+                "The position (bottom-left corner pivot) of the toolbar labels when in toolbar config menu, somewhere to the right side is recommended.",
+                "Screen position in X and Y coordinates where 0,0 is the screen center.",
+                "Positive values are right and up, while negative ones are opposite of that.",
+            });
+            ToolbarLabelsMenuPosition.AddCompatibilityNames("Toolbar: Labels Box Position In-Menu");
+
+            ToolbarLabelsMenuScale = new FloatSetting(Handler, "Toolbar: ToolbarInfo In-Menu Scale", defaultValue: 1.0f, min: 0.1f, max: 3f, commentLines: new string[]
+            {
+                "The scale of the toolbar info box when in toolbar config menu."
+            });
 
             const string ToolbarStatusFontOverride_Label = "Toolbar: Action Status Font Override";
 

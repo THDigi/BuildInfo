@@ -124,6 +124,17 @@ namespace Digi.BuildInfo.Utilities
             return resolution.Value * new Vector2D(x, y);
         }
 
+        public Vector2D PixelsToTextAPIHUD(Vector2D px, Vector2D? resolution = null)
+        {
+            if(resolution == null)
+                resolution = MyAPIGateway.Session.Camera.ViewportSize;
+
+            Vector2D scalar = px / resolution.Value;
+
+            return new Vector2D(2.0 * scalar.X - 1,
+                                1 - 2.0 * scalar.Y);
+        }
+
         public Vector2 GetGameHudBlockInfoSize(float Ymultiplier)
         {
             Vector2 size = new Vector2(0.02164f, 0.00076f);

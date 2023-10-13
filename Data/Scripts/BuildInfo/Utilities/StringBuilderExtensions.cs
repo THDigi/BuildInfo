@@ -238,6 +238,41 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
+        public static StringBuilder AppendMaxLength(this StringBuilder s, StringBuilder text, int maxLength, bool addDots = true, bool noNewLines = true)
+        {
+            if(text == null)
+                return s.Append("(NULL)");
+
+            if(noNewLines)
+            {
+                int newLine = text.IndexOf('\n');
+                if(newLine >= 0)
+                    maxLength = Math.Min(maxLength, newLine); // redefine max length to before the first newline character
+            }
+
+            if(text.Length > maxLength)
+            {
+                s.EnsureCapacity(s.Length + maxLength);
+
+                if(addDots)
+                    maxLength -= 1;
+
+                for(int i = 0; i < maxLength; i++)
+                {
+                    s.Append(text[i]);
+                }
+
+                if(addDots)
+                    s.Append('…');
+            }
+            else
+            {
+                s.AppendStringBuilder(text);
+            }
+
+            return s;
+        }
+
         const string LineInfoSeparator = ", ";
 
         public static StringBuilder Separator(this StringBuilder s)

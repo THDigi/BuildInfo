@@ -130,14 +130,14 @@ namespace Digi.BuildInfo.Features
                 int slot = 0;
                 MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
-                // intentionally skipping 0
-                for(int i = 1; i < controlSlots.Length; ++i)
+                // intentionally skipping last (slot0)
+                for(int i = 0; i < controlSlots.Length - 1; ++i)
                 {
                     MyStringId controlId = controlSlots[i];
 
                     if(MyAPIGateway.Input.IsNewGameControlPressed(controlId))
                     {
-                        slot = i;
+                        slot = i + 1;
                         break;
                     }
                 }

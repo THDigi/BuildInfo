@@ -262,10 +262,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             ItemAdd_ToolbarLabelsPos(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
             SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsPosition, groupToolbarLabels);
-            SimplePositionRedirect(Category_Toolbar, null, "ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
-            SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsInMenuPosition, groupToolbarLabels);
             SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsScale, groupToolbarLabels);
             SimpleDualSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsOffsetForInvBar, groupToolbarLabels, dialogTitle: "Applies if Ship Tool Inventory Bar is visible.");
+            SimplePositionRedirect(Category_Toolbar, null, "ToolbarInfo box can be moved in menu by holding LMB on it and dragging.", Main.Config.ToolbarLabelsMenuPosition, groupToolbarLabels);
+            SimplePositionReset(Category_Toolbar, Main.Config.ToolbarLabelsMenuPosition, groupToolbarLabels);
+            SimpleSlider(Category_Toolbar, null, Main.Config.ToolbarLabelsMenuScale, groupToolbarLabels);
 
             AddSpacer(Category_Toolbar);
 
