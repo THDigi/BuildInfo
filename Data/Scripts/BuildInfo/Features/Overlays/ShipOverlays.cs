@@ -41,6 +41,15 @@ namespace Digi.BuildInfo.Features.Overlays
         readonly List<MyEntity> TempEntities = new List<MyEntity>();
         readonly HashSet<IMyGridGroupData> TempShips = new HashSet<IMyGridGroupData>();
         readonly List<IMyCubeGrid> TempGrids = new List<IMyCubeGrid>();
+        readonly List<GridInfo> TempGridInfo = new List<GridInfo>();
+
+        struct GridInfo
+        {
+            public IMyCubeGrid Grid;
+            public Vector3D CenterOfMass;
+            public float Mass;
+            public double DistanceToCamera;
+        }
 
         public ShipOverlays(BuildInfoMod main) : base(main)
         {
@@ -119,6 +128,8 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
             }
 
+            TempGridInfo.Clear();
+
             if(TempShips.Count > 0)
             {
                 long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
@@ -180,23 +191,13 @@ namespace Digi.BuildInfo.Features.Overlays
 
                         if(drawLabel && Utils.VectorAngleBetween((gridCoM - camPos), camForward) <= ShowLabelAngleRad)
                         {
-                            int shapes = ((MyCubeGrid)grid).ShapeCount;
-                            const int maxShapes = (ushort.MaxValue + 1);
-
-                            Color colorShapes = ColorMassLabel;
-
-                            if(shapes > (maxShapes * 0.95f))
-                                colorShapes = Color.Red;
-                            else if(shapes > (maxShapes * 0.8f))
-                                colorShapes = Color.Yellow;
-
-                            Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Right;
-
-                            LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(grid.CustomName).Append(grid.IsStatic ? " <color=gray>(Static)" : "")
-                                .Color(ColorMassLabel).Append("\nMass: ").MassFormat(mass)
-                                .Color(colorShapes).Append("\nPhysical shapes: ").RoundedNumber(shapes, 0).Append("<color=gray> / ").Append(maxShapes);
-
-                            LabelRender.DrawLineLabel(LabelType.DynamicLabel, gridCoM, labelDir, ColorMassLabel, alwaysOnTop: true);
+                            // purely to draw it over ship CoM
+                            TempGridInfo.Add(new GridInfo()
+                            {
+                                Grid = grid,
+                                Mass = mass,
+                                CenterOfMass = gridCoM,
+                            });
                         }
                     }
 
@@ -246,6 +247,39 @@ namespace Digi.BuildInfo.Features.Overlays
                 {
                     Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Down;
                     LabelRender.DrawLineLabel(LabelType.ShipCenterOfMass, closestCoM.Value, labelDir, ColorLabel, "Ship's Center of Mass", alwaysOnTop: true);
+                }
+
+                if(TempGridInfo.Count > 0)
+                {
+                    // sort by camera to CoM distance, descending
+                    TempGridInfo.Sort((a, b) =>
+                    {
+                        Vector3D cam = MyAPIGateway.Session.Camera.Position;
+                        return Vector3D.DistanceSquared(cam, b.CenterOfMass).CompareTo(Vector3D.DistanceSquared(cam, a.CenterOfMass));
+                    });
+
+                    Vector3D labelDir = MyAPIGateway.Session.Camera.WorldMatrix.Right;
+
+                    foreach(GridInfo gridInfo in TempGridInfo)
+                    {
+                        int shapes = ((MyCubeGrid)gridInfo.Grid).ShapeCount;
+                        const int maxShapes = (ushort.MaxValue + 1);
+
+                        Color colorShapes = ColorMassLabel;
+
+                        if(shapes > (maxShapes * 0.95f))
+                            colorShapes = Color.Red;
+                        else if(shapes > (maxShapes * 0.8f))
+                            colorShapes = Color.Yellow;
+
+                        LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(gridInfo.Grid.CustomName).Append(gridInfo.Grid.IsStatic ? " <color=gray>(Static)" : "")
+                            .Color(ColorMassLabel).Append("\nMass: ").MassFormat(gridInfo.Mass)
+                            .Color(colorShapes).Append("\nPhysical shapes: ").RoundedNumber(shapes, 0).Append("<color=gray> / ").Append(maxShapes);
+
+                        LabelRender.DrawLineLabel(LabelType.DynamicLabel, gridInfo.CenterOfMass, labelDir, ColorMassLabel, alwaysOnTop: true);
+                    }
+
+                    TempGridInfo.Clear();
                 }
             }
         }
