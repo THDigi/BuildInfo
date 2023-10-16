@@ -278,6 +278,9 @@ namespace Digi.BuildInfo.Features
 
             bool processTooltips = false;
 
+            if(!textShown)
+                processTooltips = true;
+
             // TODO: separate quick menu!
             if(Main.QuickMenu.Shown)
             {
