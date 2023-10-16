@@ -30,8 +30,9 @@ namespace Digi.BuildInfo.Features
         bool SuppressNextSound = true;
 
         const float TextScale = 0.6f;
+        const float BackgroundOpacityHoverMin = 0.8f;
         readonly Color BackgroundColor = Color.White;
-        readonly Color BackgroundColorSelected = new Color(40, 80, 65);
+        readonly Color BackgroundColorSelected = new Color(0, 255, 100);
 
         public WeaponModeIndicator(BuildInfoMod main) : base(main)
         {
@@ -228,7 +229,8 @@ namespace Digi.BuildInfo.Features
             Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
 
             Color hudColor = (Drag.Hovered ? BackgroundColorSelected : BackgroundColor);
-            Utils.FadeColorHUD(ref hudColor, Main.GameConfig.HudBackgroundOpacity);
+            float hudOpacity = (Drag.Hovered ? Math.Max(Main.GameConfig.HudBackgroundOpacity, BackgroundOpacityHoverMin) : Main.GameConfig.HudBackgroundOpacity);
+            Utils.FadeColorHUD(ref hudColor, hudOpacity);
 
             UI_IconBg.Origin = Main.Config.WeaponModeIndicatorPosition.Value;
             UI_IconBg.Scale = scale;

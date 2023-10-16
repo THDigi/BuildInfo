@@ -22,7 +22,8 @@ namespace Digi.BuildInfo.Features.Toolbars
         public static readonly Color WeaponColor = new Color(255, 220, 155);
         public static readonly Color OtherItemColor = new Color(200, 210, 215);
 
-        const float BackgroundOpacity = 0.75f;
+        const float BackgroundOpacityMul = 0.98f;
+        const float BackgroundOpacityHoverMin = 0.8f;
         public static readonly Color BackgroundColor = new Color(41, 54, 62);
         public static readonly Color BackgroundColorSelected = new Color(40, 80, 65);
 
@@ -51,8 +52,8 @@ namespace Digi.BuildInfo.Features.Toolbars
             Main = BuildInfoMod.Instance;
 
             BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
-            BoxDrag.BoxSelected += () => UpdateBgOpacity(BackgroundOpacity, BackgroundColorSelected);
-            BoxDrag.BoxDeselected += () => UpdateBgOpacity(BackgroundOpacity);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity();
+            BoxDrag.BoxDeselected += () => UpdateBgOpacity();
             BoxDrag.Dragging += (newPos) =>
             {
                 int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
@@ -139,6 +140,8 @@ namespace Digi.BuildInfo.Features.Toolbars
                 DebugPivot.Origin = Main.DrawUtils.TextAPIHUDToPixels(configPos);
                 DebugPivot.Offset = Vector2D.Zero;
             }
+
+            UpdateBgOpacity();
         }
 
         public void SetVisible(bool visible)
@@ -150,12 +153,15 @@ namespace Digi.BuildInfo.Features.Toolbars
                 DebugPivot.Visible = visible;
         }
 
-        void UpdateBgOpacity(float opacity, Color? colorOverride = null)
+        void UpdateBgOpacity()
         {
             if(Box == null)
                 return;
 
-            Color color = (colorOverride ?? BackgroundColor);
+            Color color = (BoxDrag.Hovered ? BackgroundColorSelected : BackgroundColor);
+            float opacity = Main.GameConfig.UIBackgroundOpacity * BackgroundOpacityMul;
+            opacity = (BoxDrag.Hovered ? Math.Max(opacity, BackgroundOpacityHoverMin) : opacity);
+
             Utils.FadeColorHUD(ref color, opacity);
             Box.SetColor(color);
         }

@@ -43,7 +43,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 
             if(PBArg != null)
             {
-                sb.Append(": <i>").ColorA(ToolbarRender.ArgColor * opacity).AppendMaxLength(PBArg, ToolbarRender.MaxArgLength);
+                // ToolbarRender.MaxArgLength is kinda small for this, letting it stretch.
+                sb.Append(": <i>").ColorA(ToolbarRender.ArgColor * opacity).AppendMaxLength(PBArg, 48);
             }
         }
     }

@@ -41,6 +41,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
         const float OpacityInMenu = 0.75f;
+        const float MinOpacityWhenHovered = 0.8f;
 
         const string TextFont = FontsHandler.BI_SEOutlined;
         const bool UseShadowMessage = false;
@@ -104,7 +105,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             MyVisualScriptLogicProvider.PlayerEnteredCockpit += EnteredCockpit;
 
             BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
-            BoxDrag.BoxSelected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : MathHelper.Clamp(Main.GameConfig.HudBackgroundOpacity * 1.5f, 0.5f, 1f), BackgroundColorSelected);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity(InToolbarConfig ? Math.Min(OpacityInMenu, MinOpacityWhenHovered) : Math.Min(Main.GameConfig.HudBackgroundOpacity, MinOpacityWhenHovered), BackgroundColorSelected);
             BoxDrag.BoxDeselected += () => UpdateBgOpacity(InToolbarConfig ? OpacityInMenu : Main.GameConfig.HudBackgroundOpacity);
             BoxDrag.Dragging += (newPos) =>
             {

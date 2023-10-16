@@ -30,7 +30,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         readonly Color SlotColor = new Color(55, 200, 155);
         readonly Color ModNameColor = Color.Gray;
 
-        const float BackgroundOpacity = 0.75f;
+        const float BackgroundOpacityMul = 0.98f;
+        const float BackgroundOpacityHoverMin = 0.8f / BackgroundOpacityMul;
         readonly Color BackgroundColor = new Color(41, 54, 62);
         readonly Color BackgroundColorSelected = new Color(40, 80, 65);
 
@@ -69,8 +70,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             DrawInstance.LabelRender.ForceDrawLabel = true;
 
             BoxDrag = new BoxDragging(MyMouseButtonsEnum.Left);
-            BoxDrag.BoxSelected += () => UpdateBgOpacity(BackgroundOpacity, BackgroundColorSelected);
-            BoxDrag.BoxDeselected += () => UpdateBgOpacity(BackgroundOpacity);
+            BoxDrag.BoxSelected += () => UpdateBgOpacity(Math.Max(Main.GameConfig.UIBackgroundOpacity, BackgroundOpacityHoverMin) * BackgroundOpacityMul, BackgroundColorSelected);
+            BoxDrag.BoxDeselected += () => UpdateBgOpacity(Main.GameConfig.UIBackgroundOpacity * BackgroundOpacityMul);
             BoxDrag.Dragging += (newPos) =>
             {
                 int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
@@ -145,7 +146,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             {
                 Label.Scale = GUIScale;
 
-                UpdateBgOpacity(BackgroundOpacity);
+                UpdateBgOpacity(Main.GameConfig.UIBackgroundOpacity * BackgroundOpacityMul);
                 UpdateBoxPosition();
                 UpdateScale();
             }
