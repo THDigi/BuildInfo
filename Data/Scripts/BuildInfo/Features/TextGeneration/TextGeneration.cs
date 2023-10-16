@@ -1902,6 +1902,10 @@ namespace Digi.BuildInfo.Features
                     if(upgrades > 0 && upgradePorts > 0)
                     {
                         AddLine().Label("Upgrade ports").Color(COLOR_GOOD).Append(upgradePorts);
+
+                        SimpleTooltip("These are for upgrade module blocks to be directly mounted onto (no conveyors)."
+                                    + "\nWhich module blocks are supported depends on the available upgrades below and the module's provided upgrades.");
+
                         AddLine().Label(upgrades > 1 ? "Optional upgrades" : "Optional upgrade");
                         const int SpacePadding = 32;
                         const int NumPerRow = 2;
@@ -3189,7 +3193,11 @@ namespace Digi.BuildInfo.Features
                     float mulSpeed = MyAPIGateway.Session.AssemblerSpeedMultiplier;
                     float mulEff = MyAPIGateway.Session.AssemblerEfficiencyMultiplier;
 
-                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(mulEff).OptionalMultiplier(mulEff);
+                    AddLine().Append("Assembly speed: ").ProportionToPercent(assembler.AssemblySpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
+                        .Separator().Append("Efficiency: ").ProportionToPercent(mulEff);
+
+                    SimpleTooltip($"Assembler speed is from the block multiplied by the world setting ({assembler.AssemblySpeed:0.##} * {mulSpeed:0.##})."
+                                + $"\nAssembler efficiency is entirely the world setting.");
                 }
             }
 
@@ -3208,9 +3216,14 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
                 {
-                    float mul = MyAPIGateway.Session.RefinerySpeedMultiplier;
+                    float mulSpeed = MyAPIGateway.Session.RefinerySpeedMultiplier;
+                    float matEff = refinery.MaterialEfficiency;
 
-                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mul).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mul).ResetFormatting().Separator().Append("Efficiency: ").ProportionToPercent(refinery.MaterialEfficiency);
+                    AddLine().Append("Refine speed: ").ProportionToPercent(refinery.RefineSpeed * mulSpeed).Color(COLOR_UNIMPORTANT).OptionalMultiplier(mulSpeed).ResetFormatting()
+                        .Separator().Append("Efficiency: ").ProportionToPercent(matEff);
+
+                    SimpleTooltip($"Refinery speed is from the block multiplied by the world setting ({refinery.RefineSpeed:0.##} * {mulSpeed:0.##})."
+                                + $"\nRefinery efficiency is entirely per-block, but might also be modified by attached upgrade module blocks.");
                 }
             }
 
