@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n" +
             "\n" + SegmentPrefix + "TextInfo: [i] at end of lines" + SegmentSuffix +
             "\n  Indicates that the line has a tooltip with a more detailed explanation or even more stats." +
-            "\n  Open chat and the mouse appears, now you can aim at the line and the tooltip appears!" +
+            "\n  Open chat and the mouse appears, now you can hover the line and the tooltip appears!" +
             "\n" +
             "\n" +
             "\n" +

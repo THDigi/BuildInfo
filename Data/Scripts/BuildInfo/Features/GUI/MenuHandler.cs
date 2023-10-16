@@ -35,6 +35,8 @@ namespace Digi.BuildInfo.Features
         public MenuHandler(BuildInfoMod main) : base(main)
         {
             ServerInfoMenu.Test();
+
+            UpdateOrder = 5000;
         }
 
         public override void RegisterComponent()
@@ -103,24 +105,24 @@ namespace Digi.BuildInfo.Features
         {
             bool requestedCursor = (CursorRequests.Count > 0);
             SetUpdateMethods(UpdateFlags.UPDATE_INPUT, requestedCursor);
-
-            if(!requestedCursor && Cursor != null)
-            {
-                // HACK: doing this so cursor is always created over any fake UI
-                Cursor?.DeleteMessage();
-                Cursor = null;
-            }
-
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, (Menus.Count > 0));
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, requestedCursor || (Menus.Count > 0));
 
             Main.GameConfig.TempHideHUD(nameof(MenuHandler), Menus.Count > 0);
         }
 
         public override void UpdateDraw()
         {
-            for(int i = Menus.Count - 1; i >= 0; i--)
+            if(Menus.Count > 0)
             {
-                Menus[i].UpdateDraw();
+                for(int i = Menus.Count - 1; i >= 0; i--)
+                {
+                    Menus[i].UpdateDraw();
+                }
+            }
+
+            if(CursorRequests.Count > 0 && Cursor != null)
+            {
+                Cursor.Draw();
             }
         }
 
@@ -166,20 +168,13 @@ namespace Digi.BuildInfo.Features
                                    blockMove ? 0 : ctrl.LastRotationIndicator.Z);
             }
 
-            // HACK: re-creating cursor roughly every realtime second to avoid newly spawned UIs being over it.
-            if(Cursor != null && DateTime.Now.Second != CursorRecreatedAtSec)
-            {
-                CursorRecreatedAtSec = DateTime.Now.Second;
-                Cursor.DeleteMessage();
-                Cursor = null;
-            }
-
             if(Cursor == null)
             {
                 // HACK: MouseCursor material is from textAPI
                 Cursor = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("MouseCursor"), Vector2D.Zero, Color.White);
                 Cursor.Options = HudAPIv2.Options.Pixel | HudAPIv2.Options.HideHud;
                 Cursor.SkipLinearRGB = false;
+                Cursor.Visible = false; // manual draw calls only
 
                 const float CursorSize = 64;
 

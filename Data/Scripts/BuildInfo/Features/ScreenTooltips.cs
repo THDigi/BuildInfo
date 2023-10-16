@@ -77,7 +77,7 @@ namespace Digi.BuildInfo.Features
             if(TooltipHandler != null)
             {
                 TooltipHandler.HoverEnd();
-                SelectedBox.Visible = false;
+                //SelectedBox.Visible = false;
             }
         }
 
@@ -143,13 +143,14 @@ namespace Digi.BuildInfo.Features
                     // problem is text info hides too and flickers, needs some special case...
                     //Main.GameConfig.TempHideHUD(nameof(ScreenTooltips), true);
 
-                    TooltipHandler.Hover(found.Value.Text);
-                    TooltipHandler.Draw(mousePos, drawNow: true);
-
                     SelectedBox.Origin = found.Value.Area.Center;
                     SelectedBox.Width = found.Value.Area.Width;
                     SelectedBox.Height = found.Value.Area.Height;
-                    SelectedBox.Visible = true;
+                    //SelectedBox.Visible = true;
+                    SelectedBox.Draw();
+
+                    TooltipHandler.Hover(found.Value.Text);
+                    TooltipHandler.Draw(mousePos, drawNow: true);
 
                     if(found.Value.Action != null && MyAPIGateway.Input.IsNewLeftMousePressed())
                     {
