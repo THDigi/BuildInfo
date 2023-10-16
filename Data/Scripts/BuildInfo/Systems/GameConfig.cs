@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Digi.ComponentLib;
 using Sandbox.Game;
+using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -15,12 +16,27 @@ namespace Digi.BuildInfo.Systems
         BASIC = 2
     }
 
+    public struct HudStateChangedInfo
+    {
+        public HudState PrevState;
+        public HudState NewState;
+        public bool IsTemporary;
+    }
+
     // TODO: add UI scale if/when API gets it
 
     public class GameConfig : ModComponent
     {
         public HudState HudState { get; private set; }
-        public delegate void EventHandlerHudStateChanged(HudState prevState, HudState state);
+
+        public bool IsHudTempHidden { get; private set; }
+
+        /// <summary>
+        /// Original HUD state before it was temporarily hidden.
+        /// </summary>
+        public HudState? OriginalHudState { get; private set; }
+
+        public delegate void EventHandlerHudStateChanged(HudStateChangedInfo info);
         public event EventHandlerHudStateChanged HudStateChanged;
 
         /// <summary>
@@ -37,7 +53,6 @@ namespace Digi.BuildInfo.Systems
         public bool UsingGamepad { get; private set; }
         public event Action UsingGamepadChanged;
 
-        HudState? PreviousHudState;
         HashSet<string> HideHudRequests = new HashSet<string>();
 
         public GameConfig(BuildInfoMod main) : base(main)
@@ -59,11 +74,10 @@ namespace Digi.BuildInfo.Systems
 
             Main.GUIMonitor.OptionsMenuClosed += UpdateConfigValues;
 
-            if(PreviousHudState != null)
+            if(OriginalHudState != null)
             {
-                SetHudState(PreviousHudState.Value, callEvents: false);
-                PreviousHudState = null;
-                HideHudRequests.Clear();
+                SetHudState(OriginalHudState.Value, isTemporary: true, callEvents: false);
+                DiscardTempHide();
             }
         }
 
@@ -107,30 +121,42 @@ namespace Digi.BuildInfo.Systems
                 // TODO: what about if HUD is already hidden? and what if player manually un-hides after this?
                 if(HideHudRequests.Count == 0)
                 {
-                    PreviousHudState = this.HudState;
-                    SetHudState(HudState.OFF);
+                    OriginalHudState = this.HudState;
+                    SetHudState(HudState.OFF, isTemporary: true);
+
+                    IsHudTempHidden = true;
                 }
 
                 HideHudRequests.Add(id);
+
             }
             else
             {
                 HideHudRequests.Remove(id);
 
-                if(HideHudRequests.Count == 0 && PreviousHudState != null)
+                if(HideHudRequests.Count == 0 && OriginalHudState != null)
                 {
-                    SetHudState(PreviousHudState.Value);
-                    PreviousHudState = null;
+                    SetHudState(OriginalHudState.Value, isTemporary: true);
+                    OriginalHudState = null;
+
+                    IsHudTempHidden = false;
                 }
             }
         }
 
-        public void SetHudState(HudState state, bool callEvents = true)
+        void DiscardTempHide()
+        {
+            OriginalHudState = null;
+            IsHudTempHidden = false;
+            HideHudRequests.Clear();
+        }
+
+        public void SetHudState(HudState state, bool isTemporary = false, bool callEvents = true)
         {
             MyVisualScriptLogicProvider.SetHudState((int)state, playerId: 0); // gets called locally, because of playerId 0
 
             if(callEvents)
-                UpdateHudState();
+                UpdateHudState(isTemporary);
         }
 
         void UpdateConfigValues()
@@ -147,13 +173,26 @@ namespace Digi.BuildInfo.Systems
             AspectRatio = (double)viewportSize.X / (double)viewportSize.Y;
         }
 
-        void UpdateHudState()
+        void UpdateHudState(bool isTemporary = false)
         {
             HudState prevState = HudState;
             HudState = (HudState)(MyAPIGateway.Session.Config?.HudState ?? (int)HudState.HINTS);
 
             if(prevState != HudState)
-                HudStateChanged?.Invoke(prevState, HudState);
+            {
+                if(!isTemporary)
+                {
+                    // user manually changed HUD state, discard restoring
+                    DiscardTempHide();
+                }
+
+                HudStateChanged?.Invoke(new HudStateChangedInfo()
+                {
+                    PrevState = prevState,
+                    NewState = HudState,
+                    IsTemporary = isTemporary,
+                });
+            }
         }
     }
 }

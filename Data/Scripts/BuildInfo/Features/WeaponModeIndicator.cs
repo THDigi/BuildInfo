@@ -125,7 +125,7 @@ namespace Digi.BuildInfo.Features
             RefreshIconIfVisible();
         }
 
-        void HudStateChanged(HudState prevState, HudState state)
+        void HudStateChanged(HudStateChangedInfo info)
         {
             RefreshIconIfVisible();
         }

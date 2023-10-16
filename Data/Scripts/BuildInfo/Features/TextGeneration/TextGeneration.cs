@@ -159,8 +159,11 @@ namespace Digi.BuildInfo.Features
             Main.TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
         }
 
-        private void GameConfig_HudStateChanged(HudState prevState, HudState state)
+        private void GameConfig_HudStateChanged(HudStateChangedInfo info)
         {
+            if(info.IsTemporary)
+                return;
+
             if(Main.Config.TextShow.ValueEnum == TextShowMode.HudHints)
             {
                 LastDefId = default(MyDefinitionId);
@@ -187,7 +190,7 @@ namespace Digi.BuildInfo.Features
 
         private void ReCheckSide()
         {
-            bool shouldUseLeftSide = (Main.GameConfig.HudState == HudState.HINTS);
+            bool shouldUseLeftSide = (Main.GameConfig.HudState != HudState.BASIC);
 
             if(useLeftSide != shouldUseLeftSide)
             {

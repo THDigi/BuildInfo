@@ -205,10 +205,9 @@ namespace Digi.BuildInfo.Systems
             ForceResetBlockInfo();
         }
 
-        void HudStateChanged(HudState prevState, HudState state)
+        void HudStateChanged(HudStateChangedInfo info)
         {
-            if(prevState != state)
-                ForceResetBlockInfo();
+            ForceResetBlockInfo();
         }
 
         // HACK: it's very important this triggers before MyGuiControlBlockInfo.Draw() gets called but also after MyWelder.DrawHud()
