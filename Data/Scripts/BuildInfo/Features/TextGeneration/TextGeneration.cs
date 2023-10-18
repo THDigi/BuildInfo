@@ -2929,7 +2929,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Force").ForceFormat(gyro.ForceMagnitude);
+                AddLine().Label("Torque").TorqueFormat(gyro.ForceMagnitude);
             }
         }
 
