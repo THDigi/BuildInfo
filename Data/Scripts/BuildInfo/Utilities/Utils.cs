@@ -604,7 +604,10 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
+                    // lines circling around Y axis
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+
+                    // lines from pole to half
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
@@ -642,7 +645,10 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
+                    // edge around bottom
                     MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (Vector3)(apexPosition - prevPoint), 1f, lineThickness, blendType, customViewProjection);
+
+                    // lines towards point
                     MyTransparentGeometry.AddLineBillboard(material, color, nextPoint, (Vector3)(apexPosition - nextPoint), 1f, lineThickness, blendType, customViewProjection);
                 }
 
@@ -672,17 +678,17 @@ namespace Digi.BuildInfo.Utilities
             double halfHeight = height * 0.5;
             MyQuadD quad;
 
+
             #region Sphere halves
-            MatrixD sphereMatrix = MatrixD.CreateRotationX(-MathHelperD.PiOver2);
-            sphereMatrix.Translation = new Vector3D(0.0, halfHeight, 0.0);
-            sphereMatrix *= worldMatrix;
+            MatrixD sphereMatrix = worldMatrix; // copied
+            sphereMatrix.Translation += worldMatrix.Up * halfHeight; // offset to one end of the capsule
 
             List<Vector3D> vertices = BuildInfoMod.Instance.Caches.Vertices;
             vertices.Clear();
             GetSphereVertices(ref sphereMatrix, radius, wireDivideRatio, vertices);
 
             int halfVerts = vertices.Count / 2;
-            Vector3D addVec = worldMatrix.Down * height;
+            Vector3D heightVec = worldMatrix.Down * height;
 
             for(int i = 0; i < vertices.Count; i += 4)
             {
@@ -693,17 +699,20 @@ namespace Digi.BuildInfo.Utilities
                     quad.Point2 = vertices[i + 2];
                     quad.Point3 = vertices[i];
                 }
-                else // offset other half by the height of the cylinder
+                else // offset other semisphere to the other end of the capsule
                 {
-                    quad.Point0 = vertices[i + 1] + addVec;
-                    quad.Point1 = vertices[i + 3] + addVec;
-                    quad.Point2 = vertices[i + 2] + addVec;
-                    quad.Point3 = vertices[i] + addVec;
+                    quad.Point0 = vertices[i + 1] + heightVec;
+                    quad.Point1 = vertices[i + 3] + heightVec;
+                    quad.Point2 = vertices[i + 2] + heightVec;
+                    quad.Point3 = vertices[i] + heightVec;
                 }
 
                 if(drawWireframe)
                 {
+                    // lines circling around Y axis
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+
+                    // lines from pole to half
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
@@ -716,11 +725,10 @@ namespace Digi.BuildInfo.Utilities
 
             #region Cylinder
             double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
-            double angle = 0f;
 
             for(int k = 0; k < wireDivideRatio; k++)
             {
-                angle = k * wireDivAngle;
+                double angle = k * wireDivAngle;
                 double cos = (radius * Math.Cos(angle));
                 double sin = (radius * Math.Sin(angle));
                 quad.Point0.X = cos;
@@ -748,7 +756,6 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 
@@ -781,7 +788,6 @@ namespace Digi.BuildInfo.Utilities
             Vector3D centerBottom = center - topDir;
 
             double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
-            double angle = 0f;
 
             Vector2 uv0 = new Vector2(0, 0.5f);
             Vector2 uv1 = new Vector2(1, 0);
@@ -789,7 +795,7 @@ namespace Digi.BuildInfo.Utilities
 
             for(int k = 0; k < wireDivideRatio; k++)
             {
-                angle = k * wireDivAngle;
+                double angle = k * wireDivAngle;
                 double cos = (radius * Math.Cos(angle));
                 double sin = (radius * Math.Sin(angle));
                 quad.Point0.X = cos;
@@ -862,34 +868,49 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static void GetSphereVertices(ref MatrixD worldMatrix, float radius, int steps, List<Vector3D> vertices)
         {
-            Dictionary<int, List<Vector3D>> generatedSphereData = BuildInfoMod.Instance.Caches.GeneratedSphereData;
-            List<Vector3D> cachedVerts;
-            if(!generatedSphereData.TryGetValue(steps, out cachedVerts))
+            vertices.EnsureCapacity(steps * steps * 2);
+
+            Dictionary<int, List<Vector3>> generatedData = BuildInfoMod.Instance.Caches.GeneratedSphereData;
+
+            List<Vector3> cachedVerts;
+            if(!generatedData.TryGetValue(steps, out cachedVerts))
             {
-                cachedVerts = new List<Vector3D>();
-                generatedSphereData[steps] = cachedVerts;
-                GenerateSphere(ref worldMatrix, radius, steps, cachedVerts);
+                cachedVerts = new List<Vector3>(steps * steps);
+                generatedData[steps] = cachedVerts;
+                GenerateHalfSphereLocal(steps, cachedVerts);
+
+                //Log.Info($"Generated half-sphere for {steps} steps; total vertices: {cachedVerts.Count}");
             }
 
-            foreach(Vector3D vert in cachedVerts)
+            for(int i = 0; i < cachedVerts.Count; i++)
             {
+                Vector3 vert = cachedVerts[i];
+                vertices.Add(Vector3D.Transform(vert * radius, worldMatrix));
+            }
+
+            for(int i = 0; i < cachedVerts.Count; i++)
+            {
+                Vector3 vert = cachedVerts[i];
+                vert.Y = -vert.Y;
                 vertices.Add(Vector3D.Transform(vert * radius, worldMatrix));
             }
         }
 
-        private static void GenerateSphere(ref MatrixD worldMatrix, float radius, int steps, List<Vector3D> vertices)
+        static void GenerateHalfSphereLocal(int steps, List<Vector3> vertices)
         {
-            double angleStep = MathHelperD.ToRadians(360 / steps);
+            vertices.Clear();
+
+            double angleStep = MathHelperD.ToRadians(360d / steps);
             double ang1max = MathHelperD.PiOver2 - angleStep;
             double ang2max = MathHelperD.TwoPi - angleStep;
             Vector3D vec;
 
-            for(double ang1 = 0f; ang1 <= ang1max; ang1 += angleStep)
+            for(double ang1 = 0d; ang1 <= ang1max; ang1 += angleStep)
             {
                 double ang1sin = Math.Sin(ang1);
                 double ang1cos = Math.Cos(ang1);
 
-                for(double ang2 = 0f; ang2 <= ang2max; ang2 += angleStep)
+                for(double ang2 = 0d; ang2 <= ang2max; ang2 += angleStep)
                 {
                     double ang2sin = Math.Sin(ang2);
                     double ang2cos = Math.Cos(ang2);
@@ -901,33 +922,25 @@ namespace Digi.BuildInfo.Utilities
                     double nextAng2cos = Math.Cos(ang2 + angleStep);
 
                     vec.X = ang2sin * ang1sin;
-                    vec.Y = ang2cos * ang1sin;
-                    vec.Z = ang1cos;
+                    vec.Y = ang1cos;
+                    vec.Z = ang2cos * ang1sin;
                     vertices.Add(vec);
 
                     vec.X = ang2sin * nextAng1sin;
-                    vec.Y = ang2cos * nextAng1sin;
-                    vec.Z = nextAng1cos;
+                    vec.Y = nextAng1cos;
+                    vec.Z = ang2cos * nextAng1sin;
                     vertices.Add(vec);
 
                     vec.X = nextAng2sin * ang1sin;
-                    vec.Y = nextAng2cos * ang1sin;
-                    vec.Z = ang1cos;
+                    vec.Y = ang1cos;
+                    vec.Z = nextAng2cos * ang1sin;
                     vertices.Add(vec);
 
                     vec.X = nextAng2sin * nextAng1sin;
-                    vec.Y = nextAng2cos * nextAng1sin;
-                    vec.Z = nextAng1cos;
+                    vec.Y = nextAng1cos;
+                    vec.Z = nextAng2cos * nextAng1sin;
                     vertices.Add(vec);
                 }
-            }
-
-            // add the other half
-            int totalBeforeAdd = vertices.Count;
-            for(int i = 0; i < totalBeforeAdd; i++)
-            {
-                Vector3D v = vertices[i];
-                vertices.Add(new Vector3D(v.X, v.Y, 0.0 - v.Z));
             }
         }
 
