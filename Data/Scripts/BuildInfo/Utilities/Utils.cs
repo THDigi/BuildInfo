@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Digi.BuildInfo.Features;
+using Draygo.API;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
@@ -580,6 +582,15 @@ namespace Digi.BuildInfo.Utilities
             return new Vector3((index % maxIndex) / (float)maxIndex, 0.75f, 1f).HSVtoColor();
         }
 
+        /// <summary>
+        /// Extremely inefficient, for debugging purposes only!
+        /// </summary>
+        public static void DebugDraw3DText(StringBuilder text, Vector3D pos, double scale = 0.1)
+        {
+            MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
+            new HudAPIv2.SpaceMessage(text, pos, cm.Up, cm.Left, scale, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
+        }
+
         // Optimized wireframe draw
         public static void DrawTransparentSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1f, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
@@ -595,20 +606,34 @@ namespace Digi.BuildInfo.Utilities
             Vector3D center = worldMatrix.Translation;
             MyQuadD quad;
 
-            for(int i = 0; i < vertices.Count; i += 4)
+            int totalVerts = vertices.Count;
+            int halfVerts = totalVerts / 2;
+            int firstHalfSkip = halfVerts - (wireDivideRatio * 4);
+
+            for(int i = 0; i < totalVerts; i += 4)
             {
                 quad.Point0 = vertices[i + 1];
                 quad.Point1 = vertices[i + 3];
                 quad.Point2 = vertices[i + 2];
                 quad.Point3 = vertices[i];
 
+                //DebugDraw3DText(new StringBuilder($"<color=red>{i} to {i + 3}"), (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4, scale: 0.05);
+
                 if(drawWireframe)
                 {
-                    // lines circling around Y axis
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    // skip one of the 2 circles at the equator
+                    if(i < firstHalfSkip || i > halfVerts)
+                    {
+                        // lines circling around Y axis
+                        MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                    }
+
+                    //DebugDraw3DText(new StringBuilder($"{i + 1} to {i + 3}"), quad.Point0 + (quad.Point1 - quad.Point0) / 2, scale: 0.03);
 
                     // lines from pole to half
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+
+                    //DebugDraw3DText(new StringBuilder($"{i + 3} to {i + 2}"), quad.Point1 + (quad.Point2 - quad.Point1) / 2, scale: 0.01);
                 }
 
                 if(drawSolid)
@@ -756,6 +781,7 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawWireframe)
                 {
+                    // only the lines along the tube, no end cap circles because those are provided by the spheres
                     MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
                 }
 

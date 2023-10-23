@@ -315,6 +315,12 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(label).Color(new Color(255, 200, 100)).Append('*').Color(prevColor).Append(": ");
         }
 
+        public static StringBuilder HardcodedMarker(this StringBuilder s)
+        {
+            Color prevColor = CurrentColor;
+            return s.Color(new Color(255, 200, 100)).Append('*').Color(prevColor);
+        }
+
         public static StringBuilder BoolFormat(this StringBuilder s, bool b)
         {
             return s.Append(b ? "Yes" : "No");
