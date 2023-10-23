@@ -327,9 +327,10 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             #endregion
 
             #region Misc
-            SimpleToggle(Category_Misc, "Adjust Build Distance in Survival", Main.Config.AdjustBuildDistanceSurvival);
-            SimpleToggle(Category_Misc, "Adjust Build Distance in Ship Creative", Main.Config.AdjustBuildDistanceShipCreative);
-            SimpleToggle(Category_Misc, "Internal Info", Main.Config.InternalInfo);
+            SimpleToggle(Category_Misc, null, Main.Config.AdjustBuildDistanceSurvival);
+            SimpleToggle(Category_Misc, null, Main.Config.AdjustBuildDistanceShipCreative);
+            SimpleToggle(Category_Misc, Main.Config.SpectatorAllowRotationModifier.Name, Main.Config.SpectatorAllowRotationModifier);
+            SimpleToggle(Category_Misc, null, Main.Config.InternalInfo);
             SimpleToggle(Category_Misc, null, Main.Config.ModderHelpAlerts);
             AddSpacer(Category_Misc);
             Category_ConfirmReset = AddCategory("Reset to defaults", Category_Misc, header: "Reset, are you sure?");

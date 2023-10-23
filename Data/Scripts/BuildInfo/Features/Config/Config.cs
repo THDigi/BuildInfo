@@ -106,6 +106,8 @@ namespace Digi.BuildInfo.Features.Config
         public BoolSetting AdjustBuildDistanceSurvival;
         public BoolSetting AdjustBuildDistanceShipCreative;
 
+        public BoolSetting SpectatorAllowRotationModifier;
+
         public InputCombinationSetting MenuBind;
         public InputCombinationSetting TextShowBind;
         public InputCombinationSetting CycleOverlaysBind;
@@ -709,6 +711,10 @@ namespace Digi.BuildInfo.Features.Config
             AdjustBuildDistanceShipCreative = new BoolSetting(Handler, "Adjust Build Distance Ship Creative", true,
                 "Enable ctrl+scroll to change block placement distance when in cockpit build mode in creative.",
                 "The game currently doesn't allow this and it might get it fixed, that's why this exist as a separate setting.");
+
+            SpectatorAllowRotationModifier = new BoolSetting(Handler, "Spectator: Allow Rotation Modifier", false,
+                "Whether to allow ctrl+scroll to adjust view sensitivity in spectator (game feature).",
+                "Mind that ctrl is used as a modifier for many other things, making it very easy to accidentally change this, which is why this setting exists to block it.");
 
             ModderHelpAlerts = new BoolSetting(Handler, "ModderHelp: Show problems/hints", true,
                 "Toggles wether this mod looks at definitions from local mods for sneaky problems or hints." +
