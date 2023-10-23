@@ -644,6 +644,11 @@ namespace Digi.BuildInfo.Features
                                       + "\nFix by reordering components or changing amounts of other components or making a single component as first stack.");
                     }
 
+                    if(blockDef.DisplayNameText == null)
+                    {
+                        ModProblem(def, "does not have a DisplayName which can cause mod scripts to crash and players to be confused.");
+                    }
+
                     if(blockDef.IsAirTight == null)
                     {
                         int airTightFaces, toggledAirTightFaces, totalFaces;
