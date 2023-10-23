@@ -31,6 +31,9 @@ namespace Digi.BuildInfo.Features.Overlays
 
         IMyHudNotification OverlayNotification;
 
+        bool NeedsDraw = false;
+        public event Action DrawStopped;
+
         public Overlays(BuildInfoMod main) : base(main)
         {
             UpdateOrder = -500; // for Draw() mainly, to always render first (and therefore, under)
@@ -88,7 +91,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
             OverlayMode = setMode;
             OverlayModeName = OverlayNames[mode];
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
+            CheckNeedsDraw();
 
             if(showNotification)
             {
@@ -103,27 +106,45 @@ namespace Digi.BuildInfo.Features.Overlays
 
         void LockedOnBlockChanged(IMySlimBlock slimBlock)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
+            CheckNeedsDraw();
         }
 
         void AimedOrEquippedBlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
+            CheckNeedsDraw();
         }
 
         //void EquipmentMonitor_BuilderAimedBlockChanged(IMySlimBlock slimBlock)
         //{
-        //    SetUpdateMethods(UpdateFlags.UPDATE_DRAW, CheckNeedsDraw());
+        //    CheckNeedsDraw();
         //}
 
         bool CheckNeedsDraw()
         {
+            bool newNeedsDraw;
             if(OverlayMode == ModeEnum.Off && (!Main.Config.OverlayLockRememberMode.Value || Main.LockOverlay.LockedOnBlock == null))
-                return false;
+            {
+                newNeedsDraw = false;
+            }
+            else
+            {
+                newNeedsDraw = Main.EquipmentMonitor.BlockDef != null
+                    //|| Main.EquipmentMonitor.BuilderAimedBlock != null
+                    || Main.LockOverlay.LockedOnBlock != null;
+            }
 
-            return Main.EquipmentMonitor.BlockDef != null
-            //  || Main.EquipmentMonitor.BuilderAimedBlock != null
-                || Main.LockOverlay.LockedOnBlock != null;
+            if(NeedsDraw != newNeedsDraw)
+            {
+                NeedsDraw = newNeedsDraw;
+                SetUpdateMethods(UpdateFlags.UPDATE_DRAW, newNeedsDraw);
+
+                if(!newNeedsDraw)
+                {
+                    DrawStopped?.Invoke();
+                }
+            }
+
+            return newNeedsDraw;
         }
 
         void EquipmentMonitor_UpdateControlled(IMyCharacter character, IMyShipController shipController, IMyControllableEntity controlled, int tick)
