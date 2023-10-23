@@ -380,7 +380,8 @@ namespace Digi.BuildInfo.Features
         #region Tooltips
         public struct LocalTooltip
         {
-            public int Line;
+            public int StartLine;
+            public int Lines;
             public StringBuilder Text;
             public Action Action;
         }
@@ -389,9 +390,12 @@ namespace Digi.BuildInfo.Features
         bool LineHadTooltip = false;
 
         /// <summary>
-        /// If line not defined, automatically uses current line and automatically calls <see cref="Utilities.StringBuilderExtensions.MarkTooltip(StringBuilder)"/> when it ends.
         /// </summary>
-        StringBuilder CreateTooltip(Action action = null, int line = -1)
+        /// <param name="action">Called when clicking the line.</param>
+        /// <param name="line">if -1 then the current line is used and automatically calls <see cref="Utilities.StringBuilderExtensions.MarkTooltip(StringBuilder)"/> when it ends.</param>
+        /// <param name="coveringLines">how many lines the tooltip to cover (only first gets the [i]).</param>
+        /// <returns></returns>
+        StringBuilder CreateTooltip(Action action = null, int line = -1, int coveringLines = 1)
         {
             if(!Main.TextAPI.IsEnabled)
                 return null;
@@ -407,7 +411,8 @@ namespace Digi.BuildInfo.Features
             LocalTooltips.Add(new LocalTooltip()
             {
                 Text = sb,
-                Line = line,
+                StartLine = line,
+                Lines = coveringLines,
                 Action = action,
             });
 
@@ -444,8 +449,9 @@ namespace Digi.BuildInfo.Features
 
                 foreach(LocalTooltip lt in localTooltips)
                 {
-                    Vector2 min = textMin + new Vector2(0, -lineHeight * lt.Line);
-                    Vector2 max = min + addMax;
+                    Vector2 min = textMin + new Vector2(0, -lineHeight * lt.StartLine);
+                    Vector2 max = min + new Vector2(addMax.X, addMax.Y * Math.Max(1, lt.Lines));
+
                     BoundingBox2 bb = new BoundingBox2(Vector2.Min(min, max), Vector2.Max(min, max));
 
                     //DebugLog.PrintHUD(this, $"FinalizeTooltips() :: tooltip added: bb={bb.Min} to {bb.Max}; line={lt.Line}; text={lt.Text.ToString()}", log: true); // DEBUG log
