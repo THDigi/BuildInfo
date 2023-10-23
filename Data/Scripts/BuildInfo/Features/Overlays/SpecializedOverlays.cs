@@ -32,6 +32,7 @@ namespace Digi.BuildInfo.Features.Overlays
             new Suspension(this);
             new TargetDummy(this);
             new Thruster(this);
+            new Warhead(this);
             new Weapon(this);
             new WindTurbine(this);
         }

@@ -660,6 +660,13 @@ namespace Digi.BuildInfo.Features.Overlays
             return DepthRatioF;
         }
 
+        public static float ConvertToAlwaysOnTop(ref Vector3D vector)
+        {
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            vector = camMatrix.Translation + ((vector - camMatrix.Translation) * DepthRatio);
+            return DepthRatioF;
+        }
+
         public void DrawTurretLimits(ref MatrixD drawMatrix, ref MatrixD pitchMatrix, TurretInfo turretInfo,
             float radius, int minPitch, int maxPitch, int minYaw, int maxYaw, bool canDrawLabel)
         {
