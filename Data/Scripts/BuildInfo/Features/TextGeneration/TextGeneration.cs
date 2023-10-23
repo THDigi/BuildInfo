@@ -5168,8 +5168,30 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AmmoDetails))
             {
-                AddLine().Label("Radius").DistanceFormat(warhead.ExplosionRadius).Icon(FontsHandler.IconSphere);
                 AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##")).Icon(FontsHandler.IconExplode);
+
+                float searchRadius = Hardcoded.WarheadSearchRadius(warhead);
+
+                AddLine().Label("Radius").Color(warhead.ExplosionRadius > Hardcoded.WarheadMaxRadius ? COLOR_BAD : COLOR_NORMAL)
+                    .DistanceFormat(warhead.ExplosionRadius, 2).ResetFormatting().Icon(FontsHandler.IconSphere)
+                    .Append(" +").DistanceFormat(warhead.ExplosionRadius * Hardcoded.WarheadRadiusRatioPerOther, 2)
+                    .Append(" per warhead within ").DistanceFormat(searchRadius).Icon(FontsHandler.IconSphere);
+
+                CreateTooltip(coveringLines: 2).Append("Warhead's explosion radius is boosted by ").ProportionToPercent(Hardcoded.WarheadRadiusRatioPerOther, 2).HardcodedMarker()
+                    .Append(" for every warhead within ").DistanceFormat(searchRadius).HardcodedMarker().Append(" (for this grid size), including itself.")
+                    .Append("\nExplosion radius cannot exceed ").DistanceFormat(Hardcoded.WarheadMaxRadius).HardcodedMarker().Append(".")
+                    .Append("\nExplosions are volumetric therefore some blocks within the radius can remain unaffected.");
+
+                float warheadsForMaxRadiusF = (Hardcoded.WarheadMaxRadius - warhead.ExplosionRadius) / (warhead.ExplosionRadius * Hardcoded.WarheadRadiusRatioPerOther);
+                int warheadsForMaxRadius = (int)Math.Ceiling(warheadsForMaxRadiusF);
+
+                //float searchVolume = ((4f / 3f) * MathHelper.Pi * searchRadius * searchRadius * searchRadius);
+                //float sgBlock = MyDefinitionManager.Static.GetCubeSize(MyCubeSize.Small);
+                //float lgBlock = MyDefinitionManager.Static.GetCubeSize(MyCubeSize.Large);
+                //float sgBlocksWithinVolume = searchVolume / (sgBlock * sgBlock * sgBlock);
+                //float lgBlocksWithinVolume = searchVolume / (lgBlock * lgBlock * lgBlock);
+
+                AddLine().LabelHardcoded("Max radius").DistanceFormat(Hardcoded.WarheadMaxRadius).Icon(FontsHandler.IconSphere).Separator().Label("Clustered warheads for max radius").Append(warheadsForMaxRadius);
             }
         }
 

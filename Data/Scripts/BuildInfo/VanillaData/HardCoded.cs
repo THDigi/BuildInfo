@@ -342,6 +342,13 @@ namespace Digi.BuildInfo.VanillaData
             return true;
         }
 
+        // from MyWarhead.MarkForExplosion()
+        public const float WarheadMaxRadius = 30f;
+        public const float WarheadRadiusRatioPerOther = 0.024f;
+        public const float WarheadScanRadiusGridMul = 4f;
+        public const float WarheadScanRadiusShrink = 0.85f;
+        public static float WarheadSearchRadius(MyCubeBlockDefinition def) => MyDefinitionManager.Static.GetCubeSize(def.CubeSize) * WarheadScanRadiusGridMul * WarheadScanRadiusShrink;
+
         // from MyReflectorLight.CreateTerminalControls()
         public const float Spotlight_RotationSpeedToRPM = 20f;
         public const float Spotlight_RadiansPerSecondMul = Spotlight_RotationSpeedToRPM * 6f;
