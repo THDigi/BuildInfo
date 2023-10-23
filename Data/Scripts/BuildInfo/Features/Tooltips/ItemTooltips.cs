@@ -435,7 +435,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                             MyWeaponBlockDefinition wpBlockDef = tuple.Item1 as MyWeaponBlockDefinition;
                             if(wpBlockDef != null)
                             {
-                                AddToList(TmpNameAndSize, wpBlockDef.DisplayNameText, wpBlockDef.CubeSize);
+                                AddToList(TmpNameAndSize, wpBlockDef);
                                 continue;
                             }
                         }
@@ -443,7 +443,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                             MyWeaponItemDefinition wpPhysItem = tuple.Item1 as MyWeaponItemDefinition;
                             if(wpPhysItem != null)
                             {
-                                AddToList(TmpNameAndSize, wpPhysItem.DisplayNameText, Sizes.HandWeapon);
+                                AddToList(TmpNameAndSize, wpPhysItem, Sizes.HandWeapon);
                                 continue;
                             }
                         }
@@ -457,7 +457,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 foreach(MyCubeBlockDefinition blockDef in blockDefs)
                 {
-                    AddToList(TmpNameAndSize, blockDef.DisplayNameText, blockDef.CubeSize);
+                    AddToList(TmpNameAndSize, blockDef);
                 }
             }
 
@@ -474,7 +474,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 foreach(MyVendingMachineDefinition storeDef in storeList)
                 {
-                    AddToList(TmpNameAndSize, storeDef.DisplayNameText, storeDef.CubeSize);
+                    AddToList(TmpNameAndSize, storeDef);
                 }
             }
 
@@ -489,7 +489,7 @@ namespace Digi.BuildInfo.Features.Tooltips
             {
                 foreach(MyVendingMachineDefinition storeDef in storeList)
                 {
-                    AddToList(TmpNameAndSize, storeDef.DisplayNameText, storeDef.CubeSize);
+                    AddToList(TmpNameAndSize, storeDef);
                 }
             }
 
@@ -592,7 +592,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                             if(areResults && (prodDef is MyGasTankDefinition || prodDef is MyOxygenGeneratorDefinition))
                                 continue;
 
-                            AddToList(TmpNameAndSize, prodDef.DisplayNameText, prodDef.CubeSize);
+                            AddToList(TmpNameAndSize, prodDef);
                         }
                     }
                 }
@@ -689,7 +689,7 @@ namespace Digi.BuildInfo.Features.Tooltips
                 {
                     foreach(var blockDef in blockDefs)
                     {
-                        AddToList(TmpNameAndSize, blockDef.DisplayNameText, blockDef.CubeSize);
+                        AddToList(TmpNameAndSize, blockDef);
                     }
                 }
 
@@ -705,38 +705,32 @@ namespace Digi.BuildInfo.Features.Tooltips
             }
         }
 
-        static void AddToList(Dictionary<string, Sizes> dict, string key, MyCubeSize cubeSize)
+        static void AddToList(Dictionary<string, Sizes> dict, MyDefinitionBase def, Sizes? currentSize = null)
         {
+            if(def == null) throw new ArgumentNullException("def");
+
+            string key = def.DisplayNameText;
             if(key == null)
+                key = def.Id.ToString();
+
+            if(currentSize == null)
             {
-                Log.Error("ItemTooltips.AddToList() :: Given key is null!");
-                return;
+                var blockDef = def as MyCubeBlockDefinition;
+                if(blockDef != null)
+                    currentSize = (blockDef.CubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
+                else
+                    Log.Error($"ItemTooltips.AddToList() :: No size provided for {def.Id} and can't guess it because it's not a block def.");
             }
 
-            Sizes currentSize = (cubeSize == MyCubeSize.Small ? Sizes.Small : Sizes.Large);
             Sizes existingSize;
             if(dict.TryGetValue(key, out existingSize))
             {
-                if(existingSize != Sizes.Both && existingSize != currentSize)
+                if(existingSize != Sizes.Both && existingSize != currentSize.Value)
                     dict[key] = Sizes.Both;
             }
             else
             {
-                dict[key] = currentSize;
-            }
-        }
-
-        static void AddToList(Dictionary<string, Sizes> dict, string key, Sizes currentSize)
-        {
-            Sizes existingSize;
-            if(dict.TryGetValue(key, out existingSize))
-            {
-                if(existingSize != Sizes.Both && existingSize != currentSize)
-                    dict[key] = Sizes.Both;
-            }
-            else
-            {
-                dict[key] = currentSize;
+                dict[key] = currentSize.Value;
             }
         }
 
