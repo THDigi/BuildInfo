@@ -585,9 +585,19 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Extremely inefficient, for debugging purposes only!
         /// </summary>
-        public static void DebugDraw3DText(StringBuilder text, Vector3D pos, double scale = 0.1)
+        public static void DebugDraw3DText(StringBuilder text, Vector3D pos, double scale = 0.1, bool alwaysOnTop = false)
         {
+            if(!BuildInfoMod.Instance.TextAPI.WasDetected)
+                return;
+
             MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
+
+            if(alwaysOnTop)
+            {
+                float depthMul = BuildInfo.Features.Overlays.OverlayDrawInstance.ConvertToAlwaysOnTop(ref pos);
+                scale *= depthMul;
+            }
+
             new HudAPIv2.SpaceMessage(text, pos, cm.Up, cm.Left, scale, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
         }
 
