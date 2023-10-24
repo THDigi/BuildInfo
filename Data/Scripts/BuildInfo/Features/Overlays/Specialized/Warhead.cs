@@ -133,8 +133,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             if(drawLabel)
             {
-                drawInstance.LabelRender.DynamicLabel.Clear().Append("Damage center here\nRadius: ").DistanceFormat((float)explosionSphere.Radius, 2)
-                    .Append("\nWarheads within sphere: ").Append(warheadsInside);
+                drawInstance.LabelRender.DynamicLabel.Clear().Append("Damage center here\nFinal radius: ").DistanceFormat((float)explosionSphere.Radius, 2)
+                    .Append("\nOther warheads near: ").Append(warheadsInside - 1);
 
                 Vector3D labelDir = drawMatrix.Left + drawMatrix.Up + drawMatrix.Backward;
                 drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, explosionSphere.Center, labelDir, ColorExplosion, alwaysOnTop: true);

@@ -390,6 +390,7 @@ namespace Digi.BuildInfo.Features
         bool LineHadTooltip = false;
 
         /// <summary>
+        /// Will return NULL if textAPI is not present/disabled.
         /// </summary>
         /// <param name="action">Called when clicking the line.</param>
         /// <param name="line">if -1 then the current line is used and automatically calls <see cref="Utilities.StringBuilderExtensions.MarkTooltip(StringBuilder)"/> when it ends.</param>
@@ -5170,28 +5171,34 @@ namespace Digi.BuildInfo.Features
             {
                 AddLine().Label("Damage").Append(warhead.WarheadExplosionDamage.ToString("#,###,###,###,##0.##")).Icon(FontsHandler.IconExplode);
 
+                float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+
+                // HACK: hardcoded from MyWarhead.MarkForExplosion()
                 float searchRadius = Hardcoded.WarheadSearchRadius(warhead);
 
-                AddLine().Label("Radius").Color(warhead.ExplosionRadius > Hardcoded.WarheadMaxRadius ? COLOR_BAD : COLOR_NORMAL)
-                    .DistanceFormat(warhead.ExplosionRadius, 2).ResetFormatting().Icon(FontsHandler.IconSphere)
-                    .Append(" +").DistanceFormat(warhead.ExplosionRadius * Hardcoded.WarheadRadiusRatioPerOther, 2)
-                    .Append(" per warhead within ").DistanceFormat(searchRadius).Icon(FontsHandler.IconSphere);
+                float gridRadius = cellSize * Hardcoded.WarheadScanRadiusGridMul;
+                float minRadius = gridRadius + cellSize; // from the warheads loop
 
-                CreateTooltip(coveringLines: 2).Append("Warhead's explosion radius is boosted by ").ProportionToPercent(Hardcoded.WarheadRadiusRatioPerOther, 2).HardcodedMarker()
-                    .Append(" for every warhead within ").DistanceFormat(searchRadius).HardcodedMarker().Append(" (for this grid size), including itself.")
-                    .Append("\nExplosion radius cannot exceed ").DistanceFormat(Hardcoded.WarheadMaxRadius).HardcodedMarker().Append(".")
-                    .Append("\nExplosions are volumetric therefore some blocks within the radius can remain unaffected.");
+                int warheadsInside = 1; // always includes itself in the search
+                float radiusCapped = Math.Min(Hardcoded.WarheadMaxRadius, (1f + Hardcoded.WarheadRadiusRatioPerOther * warheadsInside) * warhead.ExplosionRadius);
 
-                float warheadsForMaxRadiusF = (Hardcoded.WarheadMaxRadius - warhead.ExplosionRadius) / (warhead.ExplosionRadius * Hardcoded.WarheadRadiusRatioPerOther);
-                int warheadsForMaxRadius = (int)Math.Ceiling(warheadsForMaxRadiusF);
+                float actualExplosionRadiusAlone = Math.Max(radiusCapped, minRadius);
 
-                //float searchVolume = ((4f / 3f) * MathHelper.Pi * searchRadius * searchRadius * searchRadius);
-                //float sgBlock = MyDefinitionManager.Static.GetCubeSize(MyCubeSize.Small);
-                //float lgBlock = MyDefinitionManager.Static.GetCubeSize(MyCubeSize.Large);
-                //float sgBlocksWithinVolume = searchVolume / (sgBlock * sgBlock * sgBlock);
-                //float lgBlocksWithinVolume = searchVolume / (lgBlock * lgBlock * lgBlock);
+                AddLine().Label("Radius").DistanceFormat(actualExplosionRadiusAlone, 2).Icon(FontsHandler.IconSphere)
+                    .Append(" + <i>some bonus</i> per warhead within ").DistanceFormat(searchRadius).Icon(FontsHandler.IconSphere);
 
-                AddLine().LabelHardcoded("Max radius").DistanceFormat(Hardcoded.WarheadMaxRadius).Icon(FontsHandler.IconSphere).Separator().Label("Clustered warheads for max radius").Append(warheadsForMaxRadius);
+                StringBuilder tooltip = CreateTooltip();
+                if(tooltip != null)
+                {
+                    tooltip.Append("Warhead's explosion radius is boosted by <i>some amount</i> for every other warhead within ")
+                        .DistanceFormat(searchRadius).HardcodedMarker().Append(" (for ").Append(def.CubeSize == MyCubeSize.Large ? "Large" : "Small").Append("Grid).")
+                        .Append("\nNo exact numbers because the game behavior on these is needlesly complex and cannot be explained in one tooltip.")
+                        .Append("\nIt is however simulated in the <color=0,255,155>block's overlay (");
+                    Main.Config.CycleOverlaysBind.Value.GetBinds(tooltip);
+                    tooltip.Append(")<reset> so you can see it in action there.")
+                        .Append("\nCareful that the behavior differs between blocks, always check the exact block you plan on using including the nearby ones.")
+                        .Append("\n\nExplosions are volumetric therefore some blocks within the radius can remain unaffected.");
+                }
             }
         }
 
