@@ -2022,15 +2022,34 @@ namespace Digi.BuildInfo.Features
         private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
             bool deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
-            int assembleTime = (int)(def.MaxIntegrity / def.IntegrityPointsPerSec);
             bool buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
-            float weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
-            float grindRatio = def.DisassembleRatio;
 
-            if(def is MyDoorDefinition)
-                grindRatio *= Hardcoded.Door_DisassembleRatioMultiplier;
-            else if(def is MyAdvancedDoorDefinition)
-                grindRatio *= Hardcoded.AdvDoor_Closed_DisassembleRatioMultiplier;
+            BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
+
+            #region DisassembleRatio
+            float disassembleRatio;
+            if(data != null)
+            {
+                disassembleRatio = data.DisassembleRatio;
+                // MyADvancedDoor uses x1 for open and x3.3 for closed... this data should have it from closed state.
+            }
+            else
+            {
+                disassembleRatio = def.DisassembleRatio;
+                if(def is MyDoorDefinition)
+                    disassembleRatio *= Hardcoded.Door_DisassembleRatioMultiplier;
+                else if(def is MyAdvancedDoorDefinition)
+                    disassembleRatio *= Hardcoded.AdvDoor_Closed_DisassembleRatioMultiplier;
+            }
+            #endregion
+
+            float weldPerSec = Hardcoded.HandWelder_GetWeldPerSec(1f);
+            float grindPerSec = Hardcoded.HandGrinder_GetGrindPerSec(1f);
+            float weldMul = MyAPIGateway.Session.WelderSpeedMultiplier;
+            float grindMul = MyAPIGateway.Session.GrinderSpeedMultiplier;
+
+            float weldTime = def.MaxIntegrity / (def.IntegrityPointsPerSec * weldPerSec);
+            float grindTime = def.MaxIntegrity / (def.IntegrityPointsPerSec * (grindPerSec / disassembleRatio));
 
             string partPrefix = string.Empty;
             if(part)
@@ -2040,32 +2059,37 @@ namespace Digi.BuildInfo.Features
                 Utilities.StringBuilderExtensions.CurrentColor = COLOR_NORMAL;
             }
 
-            #region Mass/size/build time/deconstruct time/no models
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line1))
             {
-                AddLine().Append(partPrefix);
+                StringBuilder line = AddLine().Append(partPrefix);
 
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
-                GetLine().Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator()
-                    .Size3DFormat(def.Size).Separator()
-                    .TimeFormat(assembleTime / weldMul).Color(COLOR_UNIMPORTANT).OptionalMultiplier(weldMul).ResetFormatting();
+                line.Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator();
 
-                if(Math.Abs(grindRatio - 1) >= 0.0001f)
-                    GetLine().Separator().Color(grindRatio > 1 ? COLOR_BAD : (grindRatio < 1 ? COLOR_GOOD : COLOR_NORMAL)).Append("Deconstructs: ").ProportionToPercent(1f / grindRatio).ResetFormatting();
+                line.Size3DFormat(def.Size).Separator();
+
+                line.Label("Weld").TimeFormat(weldTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(weldMul).ResetFormatting();
+
+                if(Math.Abs(grindTime - weldTime) >= 0.0001f)
+                {
+                    line.Separator().Color(grindTime > weldTime ? COLOR_WARNING : COLOR_NORMAL).Label("Grind").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(grindMul).ResetFormatting();
+                }
+
+                SimpleTooltip("Weld and grind times are for lowest tier tools and non-enemy blocks."
+                            + $"\nFor blocks owned by enemies, grind time is multiplied by x{MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
             }
-            #endregion Mass/size/build time/deconstruct time/no models
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
-                AddLine().Append(partPrefix).Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
+                StringBuilder line = AddLine().Append(partPrefix).Label("Integrity").Append(def.MaxIntegrity.ToString("#,###,###,###,###"));
 
                 if(deformable)
-                    GetLine().Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
+                    line.Separator().Label("Deform Ratio").RoundedNumber(def.DeformationRatio, 2);
 
                 float dmgMul = def.GeneralDamageMultiplier;
                 if(dmgMul != 1f)
                 {
-                    GetLine().Separator();
+                    line.Separator();
                     DamageMultiplierAsResistance(dmgMul);
                 }
 
@@ -2076,16 +2100,16 @@ namespace Digi.BuildInfo.Features
                 float expDmgMul = def.DamageMultiplierExplosion;
                 if(expDmgMul != 1f && !string.IsNullOrEmpty(def.Model)) // having an independent model makes it have a fatblock
                 {
-                    GetLine().Separator();
+                    line.Separator();
                     DamageMultiplierAsResistance(expDmgMul, "Explosive Res");
                 }
 
                 if(!Hardcoded.CanThrustDamageBlock(MyCubeSize.Small, def))
                 {
-                    GetLine().Separator().Color(COLOR_GOOD).Append("Resists small thrust flame");
+                    line.Separator().Color(COLOR_GOOD).Label("Thrust Res").Append("Small");
 
-                    SimpleTooltip("Large-grid thrusts damage all blocks." +
-                        "\nSmall-grid thrusts only damage blocks with DeformationRatio larger than 0.25." +
+                    SimpleTooltip("Large-grid thrusters damage all blocks." +
+                        "\nSmall-grid thrusters only damage blocks with DeformationRatio larger than 0.25." +
                         "\nCaution: Thrust flames penetrate and will damage blocks behind resistant blocks.");
                 }
 
@@ -2105,11 +2129,11 @@ namespace Digi.BuildInfo.Features
 
                     if(customBuildMounts)
                     {
-                        StringBuilder sb = AddLine().Color(COLOR_WARNING).Append("Different mount points in build stage!").ResetFormatting().Append(" (");
-                        Main.Config.ConstructionModelPreviewBind.Value.GetBinds(sb, ControlContext.BUILD, specialChars: true);
-                        sb.Append(" and ");
-                        Main.Config.CycleOverlaysBind.Value.GetBinds(sb, ControlContext.BUILD, specialChars: true);
-                        sb.Append(" to see)").ResetFormatting();
+                        StringBuilder extra = AddLine().Color(COLOR_WARNING).Append("Different mount points in build stage!").ResetFormatting().Append(" (");
+                        Main.Config.ConstructionModelPreviewBind.Value.GetBinds(extra, ControlContext.BUILD, specialChars: true);
+                        extra.Append(" and ");
+                        Main.Config.CycleOverlaysBind.Value.GetBinds(extra, ControlContext.BUILD, specialChars: true);
+                        extra.Append(" to see)").ResetFormatting();
                     }
                 }
                 //else

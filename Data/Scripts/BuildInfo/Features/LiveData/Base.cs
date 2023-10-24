@@ -135,6 +135,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public List<Matrix> UpgradePorts;
         public List<string> Upgrades;
         public List<SubpartInfo> Subparts;
+        public float DisassembleRatio = 1f;
 
         public BData_Base()
         {
@@ -147,6 +148,8 @@ namespace Digi.BuildInfo.Features.LiveData
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
+
+            DisassembleRatio = block.DisassembleRatio;
 
             ComputeSubparts(block);
             ComputeUpgrades(block);
