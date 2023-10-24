@@ -49,7 +49,6 @@ namespace Digi.BuildInfo
         public readonly RichHudFrameworkHandler RichHud;
         public readonly ModDetector ModDetector;
         public readonly SplitChecking SplitChecking;
-        public readonly SelectedLCD SelectedLCD;
 
         // Features
         public readonly Config Config;
@@ -141,7 +140,6 @@ namespace Digi.BuildInfo
             RichHud = new RichHudFrameworkHandler(this);
             ModDetector = new ModDetector(this);
             SplitChecking = new SplitChecking(this);
-            SelectedLCD = new SelectedLCD(this);
 
             // Features
             Config = new Config(this);

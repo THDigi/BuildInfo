@@ -4,6 +4,7 @@ using CoreSystems.Api;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
@@ -44,7 +45,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             foreach(string actionId in actionsForLCD)
             {
                 processor.AddFallback(LCDActions, actionId);
-                //processor.AddGroupFallback(LCDActionsGroup, actionId);
+                processor.AddGroupFallback(LCDActionsGroup, actionId);
             }
         }
 
@@ -279,33 +280,68 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
         bool LCDActions(StringBuilder sb, ToolbarItem item)
         {
-            var surfaceProvider = item.Block as PB_TextSurfaceProvider;
-            if(surfaceProvider == null)
+            var multiLCDOwner = item.Block as IMyMultiTextPanelComponentOwner;
+            if(multiLCDOwner?.MultiTextPanel == null)
                 return false;
 
-            SurfaceInfo surfaceInfo;
-            if(!BuildInfoMod.Instance.SelectedLCD.TryGetSelectedSurface(surfaceProvider, out surfaceInfo))
-                return false;
+            int selectedSurface = multiLCDOwner.MultiTextPanel.SelectedPanelIndex;
 
-            sb.Append("LCD ").NumberCapped(surfaceInfo.Index + 1, 4).Append('\n');
+            sb.Append("LCD:").NumberCapped(selectedSurface + 1, 4).Append('\n');
 
             item.ActionWrapper.AppendOriginalStatus(item.Block, sb);
             return true;
         }
 
-        //bool LCDActionsGroup(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
-        //{
-        //    if(!groupData.GetGroupBlocks<PB_TextSurfaceProvider>())
-        //        return false;
-        //
-        //    foreach(IMyTerminalBlock surfaceProvider in groupData.Blocks)
-        //    {
-        //        ITerminalAction action = surfaceProvider.GetActionWithName(groupToolbarItem.ActionId);
-        //
-        //        action.WriteValue();
-        //    }
-        //
-        //    return true;
-        //}
+        bool LCDActionsGroup(StringBuilder sb, ToolbarItem groupToolbarItem, GroupData groupData)
+        {
+            if(!groupData.GetGroupBlocks<PB_TextSurfaceProvider>())
+                return false;
+
+            int broken = 0;
+            int off = 0;
+            TempUniqueInt.Clear();
+
+            foreach(IMyTerminalBlock tb in groupData.Blocks)
+            {
+                if(!tb.IsFunctional)
+                    broken++;
+
+                // e.g. cockpits have LCDs but can't be turned off
+                var fb = tb as IMyFunctionalBlock;
+                if(fb != null && fb.Enabled)
+                    off++;
+
+                int selectedSurface = (tb as IMyMultiTextPanelComponentOwner)?.MultiTextPanel?.SelectedPanelIndex ?? 0;
+
+                TempUniqueInt.Add(selectedSurface);
+            }
+
+            Processor.AppendGroupStats(sb, broken, off);
+
+            if(TempUniqueInt.Count == 0)
+            {
+                sb.Append("LCD:?\n");
+            }
+            else if(TempUniqueInt.Count > 1)
+            {
+                sb.Append("LCD:Mix\n");
+            }
+            else // only one in list, meaning all blocks have same mode
+            {
+                int selectedSurface = TempUniqueInt.FirstElement();
+
+                sb.Append("LCD:").NumberCapped(selectedSurface + 1, 4).Append('\n');
+            }
+
+            // TODO: design it properly for each action?
+            groupToolbarItem.ActionWrapper.AppendOriginalStatus(groupData.Blocks[0], sb);
+
+            //sb.Append(IconAlert).Append("Mixed");
+            //switch(groupToolbarItem.ActionId)
+            //{
+            //}
+
+            return true;
+        }
     }
 }
