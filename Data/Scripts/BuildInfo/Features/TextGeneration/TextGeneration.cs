@@ -3805,7 +3805,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_LCD(MyCubeBlockDefinition def)
+        void Format_LCD(MyCubeBlockDefinition def)
         {
             MyTextPanelDefinition lcd = (MyTextPanelDefinition)def;
 
@@ -3830,15 +3830,23 @@ namespace Digi.BuildInfo.Features
                     info = Hardcoded.TextSurface_GetInfo(lcd.ScreenWidth, lcd.ScreenHeight, lcd.TextureResolution);
                 }
 
-                AddLine().Label("LCD - Resolution").Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting()
+                AddLine().Label("LCD - Resolution").Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).ResetFormatting().Append(" x ").Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.Y).ResetFormatting()
                     .Separator().Label("Rotatable").BoolFormat(supportsRotation)
-                    .Separator().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 4).Append(" to ").RoundedNumber(lcd.MaxFontSize, 4);
+                    .Separator().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 2).Append(" to ").RoundedNumber(lcd.MaxFontSize, 2);
 
-                AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+                if(!string.IsNullOrEmpty(script))
+                {
+                    SimpleTooltip($"Extra info for surface:"
+                                + $"\nUses an LCD app by default: {LCDScriptPrettyName(script)}");
+                }
 
-                // not that useful info
-                //if(!string.IsNullOrEmpty(script))
-                //    AddLine().Label("Default script").Color(COLOR_STAT_TRAVEL).Append(script).ResetFormatting();
+                Hardcoded.LCDRenderDistanceInfo lcdRenderDistanceInfo = Hardcoded.TextSurface_MaxRenderDistance(def);
+
+                AddLine().LabelHardcoded("LCD - Render").DistanceFormat(lcdRenderDistanceInfo.RenderDistanceRaw * lcdRenderDistanceInfo.TextureQualityMultiplier).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+
+                SimpleTooltip("LCD render distance is affected by game's Texture Quality setting, 2/3 for medium and 1/3 for low."
+                            + $"\nThe value you see is already modified by your current texture setting (x{lcdRenderDistanceInfo.TextureQualityMultiplier:0.##})."
+                            + $"\nThe raw render distance for this LCD is: {lcdRenderDistanceInfo.RenderDistanceRaw:0.##} m");
             }
         }
 
@@ -3852,7 +3860,7 @@ namespace Digi.BuildInfo.Features
                 return;
 
             const int SpacePrefix = 9;
-            AddLine().Label(surfaces.Count > 1 ? "LCDs" : "LCD");
+            StringBuilder line = AddLine().Label(surfaces.Count > 1 ? "LCDs" : "LCD");
 
             // TODO: toggle between list and just count?
             for(int i = 0; i < surfaces.Count; i++)
@@ -3864,25 +3872,47 @@ namespace Digi.BuildInfo.Features
                 Hardcoded.TextSurfaceInfo info = Hardcoded.TextSurface_GetInfo(surface.ScreenWidth, surface.ScreenHeight, surface.TextureResolution);
 
                 if(i > 0)
-                    AddLine().Append(' ', SpacePrefix).Append("| ");
+                    line = AddLine().Append(' ', SpacePrefix).Append("| ");
 
-                GetLine().Append(displayName);
+                line.Append(displayName);
 
-                // very edge case use for a lot of width added, who needs it can get it from API or SBC
-                //if(Main.Config.InternalInfo.Value)
-                //    GetLine().Color(COLOR_UNIMPORTANT).Append(" (").Append(surface.Name).Append(")");
+                line.ResetFormatting().Separator().Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).ResetFormatting().Append(" x ").Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.Y).ResetFormatting();
 
-                GetLine().ResetFormatting().Separator().Color(COLOR_HIGHLIGHT).Number(info.SurfaceSize.X).Append("x").Number(info.SurfaceSize.Y).ResetFormatting();
-
-                // not that useful info
-                //if(!string.IsNullOrEmpty(surface.Script))
-                //    GetLine().Separator().Color(COLOR_STAT_TRAVEL).Label("Default script").Append(surface.Script).ResetFormatting();
+                if(!string.IsNullOrEmpty(surface.Script))
+                {
+                    SimpleTooltip($"Extra info for surface '{displayName}':"
+                                + $"\nUses an LCD app by default: {LCDScriptPrettyName(surface.Script)}");
+                }
             }
 
-            AddLine().LabelHardcoded("LCD - Render").DistanceFormat(Hardcoded.TextSurfaceMaxRenderDistance).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+            Hardcoded.LCDRenderDistanceInfo lcdRenderDistanceInfo = Hardcoded.TextSurface_MaxRenderDistance(fbDef);
+
+            AddLine().LabelHardcoded("LCD - Render").DistanceFormat(lcdRenderDistanceInfo.RenderDistanceRaw * lcdRenderDistanceInfo.TextureQualityMultiplier).Separator().LabelHardcoded("Sync").DistanceFormat(Hardcoded.TextSurfaceMaxSyncDistance);
+
+            SimpleTooltip("LCD render distance is affected by game's Texture Quality setting, 2/3 for medium and 1/3 for low."
+                        + $"\nThe value you see is already modified by your current texture setting (x{lcdRenderDistanceInfo.TextureQualityMultiplier:0.##})."
+                        + $"\nThe raw render distance for this LCD is: {lcdRenderDistanceInfo.RenderDistanceRaw:0.##} m");
         }
 
-        private void Format_LCDPanels(MyCubeBlockDefinition def)
+        string LCDScriptPrettyName(string scriptId)
+        {
+            if(scriptId.StartsWith("TSS_"))
+            {
+                string langKey = $"DisplayName_{scriptId}";
+                string displayName = MyTexts.GetString(langKey);
+
+                if(langKey == displayName) // no localization found
+                    return scriptId.Substring("TSS_".Length);
+                else
+                    return displayName;
+            }
+            else // likely a mod one, can't guess name
+            {
+                return scriptId;
+            }
+        }
+
+        void Format_LCDPanels(MyCubeBlockDefinition def)
         {
             MyLCDPanelsBlockDefinition panel = (MyLCDPanelsBlockDefinition)def;
 
@@ -3891,7 +3921,7 @@ namespace Digi.BuildInfo.Features
             // LCD stats are in AddScreenInfo()
         }
 
-        private void Format_SoundBlock(MyCubeBlockDefinition def)
+        void Format_SoundBlock(MyCubeBlockDefinition def)
         {
             // NOTE: this includes jukebox
             MySoundBlockDefinition sound = (MySoundBlockDefinition)def;

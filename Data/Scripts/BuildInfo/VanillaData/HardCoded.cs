@@ -590,8 +590,64 @@ namespace Digi.BuildInfo.VanillaData
             maxMass = 2.5f * realAirDensity * (targetDescendVelocity * targetDescendVelocity) * chuteArea * parachute.DragCoefficient / EarthGravity;
         }
 
-        // where MyMultiTextPanelComponent.Init() is called in MyFunctionalBlock.InitLcdComponent() and MyCockpit.Init()
-        public const float TextSurfaceMaxRenderDistance = 120f;
+        public struct LCDRenderDistanceInfo
+        {
+            public float RenderDistanceRaw;
+            public float TextureQualityMultiplier;
+        }
+
+        public static LCDRenderDistanceInfo TextSurface_MaxRenderDistance(MyCubeBlockDefinition def)
+        {
+            LCDRenderDistanceInfo info = new LCDRenderDistanceInfo();
+
+            // as per MySessionComponentPanels.GetDrawDistanceMultiplierForQuality(), texture quality affects LCD render/update distance.
+            MyTextureQuality? textureQuality = (MyTextureQuality?)MyAPIGateway.Session?.Config?.TextureQuality;
+            switch(textureQuality)
+            {
+                case MyTextureQuality.LOW: info.TextureQualityMultiplier = (1f / 3f); break;
+                case MyTextureQuality.MEDIUM: info.TextureQualityMultiplier = (2f / 3f); break;
+                case MyTextureQuality.HIGH: info.TextureQualityMultiplier = 1f; break;
+                default: info.TextureQualityMultiplier = (2f / 3f); break;
+            }
+
+            var lcdDef = def as MyTextPanelDefinition;
+            if(lcdDef != null)
+            {
+                info.RenderDistanceRaw = lcdDef.MaxScreenRenderDistance;
+            }
+            else
+            {
+                // where MyMultiTextPanelComponent.Init() is called in MyFunctionalBlock.InitLcdComponent() and MyCockpit.Init()
+                info.RenderDistanceRaw = 120f;
+
+                MyContainerDefinition containerDef;
+                if(MyComponentContainerExtension.TryGetContainerDefinition(def.Id.TypeId, def.Id.SubtypeId, out containerDef) && containerDef.DefaultComponents != null)
+                {
+                    foreach(MyContainerDefinition.DefaultComponent compPointer in containerDef.DefaultComponents)
+                    {
+                        MyComponentDefinitionBase compDefBase;
+                        if(!MyComponentContainerExtension.TryGetComponentDefinition(compPointer.BuilderType, compPointer.SubtypeId ?? def.Id.SubtypeId, out compDefBase))
+                            continue;
+
+                        var multiLcdCompDef = compDefBase as MyMultiTextPanelComponentDefinition;
+                        if(multiLcdCompDef != null)
+                        {
+                            info.RenderDistanceRaw = multiLcdCompDef.MaxRenderDistance;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return info;
+        }
+
+        enum MyTextureQuality
+        {
+            LOW,
+            MEDIUM,
+            HIGH
+        }
 
         // where VRage.Network.DistanceRadiusAttribute is appled to MyFunctionalBlock, MyCockpit, MyTextPanel
         public const float TextSurfaceMaxSyncDistance = 32f;
