@@ -63,7 +63,8 @@ namespace Digi.BuildInfo.Features
             #endregion
 
             #region Prevent/allow rotation sensitivity to be changed
-            if(!Main.Config.SpectatorAllowRotationModifier.Value)
+            bool allowAngularMod = Main.Config.SpectatorAllowRotationModifier.Value;
+            if(!allowAngularMod)
             {
                 MySpectator.Static.SpeedModeAngular = 1f;
             }
@@ -119,15 +120,18 @@ namespace Digi.BuildInfo.Features
 
             sb.Append("Speed Modifier: ")
                 .Append("x").Append(Math.Round(MySpectator.Static.SpeedModeLinear, 2))
-                .Color(Color.Gray).Append(" (Shift+Scroll)").NewCleanLine();
+                .Color(Color.Gray).Append(" (Shift+Scroll adjust; Shift temp boost; Ctrl temp slow)").NewCleanLine();
 
             sb.Append("Rotation Modifier: ");
 
             if(Math.Abs(MySpectator.Static.SpeedModeAngular - 1f) > 0.001f)
                 sb.Color(Color.Yellow);
 
-            sb.Append("x").Append(Math.Round(MySpectator.Static.SpeedModeAngular, 2))
-                .Color(Color.Gray).Append(" (Ctrl+Scroll)").NewCleanLine();
+            sb.Append("x").Append(Math.Round(MySpectator.Static.SpeedModeAngular, 2)).Color(Color.Gray).Append(" (");
+            if(allowAngularMod)
+                sb.Append("Ctrl+Scroll adjust; ");
+            sb.Append("Alt temp boost)");
+            sb.NewCleanLine();
 
             sb.Append("Speed: ").SpeedFormat((float)speed).Color(Color.Gray).Append(" (Shift+MMB set on aimed, Shift+RMB clear, Shift+Scroll adjust)").NewCleanLine();
 
