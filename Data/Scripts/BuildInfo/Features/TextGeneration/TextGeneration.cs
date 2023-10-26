@@ -3834,11 +3834,12 @@ namespace Digi.BuildInfo.Features
                     .Separator().Label("Rotatable").BoolFormat(supportsRotation)
                     .Separator().Label("Font size limits").RoundedNumber(lcd.MinFontSize, 2).Append(" to ").RoundedNumber(lcd.MaxFontSize, 2);
 
-                if(!string.IsNullOrEmpty(script))
-                {
-                    SimpleTooltip($"Extra info for surface:"
-                                + $"\nUses an LCD app by default: {LCDScriptPrettyName(script)}");
-                }
+                // HACK: default TSS does not work on MyTextPanel, omitting this until it's fixed.
+                //if(!string.IsNullOrEmpty(script))
+                //{
+                //    SimpleTooltip($"Extra info for surface:"
+                //                + $"\nUses an LCD app by default: {LCDScriptPrettyName(script)}");
+                //}
 
                 Hardcoded.LCDRenderDistanceInfo lcdRenderDistanceInfo = Hardcoded.TextSurface_MaxRenderDistance(def);
 
