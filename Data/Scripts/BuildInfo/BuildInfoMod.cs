@@ -105,6 +105,7 @@ namespace Digi.BuildInfo
         public readonly GridMassCompute GridMassCompute;
         public readonly PBMonitor PBMonitor;
         public readonly TopPartColor TopPartColor;
+        public readonly FixTextures FixTextures;
         public readonly SpectatorControlInfo SpectatorControlInfo;
         public readonly InterModAPI InterModAPI;
         public readonly DebugEvents DebugEvents;
@@ -196,6 +197,7 @@ namespace Digi.BuildInfo
             GridMassCompute = new GridMassCompute(this);
             PBMonitor = new PBMonitor(this);
             TopPartColor = new TopPartColor(this);
+            FixTextures = new FixTextures(this);
             SpectatorControlInfo = new SpectatorControlInfo(this);
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
