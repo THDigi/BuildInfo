@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Sandbox.Game;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Collections;
 using VRage.Game.Entity.UseObject;
+using VRage.Game.ModAPI;
+using VRage.Input;
+using InternalControllableEntity = Sandbox.Game.Entities.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {
@@ -57,6 +62,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         void UseObjectChanged(IMyUseObject useObject)
         {
+            // have to use this event instead of OnInteractiveObjectUsed because that does not trigger for rightclick for some reason
+
             LastAimedUseObject = useObject;
         }
 
@@ -72,15 +79,39 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             TargetBlocks.Clear();
 
-            if(Main.GUIMonitor.InTerminal && Main.TerminalInfo.SelectedInTerminal.Count > 0)
+            if(Main.GUIMonitor.InTerminal)
             {
                 TargetBlocks.AddList(Main.TerminalInfo.SelectedInTerminal);
             }
-            else
+            else // opening toolbar config externally, e.g. clicking an empty button on button panel
             {
-                IMyTerminalBlock targetBlock = LastAimedUseObject?.Owner as IMyTerminalBlock;
-                if(targetBlock != null)
-                    TargetBlocks.Add(targetBlock);
+                // have to ignore cases where player opens g-menu while aiming at a useobject (which won't open its toolbar but your toolbar)
+
+                // likely opened g-menu via control menu, ignore.
+                if(Main.GUIMonitor.Screens.Contains("MyGuiScreenControlMenu"))
+                    return;
+
+                var ctrl = MyAPIGateway.Session.ControlledObject as InternalControllableEntity;
+                if(ctrl != null)
+                {
+                    if(ctrl is IMyCubeBlock)
+                    {
+                        // TODO: this is cockpit toolbar config which already has a different toolbar render currently, re-enable once that is fully replaced
+                        //var ctrlTerminalBlock = ctrl as IMyTerminalBlock;
+                        //if(ctrlTerminalBlock != null)
+                        //    TargetBlocks.Add(ctrlTerminalBlock);
+                    }
+                    else if(ctrl is IMyCharacter)
+                    {
+                        // kb/m & hopefully gamepad
+                        if(MyAPIGateway.Input.IsControl(ctrl.ControlContext, MyControlsSpace.BUILD_SCREEN, MyControlStateType.PRESSED))
+                            return;
+
+                        IMyTerminalBlock targetBlock = LastAimedUseObject?.Owner as IMyTerminalBlock;
+                        if(targetBlock != null)
+                            TargetBlocks.Add(targetBlock);
+                    }
+                }
             }
 
             if(TargetBlocks.Count > 0)

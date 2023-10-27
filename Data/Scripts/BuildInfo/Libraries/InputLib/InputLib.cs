@@ -292,6 +292,16 @@ namespace Digi.Input
 
         public readonly char[] CHAR_ARRAY = { ' ' };
 
+        public static readonly MyStringId CX_BASE = MyStringId.GetOrCompute("BASE");
+        public static readonly MyStringId CX_GUI = MyStringId.GetOrCompute("GUI");
+        /// <summary>
+        /// just for future ref... ideally use Sandbox.Game.Entities.IMyControllableEntity's ControlContext instead
+        /// </summary>
+        public static readonly MyStringId CX_CHARACTER = MyStringId.GetOrCompute("CHARACTER");
+        public static readonly MyStringId CX_JETPACK = MyStringId.GetOrCompute("JETPACK");
+        public static readonly MyStringId CX_SPACESHIP = MyStringId.GetOrCompute("SPACESHIP");
+        public static readonly MyStringId CX_SPECTATOR = MyStringId.GetOrCompute("SPECTATOR");
+
         private int tick;
         private List<InputReleaseKey> pressedCombinations = new List<InputReleaseKey>(); // Used by InputCombination to monitor releases for IsJustPressed().
 
