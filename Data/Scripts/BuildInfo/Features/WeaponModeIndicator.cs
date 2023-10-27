@@ -224,7 +224,7 @@ namespace Digi.BuildInfo.Features
                 UI_Bind = TextAPI.CreateHUDText(new StringBuilder(32), Vector2D.Zero, hideWithHud: true);
             }
 
-            bool showBind = Main.GameConfig.HudState == HudState.HINTS;
+            bool showBind = Main.GameConfig.HudState == HudState.HINTS && !MyAPIGateway.Input.IsJoystickLastUsed;
 
             Vector2 pxSize = (Vector2)HudAPIv2.APIinfo.ScreenPositionOnePX;
 
