@@ -355,6 +355,12 @@ namespace Digi.BuildInfo.Features
                     {
                         string filePath = error.Message.Substring(resourceNotFoundPrefix.Length, error.Message.Length - resourceNotFoundPrefix.Length);
 
+                        if(filePath.EndsWith(".xwm", StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                        {
+                            error.Message += $"\n{Signature}Path to sounds in mods start from the mod root folder.";
+                            continue;
+                        }
+
                         CloudLayerInfo info;
                         if(cloudLayerInfo.TryGetValue(filePath, out info))
                         {
@@ -365,6 +371,29 @@ namespace Digi.BuildInfo.Features
                                 error.Severity = info.SetSeverity.Value;
                         }
 
+                        continue;
+                    }
+
+                    string fileDoesNotHaveProperExtension = "File does not have a proper extension: ";
+                    if(error.Message.StartsWith(resourceNotFoundPrefix))
+                    {
+                        string filePath = error.Message.Substring(fileDoesNotHaveProperExtension.Length, error.Message.Length - fileDoesNotHaveProperExtension.Length);
+
+                        if(filePath.StartsWith("Audio", StringComparison.OrdinalIgnoreCase))
+                        {
+                            error.Severity = TErrorSeverity.Notice; // reduce severity
+                            error.Message += $"\n{Signature}Ignore this particular one, modder wants to use sound from the game folder and omitting extension is the only way to do that.";
+                        }
+
+                        continue;
+                    }
+
+                    // MyWaveBank.FindAudioFile()
+                    // "Unable to find audio file: '{cue.SubtypeId}', '{fileName}'"
+                    string unableToFindAudioFile = "Unable to find audio file: '";
+                    if(error.Message.StartsWith(unableToFindAudioFile))
+                    {
+                        error.Message += $"\n{Signature}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
                         continue;
                     }
 
