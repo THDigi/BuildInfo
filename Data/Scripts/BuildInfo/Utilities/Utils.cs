@@ -573,7 +573,7 @@ namespace Digi.BuildInfo.Utilities
         /// </summary>
         public static void FadeColorHUD(ref Color color, float opacity)
         {
-            color *= opacity * (opacity * 1.075f);
+            color *= opacity * Math.Min(1f, (opacity * 1.075f));
             color.A = (byte)(opacity * 255);
         }
 
