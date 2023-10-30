@@ -228,6 +228,10 @@ namespace Digi.BuildInfo.Features.Terminal
             float inventoryMass = 0f;
             int inventoryBlocks = 0;
 
+            int unfinished = 0;
+            int damaged = 0;
+            int broken = 0;
+
             long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
             int unowned = 0;
             int ownedByMe = 0;
@@ -264,6 +268,21 @@ namespace Digi.BuildInfo.Features.Terminal
 
                     if(allSameId && !block.SlimBlock.BlockDefinition.Id.Equals(firstBlock.SlimBlock.BlockDefinition.Id))
                         allSameId = false;
+                }
+                #endregion
+
+                #region Compute unfinished/damaged/broken
+                if(!block.IsFunctional)
+                {
+                    if(block.SlimBlock.ComponentStack.IsBuilt)
+                        broken++;
+                    else
+                        unfinished++;
+                }
+                else
+                {
+                    if(!block.SlimBlock.IsFullIntegrity)
+                        damaged++;
                 }
                 #endregion
 
@@ -462,19 +481,36 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append(inventoryBlocks).Append("x Inventories: ").VolumeFormat(inventoryCurrentM3 * 1000).Append(" / ").VolumeFormat(inventoryMaxM3 * 1000).Append(" (").MassFormat(inventoryMass).Append(")\n");
             }
 
+            // unfinished/damaged/broken
+            {
+                int lenBefore = info.Length;
+
+                if(unfinished > 0)
+                    info.Append(unfinished).Append(" unfinished, ");
+
+                if(damaged > 0)
+                    info.Append(damaged).Append(" damaged, ");
+
+                if(broken > 0)
+                    info.Append(broken).Append(" broken, ");
+
+                // remove last comma+space and finish the line
+                if(info.Length > lenBefore)
+                {
+                    info.Length -= 2;
+                    info.Append('\n');
+                }
+            }
+
             // owners summary
             {
-                int length = info.Length;
+                int lenBefore = info.Length;
 
                 if(unowned > 0)
-                {
                     info.Append(unowned).Append(" not owned, ");
-                }
 
                 //if(ownedByMe > 0)
-                //{
                 //    info.Append(ownedByMe).Append(" mine, ");
-                //}
 
                 if(OtherOwners.Count > 0)
                 {
@@ -501,18 +537,15 @@ namespace Digi.BuildInfo.Features.Terminal
                 }
 
                 if(shareAll > 0)
-                {
                     info.Append(shareAll).Append(" shared all, ");
-                }
 
                 if(sharePrivate > 0)
-                {
                     info.Append(sharePrivate).Append(" not shared, ");
-                }
 
-                if(info.Length > length)
+                // remove last comma+space and finish the line
+                if(info.Length > lenBefore)
                 {
-                    info.Length -= 2; // remove last comma+space
+                    info.Length -= 2;
                     info.Append('\n');
                 }
             }
