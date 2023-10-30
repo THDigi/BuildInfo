@@ -18,6 +18,7 @@ using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Input;
 using VRage.Utils;
 using VRageMath;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
@@ -551,8 +552,8 @@ namespace Digi.BuildInfo.Features
                 int criticalCompIndex = blockDef.CriticalGroup;
 
                 if(debugMode)
-                    if(!MyAPIGateway.Input.IsKeyPress(VRage.Input.MyKeys.Q))
-                        criticalCompIndex = (int)Dev.GetValueScroll("set criticalCompIndex", 0, 1, VRage.Input.MyKeys.Control);
+                    if(!MyAPIGateway.Input.IsKeyPress(MyKeys.Q))
+                        criticalCompIndex = (int)Dev.GetValueScroll("set criticalCompIndex", 0, MyKeys.Control);
 
                 #region red functionality line
                 if(criticalCompIndex >= (scrollIdx - 1) && criticalCompIndex <= maxScrollIdx)// within scroll limits
