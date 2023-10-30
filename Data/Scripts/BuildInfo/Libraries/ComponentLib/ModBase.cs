@@ -207,8 +207,8 @@ namespace Digi.ComponentLib
                     if(e is CrashGameException)
                         throw e;
 
-                    Log.Error($"Exception during {Components[i].GetType().Name}.RegisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
-                    Log.Error(e);
+                    string msg = $"Exception during {Components[i].GetType().Name}.RegisterComponent()";
+                    Log.Error($"{msg}: {e}", msg);
                 }
             }
 
@@ -264,8 +264,8 @@ namespace Digi.ComponentLib
                             if(e is CrashGameException)
                                 throw e;
 
-                            Log.Error($"Exception during {Components[i].GetType().Name}.UnregisterComponent(): {e.Message}", Log.PRINT_MESSAGE);
-                            Log.Error(e);
+                            string msg = $"Exception during {Components[i].GetType().Name}.UnregisterComponent()";
+                            Log.Error($"{msg}: {e}", msg);
                         }
                     }
                 }
@@ -346,8 +346,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -365,8 +365,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateInput[i].GetType().Name}.UpdateInput()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -444,8 +444,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -463,8 +463,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateBeforeSim[i].GetType().Name}.UpdateBeforeSim()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -542,8 +542,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -561,8 +561,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateAfterSim[i].GetType().Name}.UpdateAfterSim()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -623,8 +623,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
@@ -642,8 +642,8 @@ namespace Digi.ComponentLib
                                 if(e is CrashGameException)
                                     throw e;
 
-                                Log.Error($"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw(): {e.Message}", Log.PRINT_MESSAGE);
-                                Log.Error(e);
+                                string msg = $"Exception during {ComponentUpdateDraw[i].GetType().Name}.UpdateDraw()";
+                                Log.Error($"{msg}: {e}", msg);
                             }
                         }
                     }
