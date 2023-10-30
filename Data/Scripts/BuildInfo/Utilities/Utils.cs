@@ -42,6 +42,8 @@ namespace Digi.BuildInfo.Utilities
     /// </summary>
     public static class Utils
     {
+        public static string[] FrustumPlaneName = new[] { "Near", "Far", "Left", "Right", "Top", "Bottom" };
+
         public static bool AssertMainThread(bool throwException = true)
         {
             if(Environment.CurrentManagedThreadId != 1)
@@ -580,25 +582,6 @@ namespace Digi.BuildInfo.Utilities
         public static Color GetIndexColor(int index, int maxIndex)
         {
             return new Vector3((index % maxIndex) / (float)maxIndex, 0.75f, 1f).HSVtoColor();
-        }
-
-        /// <summary>
-        /// Extremely inefficient, for debugging purposes only!
-        /// </summary>
-        public static void DebugDraw3DText(StringBuilder text, Vector3D pos, double scale = 0.1, bool alwaysOnTop = false)
-        {
-            if(!BuildInfoMod.Instance.TextAPI.WasDetected)
-                return;
-
-            MatrixD cm = MyAPIGateway.Session.Camera.WorldMatrix;
-
-            if(alwaysOnTop)
-            {
-                float depthMul = BuildInfo.Features.Overlays.OverlayDrawInstance.ConvertToAlwaysOnTop(ref pos);
-                scale *= depthMul;
-            }
-
-            new HudAPIv2.SpaceMessage(text, pos, cm.Up, cm.Left, scale, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
         }
 
         // Optimized wireframe draw
