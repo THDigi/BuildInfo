@@ -60,14 +60,14 @@ namespace Digi.BuildInfo.Features
             if(!BuildInfoMod.IsDevMod)
                 return;
 
-            Queue<LogMsg> debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
+            Queue<LogMsg> debugMsgs = BuildInfoMod.Instance?.DebugLog?.LogList;
             debugMsgs?.Clear();
             PrintHUD(caller, "(log cleared)");
         }
 
         public static void PrintHUD(object caller, string message, bool log = false)
         {
-            if(!BuildInfoMod.IsDevMod)
+            if(!BuildInfoMod.IsDevMod || BuildInfoMod.Instance?.DebugLog == null)
                 return;
 
             Queue<LogMsg> debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;

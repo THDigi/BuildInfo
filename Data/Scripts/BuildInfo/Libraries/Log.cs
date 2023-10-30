@@ -21,13 +21,13 @@ namespace Digi
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
     {
-        private static Handler handler;
-        private static bool unloaded = false;
-        private static long dateStarted;
+        static Handler handler;
+        static bool unloaded = false;
+        static long dateStarted;
 
         public const string FILE = "info.log";
-        private const int DEFAULT_TIME_INFO = 3000;
-        private const int DEFAULT_TIME_ERROR = 10000;
+        const int DEFAULT_TIME_INFO = 3000;
+        const int DEFAULT_TIME_ERROR = 10000;
 
         /// <summary>
         /// Print the generic error info.
@@ -56,7 +56,7 @@ namespace Digi
             }
         }
 
-        private static void Unload()
+        static void Unload()
         {
             if(!unloaded)
             {
@@ -67,7 +67,7 @@ namespace Digi
             handler = null;
         }
 
-        private static void EnsureHandlerCreated()
+        static void EnsureHandlerCreated()
         {
             if(unloaded)
                 throw new Exception($"{typeof(Log).FullName} accessed after it was unloaded! Date started: {new DateTime(dateStarted).ToString()}");
@@ -224,25 +224,25 @@ namespace Digi
         }
         #endregion Publicly accessible properties and methods
 
-        private class Handler
+        class Handler
         {
-            private Log sessionComp;
-            private string modName = string.Empty;
+            Log sessionComp;
+            string modName = string.Empty;
 
-            private TextWriter writer;
-            private int indent = 0;
-            private string errorPrintText;
-            private bool sessionReady = false;
+            TextWriter writer;
+            int indent = 0;
+            string errorPrintText;
+            bool sessionReady = false;
 
-            private double chatMessageCooldown;
+            double chatMessageCooldown;
 
-            private IMyHudNotification notifyInfo;
-            private IMyHudNotification notifyError;
+            IMyHudNotification notifyInfo;
+            IMyHudNotification notifyError;
 
-            private StringBuilder sb = new StringBuilder(64);
+            StringBuilder sb = new StringBuilder(256);
 
-            private List<string> preInitMessages;
-            private bool preInitErrors = false;
+            List<string> preInitMessages;
+            bool preInitErrors = false;
 
             public bool AutoClose { get; set; } = true;
 
@@ -250,10 +250,7 @@ namespace Digi
 
             public string ModName
             {
-                get
-                {
-                    return modName;
-                }
+                get { return modName; }
                 set
                 {
                     modName = value;
@@ -282,7 +279,7 @@ namespace Digi
                 if(string.IsNullOrWhiteSpace(ModName))
                     ModName = sessionComp.ModContext.ModName;
 
-                WorkshopId = GetWorkshopID(sessionComp.ModContext.ModId);
+                WorkshopId = sessionComp.ModContext.ModItem.PublishedFileId;
 
                 ShowPreInitMessages();
                 InitMessage();
@@ -303,12 +300,12 @@ namespace Digi
                 MyAPIGateway.Session.OnSessionReady -= OnSessionReady;
             }
 
-            private void OnSessionReady()
+            void OnSessionReady()
             {
                 sessionReady = true;
             }
 
-            private void ShowPreInitMessages()
+            void ShowPreInitMessages()
             {
                 if(preInitMessages == null)
                     return;
@@ -330,7 +327,7 @@ namespace Digi
                 preInitMessages = null;
             }
 
-            private void InitMessage()
+            void InitMessage()
             {
                 MyObjectBuilder_SessionSettings worldsettings = MyAPIGateway.Session.SessionSettings;
 
@@ -369,7 +366,7 @@ namespace Digi
                 sb.Clear();
             }
 
-            private void ComputeErrorPrintText()
+            void ComputeErrorPrintText()
             {
                 errorPrintText = $"report contents of: %AppData%/SpaceEngineers/Storage/{MyAPIGateway.Utilities.GamePaths.ModScopeName}/{FILE}";
             }
@@ -408,7 +405,7 @@ namespace Digi
                     ShowHudMessage(ref notifyInfo, message, printText, printTime, MyFontEnum.Debug);
             }
 
-            private void ShowHudMessage(ref IMyHudNotification notify, string message, string printText, int printTime, string font)
+            void ShowHudMessage(ref IMyHudNotification notify, string message, string printText, int printTime, string font)
             {
                 try
                 {
@@ -417,6 +414,21 @@ namespace Digi
 
                     if(MyAPIGateway.Session?.Player != null)
                     {
+                        // HACK: to see errors while in GUIs and stuff, only for development.
+                        // remove these if you're copying this to your own mod as it is very much not necessary.
+                        if(BuildInfo.BuildInfoMod.IsDevMod)
+                        {
+                            string msg;
+                            switch(printText)
+                            {
+                                case PRINT_GENERIC_ERROR: msg = errorPrintText; break;
+                                case PRINT_MESSAGE: msg = message; break;
+                                default: msg = printText; break;
+                            }
+
+                            BuildInfo.Features.DebugLog.PrintHUD(this, $"<color=red>ERROR: <color=200,50,50>{msg}", log: false);
+                        }
+
                         double timeSec = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
                         if(chatMessageCooldown <= timeSec)
                         {
@@ -490,7 +502,7 @@ namespace Digi
                 }
             }
 
-            private void LogMessage(string message, string prefix = null)
+            void LogMessage(string message, string prefix = null)
             {
                 try
                 {
@@ -530,18 +542,6 @@ namespace Digi
                 {
                     MyLog.Default.WriteLineAndConsole($"{modName} :: LOGGER error/exception while logging: '{message}'\nLogger error: {e.Message}\n{e.StackTrace}");
                 }
-            }
-
-            private ulong GetWorkshopID(string modId)
-            {
-                // NOTE: workaround for MyModContext not having the actual workshop ID number.
-                foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
-                {
-                    if(mod.Name == modId)
-                        return mod.PublishedFileId;
-                }
-
-                return 0;
             }
         }
     }
