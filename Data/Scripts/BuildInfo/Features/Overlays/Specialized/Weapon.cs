@@ -129,6 +129,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 {
                     MuzzleData md = data.Muzzles[0];
                     MatrixD accMatrix = (isRealBlock ? md.Matrix_RelativeBarrel : md.Matrix_RelativePreview) * barrelMatrix;
+                    accMatrix = MatrixD.Normalize(accMatrix);
 
                     float ammoRange = ammoDef.MaxTrajectory * weaponDef.RangeMultiplier;
                     float projectileMinTravel = ammoRange * Hardcoded.Projectile_RangeMultiplier_Min;
