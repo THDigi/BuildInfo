@@ -42,6 +42,8 @@ namespace Digi.BuildInfo.Features.Terminal
         readonly Dictionary<MyObjectBuilderType, HashSet<MyObjectBuilderType>> SameType = new Dictionary<MyObjectBuilderType, HashSet<MyObjectBuilderType>>(MyObjectBuilderType.Comparer);
         readonly HashSet<MyObjectBuilderType> TempTypeSet = new HashSet<MyObjectBuilderType>();
 
+        readonly Vector3D[] TempCorners = new Vector3D[8];
+
         public MultiDetailInfo(BuildInfoMod main) : base(main)
         {
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
@@ -218,6 +220,10 @@ namespace Digi.BuildInfo.Features.Terminal
             if(totalBlocks <= 0)
                 return;
 
+            // NOTE: this isn't perfect because of FOV spring is ignored or something, but good enough for this purpose
+            MatrixD viewProjectionMatrix = MyAPIGateway.Session.Camera.ViewMatrix * MyAPIGateway.Session.Camera.ProjectionMatrix;
+            BoundingFrustumD cameraFrustum = new BoundingFrustumD(viewProjectionMatrix);
+
             ResInput.Clear();
             ResOutput.Clear();
             ResStorage.Clear();
@@ -239,6 +245,8 @@ namespace Digi.BuildInfo.Features.Terminal
             int shareFaction = 0;
             int shareAll = 0;
 
+            int outsideView = 0;
+
             IMyTerminalBlock firstBlock = selected[0];
             bool allSameId = true;
             bool allSameType = true;
@@ -256,6 +264,33 @@ namespace Digi.BuildInfo.Features.Terminal
             for(int blockIdx = 0; blockIdx < selected.Count; blockIdx++)
             {
                 IMyTerminalBlock block = selected[blockIdx];
+
+                #region Compute outside view
+                {
+                    BoundingBox modelBB = block.LocalAABB;
+                    modelBB.Inflate(0.05f);
+                    MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(modelBB, block.WorldMatrix);
+
+                    bool anyCornerVisible = false;
+
+                    obb.GetCorners(TempCorners, 0);
+                    for(int i = 0; i < TempCorners.Length; i++)
+                    {
+                        Vector3D corner = TempCorners[i];
+
+                        ContainmentType result;
+                        cameraFrustum.Contains(ref corner, out result);
+                        if(result == ContainmentType.Contains)
+                        {
+                            anyCornerVisible = true;
+                            break;
+                        }
+                    }
+
+                    if(!anyCornerVisible)
+                        outsideView++;
+                }
+                #endregion
 
                 #region Compute if all selected are similar or same
                 if(blockIdx > 0)
@@ -548,6 +583,12 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Length -= 2;
                     info.Append('\n');
                 }
+            }
+
+            // outside of view
+            if(outsideView > 0)
+            {
+                info.Append(outsideView).Append(" outside of view.\n");
             }
 
             if(allSimilarType)
