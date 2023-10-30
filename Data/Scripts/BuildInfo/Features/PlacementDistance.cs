@@ -24,7 +24,7 @@ namespace Digi.BuildInfo.Features
         float CurrentMaxRange = -1;
         float? SwapAtDistance = 15f;
 
-        readonly DefinitionEdits DefEdits = new DefinitionEdits();
+        readonly UndoableEditToolset DefEdits = new UndoableEditToolset();
 
         public PlacementDistance(BuildInfoMod main) : base(main)
         {

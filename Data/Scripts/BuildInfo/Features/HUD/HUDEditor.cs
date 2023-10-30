@@ -23,7 +23,7 @@ namespace Digi.BuildInfo.Features
         public const float CustomToolbarTextScale = 0.45f; // also the default for ToolbarStatusTextScaleOverride setting
         public const string SetFont = FontsHandler.BI_Monospace;
 
-        readonly DefinitionEdits DefEdits = new DefinitionEdits();
+        readonly UndoableEditToolset DefEdits = new UndoableEditToolset();
 
         int ApplyHUDEditsInTicks = 0;
         const int CanReloadAfterThisTick = Constants.TicksPerSecond * 2;

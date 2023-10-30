@@ -8,7 +8,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 {
     public class FixTextures : ModComponent
     {
-        DefinitionEdits DefEdits = new DefinitionEdits();
+        UndoableEditToolset DefEdits = new UndoableEditToolset();
 
         public FixTextures(BuildInfoMod main) : base(main)
         {
