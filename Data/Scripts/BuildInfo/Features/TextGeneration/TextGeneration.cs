@@ -4625,10 +4625,15 @@ namespace Digi.BuildInfo.Features
 
                             // HACK: wpDef.DamageMultiplier is not used for any missile damage
 
+                            MyExplosionFlags explosionFlags = Hardcoded.GetMissileExplosionFlags(missile);
+
                             float penetrationPool = missile.MissileHealthPool;
                             bool showPenetrationDamage = penetrationPool > 0;
 
-                            float explosiveDamage = missile.MissileExplosionRadius > 0 ? missile.MissileExplosionDamage : 0;
+                            float explosiveRadius = missile.MissileExplosionRadius;
+                            float explosiveDamage = 0;
+                            if(explosiveRadius > 0 && (explosionFlags & MyExplosionFlags.APPLY_FORCE_AND_DAMAGE) != 0)
+                                explosiveDamage = missile.MissileExplosionDamage;
                             bool showExplosiveDamage = explosiveDamage > 0;
 
                             // ricochet system is activated
@@ -4791,15 +4796,32 @@ namespace Digi.BuildInfo.Features
 
                             if(showExplosiveDamage)
                             {
-                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(missile.MissileExplosionRadius).Icon(FontsHandler.IconSphere)
-                                    .Number(missile.MissileExplosionDamage).Icon(FontsHandler.IconExplode).Append(DamageSeparator);
+                                line.Color(COLOR_STAT_EXPLOSION).DistanceFormat(explosiveRadius).Icon(FontsHandler.IconSphere)
+                                    .Number(explosiveDamage).Icon(FontsHandler.IconExplode).Append(DamageSeparator);
 
                                 if(tooltip != null)
                                 {
                                     // TODO show as concussion/screenshake only if 0 damage but >0 range?
                                     tooltip.Color(COLOR_STAT_EXPLOSION).Append("Explosion: ").ResetFormatting()
-                                        .DistanceFormat(missile.MissileExplosionRadius).Append(FontsHandler.IconSphere).Append("radius with ")
-                                        .Number(missile.MissileExplosionDamage).Append(FontsHandler.IconExplode).Append(" volumetric damage\n");
+                                        .DistanceFormat(explosiveRadius).Append(FontsHandler.IconSphere).Append("radius with ")
+                                        .Number(explosiveDamage).Append(FontsHandler.IconExplode).Append(" volumetric damage\n");
+
+                                    tooltip.Append("Explosion affects voxels: ").BoolFormat((explosionFlags & MyExplosionFlags.AFFECT_VOXELS) != 0);
+
+                                    if(!MyAPIGateway.Session.SessionSettings.EnableVoxelDestruction)
+                                        tooltip.Append(" <color=yellow>(EnableVoxelDestruction is off)<reset>");
+                                    else if(MyAPIGateway.Session.SessionSettings.AdaptiveSimulationQuality)
+                                        tooltip.Append(" (Caution: adaptive sim world setting is active)");
+
+                                    tooltip.Append('\n');
+
+                                    tooltip.Append("Explosion damages blocks: ").BoolFormat((explosionFlags & MyExplosionFlags.APPLY_DEFORMATION) != 0).Append('\n');
+
+                                    // CREATE_PARTICLE_EFFECT decides if it spawns the main explosion particle effect.
+                                    // CREATE_PARTICLE_DEBRIS spawns an extra `Explosion_Debris` particle effect.
+                                    // CREATE_DEBRIS spawns some model debris only on hitting an entity.
+                                    // FORCE_CUSTOM_END_OF_LIFE_EFFECT allows EndOfLifeEffect&EndOfLifeSound to override.
+                                    // Seem unused: CREATE_SHRAPNELS, FORCE_DEBRIS, CREATE_DECALS
                                 }
                             }
                             else if(penetrationPool <= 0)

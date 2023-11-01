@@ -423,6 +423,16 @@ namespace Digi.BuildInfo.VanillaData
             return (float)MathHelper.Clamp(distanceRatio * def.LockingModifierDistance * targetSizeModifier, def.LockingTimeMin, def.LockingTimeMax);
         }
 
+        public const MyExplosionFlags MissileDefaultExplosionFlags = (MyExplosionFlags.AFFECT_VOXELS | MyExplosionFlags.APPLY_FORCE_AND_DAMAGE | MyExplosionFlags.CREATE_DECALS | MyExplosionFlags.CREATE_SHRAPNELS | MyExplosionFlags.APPLY_DEFORMATION | MyExplosionFlags.CREATE_PARTICLE_DEBRIS);
+
+        public static MyExplosionFlags GetMissileExplosionFlags(MyMissileAmmoDefinition missileDef)
+        {
+            // as per MyMissile.ExecuteExplosion()
+            return missileDef.ExplosionFlags ?? MissileDefaultExplosionFlags;
+
+            // NOTE: MyExplosionFlags.CREATE_PARTICLE_EFFECT is force-added if not marked destroyed (by impacting safezones or destroyed by other explosions).
+        }
+
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
         public const float LaserAntenna_RotationSpeedMul = 1000f;
 
