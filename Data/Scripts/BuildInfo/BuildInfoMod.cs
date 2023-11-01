@@ -8,6 +8,7 @@ using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.Terminal;
+using Digi.BuildInfo.Features.Terminal.Underlays;
 using Digi.BuildInfo.Features.ToolbarInfo;
 using Digi.BuildInfo.Features.Toolbars;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI;
@@ -74,6 +75,7 @@ namespace Digi.BuildInfo
         public readonly TerminalInfo TerminalInfo;
         public readonly DetailInfoButtons DetailInfoButtons;
         public readonly MultiDetailInfo MultiDetailInfo;
+        public readonly TerminalUnderlays TerminalUnderlays;
         public readonly TextGeneration TextGeneration;
         public readonly CrosshairMessages CrosshairMessages;
         public readonly LiveDataHandler LiveDataHandler;
@@ -167,6 +169,7 @@ namespace Digi.BuildInfo
             TerminalInfo = new TerminalInfo(this);
             DetailInfoButtons = new DetailInfoButtons(this);
             MultiDetailInfo = new MultiDetailInfo(this);
+            TerminalUnderlays = new TerminalUnderlays(this);
             TextGeneration = new TextGeneration(this);
             CrosshairMessages = new CrosshairMessages(this);
             LiveDataHandler = new LiveDataHandler(this);

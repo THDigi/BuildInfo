@@ -26,6 +26,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
     /// </summary>
     public class EventToolbarInfo : ModComponent
     {
+        public bool DrawingOverlays { get; private set; } = false;
+
         readonly Color HeaderColor = new Color(255, 240, 220);
         readonly Color SlotColor = new Color(55, 200, 155);
         readonly Color ModNameColor = Color.Gray;
@@ -204,6 +206,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             LastSeenBlocks = ListReader<IMyTerminalBlock>.Empty;
             TargetBlock = null;
             SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+            DrawingOverlays = false;
 
             if(Label != null)
             {
@@ -846,6 +849,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(TargetBlock == null) // redundancy
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+                DrawingOverlays = false;
                 return;
             }
 
@@ -866,6 +870,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     MatrixD drawMatrix = TargetBlock.WorldMatrix;
                     overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)TargetBlock.SlimBlock.BlockDefinition, TargetBlock.SlimBlock);
+
+                    DrawingOverlays = true;
                 }
             }
             #endregion
