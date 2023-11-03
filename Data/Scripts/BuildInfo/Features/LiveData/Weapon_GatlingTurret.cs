@@ -12,6 +12,8 @@ namespace Digi.BuildInfo.Features.LiveData
     // MyLargeGatlingTurret
     public class BData_GatlingTurret : BData_Turret
     {
+        public static readonly char[] TurretSubpartSeparator = new[] { '/' };
+
         // MyLargeGatlingTurret.OnModelChange()
         public override bool GetTurretParts(IMyCubeBlock block, out MyEntity subpartBase1, out MyEntity subpartBase2, out MyEntity barrelPart)
         {
@@ -59,9 +61,8 @@ namespace Digi.BuildInfo.Features.LiveData
             }
         }
 
-        static protected readonly char[] TurretSubpartSeparator = new[] { '/' };
-
-        static MyEntitySubpart GetTurretSubpart(MyCubeBlock block, SerializableDictionary<string, string> pairing, string key)
+        // HACK: also hardcoded in ModelPreview\Blocks\TurretBase.cs
+        public static MyEntitySubpart GetTurretSubpart(MyCubeBlock block, SerializableDictionary<string, string> pairing, string key)
         {
             string value;
             if(!pairing.Dictionary.TryGetValue(key, out value))

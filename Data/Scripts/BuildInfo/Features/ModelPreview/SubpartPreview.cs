@@ -32,7 +32,12 @@ namespace Digi.BuildInfo.Features.ModelPreview
             RegisterType<Piston>(typeof(MyObjectBuilder_ExtendedPistonBase));
             RegisterType<Piston>(typeof(MyObjectBuilder_PistonBase));
 
-            //RegisterType<InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
+            RegisterType<TurretBase>(typeof(MyObjectBuilder_TurretBase));
+            RegisterType<TurretBase>(typeof(MyObjectBuilder_ConveyorTurretBase));
+            RegisterType<TurretBase>(typeof(MyObjectBuilder_InteriorTurret));
+            RegisterType<TurretBase>(typeof(MyObjectBuilder_LargeGatlingTurret));
+            RegisterType<TurretBase>(typeof(MyObjectBuilder_LargeMissileTurret));
+            // other turret-like blocks: MyLaserAntenna, MySearchlight; searchlight rotates the same as turrets but laser antenna parents differently
 
             RegisterType<AdvancedDoor>(typeof(MyObjectBuilder_AdvancedDoor));
 
