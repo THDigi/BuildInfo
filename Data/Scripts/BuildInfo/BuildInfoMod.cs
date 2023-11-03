@@ -1,4 +1,5 @@
-﻿using Digi.BuildInfo.Features;
+﻿using System;
+using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
@@ -117,9 +118,13 @@ namespace Digi.BuildInfo
 
         public static bool IsDevMod { get; private set; } = false;
 
+        public static int MainThreadId { get; private set; } = 1;
+
         public BuildInfoMod(BuildInfo_GameSession session) : base(ModName, session, MyUpdateOrder.AfterSimulation)
         {
             IsDevMod = (IsLocalMod && session?.ModContext?.ModId == "BuildInfo.dev");
+
+            MainThreadId = Environment.CurrentManagedThreadId;
 
             // Utils
             CheckVSLPEvents = new CheckVSLPEvents(this);

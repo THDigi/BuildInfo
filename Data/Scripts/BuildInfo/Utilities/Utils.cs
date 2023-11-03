@@ -46,10 +46,10 @@ namespace Digi.BuildInfo.Utilities
 
         public static bool AssertMainThread(bool throwException = true)
         {
-            if(Environment.CurrentManagedThreadId != 1)
+            if(Environment.CurrentManagedThreadId != BuildInfoMod.MainThreadId)
             {
                 if(throwException)
-                    throw new Exception($"Called in thread #{Environment.CurrentManagedThreadId.ToString()}");
+                    throw new Exception($"Called in thread {Environment.CurrentManagedThreadId}; MainThread is {BuildInfoMod.MainThreadId}");
 
                 return false;
             }

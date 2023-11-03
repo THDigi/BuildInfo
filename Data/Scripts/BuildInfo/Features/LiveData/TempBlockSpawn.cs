@@ -14,6 +14,8 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class TempBlockSpawn
     {
+        public const string TempGridDisplayName = "BuildInfo_TemporaryGrid";
+
         public static void Spawn(MyCubeBlockDefinition def, bool deleteGridOnSpawn = true, Action<IMySlimBlock> callback = null)
         {
             new TempBlockSpawn(def, deleteGridOnSpawn, callback);
@@ -38,7 +40,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             MyObjectBuilder_CubeGrid gridOB = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_CubeGrid>();
             gridOB.EntityId = 0;
-            gridOB.DisplayName = gridOB.Name = "BuildInfo_TemporaryGrid";
+            gridOB.DisplayName = TempGridDisplayName;
             gridOB.CreatePhysics = false;
             gridOB.GridSizeEnum = def.CubeSize;
             gridOB.PositionAndOrientation = new MyPositionAndOrientation(spawnPos, Vector3.Forward, Vector3.Up);

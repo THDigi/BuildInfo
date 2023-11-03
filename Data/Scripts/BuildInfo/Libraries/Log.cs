@@ -11,6 +11,7 @@ using VRage.Utils;
 
 namespace Digi
 {
+    // FIXME: errors that occur in loading (or before chat is visible?) are not seen!
     // TODO: make use of MyDefinitionErrors ?
 
     /// <summary>

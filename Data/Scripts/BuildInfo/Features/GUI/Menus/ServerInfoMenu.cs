@@ -23,6 +23,9 @@ using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity
 
 namespace Digi.BuildInfo.Features.GUI
 {
+    // TODO: use chat as search in realtime via MyAPIGateway.Input.TextInput and highlight those characters if found in the name or description of anything
+    // TODO: new setting: EnableTrashSettingsPlatformOverride
+
     public class ServerInfoMenu : Menu
     {
         public static void Test()

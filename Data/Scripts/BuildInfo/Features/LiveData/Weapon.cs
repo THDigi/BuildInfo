@@ -47,7 +47,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 catch(Exception e)
                 {
                     valid = false;
-                    Log.Error($"Error processing weapon {def.Id} - it likely will crash the game when placed.\nIf the weapon is fine, report this to buildinfo author.\n{e.ToString()}");
+                    Log.Error($"Error processing weapon {def.Id} - it likely will crash the game when placed.\nIf the weapon is fine, report this to {BuildInfoMod.ModName} author.\n{e}");
                 }
             }
 
