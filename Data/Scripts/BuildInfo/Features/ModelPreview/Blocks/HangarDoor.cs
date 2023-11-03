@@ -27,7 +27,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Parts = new List<PreviewEntityWrapper>(BaseData.Subparts.Count);
             foreach(SubpartInfo info in BaseData.Subparts)
             {
-                Parts.Add(new PreviewEntityWrapper(info.Model, info.LocalMatrix, modelVisible: true));
+                Parts.Add(new PreviewEntityWrapper(info.Model, info.LocalMatrix, info.Name, modelVisible: true));
             }
 
             HasParts = true;

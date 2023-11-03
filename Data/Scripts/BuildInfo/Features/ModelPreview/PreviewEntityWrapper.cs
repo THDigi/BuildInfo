@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 {
     public class PreviewEntityWrapper
     {
+        public readonly string Source;
         public readonly MyEntity Entity;
         public readonly string ModelFullPath;
         public List<MyEntitySubpart> AllSubparts;
@@ -29,10 +30,11 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         Vector3? SkinPaintOverride = null;
         float Transparency;
 
-        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, bool modelVisible = true)
+        public PreviewEntityWrapper(string modelFullPath, Matrix? localMatrix = null, string source = null, bool modelVisible = true)
         {
             ModelFullPath = modelFullPath;
             LocalMatrix = localMatrix;
+            Source = source;
             BaseModelVisible = modelVisible;
 
             Entity = new MyEntity();

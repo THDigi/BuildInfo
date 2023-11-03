@@ -67,7 +67,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 // same way MyAdvancedDoor.LoadSubpartFromName() does it
                 string modelName = Path.Combine(Path.GetDirectoryName(doorDef.Model), partDef.Name) + ".mwm";
 
-                DoorSubparts.Add(new SubpartInfo(localMatrix, modelName, null));
+                DoorSubparts.Add(new SubpartInfo(partDef.Name, localMatrix, modelName, null));
             }
 
             DoorSubparts?.TrimExcess();

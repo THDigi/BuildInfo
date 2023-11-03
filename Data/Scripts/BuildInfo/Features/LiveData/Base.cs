@@ -75,13 +75,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public struct SubpartInfo
     {
-        //public readonly string Name;
+        public readonly string Name;
         public readonly Matrix LocalMatrix;
         public readonly string Model;
         public readonly List<SubpartInfo> Subparts;
 
-        public SubpartInfo(Matrix localMatrix, string model, List<SubpartInfo> subparts)
+        public SubpartInfo(string dummyName, Matrix localMatrix, string model, List<SubpartInfo> subparts)
         {
+            Name = dummyName;
             LocalMatrix = localMatrix;
             Model = model;
             Subparts = subparts;
@@ -202,8 +203,10 @@ namespace Digi.BuildInfo.Features.LiveData
             if(block != null)
                 transform = MatrixD.Invert(Utils.GetBlockCenteredWorldMatrix(block.SlimBlock));
 
-            foreach(MyEntitySubpart subpart in entity.Subparts.Values)
+            foreach(KeyValuePair<string, MyEntitySubpart> kv in entity.Subparts)
             {
+                string dummyName = "subpart_" + kv.Key;
+                MyEntitySubpart subpart = kv.Value;
                 IMyModel model = (IMyModel)subpart.Model;
 
                 Matrix localMatrix;
@@ -215,12 +218,12 @@ namespace Digi.BuildInfo.Features.LiveData
                 SubpartInfo info;
                 if(subpart.Subparts != null && subpart.Subparts.Count > 0)
                 {
-                    info = new SubpartInfo(localMatrix, model.AssetName, new List<SubpartInfo>(subpart.Subparts.Count));
+                    info = new SubpartInfo(dummyName, localMatrix, model.AssetName, new List<SubpartInfo>(subpart.Subparts.Count));
                     RecursiveSubpartScan(subpart, info.Subparts);
                 }
                 else
                 {
-                    info = new SubpartInfo(localMatrix, model.AssetName, null);
+                    info = new SubpartInfo(dummyName, localMatrix, model.AssetName, null);
                 }
 
                 addTo.Add(info);

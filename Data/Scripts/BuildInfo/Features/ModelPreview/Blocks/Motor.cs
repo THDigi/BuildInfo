@@ -27,7 +27,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             if(Data == null || Data.StatorDef == null || Data.TopDef == null)
                 return baseReturn;
 
-            TopPart = new PreviewEntityWrapper(Data.TopDef.Model, null);
+            TopPart = new PreviewEntityWrapper(Data.TopDef.Model, null, "electric_motor");
             Valid = (TopPart != null);
             return baseReturn || Valid;
         }
