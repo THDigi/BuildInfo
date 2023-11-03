@@ -14,7 +14,6 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
-using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;

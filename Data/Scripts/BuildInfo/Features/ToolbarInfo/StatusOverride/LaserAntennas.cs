@@ -3,11 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using SpaceEngineers.Game.ModAPI;
 using VRageMath;
 using MyLaserAntennaStatus = Sandbox.ModAPI.Ingame.MyLaserAntennaStatus;
 

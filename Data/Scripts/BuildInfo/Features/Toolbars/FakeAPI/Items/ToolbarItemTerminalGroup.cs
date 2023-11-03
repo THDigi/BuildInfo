@@ -9,7 +9,6 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 {

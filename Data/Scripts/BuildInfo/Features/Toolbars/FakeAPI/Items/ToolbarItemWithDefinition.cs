@@ -2,7 +2,6 @@
 using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
 using VRage.Game;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.Toolbars.FakeAPI.Items
 {

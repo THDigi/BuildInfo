@@ -3,7 +3,6 @@ using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using MyGridTargetingRelationFiltering = VRage.Game.ModAPI.Ingame.MyGridTargetingRelationFiltering;

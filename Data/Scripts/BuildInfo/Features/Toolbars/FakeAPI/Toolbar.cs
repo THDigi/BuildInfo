@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Digi.BuildInfo.Features.Toolbars.FakeAPI.Items;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game;

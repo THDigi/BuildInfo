@@ -1,20 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
-using Draygo.API;
-using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using VRage.Collections;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRageMath;
-using VRageRender;
-using static VRage.Game.MyObjectBuilder_ConveyorLine;
 using static VRageRender.MyBillboard;
 
 namespace Digi.BuildInfo.Features.Overlays

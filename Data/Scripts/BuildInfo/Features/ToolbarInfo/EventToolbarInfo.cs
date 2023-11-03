@@ -13,11 +13,9 @@ using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Collections;
-using VRage.Game.Components;
 using VRage.Input;
 using VRage.Utils;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Digi.BuildInfo.Features.ToolbarInfo
 {

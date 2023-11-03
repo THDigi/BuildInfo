@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Digi.ComponentLib;
 using Sandbox.Game;
-using Sandbox.Game.Gui;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;

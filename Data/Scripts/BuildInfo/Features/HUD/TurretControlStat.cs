@@ -1,5 +1,4 @@
 ﻿using Sandbox.ModAPI;
-using SpaceEngineers.Game.ModAPI;
 using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
 
 namespace Digi.BuildInfo.Features.HUD

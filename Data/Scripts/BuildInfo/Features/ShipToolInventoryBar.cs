@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
