@@ -18,8 +18,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
         public MuzzleData(Matrix local, Matrix preview, bool isMissile = false)
         {
-            Matrix_RelativeBarrel = local;
-            Matrix_RelativePreview = preview;
+            Matrix_RelativeBarrel = Matrix.Normalize(local);
+            Matrix_RelativePreview = Matrix.Normalize(preview);
             IsMissile = isMissile;
         }
     }

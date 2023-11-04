@@ -436,6 +436,56 @@ namespace Digi.BuildInfo.VanillaData
             // NOTE: MyExplosionFlags.CREATE_PARTICLE_EFFECT is force-added if not marked destroyed (by impacting safezones or destroyed by other explosions).
         }
 
+        // from MyMissile.GetRicochetProbability()
+        /// <summary>
+        /// Determines the probability of ricochet given a certain impact angle.
+        /// </summary>
+        /// <remarks>
+        /// Probability linearly ramps between the min and max probabilities along
+        /// the range of impact angles between the min and max ricochet angle.
+        /// Any impact angle less than the min ricochet angle has NO probability of ricochet.
+        /// Any impact angle more than the max ricochet angle is capped at the max ricochet probability. 
+        /// </remarks>
+        /// <example>
+        /// Probability
+        ///     ^
+        ///     │
+        /// Max │                  _____________________
+        ///     │                 ╱
+        ///     │                ╱
+        ///     │               ╱
+        ///     │              ╱
+        ///     │             ╱
+        /// Min │            ╱
+        ///     │           │ 
+        ///    0└───────────┴───────────────────────────&gt; Impact Angle
+        ///              Min      Max
+        /// </example>
+        /// <param name="impactAngle"></param>
+        /// <returns>Probability value from 0 to max ricochet probability.</returns>
+        public static float Missile_GetRicochetProbability(MyMissileAmmoDefinition missileDef, float impactAngle)
+        {
+            // from MyMissile.Init()
+            float m_ricochetMinAngle = MathHelper.ToRadians(missileDef.MissileMinRicochetAngle);
+            float m_ricochetMaxAngle = MathHelper.Max(m_ricochetMinAngle, MathHelper.ToRadians(missileDef.MissileMaxRicochetAngle));
+            float m_ricochetMinProbability = MathHelper.Clamp(missileDef.MissileMinRicochetProbability, 0f, 1f);
+            float m_ricochetMaxProbability = MathHelper.Clamp(missileDef.MissileMaxRicochetProbability, m_ricochetMinProbability, 1f);
+
+            // from MyMissile.GetRicochetProbability()
+            if(impactAngle < m_ricochetMinAngle)
+                return 0f;
+
+            if(impactAngle > m_ricochetMaxAngle)
+                return m_ricochetMaxProbability;
+
+            float num = m_ricochetMaxAngle - m_ricochetMinAngle;
+            if(Math.Abs(num) < 1E-06f)
+                return m_ricochetMaxProbability;
+
+            float num2 = (m_ricochetMaxProbability - m_ricochetMinProbability) / num;
+            return m_ricochetMinProbability + num2 * (impactAngle - m_ricochetMinAngle);
+        }
+
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
         public const float LaserAntenna_RotationSpeedMul = 1000f;
 
@@ -472,8 +522,8 @@ namespace Digi.BuildInfo.VanillaData
         public const float CapacitorChargeMultiplier = 0.8f;
 
         // from MyProjectile.Start()
-        public const float Projectile_RangeMultiplier_Min = 0.8f;
-        public const float Projectile_RangeMultiplier_Max = 1f;
+        public const float Projectile_RandomRangeMin = 0.8f;
+        public const float Projectile_RandomRangeMax = 1f;
 
         // from MyGravityGeneratorSphere.CalculateRequiredPowerInputForRadius()
         public static float SphericalGravGen_PowerReq(MyGravityGeneratorSphereDefinition def, float radius, float gravityAcceleration)
