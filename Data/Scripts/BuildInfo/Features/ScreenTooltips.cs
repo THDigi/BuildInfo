@@ -106,7 +106,9 @@ namespace Digi.BuildInfo.Features
             {
                 if(TooltipHandler == null)
                 {
-                    TooltipHandler = new TooltipHandler();
+                    var th = new TooltipHandler();
+                    th.ScreenLimitMax = new Vector2(0.65f, 0.7f); // HACK: eyeballed bottom HUD + right side HUD limits to avoid tooltips going under them
+                    TooltipHandler = th;
                     SelectedBox = TextAPI.CreateHUDTexture(MyStringId.GetOrCompute("BuildInfo_UI_Square"), Color.Lime * 0.2f, Vector2D.Zero);
                 }
 

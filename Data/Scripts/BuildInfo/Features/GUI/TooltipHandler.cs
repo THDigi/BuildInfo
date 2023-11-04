@@ -24,6 +24,8 @@ namespace Digi.BuildInfo.Features.GUI
         string PrevTooltipRef;
         bool DrawThisTick;
 
+        public Vector2 ScreenLimitMax = new Vector2(1, 1);
+
         /// <summary>
         /// Requires TextAPI to've been initialized!
         /// </summary>
@@ -88,13 +90,13 @@ namespace Digi.BuildInfo.Features.GUI
             Vector2D pos = mouseOnScreen;
             Vector2D offset = new Vector2D(tooltipOffset, -tooltipOffset); // top-left pivot
 
-            if((mouseOnScreen.X + absTextSize.X + tooltipOffset) > 1) // box collides with right side of screen
+            if((mouseOnScreen.X + absTextSize.X + tooltipOffset) > ScreenLimitMax.X) // box collides with right side of screen
             {
                 //offset.X = -TextSize.X - TooltipOffset; // flip pivot to right, so it's on the left of the mouse
-                pos.X -= (mouseOnScreen.X + absTextSize.X + tooltipOffset) - 1; // prevent tooltip from exiting scren on the right
+                pos.X -= (mouseOnScreen.X + absTextSize.X + tooltipOffset) - ScreenLimitMax.X; // prevent tooltip from exiting scren on the right
             }
 
-            if((mouseOnScreen.Y - absTextSize.Y - tooltipOffset) < -1) // box collides with bottom of screen
+            if((mouseOnScreen.Y - absTextSize.Y - tooltipOffset) < -ScreenLimitMax.Y) // box collides with bottom of screen
             {
                 offset.Y = -TextSize.Y + tooltipOffset; // flip pivot to bottom, so it's above the mouse
             }
