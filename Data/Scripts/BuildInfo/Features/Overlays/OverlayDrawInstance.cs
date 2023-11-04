@@ -167,7 +167,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                     bool alwaysOnTop = true; // (mode == Overlays.ModeEnum.Ports);
 
-                    if(Main.TextAPI.IsEnabled)
+                    if(Main.TextAPI.IsEnabled && mode != Overlays.ModeEnum.AirtightAndSpecialized)
                     {
                         LabelRender.DrawLineLabel(LabelType.AxisX, matrix.Translation, matrix.Right, Color.Red, cacheMessage: "Right",
                             lineHeight: 1f, scale: textScale, settingFlag: OverlayLabelsFlags.Axis, autoAlign: true, alwaysOnTop: alwaysOnTop);
