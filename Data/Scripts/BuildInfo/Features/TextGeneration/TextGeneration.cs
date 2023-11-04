@@ -3972,7 +3972,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Field of view").AngleFormat(camera.MinFov).Append(" to ").AngleFormat(camera.MaxFov);
+                AddLine().Label("Field of view").AngleFormat(camera.MaxFov).Append(" to ").AngleFormat(camera.MinFov);
                 AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
 
                 if(camera.RaycastDistanceLimit < 0)
@@ -4229,7 +4229,7 @@ namespace Digi.BuildInfo.Features
                         AppendCanTargetOptions(turret.HiddenTargetingOptions, turret.EnabledTargetingOptions);
                     }
 
-                    AddLine().Label("Camera field of view").AngleFormat(turret.MinFov).Append(" to ").AngleFormat(turret.MaxFov);
+                    AddLine().Label("Camera field of view").AngleFormat(turret.MaxFov).Append(" to ").AngleFormat(turret.MinFov);
 
                     int minPitch = turret.MinElevationDegrees; // this one is actually not capped in game for whatever reason
                     int maxPitch = Math.Min(turret.MaxElevationDegrees, 90); // turret can't rotate past 90deg up
@@ -5372,7 +5372,7 @@ namespace Digi.BuildInfo.Features
                     AppendCanTargetOptions(Hardcoded.Searchlight_TargetOptionsHidden, Hardcoded.Searchlight_TargetOptionsDefault, hardcoded: true);
                 }
 
-                AddLine().Label("Camera field of view").AngleFormat(searchlight.MinFov).Append(" to ").AngleFormat(searchlight.MaxFov);
+                AddLine().Label("Camera field of view").AngleFormat(searchlight.MaxFov).Append(" to ").AngleFormat(searchlight.MinFov);
 
                 AddLine().Append("Radius: ").DistanceFormat(searchlight.LightReflectorRadius.Min).Append(" to ").DistanceFormat(searchlight.LightReflectorRadius.Max).Separator().Append("Default: ").DistanceFormat(searchlight.LightReflectorRadius.Default);
                 AddLine().Append("Intensity: ").RoundedNumber(searchlight.LightIntensity.Min, 2).Append(" to ").RoundedNumber(searchlight.LightIntensity.Max, 2).Separator().Append("Default: ").RoundedNumber(searchlight.LightIntensity.Default, 2);
