@@ -341,6 +341,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 Main.Config.Reload();
                 ShowNotify("Config reset to defaults and saved.", 3000, FontsHandler.WhiteSh);
                 RefreshAll();
+                UpdateTextBox(redraw: false);
             });
             #endregion
 
