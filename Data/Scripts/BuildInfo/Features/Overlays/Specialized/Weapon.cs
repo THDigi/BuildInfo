@@ -83,7 +83,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     if(!dataTurret.GetTurretParts(block.FatBlock, out subpartBase1, out subpartBase2, out barrelPart))
                         return;
 
-                    matrixBase2 = subpartBase2.WorldMatrix;
+                    matrixBase2 = subpartBase2.PositionComp.WorldMatrixRef;
 
                     //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color.Lime, subpartBase1.WorldMatrix.Translation, subpartBase1.WorldMatrix.Forward, 3, 0.1f, blendType: BlendTypeEnum.AdditiveTop);
                     //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color.Red, subpartBase2.WorldMatrix.Translation, subpartBase2.WorldMatrix.Forward, 3, 0.1f, blendType: BlendTypeEnum.AdditiveTop);
@@ -218,9 +218,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 }
                 else
                 {
-                    view = dataTurret.Camera.SubpartRelativePreview * drawMatrix;
-
                     // MyLargeTurretBase.GetViewMatrix()
+                    view = matrixBase2;
                     view.Translation += view.Forward * turretDef.ForwardCameraOffset;
                     view.Translation += view.Up * turretDef.UpCameraOffset;
                 }

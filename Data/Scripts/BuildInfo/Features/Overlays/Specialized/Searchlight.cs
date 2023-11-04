@@ -60,13 +60,13 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             #region Light
             {
-                // MySearchLight.UpdateAfterSimulationParallel()
+                // from MySearchLight.UpdateAfterSimulationParallel()
                 MatrixD world;
                 Matrix? local = (isRealBlock ? data.Light.RelativeSubpart : data.Light.RelativePreview);
                 if(local != null)
                     world = local.Value * pitchMatrix;
                 else
-                    world = data.Light.SubpartRelativePreview * drawMatrix;
+                    world = pitchMatrix;
 
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLight, world.Translation, (Vector3)world.Forward, 3, data.LightRadius, BlendType);
             }
@@ -82,9 +82,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 }
                 else
                 {
-                    view = data.Camera.SubpartRelativePreview * drawMatrix;
-
                     // MySearchLight.GetViewMatrix()
+                    view = pitchMatrix;
                     view.Translation += view.Forward * lightDef.ForwardCameraOffset;
                     view.Translation += view.Up * lightDef.UpCameraOffset;
                 }

@@ -36,7 +36,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
     public class TurretAttachmentInfo
     {
-        public Matrix SubpartRelativePreview;
         public Matrix? RelativeSubpart;
         public Matrix? RelativePreview;
 
@@ -44,8 +43,6 @@ namespace Digi.BuildInfo.Features.LiveData
         {
             if(subpart?.Model != null)
             {
-                SubpartRelativePreview = subpart.WorldMatrix * block.PositionComp.WorldMatrixInvScaled;
-
                 IMyModelDummy cameraDummy = subpart.Model.GetDummies().GetValueOrDefault(dummyName, null);
                 if(cameraDummy != null)
                 {
