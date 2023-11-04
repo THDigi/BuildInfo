@@ -224,8 +224,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     view.Translation += view.Up * turretDef.UpCameraOffset;
                 }
 
-                // TODO: use turretDef.MaxFov to show view frustum pyramid instead of a line
+                // TODO: use turretDef.MaxFov to show view frustum pyramid instead of a line - already done for raycast in camera overlay
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.025f, BlendType);
+                MyTransparentGeometry.AddPointBillboard(MaterialDot, ColorCamera, view.Translation, 0.04f, 0, blendType: BlendType);
 
                 if(canDrawLabel)
                 {

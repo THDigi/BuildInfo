@@ -199,6 +199,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyCollector.LoadDummies()
         public static string Collector_DummyName = "collector"; // see BData_Collector too!
 
+        // from MyCameraBlock.GetViewMatrix()
+        public static string Camera_DummyName = "camera";
+
         // from MyLandingGear.LoadDummies()
         public static string LandingGear_DummyName = "gear_lock"; // see BData_LandingGear too!
 

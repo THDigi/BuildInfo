@@ -47,6 +47,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Connector>(typeof(MyObjectBuilder_ShipConnector));
 
+            AddType<BData_Camera>(typeof(MyObjectBuilder_CameraBlock));
+
             AddType<BData_Merge>(typeof(MyObjectBuilder_MergeBlock));
 
             AddType<BData_Ladder>(typeof(MyObjectBuilder_Ladder2));

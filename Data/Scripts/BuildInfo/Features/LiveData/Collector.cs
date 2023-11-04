@@ -9,7 +9,7 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Collector : BData_Base
     {
-        public Matrix boxLocalMatrix;
+        public Matrix BoxLocalMatrix;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -42,8 +42,8 @@ namespace Digi.BuildInfo.Features.LiveData
                     //GetBoxFromMatrix(block, dummyMatrix, out halfExtents, out pos, out orient);
 
                     Vector3 size = Vector3.Abs(dummyMatrix.Scale);
-                    boxLocalMatrix = Matrix.CreateTranslation(dummyMatrix.Translation);
-                    Matrix.Rescale(ref boxLocalMatrix, ref size);
+                    BoxLocalMatrix = Matrix.CreateTranslation(dummyMatrix.Translation);
+                    Matrix.Rescale(ref BoxLocalMatrix, ref size);
                     break;
                 }
             }

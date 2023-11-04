@@ -89,6 +89,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 }
 
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.01f, BlendType);
+                MyTransparentGeometry.AddPointBillboard(MaterialDot, ColorCamera, view.Translation, 0.04f, 0, blendType: BlendType);
 
                 if(canDrawLabel)
                 {
