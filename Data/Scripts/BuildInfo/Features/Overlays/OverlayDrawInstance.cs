@@ -694,7 +694,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(canDrawLabel)
                 {
                     Vector3D labelDir = Vector3D.Normalize(lastOuterRimVec - pitchMatrix.Translation);
-                    LabelRender.DrawLineLabel(LabelType.PitchLimit, lastOuterRimVec, labelDir, ColorPitchLine, "Pitch limit");
+                    LabelRender.DrawLineLabel(LabelType.PitchLimit, lastOuterRimVec, labelDir, ColorPitchLine, "Pitch limit", scale: 0.75f, alwaysOnTop: true);
                 }
             }
 
@@ -712,7 +712,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(canDrawLabel)
                 {
                     Vector3D labelDir = Vector3D.Normalize(firstOuterRimVec - yawMatrix.Translation);
-                    LabelRender.DrawLineLabel(LabelType.YawLimit, firstOuterRimVec, labelDir, ColorYawLine, "Yaw limit");
+                    LabelRender.DrawLineLabel(LabelType.YawLimit, firstOuterRimVec, labelDir, ColorYawLine, "Yaw limit", scale: 0.75f, alwaysOnTop: true);
                 }
             }
         }
