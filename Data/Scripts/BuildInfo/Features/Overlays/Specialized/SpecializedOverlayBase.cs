@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
         public static readonly MyStringId MaterialLaser = MyStringId.GetOrCompute("BuildInfo_Laser");
         public static readonly MyStringId MaterialSquare = MyStringId.GetOrCompute("BuildInfo_Square");
         public static readonly MyStringId MaterialGradient = MyStringId.GetOrCompute("BuildInfo_TransparentGradient");
+        public static readonly MyStringId MaterialGradientSRGB = MyStringId.GetOrCompute("BuildInfo_TransparentGradientSRGB");
         public const BlendTypeEnum BlendType = BlendTypeEnum.SDR;
 
         /// <summary>

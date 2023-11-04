@@ -79,7 +79,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                         Point2 = current,
                         Point3 = inner,
                     };
-                    MyTransparentGeometry.AddQuad(MaterialGradient, ref quad, MinColorVec, ref center, blendType: BlendType);
+                    MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MinColorVec, ref center, blendType: BlendType);
 
                     quad = new MyQuadD()
                     {
@@ -88,7 +88,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                         Point2 = inner,
                         Point3 = current,
                     };
-                    MyTransparentGeometry.AddQuad(MaterialGradient, ref quad, MaxColorVec, ref center, blendType: BlendType);
+                    MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MaxColorVec, ref center, blendType: BlendType);
 
                     // inner+outer circle rims
                     MyTransparentGeometry.AddLineBillboard(MaterialLaser, MinLineColorVec, previousInner, (Vector3)(inner - previousInner), 1f, lineThick, BlendType);
