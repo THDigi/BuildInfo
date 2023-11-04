@@ -89,6 +89,14 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 }
 
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.01f, BlendType);
+
+                if(canDrawLabel)
+                {
+                    Vector3D labelDir = view.Right;
+                    Vector3D labelLineStart = view.Translation;
+
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.Camera, labelLineStart, labelDir, ColorCamera, "Camera", scale: 0.75f, alwaysOnTop: true);
+                }
             }
             #endregion
 

@@ -46,6 +46,7 @@ namespace Digi.BuildInfo.Features.Overlays
         RaycastLimits,
         SteeringAxis,
         ShipCenterOfMass,
+        Camera,
     }
 
     public class LabelRendering

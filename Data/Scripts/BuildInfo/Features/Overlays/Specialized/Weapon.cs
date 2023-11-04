@@ -96,7 +96,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 barrelMatrix = barrelPart.WorldMatrix;
 
-                //MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorBarrel, barrelMatrix.Translation, barrelMatrix.Forward, 25, 0.2f, blendType: BlendTypeEnum.AdditiveTop);
+                //MyTransparentGeometry.AddLineBillboard(MaterialLaser, new Color(255, 0, 255), barrelMatrix.Translation, barrelMatrix.Forward, 25, 0.2f, blendType: BlendTypeEnum.AdditiveTop);
             }
             //else // preview block
             //{
@@ -224,7 +224,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     view.Translation += view.Up * turretDef.UpCameraOffset;
                 }
 
-                MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.01f, BlendType);
+                // TODO: use turretDef.MaxFov to show view frustum pyramid instead of a line
+                MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorCamera, view.Translation, (Vector3)view.Forward, 3, 0.025f, BlendType);
+
+                if(canDrawLabel)
+                {
+                    Vector3D labelDir = view.Right;
+                    Vector3D labelLineStart = view.Translation;
+
+                    drawInstance.LabelRender.DrawLineLabel(LabelType.Camera, labelLineStart, labelDir, ColorCamera, "Camera", scale: 0.75f, alwaysOnTop: true);
+                }
             }
             #endregion
         }
