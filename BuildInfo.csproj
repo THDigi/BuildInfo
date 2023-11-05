@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mal.Mdk2.Analyzers" Version="*" />
+    <PackageReference Include="Mal.Mdk2.ModAnalyzers" Version="*" />
   </ItemGroup>
 
   <ItemGroup>
