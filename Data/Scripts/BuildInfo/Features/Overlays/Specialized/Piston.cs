@@ -11,8 +11,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class Piston : SpecializedOverlayBase
     {
-        static Color ColorLines = new Color(20, 255, 155) * LaserOverlayAlpha;
-        static Color ColorCylinder = new Color(20 / 2, 255 / 2, 155 / 2) * LaserOverlayAlpha;
+        static Color ColorText = new Color(20, 255, 155);
+        static Color ColorLines = ColorText * LaserOverlayAlpha;
+        static Color ColorCylinder = new Color(ColorText.R / 2, ColorText.G / 2, ColorText.B / 2) * LaserOverlayAlpha;
         static Color ColorWarnLines = new Color(255, 55, 0) * LaserOverlayAlpha;
 
         const int LinePerDeg = RoundedQualityLow * 2;
@@ -34,6 +35,11 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             MyPistonBaseDefinition pistonDef = def as MyPistonBaseDefinition;
             if(pistonDef == null)
                 return;
+
+            bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
+
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
             float cellSize;
 
@@ -57,7 +63,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             float cellSizeHalf = cellSize / 2f;
             float length = max - min;
 
-            MatrixD boxMatrix = data.TopLocalMatrix * drawMatrix;
+            MatrixD boxMatrix = data.TopLocalMatrix * blockWorldMatrix;
             boxMatrix.Translation += boxMatrix.Up * min;
 
             MatrixD travelMatrix = boxMatrix;
@@ -84,7 +90,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             boxMatrix.Translation += boxMatrix.Up * length;
             MySimpleObjectDraw.DrawTransparentBox(ref boxMatrix, ref boxLocalBB, ref colorLines, MySimpleObjectRasterizer.Wireframe, 1, BoxLineWidth, MaterialSquare, MaterialLaser, blendType: BlendType);
 
-
             // simple squares
 
             //Vector3D centerBottom = travelMatrix.Translation;
@@ -98,6 +103,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color, centerTop + travelMatrix.Left * cellSizeHalf + travelMatrix.Forward * cellSizeHalf, travelMatrix.Right, cellSize, LineWidth, BlendType);
             //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color, centerTop + travelMatrix.Right * cellSizeHalf + travelMatrix.Forward * cellSizeHalf, travelMatrix.Backward, cellSize, LineWidth, BlendType);
             //MyTransparentGeometry.AddLineBillboard(MaterialLaser, Color, centerTop + travelMatrix.Right * cellSizeHalf + travelMatrix.Backward * cellSizeHalf, travelMatrix.Left, cellSize, LineWidth, BlendType);
+
+            if(canDrawLabel)
+            {
+                Vector3D labelPos = boxMatrix.Translation + boxMatrix.Right * boxLocalBB.HalfExtents.X;
+                Vector3D labelDir = boxMatrix.Right;
+
+                drawInstance.LabelRender.DynamicLabel.Clear().Append("Piston top travel");
+
+                drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, ColorText);
+            }
         }
     }
 }

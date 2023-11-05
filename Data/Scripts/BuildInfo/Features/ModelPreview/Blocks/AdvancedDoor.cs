@@ -59,10 +59,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                             // the game looks for subpart models in the same folder as the block's build stage model
                             string buildModelPath = Path.GetFullPath(Path.GetDirectoryName(buildModels[i].File));
 
-                            Matrix lm = info.LocalMatrix;
-                            lm.Translation -= BlockDef.ModelOffset; // not sure why modeloffset needs to be removed here, but it needs to...
-
-                            stack.Models.Add(new PreviewEntityWrapper(Path.Combine(buildModelPath, subpartModelFileName), lm));
+                            stack.Models.Add(new PreviewEntityWrapper(Path.Combine(buildModelPath, subpartModelFileName), info.LocalMatrix));
                         }
                     }
                 }

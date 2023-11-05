@@ -37,11 +37,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 IMyModelDummy topDummy = Utils.GetDummy((IMyModel)subpart3.Model, "TopBlock");
                 Vector3 topLocalPos = (topDummy != null ? topDummy.Matrix.Translation : Vector3.Zero);
 
-                MatrixD blockCenteredMatrixInv = MatrixD.Invert(Utils.GetBlockCenteredWorldMatrix(block.SlimBlock));
-
                 MatrixD subpartWM = subpart3.WorldMatrix;
                 subpartWM.Translation = Vector3D.Transform(topLocalPos, subpartWM);
-                TopLocalMatrix = subpartWM * blockCenteredMatrixInv;
+                TopLocalMatrix = subpartWM * block.WorldMatrixInvScaled;
                 success = true;
             }
 

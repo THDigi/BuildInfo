@@ -58,14 +58,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             }
         }
 
-        public override void Update(ref MatrixD drawMatrix)
+        public override void Update(ref MatrixD blockWorldMatrix)
         {
             if(!HasParts)
                 return;
 
             foreach(PreviewEntityWrapper part in Parts)
             {
-                MatrixD relativeMatrix = part.LocalMatrix.Value * drawMatrix;
+                MatrixD relativeMatrix = part.LocalMatrix.Value * blockWorldMatrix;
 
                 // invisible root subparts because game spawns them too
                 part.Update(ref relativeMatrix);

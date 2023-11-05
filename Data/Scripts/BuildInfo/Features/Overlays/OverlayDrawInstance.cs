@@ -123,7 +123,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 }
                 else // assuming cubebuilder
                 {
-                    if(!Utils.GetEquippedBlockMatrix(out drawMatrix))
+                    if(!Utils.GetEquippedCenteredMatrix(out drawMatrix))
                         return;
                 }
 
@@ -452,11 +452,14 @@ namespace Digi.BuildInfo.Features.Overlays
                     BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def, BDataCache);
                     if(data != null)
                     {
+                        MatrixD blockWorldMatrix = drawMatrix;
+                        blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
                         if(data.ConveyorPorts != null)
                         {
                             foreach(ConveyorInfo info in data.ConveyorPorts)
                             {
-                                MatrixD matrix = info.LocalMatrix * drawMatrix;
+                                MatrixD matrix = info.LocalMatrix * blockWorldMatrix;
                                 bool isSmall = (info.Flags & ConveyorFlags.Small) != 0;
 
                                 if((info.Flags & ConveyorFlags.Unreachable) != 0)
@@ -484,7 +487,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         {
                             foreach(InteractionInfo info in data.Interactive)
                             {
-                                MatrixD matrix = info.LocalMatrix * drawMatrix;
+                                MatrixD matrix = info.LocalMatrix * blockWorldMatrix;
                                 DrawPort(info.Name, matrix, info.Color);
                             }
                         }
@@ -495,7 +498,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                             foreach(Matrix localMatrix in data.UpgradePorts)
                             {
-                                MatrixD matrix = localMatrix * drawMatrix;
+                                MatrixD matrix = localMatrix * blockWorldMatrix;
 
                                 if(hasUpgrades)
                                     DrawPort("Upgrade port", matrix, UpgradePortColor);
@@ -510,7 +513,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         //    {
                         //        foreach(var kv in data.Dummies)
                         //        {
-                        //            var matrix = kv.Item2 * drawMatrix;
+                        //            var matrix = kv.Item2 * blockWorldMatrix;
                         //            DrawPort(kv.Item1, matrix, Color.Red);
                         //        }
                         //    }

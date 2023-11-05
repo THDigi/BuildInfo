@@ -197,23 +197,13 @@ namespace Digi.BuildInfo.Features.LiveData
 
         static void RecursiveSubpartScan(MyEntity entity, List<SubpartInfo> addTo)
         {
-            // HACK: make the first layer of subparts be relative to centered block matrix, not ModelOffset'd one
-            MatrixD? transform = null;
-            IMyCubeBlock block = entity as IMyCubeBlock;
-            if(block != null)
-                transform = MatrixD.Invert(Utils.GetBlockCenteredWorldMatrix(block.SlimBlock));
-
             foreach(KeyValuePair<string, MyEntitySubpart> kv in entity.Subparts)
             {
                 string dummyName = "subpart_" + kv.Key;
                 MyEntitySubpart subpart = kv.Value;
                 IMyModel model = (IMyModel)subpart.Model;
 
-                Matrix localMatrix;
-                if(transform.HasValue)
-                    localMatrix = (Matrix)(subpart.PositionComp.WorldMatrixRef * transform.Value);
-                else
-                    localMatrix = subpart.PositionComp.LocalMatrixRef;
+                Matrix localMatrix = subpart.PositionComp.LocalMatrixRef;
 
                 SubpartInfo info;
                 if(subpart.Subparts != null && subpart.Subparts.Count > 0)

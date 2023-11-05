@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
         protected abstract void Disposed();
 
-        public abstract void Update(ref MatrixD drawMatrix);
+        public abstract void Update(ref MatrixD blockWorldMatrix);
 
         public virtual void SpawnConstructionModel(ConstructionModelPreview comp)
         {

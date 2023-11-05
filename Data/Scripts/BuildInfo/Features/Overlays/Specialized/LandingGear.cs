@@ -26,6 +26,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
             bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
             foreach(MyOrientedBoundingBoxD obb in data.Magents)
@@ -33,7 +36,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 BoundingBoxD localBB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
                 MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
                 m.Translation = obb.Center;
-                m *= drawMatrix;
+                m *= blockWorldMatrix;
 
                 MySimpleObjectDraw.DrawTransparentBox(ref m, ref localBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (1 + SubdivideBox), LineWidth, MaterialSquare, MaterialLaser, blendType: BlendType);
 

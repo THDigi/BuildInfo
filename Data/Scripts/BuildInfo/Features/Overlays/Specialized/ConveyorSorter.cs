@@ -21,10 +21,15 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 DrawWeaponCoreWeapon(ref drawMatrix, drawInstance, def, block, wcDefs);
                 return;
             }
+
+            //MatrixD blockWorldMatrix = drawMatrix;
+            //blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
         }
 
         internal static void DrawWeaponCoreWeapon(ref MatrixD drawMatrix, OverlayDrawInstance drawInstance, MyCubeBlockDefinition def, IMySlimBlock block, List<CoreSystemsDef.WeaponDefinition> weaponDefs)
         {
+            //MatrixD blockWorldMatrix = drawMatrix;
+            //blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
         }
     }
 }

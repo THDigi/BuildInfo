@@ -23,7 +23,10 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
-            MatrixD m = data.BoxLocalMatrix * drawMatrix;
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
+            MatrixD m = data.BoxLocalMatrix * blockWorldMatrix;
 
             MySimpleObjectDraw.DrawTransparentBox(ref m, ref OverlayDrawInstance.UnitBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, 2, lineWidth: 0.03f, lineMaterial: MaterialLaser, blendType: BlendType);
 

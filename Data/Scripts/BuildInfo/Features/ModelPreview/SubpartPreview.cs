@@ -125,10 +125,15 @@ namespace Digi.BuildInfo.Features.ModelPreview
                 return;
 
             MatrixD drawMatrix;
-            if(!Utils.GetEquippedBlockMatrix(out drawMatrix))
+            if(!Utils.GetEquippedCenteredMatrix(out drawMatrix))
                 return;
 
-            CurrentPreview.Update(ref drawMatrix);
+            Vector3 modelOffset = Main.EquipmentMonitor?.BlockDef?.ModelOffset ?? Vector3.Zero;
+
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(modelOffset, blockWorldMatrix);
+
+            CurrentPreview.Update(ref blockWorldMatrix);
         }
     }
 }

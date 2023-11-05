@@ -47,6 +47,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             float radius = data.TopDef.Size.AbsMax() * MyDefinitionManager.Static.GetCubeSize(data.TopDef.CubeSize); // twice the top's largest axis length
 
             MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
             int minAngle = (statorDef.MinAngleDeg.HasValue ? (int)statorDef.MinAngleDeg.Value : -180);
             int maxAngle = (statorDef.MaxAngleDeg.HasValue ? (int)statorDef.MaxAngleDeg.Value : 180);
@@ -54,8 +55,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             IMyMotorStator stator = block?.FatBlock as IMyMotorStator;
             if(stator != null)
             {
-                blockWorldMatrix = stator.WorldMatrix;
-
                 float min = stator.LowerLimitDeg;
                 float max = stator.UpperLimitDeg;
 
@@ -63,7 +62,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 maxAngle = (max <= 360 ? (int)max : 361);
             }
 
-            MatrixD circleMatrix = drawMatrix;
+            MatrixD circleMatrix = blockWorldMatrix;
 
             Vector3D topDirWorld = circleMatrix.Left;
 

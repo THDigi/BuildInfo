@@ -192,7 +192,10 @@ namespace Digi.BuildInfo.Utilities
             return wm;
         }
 
-        public static bool GetEquippedBlockMatrix(out MatrixD matrix)
+        /// <summary>
+        /// NOTE: Centered, does not include ModelOffset!
+        /// </summary>
+        public static bool GetEquippedCenteredMatrix(out MatrixD matrix)
         {
             const bool DebugMessages = false;
 

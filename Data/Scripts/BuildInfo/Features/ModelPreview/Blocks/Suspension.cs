@@ -49,17 +49,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Data = null;
         }
 
-        public override void Update(ref MatrixD drawMatrix)
+        public override void Update(ref MatrixD blockWorldMatrix)
         {
-            base.Update(ref drawMatrix);
+            base.Update(ref blockWorldMatrix);
 
             if(!Valid)
                 return;
 
             Matrix localMatrix = Matrix.Identity;
-
-            MatrixD blockWorldMatrix = drawMatrix;
-            blockWorldMatrix.Translation = Vector3D.Transform(BlockDef.ModelOffset, blockWorldMatrix);
 
             MatrixD gridWorldMatrix = blockWorldMatrix;
 

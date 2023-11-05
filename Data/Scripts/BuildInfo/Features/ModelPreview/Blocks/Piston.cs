@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.VanillaData;
+using Sandbox.ModAPI;
 using VRage.Game.Entity;
 using VRageMath;
 
@@ -38,14 +39,14 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             Data = null;
         }
 
-        public override void Update(ref MatrixD drawMatrix)
+        public override void Update(ref MatrixD blockWorldMatrix)
         {
-            base.Update(ref drawMatrix);
+            base.Update(ref blockWorldMatrix);
 
             if(!Valid)
                 return;
 
-            MatrixD topMatrix = Data.TopLocalMatrix * drawMatrix;
+            MatrixD topMatrix = Data.TopLocalMatrix * blockWorldMatrix;
 
             TopPart.Update(ref topMatrix, TopPartTransparency);
 
@@ -98,9 +99,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 }
                 #endregion
 
-                Matrix lm = Data.TopLocalMatrix;
-                lm.Translation -= BlockDef.ModelOffset; // needs to be relative to BB center
-                ConstructionStack = ConstructionModelStack.CreateAndAdd(comp.Stacks, Data.TopDef, lm, TopPartTransparency);
+                ConstructionStack = ConstructionModelStack.CreateAndAdd(comp.Stacks, Data.TopDef, Data.TopLocalMatrix, TopPartTransparency);
             }
         }
     }

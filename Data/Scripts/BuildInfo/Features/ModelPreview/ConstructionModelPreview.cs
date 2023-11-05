@@ -223,7 +223,7 @@ namespace Digi.BuildInfo.Features.ModelPreview
         public override void UpdateDraw()
         {
             MatrixD drawMatrix;
-            if(!Utils.GetEquippedBlockMatrix(out drawMatrix))
+            if(!Utils.GetEquippedCenteredMatrix(out drawMatrix))
                 return;
 
             if(!Main.IsPaused)

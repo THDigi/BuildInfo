@@ -28,13 +28,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
-            MatrixD capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, drawMatrix.Up, drawMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
+            MatrixD capsuleMatrix = MatrixD.CreateWorld(Vector3D.Zero, blockWorldMatrix.Up, blockWorldMatrix.Backward); // capsule is rotated weirdly (pointing up), needs adjusting
             bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
             foreach(BData_Thrust.FlameInfo flame in data.Flames)
             {
-                Vector3D start = Vector3D.Transform(flame.LocalFrom, drawMatrix);
-                capsuleMatrix.Translation = start + (drawMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
+                Vector3D start = Vector3D.Transform(flame.LocalFrom, blockWorldMatrix);
+                capsuleMatrix.Translation = start + (blockWorldMatrix.Forward * (flame.CapsuleLength * 0.5)); // capsule's position is in the center
 
                 float paddedRadius = flame.CapsuleRadius + Hardcoded.Thrust_DamageCapsuleRadiusAdd;
                 Utils.DrawTransparentCapsule(ref capsuleMatrix, paddedRadius, flame.CapsuleLength, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
@@ -42,8 +45,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 if(drawLabel)
                 {
                     drawLabel = false; // label only on the first flame
-                    Vector3D labelDir = drawMatrix.Down;
-                    Vector3D labelLineStart = Vector3D.Transform(flame.LocalTo, drawMatrix) + labelDir * paddedRadius;
+                    Vector3D labelDir = blockWorldMatrix.Down;
+                    Vector3D labelLineStart = Vector3D.Transform(flame.LocalTo, blockWorldMatrix) + labelDir * paddedRadius;
                     drawInstance.LabelRender.DrawLineLabel(LabelType.ThrustDamage, labelLineStart, labelDir, Color, "Thrust damage");
                 }
             }

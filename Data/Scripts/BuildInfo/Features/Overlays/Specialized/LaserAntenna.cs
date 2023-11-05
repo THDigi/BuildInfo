@@ -31,6 +31,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
             bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
 
             float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
@@ -41,7 +44,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             int minYaw = antennaDef.MinAzimuthDegrees;
             int maxYaw = antennaDef.MaxAzimuthDegrees;
 
-            MatrixD pitchMatrix = drawMatrix;
+            MatrixD pitchMatrix = blockWorldMatrix;
             if(block?.FatBlock != null)
             {
                 MyEntity subpartBase1;
@@ -52,14 +55,14 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 // HACK: grid matrix because subpart is parented to grid, see MyLaserAntenna.SetParent()
                 pitchMatrix = subpartBase2.PositionComp.LocalMatrixRef * block.CubeGrid.WorldMatrix;
-                pitchMatrix.Translation = drawMatrix.Translation;
+                pitchMatrix.Translation = blockWorldMatrix.Translation;
             }
 
-            drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, data.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
+            drawInstance.DrawTurretLimits(ref blockWorldMatrix, ref pitchMatrix, data.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
 
             // laser visualization
             {
-                MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
+                MatrixD m = MatrixD.CreateWorld(blockWorldMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, blockWorldMatrix.Up), blockWorldMatrix.Up);
                 Vector3D rotationPivot = Vector3D.Transform(data.TurretInfo.PitchLocalPos, m);
 
                 MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLaser, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, BlendType);

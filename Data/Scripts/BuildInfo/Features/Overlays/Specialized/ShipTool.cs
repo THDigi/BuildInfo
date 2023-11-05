@@ -28,18 +28,24 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
             MyShipToolDefinition toolDef = (MyShipToolDefinition)def;
             Vector3 sensorCenter = data.DummyMatrix.Translation + data.DummyMatrix.Forward * toolDef.SensorOffset;
-            drawMatrix.Translation = Vector3D.Transform(sensorCenter, drawMatrix);
+
+            MatrixD sensorMatrix = blockWorldMatrix;
+            sensorMatrix.Translation = Vector3D.Transform(sensorCenter, sensorMatrix);
+
             float radius = toolDef.SensorRadius;
 
-            Utils.DrawTransparentSphere(ref drawMatrix, radius, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+            Utils.DrawTransparentSphere(ref sensorMatrix, radius, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
 
             if(drawInstance.LabelRender.CanDrawLabel())
             {
                 bool isWelder = def is MyShipWelderDefinition;
-                Vector3D labelDir = drawMatrix.Down;
-                Vector3D sphereEdge = drawMatrix.Translation + (labelDir * radius);
+                Vector3D labelDir = sensorMatrix.Down;
+                Vector3D sphereEdge = sensorMatrix.Translation + (labelDir * radius);
 
                 if(isWelder)
                     drawInstance.LabelRender.DrawLineLabel(LabelType.WeldingRadius, sphereEdge, labelDir, Color, "Welding radius");

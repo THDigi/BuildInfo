@@ -1241,7 +1241,7 @@ namespace Digi.BuildInfo.Features.Terminal
             BData_Piston data = Main.LiveDataHandler.Get<BData_Piston>(def);
             if(data != null)
             {
-                MatrixD topMatrix = data.TopLocalMatrix * Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
+                MatrixD topMatrix = data.TopLocalMatrix * block.WorldMatrix;
 
                 float minAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MinLimit);
                 float maxAligned = GetNearestGridAlign(block, topMatrix, def.Minimum, piston.MaxLimit);

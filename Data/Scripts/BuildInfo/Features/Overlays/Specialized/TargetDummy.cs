@@ -30,6 +30,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
             if(data.ShootableParts.Count > 0)
             {
                 bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
@@ -38,7 +41,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 {
                     string subpartName = kv.Key;
                     BData_TargetDummy.PartInfo subpartInfo = kv.Value;
-                    MatrixD matrix = subpartInfo.LocalMatrix * drawMatrix;
+                    MatrixD matrix = subpartInfo.LocalMatrix * blockWorldMatrix;
 
                     Vector4 color = (subpartInfo.IsCritical ? ColorCrit : ColorLimb);
                     MyTransparentGeometry.AddPointBillboard(MaterialDot, color, matrix.Translation, PointRadius, 0, blendType: BlendType);
@@ -49,7 +52,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                         Vector3D labelPos = matrix.Translation;
 
                         drawInstance.LabelRender.DynamicLabel.Clear().Append(subpartName).Append("\n").Append(subpartInfo.Health).Append(" hp").Append(subpartInfo.IsCritical ? " (critical)" : "");
-                        drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, color, scale: 0.5f, lineHeight: 1f);
+                        drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, color, scale: 0.8f, lineHeight: 1f);
                     }
                 }
             }

@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
             return true;
         }
 
-        public override void Update(ref MatrixD drawMatrix)
+        public override void Update(ref MatrixD blockWorldMatrix)
         {
             if(!HasParts)
                 return;
@@ -69,7 +69,7 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 Matrix local = part.LocalMatrix.Value;
                 local.Translation += local.Up * move;
 
-                MatrixD relativeMatrix = local * drawMatrix;
+                MatrixD relativeMatrix = local * blockWorldMatrix;
                 part.Update(ref relativeMatrix);
             }
         }

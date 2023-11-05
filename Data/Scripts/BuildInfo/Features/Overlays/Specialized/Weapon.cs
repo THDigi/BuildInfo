@@ -324,14 +324,14 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 if(weaponBlock != null)
                 {
                     pitchMatrix = weaponBlock.GunBase.GetMuzzleWorldMatrix();
-                    pitchMatrix.Translation = drawMatrix.Translation;
+                    pitchMatrix.Translation = blockWorldMatrix.Translation;
                 }
                 else
                 {
-                    pitchMatrix = drawMatrix;
+                    pitchMatrix = blockWorldMatrix;
                 }
 
-                drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, dataTurret.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
+                drawInstance.DrawTurretLimits(ref blockWorldMatrix, ref pitchMatrix, dataTurret.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
             }
             #endregion Turret pitch/yaw limits
 

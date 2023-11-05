@@ -23,13 +23,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             if(data == null)
                 return;
 
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
             if(data.Buttons.Count > 0)
             {
                 bool drawLabel = drawInstance.LabelRender.CanDrawLabel();
 
                 foreach(BData_ButtonPanel.ButtonInfo buttonInfo in data.Buttons)
                 {
-                    MatrixD matrix = buttonInfo.LocalMatrix * drawMatrix;
+                    MatrixD matrix = buttonInfo.LocalMatrix * blockWorldMatrix;
 
                     MySimpleObjectDraw.DrawTransparentBox(ref matrix, ref OverlayDrawInstance.UnitBB, ref ColorLines, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: 0.01f, lineMaterial: MaterialLaser, blendType: BlendType);
 

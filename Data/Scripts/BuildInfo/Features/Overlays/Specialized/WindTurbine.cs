@@ -35,75 +35,81 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             const float groundBottomLineThick = 0.05f;
             MyQuadD quad;
 
-            Vector3D blockPos = Vector3D.Transform(def.ModelOffset, drawMatrix); // game code uses WorldMatrix.Translation which is affected by ModelOffset
+            MatrixD blockWorldMatrix = drawMatrix;
+            blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
 
-            #region Side clearance circle
             float minRadius = turbineDef.RaycasterSize * turbineDef.MinRaycasterClearance;
             float maxRadius = turbineDef.RaycasterSize;
 
             float minRadiusRatio = turbineDef.MinRaycasterClearance;
             float maxRadiusRatio = 1f - minRadiusRatio;
 
-            Vector3 up = (Vector3)drawMatrix.Up;
-            Vector3D center = drawMatrix.Translation;
+            MatrixD circleMatrix = blockWorldMatrix;
+            circleMatrix.Translation = blockWorldMatrix.Translation + blockWorldMatrix.Up * blockWorldMatrix.Up.Dot(drawMatrix.Translation - blockWorldMatrix.Translation); // maintain only vertical center-ness
+            Vector3D circleCenter = circleMatrix.Translation;
 
-            Vector3D current = Vector3D.Zero;
-            Vector3D previous = Vector3D.Zero;
-            Vector3D previousInner = Vector3D.Zero;
-
-            const int wireDivideRatio = 360 / LineEveryDeg;
-            const float stepDeg = 360f / wireDivideRatio;
-
-            for(int i = 0; i <= wireDivideRatio; i++)
+            #region Side clearance circle
             {
-                double angleRad = MathHelperD.ToRadians(stepDeg * i);
+                Vector3D current = Vector3D.Zero;
+                Vector3D previous = Vector3D.Zero;
+                Vector3D previousInner = Vector3D.Zero;
 
-                current.X = maxRadius * Math.Cos(angleRad);
-                current.Y = 0;
-                current.Z = maxRadius * Math.Sin(angleRad);
-                current = Vector3D.Transform(current, drawMatrix);
+                const int wireDivideRatio = 360 / LineEveryDeg;
+                const float stepDeg = 360f / wireDivideRatio;
 
-                Vector3D dirToOut = (current - center);
-                Vector3D inner = center + dirToOut * minRadiusRatio;
+                Vector3 n = (Vector3)circleMatrix.Up;
 
-                if(i > 0)
+                for(int i = 0; i <= wireDivideRatio; i++)
                 {
-                    // inner circle slice
-                    MyTransparentGeometry.AddTriangleBillboard(center, inner, previousInner, up, up, up, Vector2.Zero, Vector2.Zero, Vector2.Zero, MaterialSquare, 0, center, TriangleColor, BlendType);
+                    double angleRad = MathHelperD.ToRadians(stepDeg * i);
 
-                    // outer circle gradient slices
-                    quad = new MyQuadD()
+                    current.X = maxRadius * Math.Cos(angleRad);
+                    current.Y = 0;
+                    current.Z = maxRadius * Math.Sin(angleRad);
+                    current = Vector3D.Transform(current, circleMatrix);
+
+                    Vector3D dirToOut = (current - circleCenter);
+                    Vector3D inner = circleCenter + dirToOut * minRadiusRatio;
+
+                    if(i > 0)
                     {
-                        Point0 = previousInner,
-                        Point1 = previous,
-                        Point2 = current,
-                        Point3 = inner,
-                    };
-                    MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MinColorVec, ref center, blendType: BlendType);
+                        // inner circle slice
+                        MyTransparentGeometry.AddTriangleBillboard(circleCenter, inner, previousInner, n, n, n, Vector2.Zero, Vector2.Zero, Vector2.Zero, MaterialSquare, 0, circleCenter, TriangleColor, BlendType);
 
-                    quad = new MyQuadD()
-                    {
-                        Point0 = previous,
-                        Point1 = previousInner,
-                        Point2 = inner,
-                        Point3 = current,
-                    };
-                    MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MaxColorVec, ref center, blendType: BlendType);
+                        // outer circle gradient slices
+                        quad = new MyQuadD()
+                        {
+                            Point0 = previousInner,
+                            Point1 = previous,
+                            Point2 = current,
+                            Point3 = inner,
+                        };
+                        MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MinColorVec, ref circleCenter, blendType: BlendType);
 
-                    // inner+outer circle rims
-                    MyTransparentGeometry.AddLineBillboard(MaterialLaser, MinLineColorVec, previousInner, (Vector3)(inner - previousInner), 1f, lineThick, BlendType);
-                    MyTransparentGeometry.AddLineBillboard(MaterialLaser, MaxLineColorVec, previous, (Vector3)(current - previous), 1f, lineThick, BlendType);
+                        quad = new MyQuadD()
+                        {
+                            Point0 = previous,
+                            Point1 = previousInner,
+                            Point2 = inner,
+                            Point3 = current,
+                        };
+                        MyTransparentGeometry.AddQuad(MaterialGradientSRGB, ref quad, MaxColorVec, ref circleCenter, blendType: BlendType);
+
+                        // inner+outer circle rims
+                        MyTransparentGeometry.AddLineBillboard(MaterialLaser, MinLineColorVec, previousInner, (Vector3)(inner - previousInner), 1f, lineThick, BlendType);
+                        MyTransparentGeometry.AddLineBillboard(MaterialLaser, MaxLineColorVec, previous, (Vector3)(current - previous), 1f, lineThick, BlendType);
+                    }
+
+                    previous = current;
+                    previousInner = inner;
                 }
-
-                previous = current;
-                previousInner = inner;
             }
             #endregion Side clearance circle
 
             if(drawLabel)
             {
-                Vector3D labelDir = drawMatrix.Up;
-                Vector3D labelLineStart = center + drawMatrix.Left * minRadius;
+                Vector3D labelDir = blockWorldMatrix.Up;
+                Vector3D labelLineStart = circleCenter + blockWorldMatrix.Left * minRadius;
                 drawInstance.LabelRender.DrawLineLabel(LabelType.SideClearance, labelLineStart, labelDir, new Color(255, 155, 0), "Side Clearance", lineHeight: 0.5f);
 
                 //labelDir = drawMatrix.Up;
@@ -112,26 +118,28 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             }
 
             #region Ground clearance line
+            Vector3D groundClearenceStart = blockWorldMatrix.Translation;
+
             float groundMinDist = turbineDef.OptimalGroundClearance * turbineDef.MinRaycasterClearance;
             float groundMaxDist = turbineDef.OptimalGroundClearance;
 
             float artificialMultiplier;
-            Vector3 gravityAccel = MyAPIGateway.Physics.CalculateNaturalGravityAt(blockPos, out artificialMultiplier);
+            Vector3 gravityAccel = MyAPIGateway.Physics.CalculateNaturalGravityAt(groundClearenceStart, out artificialMultiplier);
             Vector3 groundDir;
             if(gravityAccel.LengthSquared() > 0)
                 groundDir = Vector3.Normalize(gravityAccel);
             else
-                groundDir = (Vector3)drawMatrix.Down;
+                groundDir = (Vector3)blockWorldMatrix.Down;
 
-            Vector3D minPos = blockPos + groundDir * groundMinDist;
-            Vector3D maxPos = blockPos + groundDir * groundMaxDist;
+            Vector3D minPos = groundClearenceStart + groundDir * groundMinDist;
+            Vector3D maxPos = groundClearenceStart + groundDir * groundMaxDist;
 
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             Vector3 lineDir = (Vector3)(maxPos - minPos);
             Vector3 right = (Vector3)Vector3D.Normalize(Vector3D.Cross(lineDir, camMatrix.Forward));
 
             // red line
-            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, blockPos, (Vector3)(minPos - blockPos), 1f, groundLineThick, BlendType);
+            MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, groundClearenceStart, (Vector3)(minPos - groundClearenceStart), 1f, groundLineThick, BlendType);
 
             // marker at min clearance
             MyTransparentGeometry.AddLineBillboard(MaterialSquare, MinColor, minPos - right, right, 2f, groundBottomLineThick, BlendType);
@@ -145,7 +153,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             if(drawLabel)
             {
-                Vector3D labelDir = drawMatrix.Left;
+                Vector3D labelDir = blockWorldMatrix.Left;
                 Vector3D labelLineStart;
                 if(groundMinDist >= (drawInstance.CellSize * 2))
                     labelLineStart = minPos;
