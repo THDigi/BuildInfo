@@ -3,6 +3,7 @@ using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
@@ -32,19 +33,10 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 return;
 
             bool isRealBlock = block?.FatBlock != null;
-
             bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
-
-            float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
-
-            int minPitch = Math.Max(lightDef.MinElevationDegrees, -90);
-            int maxPitch = Math.Min(lightDef.MaxElevationDegrees, 90);
-
-            int minYaw = lightDef.MinAzimuthDegrees;
-            int maxYaw = lightDef.MaxAzimuthDegrees;
+            bool isCamController = (block?.FatBlock != null ? MyAPIGateway.Session.CameraController == block.FatBlock : false);
 
             MatrixD pitchMatrix = drawMatrix;
-
             if(isRealBlock)
             {
                 MyEntity subpartBase1;
@@ -56,9 +48,21 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 pitchMatrix = subpartBase2.PositionComp.WorldMatrixRef;
             }
 
-            drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, data.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
+            if(!isCamController)
+            {
+                float radius = (def.Size * drawInstance.CellSizeHalf).AbsMin() + 1f;
+
+                int minPitch = Math.Max(lightDef.MinElevationDegrees, -90);
+                int maxPitch = Math.Min(lightDef.MaxElevationDegrees, 90);
+
+                int minYaw = lightDef.MinAzimuthDegrees;
+                int maxYaw = lightDef.MaxAzimuthDegrees;
+
+                drawInstance.DrawTurretLimits(ref drawMatrix, ref pitchMatrix, data.TurretInfo, radius, minPitch, maxPitch, minYaw, maxYaw, canDrawLabel);
+            }
 
             #region Light
+            if(!isCamController)
             {
                 // from MySearchLight.UpdateAfterSimulationParallel()
                 MatrixD world;
@@ -73,6 +77,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             #endregion
 
             #region Camera
+            if(!isCamController)
             {
                 MatrixD view;
                 Matrix? local = (isRealBlock ? data.Camera.RelativeSubpart : data.Camera.RelativePreview);
@@ -100,19 +105,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 }
             }
             #endregion
-
-            //{
-            //    MatrixD m = MatrixD.CreateWorld(drawMatrix.Translation, Vector3D.Cross(pitchMatrix.Left, drawMatrix.Up), drawMatrix.Up);
-            //    Vector3D rotationPivot = Vector3D.Transform(data.TurretInfo.PitchLocalPos, m);
-
-            //    MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLaser, rotationPivot, (Vector3)pitchMatrix.Forward, LaserLength, LaserThick, BlendType);
-
-            //    if(canDrawLabel)
-            //    {
-            //        Vector3D labelPos = rotationPivot + pitchMatrix.Forward * (LaserLength / 2);
-            //        drawInstance.LabelRender.DrawLineLabel(LabelType.Laser, labelPos, pitchMatrix.Up, ColorLaser, "Laser");
-            //    }
-            //}
         }
     }
 }

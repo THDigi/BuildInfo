@@ -1,6 +1,7 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -29,10 +30,11 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             BData_Camera data = Main.LiveDataHandler.Get<BData_Camera>(def);
 
-            bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
-
             MatrixD blockWorldMatrix = drawMatrix;
             blockWorldMatrix.Translation = Vector3D.Transform(def.ModelOffset, blockWorldMatrix);
+
+            bool canDrawLabel = drawInstance.LabelRender.CanDrawLabel();
+            bool isCamController = (block?.FatBlock != null ? MyAPIGateway.Session.CameraController == block.FatBlock : false);
 
             #region Raycast limits
             {
@@ -107,7 +109,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             #endregion
 
             #region Camera viewpoint
-            if(data != null)
+            if(data != null && !isCamController)
             {
                 // from MyCameraBlock.GetViewMatrix()
                 MatrixD view = blockWorldMatrix;
