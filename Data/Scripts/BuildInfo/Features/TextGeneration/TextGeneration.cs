@@ -2587,7 +2587,10 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Extended length").DistanceFormat(piston.Maximum).Separator().Label("Max velocity").DistanceFormat(piston.MaxVelocity);
-                AddLine().Label("Max Force, Safe").ForceFormat(piston.UnsafeImpulseThreshold).Separator().Label("Unsafe").ForceFormat(piston.MaxImpulse);
+
+                // HACK: hardcoded max unsafe from MyPistonBase.CreateTerminalControls()
+                // there is piston.MaxImpulse but it's not used
+                AddLine().Label("Max Force, Safe").ForceFormat(piston.UnsafeImpulseThreshold).Separator().Label("Unsafe").ForceFormat(float.MaxValue);
             }
 
             Suffix_Mechanical(def, piston.TopPart);

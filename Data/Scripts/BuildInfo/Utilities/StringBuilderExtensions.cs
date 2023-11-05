@@ -22,6 +22,8 @@ namespace Digi.BuildInfo.Utilities
 {
     public static class StringBuilderExtensions
     {
+        public const string ScientificNotationFormat = "0.##e0";
+
         // copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
@@ -504,11 +506,8 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, N, " N"))
                 return s;
 
-            if(N >= 300000000000000000000000000000000000000f)
-                return s.Append("Infinite N"); // close enough for infinite
-
             if(N >= 1000000000000000000)
-                return s.Append(N.ToString("E2")).Append(" N"); // scientific notation
+                return s.Append(N.ToString(ScientificNotationFormat)).Append(" N");
 
             if(N >= 1000000000000000)
                 return s.Number(N / 1000000000000000).Append(" PN");
@@ -541,11 +540,8 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, N, " N-m"))
                 return s;
 
-            if(N >= 300000000000000000000000000000000000000f)
-                return s.Append("Infinite N-m"); // close enough for infinite
-
             if(N >= 1000000000000000000)
-                return s.Append(N.ToString("E2")).Append(" N-m"); // scientific notation
+                return s.Append(N.ToString(ScientificNotationFormat)).Append(" N-m");
 
             if(N >= 1000000000000000)
                 return s.Number(N / 1000000000000000).Append(" PN-m");
@@ -571,7 +567,7 @@ namespace Digi.BuildInfo.Utilities
                 return s;
 
             if(MW >= 1000000000000)
-                return s.Append(MW.ToString("E2")).Append(" MW"); // scientific notation
+                return s.Append(MW.ToString(ScientificNotationFormat)).Append(" MW");
 
             if(MW >= 1000000000)
                 return s.Number(MW / 1000000000).Append(" PW");
