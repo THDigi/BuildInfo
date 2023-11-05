@@ -2332,6 +2332,42 @@ namespace Digi.BuildInfo.Features
                 }
             }
             #endregion Airtightness
+
+            if(def.MountPoints != null && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                bool hasMask = false;
+                bool hasCoupling = false;
+
+                foreach(MyCubeBlockDefinition.MountPoint mp in def.MountPoints)
+                {
+                    if(!mp.Enabled)
+                        continue;
+
+                    if(mp.PropertiesMask != 0 || mp.ExclusionMask != 0)
+                    {
+                        hasMask = true;
+                    }
+
+                    if(!string.IsNullOrEmpty(mp.CouplingTag))
+                    {
+                        hasCoupling = true;
+                    }
+                }
+
+                if(hasCoupling || hasMask)
+                {
+                    StringBuilder sb = AddLine().Color(COLOR_WARNING).Append("Mountpoints have ");
+
+                    if(hasCoupling)
+                        sb.Append("coupling rules, ");
+
+                    if(hasMask)
+                        sb.Append("mask rules, ");
+
+                    sb.Length -= 2;
+                    sb.Append(". See overlays.");
+                }
+            }
         }
         #endregion Shared generation methods
 
