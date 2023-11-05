@@ -59,10 +59,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public const BlendTypeEnum MountpointBlendType = BlendTypeEnum.SDR;
         public const BlendTypeEnum MountpointAimedBlendType = BlendTypeEnum.SDR;
-        public const double MountpointThickness = 0.075;
+        public const double MountpointThickness = 0.05; // per meter
         public const float MountpointAlpha = 0.8f;
         public static Color MountpointColorNormal = new Color(255, 255, 0) * MountpointAlpha;
-        public static Color MountpointColorMasked = new Color(255, 55, 0) * MountpointAlpha;
+        public static Color MountpointColorMasked = new Color(255, 100, 55) * MountpointAlpha;
+        public static Color MountpointColorCoupling = new Color(255, 0, 55) * MountpointAlpha;
         public static Color MountpointColorGrayed = new Color(70, 15, 15) * MountpointAlpha;
         public static Color MountpointColorAutoRotate = new Color(0, 55, 255) * MountpointAlpha;
         public static Color MountpointAimedColor = Color.White;
@@ -242,7 +243,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             if(def.IsAirTight.Value)
                             {
                                 Vector3 halfExtents = def.Size * CellSizeHalf;
-                                BoundingBoxD localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MountpointThickness * 0.5);
+                                BoundingBoxD localBB = new BoundingBoxD(-halfExtents, halfExtents).Inflate(MountpointThickness * CellSize * 0.5);
                                 //MySimpleObjectDraw.DrawTransparentBox(ref drawMatrix, ref localBB, ref color, MySimpleObjectRasterizer.Solid, 1, lineWidth: 0.01f, lineMaterial: MaterialSquare, faceMaterial: MaterialSquare, blendType: MountpointBlendType);
 
                                 MyStringId faceMaterial = MaterialSquare;
@@ -317,11 +318,11 @@ namespace Digi.BuildInfo.Features.Overlays
                                     m.Right = -m.Left;
                                     m.Up = dirUp;
                                     m.Down = -dirUp;
-                                    Vector3D scale = new Vector3D(CellSize, CellSize, MountpointThickness);
+                                    Vector3D scale = new Vector3D(CellSize, CellSize, MountpointThickness * CellSize);
                                     MatrixD.Rescale(ref m, ref scale);
 
                                     Color finalColor = color;
-                                    var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(kv2.Key));
+                                    Base6Directions.Axis axis = Base6Directions.GetAxis(Base6Directions.GetDirection(kv2.Key));
                                     if(axis == Base6Directions.Axis.LeftRight)
                                         finalColor = Color.Lighten(color, SideBrightnessChange);
                                     else if(axis == Base6Directions.Axis.UpDown)
@@ -350,6 +351,7 @@ namespace Digi.BuildInfo.Features.Overlays
                         ClosestMountOBB = default(MyOrientedBoundingBoxD);
                         ClosestMountMatrix = default(MatrixD);
                         ClosestMountGrayed = false;
+                        ClosestMountAutoRotate = false;
 
                         if(DrawBuildStageMounts != null && DrawBuildStageMounts.Count > 0)
                         {
@@ -397,12 +399,16 @@ namespace Digi.BuildInfo.Features.Overlays
 
                             MySimpleObjectDraw.DrawTransparentBox(ref ClosestMountMatrix, ref UnitBB, ref MountpointAimedColor, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: MaterialLaser, blendType: MountpointAimedBlendType);
 
+                            bool hasCouplingTag = !string.IsNullOrEmpty(mountPoint.CouplingTag);
+
                             StringBuilder dynamicLabel = LabelRender.DynamicLabel;
                             dynamicLabel.Clear();
-                            if(mountPoint.PropertiesMask != 0 || mountPoint.ExclusionMask != 0)
-                                dynamicLabel.Append("Mount point");
+                            if(mountPoint.PropertiesMask != 0 || mountPoint.ExclusionMask != 0 || hasCouplingTag)
+                                dynamicLabel.Append("Limited mount point");
                             else
                                 dynamicLabel.Append("Standard mount point");
+
+                            dynamicLabel.Color(MountpointColorMasked);
 
                             if(mountPoint.PropertiesMask != 0)
                             {
@@ -434,11 +440,24 @@ namespace Digi.BuildInfo.Features.Overlays
                                 dynamicLabel.Length -= 2; // remove last comma and space
                             }
 
-                            if(mountPoint.Default)
-                                dynamicLabel.Append("\nUsed by auto-rotate");
+                            dynamicLabel.ResetFormatting();
+
+                            // from MyCubeGrid.CheckCouplingTags()
+                            if(hasCouplingTag)
+                            {
+                                dynamicLabel.Color(MountpointColorCoupling).Append("\nCoupling tag: ").Append(mountPoint.CouplingTag);
+
+                                if(!mountPoint.AllowCouplingWithItself)
+                                    dynamicLabel.Append("\nCannot mount to itself");
+
+                                dynamicLabel.ResetFormatting();
+                            }
+
+                            if(ClosestMountAutoRotate)
+                                dynamicLabel.Color(MountpointColorAutoRotate).Append("\nUsed by auto-rotate").ResetFormatting();
 
                             if(ClosestMountGrayed)
-                                dynamicLabel.Append("\nOnly when fully built");
+                                dynamicLabel.Color(MountpointColorGrayed).Append("\nOnly when fully built").ResetFormatting();
 
                             LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, Color.White, scale: textScale, autoAlign: false, alwaysOnTop: true);
                         }
@@ -822,6 +841,7 @@ namespace Digi.BuildInfo.Features.Overlays
         MyOrientedBoundingBoxD ClosestMountOBB = default(MyOrientedBoundingBoxD);
         MatrixD ClosestMountMatrix = default(MatrixD);
         bool ClosestMountGrayed = false;
+        bool ClosestMountAutoRotate = false;
 
         void DrawMountpoints(MyCubeBlockDefinition def, MyCubeBlockDefinition.MountPoint[] mountPoints, MatrixD drawMatrix, bool grayedOut = false)
         {
@@ -829,6 +849,17 @@ namespace Digi.BuildInfo.Features.Overlays
             MatrixD mainMatrix = MatrixD.CreateTranslation((center - (def.Size * 0.5f)) * CellSize) * drawMatrix;
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             bool drawLabel = LabelRender.CanDrawLabel();
+
+            bool hasDefault = false;
+            for(int i = 0; i < mountPoints.Length; i++)
+            {
+                MyCubeBlockDefinition.MountPoint mountPoint = mountPoints[i];
+                if(mountPoint.Enabled && mountPoint.Default)
+                {
+                    hasDefault = true;
+                    break;
+                }
+            }
 
             for(int i = 0; i < mountPoints.Length; i++)
             {
@@ -845,32 +876,45 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 Base6Directions.Axis normalAxis = Base6Directions.GetAxis(Base6Directions.GetDirection(ref mountPoint.Normal));
 
-                MatrixD m = MatrixD.CreateFromQuaternion(obb.Orientation);
-                m.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? MountpointThickness : 0));
-                m.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? MountpointThickness : 0));
-                m.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? MountpointThickness : 0));
-                m.Translation = obb.Center;
+                double thickness = MountpointThickness * CellSize;
 
-                bool hasProperties = mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0;
-                Color colorFace = grayedOut ? MountpointColorGrayed : hasProperties ? MountpointColorMasked : MountpointColorNormal;
+                MatrixD boxMatrix = MatrixD.CreateFromQuaternion(obb.Orientation);
+                boxMatrix.Right *= Math.Max(obb.HalfExtent.X * 2, (normalAxis == Base6Directions.Axis.LeftRight ? thickness : 0));
+                boxMatrix.Up *= Math.Max(obb.HalfExtent.Y * 2, (normalAxis == Base6Directions.Axis.UpDown ? thickness : 0));
+                boxMatrix.Forward *= Math.Max(obb.HalfExtent.Z * 2, (normalAxis == Base6Directions.Axis.ForwardBackward ? thickness : 0));
+                boxMatrix.Translation = obb.Center;
 
-                var axis = Base6Directions.GetAxis(Base6Directions.GetDirection(mountPoint.Normal));
+                Color colorFace;
+
+                if(grayedOut)
+                    colorFace = MountpointColorGrayed;
+                else if(!string.IsNullOrEmpty(mountPoint.CouplingTag))
+                    colorFace = MountpointColorCoupling;
+                else if(mountPoint.ExclusionMask != 0 || mountPoint.PropertiesMask != 0)
+                    colorFace = MountpointColorMasked;
+                else
+                    colorFace = MountpointColorNormal;
+
+                Base6Directions.Axis axis = Base6Directions.GetAxis(Base6Directions.GetDirection(mountPoint.Normal));
                 if(axis == Base6Directions.Axis.LeftRight)
                     colorFace = Color.Lighten(colorFace, SideBrightnessChange);
                 else if(axis == Base6Directions.Axis.UpDown)
                     colorFace = Color.Darken(colorFace, SideBrightnessChange);
 
-                float lineWdith = 0.005f;
+                MySimpleObjectDraw.DrawTransparentBox(ref boxMatrix, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
 
-                MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+                bool isAutoRotate = mountPoint.Default;
+                if(!hasDefault)
+                    isAutoRotate = MyCubeBlockDefinition.NormalToBlockSide(mountPoint.Normal) == BlockSideEnum.Bottom;
 
-                if(mountPoint.Default)
+                if(isAutoRotate)
                 {
-                    var colorAutoRotate = (grayedOut ? MountpointColorGrayed : MountpointColorAutoRotate);
-                    MySimpleObjectDraw.DrawTransparentBox(ref m, ref UnitBB, ref colorAutoRotate, MySimpleObjectRasterizer.Wireframe, 8, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
+                    float lineWdith = (float)obb.HalfExtent.AbsMax() * 0.01f; // 0.01 per meter
+                    Color colorAutoRotate = (grayedOut ? MountpointColorGrayed : MountpointColorAutoRotate);
+                    MySimpleObjectDraw.DrawTransparentBox(ref boxMatrix, ref UnitBB, ref colorAutoRotate, MySimpleObjectRasterizer.Wireframe, 1, lineWidth: lineWdith, lineMaterial: MaterialSquare, onlyFrontFaces: true, blendType: MountpointBlendType);
                 }
 
-                #region See-through-wall version
+                #region See-through-wall faint addition
                 //var closeMatrix = m;
                 //float depthScale = ConvertToAlwaysOnTop(ref closeMatrix);
                 //lineWdith *= depthScale;
@@ -897,8 +941,9 @@ namespace Digi.BuildInfo.Features.Overlays
                         ClosestMountDist = distance.Value;
                         ClosestMount = mountPoint;
                         ClosestMountOBB = obb;
-                        ClosestMountMatrix = m;
+                        ClosestMountMatrix = boxMatrix;
                         ClosestMountGrayed = grayedOut;
+                        ClosestMountAutoRotate = isAutoRotate;
                     }
                 }
             }

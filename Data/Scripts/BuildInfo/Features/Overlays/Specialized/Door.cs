@@ -80,7 +80,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                         MatrixD m = MatrixD.CreateWorld(pos, dirForward, dirUp);
                         m.Right *= width * 2;
                         m.Up *= height * 2;
-                        m.Forward *= OverlayDrawInstance.MountpointThickness;
+                        m.Forward *= OverlayDrawInstance.MountpointThickness * drawInstance.CellSize;
 
                         if(fullyClosed)
                             MySimpleObjectDraw.DrawTransparentBox(ref m, ref OverlayDrawInstance.UnitBB, ref AirtightToggleColor, ref AirtightToggleColor, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, onlyFrontFaces: true, blendType: OverlayDrawInstance.MountpointBlendType);
@@ -134,7 +134,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                             m.Right = -m.Left;
                             m.Up = dirUp;
                             m.Down = -dirUp;
-                            Vector3D scale = new Vector3D(drawInstance.CellSize, drawInstance.CellSize, OverlayDrawInstance.MountpointThickness);
+                            Vector3D scale = new Vector3D(drawInstance.CellSize, drawInstance.CellSize, OverlayDrawInstance.MountpointThickness * drawInstance.CellSize);
                             MatrixD.Rescale(ref m, ref scale);
 
                             if(fullyClosed)
