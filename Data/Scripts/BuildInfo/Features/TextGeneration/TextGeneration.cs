@@ -4413,10 +4413,11 @@ namespace Digi.BuildInfo.Features
 
                 if(showAmmoDetails && validWeapon)
                 {
-                    const int MaxMagNameLength = 20;
+                    const int MaxMagNameLength = 16;
                     const string MagazineSeparator = ": ";
                     const string ColumnSeparator = " <color=gray>|<reset> ";
                     const string DamageSeparator = ColumnSeparator;
+                    Color COLOR_OR_DAMAGE = new Color(255, 55, 25);
 
                     if(hasBullets)
                     {
@@ -4483,7 +4484,8 @@ namespace Digi.BuildInfo.Features
 
                             if(projectile.HeadShot)
                             {
-                                line.Append("<color=gray>or ").Color(charHeadDamage == 0 ? COLOR_BAD : COLOR_STAT_CHARACTERDMG);
+                                // no space before "or" because it looks good with the slim character icon
+                                line.Color(COLOR_OR_DAMAGE).Append("or ").Color(charHeadDamage == 0 ? COLOR_BAD : COLOR_STAT_CHARACTERDMG);
                                 line.Number(charHeadDamage).Icon(FontsHandler.IconCharacterHead);
                             }
 
@@ -4514,7 +4516,7 @@ namespace Digi.BuildInfo.Features
 
                             float range = wpDef.RangeMultiplier * projectile.MaxTrajectory;
                             if(wpDef.UseRandomizedRange)
-                                line.DistanceRangeFormat(range * Hardcoded.Projectile_RangeMultiplier_Min, range * Hardcoded.Projectile_RangeMultiplier_Max);
+                                line.DistanceRangeFormat(range * Hardcoded.Projectile_RandomRangeMin, range * Hardcoded.Projectile_RandomRangeMax);
                             else
                                 line.DistanceFormat(range);
 
@@ -4566,8 +4568,8 @@ namespace Digi.BuildInfo.Features
                                 tooltip.Append("Max range: ");
                                 if(wpDef.UseRandomizedRange)
                                 {
-                                    tooltip.Append("random between ").DistanceFormat(range * Hardcoded.Projectile_RangeMultiplier_Min).
-                                        Append(" and ").DistanceFormat(range * Hardcoded.Projectile_RangeMultiplier_Max);
+                                    tooltip.Append("random between ").DistanceFormat(range * Hardcoded.Projectile_RandomRangeMin).
+                                        Append(" and ").DistanceFormat(range * Hardcoded.Projectile_RandomRangeMax);
                                 }
                                 else
                                     tooltip.DistanceFormat(range);
@@ -4639,23 +4641,28 @@ namespace Digi.BuildInfo.Features
                             // ricochet system is activated
                             // how it normally works: https://steamcommunity.com/sharedfiles/filedetails/?id=2963715247
                             // but it can be changed into bonus damage or can prevent penetration entirely, going through those scenarios below
-                            if(missile.MissileMinRicochetAngle >= 0 && missile.MissileMinRicochetProbability > 0)
+                            if(missile.MissileMinRicochetAngle >= 0f)
                             {
-                                // TODO: display MaxAngle and MaxProbability somehow?
+                                // HACK: clamps like in MyMissile.Init()
+                                float minProbability = MathHelper.Clamp(missile.MissileMinRicochetProbability, 0f, 1f);
+                                int ricochetChanceMin = (int)Math.Round(minProbability * 100);
+                                int ricochetChanceMax = (int)Math.Round(MathHelper.Clamp(missile.MissileMaxRicochetProbability, minProbability, 1f) * 100);
 
-                                int ricochetChance = (int)Math.Round(missile.MissileMinRicochetProbability * 100);
-                                float ricochetSurfaceAngle = 90 - missile.MissileMinRicochetAngle; // swapped normal angle to surface angle
+                                // swapped normal angle to surface angle
+                                float ricochetSurfaceAngleMin = 90 - missile.MissileMinRicochetAngle;
+                                float ricochetSurfaceAngleMax = 90 - MathHelper.Max(missile.MissileMinRicochetAngle, missile.MissileMaxRicochetAngle);
+
                                 float ricochetDamage = missile.MissileRicochetDamage;
-
-                                bool detonatesOnRicochet = missile.MissileRicochetDamage >= penetrationPool;
-                                bool ricochetAllChances = missile.MissileMinRicochetProbability >= 1f;
-                                bool ricochetAllAngles = missile.MissileMinRicochetAngle == 0f;
-                                bool alwaysRicochets = ricochetAllChances && ricochetAllAngles;
 
                                 bool isNormalRicochet = true;
 
                                 // TODO: show all the different weird configurations of ricochet
 #if false
+                                bool detonatesOnRicochet = missile.MissileRicochetDamage >= penetrationPool;
+                                bool ricochetAllChances = missile.MissileMinRicochetProbability >= 1f;
+                                bool ricochetAllAngles = missile.MissileMinRicochetAngle == 0f;
+                                bool alwaysRicochets = ricochetAllChances && ricochetAllAngles;
+
                                 if(detonatesOnRicochet) // doesn't actually ricochet
                                 {
                                     isNormalRicochet = false;
@@ -4750,20 +4757,35 @@ namespace Digi.BuildInfo.Features
 
                                 if(isNormalRicochet)
                                 {
-                                    line.Color(COLOR_STAT_RICOCHET).Append(ricochetChance).Append("%").Icon(FontsHandler.IconRicochet).AngleFormatDeg(ricochetSurfaceAngle)
-                                        .Append("<reset>: ").Color(COLOR_STAT_RICOCHET).Number(ricochetDamage).Icon(FontsHandler.IconBlockDamage);
+                                    line.Color(COLOR_STAT_RICOCHET).AngleFormatDeg(ricochetSurfaceAngleMin).Icon(FontsHandler.IconRicochet)
+                                        .Append("<reset> ").Color(COLOR_STAT_RICOCHET).Number(ricochetDamage).Icon(FontsHandler.IconBlockDamage);
 
                                     if(showPenetrationDamage)
-                                        line.Append(" <color=gray>or ");
+                                        line.Color(COLOR_OR_DAMAGE).Append(" or<reset> ");
                                     else
                                         line.Append(DamageSeparator);
 
                                     if(tooltip != null)
                                     {
-                                        tooltip.Color(COLOR_STAT_RICOCHET).Append("Ricochet<reset>").Append(FontsHandler.IconRicochet).Append(": ")
-                                            .Append(ricochetChance).Append("% chance and under ").AngleFormatDeg(ricochetSurfaceAngle).Append(" surface angle. Only grid hits cause ricochets.\n");
+                                        const int LabelSpaces = 21;
+
+                                        tooltip.Color(COLOR_STAT_RICOCHET).Append("Ricochet<reset>").Append(FontsHandler.IconRicochet)
+                                            .Append($": {ricochetChanceMax}% chance from {(ricochetSurfaceAngleMax <= 0 ? "" : "0° to ")}{ricochetSurfaceAngleMax:0.##}° surface angle.\n");
+                                        tooltip.Append(' ', LabelSpaces).Append($"Then linearly scales to {ricochetChanceMin}% chance up until {ricochetSurfaceAngleMin:0.##}°");
+
+                                        if(ricochetSurfaceAngleMin >= 90)
+                                            tooltip.Append(" (which is the max)\n");
+                                        else
+                                            tooltip.Append(", no ricochet past this angle.\n");
+
+                                        tooltip.Append(' ', LabelSpaces).Append("Ricochets only happen against blocks.\n");
+
                                         tooltip.Color(COLOR_STAT_RICOCHET).Append("On ricochet:<reset> ").Number(missile.MissileRicochetDamage).Append(FontsHandler.IconBlockDamage)
                                             .Append(" damage and reduces round's penetration pool by same amount.\n");
+
+                                        tooltip.Append("Can view a ricochet simulation in the <color=0,255,155>block's overlay (");
+                                        Main.Config.CycleOverlaysBind.Value.GetBinds(tooltip);
+                                        tooltip.Append(")<reset>.\n");
                                     }
                                 }
                             }
@@ -4783,7 +4805,8 @@ namespace Digi.BuildInfo.Features
                                 {
                                     tooltip.Color(COLOR_STAT_PENETRATIONDMG).Append("Penetration pool:<reset> ")
                                         .Number(penetrationPool).Append(FontsHandler.IconBlockPenetration)
-                                        .Append(" integrity. Destroys blocks in its path, each subtracting from this number.\n");
+                                        .Append(" hp. Destroys blocks or characters in its path,\n")
+                                        .Append(' ', 30).Append("each subtracting their hp from this number.\n");
                                 }
                             }
                             else if(penetrationPool <= 0)
@@ -4809,7 +4832,7 @@ namespace Digi.BuildInfo.Features
                                     tooltip.Append("Explosion affects voxels: ").BoolFormat((explosionFlags & MyExplosionFlags.AFFECT_VOXELS) != 0);
 
                                     if(!MyAPIGateway.Session.SessionSettings.EnableVoxelDestruction)
-                                        tooltip.Append(" <color=yellow>(EnableVoxelDestruction is off)<reset>");
+                                        tooltip.Color(COLOR_WARNING).Append(" (EnableVoxelDestruction is off)<reset>");
                                     else if(MyAPIGateway.Session.SessionSettings.AdaptiveSimulationQuality)
                                         tooltip.Append(" (Caution: adaptive sim world setting is active)");
 
@@ -4948,6 +4971,9 @@ namespace Digi.BuildInfo.Features
         void TooltipMagazineStats(StringBuilder tooltip, MyAmmoMagazineDefinition magDef, MyAmmoDefinition ammoDef, float invVolume)
         {
             tooltip.Color(COLOR_STAT_TYPE).Append(magDef.DisplayNameText).ResetFormatting().Append('\n');
+
+            // TODO: internal ID?
+            // TODO: mod?
 
             tooltip.Append("Volume in inventory: ").VolumeFormat(magDef.Volume);
             if(invVolume > 0)
@@ -5298,7 +5324,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Regeneration time").TimeFormat(dummyDef.MinRegenerationTimeInS).Append(" to ").TimeFormat(dummyDef.MaxRegenerationTimeInS);
+                AddLine().Label("Regeneration time").TimeFormat(dummyDef.MinRegenerationTimeInS).Append(" to ").TimeFormat(dummyDef.MaxRegenerationTimeInS).Append(" (terminal configurable)");
 
                 if(dummyDef.SubpartDefinitions != null && dummyDef.SubpartDefinitions.Count > 0)
                 {
