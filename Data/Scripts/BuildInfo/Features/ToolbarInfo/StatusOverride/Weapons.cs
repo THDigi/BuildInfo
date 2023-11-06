@@ -6,6 +6,7 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
@@ -29,6 +30,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             Processor.AddStatus(type, Shoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
             Processor.AddGroupStatus(type, GroupShoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
         }
+
+        static Type MyEntityCapacitorComponentType = null;
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
@@ -59,13 +62,48 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return true;
             }
 
+            bool showAmmo = true;
+
             ReloadTracker.TrackedWeapon weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
             if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
             {
                 float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
                 sb.Append("R:").TimeFormat(seconds);
+                showAmmo = false;
             }
             else
+            {
+                IMyStoredPowerRatio chargeComp = null;
+
+                foreach(MyComponentBase comp in item.Block.Components)
+                {
+                    if(MyEntityCapacitorComponentType != null)
+                    {
+                        if(comp.GetType() == MyEntityCapacitorComponentType)
+                        {
+                            chargeComp = comp as IMyStoredPowerRatio;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if(comp.GetType().Name == "MyEntityCapacitorComponent") // HACK: prohibited...
+                        {
+                            MyEntityCapacitorComponentType = comp.GetType();
+                            chargeComp = comp as IMyStoredPowerRatio;
+                            break;
+                        }
+                    }
+                }
+
+                if(chargeComp != null && chargeComp.StoredPowerRatio < 1f)
+                {
+                    sb.Append("C:").ProportionToPercent(chargeComp.StoredPowerRatio);
+                    showAmmo = false;
+                }
+            }
+
+            if(showAmmo)
             {
                 sb.NumberCapped(ammo, 5);
             }
@@ -84,10 +122,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int off = 0;
             int total = 0;
             int reloading = 0;
+            int charging = 0;
             int noAmmo = 0;
             int firing = 0;
 
             float minReloadTimeLeft = float.MaxValue;
+            float highestCharge = 0f;
 
             int leastAmmo = int.MaxValue;
             int mostAmmo = 0;
@@ -136,8 +176,39 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     }
                     else
                     {
-                        leastAmmo = Math.Min(leastAmmo, ammo);
-                        mostAmmo = Math.Max(mostAmmo, ammo);
+                        IMyStoredPowerRatio chargeComp = null;
+
+                        foreach(MyComponentBase comp in gunBlock.Components)
+                        {
+                            if(MyEntityCapacitorComponentType != null)
+                            {
+                                if(comp.GetType() == MyEntityCapacitorComponentType)
+                                {
+                                    chargeComp = comp as IMyStoredPowerRatio;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if(comp.GetType().Name == "MyEntityCapacitorComponent") // HACK: prohibited...
+                                {
+                                    MyEntityCapacitorComponentType = comp.GetType();
+                                    chargeComp = comp as IMyStoredPowerRatio;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(chargeComp != null && chargeComp.StoredPowerRatio < 1f)
+                        {
+                            charging++;
+                            highestCharge = Math.Max(highestCharge, chargeComp.StoredPowerRatio);
+                        }
+                        else
+                        {
+                            leastAmmo = Math.Min(leastAmmo, ammo);
+                            mostAmmo = Math.Max(mostAmmo, ammo);
+                        }
                     }
                 }
 
@@ -170,8 +241,16 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 return true;
             }
 
+            if(charging == total)
+            {
+                sb.Append("C:").ProportionToPercent(highestCharge);
+                return true;
+            }
+
             if(reloading > 0)
                 sb.Append("R:").TimeFormat(minReloadTimeLeft).Append('\n');
+            else if(charging > 0)
+                sb.Append("C:").ProportionToPercent(highestCharge).Append('\n');
 
             if(mostAmmo > leastAmmo)
                 sb.Append(Math.Min(leastAmmo, 99999)).Append('+');
