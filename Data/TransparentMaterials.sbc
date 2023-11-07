@@ -162,7 +162,7 @@
         <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_UI_HudHotkeyBackground</SubtypeId>
       </Id>
-      <Texture>Textures\HudHotkeyBackground.dds</Texture>
+      <Texture>Textures\HUD\HotkeyBackground.dds</Texture>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>
@@ -174,7 +174,7 @@
         <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_UI_HudWeaponModeSingle</SubtypeId>
       </Id>
-      <Texture>Textures\HudWeaponModeSingle.dds</Texture>
+      <Texture>Textures\HUD\WeaponModeSingle.dds</Texture>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>
@@ -186,7 +186,7 @@
         <TypeId>TransparentMaterialDefinition</TypeId>
         <SubtypeId>BuildInfo_UI_HudWeaponModeAll</SubtypeId>
       </Id>
-      <Texture>Textures\HudWeaponModeAll.dds</Texture>
+      <Texture>Textures\HUD\WeaponModeAll.dds</Texture>
       <CanBeAffectedByOtherLights>false</CanBeAffectedByOtherLights>
       <SoftParticleDistanceScale>0</SoftParticleDistanceScale>
       <AlphaMistingEnable>false</AlphaMistingEnable>

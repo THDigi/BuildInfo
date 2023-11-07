@@ -4,10 +4,10 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
-using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.ModAPI;
@@ -17,6 +17,9 @@ using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity
 
 namespace Digi.BuildInfo.Features
 {
+    /// <summary>
+    /// Indicator for game's hidden toggle between firing/using a single ship weapon/tool or all of them when a weapon toolbar selection is present.
+    /// </summary>
     public class WeaponModeIndicator : ModComponent
     {
         MyCockpit InCockpit;
@@ -26,6 +29,8 @@ namespace Digi.BuildInfo.Features
         HudAPIv2.BillBoardHUDMessage UI_Icon;
         HudAPIv2.HUDMessage UI_Bind;
         BoxDragging Drag;
+
+        IMyHudNotification Notify;
 
         bool SuppressNextSound = true;
 
@@ -70,7 +75,7 @@ namespace Digi.BuildInfo.Features
             Main.TextAPI.Detected += TextAPI_Detected;
             Main.GameConfig.HudVisibleChanged += HudVisibleChanged;
             Main.GameConfig.HudStateChanged += HudStateChanged;
-            Main.EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
             Main.Config.WeaponModeIndicatorScale.ValueAssigned += Config_ScaleChanged;
             Main.Config.WeaponModeIndicatorPosition.ValueAssigned += Config_PositionChanged;
             Main.Config.HudFontOverride.ValueAssigned += Config_FontOverrideChanged;
@@ -88,7 +93,7 @@ namespace Digi.BuildInfo.Features
             Main.TextAPI.Detected -= TextAPI_Detected;
             Main.GameConfig.HudVisibleChanged -= HudVisibleChanged;
             Main.GameConfig.HudStateChanged -= HudStateChanged;
-            Main.EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+            Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             Main.Config.WeaponModeIndicatorScale.ValueAssigned -= Config_ScaleChanged;
             Main.Config.WeaponModeIndicatorPosition.ValueAssigned -= Config_PositionChanged;
             Main.Config.HudFontOverride.ValueAssigned -= Config_FontOverrideChanged;
@@ -116,6 +121,11 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        {
+            RefreshIconIfVisible();
+        }
+
         void OptionsMenuClosed()
         {
             RefreshIconIfVisible();
@@ -127,11 +137,6 @@ namespace Digi.BuildInfo.Features
         }
 
         void HudStateChanged(HudStateChangedInfo info)
-        {
-            RefreshIconIfVisible();
-        }
-
-        void EquipmentMonitor_BlockChanged(MyCubeBlockDefinition def, IMySlimBlock slimBlock)
         {
             RefreshIconIfVisible();
         }
@@ -175,7 +180,16 @@ namespace Digi.BuildInfo.Features
                 ShowOrUpdateIcon();
 
                 if(!SuppressNextSound)
+                {
                     Main.HUDSounds.PlayClick();
+
+                    if(Notify == null)
+                        Notify = MyAPIGateway.Utilities.CreateNotification(string.Empty, 3000, FontsHandler.BI_SEOutlined);
+
+                    Notify.Hide();
+                    Notify.Text = "Selected weapon/tool mode: " + (singleWeaponMode ? "only one" : "all (default)");
+                    Notify.Show();
+                }
             }
 
             SuppressNextSound = false;
@@ -186,7 +200,9 @@ namespace Digi.BuildInfo.Features
                 {
                     Vector2D center = UI_IconBg.Origin;
                     Vector2D halfSize = new Vector2D(UI_IconBg.Width, UI_IconBg.Height) / 2;
-                    Drag.DragHitbox = new BoundingBox2D(center - halfSize, center + halfSize);
+                    BoundingBox2D bb = new BoundingBox2D(center - halfSize, center + halfSize);
+
+                    Drag.DragHitbox = bb;
                     Drag.Position = center;
                     Drag.Update();
                 }
@@ -205,13 +221,23 @@ namespace Digi.BuildInfo.Features
                 UI_IconBg.Visible = false;
                 UI_Icon.Visible = false;
                 UI_Bind.Visible = false;
+
+                Main.ScreenTooltips.ClearTooltips(nameof(WeaponModeIndicator));
             }
         }
+
+        // TODO: allow anchoring to a corner or center-edge (bottom right, bottom center, etc)
+        // not sure how to use coordinates then, as 0.5 would still be very different depending on screen width...
 
         void ShowOrUpdateIcon()
         {
             float scale = Main.Config.WeaponModeIndicatorScale.Value;
-            if(scale <= 0 || !Main.GameConfig.IsHudVisible || !Main.TextAPI.IsEnabled || (Main.Config.CockpitBuildHideRightHud.Value && MyCubeBuilder.Static.IsActivated))
+            if(scale <= 0 // turned off by user
+            || Main.CoreSystemsAPIHandler.IsRunning // always hide for weaponcore
+            || !Main.TextAPI.IsEnabled
+            || !Main.EquipmentMonitor.IsAnyShipItem // hide if not contextually relevant (it can still be toggled and seen as such via notification)
+            || (Main.Config.CockpitBuildHideRightHud.Value && MyCubeBuilder.Static.IsActivated) // hide if right side HUD is hidden from this mod
+            || !Main.GameConfig.IsHudVisible)
             {
                 HideIcon();
                 return;
@@ -278,6 +304,18 @@ namespace Digi.BuildInfo.Features
                 UI_Bind.Origin = new Vector2D(
                     textSize.X / -2, // centered
                     pxSize.Y * 24 * scale); // px
+            }
+
+            {
+                Vector2 center = (Vector2)UI_IconBg.Origin;
+                Vector2 halfSize = new Vector2(UI_IconBg.Width, UI_IconBg.Height) / 2f;
+                BoundingBox2 bbf = new BoundingBox2(center - halfSize, center + halfSize);
+
+                Main.ScreenTooltips.ClearTooltips(nameof(WeaponModeIndicator));
+                Main.ScreenTooltips.AddTooltip(nameof(WeaponModeIndicator), bbf,
+                    "This is an indicator for a hidden game feature that makes"
+                  + "\n  your selected ship tools/weapons only activate/fire one or all."
+                  + "\nUses the same bind as painting blocks.");
             }
         }
     }
