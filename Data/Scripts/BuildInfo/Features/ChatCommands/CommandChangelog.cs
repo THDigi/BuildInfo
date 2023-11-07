@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
+using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -12,15 +13,10 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            ulong id = Log.WorkshopId;
-
-            if(id > 0)
+            MyObjectBuilder_Checkpoint.ModItem modItem = Main.Session.ModContext.ModItem;
+            if(modItem.PublishedFileId > 0)
             {
-                string link = "https://steamcommunity.com/sharedfiles/filedetails/changelog/" + id.ToString();
-
-                MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
-
-                PrintChat($"Opened steam overlay with {link}", FontsHandler.GreenSh);
+                Utils.OpenModPage(modItem.PublishedServiceName, modItem.PublishedFileId, changelog: true);
             }
             else
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -66,6 +67,35 @@ namespace Digi.BuildInfo.Utilities
             }
 
             return Path.Combine(BuildInfoMod.Instance.Session.ModContext.ModPath, relativePath);
+        }
+
+        public static void OpenModPage(string serviceName, ulong publishedId, bool changelog = false)
+        {
+            string link = null;
+
+            if(serviceName.Equals("steam", StringComparison.OrdinalIgnoreCase))
+            {
+                if(changelog)
+                    link = "https://steamcommunity.com/sharedfiles/filedetails/changelog/" + publishedId;
+                else
+                    link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + publishedId;
+            }
+            else if(serviceName.Equals("mod.io", StringComparison.OrdinalIgnoreCase))
+            {
+                // TODO: yet to find a way to get link name or link to integer ID
+                Utils.ShowColoredChatMessage(Log.ModName, "Cannot link to mod.io pages, there's no address that accepts mod integer ID and no mod-accessible API.", senderFont: FontsHandler.RedSh);
+                return;
+            }
+
+            if(link != null)
+            {
+                MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
+                Utils.ShowColoredChatMessage(Log.ModName, $"Opened game overlay with: {link}", senderFont: FontsHandler.GreenSh);
+            }
+            else
+            {
+                Log.Error($"{nameof(Utils)}.{nameof(OpenModPage)}() :: Unknown mod serviceName: {serviceName}");
+            }
         }
 
         /// <summary>

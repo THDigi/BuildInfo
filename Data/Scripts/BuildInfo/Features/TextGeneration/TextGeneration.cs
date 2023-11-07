@@ -423,6 +423,21 @@ namespace Digi.BuildInfo.Features
             CreateTooltip()?.Append(text);
         }
 
+        StringBuilder ModClickTooltip(string serviceName, ulong publishedId, int coveringLines = 1)
+        {
+            Action action = null;
+
+            if(publishedId > 0)
+                action = () => Utils.OpenModPage(serviceName, publishedId);
+
+            StringBuilder tooltip = CreateTooltip(action, coveringLines: coveringLines);
+
+            if(tooltip != null)
+                tooltip.Append("You can <color=lime>click<reset> to go to the mod's workshop page.");
+
+            return tooltip;
+        }
+
         void FinalizeTooltips()
         {
             if(!Main.TextAPI.IsEnabled)
@@ -1690,8 +1705,15 @@ namespace Digi.BuildInfo.Features
                     AddLine().Color(COLOR_MOD).Append("Mod: ").Color(COLOR_MOD_TITLE).AppendMaxLength(context.ModName, MOD_NAME_MAX_LENGTH);
 
                     MyObjectBuilder_Checkpoint.ModItem modItem = context.ModItem;
-                    if(modItem.Name != null && modItem.PublishedFileId > 0)
+
+                    bool isPublished = modItem.Name != null && modItem.PublishedFileId > 0;
+
+                    ModClickTooltip(modItem.PublishedServiceName, modItem.PublishedFileId, isPublished ? 2 : 1);
+
+                    if(isPublished)
+                    {
                         AddLine().Color(COLOR_MOD).Append("       | ").ResetFormatting().Append("ID: ").Append(modItem.PublishedServiceName).Append(":").Append(modItem.PublishedFileId);
+                    }
                 }
                 else
                 {
@@ -1990,6 +2012,9 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.AddedByMod) && !def.Context.IsBaseGame)
             {
                 AddLine(FontsHandler.SkyBlueSh).Color(COLOR_MOD).Append("Mod: ").ModFormat(def.Context);
+
+                MyObjectBuilder_Checkpoint.ModItem modItem = def.Context.ModItem;
+                ModClickTooltip(modItem.PublishedServiceName, modItem.PublishedFileId);
             }
             #endregion Added by mod
 
@@ -2098,7 +2123,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 SimpleTooltip("Weld and grind times are for lowest tier tools and non-enemy blocks."
-                            + $"\nFor blocks owned by enemies, grind time is multiplied by x{MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
+                            + $"\nFor blocks owned by enemies, grind time is multiplied by {MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))

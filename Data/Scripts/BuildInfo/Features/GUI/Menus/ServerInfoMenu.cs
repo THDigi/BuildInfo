@@ -490,13 +490,7 @@ namespace Digi.BuildInfo.Features.GUI
 
                     if(mod.PublishedFileId > 0)
                     {
-                        clickAction = () =>
-                        {
-                            // TODO: mod.io? unknown link format to reach a mod by its id...
-                            string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + mod.PublishedFileId;
-                            MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
-                            Utils.ShowColoredChatMessage("serverinfo", $"Opened overlay with {link}", FontsHandler.GreenSh);
-                        };
+                        clickAction = () => Utils.OpenModPage(mod.PublishedServiceName, mod.PublishedFileId);
                     }
 
                     int startIdx = sb.Length;

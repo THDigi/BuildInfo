@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Game;
+using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
 {
@@ -16,18 +17,15 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 if(!Main.EquipmentMonitor.BlockDef.Context.IsBaseGame)
                 {
-                    ulong id = Main.EquipmentMonitor.BlockDef.Context.ModItem.PublishedFileId;
-
-                    if(id > 0)
+                    MyObjectBuilder_Checkpoint.ModItem modItem = Main.EquipmentMonitor.BlockDef.Context.ModItem;
+                    if(modItem.PublishedFileId > 0)
                     {
-                        string link = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.ToString();
-
-                        MyVisualScriptLogicProvider.OpenSteamOverlayLocal(link);
-
-                        PrintChat($"Opened steam overlay with {link}", FontsHandler.GreenSh);
+                        Utils.OpenModPage(modItem.PublishedServiceName, modItem.PublishedFileId);
                     }
                     else
+                    {
                         PrintChat("Can't find mod workshop ID, probably it's a local mod?", FontsHandler.RedSh);
+                    }
                 }
                 else
                     PrintChat($"{Main.EquipmentMonitor.BlockDef.DisplayNameText} is not added by a mod.", FontsHandler.RedSh);
