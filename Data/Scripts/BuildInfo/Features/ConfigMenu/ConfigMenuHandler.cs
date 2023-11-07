@@ -174,7 +174,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             AddSpacer(Category_Textbox);
             ItemAdd_CustomStyling(Category_Textbox);
             ItemAdd_ScreenPosition(Category_Textbox);
-            SimplePositionReset(Category_Textbox, Main.Config.TextAPIScreenPosition, groupCustomStyling);
+            SimplePositionReset(Category_Textbox, Main.Config.TextAPIScreenPosition, groupCustomStyling, () => UpdateTextBox(save: false, redraw: true));
             ItemAdd_HorizontalAlign(Category_Textbox);
             ItemAdd_VerticalAlign(Category_Textbox);
             AddSpacer(Category_Textbox);
@@ -410,7 +410,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 setter: (pos) =>
                 {
                     Main.Config.TextAPIScreenPosition.Value = pos;
-                    UpdateTextBox(redraw: false);
+                    UpdateTextBox(redraw: true);
                 },
                 selected: (pos) =>
                 {
@@ -671,7 +671,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             new MenuItem($"<color=155,155,155>{label}", category);
         }
 
-        private void SimplePositionReset(MenuCategoryBase category, Vector2DSetting setting, ItemGroup group = null)
+        private void SimplePositionReset(MenuCategoryBase category, Vector2DSetting setting, ItemGroup group = null, Action call = null)
         {
             ItemButton item = new ItemButton(category, GetLabelFromSetting(null, setting) + " Reset", () =>
             {
@@ -679,6 +679,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 Main.Config.Save();
                 ShowNotify($"Reset [{setting.Name}] to default.", 3000);
                 RefreshAll();
+                call?.Invoke();
             });
 
             group?.Add(item);

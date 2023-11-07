@@ -224,13 +224,11 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown && textObject != null)
             {
-                if(textObject.Background != null)
-                    textObject.Background.Draw();
+                // HACK: let this box be rendered by textAPI to draw under the textAPI menu.
+                textObject.Visible = Main.TextAPI.InModMenu;
 
-                if(textObject.Shadow != null)
-                    textObject.Shadow.Draw();
-
-                textObject.Text.Draw();
+                if(!Main.TextAPI.InModMenu)
+                    textObject.Draw();
             }
             else
             {
@@ -822,6 +820,11 @@ namespace Digi.BuildInfo.Features
         {
             if(textShown)
             {
+                if(textObject != null)
+                {
+                    textObject.Visible = false;
+                }
+
                 if(forceDrawTicks <= 0)
                 {
                     textShown = false;
@@ -5970,6 +5973,8 @@ namespace Digi.BuildInfo.Features
 
             if(redraw)
             {
+                LastDefId = default(MyDefinitionId);
+
                 if(Main.EquipmentMonitor.BlockDef != null || Main.QuickMenu.Shown)
                     UpdateTextAPIvisuals(textAPIlines);
                 else
