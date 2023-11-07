@@ -130,6 +130,11 @@ namespace Digi.BuildInfo.Systems
         public bool IsAnyTool { get; private set; }
 
         /// <summary>
+        /// True if the selected tool is a ship block type (includes weapons).
+        /// </summary>
+        public bool IsAnyShipItem { get; private set; }
+
+        /// <summary>
         /// Hand/ship tool definition id, default otherwise.
         /// </summary>
         public MyDefinitionId ToolDefId { get; private set; }
@@ -502,8 +507,8 @@ namespace Digi.BuildInfo.Systems
                     {
                         MyStringId[] controlSlots = Main.Constants.ToolbarSlotControlIds;
 
-                        // intentionally skipping SLOT0
-                        for(int i = 1; i < controlSlots.Length; ++i)
+                        // intentionally skipping last (slot0)
+                        for(int i = 0; i < controlSlots.Length - 1; ++i)
                         {
                             if(MyAPIGateway.Input.IsNewGameControlPressed(controlSlots[i]))
                             {
@@ -638,6 +643,7 @@ namespace Digi.BuildInfo.Systems
             IsAnyGrinder = (!IsCubeBuilder && (defId.TypeId == typeof(MyObjectBuilder_AngleGrinder) || defId.TypeId == typeof(MyObjectBuilder_ShipGrinder)));
             IsBuildTool = (IsAnyWelder || IsAnyGrinder);
             IsAnyTool = (IsCubeBuilder || IsBuildTool || defId.TypeId == typeof(MyObjectBuilder_Drill) || defId.TypeId == typeof(MyObjectBuilder_HandDrill));
+            IsAnyShipItem = MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_CubeBlock), defId.TypeId);
 
             if(IsCubeBuilder)
                 handToolCasterComp = null;
