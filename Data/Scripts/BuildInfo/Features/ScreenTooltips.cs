@@ -154,7 +154,7 @@ namespace Digi.BuildInfo.Features
                     TooltipHandler.Hover(found.Value.Text);
                     TooltipHandler.Draw(mousePos, drawNow: true);
 
-                    if(found.Value.Action != null && MyAPIGateway.Input.IsNewLeftMousePressed())
+                    if(!Main.TextAPI.InModMenu && found.Value.Action != null && MyAPIGateway.Input.IsNewLeftMousePressed())
                     {
                         found.Value.Action.Invoke();
                     }
