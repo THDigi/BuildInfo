@@ -4394,6 +4394,7 @@ namespace Digi.BuildInfo.Features
                 bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
                 bool validWeapon = false;
                 bool hasAmmo = true;
+                bool hasZeroProjectiles = false;
                 bool hasBullets = false;
                 bool hasMissiles = false;
 
@@ -4412,13 +4413,19 @@ namespace Digi.BuildInfo.Features
                     if(wpDef.WeaponAmmoDatas[ammoTypeIdx] == null)
                         continue;
 
-                    switch(ammo.AmmoType)
+                    if(ammo.AmmoType == MyAmmoType.HighSpeed)
                     {
-                        case MyAmmoType.HighSpeed:
-                        {
-                            hasBullets = true;
+                        hasBullets = true;
 
-                            MyProjectileAmmoDefinition bullet = (MyProjectileAmmoDefinition)ammo;
+                        MyProjectileAmmoDefinition bullet = (MyProjectileAmmoDefinition)ammo;
+
+                        // if this is 0 then nothing else matters, this ammo type does nothing.
+                        if(bullet.ProjectileCount <= 0)
+                        {
+                            hasZeroProjectiles = true;
+                        }
+                        else
+                        {
                             if(bullet.ProjectileMassDamage * wpDef.DamageMultiplier != 0
                             || bullet.ProjectileHealthDamage * wpDef.DamageMultiplier != 0
                             || (bullet.HeadShot && bullet.ProjectileHeadShotDamage * wpDef.DamageMultiplier != 0)
@@ -4427,29 +4434,24 @@ namespace Digi.BuildInfo.Features
                                 validWeapon = true;
                                 AmmoBullets.Add(MyTuple.Create(mag, bullet));
                             }
-
-                            break;
                         }
-                        case MyAmmoType.Missile:
+                    }
+                    else if(ammo.AmmoType == MyAmmoType.Missile)
+                    {
+                        hasMissiles = true;
+
+                        MyMissileAmmoDefinition missile = (MyMissileAmmoDefinition)ammo;
+                        if(missile.MissileExplosionDamage != 0
+                        || missile.MissileRicochetDamage != 0
+                        || missile.MissileHealthPool != 0)
                         {
-                            hasMissiles = true;
-
-                            MyMissileAmmoDefinition missile = (MyMissileAmmoDefinition)ammo;
-                            if(missile.MissileExplosionDamage != 0
-                            || missile.MissileRicochetDamage != 0
-                            || missile.MissileHealthPool != 0)
-                            {
-                                validWeapon = true;
-                                AmmoMissiles.Add(MyTuple.Create(mag, missile));
-                            }
-
-                            break;
+                            validWeapon = true;
+                            AmmoMissiles.Add(MyTuple.Create(mag, missile));
                         }
-                        default:
-                        {
-                            Log.Error($"Warning: Unknown ammo type: {MyEnum<MyAmmoType>.GetName(ammo.AmmoType)} (#{ammoTypeIdx.ToString()})");
-                            break;
-                        }
+                    }
+                    else
+                    {
+                        Log.Error($"Warning: Unknown ammo type: {MyEnum<MyAmmoType>.GetName(ammo.AmmoType)} (#{ammoTypeIdx.ToString()})");
                     }
                 }
 
@@ -4615,7 +4617,7 @@ namespace Digi.BuildInfo.Features
                                 TooltipMagazineStats(tooltip, mag, projectile, invVolume);
 
                                 if(projectile.ProjectileCount > 1)
-                                    tooltip.Color(COLOR_GOOD).Append("Each round fires ").Append(projectile.ProjectileCount).Append(" individual projectiles.<reset>\n");
+                                    tooltip.Color(COLOR_GOOD).Append("Each shot sends ").Append(projectile.ProjectileCount).Append(" independent projectiles.<reset>\n");
 
                                 tooltip.Color(COLOR_STAT_SHIPDMG).Append("Block damage: ").ResetFormatting().Number(gridDamage).Append(FontsHandler.IconBlockDamage).Append('\n');
 
@@ -5041,6 +5043,8 @@ namespace Digi.BuildInfo.Features
                     StringBuilder sb = AddLine().Color(COLOR_WARNING);
                     if(!hasAmmo)
                         sb.Append("Has no ammo magazines.");
+                    else if(hasZeroProjectiles)
+                        sb.Append("Ammo shoots nothing (0 projectiles).");
                     else
                         sb.Append("Ammo deals no vanilla damage.");
 
