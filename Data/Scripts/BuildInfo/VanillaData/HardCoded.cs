@@ -486,6 +486,21 @@ namespace Digi.BuildInfo.VanillaData
             return m_ricochetMinProbability + num2 * (impactAngle - m_ricochetMinAngle);
         }
 
+        /// <summary>
+        /// Because the game works in tick steps, fire rate can be quite different because it has to shoot the next tick.
+        /// <para>Gatling gun for example has 85ms between shots, but 85/16.666666 = ~5.1 so it has to do 6 ticks between shots
+        ///   which results in 100ms between shots, 600 RPM instead of 700 declared in sbc.</para>
+        /// </summary>
+        /// <param name="shootIntervalMs">the <see cref="MyWeaponDefinition.MyWeaponAmmoData.ShootIntervalInMiliseconds"/> from weapon definition</param>
+        /// <returns>Rounds per second</returns>
+        public static float WeaponRealRPS(int shootIntervalMs)
+        {
+            const double TickMs = ((1d / MyEngineConstants.UPDATE_STEPS_PER_SECOND) * 1000d);
+            double ticks = shootIntervalMs / TickMs;
+            double actualMsBetweenShots = Math.Ceiling(ticks) * TickMs;
+            return (float)(1000d / actualMsBetweenShots);
+        }
+
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
         public const float LaserAntenna_RotationSpeedMul = 1000f;
 

@@ -4513,7 +4513,7 @@ namespace Digi.BuildInfo.Features
                         {
                             printFirstAmmoData = false;
 
-                            float rps = ammoData.RateOfFire / 60f;
+                            float rps = Hardcoded.WeaponRealRPS(ammoData.ShootIntervalInMiliseconds);
                             StringBuilder sb = AddLine().Label(printBothAmmoData ? "Bullets - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
 
                             sb.Label("Reload");
@@ -4681,7 +4681,7 @@ namespace Digi.BuildInfo.Features
                         {
                             printFirstAmmoData = false;
 
-                            float rps = ammoData.RateOfFire / 60f;
+                            float rps = Hardcoded.WeaponRealRPS(ammoData.ShootIntervalInMiliseconds);
                             StringBuilder sb = AddLine().Label(printBothAmmoData ? "Missiles - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
 
                             sb.Label("Reload");
