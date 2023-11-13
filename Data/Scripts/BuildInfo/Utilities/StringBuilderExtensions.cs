@@ -484,7 +484,7 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(money.ToString("N0")).Append(" ").Append(Constants.CurrencyShortName);
         }
 
-        private static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
+        static bool IsValid(StringBuilder s, float f, string suffix = "", string prefix = "")
         {
             if(float.IsInfinity(f))
             {
@@ -505,6 +505,12 @@ namespace Digi.BuildInfo.Utilities
         {
             if(!IsValid(s, N, " N"))
                 return s;
+
+            if(N < 0)
+            {
+                s.Append("-");
+                N = -N;
+            }
 
             if(N >= 1000000000000000000)
                 return s.Append(N.ToString(ScientificNotationFormat)).Append(" N");
@@ -535,36 +541,48 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append("°/s");
         }
 
-        public static StringBuilder TorqueFormat(this StringBuilder s, float N)
+        public static StringBuilder TorqueFormat(this StringBuilder s, float Nm)
         {
-            if(!IsValid(s, N, " N-m"))
+            if(!IsValid(s, Nm, " N-m"))
                 return s;
 
-            if(N >= 1000000000000000000)
-                return s.Append(N.ToString(ScientificNotationFormat)).Append(" N-m");
+            if(Nm < 0)
+            {
+                s.Append("-");
+                Nm = -Nm;
+            }
 
-            if(N >= 1000000000000000)
-                return s.Number(N / 1000000000000000).Append(" PN-m");
+            if(Nm >= 1000000000000000000)
+                return s.Append(Nm.ToString(ScientificNotationFormat)).Append(" N-m");
 
-            if(N >= 1000000000000)
-                return s.Number(N / 1000000000000).Append(" TN-m");
+            if(Nm >= 1000000000000000)
+                return s.Number(Nm / 1000000000000000).Append(" PN-m");
 
-            if(N >= 1000000000)
-                return s.Number(N / 1000000000).Append(" GN-m");
+            if(Nm >= 1000000000000)
+                return s.Number(Nm / 1000000000000).Append(" TN-m");
 
-            if(N >= 1000000)
-                return s.Number(N / 1000000).Append(" MN-m");
+            if(Nm >= 1000000000)
+                return s.Number(Nm / 1000000000).Append(" GN-m");
 
-            if(N >= 1000)
-                return s.Number(N / 1000).Append(" kN-m");
+            if(Nm >= 1000000)
+                return s.Number(Nm / 1000000).Append(" MN-m");
 
-            return s.Number(N).Append(" N-m");
+            if(Nm >= 1000)
+                return s.Number(Nm / 1000).Append(" kN-m");
+
+            return s.Number(Nm).Append(" N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
             if(!IsValid(s, MW, " W"))
                 return s;
+
+            if(MW < 0)
+            {
+                s.Append("-");
+                MW = -MW;
+            }
 
             if(MW >= 1000000000000)
                 return s.Append(MW.ToString(ScientificNotationFormat)).Append(" MW");
@@ -599,6 +617,12 @@ namespace Digi.BuildInfo.Utilities
         {
             if(!IsValid(s, m, " m"))
                 return s;
+
+            if(m < 0)
+            {
+                s.Append("-");
+                m = -m;
+            }
 
             if(digits < 0)
             {
@@ -643,6 +667,12 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, kg, " kg"))
                 return s;
 
+            if(kg < 0)
+            {
+                s.Append("-");
+                kg = -kg;
+            }
+
             if(kg == 0)
                 return s.Append("0 kg");
 
@@ -673,6 +703,12 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, integrity))
                 return s;
 
+            if(integrity < 0)
+            {
+                s.Append("-");
+                integrity = -integrity;
+            }
+
             if(integrity >= 1000000000000)
                 return s.Number(integrity / 1000000000000f).Append(" T");
 
@@ -695,6 +731,12 @@ namespace Digi.BuildInfo.Utilities
 
             if(l == 0)
                 return s.Append("0 L");
+
+            if(l < 0)
+            {
+                s.Append("-");
+                l = -l;
+            }
 
             if(l >= 1000000000000)
                 return s.Number(l / 1000000000000f).Append(" TL");
