@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -69,14 +68,16 @@ namespace Digi.BuildInfo.Features.HUD
 
             // HACK: physics mass can be 0 if ship is landing gear'd to another ship and you're a MP client, and who knows what other cases.
             // this gets the mass of non-static grids and works for MP clients, but it's affected by inventory multiplier so it's not real mass.
-            float baseMass;
-            float physMass;
+            float baseMass, physMass;
             float mass = ctrlGrid.GetCurrentMass(out baseMass, out physMass);
 
             // remove the ship inventory multiplier from the number.
-            float invMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
-            if(invMultiplier != 1f)
-                mass = ((mass - baseMass) / invMultiplier) + baseMass;
+            float blockInvMultiplier = MyAPIGateway.Session.BlocksInventorySizeMultiplier;
+            if(blockInvMultiplier != 1f)
+            {
+                float invMass = (mass - baseMass);
+                mass = (invMass / blockInvMultiplier) + baseMass;
+            }
 
             // then add static grids' masses + remove pilot inv mass
             TempGrids.Clear();
@@ -94,12 +95,15 @@ namespace Digi.BuildInfo.Features.HUD
                 }
                 else
                 {
-                    // remove pilot's inventory mass
+                    // remove pilot inventory mass that is added in GetCurrentMass()
                     foreach(MyCockpit block in g.OccupiedBlocks)
                     {
-                        MyInventory inv = block.Pilot?.GetInventory(0);
-                        if(inv != null)
-                            mass -= (float)inv.CurrentMass;
+                        IMyCharacter pilot = block.Pilot;
+                        if(pilot != null)
+                        {
+                            float pilotInventoryMass = (pilot.CurrentMass - pilot.BaseMass);
+                            mass -= pilotInventoryMass / blockInvMultiplier;
+                        }
                     }
                 }
             }
