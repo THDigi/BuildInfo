@@ -5,10 +5,32 @@ using System.Text;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Game;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
+using VRage.Game.ModAPI;
 using VRage.Utils;
-using TypeExtensions = VRage.TypeExtensions;
+using VRageMath;
+using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity on this, probably linux or such
+
+// test override and leaking
+#if false
+namespace Someone.InexistentMod
+{
+    [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
+    public class TestEvents : MySessionComponentBase
+    {
+        public override void LoadData()
+        {
+            MyVisualScriptLogicProvider.ItemSpawned = ThingSpawned;
+            MyVisualScriptLogicProvider.PlayerSpawned = PlayerBecameAlive;
+        }
+
+        void ThingSpawned(string itemTypeName, string itemSubTypeName, long itemId, int amount, Vector3D position) { }
+        void PlayerBecameAlive(long playerId) { }
+    }
+}
+#endif
 
 namespace Digi.BuildInfo.Features
 {
@@ -31,7 +53,7 @@ namespace Digi.BuildInfo.Features
 
             protected override void UnloadData()
             {
-                Unhook(); // fallback
+                Unhook(); // safety redundancy
             }
         }
 
@@ -167,38 +189,62 @@ namespace Digi.BuildInfo.Features
             int erased = 0;
             int count = Container.Events.Count;
 
+            StringBuilder sb = new StringBuilder(512);
+
             foreach(CheckForEventBase checker in Container.Events.Values)
             {
+                string checkMessage = checker.Check();
+
                 if(checker.PreCheckMessage != null)
                 {
-                    MyLog.Default.WriteLine($"### {BuildInfoMod.ModName}.{nameof(CheckVSLPEvents)}: {checker.PreCheckMessage}");
-                    Log.Info(checker.PreCheckMessage);
+                    sb.AppendLine(checker.PreCheckMessage);
                     preAssigned++;
                 }
 
-                string message = checker.Check();
-                if(message != null)
+                if(checkMessage != null)
                 {
-                    MyLog.Default.WriteLine($"### {BuildInfoMod.ModName}.{nameof(CheckVSLPEvents)}: {message}");
-                    Log.Info(message);
+                    sb.AppendLine(checkMessage);
                     erased++;
                 }
 
                 checker.Unhook();
             }
 
-            string msg = $"Done checking events; preAssigned={preAssigned}; erased={erased}; total events={count}";
+            string msg = $"{nameof(CheckVSLPEvents)}: Done checking VSLP events; preAssigned={preAssigned}; erased={erased}; total events={count}";
+            MyLog.Default.WriteLine($"### {BuildInfoMod.ModName} :: {msg}");
             Log.Info(msg);
-            MyLog.Default.WriteLine($"### {BuildInfoMod.ModName}.{nameof(CheckVSLPEvents)}: {msg}");
 
             if(preAssigned > 0 || erased > 0)
             {
-                MyLog.Default.WriteLine($"### {BuildInfoMod.ModName}.{nameof(CheckVSLPEvents)}: If the above involve your mod, you need to use += to hook and -= to unhook the events, don't use ="
-                                      + "\nIf they are not your mods, send this info to the author if you can identify the mods, otherwise contact BuildInfo's author for help tracking down the problematic mod(s).");
+                sb.Append("These are also written to SE log.");
 
-                MyDefinitionErrors.Add((MyModContext)BuildInfoMod.Instance.Session.ModContext, "Script mods might have issues from VSLP events being leaked or unhooked by other mods, see SE log for details.", TErrorSeverity.Error);
+                string errors = sb.ToString();
 
-                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Script mods might have issues from VSLP events being leaked or unhooked by other mods, see SE log for details.", FontsHandler.YellowSh);
+                sb.Clear();
+                sb.AppendLine("Other mods are overriding or leaking VSLP events! (Alert provided by BuildInfo mod)");
+                sb.AppendLine("What to do:");
+                sb.AppendLine("- if you can identify the mod(s) below then send all this info to the author.");
+                sb.AppendLine("- if you're the author, fix it by finding all the mentioned events and ensure you're using += to hook and -= to unhook, don't use = on them.");
+                sb.AppendLine("- if the mods cannot be identified, contact BuildInfo's author to get help in identifying them.");
+                sb.AppendLine();
+                sb.AppendLine("The problematic events: ");
+                sb.Append(errors);
+
+                string text = sb.ToString();
+
+                MyLog.Default.WriteLine($"### {BuildInfoMod.ModName} :: {nameof(CheckVSLPEvents)}: {text}");
+                Log.Info(text);
+
+                // not really necessary as null would print unknown in both... but I like doing it :P
+                var fakeContext = new MyModContext();
+                fakeContext.Init("Unknown mod", "Unknown script");
+
+                MyDefinitionErrors.Add(fakeContext, text, TErrorSeverity.Error);
+
+                if(MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE) // f11 menu accessible
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Other mods are overriding or leaking VSLP events! See F11 menu or SE log for details.", FontsHandler.YellowSh);
+                else
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "Other mods are overriding or leaking VSLP events! See SE log for details.", FontsHandler.YellowSh);
             }
         }
 
@@ -295,6 +341,8 @@ namespace Digi.BuildInfo.Features
             public HashSet<string> Ignore = new HashSet<string>();
         }
 
+        const string PrefixSpacing = "    ";
+
         abstract class CheckForEventBase
         {
             public readonly string ClassName;
@@ -327,14 +375,16 @@ namespace Digi.BuildInfo.Features
                 bool allMine = true;
                 foreach(Delegate del in invocations)
                 {
-                    if(del.Target == null) // static method, isn't from this mod
+                    object instance = del.Target;
+
+                    if(instance == null) // static method, it's not from this mod
                     {
                         allMine = false;
                         break;
                     }
 
-                    string target = del.Target.ToString();
-                    if(!target.StartsWith("Digi.BuildInfo."))
+                    string fullName = instance.GetType().FullName;
+                    if(!fullName.StartsWith("Digi.BuildInfo."))
                     {
                         allMine = false;
                         break;
@@ -345,22 +395,24 @@ namespace Digi.BuildInfo.Features
                     return; // all invocations are from this mod or other versions of this mod.
                 #endregion
 
-                StringBuilder sb = new StringBuilder(256);
-                sb.Clear();
-                sb.Append($"Warning: '{ClassName}.{FieldName}' was assigned before mods loaded. If hooks are from plugins or game itself then you can ignore this.");
-                sb.Append("\nHooks:");
+                StringBuilder sb = new StringBuilder(512);
 
-                foreach(Delegate del in invocations)
-                {
-                    sb.Append(GetMethodDetails(del));
-                }
+                sb.Append(PrefixSpacing).Append(ClassName).Append('.').Append(FieldName)
+                    .Append(" - leaked! If callbacks are from plugins you can ignore this.")
+                    .AppendLine();
+
+                sb.Append(PrefixSpacing).Append("Callbacks (first one is likely the problem):").AppendLine();
+
+                AppendInvocationsRecursive(sb, invocations);
 
                 PreCheckMessage = sb.ToString();
             }
 
             protected string CheckEvent(Delegate eventField, Delegate callback)
             {
-                foreach(Delegate del in eventField.GetInvocationList())
+                Delegate[] invocations = eventField.GetInvocationList();
+
+                foreach(Delegate del in invocations)
                 {
                     if(del.Method == callback.Method)
                         return null;
@@ -368,25 +420,69 @@ namespace Digi.BuildInfo.Features
 
                 StringBuilder sb = new StringBuilder(512);
 
-                sb.Append($"Problem: '{ClassName}.{FieldName}' event has been overwritten by something! Probably a mod used = instead of +=");
-                sb.Append("\nHooks (first one is likely the culprit):");
-                foreach(Delegate del in eventField.GetInvocationList())
-                {
-                    sb.Append(GetMethodDetails(del));
-                }
+                sb.Append(PrefixSpacing).Append(ClassName).Append('.').Append(FieldName)
+                    .Append(" - overwritten!")
+                    .AppendLine();
+
+                sb.Append(PrefixSpacing).Append("Callbacks (first one is likely the problem):").AppendLine();
+
+                AppendInvocationsRecursive(sb, invocations);
 
                 return sb.ToString();
             }
 
-            static string GetMethodDetails(Delegate del)
+            static void AppendInvocationsRecursive(StringBuilder sb, Delegate[] invocations, Delegate ignore = null)
             {
-                if(del.Target == null) // static method
+                if(invocations == null)
+                    return;
+
+                foreach(Delegate del in invocations)
                 {
-                    return $"\n - static method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1} (can't get more details on static methods, do a find-in-files for this method name)";
-                }
-                else
-                {
-                    return $"\n - target={del.Target} / method={del.Method} / deeperDelegates={(del.GetInvocationList()?.Length ?? 0) > 1}";
+                    if(del == ignore)
+                        continue;
+
+                    sb.Append(PrefixSpacing).Append(" - ");
+
+                    object instance = del.Target;
+
+                    if(instance == null) // static method
+                    {
+                        sb.Append("static method=").Append(del.Method).Append(" (can't get more details on static methods, do a find-in-files for this method name)");
+                    }
+                    else
+                    {
+                        sb.Append("target=").Append(instance.GetType()?.FullName)
+                            .Append(" / method=").Append(del.Method)
+                            .Append(" / from=");
+
+                        IMyModContext modContext = null;
+
+                        {
+                            var session = instance as MySessionComponentBase;
+                            if(session != null)
+                                modContext = session.ModContext ?? MyModContext.BaseGame;
+                        }
+                        {
+                            var gamelogic = instance as MyGameLogicComponent;
+                            if(gamelogic != null)
+                                modContext = gamelogic.ModContext ?? MyModContext.BaseGame;
+                        }
+
+                        if(modContext != null)
+                        {
+                            if(modContext.IsBaseGame)
+                                sb.Append("<basegame or plugin>");
+                            else
+                                sb.Append(modContext.ModName).Append(" (").Append(modContext.ModItem.PublishedServiceName).Append(":").Append(modContext.ModItem.PublishedFileId).Append(")");
+                        }
+                        else
+                            sb.Append("<unknown>");
+                    }
+
+                    sb.AppendLine();
+
+                    // GetInvocationList() includes itself so it will end up an infinite loop if we don't ignore it
+                    AppendInvocationsRecursive(sb, del.GetInvocationList(), ignore: del);
                 }
             }
         }
