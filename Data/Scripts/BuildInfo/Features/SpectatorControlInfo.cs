@@ -16,10 +16,12 @@ namespace Digi.BuildInfo.Features
     {
         static readonly Color BackgroundColor = new Color(41, 54, 62) * 0.96f;
         const float GUIScale = 0.75f;
+        const string Font = FontsHandler.BI_SEOutlined;
 
         bool Visible = false;
         CornerBackground Box;
         TextPackage Text;
+        double WidestUnscaled;
 
         Vector3D? PrevSpecPos = null;
 
@@ -106,6 +108,13 @@ namespace Digi.BuildInfo.Features
                 //Text = new TextPackage(new StringBuilder(512), useShadow: false, backgroundTexture: MyStringId.GetOrCompute("Square"));
                 Text = new TextPackage(new StringBuilder(512));
                 Text.HideWithHUD = false;
+                Text.Font = Font;
+
+                // HACK: measure widest expected
+                Text.Scale = 1f;
+                Text.TextStringBuilder.Clear().Append("Speed: 000,000.00m/s (Shift+MMB set on aimed, Shift+RMB clear, Shift+Scroll adjust) ");
+                WidestUnscaled = Text.Text.GetTextLength().X;
+
                 Text.Scale = GUIScale;
 
                 Text.Visible = true;
@@ -119,19 +128,23 @@ namespace Digi.BuildInfo.Features
             StringBuilder sb = Text.TextStringBuilder.Clear();
 
             sb.Append("Speed Modifier: ")
-                .Append("x").Append(Math.Round(MySpectator.Static.SpeedModeLinear, 2))
-                .Color(Color.Gray).Append(" (Shift+Scroll adjust; Shift temp boost; Ctrl temp slow)").NewCleanLine();
+                .Append("x").Append(Math.Round(MySpectator.Static.SpeedModeLinear, 4))
+                .Color(Color.Gray).Append(" (Shift+Scroll adjust; Shift temp boost; Ctrl temp slow)")
+                //.Append(' ', 8).NewCleanLine(); // to acomodate the cut corner
+                .NewCleanLine();
 
             sb.Append("Rotation Modifier: ");
 
             if(Math.Abs(MySpectator.Static.SpeedModeAngular - 1f) > 0.001f)
                 sb.Color(Color.Yellow);
 
-            sb.Append("x").Append(Math.Round(MySpectator.Static.SpeedModeAngular, 2)).Color(Color.Gray).Append(" (");
+            sb.Append("x").Append(Math.Round(MySpectator.Static.SpeedModeAngular, 4)).Color(Color.Gray).Append(" (");
+            sb.Append("Alt temp boost; ");
             if(allowAngularMod)
-                sb.Append("Ctrl+Scroll adjust; ");
-            sb.Append("Alt temp boost)");
-            sb.NewCleanLine();
+                sb.Append("Ctrl+Scroll adjust");
+            else
+                sb.Append("adjust disabled from mod config");
+            sb.Append(")").NewCleanLine();
 
             sb.Append("Speed: ").SpeedFormat((float)speed).Color(Color.Gray).Append(" (Shift+MMB set on aimed, Shift+RMB clear, Shift+Scroll adjust)").NewCleanLine();
 
@@ -142,6 +155,9 @@ namespace Digi.BuildInfo.Features
 
             #region Update size and position
             Vector2D textSize = Text.Text.GetTextLength();
+
+            textSize.X = Math.Max(WidestUnscaled * GUIScale, textSize.X);
+            //WidestUnscaled = Math.Max(WidestUnscaled, textSize.X / GUIScale);
 
             //Text.Position = new Vector2D(textSize.X / -2, 0.99);
             //Text.UpdateBackgroundSize(provideTextLength: textSize);
