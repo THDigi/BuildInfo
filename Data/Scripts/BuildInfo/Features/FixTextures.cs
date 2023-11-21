@@ -4,7 +4,7 @@ using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
 using VRage.Library.Utils;
 
-namespace Digi.BuildInfo.Features.Tooltips
+namespace Digi.BuildInfo.Features
 {
     public class FixTextures : ModComponent
     {
@@ -14,10 +14,10 @@ namespace Digi.BuildInfo.Features.Tooltips
         {
             var replaceButtonTextures = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\OneButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\1button.dds"),
-                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\TwoButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\2buttons.dds"),
-                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\ThreeButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\3buttons.dds"),
-                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\FourButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\4buttons.dds"),
+                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\OneButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\Button1.dds"),
+                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\TwoButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\Button2.dds"),
+                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\ThreeButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\Button3.dds"),
+                [PathUtils.Normalize(@"Textures\GUI\Icons\buttons\FourButton.dds")] = Utils.GetModFullPath(@"Textures\Fixes\Button4.dds"),
             };
 
             foreach(MyCubeBlockDefinition blockDef in main.Caches.BlockDefs)
