@@ -2,6 +2,7 @@
 using Digi.BuildInfo.Systems;
 using Digi.ComponentLib;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game.ModAPI;
@@ -10,12 +11,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 {
     public class ReloadTracking : ModComponent
     {
-        const int SKIP_TICKS = 6; // ticks between text updates, min value 1.
-
         public readonly Dictionary<long, TrackedWeapon> WeaponLookup = new Dictionary<long, TrackedWeapon>();
 
-        private readonly List<TrackedWeapon> weaponForUpdate = new List<TrackedWeapon>();
-        private readonly MyConcurrentPool<TrackedWeapon> weaponPool = new MyConcurrentPool<TrackedWeapon>();
+        readonly List<TrackedWeapon> WeaponForUpdate = new List<TrackedWeapon>();
+        readonly MyConcurrentPool<TrackedWeapon> WeaponPool = new MyConcurrentPool<TrackedWeapon>();
 
         public ReloadTracking(BuildInfoMod main) : base(main)
         {
@@ -38,12 +37,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
         public override void UnregisterComponent()
         {
-            weaponForUpdate.Clear();
+            WeaponForUpdate.Clear();
             WeaponLookup.Clear();
-            weaponPool.Clean();
+            WeaponPool.Clean();
         }
 
-        private void WeaponBlockAdded(IMySlimBlock block)
+        void WeaponBlockAdded(IMySlimBlock block)
         {
             if(block.CubeGrid?.Physics == null)
                 return; // no tracking for ghost grids
@@ -58,31 +57,50 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             if(WeaponLookup.ContainsKey(gunBlock.EntityId))
                 return; // ignore grid merge/split if gun is already tracked
 
-            TrackedWeapon weapon = weaponPool.Get();
+            TrackedWeapon weapon = WeaponPool.Get();
             if(!weapon.Init(gunBlock))
             {
                 weapon.Clear();
-                weaponPool.Return(weapon);
+                WeaponPool.Return(weapon);
                 return;
             }
 
-            weaponForUpdate.Add(weapon);
+            WeaponForUpdate.Add(weapon);
             WeaponLookup.Add(gunBlock.EntityId, weapon);
         }
 
         public override void UpdateAfterSim(int tick)
         {
-            for(int i = (weaponForUpdate.Count - 1); i >= 0; --i)
+            for(int i = (WeaponForUpdate.Count - 1); i >= 0; --i)
             {
-                TrackedWeapon weapon = weaponForUpdate[i];
-                if(!weapon.Update(tick))
-                {
-                    weaponForUpdate.RemoveAtFast(i);
-                    WeaponLookup.Remove(weapon.Block.EntityId);
+                TrackedWeapon tw = WeaponForUpdate[i];
 
-                    weapon.Clear();
-                    weaponPool.Return(weapon);
+                if(tw.Block.MarkedForClose)
+                {
+                    WeaponForUpdate.RemoveAtFast(i);
+                    WeaponLookup.Remove(tw.Block.EntityId);
+
+                    tw.Clear();
+                    WeaponPool.Return(tw);
                     continue;
+                }
+
+                MyGunBase gunbase = tw.Gun.GunBase;
+                long lastShotTime = gunbase.LastShootTime.Ticks;
+                if(tw.LastShotTime < lastShotTime)
+                {
+                    tw.LastShotTime = lastShotTime;
+
+                    if(--tw.ShotsUntilReload == 0)
+                    {
+                        // NOTE: a bug in game code allows you to go over max shots by switching to other mag type (projectile<>missile).
+                        if(gunbase.IsAmmoProjectile)
+                            tw.ShotsUntilReload = tw.ProjectileShotsInBurst;
+                        else if(gunbase.IsAmmoMissile)
+                            tw.ShotsUntilReload = tw.MissileShotsInBurst;
+
+                        tw.ReloadUntilTick = tick + tw.ReloadDurationTicks;
+                    }
                 }
             }
         }

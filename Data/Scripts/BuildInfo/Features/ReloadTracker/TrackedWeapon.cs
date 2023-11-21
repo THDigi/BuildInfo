@@ -15,14 +15,19 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         public IMyUserControllableGun Block { get; private set; }
         public IMyGunObject<MyGunBase> Gun { get; private set; }
         public MyWeaponDefinition WeaponDef { get; private set; }
-        public int ReloadUntilTick { get; private set; }
         public int ReloadDurationTicks { get; private set; }
+
+        /// <summary>
+        /// When the weapon finishes reloading.
+        /// <para>Compare with Main.Tick to determine if it's still reloading as it does not get reset to 0.</para>
+        /// </summary>
+        public int ReloadUntilTick { get; internal set; }
 
         /// <summary>
         /// How many rounds currently until gun has to reload.
         /// <para>NOTE: Does not indicate how much ammo is loaded in the gun!</para>
         /// </summary>
-        public int ShotsUntilReload { get; private set; }
+        public int ShotsUntilReload { get; internal set; }
 
         /// <summary>
         /// How many rounds max the gun can shoot until reload.
@@ -32,19 +37,22 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             get
             {
                 if(Gun.GunBase.IsAmmoProjectile)
-                    return projectileShotsInBurst;
+                    return ProjectileShotsInBurst;
 
                 if(Gun.GunBase.IsAmmoMissile)
-                    return missileShotsInBurst;
+                    return MissileShotsInBurst;
 
                 throw new Exception("Gun uses neither projectile nor missile?!");
             }
         }
 
-        private int projectileShotsInBurst;
-        private int missileShotsInBurst;
+        public int ProjectileShotsInBurst { get; private set; }
+        public int MissileShotsInBurst { get; private set; }
 
-        private long lastShotTime;
+        /// <summary>
+        /// Used to detect when the gun shoots; in DateTime ticks.
+        /// </summary>
+        public long LastShotTime { get; internal set; }
 
         public TrackedWeapon()
         {
@@ -69,21 +77,21 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
             if(WeaponDef.HasProjectileAmmoDefined)
             {
-                projectileShotsInBurst = WeaponDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed].ShotsInBurst;
-                ShotsUntilReload = projectileShotsInBurst;
+                ProjectileShotsInBurst = WeaponDef.WeaponAmmoDatas[(int)MyAmmoType.HighSpeed].ShotsInBurst;
+                ShotsUntilReload = ProjectileShotsInBurst;
             }
 
             if(WeaponDef.HasMissileAmmoDefined)
             {
-                missileShotsInBurst = WeaponDef.WeaponAmmoDatas[(int)MyAmmoType.Missile].ShotsInBurst;
-                ShotsUntilReload = missileShotsInBurst;
+                MissileShotsInBurst = WeaponDef.WeaponAmmoDatas[(int)MyAmmoType.Missile].ShotsInBurst;
+                ShotsUntilReload = MissileShotsInBurst;
             }
 
-            if(projectileShotsInBurst == 0 && missileShotsInBurst == 0)
+            if(ProjectileShotsInBurst == 0 && MissileShotsInBurst == 0)
                 return false;
 
             ReloadDurationTicks = (int)(Constants.TicksPerSecond * (WeaponDef.ReloadTime / 1000f));
-            lastShotTime = Gun.GunBase.LastShootTime.Ticks; // needed because it starts non-0 as it is serialized to save.
+            LastShotTime = Gun.GunBase.LastShootTime.Ticks; // needed because it starts non-0 as it is serialized to save.
             return true;
         }
 
@@ -98,38 +106,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             ReloadUntilTick = 0;
             ReloadDurationTicks = 0;
             ShotsUntilReload = 0;
-            projectileShotsInBurst = 0;
-            missileShotsInBurst = 0;
-            lastShotTime = 0;
-        }
-
-        public bool Update(int tick)
-        {
-            if(Block.MarkedForClose)
-                return false;
-
-            if(ReloadUntilTick != 0 && ReloadUntilTick < tick)
-            {
-                ReloadUntilTick = 0;
-            }
-
-            if(Gun.GunBase.LastShootTime.Ticks > lastShotTime)
-            {
-                lastShotTime = Gun.GunBase.LastShootTime.Ticks;
-
-                if(--ShotsUntilReload == 0)
-                {
-                    // NOTE: a bug in here and game code allows you to go over max shots by switching to other mag type (projectile<>missile).
-                    if(Gun.GunBase.IsAmmoProjectile)
-                        ShotsUntilReload = projectileShotsInBurst;
-                    else if(Gun.GunBase.IsAmmoMissile)
-                        ShotsUntilReload = missileShotsInBurst;
-
-                    ReloadUntilTick = tick + ReloadDurationTicks;
-                }
-            }
-
-            return true;
+            ProjectileShotsInBurst = 0;
+            MissileShotsInBurst = 0;
+            LastShotTime = 0;
         }
     }
 }

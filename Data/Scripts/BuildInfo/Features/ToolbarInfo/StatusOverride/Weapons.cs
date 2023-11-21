@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Weapons;
@@ -30,8 +31,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             Processor.AddStatus(type, Shoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
             Processor.AddGroupStatus(type, GroupShoot, "ShootOnce", "Shoot", "Shoot_On", "Shoot_Off");
         }
-
-        static Type MyEntityCapacitorComponentType = null;
 
         bool Shoot(StringBuilder sb, ToolbarItem item)
         {
@@ -64,10 +63,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             bool showAmmo = true;
 
-            ReloadTracker.TrackedWeapon weaponInfo = BuildInfoMod.Instance.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
-            if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
+            int tick = Processor.Main.Tick;
+            TrackedWeapon weaponInfo = Processor.Main.ReloadTracking.WeaponLookup.GetValueOrDefault(item.Block.EntityId, null);
+            if(weaponInfo != null && weaponInfo.ReloadUntilTick > tick)
             {
-                float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
+                float seconds = (weaponInfo.ReloadUntilTick - tick) / (float)Constants.TicksPerSecond;
                 sb.Append("R:").TimeFormat(seconds);
                 showAmmo = false;
             }
@@ -77,23 +77,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                 foreach(MyComponentBase comp in item.Block.Components)
                 {
-                    if(MyEntityCapacitorComponentType != null)
-                    {
-                        if(comp.GetType() == MyEntityCapacitorComponentType)
-                        {
-                            chargeComp = comp as IMyStoredPowerRatio;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if(comp.GetType().Name == "MyEntityCapacitorComponent") // HACK: prohibited...
-                        {
-                            MyEntityCapacitorComponentType = comp.GetType();
-                            chargeComp = comp as IMyStoredPowerRatio;
-                            break;
-                        }
-                    }
+                    chargeComp = comp as IMyStoredPowerRatio;
+                    if(chargeComp != null)
+                        break;
                 }
 
                 if(chargeComp != null && chargeComp.StoredPowerRatio < 1f)
@@ -132,11 +118,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
             int leastAmmo = int.MaxValue;
             int mostAmmo = 0;
 
-            Dictionary<long, ReloadTracker.TrackedWeapon> weaponLookup = BuildInfoMod.Instance.ReloadTracking.WeaponLookup;
+            int tick = Processor.Main.Tick;
+            var weaponLookup = Processor.Main.ReloadTracking.WeaponLookup;
+            var WCLookup = Processor.Main.CoreSystemsAPIHandler.Weapons;
 
             foreach(IMyUserControllableGun gunBlock in groupData.Blocks)
             {
-                if(BuildInfoMod.Instance.CoreSystemsAPIHandler.Weapons.ContainsKey(gunBlock.BlockDefinition))
+                if(WCLookup.ContainsKey(gunBlock.BlockDefinition))
                     continue;
 
                 if(!gunBlock.IsFunctional)
@@ -166,12 +154,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 }
                 else
                 {
-                    ReloadTracker.TrackedWeapon weaponInfo = weaponLookup.GetValueOrDefault(gunBlock.EntityId, null);
-                    if(weaponInfo != null && weaponInfo.ReloadUntilTick > 0)
+                    TrackedWeapon weaponInfo = weaponLookup.GetValueOrDefault(gunBlock.EntityId, null);
+                    if(weaponInfo != null && weaponInfo.ReloadUntilTick > tick)
                     {
                         reloading++;
 
-                        float seconds = (weaponInfo.ReloadUntilTick - BuildInfoMod.Instance.Tick) / (float)Constants.TicksPerSecond;
+                        float seconds = (weaponInfo.ReloadUntilTick - tick) / (float)Constants.TicksPerSecond;
                         minReloadTimeLeft = Math.Min(minReloadTimeLeft, seconds);
                     }
                     else
@@ -180,23 +168,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
                         foreach(MyComponentBase comp in gunBlock.Components)
                         {
-                            if(MyEntityCapacitorComponentType != null)
-                            {
-                                if(comp.GetType() == MyEntityCapacitorComponentType)
-                                {
-                                    chargeComp = comp as IMyStoredPowerRatio;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                if(comp.GetType().Name == "MyEntityCapacitorComponent") // HACK: prohibited...
-                                {
-                                    MyEntityCapacitorComponentType = comp.GetType();
-                                    chargeComp = comp as IMyStoredPowerRatio;
-                                    break;
-                                }
-                            }
+                            chargeComp = comp as IMyStoredPowerRatio;
+                            if(chargeComp != null)
+                                break;
                         }
 
                         if(chargeComp != null && chargeComp.StoredPowerRatio < 1f)

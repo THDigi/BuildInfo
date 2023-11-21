@@ -231,7 +231,7 @@ namespace Digi.BuildInfo.Features
                     int current = Math.Min(shotsLeft, totalAmmo);
                     int internalMagSize = weaponTracker.InternalMagazineCapacity;
 
-                    if(weaponTracker.ReloadUntilTick > 0)
+                    if(weaponTracker.ReloadUntilTick > Main.Tick)
                     {
                         ammoSB.Color(Color.Red).Append("Reloading");
                     }
@@ -402,7 +402,7 @@ namespace Digi.BuildInfo.Features
                     int shotsLeft = weaponTracker.ShotsUntilReload;
                     int current = Math.Min(shotsLeft, totalAmmo);
 
-                    if(weaponTracker.ReloadUntilTick > 0)
+                    if(weaponTracker.ReloadUntilTick > Main.Tick)
                         notifySB.Append("Reloading");
                     else
                         notifySB.Number(current);

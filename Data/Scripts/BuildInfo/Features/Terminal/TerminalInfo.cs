@@ -677,7 +677,7 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("Shots until reload: ");
 
-                if(weaponTracker.ReloadUntilTick > 0)
+                if(weaponTracker.ReloadUntilTick > Main.Tick)
                     info.Append("Reloading");
                 else
                     info.Append(weaponTracker.ShotsUntilReload);

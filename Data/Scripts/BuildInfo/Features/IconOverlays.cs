@@ -2,7 +2,7 @@
 using System.IO;
 using Sandbox.Definitions;
 
-namespace Digi.BuildInfo.Features.Tooltips
+namespace Digi.BuildInfo.Features
 {
     public class IconOverlays : ModComponent
     {
