@@ -62,7 +62,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             Block = gunBlock;
             Gun = gunBlock as IMyGunObject<MyGunBase>;
-            MyWeaponBlockDefinition blockDef = gunBlock.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+            MyWeaponBlockDefinition blockDef = gunBlock?.SlimBlock?.BlockDefinition as MyWeaponBlockDefinition;
             if(Gun == null || blockDef == null)
                 return false;
 
@@ -72,7 +72,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
             WeaponDef = wpDef;
 
-            if(WeaponDef.ReloadTime == 0)
+            if(WeaponDef.ReloadTime == 0 || !WeaponDef.HasAmmoMagazines())
                 return false;
 
             if(WeaponDef.HasProjectileAmmoDefined)

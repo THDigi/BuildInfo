@@ -4391,7 +4391,7 @@ namespace Digi.BuildInfo.Features
 
             if(gunWWF == null) // vanilla weapon system
             {
-                bool blockTypeCanReload = !Hardcoded.NoReloadTypes.Contains(def.Id.TypeId);
+                bool blockTypeCanReload = Hardcoded.ReloadableBlockTypes.Contains(def.Id.TypeId);
                 bool validWeapon = false;
                 bool hasAmmo = true;
                 bool hasZeroProjectiles = false;

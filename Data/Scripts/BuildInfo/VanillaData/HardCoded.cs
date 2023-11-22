@@ -29,7 +29,7 @@ namespace Digi.BuildInfo.VanillaData
         public static void CleanRefs()
         {
             GameDefinition = null;
-            NoReloadTypes = null;
+            ReloadableBlockTypes = null;
             PlatformIcon.List = null;
             ProgrammableBlock_DefaultScript = null;
             CustomTargetingOptionName = null;
@@ -304,10 +304,16 @@ namespace Digi.BuildInfo.VanillaData
         public const float SoundBlock_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SOUNDBLOCK; // 0.0002f
 
         // from <weapon>.CanShoot() taking ShotsInBurst into account.
-        public static HashSet<MyObjectBuilderType> NoReloadTypes = new HashSet<MyObjectBuilderType>()
+        public static HashSet<MyObjectBuilderType> ReloadableBlockTypes = new HashSet<MyObjectBuilderType>()
         {
-            typeof(MyObjectBuilder_InteriorTurret), // MyLargeInteriorBarrel.StartShooting()
-            typeof(MyObjectBuilder_SmallGatlingGun), // MySmallGatlingGun.CanShoot()
+            typeof(MyObjectBuilder_LargeGatlingTurret),
+            typeof(MyObjectBuilder_LargeMissileTurret),
+            typeof(MyObjectBuilder_SmallMissileLauncher),
+            typeof(MyObjectBuilder_SmallMissileLauncherReload),  
+
+            // HACK: these block types don't support reloading
+            //typeof(MyObjectBuilder_InteriorTurret), // MyLargeInteriorBarrel.StartShooting()
+            //typeof(MyObjectBuilder_SmallGatlingGun), // MySmallGatlingGun.CanShoot()
         };
 
         public static MyGameDefinition GameDefinition = GetGameDefinition();
