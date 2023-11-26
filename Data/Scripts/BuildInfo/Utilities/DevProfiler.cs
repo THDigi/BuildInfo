@@ -17,8 +17,6 @@ namespace Digi
 
         public const string NumberFormat = "0.#########";
 
-        public static readonly double TickFrequency = 10000000.0 / Stopwatch.Frequency;
-
         static DevProfiler()
         {
             if(!Stopwatch.IsHighResolution)
@@ -39,7 +37,8 @@ namespace Digi
         {
             long end = Stopwatch.GetTimestamp();
             long diff = end - Start;
-            TimeSpan timespan = TimeSpan.FromTicks((long)(diff * TickFrequency));
+            double tickMod = (double)TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency; // turn Stopwatch ticks per second into Timespan ticks per second
+            TimeSpan timespan = TimeSpan.FromTicks((long)(diff * tickMod));
 
             if(DataOut != null)
             {
