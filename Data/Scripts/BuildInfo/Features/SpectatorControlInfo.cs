@@ -75,7 +75,8 @@ namespace Digi.BuildInfo.Features
             #region Check if the HUD element should be shown
             bool visible = Main.TextAPI.IsEnabled
                 && Main.GameConfig.IsHudVisible // includes cursor check to avoid showing up in admin menu or respawn screen
-                && MyAPIGateway.Session.CameraController is MySpectatorCameraController;
+                && MyAPIGateway.Session.CameraController is MySpectatorCameraController
+                && MySpectator.Static.SpectatorCameraMovement == MySpectatorCameraMovementEnum.UserControlled; // only user spectator, ignoring other modes and mods using spec cam.
 
             if(Visible != visible)
             {
