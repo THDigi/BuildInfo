@@ -201,6 +201,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_HUD, null, Main.Config.UnderCrosshairMessages);
             AddSpacer(Category_HUD);
             SimpleToggle(Category_HUD, null, Main.Config.RelativeDampenerInfo);
+            SimpleToggle(Category_HUD, null, Main.Config.SpectatorControlInfo);
             SimpleToggle(Category_HUD, null, Main.Config.TurretHUD);
             SimpleToggle(Category_HUD, null, Main.Config.HudFontOverride);
             SimpleToggle(Category_HUD, null, Main.Config.BackpackBarOverride);

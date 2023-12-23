@@ -46,6 +46,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public BoolSetting TurretHUD;
         public BoolSetting RelativeDampenerInfo;
+        public BoolSetting SpectatorControlInfo;
 
         public BoolSetting BackpackBarOverride;
         public BoolSetting HealthOverride;
@@ -413,6 +414,10 @@ namespace Digi.BuildInfo.Features.Config
             RelativeDampenerInfo = new BoolSetting(Handler, "HUD: Relative Dampeners Info", true,
                 "Shows a centered HUD message when relative dampeners are set to a target and when they're disengaged from one.",
                 "Only shows if relative damps are enabled for new controlled entity (character, ship, etc).");
+
+            SpectatorControlInfo = new BoolSetting(Handler, "HUD: Spectator Control Info", true,
+                "Shows a box top-right with the current input multipliers, speed and some control hints.",
+                "Only shows up when you're controlling the spectator camera. Any other spectator mode is ignored");
 
             TurretHUD = new BoolSetting(Handler, "HUD: Show HUD+Ammo in Turret", true,
                 "Shows HUD, ammo and ship orientation while controlling a turret.");
