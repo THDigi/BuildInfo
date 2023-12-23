@@ -40,6 +40,8 @@ namespace Digi.BuildInfo.Systems
 
         public bool InModMenu { get; private set; }
 
+        public event Action<bool> InModMenuChanged;
+
         /// <summary>
         /// False if user chose to not allow TextAPI.
         /// </summary>
@@ -114,11 +116,13 @@ namespace Digi.BuildInfo.Systems
             if(!InModMenu && MyAPIGateway.Gui.ChatEntryVisible && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F2))
             {
                 InModMenu = true;
+                InModMenuChanged?.Invoke(InModMenu);
             }
 
             if(InModMenu && !MyAPIGateway.Gui.ChatEntryVisible)
             {
                 InModMenu = false;
+                InModMenuChanged?.Invoke(InModMenu);
             }
         }
 
