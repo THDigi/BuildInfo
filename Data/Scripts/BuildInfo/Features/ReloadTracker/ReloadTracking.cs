@@ -300,8 +300,16 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                 if(missile.LauncherId == 0 || !WeaponLookup.TryGetValue(missile.LauncherId, out tw))
                     return;
 
-                NextTickUpdate.Add(tw);
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+                //NextTickUpdate.Add(tw);
+                //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
+                // HACK: replaced above because gunbase.LastShootTime does not get set clientside for missile shoots (only projectiles)
+                // this however is bad if something else spawns a missile that isn't actually shot by the launcher
+                if(--tw.ShotsUntilReload == 0)
+                {
+                    tw.ShotsUntilReload = tw.MissileShotsInBurst;
+                    tw.ReloadUntilTick = Main.Tick + tw.ReloadDurationTicks;
+                }
             }
             catch(Exception e)
             {
@@ -327,6 +335,8 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                     //   not magazine size like it does on hand weapons.
 
                     MyGunBase gunbase = tw.Gun.GunBase;
+
+                    // WARNING: only gets set for projectile shots!
                     long lastShotTime = gunbase.LastShootTime.Ticks;
                     if(tw.LastShotTime < lastShotTime)
                     {

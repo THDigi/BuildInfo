@@ -92,6 +92,10 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
             ReloadDurationTicks = (int)(Constants.TicksPerSecond * (WeaponDef.ReloadTime / 1000f));
             LastShotTime = Gun.GunBase.LastShootTime.Ticks; // needed because it starts non-0 as it is serialized to save.
+
+            // FIXME: has the same issue game has with blocks spawned clientside after they've already fired some of the loaded mag.
+            // which does not get saved to OB so there's no way for clients to know how many rounds are left until it reloads serverside.
+
             return true;
         }
 
