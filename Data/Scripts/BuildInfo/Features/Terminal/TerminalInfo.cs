@@ -661,6 +661,8 @@ namespace Digi.BuildInfo.Features.Terminal
 
             int loadedAmmo = gun.GunBase.CurrentAmmo;
             int mags = gun.GunBase.GetInventoryAmmoMagazinesCount();
+
+            // FIXME: this is not synchronized properly
             MyAmmoMagazineDefinition magDef = gun.GunBase.CurrentAmmoMagazineDefinition;
 
             // assume one mag is loaded for simplicty sake

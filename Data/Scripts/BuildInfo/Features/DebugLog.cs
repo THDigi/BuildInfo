@@ -18,8 +18,8 @@ namespace Digi.BuildInfo.Features
         const int MessageExpireSeconds = 5;
         const double TextScale = 0.75;
 
-        private HudAPIv2.HUDMessage Text;
-        private Queue<LogMsg> LogList;
+        HudAPIv2.HUDMessage Text;
+        Queue<LogMsg> LogList;
 
         struct LogMsg
         {
@@ -41,10 +41,7 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            if(BuildInfoMod.IsDevMod)
-            {
-                Main.TextAPI.Detected += TextAPIDetected;
-            }
+            Main.TextAPI.Detected += TextAPIDetected;
         }
 
         public override void UnregisterComponent()
@@ -57,9 +54,6 @@ namespace Digi.BuildInfo.Features
 
         public static void ClearHUD(object caller)
         {
-            if(!BuildInfoMod.IsDevMod)
-                return;
-
             Queue<LogMsg> debugMsgs = BuildInfoMod.Instance?.DebugLog?.LogList;
             debugMsgs?.Clear();
             PrintHUD(caller, "(log cleared)");
@@ -67,12 +61,13 @@ namespace Digi.BuildInfo.Features
 
         public static void PrintHUD(object caller, string message, bool log = false)
         {
-            if(!BuildInfoMod.IsDevMod || BuildInfoMod.Instance?.DebugLog == null)
+            DebugLog instance = BuildInfoMod.Instance?.DebugLog;
+            if(instance == null)
                 return;
 
-            Queue<LogMsg> debugMsgs = BuildInfoMod.Instance.DebugLog.LogList;
+            Queue<LogMsg> debugMsgs = instance.LogList;
             if(debugMsgs == null)
-                BuildInfoMod.Instance.DebugLog.LogList = debugMsgs = new Queue<LogMsg>(MaxMessages);
+                instance.LogList = debugMsgs = new Queue<LogMsg>(MaxMessages);
 
             if(debugMsgs.Count > MaxMessages)
                 debugMsgs.Dequeue();
@@ -81,7 +76,7 @@ namespace Digi.BuildInfo.Features
 
             debugMsgs.Enqueue(new LogMsg(callerName, message));
 
-            BuildInfoMod.Instance.DebugLog.UpdateText();
+            instance.UpdateText();
 
             if(log)
                 Log.Info($"{callerName}: {message}");

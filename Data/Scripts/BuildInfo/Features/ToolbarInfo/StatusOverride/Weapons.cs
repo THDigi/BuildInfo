@@ -57,6 +57,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(ammo == 0)
             {
+                // TODO: in MP this can show up when weapon has other ammo
+                // probably because the gun clientside isn't very aware of the selected magazine type
+
                 sb.Append(IconAlert).Append("NoAmmo");
                 return true;
             }
@@ -204,7 +207,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
 
             if(noAmmo == total)
             {
-                // TODO: what if the weapon has multiple magazines and it's only out of this type but has other types in inv?
                 sb.Append(IconAlert).Append("NoAmmo");
                 return true;
             }
