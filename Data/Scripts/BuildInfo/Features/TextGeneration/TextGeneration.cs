@@ -2123,7 +2123,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 SimpleTooltip("Weld and grind times are for lowest tier tools and non-enemy blocks."
-                            + $"\nFor blocks owned by enemies, grind time is multiplied by {MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
+                            + $"\nFor blocks owned by enemies grind speed is multiplied by {MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
