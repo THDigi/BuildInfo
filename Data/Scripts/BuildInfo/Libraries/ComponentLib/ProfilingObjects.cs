@@ -10,9 +10,11 @@
 
     public class ProfileMeasure
     {
+        public bool First = true; // ignore the very first measurement
         public double Min = double.MaxValue;
         public double Max = double.MinValue;
         public double MovingAvg = 0;
+        public double LastRead = 0;
     }
 
     public struct ProfileData

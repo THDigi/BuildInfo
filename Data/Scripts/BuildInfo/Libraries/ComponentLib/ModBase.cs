@@ -337,9 +337,15 @@ namespace Digi.ComponentLib
                                 Stopwatch.Stop();
                                 double ms = Stopwatch.Elapsed.TotalMilliseconds;
                                 ProfileMeasure profiled = comp.Profiled.MeasuredInput;
-                                profiled.Min = Math.Min(profiled.Min, ms);
-                                profiled.Max = Math.Max(profiled.Max, ms);
-                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                if(!profiled.First)
+                                {
+                                    profiled.LastRead = ms;
+                                    profiled.Min = Math.Min(profiled.Min, ms);
+                                    profiled.Max = Math.Max(profiled.Max, ms);
+                                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                }
+                                else
+                                    profiled.First = false;
                             }
                             catch(Exception e)
                             {
@@ -377,9 +383,15 @@ namespace Digi.ComponentLib
                     StopwatchRoot.Stop();
                     double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
                     ProfileMeasure profiled = RootMeasurements.MeasuredInput;
-                    profiled.Min = Math.Min(profiled.Min, ms);
-                    profiled.Max = Math.Max(profiled.Max, ms);
-                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    if(!profiled.First)
+                    {
+                        profiled.LastRead = ms;
+                        profiled.Min = Math.Min(profiled.Min, ms);
+                        profiled.Max = Math.Max(profiled.Max, ms);
+                        profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    }
+                    else
+                        profiled.First = false;
                 }
             }
             catch(Exception e)
@@ -435,9 +447,15 @@ namespace Digi.ComponentLib
                                 Stopwatch.Stop();
                                 double ms = Stopwatch.Elapsed.TotalMilliseconds;
                                 ProfileMeasure profiled = comp.Profiled.MeasuredBeforeSim;
-                                profiled.Min = Math.Min(profiled.Min, ms);
-                                profiled.Max = Math.Max(profiled.Max, ms);
-                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                if(!profiled.First)
+                                {
+                                    profiled.LastRead = ms;
+                                    profiled.Min = Math.Min(profiled.Min, ms);
+                                    profiled.Max = Math.Max(profiled.Max, ms);
+                                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                }
+                                else
+                                    profiled.First = false;
                             }
                             catch(Exception e)
                             {
@@ -475,9 +493,15 @@ namespace Digi.ComponentLib
                     StopwatchRoot.Stop();
                     double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
                     ProfileMeasure profiled = RootMeasurements.MeasuredBeforeSim;
-                    profiled.Min = Math.Min(profiled.Min, ms);
-                    profiled.Max = Math.Max(profiled.Max, ms);
-                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    if(!profiled.First)
+                    {
+                        profiled.LastRead = ms;
+                        profiled.Min = Math.Min(profiled.Min, ms);
+                        profiled.Max = Math.Max(profiled.Max, ms);
+                        profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    }
+                    else
+                        profiled.First = false;
                 }
             }
             catch(Exception e)
@@ -533,9 +557,15 @@ namespace Digi.ComponentLib
                                 Stopwatch.Stop();
                                 double ms = Stopwatch.Elapsed.TotalMilliseconds;
                                 ProfileMeasure profiled = comp.Profiled.MeasuredAfterSim;
-                                profiled.Min = Math.Min(profiled.Min, ms);
-                                profiled.Max = Math.Max(profiled.Max, ms);
-                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                if(!profiled.First)
+                                {
+                                    profiled.LastRead = ms;
+                                    profiled.Min = Math.Min(profiled.Min, ms);
+                                    profiled.Max = Math.Max(profiled.Max, ms);
+                                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                }
+                                else
+                                    profiled.First = false;
                             }
                             catch(Exception e)
                             {
@@ -573,9 +603,15 @@ namespace Digi.ComponentLib
                     StopwatchRoot.Stop();
                     double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
                     ProfileMeasure profiled = RootMeasurements.MeasuredAfterSim;
-                    profiled.Min = Math.Min(profiled.Min, ms);
-                    profiled.Max = Math.Max(profiled.Max, ms);
-                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    if(!profiled.First)
+                    {
+                        profiled.LastRead = ms;
+                        profiled.Min = Math.Min(profiled.Min, ms);
+                        profiled.Max = Math.Max(profiled.Max, ms);
+                        profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    }
+                    else
+                        profiled.First = false;
                 }
             }
             catch(Exception e)
@@ -614,9 +650,15 @@ namespace Digi.ComponentLib
                                 Stopwatch.Stop();
                                 double ms = Stopwatch.Elapsed.TotalMilliseconds;
                                 ProfileMeasure profiled = comp.Profiled.MeasuredDraw;
-                                profiled.Min = Math.Min(profiled.Min, ms);
-                                profiled.Max = Math.Max(profiled.Max, ms);
-                                profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                if(!profiled.First)
+                                {
+                                    profiled.LastRead = ms;
+                                    profiled.Min = Math.Min(profiled.Min, ms);
+                                    profiled.Max = Math.Max(profiled.Max, ms);
+                                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                                }
+                                else
+                                    profiled.First = false;
                             }
                             catch(Exception e)
                             {
@@ -654,9 +696,15 @@ namespace Digi.ComponentLib
                     StopwatchRoot.Stop();
                     double ms = StopwatchRoot.Elapsed.TotalMilliseconds;
                     ProfileMeasure profiled = RootMeasurements.MeasuredDraw;
-                    profiled.Min = Math.Min(profiled.Min, ms);
-                    profiled.Max = Math.Max(profiled.Max, ms);
-                    profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    if(!profiled.First)
+                    {
+                        profiled.LastRead = ms;
+                        profiled.Min = Math.Min(profiled.Min, ms);
+                        profiled.Max = Math.Max(profiled.Max, ms);
+                        profiled.MovingAvg = (profiled.MovingAvg * (1 - NewMeasureWeight)) + (ms * NewMeasureWeight);
+                    }
+                    else
+                        profiled.First = false;
                 }
 
                 OnDrawEnd?.Invoke();

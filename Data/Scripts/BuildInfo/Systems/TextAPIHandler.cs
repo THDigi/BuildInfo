@@ -106,9 +106,15 @@ namespace Digi.BuildInfo.Systems
             {
                 double ms = PerFrameDrawCostMs;
                 ProfileMeasure profiled = DrawCost;
-                profiled.Min = Math.Min(profiled.Min, ms);
-                profiled.Max = Math.Max(profiled.Max, ms);
-                profiled.MovingAvg = (profiled.MovingAvg * (1 - ModBase<BuildInfoMod>.NewMeasureWeight)) + (ms * ModBase<BuildInfoMod>.NewMeasureWeight);
+                if(!profiled.First)
+                {
+                    profiled.LastRead = ms;
+                    profiled.Min = Math.Min(profiled.Min, ms);
+                    profiled.Max = Math.Max(profiled.Max, ms);
+                    profiled.MovingAvg = (profiled.MovingAvg * (1 - ModBase<BuildInfoMod>.NewMeasureWeight)) + (ms * ModBase<BuildInfoMod>.NewMeasureWeight);
+                }
+                else
+                    profiled.First = false;
 
                 PerFrameDrawCostMs = 0;
             }
