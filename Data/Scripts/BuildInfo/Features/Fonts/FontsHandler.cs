@@ -25,6 +25,7 @@ namespace Digi.BuildInfo.Features
 
         public const string TextAPI_NormalFont = "white";
         public const string TextAPI_OutlinedFont = BI_SEOutlined;
+        public const string TextAPI_MonospaceFont = BI_Monospace;
 
         // these are all only in textAPI version of SEOutlined
         public const int IconStartingChar = '\ue200';
@@ -45,7 +46,7 @@ namespace Digi.BuildInfo.Features
         static readonly bool DoExportSpecialChars = false;
 
         // single-use for parsing, do not make public
-        List<FontInfo> Fonts = new List<FontInfo>()
+        List<FontInfo> TextAPIFonts = new List<FontInfo>()
         {
             new FontInfo(BI_SEOutlined, $@"Fonts\{BI_SEOutlined}\FontDataPA.xml"),
             new FontInfo(BI_Monospace, $@"Fonts\{BI_Monospace}\BIMonospace.xml"),
@@ -99,12 +100,12 @@ namespace Digi.BuildInfo.Features
                 Task.Wait(true);
             }
 
-            AddFonts();
+            AddTextAPIFonts();
         }
 
         void BackgroundTask()
         {
-            foreach(FontInfo fontInfo in Fonts)
+            foreach(FontInfo fontInfo in TextAPIFonts)
             {
                 if(Unloaded)
                     break;
@@ -151,9 +152,9 @@ namespace Digi.BuildInfo.Features
                 return;
         }
 
-        void AddFonts()
+        void AddTextAPIFonts()
         {
-            foreach(FontInfo fontInfo in Fonts)
+            foreach(FontInfo fontInfo in TextAPIFonts)
             {
                 try
                 {
@@ -194,7 +195,7 @@ namespace Digi.BuildInfo.Features
                 }
             }
 
-            Fonts = null;
+            TextAPIFonts = null;
         }
 
         void FontAdded(HudAPIv2.FontDefinition font, FontInfo fontInfo)
