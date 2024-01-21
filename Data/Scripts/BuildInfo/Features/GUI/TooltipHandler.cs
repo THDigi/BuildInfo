@@ -90,6 +90,8 @@ namespace Digi.BuildInfo.Features.GUI
             Vector2D pos = mouseOnScreen;
             Vector2D offset = new Vector2D(tooltipOffset, -tooltipOffset); // top-left pivot
 
+            // TODO: needs to limit bottom-left chat too... maybe change it to be BB intersection and if it hits it sends the text box to a certain alignment on a certain axis
+
             if((mouseOnScreen.X + absTextSize.X + tooltipOffset) > ScreenLimitMax.X) // box collides with right side of screen
             {
                 //offset.X = -TextSize.X - TooltipOffset; // flip pivot to right, so it's on the left of the mouse

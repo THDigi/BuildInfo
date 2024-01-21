@@ -136,7 +136,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
 
             Category_Mod = new MenuRootCategory(BuildInfoMod.ModName, MenuFlag.PlayerMenu, BuildInfoMod.ModName + " Settings");
 
-            new ItemButton(Category_Mod, $"Legend: { Utils.ColorTag(ValueColorDefault)}(Default) {Utils.ColorTag(ValueColorChanged)}(Changed)", () => { });
+            new ItemButton(Category_Mod, $"Legend: {Utils.ColorTag(ValueColorDefault)}(Default) {Utils.ColorTag(ValueColorChanged)}(Changed)", () => { });
 
             new ItemButton(Category_Mod, "Help Window", () =>
             {

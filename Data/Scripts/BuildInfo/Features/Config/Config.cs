@@ -15,6 +15,7 @@ using static Digi.Input.InputLib;
 
 namespace Digi.BuildInfo.Features.Config
 {
+    // TODO: default everything off and ask first time users if they want to configure things, then open a quick features UI to turn things on?
     public class Config : ModComponent
     {
         public readonly ConfigHandler Handler;
