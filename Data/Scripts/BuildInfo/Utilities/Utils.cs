@@ -282,7 +282,7 @@ namespace Digi.BuildInfo.Utilities
 
                 // fix for jittery overlays when aiming at a grid.
                 Vector3D addPosition;
-                MyCubeBuilder.Static.GetAddPosition(out addPosition);
+                MyCubeBuilder.Static.GetAddPosition(out addPosition); // NOTE: does not get updated if block gizmo is invisible (like limiting BuildingDistLargeSurvivalCharacter/etc)
                 matrix.Translation = addPosition;
 
                 if(DebugMessages)

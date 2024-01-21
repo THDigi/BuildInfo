@@ -11,14 +11,29 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
-            Main.ProfilerDisplay.Show = !Main.ProfilerDisplay.Show;
-            PrintChat($"Profiling {(Main.ProfilerDisplay.Show ? "started" : "stopped")}", FontsHandler.WhiteSh);
+            bool advancedArg = args.Get(0)?.Equals("advanced", System.StringComparison.OrdinalIgnoreCase) ?? false;
+
+            // doing /bi profile then /bi profile advanced would maintain it visible
+            // then doing /bi profile with or without advanced will turn it off
+
+            if(advancedArg && !Main.ProfilerDisplay.Advanced)
+            {
+                Main.ProfilerDisplay.Advanced = true;
+                Main.ProfilerDisplay.Show = true;
+                PrintChat("Profiling shown (+advanced)", FontsHandler.WhiteSh);
+            }
+            else
+            {
+                Main.ProfilerDisplay.Advanced = false;
+                Main.ProfilerDisplay.Show = !Main.ProfilerDisplay.Show;
+                PrintChat($"Profiling {(Main.ProfilerDisplay.Show ? "shown" : "hidden")}", FontsHandler.WhiteSh);
+            }
         }
 
         public override void PrintHelp(StringBuilder sb)
         {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Starts/stops profiling this mod to identify high CPU usage areas.").NewLine();
+            sb.Append(MainAlias).Append(" [advanced]").NewLine();
+            sb.Append("  Shows/hides profiling info for this mod to help identify CPU impacts.").NewLine();
         }
     }
 }
