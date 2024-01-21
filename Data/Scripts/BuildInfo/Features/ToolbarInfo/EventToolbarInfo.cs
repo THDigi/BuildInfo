@@ -80,10 +80,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                     ConfigLib.FloatSetting setting = Main.Config.EventToolbarInfoScale;
                     float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
                     scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
-                    setting.Value = (float)Math.Round(scale, 3);
+                    setting.SetValue((float)Math.Round(scale, 3));
                 }
 
-                Main.Config.EventToolbarInfoPosition.Value = newPos;
+                Main.Config.EventToolbarInfoPosition.SetValue(newPos);
                 UpdateFromConfig();
             };
             BoxDrag.FinishedDragging += (finalPos) =>

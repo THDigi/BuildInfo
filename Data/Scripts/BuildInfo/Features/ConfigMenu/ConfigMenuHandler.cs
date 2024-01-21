@@ -161,7 +161,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             #region TextBox
             SimpleEnumCycle(Category_Textbox, null, Main.Config.TextShow, execOnCycle: (v) =>
             {
-                Main.Config.TextShow.Value = v;
+                Main.Config.TextShow.SetValue(v);
                 bool off = (v == 0);
                 bool forceShow = (!off && Main.EquipmentMonitor.BlockDef == null);
                 UpdateTextBox(redraw: !off, drawTicks: (forceShow ? TOGGLE_FORCEDRAWTICKS : 0));
@@ -249,11 +249,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             groupToolbarLabels.Add(new ItemButton(Category_Toolbar, "ToolbarInfo preset - Left Side HUD",
                 () =>
                 {
-                    Main.Config.ToolbarStyleMode.Value = (int)ToolbarStyle.SingleList;
-                    Main.Config.ToolbarLabelsPosition.Value = new Vector2D(-0.715, -0.7069);
-                    Main.Config.ToolbarLabelsOffsetForInvBar.Value = new Vector2D(0, 0);
-                    Main.Config.ToolbarLabelsScale.Value = 0.9f;
-                    Main.Config.ToolbarLabelsHeader.Value = false;
+                    Main.Config.ToolbarStyleMode.SetValue((int)ToolbarStyle.SingleList);
+                    Main.Config.ToolbarLabelsPosition.SetValue(new Vector2D(-0.715, -0.7069));
+                    Main.Config.ToolbarLabelsOffsetForInvBar.SetValue(new Vector2D(0, 0));
+                    Main.Config.ToolbarLabelsScale.SetValue(0.9f);
+                    Main.Config.ToolbarLabelsHeader.SetValue(false);
                     Main.Config.Save();
                     ShowNotify($"Set ToolbarInfo box to Left Side HUD preset.", 3000);
                     RefreshAll();
@@ -369,17 +369,17 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     if(val < 0)
                         val = BackgroundOpacitySetting.ValueHUD;
 
-                    Main.Config.TextAPIBackgroundOpacity.Value = val;
+                    Main.Config.TextAPIBackgroundOpacity.SetValue(val);
                     UpdateTextBox(redraw: false);
                 },
                 sliding: (val) =>
                 {
-                    Main.Config.TextAPIBackgroundOpacity.Value = val;
+                    Main.Config.TextAPIBackgroundOpacity.SetValue(val);
                     UpdateTextBox(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (orig) =>
                 {
-                    Main.Config.TextAPIBackgroundOpacity.Value = orig;
+                    Main.Config.TextAPIBackgroundOpacity.SetValue(orig);
                     UpdateTextBox(save: false);
                 },
                 format: (v) => (v < 0 ? "HUD" : (v * 100).ToString() + "%"));
@@ -394,7 +394,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => Main.Config.TextAPICustomStyling.Value,
                 setter: (v) =>
                 {
-                    Main.Config.TextAPICustomStyling.Value = v;
+                    Main.Config.TextAPICustomStyling.SetValue(v);
                     groupCustomStyling.SetInteractable(v);
                     UpdateTextBox(drawTicks: TOGGLE_FORCEDRAWTICKS);
                 },
@@ -410,22 +410,22 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => Main.Config.TextAPIScreenPosition.Value,
                 setter: (pos) =>
                 {
-                    Main.Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.SetValue(pos);
                     UpdateTextBox(redraw: true);
                 },
                 selected: (pos) =>
                 {
-                    Main.Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.SetValue(pos);
                     UpdateTextBox(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 moving: (pos) =>
                 {
-                    Main.Config.TextAPIScreenPosition.Value = pos;
+                    Main.Config.TextAPIScreenPosition.SetValue(pos);
                     UpdateTextBox(save: false, redraw: true, moveHint: true, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (origPos) =>
                 {
-                    Main.Config.TextAPIScreenPosition.Value = origPos;
+                    Main.Config.TextAPIScreenPosition.SetValue(origPos);
                     UpdateTextBox(save: false, redraw: false);
                 });
 
@@ -440,17 +440,17 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 setter: (val) =>
                 {
-                    setting.Value = val;
+                    setting.SetValue(val);
                     UpdateTextBox(redraw: false);
                 },
                 sliding: (val) =>
                 {
-                    setting.Value = val;
+                    setting.SetValue(val);
                     UpdateTextBox(save: false, drawTicks: SLIDERS_FORCEDRAWTICKS);
                 },
                 cancelled: (orig) =>
                 {
-                    setting.Value = orig;
+                    setting.SetValue(orig);
                     UpdateTextBox(save: false);
                 });
 
@@ -539,7 +539,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ShipToolInventoryBar.Shown)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                     }
                     else
                     {
@@ -550,7 +550,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ShipToolInventoryBar.Shown)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                     }
                     else
                     {
@@ -561,7 +561,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ShipToolInventoryBar.Shown)
                     {
-                        setting.Value = origPos;
+                        setting.SetValue(origPos);
                         ShowNotify("Cancelled changes", 3000);
                     }
                     else
@@ -573,7 +573,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ShipToolInventoryBar.Shown)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                         Main.Config.Save();
                         ShowNotify("Saved to config", 3000);
                     }
@@ -595,7 +595,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ToolbarLabelRender.MustBeVisible)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                     }
                     else
                     {
@@ -606,7 +606,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ToolbarLabelRender.MustBeVisible)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                     }
                     else
                     {
@@ -617,7 +617,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ToolbarLabelRender.MustBeVisible)
                     {
-                        setting.Value = origPos;
+                        setting.SetValue(origPos);
                         ShowNotify("Cancelled changes", 3000);
                     }
                     else
@@ -629,7 +629,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 {
                     if(Main.ToolbarLabelRender.MustBeVisible)
                     {
-                        setting.Value = pos;
+                        setting.SetValue(pos);
                         Main.Config.Save();
                         ShowNotify("Saved to config", 3000);
                     }
@@ -704,7 +704,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 setter: (v) =>
                 {
-                    setting.Value = v;
+                    setting.SetValue(v);
                     UpdateTextBox(redraw: false);
                     setGroupInteractable?.SetInteractable(setting.Value);
                     callOnSet?.Invoke(v);
@@ -732,16 +732,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => (float)setting.Value.X,
                 setter: (val) =>
                 {
-                    setting.Value = new Vector2D(val, setting.Value.Y);
+                    setting.SetValue(new Vector2D(val, setting.Value.Y));
                     Main.Config.Save();
                 },
                 sliding: (val) =>
                 {
-                    setting.Value = new Vector2D(val, setting.Value.Y);
+                    setting.SetValue(new Vector2D(val, setting.Value.Y));
                 },
                 cancelled: (orig) =>
                 {
-                    setting.Value = new Vector2D(orig, setting.Value.Y);
+                    setting.SetValue(new Vector2D(orig, setting.Value.Y));
                 },
                 dialogTitle: dialogTitle);
 
@@ -749,16 +749,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => (float)setting.Value.Y,
                 setter: (val) =>
                 {
-                    setting.Value = new Vector2D(setting.Value.X, val);
+                    setting.SetValue(new Vector2D(setting.Value.X, val));
                     Main.Config.Save();
                 },
                 sliding: (val) =>
                 {
-                    setting.Value = new Vector2D(setting.Value.X, val);
+                    setting.SetValue(new Vector2D(setting.Value.X, val));
                 },
                 cancelled: (orig) =>
                 {
-                    setting.Value = new Vector2D(setting.Value.X, orig);
+                    setting.SetValue(new Vector2D(setting.Value.X, orig));
                 },
                 dialogTitle: dialogTitle);
 
@@ -774,16 +774,16 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 sliding: (val) =>
                 {
-                    setting.Value = val;
+                    setting.SetValue(val);
                 },
                 cancelled: (orig) =>
                 {
-                    setting.Value = orig;
+                    setting.SetValue(orig);
                     ShowNotify("Cancelled changes", 3000);
                 },
                 setter: (val) =>
                 {
-                    setting.Value = val;
+                    setting.SetValue(val);
                     Main.Config.Save();
                     ShowNotify("Saved to config", 3000);
                 },
@@ -800,11 +800,11 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 sliding: (val) =>
                 {
-                    setting.Value = val;
+                    setting.SetValue(val);
                 },
                 cancelled: (orig) =>
                 {
-                    setting.Value = orig;
+                    setting.SetValue(orig);
                     ShowNotify("Cancelled changes", 3000);
                 },
                 setter: (val) =>
@@ -812,7 +812,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                     if(val < smallerThanForOff)
                         val = offValue;
 
-                    setting.Value = val;
+                    setting.SetValue(val);
                     Main.Config.Save();
                     ShowNotify("Saved to config", 3000);
                     onSet?.Invoke(val);
@@ -831,7 +831,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 setter: (combination) =>
                 {
-                    setting.Value = combination;
+                    setting.SetValue(combination);
                     UpdateTextBox(redraw: false);
                     updateGroupOnSet?.Update();
                 },
@@ -875,7 +875,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => setting.Value,
                 setter: (v) =>
                 {
-                    setting.Value = v;
+                    setting.SetValue(v);
                     setGroupInteractable?.SetInteractable(v != offValue);
                     execOnCycle?.Invoke(v);
                     Main.Config.Save();

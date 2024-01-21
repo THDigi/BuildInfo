@@ -89,7 +89,7 @@ namespace Digi.ConfigLib
                 {
                     if(data.Value == setValue.Value)
                     {
-                        Value = setValue.Value;
+                        SetValue(setValue.Value);
                         return;
                     }
                 }

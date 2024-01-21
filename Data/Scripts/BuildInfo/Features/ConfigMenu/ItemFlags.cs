@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
                 getter: () => Setting.Value == allValue,
                 setter: (v) =>
                 {
-                    Setting.Value = (v ? allValue : 0);
+                    Setting.SetValue(v ? allValue : 0);
                     OnValueSet?.Invoke(allValue, v);
                     individualToggles.Update();
                 },

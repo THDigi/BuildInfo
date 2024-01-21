@@ -277,7 +277,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 newPos = Vector2D.Clamp(newPos, -Vector2D.One, Vector2D.One);
 
-                Main.Config.TerminalButtonsPosition.Value = newPos;
+                Main.Config.TerminalButtonsPosition.SetValue(newPos);
 
                 int deltaScroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
                 if(deltaScroll != 0)
@@ -290,7 +290,7 @@ namespace Digi.BuildInfo.Features.Terminal
                     else if(deltaScroll < 0)
                         scale -= amount;
 
-                    Main.Config.TerminalButtonsScale.Value = (float)Math.Round(MathHelper.Clamp(scale, Main.Config.TerminalButtonsScale.Min, Main.Config.TerminalButtonsScale.Max), 2);
+                    Main.Config.TerminalButtonsScale.SetValue((float)Math.Round(MathHelper.Clamp(scale, Main.Config.TerminalButtonsScale.Min, Main.Config.TerminalButtonsScale.Max), 2));
                 }
 
                 RefreshPositions();

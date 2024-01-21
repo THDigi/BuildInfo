@@ -58,12 +58,12 @@ namespace Digi.ConfigLib
             if(valueOnKeyLine.Equals("none", StringComparison.OrdinalIgnoreCase))
             {
                 _ignoreValues = true;
-                Value = 0;
+                SetValue(0);
             }
             else if(valueOnKeyLine.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
                 _ignoreValues = true;
-                Value = 0;
+                int flags = 0;
                 int[] values = (int[])Enum.GetValues(typeof(TFlags));
 
                 foreach(int value in values)
@@ -71,13 +71,15 @@ namespace Digi.ConfigLib
                     if(value == 0 || value == int.MaxValue)
                         continue;
 
-                    Value |= value;
+                    flags |= value;
                 }
+
+                SetValue(flags);
             }
             else if(valueOnKeyLine.Equals("default", StringComparison.OrdinalIgnoreCase))
             {
                 _ignoreValues = true;
-                Value = DefaultValue;
+                SetValue(DefaultValue);
             }
         }
 
@@ -114,9 +116,9 @@ namespace Digi.ConfigLib
                     int[] values = (int[])Enum.GetValues(typeof(TFlags));
 
                     if(set)
-                        Value = Value | values[i];
+                        SetValue(Value | values[i]);
                     else
-                        Value = Value & ~values[i];
+                        SetValue(Value & ~values[i]);
 
                     return;
                 }
@@ -161,9 +163,9 @@ namespace Digi.ConfigLib
         public void Set(int flag, bool set)
         {
             if(set)
-                Value |= flag;
+                SetValue(Value | flag);
             else
-                Value &= ~flag;
+                SetValue(Value & ~flag);
         }
 
         public bool IsSet(int flag)

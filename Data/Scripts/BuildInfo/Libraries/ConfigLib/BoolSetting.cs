@@ -14,7 +14,7 @@ namespace Digi.ConfigLib
             error = null;
             bool tmp;
             if(bool.TryParse(valueString, out tmp))
-                Value = tmp;
+                SetValue(tmp);
             else
                 error = "expected 'true' or 'false'";
         }

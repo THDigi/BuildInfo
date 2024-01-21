@@ -45,14 +45,14 @@ namespace Digi.BuildInfo.Features.Config
 
             if(valueString.IndexOf("true", StringComparison.OrdinalIgnoreCase) != -1)
             {
-                Value = DefaultValue;
+                SetValue(DefaultValue);
                 Log.Info($"Old '{valueString}' value for '{Name}' got converted to {Value.ToString()} ({ValueName})");
                 return;
             }
 
             if(valueString.IndexOf("false", StringComparison.OrdinalIgnoreCase) != -1)
             {
-                Value = (int)TextShowMode.Off;
+                SetValue((int)TextShowMode.Off);
                 Log.Info($"Old '{valueString}' value for '{Name}' got converted to {Value.ToString()} ({ValueName})");
                 return;
             }

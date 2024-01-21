@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.Terminal
             Drag.BoxDeselected += () => MoveIcon.BillBoardColor = Color.White;
             Drag.Dragging += (newPos) =>
             {
-                Main.Config.TerminalMultiDetailedInfoPosition.Value = newPos;
+                Main.Config.TerminalMultiDetailedInfoPosition.SetValue(newPos);
 
                 // TODO: scale setting?
                 //int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
@@ -67,7 +67,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 //    ConfigLib.FloatSetting setting = Main.Config.TerminalMultiDetailedInfoScale???;
                 //    float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
                 //    scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
-                //    setting.Value = (float)Math.Round(scale, 3);
+                //    setting.SetValue((float)Math.Round(scale, 3));
                 //}
 
                 RefreshPositions();

@@ -34,7 +34,7 @@ namespace Digi.BuildInfo.Features
             {
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
 
-                Main.Config.ModVersion.Value = Constants.ModVersion;
+                Main.Config.ModVersion.SetValue(Constants.ModVersion);
                 Main.Config.Save();
                 Utils.ShowColoredChatMessage(BuildInfoMod.ModName, "New notable changes! For changelog type in chat: /bi changelog", FontsHandler.GreenSh);
             }

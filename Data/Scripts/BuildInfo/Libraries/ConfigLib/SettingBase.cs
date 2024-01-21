@@ -7,34 +7,10 @@ namespace Digi.ConfigLib
     {
         public string Name { get; private set; }
 
-        private T _value;
-        public T Value
-        {
-            get { return _value; }
-            set
-            {
-                T oldValue = _value;
-                _value = value;
-
-                try
-                {
-                    ValueAssigned?.Invoke(oldValue, _value, this);
-                }
-                catch(Exception e)
-                {
-                    Log.Error(e);
-                }
-
-                try
-                {
-                    ConfigInstance?.InvokeSettingValueSet(this);
-                }
-                catch(Exception e)
-                {
-                    Log.Error(e);
-                }
-            }
-        }
+        /// <summary>
+        /// Its current value. Use <see cref="SetValue(T)"/> to change it.
+        /// </summary>
+        public T Value { get; private set; }
 
         public readonly T DefaultValue;
         public bool IsMultiLine { get; protected set; }
@@ -61,6 +37,34 @@ namespace Digi.ConfigLib
             CommentLines = commentLines;
 
             configInstance.Settings.Add(Name, this);
+        }
+
+        /// <summary>
+        /// Sets the value for this setting and invokes this setting's <see cref="ValueAssigned"/> as well as the global <see cref="ConfigHandler.SettingValueSet"/>.
+        /// <br />It will not automatically save the config.
+        /// </summary>
+        public void SetValue(T newValue)
+        {
+            T oldValue = Value;
+            Value = newValue;
+
+            try
+            {
+                ValueAssigned?.Invoke(oldValue, newValue, this);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
+
+            try
+            {
+                ConfigInstance?.InvokeSettingValueSet(this);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         public void AddCompatibilityNames(string name1, string name2 = null, string name3 = null, string name4 = null, string name5 = null, string name6 = null)

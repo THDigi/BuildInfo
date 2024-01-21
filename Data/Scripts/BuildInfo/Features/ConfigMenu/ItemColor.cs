@@ -43,7 +43,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                Setting.Value = color;
+                Setting.SetValue(color);
                 Item.InitialColor = color;
                 Apply?.Invoke();
                 UpdateTitle();
@@ -58,7 +58,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                Setting.Value = color;
+                Setting.SetValue(color);
                 Preview?.Invoke();
             }
             catch(Exception e)
@@ -71,7 +71,7 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         {
             try
             {
-                Setting.Value = Item.InitialColor;
+                Setting.SetValue(Item.InitialColor);
                 Preview?.Invoke();
                 UpdateTitle();
             }

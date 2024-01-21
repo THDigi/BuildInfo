@@ -15,7 +15,7 @@ namespace Digi.BuildInfo.Features.Config
         {
             Combination combination = Combination.Create(Name, valueString, out error);
             if(combination != null)
-                Value = combination;
+                SetValue(combination);
             else if(error == null)
                 error = "Unknown error";
         }

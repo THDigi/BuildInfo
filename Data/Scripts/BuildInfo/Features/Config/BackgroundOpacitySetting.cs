@@ -20,7 +20,7 @@ namespace Digi.BuildInfo.Features.Config
 
             if(valueString.ContainsIgnoreCase("HUD"))
             {
-                Value = ValueHUD;
+                SetValue(ValueHUD);
                 return;
             }
 
@@ -28,9 +28,9 @@ namespace Digi.BuildInfo.Features.Config
             if(float.TryParse(valueString, out tmp))
             {
                 if(tmp < 0)
-                    Value = ValueHUD;
+                    SetValue(ValueHUD);
                 else
-                    Value = MathHelper.Clamp(tmp, Min, Max);
+                    SetValue(MathHelper.Clamp(tmp, Min, Max));
                 return;
             }
 

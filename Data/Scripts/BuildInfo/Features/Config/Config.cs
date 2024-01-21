@@ -209,7 +209,7 @@ namespace Digi.BuildInfo.Features.Config
                 // if VoxelHandSettings isn't colliding, then set the defaults like the user is used to
                 if(voxelHandSettingsControl.GetKeyboardControl() != MyKeys.None && terminalInventoryControl.GetKeyboardControl() != voxelHandSettingsControl.GetKeyboardControl())
                 {
-                    MenuBind.Value = Combination.Create(MENU_BIND_INPUT_NAME, "c.VoxelHandSettings");
+                    MenuBind.SetValue(Combination.Create(MENU_BIND_INPUT_NAME, "c.VoxelHandSettings"));
 
                     Log.Info("NOTE: Configurable binds were added and it seems your VoxelHandSettings isn't colliding so I'm setting MenuBind to that instead so you don't need to change anything.");
                 }
@@ -235,7 +235,7 @@ namespace Digi.BuildInfo.Features.Config
                 // e.g. 0.5, 0.84 => 0.0, -0.68
 
                 Vector2D oldVec = ShipToolInvBarPosition.Value;
-                ShipToolInvBarPosition.Value = new Vector2D((oldVec.X * 2) - 1, 1 - (oldVec.Y * 2));
+                ShipToolInvBarPosition.SetValue(new Vector2D((oldVec.X * 2) - 1, 1 - (oldVec.Y * 2)));
 
                 Log.Info($"NOTE: Value for '{ShipToolInvBarPosition.Name}' was changed into a different space (the proper one), your setting was automatically calculated into it so no changes are necessary.");
 

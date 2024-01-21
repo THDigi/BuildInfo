@@ -20,7 +20,7 @@ namespace Digi.ConfigLib
             error = null;
             int tmp;
             if(int.TryParse(valueString, out tmp))
-                Value = MathHelper.Clamp(tmp, Min, Max);
+                SetValue(MathHelper.Clamp(tmp, Min, Max));
             else
                 error = "expected an integer (no decimal)";
         }

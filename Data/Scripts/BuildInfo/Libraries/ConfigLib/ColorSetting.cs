@@ -26,7 +26,7 @@ namespace Digi.ConfigLib
                 a = 255; // default alpha if not defined
                 if(split.Length == 3 || (UseAlpha && byte.TryParse(split[3], out a)))
                 {
-                    Value = new Color(r, g, b, a);
+                    SetValue(new Color(r, g, b, a));
                     return;
                 }
             }

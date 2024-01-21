@@ -56,10 +56,10 @@ namespace Digi.BuildInfo.Features
                     ConfigLib.FloatSetting setting = Main.Config.WeaponModeIndicatorScale;
                     float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
                     scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
-                    setting.Value = (float)Math.Round(scale, 3);
+                    setting.SetValue((float)Math.Round(scale, 3));
                 }
 
-                Main.Config.WeaponModeIndicatorPosition.Value = newPos;
+                Main.Config.WeaponModeIndicatorPosition.SetValue(newPos);
                 ShowOrUpdateIcon();
             };
             Drag.FinishedDragging += (finalPos) =>

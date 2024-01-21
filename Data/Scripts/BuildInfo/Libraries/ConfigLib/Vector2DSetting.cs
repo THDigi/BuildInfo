@@ -25,7 +25,7 @@ namespace Digi.ConfigLib
             double x, y;
             string[] coords = valueString.Split(Separator);
             if(coords.Length == 2 && double.TryParse(coords[0], out x) && double.TryParse(coords[1], out y))
-                Value = Vector2D.Clamp(new Vector2D(x, y), Min, Max);
+                SetValue(Vector2D.Clamp(new Vector2D(x, y), Min, Max));
             else
                 error = "expected format: 0.0, 0.0";
         }

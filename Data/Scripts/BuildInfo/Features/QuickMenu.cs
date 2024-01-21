@@ -234,7 +234,7 @@ namespace Digi.BuildInfo.Features
             if(++value > Main.Config.TextShow.HighestValue)
                 value = 0;
 
-            Main.Config.TextShow.Value = value;
+            Main.Config.TextShow.SetValue(value);
             Main.Config.Save();
 
             if(buildInfoNotification == null)

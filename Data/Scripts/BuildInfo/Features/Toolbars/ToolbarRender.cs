@@ -62,10 +62,10 @@ namespace Digi.BuildInfo.Features.Toolbars
                     ConfigLib.FloatSetting setting = Main.Config.ToolbarLabelsMenuScale;
                     float scale = setting.Value + (scroll > 0 ? 0.05f : -0.05f);
                     scale = MathHelper.Clamp(scale, setting.Min, setting.Max);
-                    setting.Value = (float)Math.Round(scale, 3);
+                    setting.SetValue((float)Math.Round(scale, 3));
                 }
 
-                Main.Config.ToolbarLabelsMenuPosition.Value = newPos;
+                Main.Config.ToolbarLabelsMenuPosition.SetValue(newPos);
                 UpdateProperties();
             };
             BoxDrag.FinishedDragging += (finalPos) =>

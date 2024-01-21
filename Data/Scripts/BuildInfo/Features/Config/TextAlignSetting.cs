@@ -14,17 +14,19 @@ namespace Digi.BuildInfo.Features.Config
         {
             error = null;
             valueString = valueString.ToUpper();
-            Value = 0;
+            int flags = 0;
 
             if(valueString.Contains("RIGHT"))
-                Value |= (int)TextAlignFlags.Right;
+                flags |= (int)TextAlignFlags.Right;
             else
-                Value |= (int)TextAlignFlags.Left;
+                flags |= (int)TextAlignFlags.Left;
 
             if(valueString.Contains("TOP"))
-                Value |= (int)TextAlignFlags.Top;
+                flags |= (int)TextAlignFlags.Top;
             else
-                Value |= (int)TextAlignFlags.Bottom;
+                flags |= (int)TextAlignFlags.Bottom;
+
+            SetValue(flags);
         }
 
         public override void WriteValue(StringBuilder output)
@@ -40,9 +42,9 @@ namespace Digi.BuildInfo.Features.Config
         public void Set(TextAlignFlags flag, bool on)
         {
             if(on)
-                Value |= (int)flag;
+                SetValue(Value | (int)flag);
             else
-                Value &= ~(int)flag;
+                SetValue(Value & ~(int)flag);
         }
 
         public bool IsSet(TextAlignFlags flag)
