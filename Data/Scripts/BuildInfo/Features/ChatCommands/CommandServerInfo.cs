@@ -11,7 +11,11 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void PrintHelp(StringBuilder sb)
         {
-            sb.Append(MainAlias).NewLine();
+            foreach(string alias in Aliases)
+            {
+                sb.Append(ChatCommandHandler.MainCommandPrefix).Append(' ').Append(alias).NewLine();
+            }
+
             sb.Append("  Shows world's settings and mods.").NewLine();
         }
 
