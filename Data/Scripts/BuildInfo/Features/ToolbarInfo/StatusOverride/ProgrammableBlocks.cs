@@ -58,11 +58,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     return true;
                 }
 
-                if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
-                {
-                    sb.Append(ErrorPrefix).Append("Syntax!");
-                    return true;
-                }
+                // FIXME: HasCompileErrors includes warnings :(
+                //if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
+                //{
+                //    sb.Append(ErrorPrefix).Append("Syntax!");
+                //    return true;
+                //}
 
                 string detailedInfo = null;
 
@@ -209,11 +210,12 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                     continue;
                 }
 
-                if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
-                {
-                    errors++;
-                    continue;
-                }
+                // FIXME: HasCompileErrors includes warnings :(
+                //if(MyAPIGateway.Multiplayer.IsServer && pb.HasCompileErrors)
+                //{
+                //    errors++;
+                //    continue;
+                //}
 
                 string detailedInfo = null;
 
