@@ -58,6 +58,7 @@ namespace Digi.BuildInfo.Features.GUI
         Vector2D PrevMousePos;
         Column.Tooltip? HoveredTooltip = null;
         ITooltipHandler TooltipHandler;
+        HudAPIv2.BillBoardHUDMessage TooltipSelectionBox;
 
         Column[] Columns = new Column[4];
         Column CurrentColumn;
@@ -199,6 +200,8 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Refresh(Vector2D.Zero);
 
             TooltipHandler = new TooltipHandler();
+
+            TooltipSelectionBox = TextAPI.CreateHUDTexture(material, Color.Lime * 0.2f, Vector2D.Zero);
         }
 
         public void ToggleMenu()
@@ -331,6 +334,7 @@ namespace Digi.BuildInfo.Features.GUI
             WindowBG.Visible = false;
             CloseButton.SetVisible(false);
             TooltipHandler.SetVisible(false);
+            TooltipSelectionBox.Visible = false;
 
             foreach(ScrollableSection section in ScrollableSections)
             {
@@ -374,6 +378,8 @@ namespace Digi.BuildInfo.Features.GUI
 
         void UpdateTooltip(Vector2D mousePos)
         {
+            BoundingBox2D highlightArea = default(BoundingBox2D);
+
             for(int i = 0; i < Columns.Length; i++)
             {
                 Column column = Columns[i];
@@ -390,6 +396,10 @@ namespace Digi.BuildInfo.Features.GUI
                 if(column.Tooltips.TryGetValue(line, out tooltip))
                 {
                     HoveredTooltip = tooltip;
+
+                    Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
+                    highlightArea = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
+
                     break;
                 }
             }
@@ -404,12 +414,19 @@ namespace Digi.BuildInfo.Features.GUI
 
             if(HoveredTooltip != null)
             {
+                TooltipSelectionBox.Origin = highlightArea.Center;
+                TooltipSelectionBox.Width = (float)highlightArea.Width;
+                TooltipSelectionBox.Height = (float)highlightArea.Height;
+                TooltipSelectionBox.Visible = true;
+
                 TooltipHandler.Hover(HoveredTooltip.Value.Text);
                 TooltipHandler.Draw(mousePos, drawNow: false);
                 TooltipHandler.SetVisible(true);
             }
             else
             {
+                TooltipSelectionBox.Visible = false;
+
                 TooltipHandler.HoverEnd();
                 TooltipHandler.SetVisible(false);
             }
