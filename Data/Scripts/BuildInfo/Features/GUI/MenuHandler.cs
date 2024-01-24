@@ -87,6 +87,10 @@ namespace Digi.BuildInfo.Features
             }
 
             CursorRequests.Add(id, new Request(escapeCallback, blockViewXY, blockMoveAndRoll));
+
+            if(Cursor != null)
+                Cursor.Visible = true;
+
             RecheckUpdates();
         }
 
@@ -96,6 +100,10 @@ namespace Digi.BuildInfo.Features
                 return; // silently ignore
 
             CursorRequests.Remove(id);
+
+            if(Cursor != null && CursorRequests.Count <= 0)
+                Cursor.Visible = false;
+
             RecheckUpdates();
         }
 
@@ -117,11 +125,6 @@ namespace Digi.BuildInfo.Features
                     Menus[i].UpdateDraw();
                 }
             }
-
-            if(CursorRequests.Count > 0 && Cursor != null)
-            {
-                Cursor.Draw();
-            }
         }
 
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
@@ -142,6 +145,9 @@ namespace Digi.BuildInfo.Features
                 finally
                 {
                     CursorRequests.Clear();
+                    if(Cursor != null)
+                        Cursor.Visible = false;
+
                     InEscapeLoop = false;
                     RecheckUpdates();
                 }
@@ -172,7 +178,6 @@ namespace Digi.BuildInfo.Features
                 Cursor = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("MouseCursor"), Vector2D.Zero, Color.White);
                 Cursor.Options = HudAPIv2.Options.Pixel | HudAPIv2.Options.HideHud;
                 Cursor.SkipLinearRGB = false;
-                Cursor.Visible = false; // manual draw calls only
 
                 const float CursorSize = 64;
 
@@ -180,6 +185,8 @@ namespace Digi.BuildInfo.Features
                 Cursor.Width = mouseSizePx.X * CursorSize;
                 Cursor.Height = mouseSizePx.Y * CursorSize;
                 Cursor.Offset = new Vector2D(Cursor.Width / -2, Cursor.Height / -2); // textures has center as cursor clicing point, not sure why this offset is necessary but it is
+
+                Cursor.Visible = true;
             }
 
             // mouse position only updates in HandleInput() so there's no point in moving this later
