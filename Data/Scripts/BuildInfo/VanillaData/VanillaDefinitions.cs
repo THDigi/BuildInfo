@@ -61,7 +61,7 @@ namespace Digi.BuildInfo.VanillaData
                     needsRegen = true;
 
                     if(blockDef.DLCs != null && blockDef.DLCs.Length > 0)
-                        Log.Info($"New vanilla block: {blockDef.Id} - DLC: {string.Join(", ", blockDef.DLCs.Select(dlc => MyTexts.GetString(MyDLCs.GetDLC(dlc).DisplayName)))}");
+                        Log.Info($"New vanilla block: {blockDef.Id} - DLC: {string.Join(", ", blockDef.DLCs.Select(dlc => MyTexts.GetString(MyAPIGateway.DLC.GetDLC(dlc).DisplayName)))}");
                     else
                         Log.Info($"New vanilla block: {blockDef.Id}");
                     //break;

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Utilities;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Gui;
+using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.ModAPI;
 
 namespace Digi.BuildInfo.Features.Tooltips
 {
@@ -172,8 +173,8 @@ namespace Digi.BuildInfo.Features.Tooltips
                                 s.Append(", ");
                         }
 
-                        MyDLCs.MyDLC dlc;
-                        if(MyDLCs.TryGetDLC(dlcId, out dlc))
+                        IMyDLC dlc;
+                        if(MyAPIGateway.DLC.TryGetDLC(dlcId, out dlc))
                         {
                             s.Append(MyTexts.GetString(dlc.DisplayName));
                         }

@@ -5777,8 +5777,8 @@ namespace Digi.BuildInfo.Features
                         GetLine().Append(", ");
                 }
 
-                MyDLCs.MyDLC dlc;
-                if(MyDLCs.TryGetDLC(dlcId, out dlc))
+                IMyDLC dlc;
+                if(MyAPIGateway.DLC.TryGetDLC(dlcId, out dlc))
                 {
                     if(!MyAPIGateway.DLC.HasDLC(dlcId, MyAPIGateway.Multiplayer.MyId))
                         GetLine().Color(COLOR_BAD);

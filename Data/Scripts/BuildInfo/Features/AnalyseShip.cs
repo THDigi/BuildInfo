@@ -491,8 +491,8 @@ namespace Digi.BuildInfo.Features
                     Objects objects = kv.Value;
 
                     string displayName = dlcId;
-                    MyDLCs.MyDLC dlc;
-                    if(MyDLCs.TryGetDLC(dlcId, out dlc))
+                    IMyDLC dlc;
+                    if(MyAPIGateway.DLC.TryGetDLC(dlcId, out dlc))
                     {
                         displayName = MyTexts.GetString(dlc.DisplayName);
                     }
