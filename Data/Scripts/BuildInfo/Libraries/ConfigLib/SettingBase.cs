@@ -86,7 +86,7 @@ namespace Digi.ConfigLib
 
         public void ResetToDefault()
         {
-            Value = DefaultValue;
+            SetValue(DefaultValue);
         }
 
         public abstract void ReadValue(string valueString, out string error);
