@@ -6,7 +6,7 @@ using VRage.Utils;
 using VRageMath;
 using VRageRender;
 
-namespace Digi.BuildInfo.Features.GUI
+namespace Digi.BuildInfo.Features.GUI.Elements
 {
     public static class CornerBackgroundExtensions
     {

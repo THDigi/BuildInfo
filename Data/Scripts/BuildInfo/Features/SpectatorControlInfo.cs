@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using Digi.BuildInfo.Features.GUI;
+using Digi.BuildInfo.Features.GUI.Elements;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
