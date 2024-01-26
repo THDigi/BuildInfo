@@ -325,7 +325,7 @@ namespace Digi.BuildInfo.Features.ReloadTracker
 
                 foreach(TrackedWeapon tw in NextTickUpdate)
                 {
-                    if(tw.Block.MarkedForClose)
+                    if(tw.Block == null || tw.Block.MarkedForClose)
                         continue;
 
                     // Cannot use IMyGunObject<T>.GetAmmunitionAmount() because:
@@ -334,7 +334,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
                     // because for block weapons ShotsInBurst is what controls how many rounds until reload,
                     //   not magazine size like it does on hand weapons.
 
-                    MyGunBase gunbase = tw.Gun.GunBase;
+                    MyGunBase gunbase = tw.Gun?.GunBase;
+                    if(gunbase == null)
+                        continue;
 
                     // WARNING: only gets set for projectile shots!
                     long lastShotTime = gunbase.LastShootTime.Ticks;
