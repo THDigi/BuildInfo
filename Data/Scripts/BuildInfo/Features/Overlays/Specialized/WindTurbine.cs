@@ -74,7 +74,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                     if(i > 0)
                     {
                         // inner circle slice
-                        MyTransparentGeometry.AddTriangleBillboard(circleCenter, inner, previousInner, n, n, n, Vector2.Zero, Vector2.Zero, Vector2.Zero, MaterialSquare, 0, circleCenter, TriangleColor, BlendType);
+                        MyTransparentGeometry.AddTriangleBillboard(circleCenter, inner, previousInner, n, n, n, Vector2.Zero, Vector2.Zero, Vector2.Zero, MaterialSquare, uint.MaxValue, circleCenter, TriangleColor, BlendType);
 
                         // outer circle gradient slices
                         quad = new MyQuadD()

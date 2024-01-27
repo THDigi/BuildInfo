@@ -808,7 +808,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 if(!first && faceMaterial.HasValue)
                 {
                     Vector3 normalF = (Vector3)normal;
-                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normalF, normalF, normalF, uv0, uv1, uv2, faceMaterial.Value, 0, center, triangleColor, blendType);
+                    MyTransparentGeometry.AddTriangleBillboard(center, current, previous, normalF, normalF, normalF, uv0, uv1, uv2, faceMaterial.Value, uint.MaxValue, center, triangleColor, blendType);
                 }
 
                 if(exit)

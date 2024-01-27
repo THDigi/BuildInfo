@@ -681,11 +681,17 @@ namespace Digi.BuildInfo.Utilities
             if(lineThickness < 0)
                 lineThickness = 0.01f;
 
-            MyQuadD quad;
+            Vector4 triangleColor = (drawSolid ? color.ToVector4().ToLinearRGB() : color.ToVector4()); // HACK: keeping color consistent with other billboards, MyTransparentGeoemtry.CreateBillboard()
+
             Vector3D offset = apexPosition + directionVector;
 
             double angleStep = (MathHelperD.TwoPi / (double)wireDivideRatio);
             Vector3D prevPoint = offset + Vector3D.Transform(baseVector, MatrixD.CreateFromAxisAngle(axisNormalized, 0)); // angle = (i * angleStep) == 0
+
+            Vector3 normal = Vector3.Forward; // HACK: not used so no point in doing all sorts of sqrt to calcualte it per triangle
+            Vector2 uv0 = new Vector2(0, 0.5f);
+            Vector2 uv1 = new Vector2(1, 0);
+            Vector2 uv2 = new Vector2(1, 1);
 
             for(int i = 0; i < wireDivideRatio; i++)
             {
@@ -695,7 +701,7 @@ namespace Digi.BuildInfo.Utilities
                 if(drawWireframe)
                 {
                     // edge around bottom
-                    MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (Vector3)(apexPosition - prevPoint), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(material, color, prevPoint, (Vector3)(nextPoint - prevPoint), 1f, lineThickness, blendType, customViewProjection);
 
                     // lines towards point
                     MyTransparentGeometry.AddLineBillboard(material, color, nextPoint, (Vector3)(apexPosition - nextPoint), 1f, lineThickness, blendType, customViewProjection);
@@ -703,11 +709,7 @@ namespace Digi.BuildInfo.Utilities
 
                 if(drawSolid)
                 {
-                    quad.Point0 = prevPoint;
-                    quad.Point1 = nextPoint;
-                    quad.Point2 = apexPosition;
-                    quad.Point3 = apexPosition;
-                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref Vector3D.Zero, -1, blendType, null);
+                    MyTransparentGeometry.AddTriangleBillboard(apexPosition, prevPoint, nextPoint, normal, normal, normal, uv0, uv1, uv2, material, uint.MaxValue, apexPosition, triangleColor, blendType);
                 }
 
                 prevPoint = nextPoint;
@@ -893,10 +895,10 @@ namespace Digi.BuildInfo.Utilities
                     if(drawSolid)
                     {
                         // bottom cap
-                        MyTransparentGeometry.AddTriangleBillboard(centerBottom, quad.Point0, quad.Point1, normal, normal, normal, uv0, uv1, uv2, faceMaterial, 0, center, triangleColor, blendType);
+                        MyTransparentGeometry.AddTriangleBillboard(centerBottom, quad.Point0, quad.Point1, normal, normal, normal, uv0, uv1, uv2, faceMaterial, uint.MaxValue, center, triangleColor, blendType);
 
                         // top cap
-                        MyTransparentGeometry.AddTriangleBillboard(centerTop, quad.Point2, quad.Point3, normal, normal, normal, uv0, uv1, uv2, faceMaterial, 0, center, triangleColor, blendType);
+                        MyTransparentGeometry.AddTriangleBillboard(centerTop, quad.Point2, quad.Point3, normal, normal, normal, uv0, uv1, uv2, faceMaterial, uint.MaxValue, center, triangleColor, blendType);
                     }
 
                     if(drawWireframe)
