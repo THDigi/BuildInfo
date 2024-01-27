@@ -1,14 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.Overlays.Specialized;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
+using Draygo.API;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 using VRage.Game;
-using VRage.Input;
 using VRageMath;
+using PB_FunctionalBlock = Sandbox.ModAPI.Ingame.IMyFunctionalBlock;
 
 namespace Digi.BuildInfo.Features.Terminal.Underlays
 {
@@ -19,6 +23,12 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
     {
         OverlayDrawInstance DrawInstance;
         BlockSelectInfo BlockSelectInfo = new BlockSelectInfo();
+
+        int NextLabelIdx = 0;
+        List<HudAPIv2.SpaceMessage> Labels = new List<HudAPIv2.SpaceMessage>();
+
+        MyObjectBuilder_EventControllerBlock TempEventControllerOB;
+        List<PB_FunctionalBlock> TempTools = new List<PB_FunctionalBlock>();
 
         public TerminalUnderlays(BuildInfoMod main) : base(main)
         {
@@ -52,14 +62,15 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
         void ScreenRemoved(string screenName)
         {
             if(!Main.GUIMonitor.InTerminal)
+            {
                 SetUpdateMethods(UpdateFlags.UPDATE_DRAW, false);
+                HideLabels();
+            }
         }
 
         public override void UpdateDraw()
         {
-            float distRatioMin = 0;
-            float distRatioMax = (float)Dev.GetValueScroll("distRatioMax", 100, MyKeys.D1);
-            float lineThickMulMax = (float)Dev.GetValueScroll("lineThickMulMax", 30, MyKeys.D2);
+            HideLabels();
 
             List<IMyTerminalBlock> blocks = Main.TerminalInfo.SelectedInTerminal;
             if(blocks.Count <= 0)
@@ -68,50 +79,225 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
             if(Main.EventToolbarInfo.DrawingOverlays)
                 return;
 
-            Color bbColor = new Color(100, 255, 155);
-
             const double MaxDistanceSq = 100 * 100;
             Vector3 camPos = MyAPIGateway.Session.Camera.Position;
 
             if(blocks.Count > 30)
                 return;
 
+            Color blockBBcolor = new Color(100, 255, 155);
+            Color subblockcolor = new Color(200, 155, 55);
+
+            bool oneSelection = blocks.Count == 1;
+
             foreach(IMyTerminalBlock block in blocks)
             {
-                BoundingBoxD blockBB = block.WorldAABB;
-                double distSq = Vector3D.DistanceSquared(camPos, blockBB.Center);
-                if(distSq > MaxDistanceSq || !MyAPIGateway.Session.Camera.IsInFrustum(ref blockBB))
-                    continue;
-
-                #region Draw selection box
+                if(!oneSelection)
                 {
-                    bool isLarge = (block.CubeGrid.GridSizeEnum == MyCubeSize.Large);
-
-                    float dist = (float)Math.Sqrt(distSq);
-                    float distRatio = MathHelper.Lerp(1f, lineThickMulMax, MathHelper.Clamp(dist / distRatioMax, distRatioMin, distRatioMax));
-                    float lineWidth = (isLarge ? 0.02f : 0.016f) * distRatio;
-
-                    BlockSelectInfo.ClearCaches();
-                    Main.OverrideToolSelectionDraw.GetBlockModelBB(block.SlimBlock, BlockSelectInfo, 0f);
-                    Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB ?? BlockSelectInfo.Boundaries, bbColor, lineWidth);
+                    BoundingBoxD blockBB = block.WorldAABB;
+                    double distSq = Vector3D.DistanceSquared(camPos, blockBB.Center);
+                    if(distSq > MaxDistanceSq || !MyAPIGateway.Session.Camera.IsInFrustum(ref blockBB))
+                        continue;
                 }
-                #endregion
+
+                DrawSelectionBox(block, blockBBcolor);
 
                 if(!block.HasLocalPlayerAccess())
                     continue;
 
-                IMyButtonPanel button = block as IMyButtonPanel;
-                if(button != null)
+                BoundingBoxD localBB = BlockSelectInfo.ModelBB ?? BlockSelectInfo.Boundaries;
+                MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(localBB, BlockSelectInfo.BlockMatrix);
+
+                if(oneSelection)
                 {
-                    SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
-                    if(overlay != null)
+                    IMyButtonPanel button = block as IMyButtonPanel;
+                    if(button != null)
                     {
-                        MatrixD drawMatrix = block.WorldMatrix;
-                        overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
+                        SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
+                        if(overlay != null)
+                        {
+                            MatrixD drawMatrix = block.WorldMatrix;
+                            overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
+                        }
+                        continue;
                     }
-                    continue;
+                }
+
+                if(oneSelection)
+                {
+                    IMyTurretControlBlock ctc = block as IMyTurretControlBlock;
+                    if(ctc != null)
+                    {
+                        if(ctc.Camera != null)
+                        {
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.Camera, subblockcolor, "Camera");
+                        }
+
+                        if(ctc.AzimuthRotor != null)
+                        {
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.AzimuthRotor, subblockcolor, "Azimuth");
+                        }
+
+                        if(ctc.ElevationRotor != null)
+                        {
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.ElevationRotor, subblockcolor, "Elevation");
+                        }
+
+                        TempTools.Clear();
+                        ctc.GetTools(TempTools);
+
+                        if(TempTools.Count < 30)
+                        {
+                            foreach(IMyTerminalBlock tool in TempTools)
+                            {
+                                DrawRelatedBlock(ctc, obb, tool, subblockcolor, "Tool/weapon");
+                            }
+                        }
+
+                        TempTools.Clear();
+                        continue;
+                    }
+                }
+
+                if(oneSelection)
+                {
+                    IMyEventControllerBlock ec = block as IMyEventControllerBlock;
+                    if(ec?.SelectedEvent != null)
+                    {
+                        if(TempEventControllerOB == null || TempEventControllerOB.EntityId != ec.EntityId || Main.Tick % 60 == 0)
+                        {
+                            TempEventControllerOB = ec.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_EventControllerBlock;
+                        }
+
+                        if(TempEventControllerOB?.SelectedBlocks != null
+                            && TempEventControllerOB.SelectedBlocks.Count > 0
+                            && TempEventControllerOB.SelectedBlocks.Count < 30)
+                        {
+                            foreach(long entityId in TempEventControllerOB.SelectedBlocks)
+                            {
+                                IMyTerminalBlock selectedBlock = MyEntities.GetEntityByIdOrDefault(entityId) as IMyTerminalBlock;
+                                if(selectedBlock != null)
+                                {
+                                    DrawRelatedBlock(ec, obb, selectedBlock, subblockcolor, "Event source");
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                }
+
+                // TODO: show light radius but wireframe only to not block view... or a way to toggle these more in-your-face underlays
+                // TODO: show screenareas when material identification can be done via IMyModel
+            }
+        }
+
+        void HideLabels()
+        {
+            foreach(HudAPIv2.SpaceMessage label in Labels)
+            {
+                label.Visible = false;
+            }
+        }
+
+        Vector3D[] SourceCorners = new Vector3D[8];
+        Vector3D[] TargetCorners = new Vector3D[8];
+
+        void DrawRelatedBlock(IMyTerminalBlock sourceBlock, MyOrientedBoundingBoxD sourceOBB, IMyTerminalBlock targetBlock, Color color, string labelText)
+        {
+            HudAPIv2.SpaceMessage label;
+
+            if(NextLabelIdx >= Labels.Count)
+            {
+                label = new HudAPIv2.SpaceMessage();
+                label.Message = new StringBuilder(128);
+                label.SkipLinearRGB = true;
+                label.Font = FontsHandler.TextAPI_OutlinedFont;
+                label.Scale = 0.4 * OverlayDrawInstance.DepthRatio;
+                Labels.Add(label);
+            }
+            else
+            {
+                label = Labels[NextLabelIdx];
+            }
+
+            NextLabelIdx++;
+
+            MatrixD camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+
+            MatrixD closeWM = camWM;
+            OverlayDrawInstance.ConvertToAlwaysOnTop(ref closeWM);
+
+            label.Visible = true;
+            label.Left = camWM.Left;
+            label.Up = camWM.Up;
+            label.Message.Clear().Color(color).Append(labelText);
+
+            DrawSelectionBox(targetBlock, color);
+
+            var localBB = BlockSelectInfo.ModelBB ?? BlockSelectInfo.Boundaries;
+            var targetOBB = new MyOrientedBoundingBoxD(localBB, BlockSelectInfo.BlockMatrix);
+
+            Vector3D centerClose = targetOBB.Center;
+            OverlayDrawInstance.ConvertToAlwaysOnTop(ref centerClose);
+            label.WorldPosition = centerClose;
+
+            sourceOBB.GetCorners(SourceCorners, 0);
+            targetOBB.GetCorners(TargetCorners, 0);
+
+            Vector3D centerBetweenOBBs = sourceOBB.Center + (targetOBB.Center - sourceOBB.Center) * 0.5;
+
+            Vector3D sourceCorner = GetClosestCorner(SourceCorners, centerBetweenOBBs);
+            Vector3D targetCorner = GetClosestCorner(TargetCorners, centerBetweenOBBs);
+
+            bool isLarge = (sourceBlock.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+            float distance = (float)Vector3D.Distance(MyAPIGateway.Session.Camera.Position, centerBetweenOBBs);
+            float distRatio = MathHelper.Lerp(1f, lineThickMulMax, MathHelper.Clamp(distance / distRatioMax, distRatioMin, distRatioMax));
+            float thick = (isLarge ? 0.02f : 0.016f) * distRatio;
+
+            MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, color, sourceCorner, (targetCorner - sourceCorner), 1f, thick, VRageRender.MyBillboard.BlendTypeEnum.PostPP);
+
+            OverlayDrawInstance.ConvertToAlwaysOnTop(ref sourceCorner);
+            OverlayDrawInstance.ConvertToAlwaysOnTop(ref targetCorner);
+            thick *= OverlayDrawInstance.DepthRatioF;
+
+            MyTransparentGeometry.AddLineBillboard(OverlayDrawInstance.MaterialLaser, color * 0.25f, sourceCorner, (targetCorner - sourceCorner), 1f, thick, VRageRender.MyBillboard.BlendTypeEnum.PostPP);
+        }
+
+        static Vector3D GetClosestCorner(Vector3D[] corners, Vector3D point)
+        {
+            double closestDistSq = double.MaxValue;
+            Vector3D closestCorner = Vector3D.Zero;
+
+            for(int i = 0; i < corners.Length; i++)
+            {
+                Vector3D corner = corners[i];
+                double distSq = Vector3D.DistanceSquared(point, corner);
+
+                if(distSq < closestDistSq)
+                {
+                    closestDistSq = distSq;
+                    closestCorner = corner;
                 }
             }
+
+            return closestCorner;
+        }
+
+        const float distRatioMin = 0;
+        const float distRatioMax = 100f; // (float)Dev.GetValueScroll("distRatioMax", 100, MyKeys.D1);
+        const float lineThickMulMax = 30f; // (float)Dev.GetValueScroll("lineThickMulMax", 30, MyKeys.D2);
+
+        void DrawSelectionBox(IMyTerminalBlock block, Color color)
+        {
+            bool isLarge = (block.CubeGrid.GridSizeEnum == MyCubeSize.Large);
+
+            float distance = (float)Vector3D.Distance(MyAPIGateway.Session.Camera.Position, block.WorldAABB.Center);
+            float distRatio = MathHelper.Lerp(1f, lineThickMulMax, MathHelper.Clamp(distance / distRatioMax, distRatioMin, distRatioMax));
+            float lineWidth = (isLarge ? 0.02f : 0.016f) * distRatio;
+
+            BlockSelectInfo.ClearCaches();
+            Main.OverrideToolSelectionDraw.GetBlockModelBB(block.SlimBlock, BlockSelectInfo, 0f);
+            Main.OverrideToolSelectionDraw.DrawSelection(BlockSelectInfo.ModelMatrix, BlockSelectInfo.ModelBB ?? BlockSelectInfo.Boundaries, color, lineWidth);
         }
     }
 }
