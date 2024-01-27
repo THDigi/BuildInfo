@@ -12,19 +12,19 @@ using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using VRage;
+using VRage.Collections;
 using VRage.Game;
 using VRage.Library.Utils;
 using VRage.Serialization;
 using VRage.Utils;
 using VRageMath;
 using VRageRender;
+using static Digi.BuildInfo.Systems.TextAPI;
 using ExperimentalReason = VRage.Game.MyObjectBuilder_SessionSettings.ExperimentalReason;
 using TypeExtensions = VRage.TypeExtensions; // HACK: some people have ambiguity on this, probably linux or such
 
 namespace Digi.BuildInfo.Features.GUI
 {
-    // TODO: use chat as search in realtime via MyAPIGateway.Input.TextInput and highlight those characters if found in the name or description of anything
-
     public class ServerInfoMenu : Menu
     {
         public static void Test()
@@ -199,6 +199,12 @@ namespace Digi.BuildInfo.Features.GUI
             CloseButton.Scale = CloseButtonScale;
             CloseButton.Refresh(Vector2D.Zero);
 
+            SearchBar = new TextPackage(128, false, MyStringId.GetOrCompute("BuildInfo_UI_Square"));
+            SearchBar.Background.BillBoardColor = new Color(60, 76, 82);
+            SearchBar.HideWithHUD = false;
+            SearchBar.Position = new Vector2D(-0.9, 0.4);
+            SearchBar.Font = FontsHandler.TextAPI_OutlinedFont;
+
             TooltipHandler = new TooltipHandler();
 
             TooltipSelectionBox = TextAPI.CreateHUDTexture(material, Color.Lime * 0.2f, Vector2D.Zero);
@@ -345,6 +351,9 @@ namespace Digi.BuildInfo.Features.GUI
             {
                 column.Reset();
             }
+
+            HideHighlighters();
+            SearchBarClosed();
         }
 
         public override void UpdateDraw()
@@ -374,7 +383,276 @@ namespace Digi.BuildInfo.Features.GUI
                     HoveredTooltip.Value.ClickAction.Invoke();
                 }
             }
+
+            if(MyAPIGateway.Gui.ChatEntryVisible)
+            {
+                ListReader<char> input = MyAPIGateway.Input.TextInput;
+                if(input.Count > 0)
+                {
+                    ChatTyped(input);
+                }
+                else if(scrolled)
+                {
+                    SearchText();
+                }
+            }
+            else
+            {
+                SearchBarClosed();
+            }
         }
+
+        #region In-window searching
+        const int MinCharsToSearch = 2;
+        int HighlighterIndex = -1;
+        List<HudAPIv2.BillBoardHUDMessage> Highlighters = new List<HudAPIv2.BillBoardHUDMessage>();
+        List<char> TextInput = new List<char>(64);
+        TextPackage SearchBar;
+        HashSet<Vector2I> LinesHighlighted = new HashSet<Vector2I>();
+
+        void ChatTyped(ListReader<char> input)
+        {
+            foreach(char c in input)
+            {
+                // TODO: maybe some day we'll get the exact chat text, but right now we only have hax
+                if(char.IsControl(c))
+                {
+                    if(c == '\r')
+                        continue;
+
+                    if(c == 1) // ctrl+A
+                    {
+                        TextInput.Clear();
+                        break;
+                    }
+
+                    if(c == '\b')
+                    {
+                        if(TextInput.Count > 0)
+                            TextInput.RemoveAt(TextInput.Count - 1);
+                    }
+
+                    continue;
+                }
+
+                TextInput.Add(c);
+            }
+
+            StringBuilder sb = SearchBar.TextStringBuilder.Clear();
+            sb.Append("Searching for: '");
+            foreach(char c in TextInput)
+                sb.Append(c);
+            sb.Append("'");
+
+            if(TextInput.Count < MinCharsToSearch)
+                sb.Append(" <color=gray>(min ").Append(MinCharsToSearch).Append(")");
+
+            SearchBar.Visible = true;
+            SearchBar.UpdateBackgroundSize();
+
+            SearchText();
+        }
+
+        void SearchBarClosed()
+        {
+            TextInput.Clear();
+
+            if(SearchBar != null)
+                SearchBar.Visible = false;
+        }
+
+        void HideHighlighters()
+        {
+            for(int i = 0; i <= HighlighterIndex; i++)
+            {
+                Highlighters[i].Visible = false;
+            }
+
+            HighlighterIndex = -1;
+        }
+
+        void SearchText()
+        {
+            HideHighlighters();
+
+            if(WindowBG == null)
+                return;
+
+            int findLength = TextInput.Count;
+            if(findLength < MinCharsToSearch)
+                return;
+
+            LinesHighlighted.Clear();
+
+            string findTextUpper = string.Join("", TextInput).ToUpperInvariant();
+
+            for(int columnIdx = 0; columnIdx < Columns.Length; columnIdx++)
+            {
+                Column column = Columns[columnIdx];
+
+                {
+                    StringBuilder sb = column.Render.TextStringBuilder;
+
+
+                    //int line = 0;
+                    //bool search = true;
+                    //int startLineIdx = 0;
+                    //while(search)
+                    //{
+                    //    int endLineIdx = sb.IndexOf('\n', startLineIdx);
+                    //    if(endLineIdx == -1)
+                    //    {
+                    //        endLineIdx = sb.Length - 1;
+                    //        search = false;
+                    //    }
+                    //
+                    //    string lineText = sb.ToString(startLineIdx, endLineIdx - startLineIdx);
+                    //    startLineIdx = endLineIdx + 1;
+                    //
+                    //    if(lineText.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
+                    //    {
+                    //        LinesHighlighted.Add(new Vector2I(columnIdx, line));
+                    //        HighlightLine(column, line);
+                    //    }
+                    //
+                    //    line++;
+                    //}
+
+
+                    int line = 0;
+                    int maxSearchLength = (sb.Length - findLength) + 1;
+
+                    for(int i = 0; i < maxSearchLength; i++)
+                    {
+                        char chr = sb[i];
+
+                        if(chr == '\n')
+                        {
+                            line++;
+                            continue;
+                        }
+
+                        // skip textAPI formatting
+                        if(chr == '<')
+                        {
+                            int x = i;
+
+                            if(i + 6 <= sb.Length)
+                            {
+                                if(sb[++x] == 'c'
+                                && sb[++x] == 'o'
+                                && sb[++x] == 'l'
+                                && sb[++x] == 'o'
+                                && sb[++x] == 'r'
+                                && sb[++x] == '=')
+                                {
+                                    // seek ahead for end char
+                                    int endChar = -1;
+                                    for(int s = i + 6; s < sb.Length; s++)
+                                    {
+                                        if(sb[s] == '>')
+                                        {
+                                            endChar = s;
+                                            break;
+                                        }
+                                    }
+
+                                    if(endChar != -1)
+                                    {
+                                        i = endChar;
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            if(SkipOverString(sb, ref i, "<reset>")
+                            || SkipOverString(sb, ref i, "<i>")
+                            || SkipOverString(sb, ref i, "</i>"))
+                                continue;
+                        }
+
+                        if(char.ToUpperInvariant(chr) == findTextUpper[0])
+                        {
+                            int foundChars = 1;
+                            while((foundChars < findLength) && (char.ToUpperInvariant(sb[i + foundChars]) == findTextUpper[foundChars]))
+                            {
+                                foundChars++;
+                            }
+
+                            if(foundChars == findLength)
+                            {
+                                LinesHighlighted.Add(new Vector2I(columnIdx, line));
+                                HighlightLine(column, line);
+
+                                // we got a match on this line, now skip to next line to avoid re-highlighting this one
+                                i = sb.IndexOf('\n', i);
+                                if(i == -1)
+                                    break;
+                                i++; // skip over \n too
+                                line++;
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                foreach(KeyValuePair<int, Column.Tooltip> kv in column.Tooltips)
+                {
+                    int line = kv.Key;
+                    Vector2I id = new Vector2I(columnIdx, line);
+                    if(LinesHighlighted.Contains(id))
+                        continue;
+
+                    string tooltipText = kv.Value.Text;
+
+                    if(tooltipText.IndexOf(findTextUpper, StringComparison.OrdinalIgnoreCase) != -1)
+                    {
+                        LinesHighlighted.Add(id);
+                        HighlightLine(column, line);
+                    }
+                }
+            }
+        }
+
+        static bool SkipOverString(StringBuilder sb, ref int i, string str)
+        {
+            if(sb.IndexOf(str, i, i + str.Length - 1, true) != -1)
+            {
+                i += str.Length - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        void HighlightLine(Column column, int line)
+        {
+            Vector2D columnMin = column.Render.Text.Origin + column.Render.Text.Offset;
+            Vector2D columnMax = columnMin + column.TextSize;
+            BoundingBox2D columnBB = new BoundingBox2D(Vector2D.Min(columnMin, columnMax), Vector2D.Max(columnMin, columnMax));
+
+            Vector2D start = new Vector2D(columnBB.Min.X, columnBB.Max.Y - ((line + 1) * LineHeight));
+            var area = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
+
+            HudAPIv2.BillBoardHUDMessage hl;
+
+            HighlighterIndex++;
+            if(Highlighters.Count <= HighlighterIndex)
+            {
+                hl = new HudAPIv2.BillBoardHUDMessage(MyStringId.GetOrCompute("Square"), Vector2D.Zero, Color.Yellow * 0.25f);
+                Highlighters.Add(hl);
+            }
+            else
+            {
+                hl = Highlighters[HighlighterIndex];
+            }
+
+            hl.Origin = area.Center;
+            hl.Width = (float)area.Width;
+            hl.Height = (float)area.Height;
+            hl.Visible = true;
+        }
+        #endregion
 
         void UpdateTooltip(Vector2D mousePos)
         {
@@ -401,6 +679,23 @@ namespace Digi.BuildInfo.Features.GUI
                     highlightArea = new BoundingBox2D(start, start + new Vector2D(columnBB.Size.X, LineHeight));
 
                     break;
+                }
+            }
+
+            if(HoveredTooltip == null && SearchBar != null && SearchBar.Visible)
+            {
+                Vector2D center = SearchBar.Background.Origin + SearchBar.Background.Offset;
+                Vector2D halfExtent = new Vector2D(SearchBar.Background.Width, SearchBar.Background.Height) * 0.5;
+                BoundingBox2D bb = new BoundingBox2D(center - halfExtent, center + halfExtent);
+
+                if(bb.Contains(mousePos) != ContainmentType.Disjoint)
+                {
+                    HoveredTooltip = new Column.Tooltip()
+                    {
+                        Text = "See exactly what is searched for when using chat.\nThis does not match 1:1 with chat because I'd have to reimplement all the textbox input features like arrows, clicking, etc.",
+                    };
+
+                    highlightArea = bb;
                 }
             }
 
@@ -676,6 +971,8 @@ namespace Digi.BuildInfo.Features.GUI
                 sb.Color(ValueColorDefault).Append("(StarSystem default)\n");
                 sb.Color(ValueColorChanged).Append("(Changed)\n");
                 sb.Color(ValueColorDisabled).Append("(Relies on something else)\n");
+                sb.Append("\n<reset>");
+                sb.Append("Open chat and start typing to search in this window\n");
             }
 
 
@@ -958,7 +1255,8 @@ namespace Digi.BuildInfo.Features.GUI
             Header(sb, "Misc.");
 
             PrintSetting(sb, nameof(settings.EnableSpectator), settings.EnableSpectator, DefaultSettings.EnableSpectator, true,
-                "Everyone spectator camera", "Allows <i>all players</i> to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.");
+                "Everyone spectator camera", "Allows <color=yellow>all players<reset> to use spectator camera (F6-F9).\nWith this off, spectator is still allowed in creative mode or admin creative tools.",
+                GrayOrWarn(true, MyAPIGateway.Session.SurvivalMode && settings.EnableSpectator));
             PrintSetting(sb, nameof(settings.EnableVoxelHand), settings.EnableVoxelHand, DefaultSettings.EnableVoxelHand, false,
                 "Voxel Hands", "Only usable in creative mode or admin creative tools.\nAllows use of voxel hand tools to manipulate voxels (in toolbar config menu).");
             PrintSetting(sb, nameof(settings.EnableCopyPaste), settings.EnableCopyPaste, DefaultSettings.EnableCopyPaste, true,
@@ -1462,6 +1760,8 @@ namespace Digi.BuildInfo.Features.GUI
                     SetVisible(true, true);
                 }
 
+                bool changed = FirstUpdate;
+
                 if(!FirstUpdate)
                 {
                     int deltaScrollWheel = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
@@ -1479,6 +1779,8 @@ namespace Digi.BuildInfo.Features.GUI
                                 Scroll -= 3;
                             else if(deltaScrollWheel < 0)
                                 Scroll += 3;
+
+                            changed = true;
                         }
                     }
 
@@ -1513,6 +1815,7 @@ namespace Digi.BuildInfo.Features.GUI
                             double dragPerLine = (drag / ScrollableHeight);
                             int draggableLines = (Lines.Count - DisplayLines);
                             Scroll = ScrollAtDrag + (int)Math.Round(dragPerLine * draggableLines);
+                            changed = true;
                         }
                         else
                         {
@@ -1523,6 +1826,9 @@ namespace Digi.BuildInfo.Features.GUI
                 }
 
                 FirstUpdate = false;
+
+                if(!changed)
+                    return false;
 
                 int maxScrollIndex = Lines.Count - DisplayLines;
                 Scroll = MathHelper.Clamp(Scroll, 0, maxScrollIndex);

@@ -76,11 +76,14 @@ namespace Digi.BuildInfo.Utilities
             return -1;
         }
 
-        public static int IndexOf(this StringBuilder sb, string findString, int startIndex = 0, bool ignoreCase = false)
+        public static int IndexOf(this StringBuilder sb, string findString, int startIndex = 0, int endIndex = -1, bool ignoreCase = false)
         {
             int length = sb.Length;
             if(length == 0)
                 return -1;
+
+            if(endIndex > -1)
+                length = endIndex + 1;
 
             if(startIndex >= length)
                 throw new Exception($"startIndex ({startIndex.ToString()}) is out of range ({length.ToString()})!");
