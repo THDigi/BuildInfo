@@ -3,25 +3,19 @@ using System.Text;
 using Digi.BuildInfo.Features.GUI.Elements;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
-using Draygo.API;
 using Sandbox.Engine.Utils;
 using Sandbox.ModAPI;
 using VRage;
 using VRageMath;
-using static Digi.BuildInfo.Systems.TextAPI;
 
 namespace Digi.BuildInfo.Features
 {
     public class SpectatorControlInfo : ModComponent
     {
         static readonly Color BackgroundColor = new Color(41, 54, 62) * 0.96f;
-        const float GUIScale = 0.75f;
-        const string Font = FontsHandler.BI_SEOutlined;
 
         bool Visible = false;
-        CornerBackground Box;
-        TextPackage Text;
-        double WidestUnscaled;
+        CornerTextBox TextBox;
 
         Vector3D? PrevSpecPos = null;
 
@@ -32,25 +26,11 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            Main.GUIMonitor.OptionsMenuClosed += RecalculateColor;
         }
 
         public override void UnregisterComponent()
         {
-            Main.GUIMonitor.OptionsMenuClosed -= RecalculateColor;
-        }
-
-        void RecalculateColor()
-        {
-            if(Box != null)
-            {
-                Color bgColor = BackgroundColor;
-                Utils.FadeColorHUD(ref bgColor, Main.GameConfig.HudBackgroundOpacity);
-
-                Box.SetColor(bgColor);
-
-                //Text.Background.BillBoardColor = bgColor;
-            }
+            TextBox?.Dispose();
         }
 
         public override void UpdateDraw()
@@ -82,14 +62,7 @@ namespace Digi.BuildInfo.Features
             if(Visible != visible)
             {
                 Visible = visible;
-
-                if(Text != null)
-                {
-                    Visible = visible;
-                    Text.Visible = visible;
-                    Box.SetVisible(visible);
-                }
-
+                TextBox?.SetVisible(visible);
                 if(!visible)
                     PrevSpecPos = null;
             }
@@ -102,32 +75,29 @@ namespace Digi.BuildInfo.Features
                 return;
 
             #region Create HUD element
-            if(Text == null)
+            if(TextBox == null)
             {
-                Box = new CornerBackground("BuildInfo_UI_Square", "BuildInfo_UI_Corner", BackgroundColor, CornerFlag.All);
-                RecalculateColor();
+                const float Scale = 0.75f;
+                TextBox = new CornerTextBox(BackgroundColor, CornerFlag.All, Scale);
 
-                //Text = new TextPackage(new StringBuilder(512), useShadow: false, backgroundTexture: MyStringId.GetOrCompute("Square"));
-                Text = new TextPackage(new StringBuilder(512));
-                Text.HideWithHUD = false;
-                Text.Font = Font;
+                // to the right, to clear "Game paused" top banner
+                TextBox.Position = new Vector2D(0.12, 0.985);
+                TextBox.CornerSizes = new CornerBackground.CornerSize(12 * Scale, 48 * Scale, 12 * Scale, 12 * Scale);
 
                 // HACK: measure widest expected
-                Text.Scale = 1f;
-                Text.TextStringBuilder.Clear().Append("Speed: 000,000.00m/s (Shift+MMB set on aimed, Shift+RMB clear, Shift+Scroll adjust) ");
-                WidestUnscaled = Text.Text.GetTextLength().X;
+                TextBox.Text.Scale = 1f;
+                TextBox.Text.TextStringBuilder.Clear().Append("Speed: 000,000.00m/s (Shift+MMB set on aimed, Shift+RMB clear, Shift+Scroll adjust) ");
+                TextBox.MinWidthUnscaled = TextBox.Text.Text.GetTextLength().X;
+                TextBox.Text.Scale = Scale;
 
-                Text.Scale = GUIScale;
-
-                Text.Visible = true;
-                Box.SetVisible(true);
+                TextBox.SetVisible(true);
             }
             #endregion
 
             // HACK: bindings for spectator are hardcoded in MySpectatorCameraController.MoveAndRotate() & UpdateVelocity()
 
             #region Update text
-            StringBuilder sb = Text.TextStringBuilder.Clear();
+            StringBuilder sb = TextBox.TextSB.Clear();
 
             sb.Append("Speed Modifier: ")
                 .Append("x").Append(Math.Round(MySpectator.Static.SpeedModeLinear, 4))
@@ -155,32 +125,7 @@ namespace Digi.BuildInfo.Features
             sb.Length -= 1; // remove last newline
             #endregion
 
-            #region Update size and position
-            Vector2D textSize = Text.Text.GetTextLength();
-
-            textSize.X = Math.Max(WidestUnscaled * GUIScale, textSize.X);
-            //WidestUnscaled = Math.Max(WidestUnscaled, textSize.X / GUIScale);
-
-            //Text.Position = new Vector2D(textSize.X / -2, 0.99);
-            //Text.UpdateBackgroundSize(provideTextLength: textSize);
-
-            Vector2D px = HudAPIv2.APIinfo.ScreenPositionOnePX;
-
-            Vector2D padding = (new Vector2D(12, -12) * GUIScale * px);
-            textSize += padding * 2;
-
-            //Vector2D pos = new Vector2D(textSize.X / -2, 1.0);
-            Vector2D pos = new Vector2D(0.12, 0.985); // to the right, to clear "Game paused" top banner
-
-            Text.Position = pos + padding;
-
-            Vector2 posPx = (Vector2)Main.DrawUtils.TextAPIHUDToPixels(pos);
-
-            Vector2D boxSize = new Vector2D(Math.Abs(textSize.X), Math.Abs(textSize.Y));
-            Vector2 boxSizePx = (Vector2)(boxSize / px);
-
-            Box.SetProperties(posPx, boxSizePx, new CornerBackground.CornerSize(12 * GUIScale, 48 * GUIScale, 12 * GUIScale, 12 * GUIScale));
-            #endregion
+            TextBox.UpdatePosition();
         }
     }
 }
