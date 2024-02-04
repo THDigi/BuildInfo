@@ -16,6 +16,7 @@ namespace Digi.BuildInfo.Features
 
         bool Visible = false;
         CornerTextBox TextBox;
+        int SkipDraw;
 
         Vector3D? PrevSpecPos = null;
 
@@ -71,7 +72,7 @@ namespace Digi.BuildInfo.Features
                 return;
             #endregion
 
-            if(Main.Tick % 4 != 0)
+            if(++SkipDraw % 4 != 0)
                 return;
 
             #region Create HUD element
