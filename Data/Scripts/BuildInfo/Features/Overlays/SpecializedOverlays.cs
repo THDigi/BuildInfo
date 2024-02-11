@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.Overlays.Specialized;
+using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.Overlays
@@ -7,6 +8,8 @@ namespace Digi.BuildInfo.Features.Overlays
     public class SpecializedOverlays : ModComponent
     {
         readonly Dictionary<MyObjectBuilderType, SpecializedOverlayBase> Overlays = new Dictionary<MyObjectBuilderType, SpecializedOverlayBase>(MyObjectBuilderType.Comparer);
+
+        public readonly SharedLightDraw LightDraw = new SharedLightDraw();
 
         public SpecializedOverlays(BuildInfoMod main) : base(main)
         {
@@ -26,6 +29,8 @@ namespace Digi.BuildInfo.Features.Overlays
             new Merge(this);
             new Motor(this);
             new Piston(this);
+            new Light(this);
+            new HeatVent(this);
             new Searchlight(this);
             new ShipDrill(this);
             new ShipTool(this);

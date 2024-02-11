@@ -3072,8 +3072,8 @@ namespace Digi.BuildInfo.Features
 
                 if(isSpotlight)
                 {
-                    BData_Spotlight data = Main.LiveDataHandler.Get<BData_Spotlight>(def);
-                    if(data != null && data.HasRotatingParts)
+                    BData_Light data = Main.LiveDataHandler.Get<BData_Light>(def);
+                    if(data != null && data.LightLogicData.HasSubpartLights)
                     {
                         float min = spotLight.RotationSpeedBounds.Min * Hardcoded.Spotlight_RadiansPerSecondMul;
                         float max = spotLight.RotationSpeedBounds.Max * Hardcoded.Spotlight_RadiansPerSecondMul;

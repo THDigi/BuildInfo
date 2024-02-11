@@ -4,6 +4,7 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
@@ -13,8 +14,6 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
     public class Searchlight : SpecializedOverlayBase
     {
-        Vector4 ColorLight = (new Color(255, 255, 200) * 0.5f).ToVector4();
-
         Color ColorCamera = new Color(55, 155, 255);
 
         public Searchlight(SpecializedOverlays processor) : base(processor)
@@ -62,17 +61,23 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             }
 
             #region Light
-            if(!isCamController)
+            if(!isCamController && data.LightSubpart != null && data?.LightLogicData?.Lights != null && data.LightLogicData.Lights.Count > 0)
             {
                 // from MySearchLight.UpdateAfterSimulationParallel()
+
                 MatrixD world;
-                Matrix? local = (isRealBlock ? data.Light.RelativeSubpart : data.Light.RelativePreview);
+                Matrix? local = (isRealBlock ? data.LightSubpart.RelativeSubpart : data.LightSubpart.RelativePreview);
                 if(local != null)
                     world = local.Value * pitchMatrix;
                 else
                     world = pitchMatrix;
 
-                MyTransparentGeometry.AddLineBillboard(MaterialGradient, ColorLight, world.Translation, (Vector3)world.Forward, 3, data.LightRadius, BlendType);
+                // HACK: interface properties return 0 after world reload until touched
+                var searchlight = block?.FatBlock as IMySearchlight;
+                float range = searchlight?.GetProperty("Radius").AsFloat().GetValue(searchlight) ?? data.LightLogicData.LightRadius.Default;
+                float offset = searchlight?.GetProperty("Offset").AsFloat().GetValue(searchlight) ?? data.LightLogicData.LightOffset.Default;
+
+                SpecializedOverlays.LightDraw.DrawLights(data.LightLogicData, ref drawMatrix, drawInstance, def, range, offset, block, world);
             }
             #endregion
 

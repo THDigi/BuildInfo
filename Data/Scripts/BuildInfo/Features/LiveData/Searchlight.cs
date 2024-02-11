@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
@@ -12,8 +10,8 @@ namespace Digi.BuildInfo.Features.LiveData
     {
         public TurretInfo TurretInfo;
         public TurretAttachmentInfo Camera;
-        public TurretAttachmentInfo Light;
-        public float LightRadius;
+        public TurretAttachmentInfo LightSubpart;
+        public LightLogicData LightLogicData;
 
         const string DummyBase1 = "InteriorTurretBase1";
         const string DummyBase2 = "InteriorTurretBase2";
@@ -32,6 +30,16 @@ namespace Digi.BuildInfo.Features.LiveData
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
+            var searchlightDef = def as MySearchlightDefinition;
+            if(searchlightDef != null)
+            {
+                // data matching MyLightingLogic.ctor(..., MySearchlightDefinition)
+                LightLogicData = new LightLogicData(block, searchlightDef.LightDummyName, searchlightDef.LightReflectorRadius,
+                    searchlightDef.LightReflectorRadius.Max, searchlightDef.LightOffset, searchlightDef.ReflectorConeDegrees);
+            }
+            else
+                Log.Error($"Unexpected for '{def.Id}' to not have a searchlight definition! Might cause issues in general, check definition xsi:type.");
+
             bool valid = false;
             MyEntity subpartBase1;
             MyEntity subpartBase2;
@@ -39,9 +47,6 @@ namespace Digi.BuildInfo.Features.LiveData
             if(GetTurretParts(block, out subpartBase1, out subpartBase2, out barrelPart))
             {
                 MySearchlightDefinition lightDef = (MySearchlightDefinition)def;
-
-                Vector3 size = subpartBase2.PositionComp.LocalAABB.Size;
-                LightRadius = Math.Min(size.X, size.Y) / 2f;
 
                 MyCubeBlock internalBlock = (MyCubeBlock)block;
 
@@ -51,8 +56,8 @@ namespace Digi.BuildInfo.Features.LiveData
                 Camera = new TurretAttachmentInfo();
                 Camera.AssignData(subpartBase2, internalBlock, "camera");
 
-                Light = new TurretAttachmentInfo();
-                Light.AssignData(subpartBase2, internalBlock, lightDef.LightDummyName);
+                LightSubpart = new TurretAttachmentInfo();
+                LightSubpart.AssignData(subpartBase2, internalBlock, lightDef.LightDummyName);
 
                 valid = true;
             }

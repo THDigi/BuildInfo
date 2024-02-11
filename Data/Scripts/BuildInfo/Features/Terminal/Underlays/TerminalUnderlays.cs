@@ -76,19 +76,20 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
             if(blocks.Count <= 0)
                 return;
 
+            if(blocks.Count > 30)
+                return;
+
             if(Main.EventToolbarInfo.DrawingOverlays)
                 return;
 
             const double MaxDistanceSq = 100 * 100;
             Vector3 camPos = MyAPIGateway.Session.Camera.Position;
 
-            if(blocks.Count > 30)
-                return;
-
             Color blockBBcolor = new Color(100, 255, 155);
-            Color subblockcolor = new Color(200, 155, 55);
+            Color subBlockColor = new Color(200, 155, 55);
 
             bool oneSelection = blocks.Count == 1;
+            bool fewSelected = blocks.Count <= 6;
 
             foreach(IMyTerminalBlock block in blocks)
             {
@@ -100,15 +101,36 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                         continue;
                 }
 
-                DrawSelectionBox(block, blockBBcolor);
-
                 if(!block.HasLocalPlayerAccess())
+                {
+                    DrawSelectionBox(block, Color.Red);
                     continue;
+                }
+
+                DrawSelectionBox(block, block.IsFunctional ? blockBBcolor : Color.Yellow);
 
                 BoundingBoxD localBB = BlockSelectInfo.ModelBB ?? BlockSelectInfo.Boundaries;
                 MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(localBB, BlockSelectInfo.BlockMatrix);
 
-                if(oneSelection)
+                bool isAlreadyDrawingOverlay = Main.Overlays.ActiveOnBlocks.Contains(block.SlimBlock);
+
+                // naaah, let the player pick if they want to see radius overlay...
+                // TODO: maybe a button to toggle specialized overlays on selected blocks?
+                //if(fewSelected && !isAlreadyDrawingOverlay)
+                //{
+                //    if(block is IMyLightingBlock || block is IMyHeatVent)
+                //    {
+                //        SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
+                //        if(overlay != null)
+                //        {
+                //            MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
+                //            overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
+                //        }
+                //        continue;
+                //    }
+                //}
+
+                if(oneSelection && !isAlreadyDrawingOverlay)
                 {
                     IMyButtonPanel button = block as IMyButtonPanel;
                     if(button != null)
@@ -116,7 +138,7 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                         SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
                         if(overlay != null)
                         {
-                            MatrixD drawMatrix = block.WorldMatrix;
+                            MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
                             overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
                         }
                         continue;
@@ -130,17 +152,17 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                     {
                         if(ctc.Camera != null)
                         {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.Camera, subblockcolor, "Camera");
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.Camera, subBlockColor, "Camera");
                         }
 
                         if(ctc.AzimuthRotor != null)
                         {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.AzimuthRotor, subblockcolor, "Azimuth");
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.AzimuthRotor, subBlockColor, "Azimuth");
                         }
 
                         if(ctc.ElevationRotor != null)
                         {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.ElevationRotor, subblockcolor, "Elevation");
+                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.ElevationRotor, subBlockColor, "Elevation");
                         }
 
                         TempTools.Clear();
@@ -150,7 +172,7 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                         {
                             foreach(IMyTerminalBlock tool in TempTools)
                             {
-                                DrawRelatedBlock(ctc, obb, tool, subblockcolor, "Tool/weapon");
+                                DrawRelatedBlock(ctc, obb, tool, subBlockColor, "Tool/weapon");
                             }
                         }
 
@@ -178,7 +200,7 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                                 IMyTerminalBlock selectedBlock = MyEntities.GetEntityByIdOrDefault(entityId) as IMyTerminalBlock;
                                 if(selectedBlock != null)
                                 {
-                                    DrawRelatedBlock(ec, obb, selectedBlock, subblockcolor, "Event source");
+                                    DrawRelatedBlock(ec, obb, selectedBlock, subBlockColor, "Event source");
                                 }
                             }
                         }
@@ -186,7 +208,6 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                     }
                 }
 
-                // TODO: show light radius but wireframe only to not block view... or a way to toggle these more in-your-face underlays
                 // TODO: show screenareas when material identification can be done via IMyModel
             }
         }

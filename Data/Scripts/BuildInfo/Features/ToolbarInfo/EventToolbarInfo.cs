@@ -866,7 +866,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(TargetBlock.BlockDefinition.TypeId);
                 if(overlay != null)
                 {
-                    MatrixD drawMatrix = TargetBlock.WorldMatrix;
+                    MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(TargetBlock.SlimBlock);
                     overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)TargetBlock.SlimBlock.BlockDefinition, TargetBlock.SlimBlock);
 
                     DrawingOverlays = true;

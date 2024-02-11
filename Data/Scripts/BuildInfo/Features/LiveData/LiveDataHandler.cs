@@ -53,6 +53,12 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Ladder>(typeof(MyObjectBuilder_Ladder2));
 
+            AddType<BData_Light>(typeof(MyObjectBuilder_LightingBlock));
+            AddType<BData_Light>(typeof(MyObjectBuilder_InteriorLight));
+            AddType<BData_Light>(typeof(MyObjectBuilder_ReflectorLight));
+            AddType<BData_HeatVent>(typeof(MyObjectBuilder_HeatVentBlock));
+            AddType<BData_Searchlight>(typeof(MyObjectBuilder_Searchlight));
+
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipWelder));
             AddType<BData_ShipTool>(typeof(MyObjectBuilder_ShipGrinder));
 
@@ -61,8 +67,6 @@ namespace Digi.BuildInfo.Features.LiveData
 
             AddType<BData_Motor>(typeof(MyObjectBuilder_MotorStator));
             AddType<BData_Motor>(typeof(MyObjectBuilder_MotorAdvancedStator));
-
-            AddType<BData_Searchlight>(typeof(MyObjectBuilder_Searchlight));
 
             AddType<BData_Suspension>(typeof(MyObjectBuilder_MotorSuspension));
 
@@ -79,8 +83,6 @@ namespace Digi.BuildInfo.Features.LiveData
             AddType<BData_InteriorTurret>(typeof(MyObjectBuilder_InteriorTurret));
 
             AddType<BData_TargetDummy>(Hardcoded.TargetDummyType);
-
-            AddType<BData_Spotlight>(typeof(MyObjectBuilder_ReflectorLight));
 
             AddType<BData_LaserAntenna>(typeof(MyObjectBuilder_LaserAntenna));
 

@@ -34,6 +34,8 @@ namespace Digi.BuildInfo.Features.Overlays
         bool NeedsDraw = false;
         public event Action DrawStopped;
 
+        public readonly HashSet<IMySlimBlock> ActiveOnBlocks = new HashSet<IMySlimBlock>();
+
         public Overlays(BuildInfoMod main) : base(main)
         {
             UpdateOrder = -500; // for Draw() mainly, to always render first (and therefore, under)
@@ -140,6 +142,7 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 if(!newNeedsDraw)
                 {
+                    ActiveOnBlocks.Clear();
                     DrawStopped?.Invoke();
                 }
             }
@@ -172,6 +175,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         public override void UpdateDraw()
         {
+            ActiveOnBlocks.Clear();
+
             if(OverlayMode == ModeEnum.Off && (!Main.Config.OverlayLockRememberMode.Value || Main.LockOverlay.LockedOnBlock == null))
                 return;
 
@@ -185,12 +190,16 @@ namespace Digi.BuildInfo.Features.Overlays
             {
                 ModeEnum? overrideMode = (Main.Config.OverlayLockRememberMode.Value ? Main.LockOverlay.LockedOnMode : (ModeEnum?)null);
                 DrawInstanceLockedOn.Draw(Main.LockOverlay.LockedOnBlockDef, lockedOnBlock, overrideMode);
+
+                ActiveOnBlocks.Add(lockedOnBlock);
             }
 
             IMySlimBlock toolAimedBlock = Main.EquipmentMonitor.AimedBlock;
             if(toolAimedBlock != null && lockedOnBlock != toolAimedBlock)
             {
                 DrawInstanceToolAimed.Draw(Main.EquipmentMonitor.BlockDef, toolAimedBlock);
+
+                ActiveOnBlocks.Add(toolAimedBlock);
             }
 
             if(Main.EquipmentMonitor.IsCubeBuilder)
