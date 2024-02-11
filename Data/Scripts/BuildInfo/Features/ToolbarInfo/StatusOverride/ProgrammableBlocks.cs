@@ -54,8 +54,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 if(!MyAPIGateway.Multiplayer.IsServer)
                 {
                     // TODO: split off into a separate mod, with networking
-                    sb.Append("No data\nin MP");
-                    return true;
+
+                    //sb.Append("No data\nin MP");
+                    //return true;
+
+                    return false;
                 }
 
                 // FIXME: HasCompileErrors includes warnings :(
