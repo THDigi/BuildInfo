@@ -22,8 +22,9 @@ namespace Digi.BuildInfo.Features.Terminal
         Button[] Buttons;
         TooltipHandler Tooltip;
 
-        Button RefreshButton;
         Button CopyButton;
+        Button RefreshButton;
+        Button OverlaysButton;
 
         Vector2D MousePos;
         Vector2D? DragOffset;
@@ -33,6 +34,8 @@ namespace Digi.BuildInfo.Features.Terminal
         bool CopyCopied;
 
         int RefreshClickHighlightTicks;
+
+        int OverlaysClickHighlightTicks;
 
         public DetailInfoButtons(BuildInfoMod main) : base(main)
         {
@@ -81,24 +84,34 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             Tooltip = new TooltipHandler();
 
-            Buttons = new Button[2];
+            string moveHint = $"\n\n<i>Hold RMB to move this set of buttons. Added by {BuildInfoMod.ModName} mod.";
 
-            string moveHint = $"\nHold RMB to move. Added by {BuildInfoMod.ModName} mod.";
+            // starting from right side and filing buttons towards left
 
-            Buttons[0] = CopyButton = new Button("Copy",
-                tooltip: "Copies the detailed info text to clipboard." + moveHint, tooltipHandler: Tooltip,
-                hover: CopyHover, hoverEnd: CopyHoverEnd,
-                pivot: Align.TopRight,
-                directDraw: true);
+            Buttons = new Button[]
+            {
+                CopyButton = new Button("Copy",
+                    tooltip: "Copies the detailed info text to clipboard." + moveHint, tooltipHandler: Tooltip,
+                    hover: CopyHover, hoverEnd: CopyHoverEnd,
+                    pivot: Align.TopRight,
+                    directDraw: true),
 
-            Buttons[1] = RefreshButton = new Button("Auto-Refresh: On",
-                tooltip: "Toggle if the detailed info area is forced to self-refresh twice a second." +
-                         "\nValue not saved to config as it is meant as a temporary thing to mess with." + moveHint, tooltipHandler: Tooltip,
-                hover: RefreshHover, hoverEnd: RefreshHoverEnd,
-                pivot: Align.TopRight,
-                directDraw: true);
+                OverlaysButton = new Button("Overlays: Off",
+                    tooltip: "Toggle showing <i>specialized</i> overlays for selected blocks (up to 30)." + moveHint, tooltipHandler: Tooltip,
+                    hover: OverlaysHover, hoverEnd: OverlaysHoverEnd,
+                    pivot: Align.TopRight,
+                    directDraw: true),
+
+                RefreshButton = new Button("Auto-Refresh: On",
+                    tooltip: "Toggle if the detailed info area is forced to self-refresh twice a second." +
+                             "\nValue not saved to config as it is meant as a temporary thing to mess with." + moveHint, tooltipHandler: Tooltip,
+                    hover: RefreshHover, hoverEnd: RefreshHoverEnd,
+                    pivot: Align.TopRight,
+                    directDraw: true),
+            };
         }
 
+        #region Refresh button
         void RefreshHover(Button button)
         {
             CheckForDragInput();
@@ -107,9 +120,9 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 RefreshClickHighlightTicks = 30;
 
-                Main.TerminalInfo.AutoRefresh = !Main.TerminalInfo.AutoRefresh;
+                bool on = (Main.TerminalInfo.AutoRefresh = !Main.TerminalInfo.AutoRefresh);
 
-                button.Label.TextStringBuilder.Clear().Append("Auto-Refresh: ").Append(Main.TerminalInfo.AutoRefresh ? "On" : "Off");
+                button.Label.TextStringBuilder.Clear().Append("Auto-Refresh: ").Append(on ? "On" : "Off");
             }
 
             if(RefreshClickHighlightTicks > 0 && --RefreshClickHighlightTicks > 0)
@@ -123,7 +136,9 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             RefreshClickHighlightTicks = 0;
         }
+        #endregion
 
+        #region Copy button
         void CopyHover(Button button)
         {
             CheckForDragInput();
@@ -187,6 +202,40 @@ namespace Digi.BuildInfo.Features.Terminal
         {
             CopyClickHighlightTicks = 0;
         }
+        #endregion
+
+        #region Overlays button
+        void OverlaysHover(Button button)
+        {
+            CheckForDragInput();
+
+            if(MyAPIGateway.Input.IsNewLeftMousePressed())
+            {
+                OverlaysClickHighlightTicks = 30;
+
+                bool on = (Main.TerminalUnderlays.ShowSpecializedOverlays = !Main.TerminalUnderlays.ShowSpecializedOverlays);
+
+                button.DefaultColor = (on ? Color.Yellow : Color.White);
+                button.Label.TextStringBuilder.Clear().Append("Overlays: ").Append(on ? "On" : "Off");
+            }
+
+            if(OverlaysClickHighlightTicks > 0 && --OverlaysClickHighlightTicks > 0)
+            {
+                button.Label.Background.Material = Button.MaterialBgActivate;
+                button.Label.Background.BillBoardColor = Color.Lime;
+            }
+        }
+
+        void OverlaysHoverEnd(Button button)
+        {
+            if(Main.TerminalUnderlays.ShowSpecializedOverlays)
+            {
+                button.Label.Background.Material = Button.MaterialBgActivate;
+            }
+
+            OverlaysClickHighlightTicks = 0;
+        }
+        #endregion
 
         void CheckForDragInput()
         {

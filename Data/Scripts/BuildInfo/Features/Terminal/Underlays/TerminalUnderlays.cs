@@ -21,6 +21,8 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
     /// </summary>
     public class TerminalUnderlays : ModComponent
     {
+        public bool ShowSpecializedOverlays = false;
+
         OverlayDrawInstance DrawInstance;
         BlockSelectInfo BlockSelectInfo = new BlockSelectInfo();
 
@@ -114,23 +116,17 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
 
                 bool isAlreadyDrawingOverlay = Main.Overlays.ActiveOnBlocks.Contains(block.SlimBlock);
 
-                // naaah, let the player pick if they want to see radius overlay...
-                // TODO: maybe a button to toggle specialized overlays on selected blocks?
-                //if(fewSelected && !isAlreadyDrawingOverlay)
-                //{
-                //    if(block is IMyLightingBlock || block is IMyHeatVent)
-                //    {
-                //        SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
-                //        if(overlay != null)
-                //        {
-                //            MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
-                //            overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
-                //        }
-                //        continue;
-                //    }
-                //}
+                if(!isAlreadyDrawingOverlay && ShowSpecializedOverlays)
+                {
+                    SpecializedOverlayBase overlay = Main.SpecializedOverlays.Get(block.BlockDefinition.TypeId);
+                    if(overlay != null)
+                    {
+                        MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
+                        overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
+                    }
+                }
 
-                if(oneSelection && !isAlreadyDrawingOverlay)
+                if(!ShowSpecializedOverlays && oneSelection && !isAlreadyDrawingOverlay)
                 {
                     IMyButtonPanel button = block as IMyButtonPanel;
                     if(button != null)
