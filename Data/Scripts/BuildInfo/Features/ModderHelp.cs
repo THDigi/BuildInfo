@@ -14,6 +14,7 @@ using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Input;
 using VRage.Library.Utils;
 using VRage.Utils;
@@ -81,7 +82,7 @@ namespace Digi.BuildInfo.Features
         struct HackCloudLayerSettings  // HACK: MyCloudLayerSettings is not whitelisted
         {
             //[ProtoMember(1)] public string Model;
-            [ProtoMember(4)] [XmlArrayItem("Texture")] public List<string> Textures;
+            [ProtoMember(4)][XmlArrayItem("Texture")] public List<string> Textures;
             //[ProtoMember(7)] public float RelativeAltitude;
             //[ProtoMember(10)] public Vector3D RotationAxis;
             //[ProtoMember(13)] public float AngularVelocity;
@@ -163,7 +164,8 @@ namespace Digi.BuildInfo.Features
 
             cloudLayerInfo[pathKey] = new CloudLayerInfo()
             {
-                AppendMessage = "Game looks for this texture with _cm and _alphamask suffix, if those exist and they show up in game then this error can be ignored.",
+                AppendMessage = "You can ignore this game error if the planet looks fine.\nIf you're the planet's author you can ask on Keen discord how to get rid the fake cloudlayer error.",
+                SetSeverity = TErrorSeverity.Warning,
             };
 
             // FIXME: same texture used in multiple planets on the same mod collide.
@@ -591,6 +593,7 @@ namespace Digi.BuildInfo.Features
         void CheckMods()
         {
             Dictionary<string, ModHintData> modHints = new Dictionary<string, ModHintData>();
+            HashSet<string> voxelPlacementAlerted = new HashSet<string>();
 
             foreach(MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
@@ -707,6 +710,21 @@ namespace Digi.BuildInfo.Features
                     {
                         ModProblem(def, "uses HasPhysics=false and IsStandAlone=true which allows player to place free-floating and then can't be grinded anymore!"
                                       + "\nGenerally recommended for both of these tags to have the same value. Can also have IsStandAlone=false and HasPhysics=true.");
+                    }
+
+                    if(blockDef.VoxelPlacement.HasValue)
+                    {
+                        var vp = blockDef.VoxelPlacement.Value;
+
+                        bool firstTimeForThisMod = voxelPlacementAlerted.Add(blockDef.Context.ModId);
+                        if(firstTimeForThisMod)
+                        {
+                            if((vp.StaticMode.PlacementMode == VoxelPlacementMode.Volumetric && vp.StaticMode.MinAllowed > vp.StaticMode.MaxAllowed)
+                            || (vp.DynamicMode.PlacementMode == VoxelPlacementMode.Volumetric && vp.DynamicMode.MinAllowed > vp.DynamicMode.MaxAllowed))
+                            {
+                                ModHint(def, $"VoxelPlacement's MinAllowed is larger than MaxAllowed, is this really intended? If so please let me (Digi) know of the intended effect!");
+                            }
+                        }
                     }
 
                     continue;
