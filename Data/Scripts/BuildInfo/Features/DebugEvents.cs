@@ -31,6 +31,8 @@ using VRage.Game.Components;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.EntityComponents;
 using VRage.Game.Entity;
+using static VRageRender.MyBillboard;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 
 namespace Digi.BuildInfo.Features
 {
@@ -125,8 +127,108 @@ namespace Digi.BuildInfo.Features
             //    DamagePerEnt[obj] = DamagePerEnt.GetValueOrDefault(obj, 0) + 1;
             //});
 
+            // result: Dictionary<K,V> works in protobuf but not in XML
+            //try
+            //{
+            //    Dictionary<Vector3I, string> data = new Dictionary<Vector3I, string>()
+            //    {
+            //        [Vector3I.One] = "yoo",
+            //    };
+
+            //    //var binary = MyAPIGateway.Utilities.SerializeToBinary(data);
+            //    //var newData = MyAPIGateway.Utilities.SerializeFromBinary<Dictionary<Vector3I, string>>(binary);
+            //    //Log.Info($"binary deserialized: {newData[Vector3I.One]}");
+
+            //    var xml = MyAPIGateway.Utilities.SerializeToXML(data);
+            //    var newData = MyAPIGateway.Utilities.SerializeFromXML<Dictionary<Vector3I, string>>(xml);
+            //    Log.Info($"XML deserialized: {newData[Vector3I.One]}");
+            //}
+            //catch(Exception e)
+            //{
+            //    Log.Error(e);
+            //}
+
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
         }
+
+        // testing GetVoxelContentInBoundingBox_Fast() with how VoxelPlacement uses it
+        /*
+        bool testVoxelVolume = false;
+        public override void UpdateAfterSim(int tick)
+        {
+            if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.L))
+            {
+                testVoxelVolume = !testVoxelVolume;
+            }
+
+            if(!testVoxelVolume)
+                return;
+
+            var camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+
+            MatrixD m = MatrixD.Identity;
+
+            m.Translation = camWM.Translation + camWM.Forward * 15;
+
+            Vector3D size = new Vector3D(2.5, 2.5, 2.5);
+            size.X = Dev.GetValueScroll("x", 2.5, MyKeys.D4);
+            size.Y = Dev.GetValueScroll("y", 2.5, MyKeys.D5);
+            size.Z = Dev.GetValueScroll("z", 2.5, MyKeys.D6);
+            BoundingBoxD localbox = new BoundingBoxD(size * -0.5, size * 0.5);
+
+            Color color = Color.SkyBlue;
+            MySimpleObjectDraw.DrawTransparentBox(ref m, ref localbox, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, 0.01f, MyStringId.GetOrCompute("Square"), MyStringId.GetOrCompute("Square"), blendType: BlendTypeEnum.Standard);
+
+            float min = (float)Dev.GetValueScroll("min", 0, MyKeys.D1);
+            float max = (float)Dev.GetValueScroll("max", 1f, MyKeys.D2);
+
+            VoxelPlacementSettings settings = new VoxelPlacementSettings()
+            {
+                MinAllowed = min,
+                MaxAllowed = max,
+                PlacementMode = VoxelPlacementMode.Volumetric,
+            };
+
+            bool stopIfFindAtLeastOneContent = settings.MaxAllowed <= 0f;
+
+            BoundingBoxD box = localbox.TransformFast(ref m);
+            List<MyVoxelBase> voxelMaps = new List<MyVoxelBase>();
+            MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, voxelMaps);
+            foreach(MyVoxelBase voxelMap in voxelMaps)
+            {
+                if(voxelMap == null)
+                    continue;
+
+                MyTuple<float, float> res = voxelMap.GetVoxelContentInBoundingBox_Fast(localbox, m, stopIfFindAtLeastOneContent);
+
+                float num = res.Item2;
+                if(float.IsNaN(num) || float.IsInfinity(num))
+                    num = 0;
+
+                bool valid = CheckFlag(num, settings);
+
+                MyAPIGateway.Utilities.ShowNotification($"res={res.Item1} / {res.Item2}\nvalid={valid}; min={settings.MinAllowed}; max={settings.MaxAllowed}", 16);
+
+                color = (valid ? Color.Lime : Color.Red);
+                MySimpleObjectDraw.DrawTransparentBox(ref m, ref localbox, ref color, MySimpleObjectRasterizer.Solid, 1, 0.001f, MyStringId.GetOrCompute("Square"), MyStringId.GetOrCompute("Square"), blendType: BlendTypeEnum.AdditiveTop);
+
+                break;
+            }
+        }
+
+        public static bool CheckFlag(float num, VoxelPlacementSettings VoxelPlacement)
+        {
+            if(num <= VoxelPlacement.MaxAllowed)
+            {
+                if(!(num >= VoxelPlacement.MinAllowed))
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+        */
 
         //Dictionary<object, int> DamagePerEnt = new Dictionary<object, int>();
 

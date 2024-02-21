@@ -25,6 +25,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Library.Utils;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -1740,6 +1741,70 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Aimed block info generation
 
+        void AppendVoxelPlacement(VoxelPlacementSettings ps, StringBuilder sb)
+        {
+            // for static vs dynamic:
+            // - cubebuilder aimed at grid (regardless of static/dynamic) it uses Static
+            // - cubebuilder aimed at voxel in "local grid mode" uses Static, otherwise if you can move it freely on the surface it's Dynamic
+            // - cubebuilder aimed at empty space uses Dynamic
+            // - grid paste ghost aimed at existing grid it uses Static
+            // - grid paste ghost aimed at nothing it uses Dynamic
+
+            // if the block has null def.VoxelPlacement then it falls back to SessionComponents.sbc based on the equipped thing
+            // ... with a few hardcoded overrides (these only override the session comp stuff as they're done before TestVoxelPlacement() which overrides from def.VoxelPlacement):
+            // - MyCubeBuilder.RequestGridSpawn() forces it to be OutsideVoxel
+            // - MyCubeGrid.ShouldBeStatic() forces it to be Volumetric with 0 min and 0 max
+            // - MyCubeGrid.TestBlockPlacementArea() forces to Both if dynamic && largegrid
+
+            // NOTE: InVoxel and OutsideVoxel checks if any BB corner is in voxel, so big blocks can still be in voxels but not detected as such.
+
+            if(ps.PlacementMode == VoxelPlacementMode.None)
+            {
+                sb.Color(COLOR_BAD).Append("Cannot be placed regardless of voxel proximity!");
+            }
+            else if(ps.PlacementMode == VoxelPlacementMode.Both)
+            {
+                sb.Color(COLOR_GOOD).Append("No terrain restrictions");
+            }
+            else if(ps.PlacementMode == VoxelPlacementMode.InVoxel)
+            {
+                sb.Color(COLOR_BAD).Append("Touching terrain");
+            }
+            else if(ps.PlacementMode == VoxelPlacementMode.OutsideVoxel)
+            {
+                sb.Color(COLOR_WARNING).Append("Outside of terrain");
+            }
+            else if(ps.PlacementMode == VoxelPlacementMode.Volumetric)
+            {
+                // HACK: because GetVoxelContentInBoundingBox_Fast() returns very weird results
+                const float PercentageFix = 0.75f;
+
+                // only Volumetric uses Min/MaxAllowed
+                int minP = (int)MathHelper.Clamp((ps.MinAllowed / PercentageFix) * 100, 0, 100);
+                int maxP = (int)MathHelper.Clamp((ps.MaxAllowed / PercentageFix) * 100, 0, 100);
+
+                if(minP <= maxP)
+                {
+                    if(minP > 0)
+                    {
+                        sb.Color(COLOR_BAD).Append("Has to be ").Append(minP).Append("% to ").Append(maxP).Append("% inside terrain");
+                    }
+                    else
+                    {
+                        sb.Color(COLOR_WARNING).Append(100 - maxP).Append("% outside of terrain");
+                    }
+                }
+                else
+                {
+                    sb.Color(COLOR_BAD).Append($"Weird volumetric - Min: {ps.MinAllowed * 100:0}%, Max: {ps.MaxAllowed * 100:0}%");
+                }
+            }
+            else
+            {
+                sb.Color(COLOR_BAD).Append($"(Unknown Mode: {ps.PlacementMode})");
+            }
+        }
+
         #region Equipped block info generation
         public void GenerateBlockText(MyCubeBlockDefinition def)
         {
@@ -1835,26 +1900,91 @@ namespace Digi.BuildInfo.Features
             }
             #endregion Optional - different item gain on grinding
 
-            // TODO: use? not sure if useful...
-            //if(def.VoxelPlacement.HasValue)
-            //{
-            //    // Comment from definition:
-            //    // <!--Possible settings Both,InVoxel,OutsideVoxel,Volumetric. If volumetric set than MaxAllowed and MinAllowed will be used.-->
-            //
-            //    var vp = def.VoxelPlacement.Value;
-            //
-            //    AddLine().Color(COLOR_WARNING).Append($"Terrain placement - Dynamic: ").Append(vp.DynamicMode.PlacementMode.ToString());
-            //
-            //    if(vp.DynamicMode.PlacementMode == VoxelPlacementMode.Volumetric)
-            //        GetLine().Append(" (").ProportionToPercent(vp.DynamicMode.MinAllowed).Append(" to ").ProportionToPercent(vp.DynamicMode.MaxAllowed).Append(")");
-            //
-            //    GetLine().Separator().Append($"Static: ").Append(vp.StaticMode.PlacementMode.ToString());
-            //
-            //    if(vp.StaticMode.PlacementMode == VoxelPlacementMode.Volumetric)
-            //        GetLine().Append(" (").ProportionToPercent(vp.StaticMode.MinAllowed).Append(" to ").ProportionToPercent(vp.StaticMode.MaxAllowed).Append(")");
-            //
-            //    GetLine().ResetColor();
-            //}
+            #region Optional - voxel placement restrictions
+            //if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.placement???))
+            {
+                var cbDynamic = MyCubeBuilder.CubeBuilderDefinition.BuildingSettings.GetGridPlacementSettings(def.CubeSize, isStatic: false);
+                var cbStatic = MyCubeBuilder.CubeBuilderDefinition.BuildingSettings.GetGridPlacementSettings(def.CubeSize, isStatic: true);
+
+                // game will probably crash if cubebuilder defaults don't have values, but checking them anyway
+                if(def.VoxelPlacement.HasValue || (cbDynamic.VoxelPlacement.HasValue && cbStatic.VoxelPlacement.HasValue))
+                {
+                    VoxelPlacementSettings staticSettings;
+                    VoxelPlacementSettings dynamicSettings;
+
+                    bool fromCubeBuilder = true;
+
+                    if(def.VoxelPlacement.HasValue)
+                    {
+                        fromCubeBuilder = false;
+
+                        VoxelPlacementOverride vp = def.VoxelPlacement.Value;
+                        staticSettings = vp.StaticMode;
+                        dynamicSettings = vp.DynamicMode;
+                    }
+                    else
+                    {
+                        staticSettings = cbStatic.VoxelPlacement.Value;
+
+                        // HACK: from MyCubeGrid.TestBlockPlacementArea()
+                        if(def.CubeSize == MyCubeSize.Large)
+                            dynamicSettings = new VoxelPlacementSettings { PlacementMode = VoxelPlacementMode.Both };
+                        else
+                            dynamicSettings = cbDynamic.VoxelPlacement.Value;
+                    }
+
+                    bool identical = false;
+                    if(dynamicSettings.PlacementMode == staticSettings.PlacementMode)
+                    {
+                        if(staticSettings.PlacementMode == VoxelPlacementMode.Volumetric)
+                        {
+                            if(dynamicSettings.MinAllowed == staticSettings.MinAllowed && dynamicSettings.MaxAllowed == staticSettings.MaxAllowed)
+                                identical = true;
+                        }
+                        else
+                            identical = true;
+                    }
+
+                    const int PlaceLimitAsSpaces = 31; // calculated with /bi measure "Voxel placement "
+
+                    StringBuilder line = AddLine();
+                    if(identical)
+                    {
+                        line.Label("Voxel placement");
+                        AppendVoxelPlacement(staticSettings, line);
+                    }
+                    else
+                    {
+                        line.Label("Voxel placement - 3D grid");
+                        AppendVoxelPlacement(staticSettings, line);
+                    }
+
+                    if(fromCubeBuilder)
+                        GetLine().Append(" <color=gray>(default)");
+
+                    StringBuilder tooltip = CreateTooltip(coveringLines: identical ? 1 : 2);
+                    if(tooltip != null)
+                    {
+                        tooltip.Append("How the block is allowed to be placed in relation to nearby voxels (terrain).")
+                               .Append("\n")
+                               .Append("\nThere's 2 pairs of settings, one for 3D-grid-aligned and another for free placment, if both have identical settings then only one is printed here.")
+                               .Append("\nGrid is used when the block is locked to a 3D grid, either aiming at a cubegrid or using 'Local grid mode' when aiming at terrain.")
+                               .Append("\nFree is when not locked to any 3D grid, freely aimed either mid-air or at terrain.")
+                               .Append("\n")
+                               .Append("\nThe <color=gray>(default)<reset> tag means that these rules are not on this specific block, but from fallback to cubebuilder's generic rules.");
+                    }
+
+                    if(!identical)
+                    {
+                        line = AddLine().Append(' ', PlaceLimitAsSpaces).Label("- Free");
+                        AppendVoxelPlacement(dynamicSettings, line);
+
+                        if(fromCubeBuilder)
+                            GetLine().Append(" <color=gray>(default)");
+                    }
+                }
+            }
+            #endregion Optional - voxel placement restrictions
 
             // TODO: cache needs clearing for this to get added/removed as creative tools are on/off
             #region Optional - creative-only stuff
