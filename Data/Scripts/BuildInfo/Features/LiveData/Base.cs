@@ -21,7 +21,15 @@ namespace Digi.BuildInfo.Features.LiveData
         In = (1 << 1),
         Out = (1 << 2),
         Interactive = (1 << 3),
-        Unreachable = (1 << 4),
+    }
+
+    /// <summary>
+    /// Relative to a grid
+    /// </summary>
+    public struct PortPos
+    {
+        public Vector3I Position;
+        public Base6Directions.Direction Direction;
     }
 
     public struct ConveyorInfo
@@ -41,19 +49,30 @@ namespace Digi.BuildInfo.Features.LiveData
             Direction = dir;
         }
 
-        public void TransformToGrid(IMySlimBlock block, out Vector3I gridPos, out Base6Directions.Direction gridDir)
+        public PortPos TransformToGrid(IMySlimBlock block)
         {
-            // from MyConveyorConnector.PositionToGridCoords()
+            PortPos port = default(PortPos);
 
-            //Matrix localOrientation;
-            //block.Orientation.GetMatrix(out localOrientation);
-            //gridPos = Vector3I.Round(Vector3.TransformNormal(new Vector3(CellPosition), localOrientation)) + block.Position;
-
-            // optimized with integer transform
+            // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
             MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
-            Vector3I.Transform(ref CellPosition, ref matrix, out gridPos);
+            Vector3I.Transform(ref CellPosition, ref matrix, out port.Position);
+            port.Direction = block.Orientation.TransformDirection(Direction);
 
-            gridDir = block.Orientation.TransformDirection(Direction);
+            return port;
+        }
+
+        public Vector3 GetGridLocalPosition(MyCubeBlock block)
+        {
+            PortPos port = default(PortPos);
+
+            // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
+            MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
+            Vector3I.Transform(ref CellPosition, ref matrix, out port.Position);
+            port.Direction = block.Orientation.TransformDirection(Direction);
+
+            Vector3 portCellCenter = port.Position * block.CubeGrid.GridSize;
+            Vector3 portEdgeOffset = Base6Directions.GetVector(port.Direction) * block.CubeGrid.GridSizeHalf;
+            return portCellCenter + portEdgeOffset;
         }
     }
 
@@ -89,6 +108,7 @@ namespace Digi.BuildInfo.Features.LiveData
         }
     }
 
+    // Not serialized in any way, can safely change numbers around.
     [Flags]
     public enum BlockHas : byte
     {
@@ -119,10 +139,15 @@ namespace Digi.BuildInfo.Features.LiveData
         /// </summary>
         OwnershipDetector = (1 << 4),
 
-        /// <summary>
-        /// Block has custom useobjects or custom gamelogic.
-        /// </summary>
+        ///// <summary>
+        ///// Block has custom useobjects or custom gamelogic.
+        ///// </summary>
         //CustomLogic = (1 << 5),
+
+        /// <summary>
+        /// All conveyor ports on this block are large ports, if flag is missing then it can have mixed or all small.
+        /// </summary>
+        LargeConveyorPorts = (1 << 6),
     }
 
     public class BData_Base
@@ -253,8 +278,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             Interactive = new List<InteractionInfo>(dummies.Values.Count);
 
-            // supergridding might break this?
-            float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+            // using grid's actual size in case this is a supergrid'd block, to properly translate into cells
+            float cellSize = block.CubeGrid.GridSize; // MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             float cellSizeHalf = cellSize / 2f;
             Vector3 sizeMetric = new Vector3(def.Size) * cellSizeHalf;
 
@@ -306,15 +331,14 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     // some blocks like classic large turrets have their interactive ports as real conveyor ports but they are not reachable because they start from middle cell.
                     {
-                        Vector3I gridPos;
-                        Base6Directions.Direction gridDir;
-                        port.TransformToGrid(block.SlimBlock, out gridPos, out gridDir);
-
-                        IMySlimBlock slimCheck = block.CubeGrid.GetCubeBlock(gridPos + Base6Directions.GetIntVector(gridDir));
-                        if(slimCheck == block.SlimBlock)
+                        PortPos portPos = port.TransformToGrid(block.SlimBlock);
+                        Vector3I connectingToCell = portPos.Position + Base6Directions.GetIntVector(portPos.Direction);
+                        IMySlimBlock slimCheck = block.CubeGrid.GetCubeBlock(connectingToCell);
+                        if(slimCheck == block.SlimBlock) // connects to itself, mark unreachable
                         {
-                            flags |= ConveyorFlags.Unreachable;
-                            port = new ConveyorInfo(flags, matrix, portCellPos, portDir);
+                            Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
+                            Has |= BlockHas.PhysicalTerminalAccess;
+                            continue;
                         }
                     }
 
@@ -322,6 +346,9 @@ namespace Digi.BuildInfo.Features.LiveData
                         ConveyorPorts = new List<ConveyorInfo>();
 
                     ConveyorPorts.Add(port);
+
+                    if((flags & ConveyorFlags.Small) == 0)
+                        Has |= BlockHas.LargeConveyorPorts;
 
                     // less memory to just compute it in overlay, not much added overhead
                     //if((flags & ConveyorFlags.Interactive) != 0)

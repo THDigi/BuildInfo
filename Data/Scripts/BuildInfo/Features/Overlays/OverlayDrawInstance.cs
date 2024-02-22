@@ -481,11 +481,7 @@ namespace Digi.BuildInfo.Features.Overlays
                                 MatrixD matrix = info.LocalMatrix * blockWorldMatrix;
                                 bool isSmall = (info.Flags & ConveyorFlags.Small) != 0;
 
-                                if((info.Flags & ConveyorFlags.Unreachable) != 0)
-                                {
-                                    DrawPort("Inventory/Terminal access", matrix, InteractiveTerminalColor);
-                                }
-                                else if((info.Flags & ConveyorFlags.Interactive) != 0)
+                                if((info.Flags & ConveyorFlags.Interactive) != 0)
                                 {
                                     if(isSmall)
                                         DrawPort("        Interactive\nSmall conveyor port", matrix, InteractiveConveyorPortColor);
