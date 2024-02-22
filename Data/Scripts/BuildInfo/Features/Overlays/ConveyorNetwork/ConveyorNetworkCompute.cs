@@ -233,7 +233,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                             TempCheckedBlocks.Add(traceFromBlock);
 
                             SelectGrid(traceFrom.CubeGrid);
-                            PathfindFromConveyor(traceFromBlock, traceFromConveyor);
+
+                            if(PathfindFromConveyor(traceFromBlock, traceFromConveyor))
+                            {
+                                SetNetworkIdx(NetworkIndex + 1);
+                            }
 
                             CurrentGridRender.Dots.Add(new RenderDot()
                             {
@@ -241,8 +245,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                 LocalPos = Vector3.Transform(traceFromBlock.PositionComp.LocalAABB.Center, traceFromBlock.PositionComp.LocalMatrixRef),
                                 Flags = RenderFlags.Pulse,
                             });
-
-                            SetNetworkIdx(NetworkIndex + 1);
                         }
                         else
                         {
@@ -260,9 +262,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                             if(CurrentGridRender?.Grid != block.CubeGrid)
                                 SelectGrid(block.CubeGrid);
 
-                            PathfindFromConveyor(block, conveyor);
-
-                            SetNetworkIdx(NetworkIndex + 1);
+                            if(PathfindFromConveyor(block, conveyor))
+                            {
+                                SetNetworkIdx(NetworkIndex + 1);
+                            }
                         }
                     }
                 }
@@ -303,7 +306,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             NetworkColor = ConveyorNetworkRender.Colors[NetworkIndex % ConveyorNetworkRender.Colors.Length];
         }
 
-        void PathfindFromConveyor(MyCubeBlock block, Conveyor conveyor)
+        bool PathfindFromConveyor(MyCubeBlock block, Conveyor conveyor)
         {
             bool hasConnections = conveyor.Connected.Count > 0;
             bool hasLargePorts = (conveyor.Data.Has & BlockHas.LargeConveyorPorts) != 0;
@@ -529,6 +532,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 });
             }
             #endregion
+
+            return hasConnections;
         }
     }
 }
