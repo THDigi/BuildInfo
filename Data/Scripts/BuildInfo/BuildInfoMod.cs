@@ -7,6 +7,7 @@ using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
+using Digi.BuildInfo.Features.Overlays.ConveyorNetwork;
 using Digi.BuildInfo.Features.ReloadTracker;
 using Digi.BuildInfo.Features.Terminal;
 using Digi.BuildInfo.Features.Terminal.Underlays;
@@ -63,6 +64,7 @@ namespace Digi.BuildInfo
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
         public readonly LeakInfo LeakInfo;
         public readonly ShipOverlays ShipOverlays;
+        public readonly ConveyorNetworkView ConveyorNetworkView;
         public readonly Overlays Overlays;
         public readonly SpecializedOverlays SpecializedOverlays;
         public readonly LockOverlay LockOverlay;
@@ -160,6 +162,7 @@ namespace Digi.BuildInfo
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             ShipOverlays = new ShipOverlays(this);
+            ConveyorNetworkView = new ConveyorNetworkView(this);
             Overlays = new Overlays(this);
             SpecializedOverlays = new SpecializedOverlays(this);
             LockOverlay = new LockOverlay(this);

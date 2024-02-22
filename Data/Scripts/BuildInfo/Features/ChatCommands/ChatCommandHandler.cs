@@ -15,6 +15,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public CommandHelp CommandHelp;
         public CommandServerInfo CommandServerInfo;
+        public CommandConveyorNetwork CommandConveyorNetwork;
         public CommandModLink CommandModLink;
         public CommandWorkshop CommandWorkshop;
         public CommandChangelog CommandChangelog;
@@ -45,6 +46,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             // affects order in help menu
             CommandHelp = new CommandHelp();
             CommandServerInfo = new CommandServerInfo();
+            CommandConveyorNetwork = new CommandConveyorNetwork();
             CommandModLink = new CommandModLink();
             CommandWorkshop = new CommandWorkshop();
             CommandChangelog = new CommandChangelog();
