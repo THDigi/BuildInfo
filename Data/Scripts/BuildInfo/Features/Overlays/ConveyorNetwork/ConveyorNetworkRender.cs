@@ -3,6 +3,7 @@ using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 using static VRageRender.MyBillboard;
@@ -68,6 +69,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         float Pulse;
         bool IgnoreSmall = false;
 
+        BoundingFrustumD CameraFrustum = new BoundingFrustumD(MatrixD.Identity);
+
         public ConveyorNetworkRender(ConveyorNetworkView handler)
         {
             Handler = handler;
@@ -128,6 +131,15 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         {
             Pulse = Utils.Pulse(0.5f, 1.5f, freq: 1.2f);
 
+            IMyCamera camera = MyAPIGateway.Session.Camera;
+
+            // for debugging
+            //var ProjectionMatrix = MatrixD.CreatePerspectiveFieldOfView(MathHelper.ToRadians(40), camera.ViewportSize.X / camera.ViewportSize.Y, camera.NearPlaneDistance, camera.FarPlaneDistance);
+            //CameraFrustum.Matrix = MatrixD.Invert(MyAPIGateway.Session.Player.Character.GetHeadMatrix(false, false)) * ProjectionMatrix;
+            //DebugDraw.DrawFrustum(CameraFrustum);
+
+            CameraFrustum.Matrix = camera.ViewMatrix * camera.ProjectionMatrix;
+
             DrawLayer(isShadow: true);
             DrawLayer(drawLines: true);
             DrawBoxes();
@@ -136,6 +148,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
         void DrawLayer(bool isShadow = false, bool drawLines = false, bool drawDots = false)
         {
+            const double ContainsRadius = BaseThickLarge * LineShadowThickMul;
+
             Vector3D camPos = MyAPIGateway.Session.Camera.Position;
 
             if(isShadow)
@@ -147,6 +161,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             // grid-local render objects
             foreach(GridRender gridRender in RenderGrids.Values)
             {
+                if(CameraFrustum.Contains(gridRender.Grid.WorldAABB) == ContainmentType.Disjoint)
+                    continue;
+
                 MatrixD transform = gridRender.Grid.PositionComp.WorldMatrixRef;
 
                 if(drawLines)
@@ -156,6 +173,13 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     for(int i = 0; i < gridRender.Lines.Count; i++)
                     {
                         RenderLine line = gridRender.Lines[i];
+                        Vector3D from = Vector3D.Transform(line.LocalFrom, transform);
+                        Vector3D to = Vector3D.Transform(line.LocalTo, transform);
+                        Vector3D midpoint = from + (to - from) * 0.5f;
+
+                        if(CameraFrustum.Contains(new BoundingSphereD(midpoint, line.Length + ContainsRadius * 2)) == ContainmentType.Disjoint)
+                            continue;
+
                         bool isSmallPort = (line.Flags & RenderFlags.Small) != 0;
 
                         float thickness = (isSmallPort ? BaseThickSmall : BaseThickLarge)
@@ -173,9 +197,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                 color = Color.Darken(color, NoSmallDarken);
                         }
 
-                        Vector3D from = Vector3D.Transform(line.LocalFrom, transform);
                         Vector3D fromClose = camPos + ((from - camPos) * DepthRatio);
-                        Vector3D to = Vector3D.Transform(line.LocalTo, transform);
                         Vector3D toClose = camPos + ((to - camPos) * DepthRatio);
 
                         MyTransparentGeometry.AddLineBillboard(material, color,
@@ -192,6 +214,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     for(int i = 0; i < gridRender.Dots.Count; i++)
                     {
                         RenderDot dot = gridRender.Dots[i];
+                        Vector3D pos = Vector3D.Transform(dot.LocalPos, transform);
+
+                        if(CameraFrustum.Contains(new BoundingSphereD(pos, ContainsRadius)) == ContainmentType.Disjoint)
+                            continue;
+
                         bool isSmallPort = (dot.Flags & RenderFlags.Small) != 0;
 
                         float thickness = (isSmallPort ? BaseThickSmall : BaseThickLarge)
@@ -209,7 +236,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         if((dot.Flags & RenderFlags.Pulse) != 0)
                             thickness *= Pulse;
 
-                        Vector3D pos = Vector3D.Transform(dot.LocalPos, transform);
                         Vector3D posClose = camPos + ((pos - camPos) * DepthRatio);
 
                         MyTransparentGeometry.AddPointBillboard(material, color, posClose,
@@ -225,6 +251,10 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     for(int i = 0; i < gridRender.DirectionalLines.Count; i++)
                     {
                         RenderDirectional directionalLine = gridRender.DirectionalLines[i];
+                        Vector3D pos = Vector3D.Transform(directionalLine.LocalPos, transform);
+
+                        if(CameraFrustum.Contains(new BoundingSphereD(pos, ContainsRadius)) == ContainmentType.Disjoint)
+                            continue;
 
                         bool isSmallPort = (directionalLine.Flags & RenderFlags.Small) != 0;
 
@@ -243,7 +273,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                             thickness *= Pulse;
 
                         Vector3D dir = transform.GetDirectionVector(directionalLine.Dir);
-                        Vector3D pos = Vector3D.Transform(directionalLine.LocalPos, transform);
                         pos -= dir * thickness; // since this is a line, offset by half length so the input position is centered
                         thickness *= DepthRatio;
 
@@ -262,12 +291,24 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             {
                 MyStringId material = (isShadow ? MaterialLineShadow : MaterialLine);
 
-                foreach(RenderLink link in GridLinks)
+                for(int i = GridLinks.Count - 1; i >= 0; i--)
                 {
-                    Vector3D from = Vector3D.Transform(link.BlockA.LocalAABB.Center, link.BlockA.WorldMatrix);
-                    Vector3D fromClose = camPos + ((from - camPos) * DepthRatio);
+                    RenderLink link = GridLinks[i];
 
+                    if(link.BlockA.MarkedForClose || link.BlockB.MarkedForClose)
+                    {
+                        GridLinks.RemoveAtFast(i);
+                        continue;
+                    }
+
+                    Vector3D from = Vector3D.Transform(link.BlockA.LocalAABB.Center, link.BlockA.WorldMatrix);
                     Vector3D to = Vector3D.Transform(link.BlockB.LocalAABB.Center, link.BlockB.WorldMatrix);
+                    Vector3D midpoint = from + (to - from) * 0.5f;
+
+                    if(CameraFrustum.Contains(new BoundingSphereD(midpoint, link.Length + ContainsRadius * 2)) == ContainmentType.Disjoint)
+                        continue;
+
+                    Vector3D fromClose = camPos + ((from - camPos) * DepthRatio);
                     Vector3D toClose = camPos + ((to - camPos) * DepthRatio);
 
                     bool isSmallPort = (link.Flags & RenderFlags.Small) != 0;
@@ -299,6 +340,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         {
             foreach(GridRender gridRender in RenderGrids.Values)
             {
+                if(CameraFrustum.Contains(gridRender.Grid.WorldAABB) == ContainmentType.Disjoint)
+                    continue;
+
                 MatrixD transform = gridRender.Grid.PositionComp.WorldMatrixRef;
 
                 float boxSize = (gridRender.Grid.GridSizeEnum == MyCubeSize.Large ? BoxSizeLG : BoxSizeSG);
@@ -312,6 +356,9 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
                     MatrixD boxWM = transform;
                     boxWM.Translation = Vector3D.Transform(box.LocalPos, transform);
+
+                    if(CameraFrustum.Contains(new BoundingSphereD(boxWM.Translation, BoxSizeLG)) == ContainmentType.Disjoint)
+                        continue;
 
                     float depthRatio = OverlayDrawInstance.ConvertToAlwaysOnTop(ref boxWM);
 

@@ -357,6 +357,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     Color = lineColor,
                     LocalFrom = linkCenter,
                     LocalTo = cp.PortGridLocalPos,
+                    Length = Vector3.Distance(linkCenter, cp.PortGridLocalPos),
                     Flags = flags
                 });
 
@@ -435,6 +436,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         {
                             BlockA = block,
                             BlockB = connected,
+                            Length = (float)Vector3D.Distance(block.WorldMatrix.Translation, connected.WorldMatrix.Translation),
                             Color = lineColor,
                             Flags = flags,
                         });
@@ -481,6 +483,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         Color = ConveyorNetworkRender.IsolatedColor,
                         LocalFrom = linkCenter,
                         LocalTo = portLocalPos,
+                        Length = Vector3.Distance(linkCenter, portLocalPos),
                         Flags = flags,
                     });
                 }

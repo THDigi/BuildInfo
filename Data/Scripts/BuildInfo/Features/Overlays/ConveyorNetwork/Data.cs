@@ -32,12 +32,15 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public Vector3 LocalPos;
         public Color Color; // 32bits
         public RenderFlags Flags;
+
+        // not using readonly+constructor because mod profiler
     }
 
     struct RenderLine
     {
         public Vector3 LocalFrom;
         public Vector3 LocalTo;
+        public float Length;
         public Color Color;
         public RenderFlags Flags;
     }
@@ -54,6 +57,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     {
         public IMyCubeBlock BlockA;
         public IMyCubeBlock BlockB;
+        public float Length;
         public Color Color;
         public RenderFlags Flags;
     }
