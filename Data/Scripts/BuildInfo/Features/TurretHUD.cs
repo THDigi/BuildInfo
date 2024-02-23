@@ -130,46 +130,53 @@ namespace Digi.BuildInfo.Features
             IMyLargeTurretBase turret = MyAPIGateway.Session.ControlledObject as IMyLargeTurretBase;
             if(turret != null)
             {
-                if(prevTurret != turret)
+                try
                 {
-                    weaponTracker = null;
-                    weaponBlockDef = null;
-                    weaponDef = null;
-                    weaponCoreBlock = Main.CoreSystemsAPIHandler.Weapons.ContainsKey(turret.BlockDefinition);
-
-                    if(!weaponCoreBlock)
+                    if(prevTurret != turret)
                     {
-                        weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(turret.EntityId, null);
-                        weaponBlockDef = turret.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
-                        weaponDef = (weaponBlockDef != null ? MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId) : null);
+                        weaponTracker = null;
+                        weaponBlockDef = null;
+                        weaponDef = null;
+                        weaponCoreBlock = Main.CoreSystemsAPIHandler.Weapons.ContainsKey(turret.BlockDefinition);
 
-                        if(weaponDef == null || !weaponDef.HasAmmoMagazines())
+                        if(!weaponCoreBlock)
                         {
-                            weaponTracker = null;
-                            weaponBlockDef = null;
-                            weaponDef = null;
+                            weaponTracker = Main.ReloadTracking.WeaponLookup.GetValueOrDefault(turret.EntityId, null);
+                            weaponBlockDef = turret.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+                            weaponDef = (weaponBlockDef != null ? MyDefinitionManager.Static.GetWeaponDefinition(weaponBlockDef.WeaponDefinitionId) : null);
+
+                            if(weaponDef == null || !weaponDef.HasAmmoMagazines())
+                            {
+                                weaponTracker = null;
+                                weaponBlockDef = null;
+                                weaponDef = null;
+                            }
                         }
+
+                        prevTurret = turret;
+
+                        // TODO: add or not?
+                        // NOTE: if add, must draw a crosshair... and must set these on all turrets beforehand to avoid the flashing
+                        //MyLargeTurretBaseDefinition def = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
+                        //string overlay = def.OverlayTexture;
+                        //def.OverlayTexture = null;
+                        //turret.OnAssumeControl(null);
+                        //def.OverlayTexture = overlay;
                     }
 
-                    prevTurret = turret;
+                    if(weaponCoreBlock)
+                    {
+                        HideHUD();
+                        return;
+                    }
 
-                    // TODO: add or not?
-                    // NOTE: if add, must draw a crosshair... and must set these on all turrets beforehand to avoid the flashing
-                    //MyLargeTurretBaseDefinition def = (MyLargeTurretBaseDefinition)turret.SlimBlock.BlockDefinition;
-                    //string overlay = def.OverlayTexture;
-                    //def.OverlayTexture = null;
-                    //turret.OnAssumeControl(null);
-                    //def.OverlayTexture = overlay;
+                    GenerateText(turret);
+                    DrawHUD();
                 }
-
-                if(weaponCoreBlock)
+                catch(Exception e)
                 {
-                    HideHUD();
-                    return;
+                    Log.Error($"TurretHUD error for {turret?.BlockDefinition}\n{e}");
                 }
-
-                GenerateText(turret);
-                DrawHUD();
             }
             else
             {

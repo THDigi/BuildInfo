@@ -494,7 +494,10 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             catch(Exception e)
             {
-                Log.Error(e);
+                Log.Error($"Error during terminal detailed info for blockDefId={block?.BlockDefinition}"
+                    + $"\ndetailinfo additions config={(Main?.Config?.TerminalDetailInfoAdditions?.Value.ToString() ?? "NULL")}"
+                    + $"\nmain={Main != null}; config={Main?.Config != null}; header={(Main?.Config?.TerminalDetailInfoHeader?.Value.ToString() ?? "NULL")}"
+                    + "\n" + e);
                 info?.Append($"\n[ {BuildInfoMod.ModName} ERROR; SEND GAME LOG! ]");
             }
         }

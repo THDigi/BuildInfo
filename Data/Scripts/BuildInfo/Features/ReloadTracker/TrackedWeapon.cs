@@ -36,6 +36,12 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             get
             {
+                if(Gun == null)
+                    throw new Exception($"Block '{Block?.BlockDefinition}' is not IMyGunObject!");
+
+                if(Gun.GunBase == null)
+                    throw new Exception($"Block '{Block?.BlockDefinition}' has null .GunBase!");
+
                 if(Gun.GunBase.IsAmmoProjectile)
                     return ProjectileShotsInBurst;
 
