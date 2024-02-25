@@ -274,7 +274,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 return;
             }
 
-            const StringComparison CompareType = StringComparison.InvariantCultureIgnoreCase;
+            const StringComparison CompareType = StringComparison.OrdinalIgnoreCase;
 
             Interactive = new List<InteractionInfo>(dummies.Values.Count);
 
@@ -298,7 +298,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 StringSegment part1 = GetNextSection(name, ref index); // detector_conveyorline_<here>_in
                 StringSegment part2 = GetNextSection(name, ref index); // detector_conveyorline_small_<here>
 
-                if(detectorPtr.StartsWith("conveyor"))
+                if(detectorPtr.StartsWithCaseInsensitive("conveyor"))
                 {
                     ConveyorFlags flags = ConveyorFlags.None;
 
@@ -312,7 +312,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     else if(part1.EqualsIgnoreCase("in") || part2.EqualsIgnoreCase("in"))
                         flags |= ConveyorFlags.In;
 
-                    if(!detectorPtr.StartsWith("conveyorline"))
+                    if(!detectorPtr.StartsWithCaseInsensitive("conveyorline"))
                     {
                         flags |= ConveyorFlags.Interactive;
                         Has |= BlockHas.PhysicalTerminalAccess;
