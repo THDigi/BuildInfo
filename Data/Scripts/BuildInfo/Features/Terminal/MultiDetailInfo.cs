@@ -842,18 +842,18 @@ namespace Digi.BuildInfo.Features.Terminal
                     connected++;
 
                 IMyThrust apiThrust = (IMyThrust)thrust;
-                currentForce += apiThrust.CurrentThrust;
-                effectiveMax += apiThrust.MaxEffectiveThrust;
-                absoluteMax += apiThrust.MaxThrust;
+                MyThrustDefinition def = thrust.BlockDefinition;
+                float effMulMax = Math.Max(def.EffectivenessAtMinInfluence, def.EffectivenessAtMaxInfluence);
+                float currentThrust = apiThrust.CurrentThrust;
+                float maxEffectiveThrust = apiThrust.MaxEffectiveThrust;
+                float maxThrust = apiThrust.MaxThrust * effMulMax;
 
-                if(!canBeSubOptimal)
-                {
-                    MyThrustDefinition def = thrust.BlockDefinition;
-                    if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
-                    {
-                        canBeSubOptimal = true;
-                    }
-                }
+                currentForce += currentThrust;
+                effectiveMax += maxEffectiveThrust;
+                absoluteMax += maxThrust;
+
+                if(!canBeSubOptimal && def.EffectivenessAtMinInfluence != 1.0f || def.EffectivenessAtMaxInfluence != 1.0f)
+                    canBeSubOptimal = true;
 
                 if(!mixedFuels)
                 {
@@ -865,7 +865,7 @@ namespace Digi.BuildInfo.Features.Terminal
                         mixedFuels = true;
                 }
 
-                ThrustPerSide[(int)thrust.Orientation.Forward] += new Vector3(apiThrust.CurrentThrust, apiThrust.MaxEffectiveThrust, apiThrust.MaxThrust);
+                ThrustPerSide[(int)thrust.Orientation.Forward] += new Vector3(currentThrust, maxEffectiveThrust, maxThrust);
             }
 
             info.Append("Requires: ").Append(mixedFuels ? "Mixed" : fuelType).Append('\n');
@@ -881,7 +881,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             if(canBeSubOptimal)
             {
-                info.Append("Effective Max Thrust: ").ForceFormat(effectiveMax).Append('\n');
+                info.Append("Current Max Thrust: ").ForceFormat(effectiveMax).Append('\n');
                 info.Append("Optimal Max Thrust: ").ForceFormat(absoluteMax).Append('\n');
             }
             else

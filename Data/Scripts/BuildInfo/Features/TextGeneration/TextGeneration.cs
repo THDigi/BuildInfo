@@ -3029,6 +3029,10 @@ namespace Digi.BuildInfo.Features
         {
             MyThrustDefinition thrust = (MyThrustDefinition)def;
 
+            float effMulMax = Math.Max(thrust.EffectivenessAtMinInfluence, thrust.EffectivenessAtMaxInfluence);
+            float minPowerUsage = thrust.MinPowerConsumption; // not affected by effectiviness
+            float maxPowerUsage = thrust.MaxPowerConsumption * effMulMax;
+
             if(thrust.FuelConverter != null && !thrust.FuelConverter.FuelId.IsNull() && thrust.FuelConverter.FuelId != MyResourceDistributorComponent.ElectricityId)
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ItemInputs))
@@ -3038,8 +3042,8 @@ namespace Digi.BuildInfo.Features
                     {
                         // HACK formula from MyEntityThrustComponent.PowerAmountToFuel()
                         float eff = (fuelDef.EnergyDensity * thrust.FuelConverter.Efficiency);
-                        float minFuelUsage = thrust.MinPowerConsumption / eff;
-                        float maxFuelUsage = thrust.MaxPowerConsumption / eff;
+                        float minFuelUsage = minPowerUsage / eff;
+                        float maxFuelUsage = maxPowerUsage / eff;
 
                         AddLine().Label("Requires").Append(thrust.FuelConverter.FuelId.SubtypeId);
 
@@ -3063,7 +3067,7 @@ namespace Digi.BuildInfo.Features
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
 
-                    AddLine().Label("Consumption, Max").PowerFormat(thrust.MaxPowerConsumption).Separator().Label("Idle").PowerFormat(thrust.MinPowerConsumption);
+                    AddLine().Label("Consumption, Max").PowerFormat(maxPowerUsage).Separator().Label("Idle").PowerFormat(minPowerUsage);
                 }
             }
 
@@ -3087,7 +3091,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Label("Force").ForceFormat(thrust.ForceMagnitude);
+                AddLine().Label("Force").ForceFormat(thrust.ForceMagnitude * effMulMax);
 
                 if(Math.Abs(thrust.SlowdownFactor - 1) > 0.001f)
                     GetLine().Separator().Color(COLOR_WARNING).Label("Dampeners").Append("x").RoundedNumber(thrust.SlowdownFactor, 2);
@@ -3095,7 +3099,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Limits");
                 const int PrefixSpaces = 11;
 
-                if(thrust.EffectivenessAtMinInfluence < 1.0f || thrust.EffectivenessAtMaxInfluence < 1.0f)
+                if(thrust.EffectivenessAtMinInfluence != 1.0f || thrust.EffectivenessAtMaxInfluence != 1.0f)
                 {
                     // HACK thrust.NeedsAtmosphereForInfluence seems to be a pointless var because planetary influence is air density.
                     // tested NeedsAtmosphereForInfluence=false with atmos thrusts and they don't work.
@@ -3115,6 +3119,9 @@ namespace Digi.BuildInfo.Features
                         thrustAtMaxAir = thrust.EffectivenessAtMinInfluence;
                     }
 
+                    thrustAtMinAir /= effMulMax;
+                    thrustAtMaxAir /= effMulMax;
+
                     // if mod has weird values, can't really present them in an understandable manner so just printing the values instead
                     if(!Hardcoded.Thrust_HasSaneLimits(thrust))
                     {
@@ -3126,16 +3133,16 @@ namespace Digi.BuildInfo.Features
                     }
                     else
                     {
-                        GetLine().Color(thrustAtMaxAir < 1f ? COLOR_BAD : COLOR_GOOD)
+                        GetLine().Color(thrustAtMaxAir < 1f ? COLOR_WARNING : COLOR_GOOD)
                             .ProportionToPercent(thrustAtMaxAir).Append(" thrust ")
                             // no "in atmosphere" because it needs to explicitly state that it expects 100% air density, which some planets do not have (like Mars)
                             .Append("in ").ProportionToPercent(maxAir).Append(" air density");
 
                         AddLine().Append(' ', PrefixSpaces).Append("| ")
-                            .Color(thrustAtMinAir < 1f ? COLOR_BAD : COLOR_GOOD)
+                            .Color(thrustAtMinAir < 1f ? COLOR_WARNING : COLOR_GOOD)
                             .ProportionToPercent(thrustAtMinAir).Append(" thrust ");
                         if(minAir <= 0)
-                            GetLine().Append("in vacuum.");
+                            GetLine().Append("in vacuum");
                         else
                             GetLine().Append("below ").ProportionToPercent(minAir).Append(" air density");
                     }

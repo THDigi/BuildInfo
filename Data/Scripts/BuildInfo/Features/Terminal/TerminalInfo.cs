@@ -1535,8 +1535,10 @@ namespace Digi.BuildInfo.Features.Terminal
 
             //info.Append('\n');
 
+            float effMulMax = Math.Max(def.EffectivenessAtMinInfluence, def.EffectivenessAtMaxInfluence);
+
             // HACK NOTE: def.NeedsAtmosphereForInfluence does nothing, influence is always air density
-            if(def.EffectivenessAtMinInfluence < 1.0f || def.EffectivenessAtMaxInfluence < 1.0f)
+            if(def.EffectivenessAtMinInfluence != 1.0f || def.EffectivenessAtMaxInfluence != 1.0f)
             {
                 // renamed to what they actually are for simpler code
                 float minAir = def.MinPlanetaryInfluence;
@@ -1544,8 +1546,20 @@ namespace Digi.BuildInfo.Features.Terminal
                 float thrustAtMinAir = def.EffectivenessAtMinInfluence;
                 float thrustAtMaxAir = def.EffectivenessAtMaxInfluence;
 
-                info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).Append('\n');
-                info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
+                // flip values if they're in wrong order
+                if(def.InvDiffMinMaxPlanetaryInfluence < 0)
+                {
+                    minAir = def.MaxPlanetaryInfluence;
+                    maxAir = def.MinPlanetaryInfluence;
+                    thrustAtMinAir = def.EffectivenessAtMaxInfluence;
+                    thrustAtMaxAir = def.EffectivenessAtMinInfluence;
+                }
+
+                thrustAtMinAir /= effMulMax;
+                thrustAtMaxAir /= effMulMax;
+
+                info.Append("Current Max Thrust: ").ForceFormat(thrust.MaxEffectiveThrust).Append('\n'); // already multiplied by planetary effectiviness
+                info.Append("Optimal Max Thrust: ").ForceFormat(thrust.MaxThrust * effMulMax).Append('\n');
                 info.Append("Limits:\n");
 
                 // if mod has weird values, can't really present them in an understandable manner so just printing the values instead
@@ -1578,7 +1592,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
             else
             {
-                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust).Append('\n');
+                info.Append("Max Thrust: ").ForceFormat(thrust.MaxThrust * effMulMax).Append('\n');
                 info.Append("No atmosphere or vacuum limits.\n");
             }
         }

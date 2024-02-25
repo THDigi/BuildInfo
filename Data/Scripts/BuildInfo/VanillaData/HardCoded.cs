@@ -561,8 +561,8 @@ namespace Digi.BuildInfo.VanillaData
         {
             return (def.MinPlanetaryInfluence >= 0 && def.MinPlanetaryInfluence <= 1f
                  && def.MaxPlanetaryInfluence >= 0 && def.MaxPlanetaryInfluence <= 1f
-                 && def.EffectivenessAtMinInfluence >= 0 && def.EffectivenessAtMinInfluence <= 1f
-                 && def.EffectivenessAtMaxInfluence >= 0 && def.EffectivenessAtMaxInfluence <= 1f);
+                 && def.EffectivenessAtMinInfluence >= 0
+                 && def.EffectivenessAtMaxInfluence >= 0);
         }
 
         public struct ThrustInfo
@@ -600,13 +600,13 @@ namespace Digi.BuildInfo.VanillaData
 
                 // from MyThrusterBlockThrustComponent.RecomputeOverriddenParameters() and UpdateThrustStrength()
                 if(thrustInternal.IsOverridden) // from IsOverridden(), NOTE: missing fast autopilot check
-                    currentPowerUsage = thrustInternal.ThrustOverride / thrustInternal.ThrustForce.Length() * thrustInternal.MaxPowerConsumption;
+                    currentPowerUsage = thrustInternal.CurrentStrength * thrustInternal.MaxPowerConsumption;
                 else
-                    currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * (thrust.CurrentThrust / thrust.MaxThrust));
+                    currentPowerUsage = thrustInternal.MinPowerConsumption + ((thrustInternal.MaxPowerConsumption - thrustInternal.MinPowerConsumption) * thrustInternal.CurrentStrength);
             }
 
             // IMyThrust.PowerConsumptionMultiplier is included in MyThrust.Min/MaxPowerConsumption
-            float maxPowerUsage = thrustInternal.MaxPowerConsumption;
+            float maxPowerUsage = thrustInternal.MaxPowerConsumption * Math.Max(def.EffectivenessAtMinInfluence, def.EffectivenessAtMaxInfluence);
             float gravityLength = BuildInfoMod.Instance.Caches.GetGravityLengthAtGrid(thrust.CubeGrid);
 
             // from MyEntityThrustComponent.RecomputeTypeThrustParameters() + calling CalculateConsumptionMultiplier()
