@@ -727,6 +727,33 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
+                    MyThrustDefinition thrustDef = def as MyThrustDefinition;
+                    if(thrustDef != null)
+                    {
+                        if(thrustDef.EffectivenessAtMinInfluence > 1f || thrustDef.EffectivenessAtMaxInfluence > 1f)
+                        {
+                            float maxEff = Math.Max(thrustDef.EffectivenessAtMinInfluence, thrustDef.EffectivenessAtMaxInfluence);
+
+                            StringBuilder sb = new StringBuilder(600);
+                            sb.Append("EffectivenessAtMinInfluence/EffectivenessAtMaxInfluence are above 1, while it will mostly work it's also unexpected even by the game (shows wrong power consumption) and will cause issues with other mods and PB scripts too.");
+                            sb.Append("\nIf you wish to fix without affecting thrust behavior, here's the values normalized:");
+                            sb.Append("\n<ForceMagnitude>").Append(thrustDef.ForceMagnitude * maxEff).Append("</ForceMagnitude>");
+                            sb.Append("\n<MaxPowerConsumption>").Append(thrustDef.MaxPowerConsumption * maxEff).Append("</MaxPowerConsumption>");
+                            sb.Append("\n<EffectivenessAtMinInfluence>").Append(thrustDef.EffectivenessAtMinInfluence / maxEff).Append("</EffectivenessAtMinInfluence>");
+                            sb.Append("\n<EffectivenessAtMaxInfluence>").Append(thrustDef.EffectivenessAtMaxInfluence / maxEff).Append("</EffectivenessAtMaxInfluence>");
+                            sb.Append("\n(You can find these written in the SE log too for easy copy)");
+
+                            ModHint(def, sb.ToString());
+                        }
+
+                        if(Math.Abs(thrustDef.SlowdownFactor - 1f) > 0.0000001f)
+                        {
+                            ModHint(def, $"<SlowdownFactor> is {thrustDef.SlowdownFactor}!"
+                                       + "\nThis forces all thrusters on the same grid to use the highest value SlowdownFactor."
+                                       + "\nRecommended to set as 1.");
+                        }
+                    }
+
                     continue;
                 }
 
