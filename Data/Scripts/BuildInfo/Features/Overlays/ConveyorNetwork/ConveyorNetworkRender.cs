@@ -14,22 +14,24 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     {
         public const double RangeOutsideShipVolume = 100;
 
-        public static readonly Vector4[] Colors = new Vector4[]
+        // TODO: configurable colors, first need some kind of list config setting...
+        public static readonly Color[] NetworkColors = new Color[]
         {
-            new Vector4(1, 1, 0, 1),
-            //new Vector4(1, 0.5f, 0, 1),
-            new Vector4(0, 1, 1, 1),
-            //new Vector4(0, 0.5f, 1, 1),
-            new Vector4(0, 0, 1, 1),
-            //new Vector4(0, 1, 0.5f, 1),
-            new Vector4(0, 1, 0, 1),
+            Color.Yellow,
+            Color.Orange,
+            Color.Cyan,
+            Color.SkyBlue,
+            Color.Blue,
+            Color.MediumSpringGreen,
+            Color.LimeGreen,
         };
 
         public static readonly Color ConnectableColor = new Color(255, 0, 255);
-        public static readonly Color TracebackColor = new Color(0, 155, 255) * 0.5f;
+        //public static readonly Color TracebackColor = new Color(0, 155, 255) * 0.5f;
         public static readonly Color IsolatedColor = new Color(255, 0, 0);
         public static readonly Color BrokenColor = new Color(255, 80, 10);
         public static readonly Color ArrowColor = new Color(255, 0, 200);
+        public static readonly Color ShadowColor = Color.Black;
 
         public const float InventoryBoxOpacity = 0.75f;
         public const double NoSmallDarken = 0.75;
@@ -67,7 +69,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         ConveyorNetworkView Handler;
 
         float Pulse;
-        bool IgnoreSmall = false;
 
         BoundingFrustumD CameraFrustum = new BoundingFrustumD(MatrixD.Identity);
 
@@ -189,13 +190,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         if((line.Flags & RenderFlags.Pulse) != 0)
                             thickness *= Pulse;
 
-                        Color color = Color.Black;
-                        if(!isShadow)
-                        {
-                            color = line.Color;
-                            if(IgnoreSmall && isSmallPort)
-                                color = Color.Darken(color, NoSmallDarken);
-                        }
+                        Color color = (isShadow ? ShadowColor : line.Color);
 
                         Vector3D fromClose = camPos + ((from - camPos) * DepthRatio);
                         Vector3D toClose = camPos + ((to - camPos) * DepthRatio);
@@ -225,13 +220,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                                         * (isShadow ? DotShadowThickMul : DotThickMul)
                                         * DepthRatio;
 
-                        Color color = Color.Black;
-                        if(!isShadow)
-                        {
-                            color = dot.Color;
-                            if(IgnoreSmall && isSmallPort)
-                                color = Color.Darken(color, NoSmallDarken);
-                        }
+                        Color color = (isShadow ? ShadowColor : dot.Color);
 
                         if((dot.Flags & RenderFlags.Pulse) != 0)
                             thickness *= Pulse;
@@ -261,13 +250,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         float thickness = (isSmallPort ? BaseThickSmall : BaseThickLarge)
                                         * (isShadow ? ArrowShadowThickMul : ArrowThickMul);
 
-                        Color color = Color.Black;
-                        if(!isShadow)
-                        {
-                            color = directionalLine.Color;
-                            if(IgnoreSmall && isSmallPort)
-                                color = Color.Darken(color, NoSmallDarken);
-                        }
+                        Color color = (isShadow ? ShadowColor : directionalLine.Color);
 
                         if((directionalLine.Flags & RenderFlags.Pulse) != 0)
                             thickness *= Pulse;
@@ -301,8 +284,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         continue;
                     }
 
-                    Vector3D from = Vector3D.Transform(link.BlockA.LocalAABB.Center, link.BlockA.WorldMatrix);
-                    Vector3D to = Vector3D.Transform(link.BlockB.LocalAABB.Center, link.BlockB.WorldMatrix);
+                    Vector3D from = Vector3D.Transform(link.DataA.ConveyorVisCenter, link.BlockA.WorldMatrix);
+                    Vector3D to = Vector3D.Transform(link.DataB.ConveyorVisCenter, link.BlockB.WorldMatrix);
                     Vector3D midpoint = from + (to - from) * 0.5f;
 
                     if(CameraFrustum.Contains(new BoundingSphereD(midpoint, link.Length + ContainsRadius * 2)) == ContainmentType.Disjoint)
@@ -313,13 +296,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
                     bool isSmallPort = (link.Flags & RenderFlags.Small) != 0;
 
-                    Color color = Color.Black;
-                    if(!isShadow)
-                    {
-                        color = link.Color;
-                        if(IgnoreSmall && isSmallPort)
-                            color = Color.Darken(color, NoSmallDarken);
-                    }
+                    Color color = (isShadow ? ShadowColor : link.Color);
 
                     float thickness = (isSmallPort ? BaseThickSmall : BaseThickLarge)
                                     * (isShadow ? LineShadowThickMul : LineThickMul)

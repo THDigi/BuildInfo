@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     // TODO: explain somewhere how the visuals work
     public class ConveyorNetworkCompute
     {
-        public const string NotifyPrefix = "Conveyor Network: ";
+        public const string NotifyPrefix = "ConveyorVis: ";
 
         ConveyorNetworkView Handler;
         ConveyorNetworkRender Render;
@@ -225,32 +225,32 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
 
                 //using(new DevProfiler("pathing", 2000))
                 {
-                    if(traceFrom != null)
-                    {
-                        Conveyor traceFromConveyor;
-                        if(tracebackPath && traceFromBlock != null && TempConveyorData.TryGetValue(traceFromBlock, out traceFromConveyor))
-                        {
-                            TempCheckedBlocks.Add(traceFromBlock);
-
-                            SelectGrid(traceFrom.CubeGrid);
-
-                            if(PathfindFromConveyor(traceFromBlock, traceFromConveyor))
-                            {
-                                SetNetworkIdx(NetworkIndex + 1);
-                            }
-
-                            CurrentGridRender.Dots.Add(new RenderDot()
-                            {
-                                Color = ConveyorNetworkRender.TracebackColor,
-                                LocalPos = Vector3.Transform(traceFromBlock.PositionComp.LocalAABB.Center, traceFromBlock.PositionComp.LocalMatrixRef),
-                                Flags = RenderFlags.Pulse,
-                            });
-                        }
-                        else
-                        {
-                            tracebackPath = false;
-                        }
-                    }
+                    //if(traceFrom != null)
+                    //{
+                    //    Conveyor traceFromConveyor;
+                    //    if(tracebackPath && traceFromBlock != null && TempConveyorData.TryGetValue(traceFromBlock, out traceFromConveyor))
+                    //    {
+                    //        TempCheckedBlocks.Add(traceFromBlock);
+                    //
+                    //        SelectGrid(traceFrom.CubeGrid);
+                    //
+                    //        if(PathfindFromConveyor(traceFromBlock, traceFromConveyor))
+                    //        {
+                    //            SetNetworkIdx(NetworkIndex + 1);
+                    //        }
+                    //
+                    //        CurrentGridRender.Dots.Add(new RenderDot()
+                    //        {
+                    //            Color = ConveyorNetworkRender.TracebackColor,
+                    //            LocalPos = Vector3.Transform(traceFromConveyor.Data.ConveyorVisCenter, traceFromBlock.PositionComp.LocalMatrixRef),
+                    //            Flags = RenderFlags.Pulse,
+                    //        });
+                    //    }
+                    //    else
+                    //    {
+                    //        tracebackPath = false;
+                    //    }
+                    //}
 
                     foreach(KeyValuePair<MyCubeBlock, Conveyor> kv in TempConveyorData)
                     {
@@ -303,7 +303,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         void SetNetworkIdx(int index)
         {
             NetworkIndex = index;
-            NetworkColor = ConveyorNetworkRender.Colors[NetworkIndex % ConveyorNetworkRender.Colors.Length];
+            NetworkColor = ConveyorNetworkRender.NetworkColors[NetworkIndex % ConveyorNetworkRender.NetworkColors.Length];
         }
 
         bool PathfindFromConveyor(MyCubeBlock block, Conveyor conveyor)
@@ -313,8 +313,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             bool drawDeadEnd = false;
 
             #region compute center where all lines link to from ports
-            //Vector3 linkCenter = block.Position * block.CubeGrid.GridSize;
-            Vector3 linkCenter = Vector3.Transform(block.PositionComp.LocalAABB.Center, block.PositionComp.LocalMatrixRef);
+            Vector3 linkCenter = Vector3.Transform(conveyor.Data.ConveyorVisCenter, block.PositionComp.LocalMatrixRef);
 
             if(hasConnections)
             {
@@ -325,16 +324,27 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     if(conveyor.Data.ConveyorPorts.Count == 1)
                         drawDeadEnd = true;
                 }
-                // makes it look more organic with more curves and stuff
-                //else
-                //{
-                //    linkCenter = Vector3.Zero;
-                //    foreach(ConnectedPort cp in conveyor.Connected)
-                //    {
-                //        linkCenter += cp.PortGridLocalPos;
-                //    }
-                //    linkCenter /= conveyor.Connected.Count;
-                //}
+                else
+                {
+                    // NOTE: if I change linkCenter I'd have to also pass it for RenderLink
+
+                    // makes it look more interesting with more diagonals and such but harder to read
+                    //linkCenter = Vector3.Zero;
+                    //foreach(ConnectedPort cp in conveyor.Connected)
+                    //{
+                    //    linkCenter += cp.PortGridLocalPos;
+                    //}
+                    //linkCenter /= conveyor.Connected.Count;
+
+                    // average connected ports from their cell center instead of port position
+                    //linkCenter = Vector3.Zero;
+                    //foreach(ConnectedPort cp in conveyor.Connected)
+                    //{
+                    //    var port = conveyor.Data.ConveyorPorts[cp.PortIndex];
+                    //    linkCenter += port.TransformToGrid(block.SlimBlock).Position;
+                    //}
+                    //linkCenter = (linkCenter * block.CubeGrid.GridSize) / conveyor.Connected.Count;
+                }
             }
             #endregion
 
@@ -416,7 +426,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 }
             }
 
-            if(connected != null && connected.IsFunctional)
+            if(connected != null)
             {
                 Conveyor connectedConveyor = TempConveyorData.GetValueOrDefault(connected, null);
                 if(connectedConveyor != null)
@@ -436,6 +446,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                         {
                             BlockA = block,
                             BlockB = connected,
+                            DataA = conveyor.Data,
+                            DataB = connectedConveyor.Data,
                             Length = (float)Vector3D.Distance(block.WorldMatrix.Translation, connected.WorldMatrix.Translation),
                             Color = lineColor,
                             Flags = flags,
@@ -451,7 +463,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     #endregion
                 }
             }
-            else if(canLinkGrids && connected == null)
+
+            if(canLinkGrids) // && connected == null)
             {
                 CurrentGridRender.Dots.Add(new RenderDot()
                 {

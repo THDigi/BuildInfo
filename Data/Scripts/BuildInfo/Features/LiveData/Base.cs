@@ -36,8 +36,12 @@ namespace Digi.BuildInfo.Features.LiveData
     {
         public readonly ConveyorFlags Flags;
         public readonly Matrix LocalMatrix;
-        Vector3I CellPosition;
-        Base6Directions.Direction Direction;
+
+        /// <summary>
+        /// Relative to block's def.Center!
+        /// </summary>
+        public readonly Vector3I CellPosition;
+        public readonly Base6Directions.Direction Direction;
 
         public ConveyorInfo(ConveyorFlags flags, Matrix localMatrix, Vector3I cellPos, Base6Directions.Direction dir)
         {
@@ -55,7 +59,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
             MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
-            Vector3I.Transform(ref CellPosition, ref matrix, out port.Position);
+            port.Position = Vector3I.Transform(CellPosition, matrix);
             port.Direction = block.Orientation.TransformDirection(Direction);
 
             return port;
@@ -67,7 +71,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
             // from MyConveyorConnector.PositionToGridCoords() + optimized with integer transform
             MatrixI matrix = new MatrixI(block.Position, block.Orientation.Forward, block.Orientation.Up);
-            Vector3I.Transform(ref CellPosition, ref matrix, out port.Position);
+            port.Position = Vector3I.Transform(CellPosition, matrix);
             port.Direction = block.Orientation.TransformDirection(Direction);
 
             Vector3 portCellCenter = port.Position * block.CubeGrid.GridSize;
@@ -162,6 +166,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public List<string> Upgrades;
         public List<SubpartInfo> Subparts;
         public float DisassembleRatio = 1f;
+        public Vector3 ConveyorVisCenter;
 
         public BData_Base()
         {
@@ -184,6 +189,23 @@ namespace Digi.BuildInfo.Features.LiveData
             //ComputeGamelogic(block, def)
 
             dummies.Clear();
+
+            #region Calculate ConveyorVisCenter
+            ConveyorVisCenter = Vector3.Zero;
+            if(ConveyorPorts != null && ConveyorPorts.Count > 0)
+            {
+                ConveyorVisCenter = Vector3D.Transform(block.CubeGrid.GridIntegerToWorld(block.Position), block.WorldMatrixInvScaled);
+
+                // long way around because can't get the math right locally :(
+                //Vector3D world = Vector3D.Zero;
+                //for(int i = 0; i < ConveyorPorts.Count; i++)
+                //{
+                //    ConveyorInfo port = ConveyorPorts[i];
+                //    world += block.CubeGrid.GridIntegerToWorld(port.TransformToGrid(block.SlimBlock).Position);
+                //}
+                //ConveyorVisCenter = Vector3D.Transform(world / ConveyorPorts.Count, block.WorldMatrixInvScaled);
+            }
+            #endregion
 
             bool isValid = IsValid(block, def);
 

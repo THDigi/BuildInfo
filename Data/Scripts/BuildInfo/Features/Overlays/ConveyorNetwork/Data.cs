@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features.LiveData;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -57,6 +58,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     {
         public IMyCubeBlock BlockA;
         public IMyCubeBlock BlockB;
+        public BData_Base DataA;
+        public BData_Base DataB;
         public float Length;
         public Color Color;
         public RenderFlags Flags;

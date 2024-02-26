@@ -11,7 +11,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class CommandConveyorNetwork : Command
     {
-        public CommandConveyorNetwork() : base("conveyors", "cn")
+        public CommandConveyorNetwork() : base("conveyorvis", "conveyors", "cn")
         {
         }
 
@@ -98,7 +98,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 sb.Append(ChatCommandHandler.MainCommandPrefix).Append(' ').Append(alias).NewLine();
             }
 
-            sb.Append("  Renders conveyor networks from the ship you're looking at.").NewLine();
+            sb.Append("  Renders conveyor networks from the ship you're looking at (must be friendly).").NewLine();
             //sb.Append("  Aiming with cubebuilder/tool at a conveyor-able block will trace from that block.").NewLine();
             sb.Append("  Use command again to turn off.").NewLine();
         }
