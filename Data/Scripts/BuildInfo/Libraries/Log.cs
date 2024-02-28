@@ -413,88 +413,49 @@ namespace Digi
                     if(!sessionReady || printText == null || MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
                         return;
 
-                    if(MyAPIGateway.Session?.Player != null)
+                    // HACK: to see errors while in GUIs and stuff, only for development.
+                    // remove these if you're copying this to your own mod as it is very much not necessary.
+                    if(MyAPIGateway.Session?.Player != null && BuildInfo.BuildInfoMod.IsDevMod)
                     {
-                        // HACK: to see errors while in GUIs and stuff, only for development.
-                        // remove these if you're copying this to your own mod as it is very much not necessary.
-                        if(BuildInfo.BuildInfoMod.IsDevMod)
+                        string msg;
+                        switch(printText)
                         {
-                            string msg;
-                            switch(printText)
-                            {
-                                case PRINT_GENERIC_ERROR: msg = errorPrintText; break;
-                                case PRINT_MESSAGE: msg = message; break;
-                                default: msg = printText; break;
-                            }
-
-                            BuildInfo.Features.DebugLog.PrintHUD(this, $"<color=red>ERROR: <color=200,50,50>{msg}", log: false);
+                            case PRINT_GENERIC_ERROR: msg = errorPrintText; break;
+                            case PRINT_MESSAGE: msg = message; break;
+                            default: msg = printText; break;
                         }
 
-                        double timeSec = TimeSpan.FromTicks(DateTime.Now.Ticks).TotalSeconds;
-                        if(chatMessageCooldown <= timeSec)
-                        {
-                            chatMessageCooldown = timeSec + 60;
-
-                            // HACK: SendChatMessageColored() no longer works if sent by MP clients (even to themselves)
-                            if(printText == PRINT_GENERIC_ERROR)
-                            {
-                                MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", errorPrintText);
-                                //MyVisualScriptLogicProvider.SendChatMessageColored(errorPrintText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
-                            }
-                            else if(printText == PRINT_MESSAGE)
-                            {
-                                if(font == MyFontEnum.Red)
-                                {
-                                    MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", message);
-                                    //MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
-                                }
-                                else
-                                {
-                                    MyAPIGateway.Utilities.ShowMessage($"{modName} WARNING", message);
-                                    //MyVisualScriptLogicProvider.SendChatMessageColored(message, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
-                                }
-                            }
-                            else
-                            {
-                                if(font == MyFontEnum.Red)
-                                {
-                                    MyAPIGateway.Utilities.ShowMessage($"{modName} ERROR", printText);
-                                    //MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Red, $"{modName} ERROR", MyAPIGateway.Session.Player.IdentityId);
-                                }
-                                else
-                                {
-                                    MyAPIGateway.Utilities.ShowMessage($"{modName} WARNING", printText);
-                                    //MyVisualScriptLogicProvider.SendChatMessageColored(printText, Color.Yellow, $"{modName} WARNING", MyAPIGateway.Session.Player.IdentityId);
-                                }
-                            }
-                        }
+                        BuildInfo.Features.DebugLog.PrintHUD(this, $"<color=red>ERROR: <color=200,50,50>{msg}", log: false);
                     }
 
-                    //if(printText == PRINT_GENERIC_ERROR)
-                    //{
-                    //    printText =  $"[{modName} ERROR: {errorPrintText}]";
-                    //}
-                    //else if(printText == PRINT_MESSAGE)
-                    //{
-                    //    if(font == MyFontEnum.Red)
-                    //        printText = $"[{modName} ERROR: {message}]";
-                    //    else
-                    //        printText = $"[{modName} WARNING: {message}]";
-                    //}
-                    //
-                    //if(notify == null)
-                    //{
-                    //    notify = MyAPIGateway.Utilities.CreateNotification(printText, printTime, font);
-                    //}
-                    //else
-                    //{
-                    //    notify.Hide(); // required since SE v1.194
-                    //    notify.Text = printText;
-                    //    notify.AliveTime = printTime;
-                    //    notify.ResetAliveTime();
-                    //}
-                    //
-                    //notify.Show();
+                    if(MyParticlesManager.Paused)
+                        return; // HACK: fix for notifications breaking
+
+                    if(printText == PRINT_GENERIC_ERROR)
+                    {
+                        printText = $"[{modName} ERROR: {errorPrintText}]";
+                    }
+                    else if(printText == PRINT_MESSAGE)
+                    {
+                        if(font == MyFontEnum.Red)
+                            printText = $"[{modName} ERROR: {message}]";
+                        else
+                            printText = $"[{modName} WARNING: {message}]";
+                    }
+
+                    if(notify == null)
+                    {
+                        notify = MyAPIGateway.Utilities.CreateNotification(printText, printTime, font);
+                    }
+                    else
+                    {
+                        notify.Hide(); // required since SE v1.194
+                        notify.Text = printText;
+                        notify.AliveTime = printTime;
+                        notify.ResetAliveTime();
+                    }
+
+                    notify.Show();
                 }
                 catch(Exception e)
                 {
