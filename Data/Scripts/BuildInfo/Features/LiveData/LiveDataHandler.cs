@@ -159,7 +159,8 @@ namespace Digi.BuildInfo.Features.LiveData
 
             bool success = false;
             MyCubeBlock internalBlock = (MyCubeBlock)block;
-            if(internalBlock.IsBuilt) // it's what keen uses before getting subparts on turrets and such
+            // IsBuilt is what keen uses before getting subparts on turrets and such
+            if(internalBlock.IsBuilt && internalBlock.Model != null)
             {
                 BData_Base data = null;
                 try
