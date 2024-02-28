@@ -8,6 +8,7 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
@@ -771,10 +772,9 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             IMyShipController shipCtrl = TargetBlock as IMyShipController;
             if(shipCtrl != null)
             {
-                RenderBoxHeader(sb, blocks.Count);
-
                 if(Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.LockOnVictim)
                 {
+                    RenderBoxHeader(sb, blocks.Count);
                     sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": once this ship is locked on\n");
                     sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no longer locked on\n");
                     return true;
@@ -782,6 +782,17 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 if(TargetBlock is IMyRemoteControl && Main.EventToolbarMonitor.LastOpenedToolbarType == EventToolbarMonitor.ToolbarType.RCWaypoint)
                 {
+                    string title = "Unknown waypoint on ";
+
+                    var apc = TargetBlock.Components.Get<MyAutopilotComponent>();
+                    var waypoints = apc?.SelectedWaypoints;
+                    if(waypoints != null && waypoints.Count > 0)
+                    {
+                        title = $"\"{waypoints[0].Name}\" waypoint on ";
+                    }
+
+                    RenderBoxHeader(sb, blocks.Count, title);
+
                     sb.Append("All slots: waypoint reached\n");
                     return true;
                 }
@@ -803,6 +814,41 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
                 sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": turret aligned with target (angle deviation)\n");
                 sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": turret no longer aligned with target\n");
+                return true;
+            }
+
+            IMyDefensiveCombatBlock defensiveCombat = TargetBlock as IMyDefensiveCombatBlock;
+            if(defensiveCombat != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": first enemy detected\n");
+                sb.Color(SlotColor).Append("Slot 2").ResetFormatting().Append(": no more enemites detected\n");
+                return true;
+            }
+
+            IMyPathRecorderBlock pathRecorder = TargetBlock as IMyPathRecorderBlock;
+            if(pathRecorder != null)
+            {
+                string title = "Unknown waypoint on ";
+
+                var prc = pathRecorder.Components.Get<MyPathRecorderComponent>();
+                var waypoints = prc?.Waypoints;
+                if(waypoints != null && waypoints.Count > 0)
+                {
+                    foreach(var wp in waypoints)
+                    {
+                        if(wp.SelectedForDraw)
+                        {
+                            title = $"\"{wp.Name}\" waypoint on ";
+                            break; // HACK: same behavior MyPathRecorderComponent.SelectedWaypointsChanged(), first in order gets the toolbar
+                        }
+                    }
+                }
+
+                RenderBoxHeader(sb, blocks.Count, title);
+
+                sb.Color(SlotColor).Append("Slot 1").ResetFormatting().Append(": waypoint reached\n");
                 return true;
             }
 
