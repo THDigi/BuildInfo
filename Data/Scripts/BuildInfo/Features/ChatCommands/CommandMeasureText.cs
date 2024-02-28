@@ -10,6 +10,15 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            if(BuildInfoMod.IsDevMod)
+            {
+                AppendCommands(sb, "<text>");
+                sb.Append("  Measures given text with TextAPI.").NewLine();
+            }
+        }
+
         public override void Execute(Arguments args)
         {
             string text = args.GetRestAsText(0);
@@ -19,15 +28,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
             double spacesWidth = size.X / spaceSize.X;
 
             PrintChat($"Text size X={size.X.ToString("N6")}, Y={size.Y.ToString("N6")}, spaces-width={spacesWidth.ToString("N3")} for: \"{text}\"", FontsHandler.GreenSh);
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            if(BuildInfoMod.IsDevMod)
-            {
-                sb.Append(MainAlias).Append(" <text>").NewLine();
-                sb.Append("  Measures given text with TextAPI.").NewLine();
-            }
         }
     }
 }

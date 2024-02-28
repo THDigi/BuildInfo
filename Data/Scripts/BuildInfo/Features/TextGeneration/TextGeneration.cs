@@ -1006,7 +1006,7 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                GetLine().Append(Main.ChatCommandHandler.CommandQuickMenu.MainAlias);
+                GetLine().Append(Main.ChatCommandHandler.CommandQuickMenu.PrimaryCommand);
             }
             GetLine().Append(")");
 
@@ -1024,15 +1024,15 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                GetLine().Append(Main.ChatCommandHandler.CommandGetBlock.MainAlias);
+                GetLine().Append(Main.ChatCommandHandler.CommandGetBlock.PrimaryCommand);
             }
             GetLine().Append(")");
 
-            AddMenuItemLine(i++).Append("Open block's mod workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandModLink.MainAlias).Append(')');
+            AddMenuItemLine(i++).Append("Open block's mod workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandModLink.PrimaryCommand).Append(')');
 
-            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandHelp.MainAlias).Append(')');
+            AddMenuItemLine(i++).Append("Help topics").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandHelp.PrimaryCommand).Append(')');
 
-            AddMenuItemLine(i++).Append("Open this mod's workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandWorkshop.MainAlias).Append(')');
+            AddMenuItemLine(i++).Append("Open this mod's workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandWorkshop.PrimaryCommand).Append(')');
 
             if(Main.TextAPI.IsEnabled)
             {
@@ -1072,7 +1072,7 @@ namespace Digi.BuildInfo.Features
             else
                 GetLine().Append("OFF (Mod not detected)");
 
-            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).Append(')');
+            AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandReloadConfig.PrimaryCommand).Append(')');
 
             if(Main.TextAPI.IsEnabled)
                 AddLine();
@@ -3936,7 +3936,7 @@ namespace Digi.BuildInfo.Features
                 AddLine().Label("Power - Active").PowerFormat(Hardcoded.LaserAntenna_PowerUsage(laserAntenna, 1000)).Append(" per km");
 
                 SimpleTooltip("Laser antenna power usage is linear up to 200km, after that it's a quadratic ecuation."
-                            + "\nTo calculate it at your needed distance, hold a laser antenna block and type in chat: <color=0,255,155>/bi laserpower <km>");
+                            + $"\nTo calculate it at your needed distance, hold a laser antenna block and type in chat: <color=0,255,155>{Main.ChatCommandHandler.CommandLaserPower.PrimaryCommand} <km>");
 
                 AddLine().Label("Power - Turning").PowerFormat(laserAntenna.PowerInputTurning).Separator().Label("Idle").PowerFormat(laserAntenna.PowerInputIdle);
 

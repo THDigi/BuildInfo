@@ -10,6 +10,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "<1~9> [text]");
+            sb.Append("  Set custom label for the specified slot on the current page of your controlled cockpit/RC's toolbar.").NewLine();
+            sb.Append("  Text is optional, omitting it would clear the custom label.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             IMyShipController shipCtrl = MyAPIGateway.Session.ControlledObject as IMyShipController;
@@ -48,17 +55,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 PrintChat($"Cleared custom label for slot {slotStr}.", FontsHandler.GreenSh);
             else
                 PrintChat($"Set custom label for {slotStr} to '{label}'", FontsHandler.GreenSh);
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            foreach(string alias in Aliases)
-            {
-                sb.Append(ChatCommandHandler.MainCommandPrefix).Append(' ').Append(alias).Append(" <1~9> [text]").NewLine();
-            }
-
-            sb.Append("  Set custom label for the specified slot on the current page of your controlled cockpit/RC's toolbar.").NewLine();
-            sb.Append("  Text is optional, omitting it would clear the custom label.").NewLine();
         }
     }
 }

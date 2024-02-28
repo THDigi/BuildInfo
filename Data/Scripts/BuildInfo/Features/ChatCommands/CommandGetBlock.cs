@@ -11,6 +11,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "[1~9]");
+            sb.Append("  Picks the aimed block to be placed in toolbar.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             if(MyAPIGateway.Session?.Player == null)
@@ -45,14 +51,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
             }
             else
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Aim at a block with a welder or grinder first.", FontsHandler.RedSh);
+                Utils.ShowColoredChatMessage(PrimaryCommand, "Aim at a block with a welder or grinder first.", FontsHandler.RedSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).Append(" [1~9]").NewLine();
-            sb.Append("  Picks the aimed block to be placed in toolbar.").NewLine();
         }
     }
 }

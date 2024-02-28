@@ -11,6 +11,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "<width> <height> <resolution>");
+            sb.Append("  (Modder tool) calculate screen area surface size.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             int width, height, res;
@@ -30,12 +36,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             if(!MathHelper.IsPowerOfTwo(res))
                 PrintChat($"Resolution ({res.ToString()}) is not power of 2, it could cause problems. Next power of 2: {MathHelper.GetNearestBiggerPowerOfTwo(res).ToString()}", FontsHandler.YellowSh);
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).Append(" <width> <height> <resolution>").NewLine();
-            sb.Append("  (Modder tool) calculate screen area surface size.").NewLine();
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Digi.BuildInfo.Utilities;
-using Sandbox.Game;
 using VRage.Game;
 
 namespace Digi.BuildInfo.Features.ChatCommands
@@ -9,6 +8,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
     {
         public CommandModLink() : base("modlink")
         {
+        }
+
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Opens steam overlay with workshop on the selected block's mod.").NewLine();
         }
 
         public override void Execute(Arguments args)
@@ -32,12 +37,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
             }
             else
                 PrintChat("No block selected/equipped.", FontsHandler.RedSh);
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Opens steam overlay with workshop on the selected block's mod").NewLine();
         }
     }
 }

@@ -9,6 +9,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Reloads the config file.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             if(Main.Config.Load())
@@ -18,12 +24,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             Main.Config.Save();
             Main.TextGeneration.OnConfigReloaded();
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Reloads the config file.").NewLine();
         }
     }
 }

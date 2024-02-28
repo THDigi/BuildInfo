@@ -7,7 +7,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class CommandHelp : Command
     {
-        private const string Footer =
+        const string Footer =
             SegmentPrefix + "TextInfo: Asterisk in labels explained" + SegmentSuffix +
             "\n  The asterisks on the labels (e.g. Power usage*: 10 W) means that the value is calculated from hardcoded values taken from the game source, they might become inaccurate with updates." +
             "\n" +
@@ -68,17 +68,26 @@ namespace Digi.BuildInfo.Features.ChatCommands
             "\n  Max line 128 chars including formatting, and multilines are removed." +
             "\n  NOTE: if non-ini things need to also be in CustomData then add ini at the top and " + ToolbarCustomLabels.IniDivider + " as the divider, parser will ignore everything after those 3 dashes.";
 
-        private const string SegmentPrefix = "  "; //  menu;  windows
-        private const string SegmentSuffix = ""; // " —————————";
-
-        private StringBuilder sb = new StringBuilder(1024);
+        const string SegmentPrefix = "  "; //  menu;  windows
+        const string SegmentSuffix = ""; // " —————————";
 
         public CommandHelp() : base("", "help")
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            sb.Append(ChatCommandHandler.ModCommandPrefix).NewLine();
+            sb.Append(ChatCommandHandler.ModCommandPrefix).Append(" help").NewLine();
+            sb.Append(ChatCommandHandler.HelpAlternative).NewLine();
+            sb.Append("  Shows this window.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
+            const int ExpectedLength = 6000;
+            var sb = new StringBuilder(ExpectedLength);
+
             sb.Clear();
             sb.Append(SegmentPrefix).Append("Config").Append(SegmentSuffix).NewLine();
             sb.Append("You can edit the config ingame with TextAPI Mod menu").NewLine();
@@ -88,7 +97,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append(@"  %appdata%\SpaceEngineers\Storage").NewLine();
             sb.Append(@"    \").Append(MyAPIGateway.Utilities.GamePaths.ModScopeName).Append(@"\").Append(Main.Config.Handler.FileName).NewLine();
             sb.NewLine();
-            sb.Append("And can be reloaded with: ").Append(Main.ChatCommandHandler.CommandReloadConfig.MainAlias).NewLine();
+            sb.Append("And can be reloaded with: ").Append(Main.ChatCommandHandler.CommandReloadConfig.PrimaryCommand).NewLine();
 
             sb.NewLine();
             sb.NewLine();
@@ -143,7 +152,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             sb.Append(SegmentPrefix).Append("Chat Commands").Append(SegmentSuffix).NewLine();
             sb.NewLine();
 
-            foreach(Command handler in Main.ChatCommandHandler.Commands)
+            foreach(Command handler in Main.ChatCommandHandler.UniqueCommands)
             {
                 int preLen = sb.Length;
                 handler.PrintHelp(sb);
@@ -153,17 +162,14 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             sb.NewLine();
 
-            sb.AppendFormat(Footer, Main.ChatCommandHandler.CommandToolbarCustomLabel.MainAlias);
+            sb.AppendFormat(Footer, Main.ChatCommandHandler.CommandToolbarCustomLabel.PrimaryCommand);
+
+            if(BuildInfoMod.IsDevMod && sb.Length > ExpectedLength)
+            {
+                DebugLog.PrintHUD(this, $"Expected length exceeded! length={sb.Length}", log: true);
+            }
 
             MyAPIGateway.Utilities.ShowMissionScreen($"{BuildInfoMod.ModName} help", null, null, sb.ToString(), null, "Close");
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(ChatCommandHandler.HelpAlternative).NewLine();
-            sb.Append(ChatCommandHandler.MainCommandPrefix).NewLine();
-            sb.Append(ChatCommandHandler.MainCommandPrefix).Append(" help").NewLine();
-            sb.Append("  Shows this window.").NewLine();
         }
     }
 }

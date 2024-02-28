@@ -15,6 +15,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Renders conveyor networks from the ship you're looking at.").NewLine();
+            sb.Append("  Use command again to turn off.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             if(MyAPIGateway.Session?.Player == null)
@@ -89,18 +96,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 //MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}First look at a grid, or aim at a block with cubebuilder/welder/grinder.", 4000, FontsHandler.RedSh);
                 MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}First look at a grid.", 4000, FontsHandler.RedSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            foreach(string alias in Aliases)
-            {
-                sb.Append(ChatCommandHandler.MainCommandPrefix).Append(' ').Append(alias).NewLine();
-            }
-
-            sb.Append("  Renders conveyor networks from the ship you're looking at (must be friendly).").NewLine();
-            //sb.Append("  Aiming with cubebuilder/tool at a conveyor-able block will trace from that block.").NewLine();
-            sb.Append("  Use command again to turn off.").NewLine();
         }
     }
 }

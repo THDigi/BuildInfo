@@ -302,7 +302,7 @@ namespace Digi.BuildInfo.Features.Config
 
         private void InitSettings()
         {
-            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.MainCommandPrefix} reload");
+            Handler.HeaderComments.Add($"You can reload this while in game by typing in chat: {ChatCommandHandler.ModCommandPrefix} reload");
 
             StringBuilder sb = new StringBuilder(8000);
             InputLib.AppendInputBindingInstructions(sb, ConfigHandler.COMMENT_PREFIX);

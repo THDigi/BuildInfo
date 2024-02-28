@@ -14,6 +14,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "<km>");
+            sb.Append("  Calculates power needed for equipped/aimed laser antenna").NewLine();
+            sb.Append("  at the specified range.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             MyLaserAntennaDefinition antennaDef = Main.EquipmentMonitor.BlockDef as MyLaserAntennaDefinition;
@@ -41,20 +48,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
                 else
                 {
-                    PrintChat($"Need a distance in kilometers, e.g. {MainAlias} 500", FontsHandler.RedSh);
+                    PrintChat($"Need a distance in kilometers, e.g. {PrimaryCommand} 500", FontsHandler.RedSh);
                 }
             }
             else
             {
                 PrintChat("Need a reference Laser Antenna type block, equip or aim at one first then the command.", FontsHandler.RedSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).Append(" <km>").NewLine();
-            sb.Append("  Calculates power needed for equipped/aimed laser antenna").NewLine();
-            sb.Append("  at the specified range.").NewLine();
         }
     }
 }

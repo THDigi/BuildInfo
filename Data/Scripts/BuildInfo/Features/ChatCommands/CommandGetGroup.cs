@@ -12,6 +12,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "<1~9>");
+            sb.Append("  Adds aimed/held block's variant group to the toolbar.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             if(MyAPIGateway.Session?.Player == null)
@@ -23,20 +29,20 @@ namespace Digi.BuildInfo.Features.ChatCommands
             MyCubeBlockDefinition blockDef = Main.EquipmentMonitor?.BlockDef;
             if(blockDef == null)
             {
-                Utils.ShowColoredChatMessage(MainAlias, "First equip a block or aim at one using welder or grinder.", FontsHandler.RedSh);
+                Utils.ShowColoredChatMessage(PrimaryCommand, "First equip a block or aim at one using welder or grinder.", FontsHandler.RedSh);
                 return;
             }
 
             MyCubeBlockDefinition primaryDef = blockDef.BlockVariantsGroup?.PrimaryGUIBlock;
             if(primaryDef == null)
             {
-                Utils.ShowColoredChatMessage(MainAlias, "This block does not belong to any variants group.", FontsHandler.YellowSh);
+                Utils.ShowColoredChatMessage(PrimaryCommand, "This block does not belong to any variants group.", FontsHandler.YellowSh);
                 return;
             }
 
             if(args == null || args.Count <= 0)
             {
-                Utils.ShowColoredChatMessage(MainAlias, "Input a slot number to place this into.", FontsHandler.RedSh);
+                Utils.ShowColoredChatMessage(PrimaryCommand, "Input a slot number to place this into.", FontsHandler.RedSh);
                 return;
             }
 
@@ -53,12 +59,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 PrintChat($"'{slotStr}' is not a number from 1 to 9.", FontsHandler.RedSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).Append(" <1~9>").NewLine();
-            sb.Append("  Aimed/held block's variants group is added to specified toolbar slot.").NewLine();
         }
     }
 }

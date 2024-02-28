@@ -5,15 +5,38 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public abstract class Command
     {
+        /// <summary>
+        /// The full command including <see cref="ChatCommandHandler.ModCommandPrefix"/>.
+        /// </summary>
+        public readonly string PrimaryCommand;
+
+        /// <summary>
+        /// All aliases (without mod command prefix) and includes the main one as the first, therefore never empty.
+        /// Can be "" if it only expects the mod prefix command to work.
+        /// </summary>
         public readonly string[] Aliases;
-        public readonly string MainAlias;
 
         protected BuildInfoMod Main => BuildInfoMod.Instance;
 
-        public Command(params string[] commands)
+        public Command(params string[] aliases)
         {
-            Aliases = commands;
-            MainAlias = ChatCommandHandler.MainCommandPrefix + " " + Aliases[0];
+            if(aliases == null || aliases.Length <= 0)
+            {
+                Log.Error($"{GetType().Name} No aliases given!");
+                return;
+            }
+
+            foreach(string alias in aliases)
+            {
+                if(alias.IndexOf(' ') != -1)
+                {
+                    Log.Error($"{GetType().Name}: Alias '{alias}' has spaces! Use arguments instead.");
+                    return;
+                }
+            }
+
+            Aliases = aliases;
+            PrimaryCommand = ChatCommandHandler.ModCommandPrefix + " " + Aliases[0];
             Main.ChatCommandHandler.AddCommand(this);
         }
 
@@ -23,7 +46,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         /// </summary>
         protected void PrintChat(string message, string commandFont = FontsHandler.WhiteSh)
         {
-            Utils.ShowColoredChatMessage(MainAlias, message, senderFont: commandFont);
+            Utils.ShowColoredChatMessage(PrimaryCommand, message, senderFont: commandFont);
         }
 
         public void PrintHelpToChat()
@@ -49,5 +72,26 @@ namespace Digi.BuildInfo.Features.ChatCommands
         /// Do not clear the <paramref name="sb"/>.
         /// </summary>
         public abstract void PrintHelp(StringBuilder sb);
+
+        protected void AppendCommands(StringBuilder sb, string args = null, bool all = true)
+        {
+            if(all)
+            {
+                foreach(string alias in Aliases)
+                {
+                    sb.Append(ChatCommandHandler.ModCommandPrefix).Append(' ').Append(alias);
+                    if(args != null)
+                        sb.Append(' ').Append(args);
+                    sb.NewLine();
+                }
+            }
+            else
+            {
+                sb.Append(PrimaryCommand);
+                if(args != null)
+                    sb.Append(' ').Append(args);
+                sb.NewLine();
+            }
+        }
     }
 }

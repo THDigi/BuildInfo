@@ -9,17 +9,17 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Clears the block info cache, not for normal use.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             Main.TextGeneration.CachedBuildInfoNotification.Clear();
             Main.TextGeneration.CachedBuildInfoTextAPI.Clear();
             PrintChat("Emptied block info cache.", FontsHandler.GreenSh);
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Clears the block info cache, not for normal use.").NewLine();
         }
     }
 }

@@ -9,6 +9,12 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb, "[advanced]");
+            sb.Append("  Shows/hides profiling info for this mod to help identify CPU impacts.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             bool advancedArg = args.Get(0)?.Equals("advanced", System.StringComparison.OrdinalIgnoreCase) ?? false;
@@ -28,12 +34,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 Main.ProfilerDisplay.Show = !Main.ProfilerDisplay.Show;
                 PrintChat($"Profiling {(Main.ProfilerDisplay.Show ? "shown" : "hidden")}", FontsHandler.WhiteSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).Append(" [advanced]").NewLine();
-            sb.Append("  Shows/hides profiling info for this mod to help identify CPU impacts.").NewLine();
         }
     }
 }

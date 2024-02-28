@@ -24,9 +24,9 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void PrintHelp(StringBuilder sb)
         {
-            sb.Append(MainAlias).Append(" blocks <mass|hp|volume> [sg|lg] [desc]").NewLine();
-            sb.Append(MainAlias).Append(" comps <mass|hp|volume> [desc]").NewLine();
-            sb.Append(MainAlias).Append(" lcds [group]").NewLine();
+            sb.Append(PrimaryCommand).Append(" blocks <mass|hp|volume> [sg|lg] [desc]").NewLine();
+            sb.Append(PrimaryCommand).Append(" comps <mass|hp|volume> [desc]").NewLine();
+            sb.Append(PrimaryCommand).Append(" lcds [group]").NewLine();
             sb.Append("  Shows a sorted list of the specified things; can be exported to file.").NewLine();
         }
 

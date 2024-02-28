@@ -10,6 +10,13 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Shows what mods and DLCs are used on the aimed block's ship.").NewLine();
+            sb.Append("  Also available for blueprints in projectors' terminal.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             IMyCubeGrid aimedGrid = Main.EquipmentMonitor?.AimedBlock?.CubeGrid;
@@ -25,13 +32,6 @@ namespace Digi.BuildInfo.Features.ChatCommands
             {
                 PrintChat("Can't be used on enemy ships.", FontsHandler.RedSh);
             }
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Shows what mods and DLCs are used on the aimed block's ship.").NewLine();
-            sb.Append("  Also available for blueprints in projectors' terminal.").NewLine();
         }
     }
 }

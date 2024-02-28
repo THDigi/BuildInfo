@@ -7,31 +7,26 @@ namespace Digi.BuildInfo.Features.ChatCommands
 {
     public class ChatCommandHandler : ModComponent
     {
-        public const string MainCommandPrefix = "/bi";
+        public const string ModCommandPrefix = "/bi";
         public const string HelpAlternative = "/buildinfo";
 
-        public readonly List<Command> Commands = new List<Command>();
+        /// <summary>
+        /// Alias to command object for fast lookup.
+        /// Does not expect <see cref="ModCommandPrefix"/>
+        /// </summary>
         public readonly Dictionary<string, Command> AliasToCommand = new Dictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
+
+        public readonly List<Command> UniqueCommands = new List<Command>();
 
         public CommandHelp CommandHelp;
         public CommandServerInfo CommandServerInfo;
-        public CommandConveyorNetwork CommandConveyorNetwork;
         public CommandModLink CommandModLink;
         public CommandWorkshop CommandWorkshop;
-        public CommandChangelog CommandChangelog;
         public CommandGetBlock CommandGetBlock;
-        public CommandGetGroup CommandGetGroup;
-        public CommandShipMods CommandShipMods;
-        public CommandSort CommandSort;
         public CommandQuickMenu CommandQuickMenu;
         public CommandToolbarCustomLabel CommandToolbarCustomLabel;
-        public CommandToolbarErasePrefix CommandToolbarErasePrefix;
         public CommandLaserPower CommandLaserPower;
         public CommandReloadConfig CommandReloadConfig;
-        public CommandClearCache CommandClearCache;
-        public CommandLCDResolution CommandLCDResolution;
-        public CommandMeasureText CommandMeasureText;
-        public CommandProfile CommandProfile;
 
         public const StringComparison StringCompare = StringComparison.OrdinalIgnoreCase;
 
@@ -45,24 +40,24 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
             // affects order in help menu
             CommandHelp = new CommandHelp();
+            CommandReloadConfig = new CommandReloadConfig();
             CommandServerInfo = new CommandServerInfo();
-            CommandConveyorNetwork = new CommandConveyorNetwork();
+            new CommandConveyorNetwork();
             CommandModLink = new CommandModLink();
             CommandWorkshop = new CommandWorkshop();
-            CommandChangelog = new CommandChangelog();
+            new CommandChangelog();
             CommandGetBlock = new CommandGetBlock();
-            CommandGetGroup = new CommandGetGroup();
-            CommandShipMods = new CommandShipMods();
-            CommandSort = new CommandSort();
+            new CommandGetGroup();
+            new CommandShipMods();
+            new CommandSort();
             CommandQuickMenu = new CommandQuickMenu();
             CommandToolbarCustomLabel = new CommandToolbarCustomLabel();
-            CommandToolbarErasePrefix = new CommandToolbarErasePrefix();
+            new CommandToolbarErasePrefix();
             CommandLaserPower = new CommandLaserPower();
-            CommandReloadConfig = new CommandReloadConfig();
-            CommandClearCache = new CommandClearCache();
-            CommandLCDResolution = new CommandLCDResolution();
-            CommandMeasureText = new CommandMeasureText();
-            CommandProfile = new CommandProfile();
+            new CommandLCDResolution();
+            new CommandMeasureText();
+            new CommandProfile();
+            new CommandClearCache();
 
             MyAPIGateway.Utilities.MessageEntered += MessageEntered;
         }
@@ -82,7 +77,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                     return;
                 }
 
-                if(!text.StartsWith(MainCommandPrefix, StringCompare))
+                if(!text.StartsWith(ModCommandPrefix, StringCompare))
                     return;
 
                 if(!args.TryParse(text))
@@ -100,8 +95,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 }
                 else
                 {
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Unknown command: {MainCommandPrefix} {alias}", FontsHandler.RedSh);
-                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"For commands list, type: {MainCommandPrefix}", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"Unknown command: {ModCommandPrefix} {alias}", FontsHandler.RedSh);
+                    Utils.ShowColoredChatMessage(BuildInfoMod.ModName, $"For commands list, type: {ModCommandPrefix}", FontsHandler.RedSh);
                 }
             }
             catch(Exception e)
@@ -116,7 +111,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
         /// </summary>
         public void AddCommand(Command cmd)
         {
-            Commands.Add(cmd);
+            UniqueCommands.Add(cmd);
 
             foreach(string alias in cmd.Aliases)
             {

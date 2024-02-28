@@ -9,15 +9,15 @@ namespace Digi.BuildInfo.Features.ChatCommands
         {
         }
 
+        public override void PrintHelp(StringBuilder sb)
+        {
+            AppendCommands(sb);
+            sb.Append("  Shows the quick menu.").NewLine();
+        }
+
         public override void Execute(Arguments args)
         {
             Main.QuickMenu.ShowMenu();
-        }
-
-        public override void PrintHelp(StringBuilder sb)
-        {
-            sb.Append(MainAlias).NewLine();
-            sb.Append("  Shows the quick menu.").NewLine();
         }
     }
 }
