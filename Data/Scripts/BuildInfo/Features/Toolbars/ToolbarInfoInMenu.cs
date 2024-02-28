@@ -6,6 +6,7 @@ using Digi.ComponentLib;
 using Sandbox.ModAPI;
 using VRage.Collections;
 using VRage.Game;
+using VRage.Utils;
 using VRageMath;
 
 namespace Digi.BuildInfo.Features.Toolbars
@@ -15,6 +16,8 @@ namespace Digi.BuildInfo.Features.Toolbars
         ToolbarRender Render = new ToolbarRender();
         Toolbar Toolbar;
         IMyTerminalBlock TargetBlock;
+
+        HashSet<MyDefinitionId> Alerted = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
 
         public ToolbarInfoInMenu(BuildInfoMod main) : base(main)
         {
@@ -32,6 +35,15 @@ namespace Digi.BuildInfo.Features.Toolbars
             Main.TextAPI.Detected -= CreateUI;
             Main.EventToolbarMonitor.OpenedToolbarConfig -= EventToolbarMonitor_OpenedToolbarConfig;
             Main.EventToolbarMonitor.ClosedToolbarConfig -= EventToolbarMonitor_ClosedToolbarConfig;
+
+            if(Alerted.Count > 0)
+            {
+                Log.Info("All block IDs found to be missing from toolbar reader:");
+                foreach(var id in Alerted)
+                {
+                    Log.Info($"  {id}");
+                }
+            }
         }
 
         void CreateUI()
@@ -45,7 +57,8 @@ namespace Digi.BuildInfo.Features.Toolbars
                 return;
 
             TargetBlock = blocks[0];
-            LoadToolbar();
+            if(TargetBlock != null)
+                LoadToolbar();
 
             if(Toolbar != null)
             {
@@ -70,7 +83,14 @@ namespace Digi.BuildInfo.Features.Toolbars
             ToolbarHolder th;
             if(!Main.ToolbarTracker.EntitiesWithToolbars.TryGetValue(TargetBlock, out th))
             {
-                Log.Error($"Unexpected for {TargetBlock} to be opened in toolbar config but not have a toolbar stored in this mod's system... investigation required.");
+                if(Alerted.Add(TargetBlock.BlockDefinition))
+                {
+                    string msg = $"{TargetBlock.BlockDefinition} not in tracked toolbars! Please inform author.";
+                    MyAPIGateway.Utilities.ShowMessage(Log.ModName, msg);
+                    Log.Info(msg);
+                    MyLog.Default.WriteLine($"{Log.ModName} warning: {msg}");
+                }
+
                 return;
             }
 
