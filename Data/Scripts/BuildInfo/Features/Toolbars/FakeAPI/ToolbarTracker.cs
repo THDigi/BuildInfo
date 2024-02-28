@@ -183,9 +183,10 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 }
             }
             {
-                var casted = slim.FatBlock as IMyFlightMovementBlock;
+                var casted = slim.FatBlock as IMyPathRecorderBlock;
                 if(casted != null)
                 {
+                    // MyPathRecorderComponent.SetupAction() is the real one, not the one from ctor()
                     SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 1, 1);
                     return;
                 }
@@ -272,7 +273,50 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     return null;
                 }
 
-                var blockOB = block.GetObjectBuilderCubeBlock(false);
+                if(ent is IMyPathRecorderBlock)
+                {
+                    var prc = ent.Components.Get<MyPathRecorderComponent>();
+                    List<MyAutopilotWaypoint> waypoints = prc?.Waypoints;
+                    if(waypoints != null && waypoints.Count > 0)
+                    {
+                        var ob = new MyObjectBuilder_Toolbar()
+                        {
+                            ToolbarType = MyToolbarType.ButtonPanel,
+                            Slots = new List<MyObjectBuilder_Toolbar.Slot>(0),
+                        };
+
+                        foreach(MyAutopilotWaypoint wp in waypoints)
+                        {
+                            if(wp.SelectedForDraw)
+                            {
+                                var wpOB = wp.GetObjectBuilder();
+
+                                if(wpOB.Actions != null)
+                                {
+                                    for(int i = 0; i < wpOB.Actions.Count; i++)
+                                    {
+                                        var itemOB = new MyObjectBuilder_Toolbar.Slot()
+                                        {
+                                            Index = wpOB.Indexes[i],
+                                            Data = wpOB.Actions[i],
+                                            Item = string.Empty,
+                                        };
+
+                                        ob.Slots.Add(itemOB);
+                                    }
+                                }
+
+                                break; // HACK: same behavior MyPathRecorderComponent.SelectedWaypointsChanged(), first in order gets the toolbar
+                            }
+                        }
+
+                        return ob;
+                    }
+
+                    return null;
+                }
+
+                MyObjectBuilder_CubeBlock blockOB = block.GetObjectBuilderCubeBlock(false);
 
                 {
                     var casted = blockOB as MyObjectBuilder_TimerBlock;
