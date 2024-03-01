@@ -27,7 +27,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
         private MenuCategoryBase Category_HUD;
         private MenuCategoryBase Category_Toolbar;
         private MenuCategoryBase Category_GUI;
-        private MenuCategoryBase Category_LeakInfo;
         private MenuCategoryBase Category_Binds;
         private MenuCategoryBase Category_Misc;
         private MenuCategoryBase Category_ConfirmReset;
@@ -154,7 +153,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             Category_HUD = AddCategory("HUD", Category_Mod, header: "HUD additions and modifications");
             Category_Toolbar = AddCategory("Toolbar", Category_Mod, header: "ToolbarInfo box and other toolbar modifications");
             Category_GUI = AddCategory("Terminal/Inventory/GUI", Category_Mod, header: "GUI additions and modifications");
-            Category_LeakInfo = AddCategory("Air Leak Scanner", Category_Mod, header: "Air Leak Scanner - Access from any AirVent block");
             Category_Binds = AddCategory("Binds", Category_Mod, header: "Key/button bindings");
             Category_Misc = AddCategory("Misc", Category_Mod, header: "Various other settings");
 
@@ -307,11 +305,6 @@ namespace Digi.BuildInfo.Features.ConfigMenu
             SimpleToggle(Category_GUI, null, Main.Config.ItemTooltipAdditions);
             SimpleToggle(Category_GUI, null, Main.Config.ItemSymbolAdditions);
             SimpleToggle(Category_GUI, null, Main.Config.BlockIconOverlays);
-            #endregion
-
-            #region Leak Info
-            SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorWorld);
-            SimpleColor(Category_LeakInfo, null, Main.Config.LeakParticleColorOverlay);
             #endregion
 
             #region Binds

@@ -3,7 +3,6 @@ using Digi.BuildInfo.Features;
 using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
-using Digi.BuildInfo.Features.LeakInfo;
 using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
@@ -65,7 +64,6 @@ namespace Digi.BuildInfo
         public readonly ScreenTooltips ScreenTooltips;
         public readonly JumpDriveMonitor JumpDriveMonitor;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
-        public readonly LeakInfo LeakInfo;
         public readonly ShipOverlays ShipOverlays;
         public readonly ConveyorNetworkView ConveyorNetworkView;
         public readonly Overlays Overlays;
@@ -131,16 +129,6 @@ namespace Digi.BuildInfo
 
             MainThreadId = Environment.CurrentManagedThreadId;
 
-            bool standalineLeakFinder = false;
-            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
-            {
-                if(mod.PublishedFileId == 3170315974)
-                {
-                    standalineLeakFinder = true;
-                    break;
-                }
-            }
-
             // Utils
             CheckVSLPEvents = new CheckVSLPEvents(this);
             Caches = new Caches(this);
@@ -181,8 +169,6 @@ namespace Digi.BuildInfo
             LockOverlay = new LockOverlay(this);
             SubpartPreview = new SubpartPreview(this);
             ConstructionModelPreview = new ConstructionModelPreview(this);
-            if(!standalineLeakFinder)
-                LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);

@@ -104,9 +104,6 @@ namespace Digi.BuildInfo.Features.Config
         // TODO ^ rebindable key?
         public BoolSetting OverlayLockRememberMode;
 
-        public ColorSetting LeakParticleColorWorld;
-        public ColorSetting LeakParticleColorOverlay;
-
         public BoolSetting AdjustBuildDistanceSurvival;
         public BoolSetting AdjustBuildDistanceShipCreative;
 
@@ -258,16 +255,6 @@ namespace Digi.BuildInfo.Features.Config
                     ShowToolbarInfoBind.ResetToDefault();
 
                     Log.Info($"NOTE: '{ShowToolbarInfoBind.Name}' is the previous default (alt), resetting to new default ({ShowToolbarInfoBind.Value}).");
-                }
-            }
-
-            if(cfgv <= 7)
-            {
-                if(LeakParticleColorOverlay.Value == new Color(255, 255, 0))
-                {
-                    LeakParticleColorOverlay.ResetToDefault();
-
-                    Log.Info($"NOTE: '{LeakParticleColorOverlay.Name}' is the previous default (255, 255, 0), resetting to new default ({LeakParticleColorOverlay.Value.R.ToString()}, {LeakParticleColorOverlay.Value.G.ToString()}, {LeakParticleColorOverlay.Value.B.ToString()}).");
                 }
             }
 
@@ -661,15 +648,6 @@ namespace Digi.BuildInfo.Features.Config
             #endregion
 
             new Comment(Handler, string.Format(SubHeaderFormat, "Air Leak Detector"));
-
-            #region Air Leak
-            LeakParticleColorWorld = new ColorSetting(Handler, "LeakInfo: Particle Color World", new Color(0, 120, 255), false,
-                "Color of airleak indicator particles in world, only visible if nothing is in the way.");
-
-            LeakParticleColorOverlay = new ColorSetting(Handler, "LeakInfo: Particle Color Overlay", new Color(140, 140, 0), false,
-                "Color of airleak indicator particles that are seen through walls.",
-                "NOTE: This color is overlayed on top of the world ones when those are visible too, making the colors mix, so pick wisely!");
-            #endregion
 
             new Comment(Handler, string.Format(SubHeaderFormat, "Key/button binds"));
 
