@@ -34,6 +34,9 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
 
         public TerminalUnderlays(BuildInfoMod main) : base(main)
         {
+            // TODO: not working... would need to draw textAPI stuff myself
+            // could even change them all to space messages and update positions myself too, to fix the clipping...
+            UpdateOrder = -400; // for Draw() mainly to render under fake GUI
         }
 
         public override void RegisterComponent()

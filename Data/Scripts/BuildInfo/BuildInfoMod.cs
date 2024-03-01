@@ -19,6 +19,8 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using Sandbox.ModAPI;
+using VRage.Game;
 using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
@@ -128,6 +130,16 @@ namespace Digi.BuildInfo
 
             MainThreadId = Environment.CurrentManagedThreadId;
 
+            bool standalineLeakFinder = false;
+            foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
+            {
+                if(mod.PublishedFileId == 3170315974)
+                {
+                    standalineLeakFinder = true;
+                    break;
+                }
+            }
+
             // Utils
             CheckVSLPEvents = new CheckVSLPEvents(this);
             Caches = new Caches(this);
@@ -168,7 +180,8 @@ namespace Digi.BuildInfo
             LockOverlay = new LockOverlay(this);
             SubpartPreview = new SubpartPreview(this);
             ConstructionModelPreview = new ConstructionModelPreview(this);
-            LeakInfo = new LeakInfo(this);
+            if(!standalineLeakFinder)
+                LeakInfo = new LeakInfo(this);
             PickBlock = new PickBlock(this);
             QuickMenu = new QuickMenu(this);
             AnalyseShip = new AnalyseShip(this);

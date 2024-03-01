@@ -32,6 +32,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
             if(BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 return;
 
+            if(BuildInfoMod.Instance?.LeakInfo == null)
+                return;
+
             block = (IMyAirVent)Entity;
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
         }
@@ -90,11 +93,10 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                         // on/off switch
                         IMyTerminalControlOnOffSwitch c = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlOnOffSwitch, IMyAirVent>("FindAirLeak");
-                        c.Title = MyStringId.GetOrCompute("Air leak scan");
-                        //c.Tooltip = MyStringId.GetOrCompute("Finds the path towards an air leak and displays it as blue lines, for a maximum of " + LeakInfoComponent.MAX_DRAW_SECONDS + " seconds.\nTo find the leak it first requires the air vent to be powered, functional, enabled and the room not sealed.\nIt only searches once and doesn't update in realtime. If you alter the ship or open/close doors you need to start it again.\nThe lines are only shown to the player that requests the air leak scan.\nDepending on ship size the computation might take a while, you can cancel at any time however.\nAll air vents control the same system, therefore you can start it from one and stop it from another.\n\nAdded by the Build Info mod.");
-                        c.Tooltip = MyStringId.GetOrCompute("A client-side pathfinding towards an air leak.\nAdded by Build Info mod.");
+                        c.Title = MyStringId.GetOrCompute("Air Leak (will be removed)");
+                        c.Tooltip = MyStringId.GetOrCompute("NOTE: This feature will be removed in the next major version because there is a standalone version now called 'Leak Finder' !\n\nA client-side pathfinding towards an air leak.\nAdded by Build Info mod.");
                         c.OnText = MyStringId.GetOrCompute("Find");
-                        c.OffText = MyStringId.GetOrCompute("Stop");
+                        c.OffText = MyStringId.GetOrCompute("Hide");
                         c.Enabled = Terminal_Enabled;
                         c.SupportsMultipleBlocks = false;
                         c.Setter = Terminal_Setter;
@@ -147,6 +149,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
         #region Terminal control handling
         private static bool Terminal_Enabled(IMyTerminalBlock block)
         {
+            if(BuildInfoMod.Instance?.LeakInfo == null)
+                return false;
+
             return BuildInfoMod.Instance.LeakInfo.Enabled;
         }
 
@@ -157,8 +162,8 @@ namespace Digi.BuildInfo.Features.LeakInfo
                 if(BuildInfoMod.Instance.IsDedicatedServer)
                     return;
 
-                LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
-                if(!leakInfo.Enabled)
+                LeakInfo leakInfo = BuildInfoMod.Instance?.LeakInfo;
+                if(leakInfo == null || !leakInfo.Enabled)
                     return;
 
                 IMyAirVent vent = (IMyAirVent)block;
@@ -192,6 +197,9 @@ namespace Digi.BuildInfo.Features.LeakInfo
         private static bool Terminal_Getter(IMyTerminalBlock block)
         {
             LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
+            if(leakInfo == null)
+                return false;
+
             return (leakInfo.Status != InfoStatus.None);
         }
 
@@ -199,6 +207,13 @@ namespace Digi.BuildInfo.Features.LeakInfo
         {
             try
             {
+                LeakInfo leakInfo = BuildInfoMod.Instance?.LeakInfo;
+                if(leakInfo == null)
+                {
+                    //str.Append("Not initialized.");
+                    return;
+                }
+
                 IMyAirVent vent = (IMyAirVent)block;
                 AirVent logic = block.GameLogic.GetAs<AirVent>();
 
@@ -207,13 +222,6 @@ namespace Digi.BuildInfo.Features.LeakInfo
 
                 str.Append('\n');
                 str.Append("Air leak scan status:\n");
-
-                LeakInfo leakInfo = BuildInfoMod.Instance.LeakInfo;
-                if(leakInfo == null)
-                {
-                    str.Append("Not initialized.");
-                    return;
-                }
 
                 if(!leakInfo.Enabled)
                 {
