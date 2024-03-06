@@ -14,6 +14,11 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public readonly List<RenderDirectional> DirectionalLines = new List<RenderDirectional>();
         public readonly List<RenderBox> Boxes = new List<RenderBox>();
 
+        public RenderLine[] SortedLines = null;
+        public RenderDot[] SortedDots = null;
+        public RenderDirectional[] SortedDirLines = null;
+        public RenderBox[] SortedBoxes = null;
+
         public GridRender(IMyCubeGrid grid)
         {
             Grid = grid;
@@ -28,13 +33,14 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         Pulse = (1 << 1),
     }
 
+    // these structs are meant to be immutable
+    // not using readonly+constructor because mod profiler
+
     struct RenderDot
     {
         public Vector3 LocalPos;
-        public Color Color; // 32bits
+        public Vector4 Color;
         public RenderFlags Flags;
-
-        // not using readonly+constructor because mod profiler
     }
 
     struct RenderLine
@@ -42,7 +48,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public Vector3 LocalFrom;
         public Vector3 LocalTo;
         public float Length;
-        public Color Color;
+        public Vector4 Color;
         public RenderFlags Flags;
     }
 
@@ -50,7 +56,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     {
         public Vector3 LocalPos;
         public Base6Directions.Direction Dir;
-        public Color Color;
+        public Vector4 Color;
         public RenderFlags Flags;
     }
 
@@ -61,14 +67,14 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public BData_Base DataA;
         public BData_Base DataB;
         public float Length;
-        public Color Color;
+        public Vector4 Color;
         public RenderFlags Flags;
     }
 
     struct RenderBox
     {
         public Vector3 LocalPos;
-        public Color Color;
-        public RenderFlags Flags;
+        public Vector4 Color;
+        //public RenderFlags Flags;
     }
 }
