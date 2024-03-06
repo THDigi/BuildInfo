@@ -50,7 +50,7 @@ namespace Digi
 
                 Log.Info(text);
 
-                if(NotifyMs > 0)
+                if(NotifyMs > 0 && !MyParticlesManager.Paused)
                     MyAPIGateway.Utilities.ShowNotification(text, NotifyMs, MyFontEnum.Debug);
             }
         }
@@ -153,7 +153,9 @@ namespace Digi
                 {
                     notify.Hide();
                     notify.Text = text;
-                    notify.Show();
+
+                    if(!MyParticlesManager.Paused)
+                        notify.Show();
                 }
             }
         }
