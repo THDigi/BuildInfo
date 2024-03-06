@@ -184,7 +184,7 @@ namespace Digi.BuildInfo.Utilities
 
         static readonly HashSet<long> TempOwners = new HashSet<long>();
 
-        public static bool ShipIsFriendly(ICollection<IMyCubeGrid> grids)
+        public static bool IsShipFriendly(ICollection<IMyCubeGrid> grids)
         {
             // gather all unique owners to reduce the calls on GetRelationPlayerPlayer()
             TempOwners.Clear();
@@ -213,6 +213,26 @@ namespace Digi.BuildInfo.Utilities
                 MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(owner, localIdentityId);
                 if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
                     return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsGridFriendly(IMyCubeGrid grid)
+        {
+            if(MyAPIGateway.Session?.Player == null)
+                return false;
+
+            long localIdentityId = MyAPIGateway.Session.Player.IdentityId;
+
+            if(grid.BigOwners != null)
+            {
+                foreach(long owner in grid.BigOwners)
+                {
+                    MyRelationsBetweenPlayers relation = MyIDModule.GetRelationPlayerPlayer(owner, localIdentityId);
+                    if(relation == MyRelationsBetweenPlayers.Allies || relation == MyRelationsBetweenPlayers.Self)
+                        return true;
+                }
             }
 
             return false;

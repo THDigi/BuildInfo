@@ -54,7 +54,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             try
             {
                 MyAPIGateway.GridGroups.GetGroup(grid, GridLinkTypeEnum.Physical, TempGrids);
-                if(!Utils.ShipIsFriendly(TempGrids))
+                if(!Utils.IsShipFriendly(TempGrids))
                 {
                     //if(notify)
                     MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);

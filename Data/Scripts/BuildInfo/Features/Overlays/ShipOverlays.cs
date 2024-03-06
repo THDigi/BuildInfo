@@ -140,7 +140,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     ship.GetGrids(TempGrids);
 
                     // TODO: optimize by checking more rarely
-                    if(!Utils.ShipIsFriendly(TempGrids))
+                    if(!Utils.IsShipFriendly(TempGrids))
                         continue;
 
                     // has known weird issues so I'd rather just compute it myself when I can
