@@ -56,6 +56,25 @@ namespace Digi.BuildInfo.Utilities
             return true;
         }
 
+        public static void EnlargeArray<T>(ref T[] array, int newCapacity)
+        {
+            if(newCapacity == 0)
+                throw new Exception("newCapacity not allowed to be 0 to avoid complications/bugs");
+
+            newCapacity = MathHelper.GetNearestBiggerPowerOfTwo(newCapacity);
+
+            if(array != null && newCapacity < array.Length)
+                throw new Exception($"newCapacity ({newCapacity}) lower than existing capacity ({array.Length})");
+
+            T[] oldArray = array;
+            T[] newArray = new T[newCapacity];
+
+            if(oldArray != null && oldArray.Length > 0 && newArray.Length > 0)
+                Array.Copy(oldArray, newArray, oldArray.Length);
+
+            array = newArray;
+        }
+
         public static string GetModFullPath(string relativePath)
         {
             if(relativePath.StartsWith("\\") || relativePath.StartsWith("/"))
