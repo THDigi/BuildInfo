@@ -110,9 +110,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 ShowFor(TargetGrid, TargetBlock, notify: false);
             }
 
-            if(Main.GameConfig.HudState == Systems.HudState.OFF)
-                return;
-
             //if(!Main.IsPaused)
             //using(new DevProfiler("render", 16)) 
             {
