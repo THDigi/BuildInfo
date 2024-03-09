@@ -166,11 +166,13 @@ namespace Digi.BuildInfo.Features.ReloadTracker
             try
             {
                 TrackedWeapon tw = WeaponLookup.GetValueOrDefault(ent.EntityId);
+                if(tw == null)
+                    return;
 
+                WeaponLookup.Remove(ent.EntityId);
                 ProjectileWeaponsPerGrid.GetValueOrDefault(tw.Block.CubeGrid.EntityId)?.Remove(tw);
 
                 tw.Clear();
-
                 WeaponPool.Return(tw);
             }
             catch(Exception e)
