@@ -36,6 +36,9 @@ namespace Digi.BuildInfo.Features.ReloadTracker
         {
             get
             {
+                if(Block == null)
+                    throw new Exception("Tracked object is cleared, it should not be accessible!");
+
                 if(Gun == null)
                     throw new Exception($"Block '{Block?.BlockDefinition}' is not IMyGunObject!");
 
