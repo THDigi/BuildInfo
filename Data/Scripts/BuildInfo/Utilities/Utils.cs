@@ -184,6 +184,9 @@ namespace Digi.BuildInfo.Utilities
 
         static readonly HashSet<long> TempOwners = new HashSet<long>();
 
+        /// <summary>
+        /// Neutral is not friendly.
+        /// </summary>
         public static bool IsShipFriendly(ICollection<IMyCubeGrid> grids)
         {
             // gather all unique owners to reduce the calls on GetRelationPlayerPlayer()
@@ -200,9 +203,6 @@ namespace Digi.BuildInfo.Utilities
                 }
             }
 
-            if(TempOwners.Count == 0)
-                return true;
-
             if(MyAPIGateway.Session?.Player == null)
                 return false;
 
@@ -218,6 +218,9 @@ namespace Digi.BuildInfo.Utilities
             return false;
         }
 
+        /// <summary>
+        /// Neutral is not friendly.
+        /// </summary>
         public static bool IsGridFriendly(IMyCubeGrid grid)
         {
             if(MyAPIGateway.Session?.Player == null)
