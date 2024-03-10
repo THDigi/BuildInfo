@@ -40,7 +40,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         int NetworkIndex = 0;
         Vector4 NetworkColor;
 
-        List<IMyCubeGrid> GridsForEvents = new List<IMyCubeGrid>();
+        internal List<IMyCubeGrid> GridsForEvents = new List<IMyCubeGrid>();
 
         public ConveyorNetworkCompute(ConveyorNetworkView handler)
         {

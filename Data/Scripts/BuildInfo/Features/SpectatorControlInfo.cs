@@ -14,7 +14,7 @@ namespace Digi.BuildInfo.Features
     {
         static readonly Color BackgroundColor = new Color(41, 54, 62) * 0.96f;
 
-        bool Visible = false;
+        public bool Visible { get; private set; } = false;
         CornerTextBox TextBox;
         int SkipDraw;
 

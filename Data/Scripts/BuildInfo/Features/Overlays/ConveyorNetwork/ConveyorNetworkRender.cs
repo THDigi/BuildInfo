@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Digi.BuildInfo.Utilities;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -32,7 +31,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         public static readonly Vector4 ConnectableColor = new Color(255, 0, 255).ToVector4().ToLinearRGB();
         public static readonly Vector4 UnusedPortColor = (new Color(80, 80, 80) * 0.5f).ToVector4().ToLinearRGB();
         public static readonly Vector4 IsolatedColor = new Color(255, 0, 0).ToVector4().ToLinearRGB();
-        public static readonly Vector4 BrokenColor = new Color(255, 50, 10).ToVector4().ToLinearRGB();
+        public static readonly Vector4 BrokenColor = IsolatedColor; // new Color(255, 50, 10).ToVector4().ToLinearRGB();
         public static readonly Vector4 ShadowColor = Color.Black.ToVector4().ToLinearRGB();
 
         public const float InventoryBoxOpacity = 0.25f; // note that it's on linear space now
