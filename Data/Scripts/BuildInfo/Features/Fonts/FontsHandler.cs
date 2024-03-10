@@ -29,19 +29,22 @@ namespace Digi.BuildInfo.Features
 
         // these are all only in textAPI version of SEOutlined
         public const int IconStartingChar = '\ue200';
-        public const char IconExplode = '\ue200';
-        public const char IconCharacter = '\ue201';
-        public const char IconCharacterHead = '\ue202';
-        public const char IconBlockDamage = '\ue203';
-        public const char IconProjectileGravity = '\ue204';
-        public const char IconProjectileNoGravity = '\ue205';
-        public const char IconBlockPenetration = '\ue206';
-        public const char IconMaxSpeed = '\ue207';
-        public const char IconMissile = '\ue208';
-        public const char IconSphere = '\ue209';
-        public const char IconRicochet = '\ue20A';
-        public const char IconDice = '\ue20B';
-        public const char IconTooltip = '\ue20C';
+        public const char IconExplode = (char)IconStartingChar;
+        public const char IconCharacter = (char)(IconStartingChar + 1);
+        public const char IconCharacterHead = (char)(IconStartingChar + 2);
+        public const char IconBlockDamage = (char)(IconStartingChar + 3);
+        public const char IconProjectileGravity = (char)(IconStartingChar + 4);
+        public const char IconProjectileNoGravity = (char)(IconStartingChar + 5);
+        public const char IconBlockPenetration = (char)(IconStartingChar + 6);
+        public const char IconMaxSpeed = (char)(IconStartingChar + 7);
+        public const char IconMissile = (char)(IconStartingChar + 8);
+        public const char IconSphere = (char)(IconStartingChar + 9);
+        public const char IconRicochet = (char)(IconStartingChar + 10);
+        public const char IconDice = (char)(IconStartingChar + 11);
+        public const char IconTooltip = (char)(IconStartingChar + 12);
+
+        public const char IconCircle = (char)(IconStartingChar + 62);
+        public const char IconSquare = (char)(IconStartingChar + 63); // last slot
 
         static readonly bool DoExportSpecialChars = false;
 
