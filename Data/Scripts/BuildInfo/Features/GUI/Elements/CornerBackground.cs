@@ -262,6 +262,17 @@ namespace Digi.BuildInfo.Features.GUI.Elements
         }
 
         /// <summary>
+        /// Manual draw for one frame regardless of visible state
+        /// </summary>
+        public void Draw()
+        {
+            foreach(Element element in Elements)
+            {
+                element.Billboard.Draw();
+            }
+        }
+
+        /// <summary>
         /// Everything is in pixels!
         /// </summary>
         public void SetProperties(Vector2D pos, Vector2 boxSize, CornerSize cornerSize)

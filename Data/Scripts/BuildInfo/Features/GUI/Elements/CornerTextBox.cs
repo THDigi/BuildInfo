@@ -72,6 +72,15 @@ namespace Digi.BuildInfo.Features.GUI.Elements
             Background.SetVisible(visible);
         }
 
+        /// <summary>
+        /// Manual draw for one frame regardless of visible state
+        /// </summary>
+        public void Draw()
+        {
+            Background.Draw();
+            Text.Draw();
+        }
+
         public void UpdatePosition()
         {
             Vector2D textSize = Text.Text.GetTextLength();

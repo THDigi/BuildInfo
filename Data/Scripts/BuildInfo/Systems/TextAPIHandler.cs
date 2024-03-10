@@ -333,6 +333,9 @@ namespace Digi.BuildInfo.Systems
                 Background.Offset = textLen / 2;
             }
 
+            /// <summary>
+            /// Manual draw for one frame regardless of visible state
+            /// </summary>
             public void Draw()
             {
                 Background?.Draw();
