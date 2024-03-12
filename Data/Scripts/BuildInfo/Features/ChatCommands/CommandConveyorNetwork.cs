@@ -93,8 +93,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
             }
             else
             {
-                //MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}First look at a grid, or aim at a block with cubebuilder/welder/grinder.", 4000, FontsHandler.RedSh);
-                MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}First look at a grid.", 4000, FontsHandler.RedSh);
+                Main.ConveyorNetworkView.Notify("Look at a grid before entering the command.", 4000, FontsHandler.RedSh);
             }
         }
     }

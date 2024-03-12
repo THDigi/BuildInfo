@@ -15,8 +15,6 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
     // TODO: explain somewhere how the visuals work
     public class ConveyorNetworkCompute
     {
-        public const string NotifyPrefix = "ConveyorVis: ";
-
         ConveyorNetworkView Handler;
         ConveyorNetworkRender Render;
         LiveDataHandler LiveData;
@@ -221,7 +219,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 if(TempConveyorData.Count == 0)
                 {
                     if(notify)
-                        MyAPIGateway.Utilities.ShowNotification($"{NotifyPrefix}No conveyor blocks found.");
+                        Handler.Notify("No conveyor blocks found.", 3000, FontsHandler.YellowSh);
                     return false;
                 }
 
@@ -281,7 +279,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                     //if(tracebackPath)
                     //    MyAPIGateway.Utilities.ShowNotification($"{NotifyPrefix}Traceback from aimed block and {NetworkIndex} {unit}", 4000);
                     //else
-                    MyAPIGateway.Utilities.ShowNotification($"{NotifyPrefix}Showing {NetworkIndex} {unit}", 4000);
+                    Handler.Notify($"Showing {NetworkIndex} {unit}", 3000);
                 }
 
                 return true;

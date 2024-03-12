@@ -24,6 +24,8 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         IMyCubeGrid TargetGrid;
         public IMySlimBlock TargetBlock;
 
+        IMyHudNotification Notification;
+
         public int RescanAtTick;
 
         bool TextBoxVisible = false;
@@ -62,6 +64,18 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
             TextBox?.SetVisible(false);
         }
 
+        public void Notify(string text, int aliveTimeMs = 2000, string font = FontsHandler.BI_SEOutlined)
+        {
+            if(Notification == null)
+                Notification = MyAPIGateway.Utilities.CreateNotification(string.Empty);
+
+            Notification.Hide(); // required otherwise it breaks
+            Notification.Text = $"ConveyorVis: {text}";
+            Notification.AliveTime = aliveTimeMs;
+            Notification.Font = font;
+            Notification.Show();
+        }
+
         public void ShowFor(IMyCubeGrid grid, IMySlimBlock traceFrom = null, bool notify = true)
         {
             Reset();
@@ -73,7 +87,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
                 if(!Utils.IsShipFriendly(TempGrids))
                 {
                     //if(notify)
-                    MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);
+                    Notify("Cannot show, unfriendly ship!", 4000, FontsHandler.RedSh);
 
                     return;
                 }
@@ -100,8 +114,7 @@ namespace Digi.BuildInfo.Features.Overlays.ConveyorNetwork
         {
             Reset();
             Compute.Reset();
-
-            MyAPIGateway.Utilities.ShowNotification($"{ConveyorNetworkCompute.NotifyPrefix}{customMessage ?? "stopped showing"}");
+            Notify(customMessage ?? "Stopped showing");
         }
 
         public void ScheduleRescan()
