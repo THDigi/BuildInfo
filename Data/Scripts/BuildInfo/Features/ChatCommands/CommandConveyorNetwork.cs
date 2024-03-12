@@ -30,7 +30,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 return;
             }
 
-            bool isRendering = Main.ConveyorNetworkView.Render.RenderGrids.Count > 0;
+            bool isRendering = Main.ConveyorNetworkView.Compute.GridsForEvents.Count > 0;
             bool aimedAtRendering = false;
 
             IMySlimBlock optionalAimedBlock = null; // Main.EquipmentMonitor.AimedBlock ?? Main.EquipmentMonitor.BuilderAimedBlock;
@@ -57,7 +57,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
             if(aimedGrid != null)
             {
-                foreach(var grid in Main.ConveyorNetworkView.Render.RenderGrids.Keys)
+                foreach(var grid in Main.ConveyorNetworkView.Compute.GridsForEvents)
                 {
                     if(aimedGrid == grid)
                     {
