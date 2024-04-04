@@ -667,6 +667,35 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
+                    if(blockDef.BlockTopology == MyBlockTopology.Cube)
+                    {
+                        if(blockDef.CubeDefinition == null)
+                        {
+                            if(string.IsNullOrEmpty(blockDef.Model))
+                                ModProblem(def, "has BlockTopology set to Cube but no CubeDefinition!");
+                            else
+                                ModProblem(def, "has Model + BlockTopology=Cube + no CubeDefinition, are you sure you're trying to make a deformable armor? If not then use: <BlockTopology>TriangleMesh</BlockTopology> because it will cause issues, the block will go invisible once painted for example.");
+                        }
+                        else
+                        {
+                            if(blockDef.CubeDefinition.Model == null || blockDef.CubeDefinition.Model.Length == 0)
+                            {
+                                ModProblem(def, "has BlockTopology set to Cube but no models in CubeDefinition!");
+                            }
+                        }
+                    }
+                    else if(blockDef.BlockTopology == MyBlockTopology.TriangleMesh)
+                    {
+                        if(string.IsNullOrEmpty(blockDef.Model))
+                        {
+                            ModProblem(def, "has BlockTopology set to TriangleMesh but Model is not defined!");
+                        }
+                    }
+                    else
+                    {
+                        ModHint(def, $"has BlockTopology set to unknown: {blockDef.BlockTopology}; inform BuildInfo author to update their stuff! :]");
+                    }
+
                     MyComponentStack comps = new MyComponentStack(blockDef, MyComponentStack.MOUNT_THRESHOLD, MyComponentStack.MOUNT_THRESHOLD);
                     MyComponentStack.GroupInfo firstComp = comps.GetGroupInfo(0);
                     if(firstComp.TotalCount > 1 && firstComp.MountedCount > 1)
