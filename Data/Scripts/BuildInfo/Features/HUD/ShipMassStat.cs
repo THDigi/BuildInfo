@@ -32,6 +32,8 @@ namespace Digi.BuildInfo.Features.HUD
 
             if(ShowCustomSuffix && format == Config.MassFormat.RealCustomSuffix)
                 return TempSB.Clear().MassFormat(CurrentValue).ToString();
+            if(ShowCustomSuffix && format == Config.MassFormat.RealSISuffix)
+                return TempSB.Clear().MassFormat(CurrentValue).ToString();
 
             return CurrentValue.ToString(NumberFormat);
         }

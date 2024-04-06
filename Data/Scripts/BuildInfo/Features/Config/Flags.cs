@@ -112,5 +112,6 @@ namespace Digi.BuildInfo.Features.Config
         Vanilla = 0,
         RealCustomSuffix = 1,
         RealKg = 2,
+        RealSISuffix = 3,
     }
 }

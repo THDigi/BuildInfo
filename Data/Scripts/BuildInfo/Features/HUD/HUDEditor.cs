@@ -118,7 +118,7 @@ namespace Digi.BuildInfo.Features
 
                 ModifyToolbarStyle(hudDef);
 
-                if(Main.Config.MassOverride.ValueEnum == Config.MassFormat.RealCustomSuffix)
+                if(Main.Config.MassOverride.ValueEnum == Config.MassFormat.RealCustomSuffix || Main.Config.MassOverride.ValueEnum == Config.MassFormat.RealSISuffix)
                 {
                     ModifyMassFormat(hudDef);
                 }

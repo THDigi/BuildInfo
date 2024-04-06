@@ -701,6 +701,42 @@ namespace Digi.BuildInfo.Utilities
             return s.Number(kg * 1000000000f).Append(" µg");
         }
 
+        public static StringBuilder MassFormatSI(this StringBuilder s, float kg)
+        {
+            if(!IsValid(s, kg, " kg"))
+                return s;
+
+            if(kg < 0)
+            {
+                s.Append("-");
+                kg = -kg;
+            }
+
+            if(kg == 0)
+                return s.Append("0 kg");
+
+            if(kg >= 1000000000)
+                return s.Number(kg / 1000000000f).Append(" Tg");
+
+            if(kg >= 1000000)
+                return s.Number(kg / 1000000f).Append(" Gg");
+
+            if(kg >= 10000)
+                return s.Number(kg / 1000f).Append(" Mg");
+
+            if(kg >= 1)
+                return s.Number(kg).Append(" kg");
+
+            if(kg >= 0.001f)
+                return s.Number(kg * 1000f).Append(" grams");
+
+            if(kg >= 0.000001f)
+                return s.Number(kg * 1000000f).Append(" mg");
+
+            //if(kg >= 0.000000001f)
+            return s.Number(kg * 1000000000f).Append(" µg");
+        }
+
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
         {
             if(!IsValid(s, integrity))
