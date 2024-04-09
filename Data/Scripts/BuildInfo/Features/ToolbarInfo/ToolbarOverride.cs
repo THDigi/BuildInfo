@@ -29,6 +29,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
         // to check if the same id is added multiple times per block type
         Dictionary<MyTuple<string, string>, int> TypeActionIdPairs = new Dictionary<MyTuple<string, string>, int>(new MyTupleComparer<string, string>());
+        const int TypeActionIdMaxTriggers = 5;
+
+        const int TooManyActions = 50000; // as a last restort because the above can find repeats.
+        bool AlertedForTooMany = false;
 
         struct QueuedActionGet
         {
@@ -139,15 +143,13 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 {
                     if(block != null)
                     {
-                        const int MaxTriggers = 3;
-
                         MyTuple<string, string> key = MyTuple.Create(block.GetType().Name, action.Id);
                         int triggered;
                         if(TypeActionIdPairs.TryGetValue(key, out triggered))
                         {
                             triggered++;
-                            if(triggered == MaxTriggers)
-                                Log.Error($"Action {action.Id} was added {MaxTriggers} times before for type {key.Item1}, is a mod creating new instances in CustomActionGetter?");
+                            if(triggered == TypeActionIdMaxTriggers)
+                                Log.Error($"Action {action.Id} was added {TypeActionIdMaxTriggers} times before for type {key.Item1}, is a mod creating new instances in CustomActionGetter?");
                         }
                         else
                         {
@@ -171,11 +173,8 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             CheckInfiniteActions();
         }
 
-        bool AlertedForTooMany = false;
         void CheckInfiniteActions()
         {
-            const int TooManyActions = 1000;
-
             if(!AlertedForTooMany && ActionWrappers.Count > TooManyActions)
             {
                 const string File = "Error_TooManyActions.txt";
