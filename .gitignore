@@ -281,10 +281,10 @@ $RECYCLE.BIN/
 *.lnk
 
 # Blender
-Models/*.fbx
-Models/*.hkt
-Models/*.log
-Models/*.xml
+Models/*/*.fbx
+Models/*/*.hkt
+Models/*/*.log
+Models/*/*.xml
 *.blend*
 
 Ignored/
