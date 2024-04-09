@@ -41,6 +41,7 @@ namespace Digi
             if(MyAPIGateway.Input.IsNewKeyPressed(MyKeys.R))
             {
                 stored.Value = stored.Initial;
+                stored.Step = GetStep(stored.Value);
                 return stored.Value;
             }
 
@@ -86,10 +87,10 @@ namespace Digi
         static double GetStep(double value)
         {
             if(value == 0)
-                return 1e-9;
+                return 0.1;
 
             int exponnent = 0;
-            string valueStr = value.ToString("0e0");
+            string valueStr = Math.Abs(value).ToString("0e0");
             if(valueStr.Length > 0 && char.IsDigit(valueStr[0]))
             {
                 string[] split = valueStr.Split(Separator);
@@ -101,7 +102,7 @@ namespace Digi
             }
 
             // step would be one exponent lower
-            exponnent -= 1;
+            //exponnent -= 1;
 
             if(exponnent == 0)
                 return 1;
