@@ -22,6 +22,8 @@ using PistonStatus = Sandbox.ModAPI.Ingame.PistonStatus;
 
 namespace Digi.BuildInfo.Features.Terminal
 {
+    // TODO: blocks with upgrade modules attached? to quickly check if they all have all slots used or something
+
     public class MultiDetailInfo : ModComponent
     {
         const string TextFont = FontsHandler.BI_SEOutlined;

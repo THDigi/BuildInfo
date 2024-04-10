@@ -29,9 +29,6 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
         int NextLabelIdx = 0;
         List<HudAPIv2.SpaceMessage> Labels = new List<HudAPIv2.SpaceMessage>();
 
-        MyObjectBuilder_EventControllerBlock TempEventControllerOB;
-        List<PB_FunctionalBlock> TempTools = new List<PB_FunctionalBlock>();
-
         public TerminalUnderlays(BuildInfoMod main) : base(main)
         {
             // TODO: not working... would need to draw textAPI stuff myself
@@ -139,69 +136,6 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                         {
                             MatrixD drawMatrix = Utils.GetBlockCenteredWorldMatrix(block.SlimBlock);
                             overlay.Draw(ref drawMatrix, DrawInstance, (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition, block.SlimBlock);
-                        }
-                        continue;
-                    }
-                }
-
-                if(oneSelection)
-                {
-                    IMyTurretControlBlock ctc = block as IMyTurretControlBlock;
-                    if(ctc != null)
-                    {
-                        if(ctc.Camera != null)
-                        {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.Camera, subBlockColor, "Camera");
-                        }
-
-                        if(ctc.AzimuthRotor != null)
-                        {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.AzimuthRotor, subBlockColor, "Azimuth");
-                        }
-
-                        if(ctc.ElevationRotor != null)
-                        {
-                            DrawRelatedBlock(ctc, obb, (IMyTerminalBlock)ctc.ElevationRotor, subBlockColor, "Elevation");
-                        }
-
-                        TempTools.Clear();
-                        ctc.GetTools(TempTools);
-
-                        if(TempTools.Count < 30)
-                        {
-                            foreach(IMyTerminalBlock tool in TempTools)
-                            {
-                                DrawRelatedBlock(ctc, obb, tool, subBlockColor, "Tool/weapon");
-                            }
-                        }
-
-                        TempTools.Clear();
-                        continue;
-                    }
-                }
-
-                if(oneSelection)
-                {
-                    IMyEventControllerBlock ec = block as IMyEventControllerBlock;
-                    if(ec?.SelectedEvent != null)
-                    {
-                        if(TempEventControllerOB == null || TempEventControllerOB.EntityId != ec.EntityId || Main.Tick % 60 == 0)
-                        {
-                            TempEventControllerOB = ec.GetObjectBuilderCubeBlock(false) as MyObjectBuilder_EventControllerBlock;
-                        }
-
-                        if(TempEventControllerOB?.SelectedBlocks != null
-                            && TempEventControllerOB.SelectedBlocks.Count > 0
-                            && TempEventControllerOB.SelectedBlocks.Count < 30)
-                        {
-                            foreach(long entityId in TempEventControllerOB.SelectedBlocks)
-                            {
-                                IMyTerminalBlock selectedBlock = MyEntities.GetEntityByIdOrDefault(entityId) as IMyTerminalBlock;
-                                if(selectedBlock != null)
-                                {
-                                    DrawRelatedBlock(ec, obb, selectedBlock, subBlockColor, "Event source");
-                                }
-                            }
                         }
                         continue;
                     }

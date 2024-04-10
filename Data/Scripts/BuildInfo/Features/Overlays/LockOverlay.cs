@@ -9,6 +9,9 @@ using VRageMath;
 
 namespace Digi.BuildInfo.Features.Overlays
 {
+    // TODO: lock-on multiple blocks
+    // TODO: use terminal to mass-lock-on blocks? somehow...
+
     public class LockOverlay : ModComponent
     {
         public IMySlimBlock LockedOnBlock { get; private set; }

@@ -172,8 +172,14 @@ namespace Digi.BuildInfo.Features.LiveData
         {
         }
 
-        public bool CheckAndAdd(IMyCubeBlock block)
+        public bool CheckAndAdd(IMyCubeBlock block) // only gets called if the block IsBuilt
         {
+            if(!block.SlimBlock.ComponentStack.IsBuilt)
+                Log.Error($"CheckAndAdd() called for a !IsBuilt block! {block.BlockDefinition} / entId={block.EntityId}");
+
+            if(!Utils.AssertMainThread(false))
+                Log.Error($"CheckAndAdd() not on main thread! for block: {block.BlockDefinition} / entId={block.EntityId}");
+
             MyCubeBlockDefinition def = (MyCubeBlockDefinition)block.SlimBlock.BlockDefinition;
 
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
@@ -190,27 +196,15 @@ namespace Digi.BuildInfo.Features.LiveData
 
             dummies.Clear();
 
-            #region Calculate ConveyorVisCenter
             ConveyorVisCenter = Vector3.Zero;
             if(ConveyorPorts != null && ConveyorPorts.Count > 0)
             {
                 ConveyorVisCenter = Vector3D.Transform(block.CubeGrid.GridIntegerToWorld(block.Position), block.WorldMatrixInvScaled);
-
-                // long way around because can't get the math right locally :(
-                //Vector3D world = Vector3D.Zero;
-                //for(int i = 0; i < ConveyorPorts.Count; i++)
-                //{
-                //    ConveyorInfo port = ConveyorPorts[i];
-                //    world += block.CubeGrid.GridIntegerToWorld(port.TransformToGrid(block.SlimBlock).Position);
-                //}
-                //ConveyorVisCenter = Vector3D.Transform(world / ConveyorPorts.Count, block.WorldMatrixInvScaled);
             }
-            #endregion
 
             bool isValid = IsValid(block, def);
 
-            // now always valid because of the base data
-
+            // always valid because of the base data and this triggers only if block IsBuilt so it's not a problem with construction stages
             BuildInfoMod.Instance.LiveDataHandler.BlockData.Add(def.Id, this);
             return true;
         }
