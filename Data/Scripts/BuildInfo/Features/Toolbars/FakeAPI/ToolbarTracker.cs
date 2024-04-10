@@ -19,6 +19,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         Normal = 0,
         Waypoint = 1,
         LockedOn = 2,
+        // TODO: build mode toolbar when relevant/needed
+        //BuildMode = 3,
     }
 
     public struct ToolbarHolder
@@ -230,7 +232,14 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
             }
         }
 
-        public static MyObjectBuilder_Toolbar GetToolbarFromEntity(IMyEntity ent, ToolbarId toolbarId = ToolbarId.Normal)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ent"></param>
+        /// <param name="toolbarId"></param>
+        /// <param name="blockOB">only provide it if you have it from something else as an optimization, otherwise leave null</param>
+        /// <returns></returns>
+        public static MyObjectBuilder_Toolbar GetToolbarOBFromEntity(IMyEntity ent, ToolbarId toolbarId = ToolbarId.Normal, MyObjectBuilder_CubeBlock blockOB = null)
         {
             var block = ent as IMyCubeBlock;
             if(block != null)
@@ -316,7 +325,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     return null;
                 }
 
-                MyObjectBuilder_CubeBlock blockOB = block.GetObjectBuilderCubeBlock(false);
+                if(blockOB == null)
+                    blockOB = block.GetObjectBuilderCubeBlock(false);
 
                 {
                     var casted = blockOB as MyObjectBuilder_TimerBlock;

@@ -117,7 +117,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                 return;
             }
 
-            MyObjectBuilder_Toolbar toolbarOB = ToolbarTracker.GetToolbarFromEntity(TargetBlock, toolbarId);
+            MyObjectBuilder_Toolbar toolbarOB = ToolbarTracker.GetToolbarOBFromEntity(TargetBlock, toolbarId);
             if(toolbarOB == null)
             {
                 //Log.Error($"Couldn't get {toolbarId} toolbar OB from {TargetBlock}!");

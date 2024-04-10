@@ -12,7 +12,8 @@ using VRageMath;
 namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 {
     /// <summary>
-    /// A fake API for toolbars that would be easier to replace if Keen ever adds an actual API
+    /// A fake API for toolbars that would be easier to replace if Keen ever adds an actual API.
+    /// Not updated automatically, requires using <see cref="LoadFromOB(MyObjectBuilder_Toolbar)"/> with <see cref="ToolbarTracker.GetToolbarOBFromEntity(VRage.ModAPI.IMyEntity, ToolbarId, MyObjectBuilder_CubeBlock)"/>.
     /// </summary>
     public class Toolbar
     {
@@ -23,6 +24,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         public MyToolbarType Type { get; private set; } = MyToolbarType.None;
         public int? SelectedSlot { get; private set; } = null;
         public int CurrentPageIndex { get; private set; } = 0;
+
+        public bool HasItems { get; private set; }
 
         public readonly ToolbarItem[] Items;
         //public readonly List<ToolbarItem> ItemsGamepad;
@@ -65,13 +68,14 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                 }
             }
 
-            if(ob.SlotsGamepad != null)
-            {
-                foreach(MyObjectBuilder_Toolbar.Slot item in ob.SlotsGamepad)
-                {
-                    SetItemAtSerialized(item.Index, item.Item, item.Data, gamepad: true);
-                }
-            }
+            // TODO: gamepad
+            //if(ob.SlotsGamepad != null)
+            //{
+            //    foreach(MyObjectBuilder_Toolbar.Slot item in ob.SlotsGamepad)
+            //    {
+            //        SetItemAtSerialized(item.Index, item.Item, item.Data, gamepad: true);
+            //    }
+            //}
         }
 
         /// <summary>
@@ -162,6 +166,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
 
         void Clear()
         {
+            HasItems = false;
+
             //ItemsGamepad.Clear();
 
             for(int i = 0; i < Items.Length; i++)
@@ -179,6 +185,8 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
             if(gamepad)
             {
                 // TODO: gamepad
+
+                //HasItems = true;
             }
             else
             {
@@ -186,6 +194,7 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     return;
 
                 Items[i] = (ToolbarItem)item;
+                HasItems = true;
             }
         }
 
