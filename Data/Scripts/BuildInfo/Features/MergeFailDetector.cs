@@ -24,18 +24,19 @@ namespace Digi.BuildInfo.Features
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_MergeBlock), useEntityUpdate: false)]
     public class MergeBlock : MyGameLogicComponent
     {
-        IMyShipMergeBlock block;
-        MyMergeBlockDefinition def;
-        Base6Directions.Direction forward;
-        Base6Directions.Direction right;
-        bool loadedDummies = false;
-        bool mergeFailing = false;
-        bool blinkSwitch = false;
-        ushort frameCounter = 0;
+        IMyShipMergeBlock Block;
+        MyMergeBlockDefinition Def;
+        Base6Directions.Direction Forward;
+        Base6Directions.Direction Right;
+        bool LoadedDummies = false;
+        bool IsFailing = false;
+        bool BlinkSwitch = false;
+        int UpdateCounter = 0;
 
         IMySlimBlock MarkThis;
         IMySlimBlock MarkOther;
 
+        const float MaxDistanceComputeSq = 200 * 200; // meters squared
         const float MaxDistanceBoxRenderSq = 100 * 100; // meters squared
 
         const string EmissiveName = "Emissive";
@@ -48,29 +49,28 @@ namespace Digi.BuildInfo.Features
             if(BuildInfo_GameSession.GetOrComputeIsKilled(this.GetType().Name))
                 return;
 
-            block = (IMyShipMergeBlock)Entity;
-            def = (MyMergeBlockDefinition)block.SlimBlock.BlockDefinition;
+            Block = (IMyShipMergeBlock)Entity;
+            Def = (MyMergeBlockDefinition)Block.SlimBlock.BlockDefinition;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
         }
 
         public override void UpdateOnceBeforeFrame()
         {
-            if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null)
+            if(MyAPIGateway.Utilities.IsDedicated || Block?.CubeGrid?.Physics == null)
                 return;
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
 
-            block.AppendingCustomInfo += CustomInfo;
-
-            block.BeforeMerge += BeforeMerge;
+            Block.AppendingCustomInfo += CustomInfo;
+            Block.BeforeMerge += BeforeMerge;
         }
 
         public override void MarkForClose()
         {
-            if(block != null)
+            if(Block != null)
             {
-                block.AppendingCustomInfo -= CustomInfo;
-                block.BeforeMerge -= BeforeMerge;
+                Block.AppendingCustomInfo -= CustomInfo;
+                Block.BeforeMerge -= BeforeMerge;
             }
         }
 
@@ -78,24 +78,33 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
-                if(!loadedDummies && block.IsFunctional && block.Model.AssetName == def.Model) // need main model to load dummies
+                if(!LoadedDummies && Block.SlimBlock.ComponentStack.IsBuilt) // need main model to load dummies
                 {
-                    loadedDummies = true;
+                    LoadedDummies = true;
                     LoadDummies();
                 }
 
-                if(CheckOther())
-                    Update10();
-                else
-                    SetMergeFailing(false);
+                if(Vector3D.DistanceSquared(Block.GetPosition(), MyAPIGateway.Session.Camera.Position) > MaxDistanceComputeSq)
+                    return;
 
-                if(mergeFailing)
+                if(Block.IsWorking
+                && Block.Other != null // magnetized or connected
+                && Block.Other.CubeGrid != Block.CubeGrid // not already merged
+                && Block.Other.IsWorking)
                 {
-                    block.SetEmissiveParts(EmissiveName, (blinkSwitch ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
-                    blinkSwitch = !blinkSwitch;
+                    Update10();
+                }
+                else
+                {
+                    if(IsFailing)
+                        SetMergeFailing(false);
                 }
 
-                block.RefreshCustomInfo();
+                if(IsFailing)
+                {
+                    Block.SetEmissiveParts(EmissiveName, (BlinkSwitch ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
+                    BlinkSwitch = !BlinkSwitch;
+                }
             }
             catch(Exception e)
             {
@@ -108,55 +117,40 @@ namespace Digi.BuildInfo.Features
             SetMergeFailing(false);
         }
 
-        void SetMergeFailing(bool failing)
+        void SetMergeFailing(bool fail)
         {
-            if(mergeFailing == failing)
+            if(IsFailing == fail)
                 return;
 
-            mergeFailing = failing;
+            IsFailing = fail;
 
-            if(failing)
+            if(fail)
                 NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
             else
                 NeedsUpdate &= ~MyEntityUpdateEnum.EACH_FRAME;
 
-            if(!failing)
+            if(!fail)
             {
-                blinkSwitch = false;
-                ((MyCubeBlock)block).CheckEmissiveState(true);
+                MarkThis = null;
+                MarkOther = null;
+                BlinkSwitch = false;
+                ((MyCubeBlock)Block).CheckEmissiveState(true);
             }
-        }
-
-        bool CheckOther()
-        {
-            if(!block.IsWorking)
-                return false;
-
-            if(block.Other == null)
-                return false; // not magnetized or connected
-
-            if(!block.Other.IsWorking)
-                return false;
-
-            if(block.Other.CubeGrid == block.CubeGrid)
-                return false; // already merged
-
-            return true;
         }
 
         void CustomInfo(IMyTerminalBlock b, StringBuilder str)
         {
             try
             {
-                if(block.Other == null)
+                if(Block.Other == null)
                 {
-                    if(block.IsWorking)
+                    if(Block.IsWorking)
                         str.Append("Status: Idle.\n");
 
                     return;
                 }
 
-                if(block.Other.CubeGrid == block.CubeGrid)
+                if(Block.Other.CubeGrid == Block.CubeGrid)
                 {
                     str.Append("Status: Merged.\n");
                     return;
@@ -164,7 +158,7 @@ namespace Digi.BuildInfo.Features
 
                 str.Append("Status: Attempting to merge...\n");
 
-                if(mergeFailing)
+                if(IsFailing)
                 {
                     str.Append("FAILED: Obstruction detected between:\n");
 
@@ -245,7 +239,7 @@ namespace Digi.BuildInfo.Features
             MatrixD blockMatrix = localMatrix * grid.WorldMatrix;
 
             MySimpleObjectDraw.DrawTransparentBox(ref blockMatrix, ref boundaries, ref color,
-                MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, LineMaterial, blendType: MyBillboard.BlendTypeEnum.AdditiveTop);
+                MySimpleObjectRasterizer.Wireframe, 1, lineWidth, null, LineMaterial, intensity: 10, blendType: MyBillboard.BlendTypeEnum.AdditiveTop);
         }
 
         // HACK: copied from MyShipMergeBlock + modified
@@ -255,7 +249,7 @@ namespace Digi.BuildInfo.Features
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
 
-            block.Model.GetDummies(dummies);
+            Block.Model.GetDummies(dummies);
 
             foreach(KeyValuePair<string, IMyModelDummy> kv in dummies)
             {
@@ -265,8 +259,8 @@ namespace Digi.BuildInfo.Features
                     Vector3 vector = matrix.Scale / 2f;
                     Vector3 vec = Vector3.DominantAxisProjection(matrix.Translation / vector);
                     vec.Normalize();
-                    forward = Base6Directions.GetDirection(vec);
-                    right = Base6Directions.GetPerpendicular(forward);
+                    Forward = Base6Directions.GetDirection(vec);
+                    Right = Base6Directions.GetPerpendicular(Forward);
                     break;
                 }
             }
@@ -281,16 +275,18 @@ namespace Digi.BuildInfo.Features
 
             if(data.PositionOk && data.AxisOk && data.RotationOk)
             {
-                if(++frameCounter >= 3)
+                if(++UpdateCounter >= 3)
                 {
-                    frameCounter = 0;
+                    UpdateCounter = 0;
 
-                    IMyShipMergeBlock other = block.Other;
-                    Vector3I gridOffset = CalculateOtherGridOffset(block);
+                    IMyShipMergeBlock other = Block.Other;
+                    Vector3I gridOffset = CalculateOtherGridOffset(Block);
                     Vector3I gridOffset2 = CalculateOtherGridOffset(other);
 
-                    //if(!block.CubeGrid.CanMergeCubes(other.CubeGrid, gridOffset))
-                    if(!CanMergeCubes((MyCubeGrid)block.CubeGrid, (MyCubeGrid)other.CubeGrid, gridOffset, out MarkThis, out MarkOther))
+                    // block.CubeGrid.CanMergeCubes(other.CubeGrid, gridOffset)
+                    bool canMerge = CanMergeCubes((MyCubeGrid)Block.CubeGrid, (MyCubeGrid)other.CubeGrid, gridOffset, out MarkThis, out MarkOther);
+
+                    if(!canMerge && !IsFailing)
                     {
                         SetMergeFailing(true);
                     }
@@ -298,23 +294,25 @@ namespace Digi.BuildInfo.Features
             }
             else
             {
-                frameCounter = 0;
-                SetMergeFailing(false);
+                UpdateCounter = 0;
+
+                if(IsFailing)
+                    SetMergeFailing(false);
             }
         }
 
         void CalculateMergeData(ref MergeData data)
         {
-            IMyShipMergeBlock other = block.Other;
+            IMyShipMergeBlock other = Block.Other;
 
-            float num = (def != null) ? def.Strength : 0.1f;
+            float num = (Def != null) ? Def.Strength : 0.1f;
 
-            data.Distance = (float)(block.WorldMatrix.Translation - other.WorldMatrix.Translation).Length() - block.CubeGrid.GridSize;
-            data.StrengthFactor = (float)Math.Exp((double)(-(double)data.Distance / block.CubeGrid.GridSize));
+            data.Distance = (float)(Block.WorldMatrix.Translation - other.WorldMatrix.Translation).Length() - Block.CubeGrid.GridSize;
+            data.StrengthFactor = (float)Math.Exp((double)(-(double)data.Distance / Block.CubeGrid.GridSize));
 
-            float num2 = MathHelper.Lerp(0f, num * ((block.CubeGrid.GridSizeEnum == MyCubeSize.Large) ? 0.005f : 0.1f), data.StrengthFactor);
+            float num2 = MathHelper.Lerp(0f, num * ((Block.CubeGrid.GridSizeEnum == MyCubeSize.Large) ? 0.005f : 0.1f), data.StrengthFactor);
 
-            Vector3 velocityAtPoint = block.CubeGrid.Physics.GetVelocityAtPoint(block.PositionComp.GetPosition());
+            Vector3 velocityAtPoint = Block.CubeGrid.Physics.GetVelocityAtPoint(Block.PositionComp.GetPosition());
             Vector3 velocityAtPoint2 = other.CubeGrid.Physics.GetVelocityAtPoint(other.PositionComp.GetPosition());
 
             data.RelativeVelocity = velocityAtPoint2 - velocityAtPoint;
@@ -324,16 +322,16 @@ namespace Digi.BuildInfo.Features
 
             data.ConstraintStrength = num2 / num4;
 
-            Vector3D vector = other.PositionComp.GetPosition() - block.PositionComp.GetPosition();
-            Vector3D value = block.WorldMatrix.GetDirectionVector(forward);
+            Vector3D vector = other.PositionComp.GetPosition() - Block.PositionComp.GetPosition();
+            Vector3D value = Block.WorldMatrix.GetDirectionVector(Forward);
 
-            Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(block.WorldMatrix.GetDirectionVector(right));
+            Base6Directions.Direction otherRight = other.WorldMatrix.GetClosestDirection(Block.WorldMatrix.GetDirectionVector(Right));
 
             data.Distance = (float)vector.Length();
-            data.PositionOk = (data.Distance < block.CubeGrid.GridSize + 0.17f);
-            data.AxisDelta = (float)(value + other.WorldMatrix.GetDirectionVector(forward)).Length();
+            data.PositionOk = (data.Distance < Block.CubeGrid.GridSize + 0.17f);
+            data.AxisDelta = (float)(value + other.WorldMatrix.GetDirectionVector(Forward)).Length();
             data.AxisOk = (data.AxisDelta < 0.1f);
-            data.RotationDelta = (float)(block.WorldMatrix.GetDirectionVector(right) - other.WorldMatrix.GetDirectionVector(otherRight)).Length();
+            data.RotationDelta = (float)(Block.WorldMatrix.GetDirectionVector(Right) - other.WorldMatrix.GetDirectionVector(otherRight)).Length();
             data.RotationOk = (data.RotationDelta < 0.08f);
         }
 
@@ -343,12 +341,12 @@ namespace Digi.BuildInfo.Features
             IMyShipMergeBlock other = b.Other;
             MergeBlock otherLogic = other.GameLogic.GetAs<MergeBlock>();
 
-            Vector3 value = ConstraintPositionInGridSpace(b, blockLogic.forward) / b.CubeGrid.GridSize;
-            Vector3 vector = -ConstraintPositionInGridSpace(other, blockLogic.forward) / other.CubeGrid.GridSize;
+            Vector3 value = ConstraintPositionInGridSpace(b, blockLogic.Forward) / b.CubeGrid.GridSize;
+            Vector3 vector = -ConstraintPositionInGridSpace(other, blockLogic.Forward) / other.CubeGrid.GridSize;
 
-            Base6Directions.Direction direction = b.Orientation.TransformDirection(blockLogic.right);
-            Base6Directions.Direction newB = b.Orientation.TransformDirection(blockLogic.forward);
-            Base6Directions.Direction flippedDirection = Base6Directions.GetFlippedDirection(other.Orientation.TransformDirection(otherLogic.forward));
+            Base6Directions.Direction direction = b.Orientation.TransformDirection(blockLogic.Right);
+            Base6Directions.Direction newB = b.Orientation.TransformDirection(blockLogic.Forward);
+            Base6Directions.Direction flippedDirection = Base6Directions.GetFlippedDirection(other.Orientation.TransformDirection(otherLogic.Forward));
             Base6Directions.Direction closestDirection = other.CubeGrid.WorldMatrix.GetClosestDirection(b.CubeGrid.WorldMatrix.GetDirectionVector(direction));
 
             MatrixI matrixI = MatrixI.CreateRotation(closestDirection, flippedDirection, direction, newB);
@@ -378,10 +376,10 @@ namespace Digi.BuildInfo.Features
 
         static bool CanMergeCubes(MyCubeGrid thisGrid, MyCubeGrid gridToMerge, Vector3I gridOffset, out IMySlimBlock collideThis, out IMySlimBlock collideOther)
         {
+            MatrixI transform = thisGrid.CalculateMergeTransform(gridToMerge, gridOffset);
+
             collideThis = null;
             collideOther = null;
-
-            MatrixI transform = thisGrid.CalculateMergeTransform(gridToMerge, gridOffset);
 
             foreach(IMySlimBlock slimOther in gridToMerge.GetBlocks())
             {
@@ -396,51 +394,28 @@ namespace Digi.BuildInfo.Features
 
                     Vector3I posThis = Vector3I.Transform(posMerge, transform);
                     IMySlimBlock slimThis = thisGrid.GetCubeBlock(posThis);
-
                     if(slimThis == null)
                         continue;
 
                     collideThis = slimThis;
                     collideOther = slimOther;
 
-                    // removed compound block checks as SE does not support it
+                    // removed compound block checks here as SE does not support that.
 
                     if(slimThis?.FatBlock != null && slimOther?.FatBlock != null)
                     {
-                        IMyPistonTop pistonTop;
-                        if(slimOther.FatBlock is IMyPistonTop)
-                        {
-                            pistonTop = (IMyPistonTop)slimOther.FatBlock;
-                        }
-                        else
-                        {
-                            if(!(slimThis.FatBlock is IMyPistonTop))
-                                return false;
+                        IMyPistonBase pistonBase = slimOther.FatBlock as IMyPistonBase ?? slimThis.FatBlock as IMyPistonBase;
+                        IMyPistonTop pistonTop = slimOther.FatBlock as IMyPistonTop ?? slimThis.FatBlock as IMyPistonTop;
 
-                            pistonTop = (IMyPistonTop)slimThis.FatBlock;
-                        }
-
-                        IMyPistonBase pistonBase;
-                        if(slimOther.FatBlock is IMyPistonBase)
-                        {
-                            pistonBase = (IMyPistonBase)slimOther.FatBlock;
-                        }
-                        else
-                        {
-                            if(!(slimThis.FatBlock is IMyPistonBase))
-                                return false;
-
-                            pistonBase = (IMyPistonBase)slimThis.FatBlock;
-                        }
+                        if(pistonBase == null || pistonTop == null)
+                            return false;
 
                         if((pistonBase.Top != null && pistonBase.Top.EntityId == pistonTop.EntityId)
                         || (pistonTop.Base != null && pistonTop.Base.EntityId == pistonBase.EntityId))
-                        {
                             continue;
-                        }
-
-                        return false;
                     }
+
+                    return false;
                 }
             }
 
