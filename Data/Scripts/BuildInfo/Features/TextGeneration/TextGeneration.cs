@@ -4474,8 +4474,8 @@ namespace Digi.BuildInfo.Features
 
                 if(extraInfo)
                 {
-                    float accuracyAt100m = (float)Math.Tan(MathHelper.ToRadians(gunWWF.DeviationAngleDeg)) * 100 * 2;
-                    AddLine().Label("| Accuracy").DistanceFormat(accuracyAt100m).Append(" group at 100m").Separator().Label("Recoil force").ForceFormat(gunWWF.RecoilImpulse);
+                    float precisionAt100m = (float)Math.Tan(MathHelper.ToRadians(gunWWF.DeviationAngleDeg)) * 100 * 2;
+                    AddLine().Label("| Precision").DistanceFormat(precisionAt100m).Append(" group at 100m").Separator().Label("Recoil force").ForceFormat(gunWWF.RecoilImpulse);
                 }
 
                 if(showAmmoDetails)
