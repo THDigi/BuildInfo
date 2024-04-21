@@ -19,5 +19,8 @@
     <PackageReference Include="Mal.Mdk2.ModAnalyzers" Version="*" />
     <PackageReference Include="Mal.Mdk2.References" Version="*" />
   </ItemGroup>
-
+  
+  <PropertyGroup>
+      <NoWarn>CS0162</NoWarn> <!-- unreachable code detected -->
+  </PropertyGroup>
 </Project>
