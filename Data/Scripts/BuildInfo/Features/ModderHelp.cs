@@ -8,9 +8,11 @@ using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
 using Draygo.API;
 using ProtoBuf;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage.Collections;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -709,6 +711,58 @@ namespace Digi.BuildInfo.Features
                         ModProblem(def, "does not have a DisplayName which can cause mod scripts to crash and players to be confused.");
                     }
 
+                    //if((blockDef.DisplayNameEnum != null && blockDef.BlockPairName == blockDef.DisplayNameEnum.Value.String)
+                    //|| (blockDef.BlockPairName == blockDef.DisplayNameString))
+                    //{
+                    //    ModHint(def, "does not have a BlockPairName defined therefore it defaults to the DisplayName."
+                    //               + "\nRecommended to set it properly, similar to SubtypeId but without the grid size prefix/suffix if any.");
+                    //}
+
+                    // last generated from SE v01_203_630
+                    if(def is MySafeZoneBlockDefinition) CheckResourceGroup(def, ((MySafeZoneBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyAdvancedDoorDefinition) CheckResourceGroup(def, ((MyAdvancedDoorDefinition)def).ResourceSinkGroup);
+                    if(def is MyAirtightDoorGenericDefinition) CheckResourceGroup(def, ((MyAirtightDoorGenericDefinition)def).ResourceSinkGroup);
+                    if(def is MyAirVentDefinition) CheckResourceGroup(def, ((MyAirVentDefinition)def).ResourceSinkGroup);
+                    if(def is MyBatteryBlockDefinition) CheckResourceGroup(def, ((MyBatteryBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyBeaconDefinition) CheckResourceGroup(def, ((MyBeaconDefinition)def).ResourceSinkGroup);
+                    if(def is MyButtonPanelDefinition) CheckResourceGroup(def, ((MyButtonPanelDefinition)def).ResourceSinkGroup);
+                    if(def is MyCameraBlockDefinition) CheckResourceGroup(def, ((MyCameraBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyConveyorSorterDefinition) CheckResourceGroup(def, ((MyConveyorSorterDefinition)def).ResourceSinkGroup);
+                    if(def is MyCryoChamberDefinition) CheckResourceGroup(def, ((MyCryoChamberDefinition)def).ResourceSinkGroup);
+                    if(def is MyDoorDefinition) CheckResourceGroup(def, ((MyDoorDefinition)def).ResourceSinkGroup);
+                    if(def is MyEmotionControllerBlockDefinition) CheckResourceGroup(def, ((MyEmotionControllerBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyEventControllerBlockDefinition) CheckResourceGroup(def, ((MyEventControllerBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyFlightMovementBlockDefinition) CheckResourceGroup(def, ((MyFlightMovementBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyGasFueledPowerProducerDefinition) CheckResourceGroup(def, ((MyGasFueledPowerProducerDefinition)def).ResourceSinkGroup);
+                    if(def is MyGravityGeneratorBaseDefinition) CheckResourceGroup(def, ((MyGravityGeneratorBaseDefinition)def).ResourceSinkGroup);
+                    if(def is MyGyroDefinition) CheckResourceGroup(def, ((MyGyroDefinition)def).ResourceSinkGroup);
+                    if(def is MyJumpDriveDefinition) CheckResourceGroup(def, ((MyJumpDriveDefinition)def).ResourceSinkGroup);
+                    if(def is MyLaserAntennaDefinition) CheckResourceGroup(def, ((MyLaserAntennaDefinition)def).ResourceSinkGroup);
+                    if(def is MyLCDPanelsBlockDefinition) CheckResourceGroup(def, ((MyLCDPanelsBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyLightingBlockDefinition) CheckResourceGroup(def, ((MyLightingBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyMedicalRoomDefinition) CheckResourceGroup(def, ((MyMedicalRoomDefinition)def).ResourceSinkGroup);
+                    if(def is MyMotorStatorDefinition) CheckResourceGroup(def, ((MyMotorStatorDefinition)def).ResourceSinkGroup);
+                    if(def is MyOreDetectorDefinition) CheckResourceGroup(def, ((MyOreDetectorDefinition)def).ResourceSinkGroup);
+                    if(def is MyOxygenFarmDefinition) CheckResourceGroup(def, ((MyOxygenFarmDefinition)def).ResourceSinkGroup);
+                    if(def is MyParachuteDefinition) CheckResourceGroup(def, ((MyParachuteDefinition)def).ResourceSinkGroup);
+                    if(def is MyPistonBaseDefinition) CheckResourceGroup(def, ((MyPistonBaseDefinition)def).ResourceSinkGroup);
+                    if(def is MyPoweredCargoContainerDefinition) CheckResourceGroup(def, ((MyPoweredCargoContainerDefinition)def).ResourceSinkGroup);
+                    if(def is MyProductionBlockDefinition) CheckResourceGroup(def, ((MyProductionBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyProgrammableBlockDefinition) CheckResourceGroup(def, ((MyProgrammableBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyProjectorDefinition) CheckResourceGroup(def, ((MyProjectorDefinition)def).ResourceSinkGroup);
+                    if(def is MyRadioAntennaDefinition) CheckResourceGroup(def, ((MyRadioAntennaDefinition)def).ResourceSinkGroup);
+                    if(def is MyRemoteControlDefinition) CheckResourceGroup(def, ((MyRemoteControlDefinition)def).ResourceSinkGroup);
+                    if(def is MySearchlightDefinition) CheckResourceGroup(def, ((MySearchlightDefinition)def).ResourceSinkGroup);
+                    if(def is MySensorBlockDefinition) CheckResourceGroup(def, ((MySensorBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyShipDrillDefinition) CheckResourceGroup(def, ((MyShipDrillDefinition)def).ResourceSinkGroup);
+                    if(def is MySoundBlockDefinition) CheckResourceGroup(def, ((MySoundBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyTextPanelDefinition) CheckResourceGroup(def, ((MyTextPanelDefinition)def).ResourceSinkGroup);
+                    if(def is MyThrustDefinition) CheckResourceGroup(def, ((MyThrustDefinition)def).ResourceSinkGroup);
+                    if(def is MyTimerBlockDefinition) CheckResourceGroup(def, ((MyTimerBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyTurretControlBlockDefinition) CheckResourceGroup(def, ((MyTurretControlBlockDefinition)def).ResourceSinkGroup);
+                    if(def is MyVirtualMassDefinition) CheckResourceGroup(def, ((MyVirtualMassDefinition)def).ResourceSinkGroup);
+                    if(def is MyWeaponBlockDefinition) CheckResourceGroup(def, ((MyWeaponBlockDefinition)def).ResourceSinkGroup);
+
                     if(blockDef.IsAirTight == null)
                     {
                         int airTightFaces, toggledAirTightFaces, totalFaces;
@@ -798,6 +852,13 @@ namespace Digi.BuildInfo.Features
 
                     continue;
                 }
+
+                // HACK: MyAiBlockPowerComponentDefinition is not whitelisted
+                if(def is MyComponentDefinitionBase && def.GetType().Name == "MyAiBlockPowerComponentDefinition")
+                {
+                    var ob = (MyObjectBuilder_AiBlockPowerComponentDefinition)def.GetObjectBuilder();
+                    CheckResourceGroup(def, MyStringHash.GetOrCompute(ob.ResourceSinkGroup));
+                }
             }
 
             if(modHints.Count > 0)
@@ -809,6 +870,20 @@ namespace Digi.BuildInfo.Features
                     CombineIsAirTightHints(sb, modData, true);
                     CombineIsAirTightHints(sb, modData, false);
                 }
+            }
+        }
+
+        void CheckResourceGroup(MyDefinitionBase def, string group) => CheckResourceGroup(def, MyStringHash.GetOrCompute(group));
+
+        void CheckResourceGroup(MyDefinitionBase def, MyStringHash group)
+        {
+            if(group == MyStringHash.NullOrEmpty)
+            {
+                ModHint(def, $"does not have ResourceSinkGroup defined which means it will be in the last power priority group. Refer to ResourceDistributionGroups.sbc for subtypes to use.");
+            }
+            else if(!Main.Constants.ResourceGroupPriority.ContainsKey(group))
+            {
+                ModProblem(def, $"the ResourceSinkGroup '{group.String}' does not exist which can cause issues with block working. Refer to ResourceDistributionGroups.sbc for subtypes to use.");
             }
         }
 
