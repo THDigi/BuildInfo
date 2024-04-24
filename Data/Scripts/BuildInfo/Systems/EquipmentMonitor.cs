@@ -264,9 +264,12 @@ namespace Digi.BuildInfo.Systems
 
             MyCubeBlockDefinition equippedDef = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
 
-            if(IsCubeBuilder && equippedDef != null)
+            if(IsCubeBuilder)
             {
-                SetBlock(equippedDef, null);
+                if(equippedDef != null && MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.BlockCreationIsActivated)
+                    SetBlock(equippedDef);
+                else
+                    SetBlock(null);
                 return;
             }
 
@@ -466,7 +469,12 @@ namespace Digi.BuildInfo.Systems
             if(internalController.BuildingMode)
             {
                 SetTool(null, null, internalController);
-                SetBlock(MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition);
+
+                var def = MyCubeBuilder.Static?.CubeBuilderState?.CurrentBlockDefinition;
+                if(MyCubeBuilder.Static.IsActivated && MyCubeBuilder.Static.BlockCreationIsActivated)
+                    SetBlock(def);
+                else
+                    SetBlock(null);
                 return;
             }
 
