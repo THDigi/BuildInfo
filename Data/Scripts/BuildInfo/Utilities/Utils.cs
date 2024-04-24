@@ -674,8 +674,9 @@ namespace Digi.BuildInfo.Utilities
 
             int totalVerts = vertices.Count;
             int halfVerts = totalVerts / 2;
-            int firstHalfSkip = halfVerts - (wireDivideRatio * 4);
+            int secondEquatorStartIndex = totalVerts - (wireDivideRatio * 4);
 
+            // it goes from top to middle then bottom to middle
             for(int i = 0; i < totalVerts; i += 4)
             {
                 quad.Point0 = vertices[i + 1];
@@ -684,11 +685,12 @@ namespace Digi.BuildInfo.Utilities
                 quad.Point3 = vertices[i];
 
                 //DebugDraw3DText(new StringBuilder($"<color=red>{i} to {i + 3}"), (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4, scale: 0.05);
+                //color = Utils.GetIndexColor(i / 4, totalVerts / 4);
 
                 if(drawWireframe)
                 {
-                    // skip one of the 2 circles at the equator
-                    if(i < firstHalfSkip || i > halfVerts)
+                    // skip the second circle at the ecuator
+                    if(i < secondEquatorStartIndex)
                     {
                         // lines circling around Y axis
                         MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
