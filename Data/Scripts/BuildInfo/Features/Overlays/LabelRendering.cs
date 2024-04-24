@@ -63,7 +63,6 @@ namespace Digi.BuildInfo.Features.Overlays
         public bool ForceDrawLabel = false;
 
         readonly LabelData[] LabelByType;
-        readonly OverlayDrawInstance DrawInstance;
         readonly BuildInfoMod Main;
 
         public const double TextScale = 0.24;

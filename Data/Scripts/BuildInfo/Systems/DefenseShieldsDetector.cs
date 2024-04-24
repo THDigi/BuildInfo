@@ -13,8 +13,6 @@ namespace Digi.BuildInfo.Systems
 
         const long Channel = 1365616918;
 
-        private bool Registered;
-
         public DefenseShieldsDetector(BuildInfoMod main) : base(main)
         {
             MyAPIGateway.Utilities.RegisterMessageHandler(Channel, HandleMessage);

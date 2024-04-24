@@ -31,9 +31,9 @@ namespace Whiplash.WeaponFramework
             MyAPIGateway.Utilities.RegisterMessageHandler(FIXED_GUN_REGESTRATION_NETID, HandleFixedGunRegistration);
             MyAPIGateway.Utilities.RegisterMessageHandler(TURRET_REGESTRATION_NETID, HandleTurretRegistration);
 
-            MyAPIGateway.Multiplayer.RegisterMessageHandler(FIXED_GUN_CONFIG_SYNC_NETID, HandleFixedGunConfigSyncMessage);
-            MyAPIGateway.Multiplayer.RegisterMessageHandler(TURRET_CONFIG_SYNC_NETID, HandleTurretConfigSyncMessage);
-            MyAPIGateway.Multiplayer.RegisterMessageHandler(SERVER_CONFIG_SYNC_REQUEST_FINISHED_NETID, OnClientConfigSyncFinished);
+            MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(FIXED_GUN_CONFIG_SYNC_NETID, HandleFixedGunConfigSyncMessage);
+            MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(TURRET_CONFIG_SYNC_NETID, HandleTurretConfigSyncMessage);
+            //MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(SERVER_CONFIG_SYNC_REQUEST_FINISHED_NETID, OnClientConfigSyncFinished);
 
             if(Main.IsServer)
                 SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
@@ -48,9 +48,9 @@ namespace Whiplash.WeaponFramework
             MyAPIGateway.Utilities.UnregisterMessageHandler(FIXED_GUN_REGESTRATION_NETID, HandleFixedGunRegistration);
             MyAPIGateway.Utilities.UnregisterMessageHandler(TURRET_REGESTRATION_NETID, HandleTurretRegistration);
 
-            MyAPIGateway.Multiplayer.UnregisterMessageHandler(FIXED_GUN_CONFIG_SYNC_NETID, HandleFixedGunConfigSyncMessage);
-            MyAPIGateway.Multiplayer.UnregisterMessageHandler(TURRET_CONFIG_SYNC_NETID, HandleTurretConfigSyncMessage);
-            MyAPIGateway.Multiplayer.UnregisterMessageHandler(SERVER_CONFIG_SYNC_REQUEST_FINISHED_NETID, OnClientConfigSyncFinished);
+            MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(FIXED_GUN_CONFIG_SYNC_NETID, HandleFixedGunConfigSyncMessage);
+            MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(TURRET_CONFIG_SYNC_NETID, HandleTurretConfigSyncMessage);
+            //MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(SERVER_CONFIG_SYNC_REQUEST_FINISHED_NETID, OnClientConfigSyncFinished);
         }
 
         void HandleFixedGunRegistration(object o)
@@ -107,18 +107,14 @@ namespace Whiplash.WeaponFramework
             MyAPIGateway.Multiplayer.SendMessageToServer(CLIENT_CONFIG_SYNC_REQUEST_NETID, bytes);
         }
 
-        void OnClientConfigSyncFinished(byte[] b)
-        {
-        }
-
-        void HandleFixedGunConfigSyncMessage(byte[] b)
+        void HandleFixedGunConfigSyncMessage(ushort channelId, byte[] data, ulong senderSteamId, bool isSenderServer)
         {
             try
             {
-                if(b == null)
+                if(data == null)
                     return;
 
-                WeaponConfig config = MyAPIGateway.Utilities.SerializeFromBinary<WeaponConfig>(b);
+                WeaponConfig config = MyAPIGateway.Utilities.SerializeFromBinary<WeaponConfig>(data);
                 UpdateWeapon(config, isFixed: true);
             }
             catch(Exception e)
@@ -127,14 +123,14 @@ namespace Whiplash.WeaponFramework
             }
         }
 
-        void HandleTurretConfigSyncMessage(byte[] b)
+        void HandleTurretConfigSyncMessage(ushort channelId, byte[] data, ulong senderSteamId, bool isSenderServer)
         {
             try
             {
-                if(b == null)
+                if(data == null)
                     return;
 
-                TurretWeaponConfig config = MyAPIGateway.Utilities.SerializeFromBinary<TurretWeaponConfig>(b);
+                TurretWeaponConfig config = MyAPIGateway.Utilities.SerializeFromBinary<TurretWeaponConfig>(data);
                 UpdateWeapon(config, isFixed: false);
             }
             catch(Exception e)
@@ -142,6 +138,10 @@ namespace Whiplash.WeaponFramework
                 Log.Error(e);
             }
         }
+
+        //void OnClientConfigSyncFinished(ushort channelId, byte[] data, ulong senderSteamId, bool isSenderServer)
+        //{
+        //}
 
         void UpdateWeapon(WeaponConfig config, bool isFixed)
         {

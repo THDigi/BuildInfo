@@ -147,7 +147,7 @@ namespace Digi.BuildInfo.Features
                 // if path is not valid, throws a System.NotSupportedException: The given path's format is not supported.
                 // might have other exceptions, anything that makes this throw should be coverted by this custom error.
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 // game is not gonna add an error for this file path so I gotta add one myself
                 MyDefinitionErrors.Add(def.Context, $"{Signature}Planet '{def.Id.SubtypeName}' at CloudLayer #{layerNum}: Invalid path: '{filePath}'"

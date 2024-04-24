@@ -28,7 +28,6 @@ namespace Digi.BuildInfo.Features
         Dictionary<string, Request> CursorRequests = new Dictionary<string, Request>();
         bool InEscapeLoop = false;
         HudAPIv2.BillBoardHUDMessage Cursor;
-        int CursorRecreatedAtSec = 0;
 
         public MenuHandler(BuildInfoMod main) : base(main)
         {

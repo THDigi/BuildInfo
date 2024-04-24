@@ -40,7 +40,6 @@ namespace Digi.BuildInfo.Features.Overlays
             public IMyCubeGrid Grid;
             public Vector3D CenterOfMass;
             public float Mass;
-            public double DistanceToCamera;
         }
 
         public ShipOverlays(BuildInfoMod main) : base(main)

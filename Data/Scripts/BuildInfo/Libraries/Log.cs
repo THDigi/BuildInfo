@@ -235,7 +235,7 @@ namespace Digi
             string errorPrintText;
             bool sessionReady = false;
 
-            double chatMessageCooldown;
+            //double chatMessageCooldown;
 
             IMyHudNotification notifyInfo;
             IMyHudNotification notifyError;

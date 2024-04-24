@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
         private IMyTerminalBlock viewedInTerminal;
         private int cursorCheckAfterTick = 0;
-        private int refreshWaitForTick = 0;
+        //private int refreshWaitForTick = 0;
 
         private int ticker;
         private int tickerUpdateAt;
