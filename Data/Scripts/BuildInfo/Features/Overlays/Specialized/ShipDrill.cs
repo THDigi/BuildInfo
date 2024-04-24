@@ -46,7 +46,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 MatrixD mineMatrix = blockWorldMatrix;
                 mineMatrix.Translation += mineMatrix.Forward * drill.CutOutOffset;
 
-                Utils.DrawTransparentSphere(ref mineMatrix, mineRadius, ref ColorMineLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+                Utils.DrawSphere(ref mineMatrix, mineRadius, LineEveryDeg,
+                   wireColor: ColorMineLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);
 
                 if(drawLabel)
                 {
@@ -64,7 +65,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                 float carveRadius = Hardcoded.ShipDrill_VoxelVisualAdd + (drill.CutOutRadius * Hardcoded.Drill_MineVoelNoOreRadiusMul);
 
-                Utils.DrawTransparentSphere(ref carveMatrix, carveRadius, ref ColorCarveLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+                Utils.DrawSphere(ref carveMatrix, carveRadius, LineEveryDeg,
+                   wireColor: ColorCarveLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);
 
                 if(drawLabel)
                 {
@@ -85,7 +87,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
                 // only draw it if it's a different size or offset
                 if(Math.Abs(mineRadius - sensorRadius) > 0.001f || Math.Abs(drill.CutOutOffset - drill.SensorOffset) > 0.001f)
                 {
-                    Utils.DrawTransparentSphere(ref sensorMatrix, sensorRadius, ref ColorSensorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+                    Utils.DrawSphere(ref sensorMatrix, sensorRadius, LineEveryDeg,
+                       wireColor: ColorSensorLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);
                 }
 
                 if(drawLabel)

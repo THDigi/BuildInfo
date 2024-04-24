@@ -39,7 +39,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
             float radius = toolDef.SensorRadius;
 
-            Utils.DrawTransparentSphere(ref sensorMatrix, radius, ref ColorLines, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
+            Utils.DrawSphere(ref sensorMatrix, radius, LineEveryDeg,
+               wireColor: ColorLines, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType);
 
             if(drawInstance.LabelRender.CanDrawLabel())
             {

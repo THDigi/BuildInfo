@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features;
+using Digi.BuildInfo.Features.Overlays.Specialized;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -657,14 +658,33 @@ namespace Digi.BuildInfo.Utilities
             return new Vector3((index % maxIndex) / (float)maxIndex, 0.75f, 1f).HSVtoColor();
         }
 
-        // Optimized wireframe draw
-        public static void DrawTransparentSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1f, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        /// <summary>
+        /// Renders a sphere at the specified matrix (position, orientation and scale are considered).<br/>
+        /// It's required to define either <paramref name="wireColor"/> and/or <paramref name="solidColor"/> for it to draw something.
+        /// </summary>
+        /// <param name="lineEveryDeg">draw a line/solid every this many degrees. Lower values makes a more rounded shape. Recommended values: 18, 15, 6 (low, med, high)</param>
+        /// <param name="wireColor">leave null to not draw wireframe, otherwise specify the color.</param>
+        /// <param name="wireMaterial">leave null to use BuildInfo_Laser material.</param>
+        /// <param name="wireThickness">wireframe line thickness</param>
+        /// <param name="solidColor">leave null to not draw solid faces, otherwise specify the color.</param>
+        /// <param name="solidMaterial">leave null to use BuildInfo_Square material.</param>
+        public static void DrawSphere(ref MatrixD worldMatrix, float radius, int lineEveryDeg,
+            Color? wireColor = null, MyStringId? wireMaterial = null, float wireThickness = 0.01f, BlendTypeEnum wireBlend = BlendTypeEnum.PostPP,
+            Color? solidColor = null, MyStringId? solidMaterial = null, BlendTypeEnum solidBlend = BlendTypeEnum.PostPP)
         {
-            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
-            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+            bool drawWireframe = wireColor != null;
+            bool drawSolid = solidColor != null;
 
-            if(lineThickness < 0)
-                lineThickness = 0.01f;
+            if(!drawWireframe && !drawSolid)
+            {
+                Log.Error($"Both {nameof(wireColor)} and {nameof(solidColor)} are null which results in nothing drawn");
+                return;
+            }
+
+            wireMaterial = wireMaterial ?? SpecializedOverlayBase.MaterialLaser;
+            solidMaterial = solidMaterial ?? SpecializedOverlayBase.MaterialSquare;
+
+            int wireDivideRatio = 360 / lineEveryDeg;
 
             List<Vector3D> vertices = BuildInfoMod.Instance.Caches.Vertices;
             vertices.Clear();
@@ -676,7 +696,7 @@ namespace Digi.BuildInfo.Utilities
             int halfVerts = totalVerts / 2;
             int secondEquatorStartIndex = totalVerts - (wireDivideRatio * 4);
 
-            // it goes from top to middle then bottom to middle
+            // goes from top to middle then bottom to middle
             for(int i = 0; i < totalVerts; i += 4)
             {
                 quad.Point0 = vertices[i + 1];
@@ -693,20 +713,20 @@ namespace Digi.BuildInfo.Utilities
                     if(i < secondEquatorStartIndex)
                     {
                         // lines circling around Y axis
-                        MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+                        MyTransparentGeometry.AddLineBillboard(wireMaterial.Value, wireColor.Value, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, wireThickness, wireBlend);
                     }
 
                     //DebugDraw3DText(new StringBuilder($"{i + 1} to {i + 3}"), quad.Point0 + (quad.Point1 - quad.Point0) / 2, scale: 0.03);
 
                     // lines from pole to half
-                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                    MyTransparentGeometry.AddLineBillboard(wireMaterial.Value, wireColor.Value, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, wireThickness, wireBlend);
 
                     //DebugDraw3DText(new StringBuilder($"{i + 3} to {i + 2}"), quad.Point1 + (quad.Point2 - quad.Point1) / 2, scale: 0.01);
                 }
 
                 if(drawSolid)
                 {
-                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
+                    MyTransparentGeometry.AddQuad(solidMaterial.Value, ref quad, solidColor.Value, ref center, blendType: solidBlend);
                 }
             }
         }

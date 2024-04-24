@@ -122,8 +122,8 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             #endregion
 
             #region Drawing
-            DrawSphere(ColorScanLines, drawMatrix, searchSphere);
-            DrawSphere(ColorExplosionLines, drawMatrix, explosionSphere);
+            DrawSphere(ref ColorScanLines, ref drawMatrix, ref searchSphere);
+            DrawSphere(ref ColorExplosionLines, ref drawMatrix, ref explosionSphere);
 
             MyTransparentGeometry.AddPointBillboard(MaterialDot, ColorExplosion, explosionSphere.Center, 0.2f, 0, blendType: BlendType);
 
@@ -146,14 +146,19 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             #endregion
         }
 
-        void DrawSphere(Color color, MatrixD m, BoundingSphereD sphere)
+        void DrawSphere(ref Color color, ref MatrixD orientation, ref BoundingSphereD sphere)
         {
             Color colorWire = color * LaserOverlayAlpha;
             Color colorSolid = color * 0.3f;
+
+            MatrixD m = orientation; // copy
             m.Translation = sphere.Center;
+
             float radius = (float)sphere.Radius;
-            Utils.DrawTransparentSphere(ref m, radius, ref colorWire, MySimpleObjectRasterizer.Wireframe, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialLaser, blendType: BlendType);
-            Utils.DrawTransparentSphere(ref m, radius, ref colorSolid, MySimpleObjectRasterizer.Solid, (360 / LineEveryDeg), lineThickness: LineThickness, material: MaterialSquare, blendType: BlendType);
+
+            Utils.DrawSphere(ref m, radius, LineEveryDeg,
+               wireColor: colorWire, wireMaterial: MaterialLaser, wireThickness: LineThickness, wireBlend: BlendType,
+               solidColor: colorSolid, solidMaterial: MaterialSquare, solidBlend: BlendType);
         }
     }
 }

@@ -174,11 +174,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
                 pointRadius *= EyeballedMul;
 
-                Utils.DrawTransparentSphere(ref wm, pointRadius, ref ColorSphere, MySimpleObjectRasterizer.Wireframe, WireDivRatio,
-                    SpecializedOverlayBase.MaterialLaser, WireFrameThick, blendType: SpecializedOverlayBase.BlendType);
+                Utils.DrawSphere(ref wm, pointRadius, SpecializedOverlayBase.RoundedQualityMed,
+                   wireColor: ColorSphere, wireMaterial: SpecializedOverlayBase.MaterialLaser, wireThickness: WireFrameThick, wireBlend: SpecializedOverlayBase.BlendType);
 
-                Utils.DrawTransparentSphere(ref wm, pointRadius, ref ColorSphereSeeThrough, MySimpleObjectRasterizer.Wireframe, WireDivRatio,
-                    SpecializedOverlayBase.MaterialLaser, WireFrameThick, blendType: BlendTypeEnum.AdditiveTop);
+                Utils.DrawSphere(ref wm, pointRadius, SpecializedOverlayBase.RoundedQualityMed,
+                   wireColor: ColorSphereSeeThrough, wireMaterial: SpecializedOverlayBase.MaterialLaser, wireThickness: WireFrameThick, wireBlend: BlendTypeEnum.AdditiveTop);
 
                 MyTransparentGeometry.AddPointBillboard(SpecializedOverlayBase.MaterialDot, ColorDot, wm.Translation, DotRadius, 0, blendType: SpecializedOverlayBase.BlendType);
                 MyTransparentGeometry.AddPointBillboard(SpecializedOverlayBase.MaterialDot, ColorDotSeeThrough, wm.Translation, DotRadius, 0, blendType: BlendTypeEnum.AdditiveTop);
