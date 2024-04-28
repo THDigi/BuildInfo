@@ -6,16 +6,19 @@ using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
+using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
+using Sandbox.Game.Localization;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using SpaceEngineers.Game.Definitions.SafeZone;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
@@ -215,6 +218,8 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
 
             //Add(typeof(MyObjectBuilder_JumpDrive), Format_JumpDrive);
+
+            Add(typeof(MyObjectBuilder_SafeZoneBlock), Format_SafeZone);
         }
 
         void Add(MyObjectBuilderType blockType, CustomInfoCall call)
@@ -906,7 +911,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
             info.Append("Connections:");
 
-            if(upgradeModule.Connections > 0)
+            if(upgradeModule.Connections > 0) // NOTE: upgradeModule.Connections is blocks not ports.
             {
                 info.Append('\n');
 
@@ -1904,6 +1909,55 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append(pbe.EchoText).Append('\n');
 
                 //echoText.Append(pbe.EchoText);
+            }
+        }
+
+        void Format_SafeZone(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.203:
+            //     Type: <BlockName>
+            //     Current Input: 1W during init / actual power when used
+            //     Safe Zone: <Status>
+            //     Next Upkeep: <Time>
+            //     Zone Chips:<Amount>
+
+            IMySafeZoneBlock szb = block as IMySafeZoneBlock;
+            MySafeZoneBlockDefinition def = szb?.SlimBlock?.BlockDefinition as MySafeZoneBlockDefinition;
+            if(def == null)
+                return;
+
+            bool bubbleActive = szb.IsSafeZoneEnabled();
+            bool initializing = szb.GetDetailedInfo().IndexOf(MyTexts.GetString(MySpaceTexts.Beacon_SafeZone_Info_Initializing)) != -1;
+            bool active = szb.GetDetailedInfo().IndexOf(MyTexts.GetString(MySpaceTexts.Beacon_SafeZone_Info_NextUnkeepIn)) != -1;
+
+            if(bubbleActive && initializing) // controls would be grayed out if bubble is not active
+            {
+                Vector3 size;
+
+                // HACK: no proper access to read these especially if safezone is not spawned
+                bool isSphere = szb.GetValue<long>("SafeZoneShapeCombo") == 0;
+                if(isSphere)
+                {
+                    float radius = szb.GetValue<float>("SafeZoneSlider");
+                    size = new Vector3(radius);
+                }
+                else // cube
+                {
+                    float x = szb.GetValue<float>("SafeZoneXSlider");
+                    float y = szb.GetValue<float>("SafeZoneYSlider");
+                    float z = szb.GetValue<float>("SafeZoneZSlider");
+                    size = new Vector3(x, y, z);
+                }
+
+                float estimatedPowerMW = Hardcoded.SafeZone_GetPowerDrain(def, on: true, isSphere: isSphere, size: size);
+                info.Append("Estimated usage: ").PowerFormat(estimatedPowerMW).Append('\n');
+            }
+
+            info.Append("Max power usage: ").PowerFormat(def.MaxSafeZonePowerDrainkW / 1000f).Append('\n');
+
+            if(bubbleActive && active)
+            {
+                info.Append("Consumes: x").Append(def.SafeZoneUpkeep).Append(" ZoneChip every ").TimeFormat(def.SafeZoneUpkeepTimeM * 60f).Append('\n');
             }
         }
 

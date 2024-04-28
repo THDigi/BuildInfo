@@ -166,6 +166,8 @@ namespace Digi.BuildInfo.Features
                     blockMove |= request.BlockMovementAndRoll;
                 }
 
+                // FIXME: still can move/rotate in spec cam, see if can be fixed
+
                 ctrl.MoveAndRotate(blockMove ? Vector3.Zero : ctrl.LastMotionIndicator,
                                    blockView ? Vector2.Zero : new Vector2(ctrl.LastRotationIndicator.X, ctrl.LastRotationIndicator.Y),
                                    blockMove ? 0 : ctrl.LastRotationIndicator.Z);

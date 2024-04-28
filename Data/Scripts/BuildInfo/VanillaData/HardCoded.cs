@@ -8,6 +8,8 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Localization;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.Definitions.SafeZone;
+using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.Definitions;
@@ -505,6 +507,32 @@ namespace Digi.BuildInfo.VanillaData
             double ticks = shootIntervalMs / TickMs;
             double actualMsBetweenShots = Math.Ceiling(ticks) * TickMs;
             return (float)(1000d / actualMsBetweenShots);
+        }
+
+        // from MySafeZoneComponent.GetPowerDrain()
+        public static float SafeZone_GetPowerDrain(MySafeZoneBlockDefinition def, bool on, bool isSphere, Vector3 size)
+        {
+            if(!on)
+                return 1E-06f;
+
+            float drainDiff = def.MaxSafeZonePowerDrainkW - def.MinSafeZonePowerDrainkW;
+            float radiusDiff = def.MaxSafeZoneRadius - def.MinSafeZoneRadius;
+
+            float result;
+            if(isSphere)
+            {
+                result = (size.X - def.MinSafeZoneRadius) / radiusDiff * drainDiff / 1000f;
+            }
+            else // cube
+            {
+                radiusDiff = def.MaxSafeZoneRadius * 2f - def.MinSafeZoneRadius;
+                float x = (size.X - def.MinSafeZoneRadius) / radiusDiff / 3f;
+                float y = (size.Y - def.MinSafeZoneRadius) / radiusDiff / 3f;
+                float z = (size.Z - def.MinSafeZoneRadius) / radiusDiff / 3f;
+                result = (x + y + z) * drainDiff / 1000f;
+            }
+
+            return def.MinSafeZonePowerDrainkW / 1000f + result;
         }
 
         // from MyLaserAntenna @ bool RotationAndElevation(float needRotation, float needElevation) - rotation speed is radians per milisecond
