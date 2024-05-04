@@ -146,6 +146,9 @@ namespace Digi.BuildInfo.Features.Toolbars
 
         public void SetVisible(bool visible)
         {
+            if(Box == null || Text == null)
+                return;
+
             Box.SetVisible(visible);
             Text.Visible = visible;
 

@@ -90,6 +90,8 @@ namespace Digi.BuildInfo.Systems
                     return;
                 }
 
+                Log.Info("TextAPI replied, initializing...");
+
                 WasDetected = true;
                 IsEnabled = Use;
                 Detected?.Invoke();
@@ -129,6 +131,11 @@ namespace Digi.BuildInfo.Systems
             {
                 InModMenu = false;
                 InModMenuChanged?.Invoke(InModMenu);
+            }
+
+            if(!WasDetected && Main.Tick == Constants.TicksPerSecond * 3)
+            {
+                Log.Info("TextAPI did not reply in 3 seconds, it's either missing or it failed to compile.");
             }
         }
 
