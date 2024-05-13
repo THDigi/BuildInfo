@@ -63,7 +63,7 @@ namespace Digi.BuildInfo.Features.HUD
                     MyOxygenContainerDefinition def = MyDefinitionManager.Static.GetPhysicalItemDefinition(item.Content.GetId()) as MyOxygenContainerDefinition;
                     if(def != null && def.StoredGasId == Gas)
                     {
-                        current += 1f;
+                        current += (float)item.Amount;
                     }
                 }
             }
