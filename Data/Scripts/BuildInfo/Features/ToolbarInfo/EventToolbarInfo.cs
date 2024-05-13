@@ -852,6 +852,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 return true;
             }
 
+            IMyTransponder transponder = TargetBlock as IMyTransponder;
+            if(transponder != null)
+            {
+                RenderBoxHeader(sb, blocks.Count);
+
+                sb.Append("All slots: signal received\n");
+                return true;
+            }
+
             return false; // unknown block, don't draw
         }
 

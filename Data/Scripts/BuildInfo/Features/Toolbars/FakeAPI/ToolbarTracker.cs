@@ -201,6 +201,14 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                     return;
                 }
             }
+            {
+                var casted = slim.FatBlock as IMyTransponder;
+                if(casted != null)
+                {
+                    SingleToolbar(slim.FatBlock, MyToolbarType.ButtonPanel, 9, 10);
+                    return;
+                }
+            }
         }
 
         void SingleToolbar(IMyCubeBlock block, MyToolbarType toolbarType, int slotsPerPage = 9, int pages = 9)
@@ -369,6 +377,24 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
                             case ToolbarId.LockedOn: return casted.OnLockedToolbar;
                             default: Log.Error($"unknown toolbarId={toolbarId} for {block}"); return null;
                         }
+                    }
+                }
+                {
+                    var casted = blockOB as MyObjectBuilder_TransponderBlock;
+                    if(casted != null)
+                    {
+                        if(casted?.ComponentContainer?.Components != null)
+                        {
+                            foreach(var cd in casted.ComponentContainer.Components)
+                            {
+                                var signalReceiverOB = cd.Component as MyObjectBuilder_SignalReceiverEntityComponent;
+                                if(signalReceiverOB != null)
+                                    return signalReceiverOB.Toolbar;
+                            }
+                        }
+
+                        //Log.Error($"couldn't find SignalReceiverEntityComponent in transponder block: {block.EntityId}");
+                        return null;
                     }
                 }
 
