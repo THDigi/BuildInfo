@@ -696,6 +696,23 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
                 case "Detect Enemy":
                 case "Detect Enemy_On":
                 case "Detect Enemy_Off": return Utils.GetModFullPath(@"Textures\ActionIcons\TargetEnemies.dds");
+
+                    // action relay/transponder
+                    //case "SetChannelValue":
+                    //case "SetChannelValue_SendSignal":
+                    //case "SendSignal":
+
+                    // broadcast controller
+                    //case "Transmit Message 1":
+                    //case "Transmit Message 2":
+                    //case "Transmit Message 3":
+                    //case "Transmit Message 4":
+                    //case "Transmit Message 5":
+                    //case "Transmit Message 6":
+                    //case "Transmit Message 7":
+                    //case "Transmit Message 8":
+                    //case "TransmitRandomMessage":
+                    //case "SendGps":
             }
             #endregion
 
@@ -737,6 +754,15 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
 
             if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SwitchOff.dds", StringComparison.OrdinalIgnoreCase))
                 return Utils.GetModFullPath(@"Textures\ActionIcons\GenericOff.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SendSignal.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\SendSignal.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SetChannel.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\SetChannel.dds");
+
+            if(action.Icon.Equals(@"Textures\GUI\Icons\Actions\SetChannelSendSignal.dds", StringComparison.OrdinalIgnoreCase))
+                return Utils.GetModFullPath(@"Textures\ActionIcons\SetChannelAndSend.dds");
             #endregion
 
             if(BuildInfoMod.IsDevMod)
