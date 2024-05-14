@@ -210,10 +210,10 @@ namespace Digi.BuildInfo.Features.Terminal
             Add(typeof(MyObjectBuilder_AirVent), Format_AirVent);
 
             Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
-
             Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
-
             Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
+            Add(typeof(MyObjectBuilder_BroadcastController), Format_BroadcastController);
+            Add(typeof(MyObjectBuilder_TransponderBlock), Format_Transponder);
 
             Add(typeof(MyObjectBuilder_MyProgrammableBlock), Format_ProgrammableBlock);
 
@@ -1658,6 +1658,39 @@ namespace Digi.BuildInfo.Features.Terminal
             MyBeaconDefinition def = (MyBeaconDefinition)block.SlimBlock.BlockDefinition;
 
             info.Append("Max Power Usage: ").PowerFormat(Hardcoded.Beacon_PowerReq(def)).Append('\n');
+        }
+
+        void Format_BroadcastController(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.204.015:
+            //   MyChatBroadcastEntityComponent:
+            //     Error: <error> (hidden if no error)
+            //     Anti-spam cooldown: <N> (hidden if 0)
+            //     Messages in buffer: <N> (hidden if 0)
+
+            info.DetailInfo_Type(block);
+            info.DetailInfo_InputPower(Sink);
+
+            // nothing useful in:
+            //IMyChatBroadcastControllerComponent
+            //MyBroadcastControllerDefinition def = (MyBroadcastControllerDefinition)block.SlimBlock.BlockDefinition;
+        }
+
+        void Format_Transponder(IMyTerminalBlock block, StringBuilder info)
+        {
+            // Vanilla info in 1.204.015:
+            //   MySignalConnectivityCheckerEntityComponent:
+            //     (nothing)
+            //     Error: No antenna found
+            //     <AntennaTerminalName>: <state>
+
+            info.DetailInfo_Type(block);
+            info.DetailInfo_InputPower(Sink);
+
+            // nothing useful in:
+            //IMySignalReceiverEntityComponent
+            //IMySignalSenderEntityComponent
+            //MyTransponderBlockDefinition def = (MyTransponderBlockDefinition)block.SlimBlock.BlockDefinition;
         }
 
         void Format_GasGenerator(IMyTerminalBlock block, StringBuilder info)
