@@ -933,6 +933,9 @@ namespace Digi.BuildInfo.Features.GUI
                 //    "Flora Density Multiplier", "x", "");
                 KnownFields.Add("FloraDensityMultiplier"); // unused
 
+                //PrintSetting(sb, nameof(settings.MinimumWorldSize), settings.MinimumWorldSize, DefaultSettings.MinimumWorldSize, false, "Minimum world size [km]", "World size can't be selected lower than this value");
+                KnownFields.Add("MinimumWorldSize"); // does not affect anything in the actual world, it only affects world's creation GUI
+
                 KnownFields.Add("OptimalSpawnDistance"); // it's not ok for players to know this
                 KnownFields.Add("SyncDistance"); // server owners would not like this exposed
 
@@ -1098,6 +1101,8 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.EnableScripterRole), settings.EnableScripterRole, DefaultSettings.EnableScripterRole, true,
                 "Scripter Role", "Adds a Scripter role, only Scripters and higher ranks will be able to paste and modify scripts in programmable block.",
                 GrayIfFalse(settings.EnableIngameScripts));
+            PrintFormattedNumber(sb, nameof(settings.BroadcastControllerMaxOfflineTransmitDistance), settings.BroadcastControllerMaxOfflineTransmitDistance, DefaultSettings.BroadcastControllerMaxOfflineTransmitDistance, false,
+                "Max Broadcast Controller distance when owner offline", " m", "The maximum distance Broadcast Controller will transmit messages when its owner is offline.");
             PrintSetting(sb, nameof(settings.EnableSupergridding), settings.EnableSupergridding, DefaultSettings.EnableSupergridding, false,
                 "Supergridding", "Allows supergridding exploit to be used (placing block on wrong size grid, e.g. jumpdrive on smallgrid).");
 
@@ -1165,6 +1170,7 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, string.Empty, MyPerGameSettings.CharacterGravityMultiplier, Hardcoded.DefaultCharacterGravityMultiplier, false,
                 "Character Gravity Multiplier", "x", "Gravity acceleration is multiplied by this value only for characters." + TooltipSettingModdable);
 
+
             Header(sb, "Environment");
 
             PrintSetting(sb, nameof(settings.EnableSunRotation), settings.EnableSunRotation, DefaultSettings.EnableSunRotation, true,
@@ -1185,6 +1191,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Automatic weather system", "Enable automatic weather generation on planets.");
             PrintSetting(sb, nameof(settings.EnvironmentHostility), settings.EnvironmentHostility, DefaultSettings.EnvironmentHostility, true,
                 "Meteorite showers", $"Enables meteorites, available difficulties: {string.Join(", ", Enum.GetNames(typeof(MyEnvironmentHostilityEnum)))}" + TooltipOriginalName("WorldSettings_EnvironmentHostility"));
+            PrintSetting(sb, nameof(settings.WeatherLightingDamage), settings.WeatherLightingDamage, DefaultSettings.WeatherLightingDamage, false,
+                "Enable lightning damage", "Lightning strikes from weather can damage grids.");
             PrintSetting(sb, nameof(settings.EnableVoxelDestruction), settings.EnableVoxelDestruction, DefaultSettings.EnableVoxelDestruction, true,
                 "Voxel Destruction", "Enables voxel destructions.");
             PrintSetting(sb, nameof(settings.VoxelGeneratorVersion), settings.VoxelGeneratorVersion.ToString(), null, false,
@@ -1238,6 +1246,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Drop Container min spawn", " min", "Defines minimum respawn time for drop containers.");
             PrintFormattedNumber(sb, nameof(settings.MaxDropContainerRespawnTime), settings.MaxDropContainerRespawnTime, DefaultSettings.MaxDropContainerRespawnTime, false,
                 "Drop Container max spawn", " min", "Defines maximum respawn time for drop containers.");
+            PrintFormattedNumber(sb, nameof(settings.NPCGridClaimTimeLimit), settings.NPCGridClaimTimeLimit, DefaultSettings.NPCGridClaimTimeLimit, false,
+                "Claim time for NPC grids", " min", "Time period in which player can claim NPC grid. NPC block do despawn after limit ends. Minutes");
 
 
             Header(sb, "Combat");
@@ -1250,6 +1260,10 @@ namespace Digi.BuildInfo.Features.GUI
                 "Hand weapons recoil");
             PrintSetting(sb, nameof(settings.AutoHealing), settings.AutoHealing, DefaultSettings.AutoHealing, true,
                 "Auto-heal players", "Auto-healing heals players only in oxygen environments and during periods of not taking damage.");
+            PrintSetting(sb, nameof(settings.ScrapEnabled), settings.ScrapEnabled, DefaultSettings.ScrapEnabled, false,
+                "Enable Scrap Drops", "Allow scrap to be dropped from destroyed blocks");
+            PrintSetting(sb, nameof(settings.TemporaryContainers), settings.TemporaryContainers, DefaultSettings.TemporaryContainers, false,
+                "Enable Temporary Containers", "Enable Temporary Containers to spawn after destroying block with inventory.");
 
 
             Header(sb, "Misc.");
@@ -1337,6 +1351,8 @@ namespace Digi.BuildInfo.Features.GUI
                 "Remove Old Identities", " hours", "Defines time in hours after which inactive identities that do not own any grids will be removed.\n0 means off.");
             PrintSetting(sb, nameof(settings.EnableTrashSettingsPlatformOverride), settings.EnableTrashSettingsPlatformOverride, DefaultSettings.EnableTrashSettingsPlatformOverride, false,
                 "Platform Trash Setting Override", "Enable trash settings to be overriden by console specific settings.");
+            PrintSetting(sb, nameof(settings.TrashCleanerCargoBagsMaxLiveTime), settings.TrashCleanerCargoBagsMaxLiveTime, DefaultSettings.TrashCleanerCargoBagsMaxLiveTime, false,
+                "Max Cargo Bags Lifetime", "The maximum amount of time (in minutes) allowed for cargo bags to be alive before deletion.");
 
 
             Header(sb, "Grids Cleanup");
@@ -1384,6 +1400,7 @@ namespace Digi.BuildInfo.Features.GUI
                                                          "\n0 means off.",
                 GrayOrWarn(settings.TrashRemovalEnabled, settings.PlayerInactivityThreshold > 0));
 
+
             Header(sb, "Voxel Cleanup");
 
             PrintSetting(sb, nameof(settings.VoxelTrashRemovalEnabled), settings.VoxelTrashRemovalEnabled, DefaultSettings.VoxelTrashRemovalEnabled, false,
@@ -1421,7 +1438,9 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.ViewDistance), settings.ViewDistance, DefaultSettings.ViewDistance, true,
                 "View Distance", " m", "");
             PrintSetting(sb, nameof(settings.MaxFloatingObjects), settings.MaxFloatingObjects, DefaultSettings.MaxFloatingObjects, true,
-                "Max Floating Objects", "The maximum number of concurrent floating objects (loose ore, items, etc).\nOlder floating objects are removed when newer ones need to spawn.");
+                "Max Floating Objects", "The maximum number of concurrent loose items.\nOlder floating objects are removed when newer ones need to spawn.");
+            PrintSetting(sb, nameof(settings.MaxCargoBags), settings.MaxCargoBags, DefaultSettings.MaxCargoBags, false,
+                "Max Cargo Bags", "The maximum number of existing cargo bags.");
             PrintSetting(sb, nameof(settings.AdaptiveSimulationQuality), settings.AdaptiveSimulationQuality, DefaultSettings.AdaptiveSimulationQuality, false,
                 "Adaptive Simulation Quality", "Enables adaptive simulation quality system. This system is useful if you have a lot of voxel deformations in the world and low simulation speed.");
             PrintSetting(sb, nameof(settings.EnableSelectivePhysicsUpdates), settings.EnableSelectivePhysicsUpdates, DefaultSettings.EnableSelectivePhysicsUpdates, false,
@@ -1441,7 +1460,9 @@ namespace Digi.BuildInfo.Features.GUI
                 "Max Production Queue Length ", "Maximum assembler production queue size." +
                                                 "\nIt becomes a problem when assemblers with no resources have lots of queued stacks, each requesting items through conveyor system.");
             PrintFormattedNumber(sb, nameof(settings.PrefetchShapeRayLengthLimit), settings.PrefetchShapeRayLengthLimit, DefaultSettings.PrefetchShapeRayLengthLimit, false,
-                "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels.\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this.\nThis call is used by bullet projectiles, targetting systems and mods can use it too.");
+                "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels." +
+                                                     "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
+                                                     "\nThis call is used by bullet projectiles, targetting systems and mods can use it too.");
         }
 
         void CheckSettings()
