@@ -2621,10 +2621,10 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_WindTurbine), action);
 
             Add(typeof(MyObjectBuilder_RadioAntenna), Format_RadioAntenna);
-
             Add(typeof(MyObjectBuilder_LaserAntenna), Format_LaserAntenna);
-
             Add(typeof(MyObjectBuilder_Beacon), Format_Beacon);
+            Add(typeof(MyObjectBuilder_BroadcastController), Format_BroadcastController);
+            Add(typeof(MyObjectBuilder_TransponderBlock), Format_Transponder);
 
             Add(typeof(MyObjectBuilder_TimerBlock), Format_Timer);
 
@@ -3913,7 +3913,7 @@ namespace Digi.BuildInfo.Features
         #endregion Production
 
         #region Communication
-        private void Format_RadioAntenna(MyCubeBlockDefinition def)
+        void Format_RadioAntenna(MyCubeBlockDefinition def)
         {
             MyRadioAntennaDefinition radioAntenna = (MyRadioAntennaDefinition)def;
 
@@ -3927,7 +3927,7 @@ namespace Digi.BuildInfo.Features
             // TODO: lightning catch area? also for decoy blocks...
         }
 
-        private void Format_LaserAntenna(MyCubeBlockDefinition def)
+        void Format_LaserAntenna(MyCubeBlockDefinition def)
         {
             MyLaserAntennaDefinition laserAntenna = (MyLaserAntennaDefinition)def;
 
@@ -3980,7 +3980,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Beacon(MyCubeBlockDefinition def)
+        void Format_Beacon(MyCubeBlockDefinition def)
         {
             MyBeaconDefinition beacon = (MyBeaconDefinition)def;
 
@@ -3989,6 +3989,42 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Max radius").DistanceFormat(beacon.MaxBroadcastRadius);
+            }
+        }
+
+        void Format_BroadcastController(MyCubeBlockDefinition def)
+        {
+            MyBroadcastControllerDefinition broadcaster = (MyBroadcastControllerDefinition)def;
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                PowerRequired(broadcaster.RequiredPowerInput, broadcaster.ResourceSinkGroup);
+            }
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Offline owner max distance").DistanceFormat(MyAPIGateway.Session.SessionSettings.BroadcastControllerMaxOfflineTransmitDistance);
+
+                SimpleTooltip("If the owner of this block is not online then this block will be limited to this distance over antennas.\nNOTE: This is a world setting.");
+
+                // MyChatBroadcastEntityComponent.Init() - uses ConfigDedicated.SpamMessagesTime if on a DS, which clients cannot retrieve
+                //AddLine().Label("Anti-spam time").TimeFormat(0.5f);
+
+                AddLine().LabelHardcoded("Max queued messages").Number(Hardcoded.BroadcastController_MaxMessageCount);
+                SimpleTooltip("It won't show messages more frequent than every 0.5 seconds (or dedicated server's SpamMessagesTime which is inaccessible from clients)." +
+                              "\nBecause of that it adds them to a queue instead of just ignoring them, and that queue is limited to this many messages.");
+
+                AddLine().LabelHardcoded("Max message size").Number(Hardcoded.BroadcastController_MaxMessageLength).Append(" characters");
+            }
+        }
+
+        void Format_Transponder(MyCubeBlockDefinition def)
+        {
+            MyTransponderBlockDefinition transponder = (MyTransponderBlockDefinition)def;
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                PowerRequired(transponder.RequiredPowerInput, transponder.ResourceSinkGroup);
             }
         }
         #endregion Communication

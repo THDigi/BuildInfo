@@ -273,6 +273,10 @@ namespace Digi.BuildInfo.VanillaData
                 return (def.MaxBroadcastPowerDrainkW / 1000f);
         }
 
+        // from MyChatBroadcastEntityComponent
+        public const int BroadcastController_MaxMessageCount = 8;
+        public const int BroadcastController_MaxMessageLength = 128;
+
         // from MyMyProjectorBase.AllowWelding
         public static bool Projector_AllowWelding(MyProjectorDefinition def) => def.AllowWelding && !def.AllowScaling && !def.IgnoreSize;
 

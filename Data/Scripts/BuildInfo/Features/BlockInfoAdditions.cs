@@ -461,7 +461,7 @@ namespace Digi.BuildInfo.Features
             }
             catch(Exception e)
             {
-                Log.Error($"Exception at part #{debugStage}");
+                Log.Error($"{GetType().Name} at part #{debugStage}");
                 Log.Error(e, null);
             }
         }
