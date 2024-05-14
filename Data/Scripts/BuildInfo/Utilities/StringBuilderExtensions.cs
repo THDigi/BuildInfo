@@ -22,8 +22,6 @@ namespace Digi.BuildInfo.Utilities
 {
     public static class StringBuilderExtensions
     {
-        public const string ScientificNotationFormat = "0.##e0";
-
         // copy of StringBuilderExtensions_2.TrimTrailingWhitespace() since it's not whitelisted in modAPI
         public static StringBuilder TrimEndWhitespace(this StringBuilder sb)
         {
@@ -515,23 +513,23 @@ namespace Digi.BuildInfo.Utilities
                 N = -N;
             }
 
-            if(N >= 1000000000000000000)
-                return s.Append(N.ToString(ScientificNotationFormat)).Append(" N");
+            if(N > 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(N, " N");
 
-            if(N >= 1000000000000000)
-                return s.Number(N / 1000000000000000).Append(" PN");
+            if(N >= 1e15f)
+                return s.Number(N / 1e15f).Append(" PN");
 
-            if(N >= 1000000000000)
-                return s.Number(N / 1000000000000).Append(" TN");
+            if(N >= 1e12f)
+                return s.Number(N / 1e12f).Append(" TN");
 
-            if(N >= 1000000000)
-                return s.Number(N / 1000000000).Append(" GN");
+            if(N >= 1e9f)
+                return s.Number(N / 1e9f).Append(" GN");
 
-            if(N >= 1000000)
-                return s.Number(N / 1000000).Append(" MN");
+            if(N >= 1e6f)
+                return s.Number(N / 1e6f).Append(" MN");
 
-            if(N >= 1000)
-                return s.Number(N / 1000).Append(" kN");
+            if(N >= 1e3f)
+                return s.Number(N / 1e3f).Append(" kN");
 
             return s.Number(N).Append(" N");
         }
@@ -555,57 +553,59 @@ namespace Digi.BuildInfo.Utilities
                 Nm = -Nm;
             }
 
-            if(Nm >= 1000000000000000000)
-                return s.Append(Nm.ToString(ScientificNotationFormat)).Append(" N-m");
+            if(Nm >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(Nm, " N-m");
 
-            if(Nm >= 1000000000000000)
-                return s.Number(Nm / 1000000000000000).Append(" PN-m");
+            if(Nm >= 1e15f)
+                return s.Number(Nm / 1e15f).Append(" PN-m");
 
-            if(Nm >= 1000000000000)
-                return s.Number(Nm / 1000000000000).Append(" TN-m");
+            if(Nm >= 1e12f)
+                return s.Number(Nm / 1e12f).Append(" TN-m");
 
-            if(Nm >= 1000000000)
-                return s.Number(Nm / 1000000000).Append(" GN-m");
+            if(Nm >= 1e9f)
+                return s.Number(Nm / 1e9f).Append(" GN-m");
 
-            if(Nm >= 1000000)
-                return s.Number(Nm / 1000000).Append(" MN-m");
+            if(Nm >= 1e6f)
+                return s.Number(Nm / 1e6f).Append(" MN-m");
 
-            if(Nm >= 1000)
-                return s.Number(Nm / 1000).Append(" kN-m");
+            if(Nm >= 1e3f)
+                return s.Number(Nm / 1e3f).Append(" kN-m");
 
             return s.Number(Nm).Append(" N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
         {
-            if(!IsValid(s, MW, " W"))
+            float w = MW * 1e6f;
+
+            if(!IsValid(s, w, " W"))
                 return s;
 
-            if(MW < 0)
+            if(w < 0)
             {
                 s.Append("-");
-                MW = -MW;
+                w = -w;
             }
 
-            if(MW >= 1000000000000)
-                return s.Append(MW.ToString(ScientificNotationFormat)).Append(" MW");
+            if(w >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(w, " W");
 
-            if(MW >= 1000000000)
-                return s.Number(MW / 1000000000).Append(" PW");
+            if(w >= 1e15f)
+                return s.Number(w / 1e15f).Append(" PW");
 
-            if(MW >= 1000000)
-                return s.Number(MW / 1000000).Append(" TW");
+            if(w >= 1e12f)
+                return s.Number(w / 1e12f).Append(" TW");
 
-            if(MW >= 1000)
-                return s.Number(MW / 1000).Append(" GW");
+            if(w >= 1e9f)
+                return s.Number(w / 1e9f).Append(" GW");
 
-            if(MW >= 1)
-                return s.Number(MW).Append(" MW");
+            if(w >= 1e6f)
+                return s.Number(w / 1e6f).Append(" MW");
 
-            if(MW >= 0.001)
-                return s.Number(MW * 1000f).Append(" kW");
+            if(w >= 1e3f)
+                return s.Number(w / 1e3f).Append(" kW");
 
-            return s.Number(MW * 1000000f).Append(" W");
+            return s.Number(w).Append(" W");
         }
 
         public static StringBuilder PowerStorageFormat(this StringBuilder s, float MWh)
@@ -626,6 +626,9 @@ namespace Digi.BuildInfo.Utilities
                 s.Append("-");
                 m = -m;
             }
+
+            if(m >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(m, " m");
 
             if(digits < 0)
             {
@@ -649,12 +652,13 @@ namespace Digi.BuildInfo.Utilities
         public static StringBuilder DistanceRangeFormat(this StringBuilder s, float m1, float m2)
         {
             bool valid = IsValid(s, m1);
-
             if(!IsValid(s, m2, prefix: (valid ? "" : "~")))
                 valid = false;
-
             if(!valid)
                 return s.Append(" m");
+
+            if(m1 >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(m1).Append("~").NumberSciNot(m2).Append(" m");
 
             if(m1 >= 1000)
                 return s.Number(m1 / 1000).Append("~").Number(m2 / 1000).Append(" km");
@@ -670,35 +674,40 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, kg, " kg"))
                 return s;
 
-            if(kg < 0)
+            float g = kg * 1e3f;
+
+            if(g < 0)
             {
                 s.Append("-");
-                kg = -kg;
+                g = -g;
             }
 
-            if(kg == 0)
-                return s.Append("0 kg");
+            if(g >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(kg, " kg");
 
-            if(kg >= 1e9f)
-                return s.Number(kg / 1e9f).Append(" Tg");
+            if(g >= 1e15f)
+                return s.Number(g / 1e15f).Append(" Pg");
 
-            if(kg >= 1e6f)
-                return s.Number(kg / 1e6f).Append(" Gg");
+            if(g >= 1e12f)
+                return s.Number(g / 1e12f).Append(" Tg");
 
-            if(kg >= 1e5f)
-                return s.Number(kg / 1e3f).Append(" Mg");
+            if(g >= 1e9f)
+                return s.Number(g / 1e9f).Append(" Gg");
 
-            if(kg >= 1)
-                return s.Number(kg).Append(" kg");
+            if(g >= 1e6f)
+                return s.Number(g / 1e6f).Append(" Mg");
 
-            if(kg >= 1e-3f)
-                return s.Number(kg * 1e3f).Append(" grams");
+            if(g >= 1e3f)
+                return s.Number(g / 1e3f).Append(" Kg");
 
-            if(kg >= 1e-6f)
-                return s.Number(kg * 1e6f).Append(" mg");
+            if(g >= 1)
+                return s.Number(g).Append(" grams");
 
-            //if(kg >= 1e-0f)
-            return s.Number(kg * 1e9f).Append(" µg");
+            if(g >= 1e-3f)
+                return s.Number(g * 1e3f).Append(" mg");
+
+            //if(g >= 1e-6f)
+            return s.Number(g * 1e6f).Append(" µg");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
@@ -712,79 +721,58 @@ namespace Digi.BuildInfo.Utilities
                 integrity = -integrity;
             }
 
-            if(integrity >= 1000000000000)
-                return s.Number(integrity / 1000000000000f).Append(" T");
+            //if(integrity >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+            //    return s.NumberSciNot(integrity);
 
-            if(integrity >= 1000000000)
-                return s.Number(integrity / 1000000000f).Append(" G");
-
-            if(integrity >= 1000000)
-                return s.Number(integrity / 1000000f).Append(" M");
-
-            if(integrity >= 1000)
-                return s.Number(integrity / 1000f).Append(" k");
+            //if(integrity >= 1e9f)
+            //    return s.Number(integrity / 1e9f).Append(" G");
+            //
+            //if(integrity >= 1e6f)
+            //    return s.Number(integrity / 1e6f).Append(" M");
+            //
+            //if(integrity >= 1e3f)
+            //    return s.Number(integrity / 1e3f).Append(" k");
 
             return s.Number(integrity);
         }
 
-        public static StringBuilder VolumeFormat(this StringBuilder s, float l)
+        public static StringBuilder VolumeFormat(this StringBuilder s, float L)
         {
-            if(!IsValid(s, l, " L"))
+            if(!IsValid(s, L, " L"))
                 return s;
 
-            if(l == 0)
-                return s.Append("0 L");
-
-            if(l < 0)
+            if(L < 0)
             {
                 s.Append("-");
-                l = -l;
+                L = -L;
             }
 
-            if(l >= 1000000000000)
-                return s.Number(l / 1000000000000f).Append(" TL");
+            if(L > 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.NumberSciNot(L, " L");
 
-            if(l >= 1000000000)
-                return s.Number(l / 1000000000f).Append(" GL");
+            if(L >= 1e15f)
+                return s.Number(L / 1e15f).Append(" PL");
 
-            if(l >= 1000000)
-                return s.Number(l / 1000000f).Append(" ML");
+            if(L >= 1e12f)
+                return s.Number(L / 1e12f).Append(" TL");
 
-            if(l >= 1000)
-                return s.Number(l / 1000f).Append(" kL");
+            if(L >= 1e9f)
+                return s.Number(L / 1e9f).Append(" GL");
 
-            if(l >= 1)
-                return s.Number(l).Append(" L");
+            if(L >= 1e6f)
+                return s.Number(L / 1e6f).Append(" ML");
 
-            if(l >= 0.001f)
-                return s.Number(l * 1000f).Append(" mL");
+            if(L >= 1e3f)
+                return s.Number(L / 1e3f).Append(" kL");
 
-            //if(l >= 0.000001f)
-            return s.Number(l * 1000000f).Append(" µL");
+            if(L >= 1f)
+                return s.Number(L).Append(" L");
 
-            //else
-            //{
-            //    if(l >= 1000000000000)
-            //        return s.Number(l / 1000000000000f).Append(" km³");
+            if(L >= 1e-3f)
+                return s.Number(L * 1e3f).Append(" mL");
 
-            //    if(l >= 1000000000)
-            //        return s.Number(l / 1000000000f).Append(" hm³");
-
-            //    if(l >= 1000000)
-            //        return s.Number(l / 1000000f).Append(" dam³");
-
-            //    if(l >= 1000)
-            //        return s.Number(l / 1000f).Append(" m³");
-
-            //    if(l >= 1)
-            //        return s.Number(l).Append(" L");
-
-            //    if(l >= 0.001f)
-            //        return s.Number(l * 1000f).Append(" cm³");
-
-            //    //if(l >= 0.000001f)
-            //    return s.Number(l * 1000000f).Append(" mm³");
-            //}
+            //if(l >= 1e-6f)
+            return s.Number(L * 1e6f).Append(" µL");
         }
 
         public static StringBuilder InventoryFormat(this StringBuilder s, float volume, MyInventoryConstraint inputConstraint, MyInventoryConstraint outputConstraint, MyInventoryComponentDefinition invComp)
@@ -1201,6 +1189,9 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, value))
                 return s;
 
+            if(value > 1e18f)
+                return s.NumberSciNot(value);
+
             return s.Append(value.ToString("###,###,###,###,###,##0.##"));
         }
 
@@ -1227,44 +1218,54 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########"));
         }
 
-        static char[] SplitExponent = new char[] { 'e' };
-        public static StringBuilder ExponentNumber(this StringBuilder s, double value)
+        public static StringBuilder NumberSciNot(this StringBuilder s, float value, string unit = "")
         {
-            if(value >= 10000 || value < 0.0001)
-            {
-                //Vector3 hsv = CurrentColor.ColorToHSV();
-
-                //hsv.X += 0.2f;
-                //if(hsv.X > 1f)
-                //    hsv.X -= 1f;
-
-                //if(hsv.Y <= 0.8f)
-                //    hsv.Y += 0.2f;
-                //else if(hsv.Z <= 0.8f)
-                //    hsv.Z += 0.2f;
-
-                //Color expColor = hsv.HSVtoColor();
-
-                //s.Append(value.ToString($"0.##<i><color={expColor.R}\\,{expColor.G}\\,{expColor.B}>e+0</i>")).Color(CurrentColor);
-
-                string numText = value.ToString($"0.##e+0");
-                string[] parts = numText.Split(SplitExponent);
-
-                if(parts.Length != 2)
-                    Log.Error($"Exponent has more than one 'e'???: value={value.ToString("N10")}; numText='{numText}'");
-
-                Color prevColor = CurrentColor;
-                s.Append(parts[0]).Color(new Color(200, 55, 200)).Append('e').Color(prevColor).Append(parts[1]);
-            }
+            if(value == 0f)
+                return s.Number(value).Append(unit);
+            else if(value < 1e-4f || value > 1e4f)
+                return s.Append(value.ToString("0.##e0")).Append(unit);
             else
-            {
-                if(value > 10)
-                    s.Append(Math.Round(value, 2));
-                else
-                    s.Append(Math.Round(value, 4));
-            }
-            return s;
+                return s.Number(value).Append(unit);
         }
+
+        //static char[] SplitExponent = new char[] { 'e' };
+        //public static StringBuilder ExponentNumber(this StringBuilder s, double value)
+        //{
+        //    if(value >= 10000 || value < 0.0001)
+        //    {
+        //        //Vector3 hsv = CurrentColor.ColorToHSV();
+        //
+        //        //hsv.X += 0.2f;
+        //        //if(hsv.X > 1f)
+        //        //    hsv.X -= 1f;
+        //
+        //        //if(hsv.Y <= 0.8f)
+        //        //    hsv.Y += 0.2f;
+        //        //else if(hsv.Z <= 0.8f)
+        //        //    hsv.Z += 0.2f;
+        //
+        //        //Color expColor = hsv.HSVtoColor();
+        //
+        //        //s.Append(value.ToString($"0.##<i><color={expColor.R}\\,{expColor.G}\\,{expColor.B}>e+0</i>")).Color(CurrentColor);
+        //
+        //        string numText = value.ToString($"0.##e+0");
+        //        string[] parts = numText.Split(SplitExponent);
+        //
+        //        if(parts.Length != 2)
+        //            Log.Error($"Exponent retrieval error, expected 2 parts, got {parts.Length}; split '{numText}' by 'e'; value={value.ToString("N10")}");
+        //
+        //        Color prevColor = CurrentColor;
+        //        s.Append(parts[0]).Color(new Color(200, 55, 200)).Append('e').Color(prevColor).Append(parts[1]);
+        //    }
+        //    else
+        //    {
+        //        if(value > 10)
+        //            s.Append(Math.Round(value, 2));
+        //        else
+        //            s.Append(Math.Round(value, 4));
+        //    }
+        //    return s;
+        //}
 
         public static StringBuilder ShortNumber(this StringBuilder s, float value)
         {

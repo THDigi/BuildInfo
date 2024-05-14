@@ -3508,7 +3508,7 @@ namespace Digi.BuildInfo.Features
                 if(gasTank.GasExplosionDamageMultiplier > 0)
                 {
                     // HACK: from MyGasTank.CalculateGasExplosionRadius() and CalculateGasExplosionDamage()
-                    AddLine().Color(COLOR_WARNING).Label("Destroyed Explosion - Max Damage").ExponentNumber(gasTank.GasExplosionDamageMultiplier * gasTank.Capacity)
+                    AddLine().Color(COLOR_WARNING).Label("Destroyed Explosion - Max Damage").NumberSciNot(gasTank.GasExplosionDamageMultiplier * gasTank.Capacity)
                         .Separator().Label("Max Radius").DistanceFormat(gasTank.GasExplosionMaxRadius);
                 }
                 else

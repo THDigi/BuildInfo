@@ -96,6 +96,8 @@ namespace Digi.BuildInfo.Features.Config
         public FloatSetting TextAPIScale;
         public BackgroundOpacitySetting TextAPIBackgroundOpacity;
 
+        public BoolSetting ScientificNotation;
+
         public BoolSetting OverlaysAlwaysVisible;
         public FlagsSetting<OverlayLabelsFlags> OverlayLabels;
         public BoolSetting OverlaysShowLabelsWithBind;
@@ -721,6 +723,10 @@ namespace Digi.BuildInfo.Features.Config
             SpectatorAllowRotationModifier = new BoolSetting(Handler, "Spectator: Allow Rotation Modifier", false,
                 "Whether to allow ctrl+scroll to adjust view sensitivity in spectator (game feature).",
                 "Mind that ctrl is used as a modifier for many other things, making it very easy to accidentally change this, which is why this setting exists to block it.");
+
+            ScientificNotation = new BoolSetting(Handler, "Scientific Notation", false,
+                "Enabling this will make most numbers provided by this mod turn into scientific notation for larger than 1e4 or lower than 1e-4.",
+                "With this off, scientific notation will still be used for numbers past 1e12 and some past 1e18.");
 
             ModderHelpAlerts = new BoolSetting(Handler, "ModderHelp: Show problems/hints", true,
                 "Toggles wether this mod looks at definitions from local mods for sneaky problems or hints." +
