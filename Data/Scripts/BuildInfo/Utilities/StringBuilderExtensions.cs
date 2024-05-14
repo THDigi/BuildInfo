@@ -679,26 +679,26 @@ namespace Digi.BuildInfo.Utilities
             if(kg == 0)
                 return s.Append("0 kg");
 
-            if(kg >= 1000000000)
-                return s.Number(kg / 1000000000f).Append(" Mt");
+            if(kg >= 1e9f)
+                return s.Number(kg / 1e9f).Append(" Tg");
 
-            if(kg >= 1000000)
-                return s.Number(kg / 1000000f).Append(" kt");
+            if(kg >= 1e6f)
+                return s.Number(kg / 1e6f).Append(" Gg");
 
-            if(kg >= 10000)
-                return s.Number(kg / 1000f).Append(" t");
+            if(kg >= 1e5f)
+                return s.Number(kg / 1e3f).Append(" Mg");
 
             if(kg >= 1)
                 return s.Number(kg).Append(" kg");
 
-            if(kg >= 0.001f)
-                return s.Number(kg * 1000f).Append(" grams");
+            if(kg >= 1e-3f)
+                return s.Number(kg * 1e3f).Append(" grams");
 
-            if(kg >= 0.000001f)
-                return s.Number(kg * 1000000f).Append(" mg");
+            if(kg >= 1e-6f)
+                return s.Number(kg * 1e6f).Append(" mg");
 
-            //if(kg >= 0.000000001f)
-            return s.Number(kg * 1000000000f).Append(" µg");
+            //if(kg >= 1e-0f)
+            return s.Number(kg * 1e9f).Append(" µg");
         }
 
         public static StringBuilder IntegrityFormat(this StringBuilder s, float integrity)
