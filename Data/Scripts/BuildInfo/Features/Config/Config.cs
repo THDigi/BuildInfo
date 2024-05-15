@@ -440,7 +440,7 @@ namespace Digi.BuildInfo.Features.Config
             MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.RealCustomSuffix,
                 "Changes the ship mass format on the HUD.");
             MassOverride.SetEnumComment(MassFormat.Vanilla, "Game's default inaccurate mass and no station mass (same as info tab), shown in kg.");
-            MassOverride.SetEnumComment(MassFormat.RealCustomSuffix, "Physical mass + station mass, formatted with unit multipliers (kg, t, kt, Mt, ...)");
+            MassOverride.SetEnumComment(MassFormat.RealCustomSuffix, "Physical mass + station mass, formatted with SI unit multipliers (kg, Mg, Gg, Tg, Pg then scientific notation kg)");
             MassOverride.SetEnumComment(MassFormat.RealKg, "Physical mass + station mass, shown only as kg.");
 
             CockpitBuildHideRightHud = new BoolSetting(Handler, "HUD: Cockpit build mode hide right panel", true,
