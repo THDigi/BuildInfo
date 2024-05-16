@@ -514,7 +514,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(N > 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(N, " N");
+                return s.ScientificNumber(N).Append(" N");
 
             if(N >= 1e15f)
                 return s.Number(N / 1e15f).Append(" PN");
@@ -536,10 +536,12 @@ namespace Digi.BuildInfo.Utilities
 
         public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond, int digits = 2)
         {
-            if(!IsValid(s, radPerSecond, "°/s"))
+            float degPerSec = MathHelper.ToDegrees(radPerSecond);
+
+            if(!IsValid(s, degPerSec, "°/s"))
                 return s;
 
-            return s.Append(Math.Round(MathHelper.ToDegrees(radPerSecond), digits)).Append("°/s");
+            return s.RoundedNumber(degPerSec, digits).Append("°/s");
         }
 
         public static StringBuilder TorqueFormat(this StringBuilder s, float Nm)
@@ -554,7 +556,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(Nm >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(Nm, " N-m");
+                return s.ScientificNumber(Nm).Append(" N-m");
 
             if(Nm >= 1e15f)
                 return s.Number(Nm / 1e15f).Append(" PN-m");
@@ -588,7 +590,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(w >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(w, " W");
+                return s.ScientificNumber(w).Append(" W");
 
             if(w >= 1e15f)
                 return s.Number(w / 1e15f).Append(" PW");
@@ -628,7 +630,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(m >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(m, " m");
+                return s.ScientificNumber(m).Append(" m");
 
             if(digits < 0)
             {
@@ -657,22 +659,39 @@ namespace Digi.BuildInfo.Utilities
             if(!valid)
                 return s.Append(" m");
 
+            bool m2negative = false;
+
+            if(m1 < 0)
+            {
+                s.Append("-");
+                m1 = -m1;
+            }
+
+            if(m2 < 0)
+            {
+                m2negative = true;
+                m2 = -m2;
+            }
+
             if(m1 >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(m1).Append("~").NumberSciNot(m2).Append(" m");
+                return s.ScientificNumber(m1).Append(m2negative ? "~-" : "~").ScientificNumber(m2).Append(" m");
 
             if(m1 >= 1000)
-                return s.Number(m1 / 1000).Append("~").Number(m2 / 1000).Append(" km");
+                return s.Number(m1 / 1000).Append(m2negative ? "~-" : "~").Number(m2 / 1000).Append(" km");
 
             if(m1 < 10)
-                return s.Number(m1).Append("~").Number(m2).Append(" m");
+                return s.Number(m1).Append(m2negative ? "~-" : "~").Number(m2).Append(" m");
 
-            return s.RoundedNumber(m1, 0).Append("~").RoundedNumber(m2, 0).Append(" m");
+            return s.RoundedNumber(m1, 0).Append(m2negative ? "~-" : "~").RoundedNumber(m2, 0).Append(" m");
         }
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
             if(!IsValid(s, kg, " kg"))
                 return s;
+
+            if(kg == 0)
+                return s.Append("0 kg");
 
             float g = kg * 1e3f;
 
@@ -683,7 +702,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(g >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(kg, " kg");
+                return s.ScientificNumber(kg).Append(" kg");
 
             if(g >= 1e15f)
                 return s.Number(g / 1e15f).Append(" Pg");
@@ -698,7 +717,7 @@ namespace Digi.BuildInfo.Utilities
                 return s.Number(g / 1e6f).Append(" Mg");
 
             if(g >= 1e3f)
-                return s.Number(g / 1e3f).Append(" Kg");
+                return s.Number(g / 1e3f).Append(" kg");
 
             if(g >= 1)
                 return s.Number(g).Append(" grams");
@@ -722,7 +741,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             //if(integrity >= 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-            //    return s.NumberSciNot(integrity);
+            //    return s.NumberScientific(integrity);
 
             //if(integrity >= 1e9f)
             //    return s.Number(integrity / 1e9f).Append(" G");
@@ -741,6 +760,9 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, L, " L"))
                 return s;
 
+            if(L == 0)
+                return s.Append("0 L");
+
             if(L < 0)
             {
                 s.Append("-");
@@ -748,7 +770,7 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(L > 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.NumberSciNot(L, " L");
+                return s.ScientificNumber(L).Append(" L");
 
             if(L >= 1e15f)
                 return s.Number(L / 1e15f).Append(" PL");
@@ -905,6 +927,12 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, totalSeconds))
                 return s.Append(" seconds");
 
+            if(totalSeconds < 0)
+            {
+                totalSeconds = -totalSeconds;
+                s.Append('-');
+            }
+
             if(totalSeconds > (60 * 60 * 24 * 365))
                 return s.Append("1 y+");
 
@@ -947,20 +975,14 @@ namespace Digi.BuildInfo.Utilities
             return s;
         }
 
-        public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0)
-        {
-            if(!IsValid(s, radians))
-                return s.Append('°');
-
-            return s.AngleFormatDeg(MathHelper.ToDegrees(radians), digits);
-        }
+        public static StringBuilder AngleFormat(this StringBuilder s, float radians, int digits = 0) => s.AngleFormatDeg(MathHelper.ToDegrees(radians), digits);
 
         public static StringBuilder AngleFormatDeg(this StringBuilder s, float degrees, int digits = 0)
         {
             if(!IsValid(s, degrees))
                 return s.Append('°');
 
-            return s.Append(Math.Round(degrees, digits)).Append('°');
+            return s.RoundedNumber(degrees, digits).Append('°');
         }
 
         public static StringBuilder Size3DFormat(this StringBuilder s, Vector3 vec)
@@ -973,16 +995,22 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, metersPerSecond))
                 return s.Append(" m/s");
 
+            if(metersPerSecond == 0)
+                return s.Append("0 m/s");
+
+            if(metersPerSecond < 0)
+            {
+                s.Append('-');
+                metersPerSecond = -metersPerSecond;
+            }
+
+            if(metersPerSecond > 1e9f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.ScientificNumber(metersPerSecond).Append(" m/s");
+
             return s.RoundedNumber(metersPerSecond, digits).Append(" m/s");
         }
 
-        public static StringBuilder AccelerationFormat(this StringBuilder s, float metersPerSecondSquared)
-        {
-            if(!IsValid(s, metersPerSecondSquared))
-                return s.Append(" m/s²");
-
-            return s.SpeedFormat(metersPerSecondSquared).Append('²');
-        }
+        public static StringBuilder AccelerationFormat(this StringBuilder s, float metersPerSecondSquared) => s.SpeedFormat(metersPerSecondSquared).Append('²');
 
         public static StringBuilder ProportionToPercent(this StringBuilder s, float proportion, int digits = 0)
         {
@@ -1011,7 +1039,7 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, multiplier))
                 return s;
 
-            return s.Append("x").Append(Math.Round(multiplier, digits));
+            return s.Append("x").RoundedNumber(multiplier, digits);
         }
 
         public static StringBuilder OptionalMultiplier(this StringBuilder s, float mul)
@@ -1189,23 +1217,23 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, value))
                 return s;
 
-            if(value > 1e18f)
-                return s.NumberSciNot(value);
+            if(value == 0)
+                return s.Append("0");
+
+            if(value < 0)
+            {
+                s.Append('-');
+                value = -value;
+            }
+
+            if(value > 1e12f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
+                return s.ScientificNumber(value);
 
             return s.Append(value.ToString("###,###,###,###,###,##0.##"));
         }
 
         public static StringBuilder RoundedNumber(this StringBuilder s, float value, int digits)
         {
-            if(!IsValid(s, value))
-                return s;
-
-            if(digits <= 2)
-            {
-                // no need for zero-fill if 2 or less as it can't be mistaken with thousands
-                return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##"));
-            }
-
             if(digits == 3)
             {
                 if(BuildInfoMod.IsDevMod)
@@ -1214,18 +1242,63 @@ namespace Digi.BuildInfo.Utilities
                 digits = 4;
             }
 
-            // use zero-fill up to 4 digits to avoid mistaking it with thousands
-            return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########"));
+            if(!IsValid(s, value))
+                return s;
+
+            //if(value == 0)
+            //{
+            //    if(digits > 2)
+            //        return s.Append("0.").Append('0', digits);
+            //    else
+            //        return s.Append("0");
+            //}
+
+            if(value < 0)
+            {
+                s.Append('-');
+                value = -value;
+            }
+
+            bool useSci = value > 1e12f || (BuildInfoMod.Instance.Config.ScientificNotation.Value && value > MinForScientific);
+
+            if(digits <= 2)
+            {
+                if(useSci)
+                    return s.Append(value.ToString("0.##e0"));
+                else
+                    // no need for zero-fill if 2 or less as it can't be mistaken with thousands
+                    return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.##"));
+            }
+            else
+            {
+                if(useSci)
+                    return s.Append(value.ToString("0.0000e0"));
+                else
+                    // use zero-fill up to 4 digits to avoid mistaking it with thousands
+                    return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########"));
+            }
         }
 
-        public static StringBuilder NumberSciNot(this StringBuilder s, float value, string unit = "")
+        const float MinForScientific = 1e3f;
+
+        /// <summary>
+        /// Scientific notation for numbers larger than 1000 (or smaller than -1000)
+        /// </summary>
+        public static StringBuilder ScientificNumber(this StringBuilder s, float value, int digits = 2)
         {
-            if(value == 0f)
-                return s.Number(value).Append(unit);
-            else if(value < 1e-4f || value > 1e4f)
-                return s.Append(value.ToString("0.##e0")).Append(unit);
+            if(value == 0)
+                return s.Append("0");
+
+            if(value < 0)
+            {
+                s.Append('-');
+                value = -value;
+            }
+
+            if(value >= MinForScientific)
+                return s.Append(value.ToString("0.##e0"));
             else
-                return s.Number(value).Append(unit);
+                return s.Append(Math.Round(value, digits));
         }
 
         //static char[] SplitExponent = new char[] { 'e' };
@@ -1272,11 +1345,17 @@ namespace Digi.BuildInfo.Utilities
             if(!IsValid(s, value))
                 return s;
 
-            if(value >= 1000000)
-                return s.RoundedNumber(value / 1000, 0).Append("k");
+            if(value < 0)
+            {
+                s.Append('-');
+                value = -value;
+            }
 
-            if(value >= 1000)
-                return s.RoundedNumber(value / 1000, 1).Append("k");
+            if(value >= 1e6f)
+                return s.RoundedNumber(value / 1e3f, 0).Append('k');
+
+            if(value >= 1e3f)
+                return s.RoundedNumber(value / 1e3f, 1).Append('k');
 
             return s.RoundedNumber(value, 1);
         }

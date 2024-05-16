@@ -105,15 +105,12 @@ namespace Digi.BuildInfo.Features
 
         public override void RegisterComponent()
         {
-            if(Main.IsPlayer)
-            {
-                Main.Config.Debug.ValueAssigned += Debug_ValueAssigned;
+            Main.Config.Debug.ValueAssigned += Debug_ValueAssigned;
 
-                //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
-                //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
+            //EquipmentMonitor.ToolChanged += EquipmentMonitor_ToolChanged;
+            //EquipmentMonitor.BlockChanged += EquipmentMonitor_BlockChanged;
 
-                //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
-            }
+            //MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
 
             //MyAPIGateway.Session.DamageSystem.RegisterBeforeDamageHandler(0, BeforeDamage);
 
@@ -149,7 +146,122 @@ namespace Digi.BuildInfo.Features
             //}
 
             //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
+
+            //MyEntities.OnEntityAdd += MyEntities_OnEntityAdd;
+
+            //TestUnitFormats();
         }
+
+        public override void UnregisterComponent()
+        {
+            //MyAPIGateway.Gui.GuiControlCreated -= GuiControlCreated;
+            //MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
+
+            //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
+
+            //MyEntities.OnEntityAdd -= MyEntities_OnEntityAdd;
+
+            if(!Main.ComponentsRegistered)
+                return;
+
+            Main.Config.Debug.ValueAssigned -= Debug_ValueAssigned;
+
+            //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
+            //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
+        }
+
+        //void MyEntities_OnEntityAdd(MyEntity ent)
+        //{
+        //    MyAPIGateway.Utilities.ShowMessage("debug", $"{ent.GetType().Name} spawned");
+        //}
+
+        //void TestUnitFormats()
+        //{
+        //    bool resetTo = BuildInfoMod.Instance.Config.ScientificNotation.Value;
+
+        //    try
+        //    {
+        //        float[] values = new float[]
+        //        {
+        //            1.235733e24f,
+        //            5292.135804f,
+        //            999.53999f,
+        //            4.3125783258f,
+        //            1f,
+        //            0.5f,
+        //            0f,
+        //        };
+
+        //        Dictionary<string, Action<StringBuilder, float>> actions = new Dictionary<string, Action<StringBuilder, float>>()
+        //        {
+        //            [nameof(Utilities.StringBuilderExtensions.Number)] = (s, value) => s.Number(value),
+        //            [nameof(Utilities.StringBuilderExtensions.RoundedNumber) + " 2/4/6"] = (s, value) => s.RoundedNumber(value, 2).Append(value < 0 ? " / " : " /  ").RoundedNumber(value, 4).Append(value < 0 ? " / " : " /  ").RoundedNumber(value, 6),
+        //            [nameof(Utilities.StringBuilderExtensions.ScientificNumber)] = (s, value) => s.ScientificNumber(value),
+        //            [nameof(Utilities.StringBuilderExtensions.ShortNumber)] = (s, value) => s.ShortNumber(value),
+        //            //[nameof(Utilities.StringBuilderExtensions.NumberCapped)] = (s, value) => s.NumberCapped((int)value, ToolbarInfo.ToolbarStatusProcessor.MaxChars),
+        //            //[nameof(Utilities.StringBuilderExtensions.NumberCappedSpaced)] = (s, value) => s.NumberCappedSpaced((int)value, ToolbarInfo.ToolbarStatusProcessor.MaxChars),
+        //            [nameof(Utilities.StringBuilderExtensions.MassFormat)] = (s, value) => s.MassFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.SpeedFormat)] = (s, value) => s.SpeedFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.AccelerationFormat)] = (s, value) => s.AccelerationFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.ForceFormat)] = (s, value) => s.ForceFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.TorqueFormat)] = (s, value) => s.TorqueFormat(value),
+        //            //[nameof(Utilities.StringBuilderExtensions.AngleFormat)] = (s, value) => s.AngleFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.AngleFormatDeg)] = (s, value) => s.AngleFormatDeg(value),
+        //            [nameof(Utilities.StringBuilderExtensions.RotationSpeed)] = (s, value) => s.RotationSpeed(value),
+        //            [nameof(Utilities.StringBuilderExtensions.DistanceFormat)] = (s, value) => s.DistanceFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.DistanceRangeFormat)] = (s, value) => s.DistanceRangeFormat(0, value),
+        //            //[nameof(Utilities.StringBuilderExtensions.IntegrityFormat)] = (s, value) => s.IntegrityFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.PowerFormat)] = (s, value) => s.PowerFormat(value),
+        //            //[nameof(Utilities.StringBuilderExtensions.PowerStorageFormat)] = (s, value) => s.PowerStorageFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.TimeFormat)] = (s, value) => s.TimeFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.VolumeFormat)] = (s, value) => s.VolumeFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.MultiplierFormat)] = (s, value) => s.MultiplierFormat(value),
+        //            [nameof(Utilities.StringBuilderExtensions.MultiplierToPercent)] = (s, value) => s.MultiplierToPercent(value),
+        //            [nameof(Utilities.StringBuilderExtensions.OptionalMultiplier)] = (s, value) => s.OptionalMultiplier(value),
+        //        };
+
+        //        StringBuilder sb = new StringBuilder();
+
+        //        foreach(var kv in actions)
+        //        {
+        //            string desc = kv.Key;
+        //            var action = kv.Value;
+
+        //            sb.Append(desc).Append(":\n");
+
+        //            foreach(float value in values)
+        //            {
+        //                BuildInfoMod.Instance.Config.ScientificNotation.SetValue(false);
+
+        //                sb.Append(' ').Append(value).Append(" ->  ");
+        //                action.Invoke(sb, value);
+        //                sb.Append('\n');
+
+        //                sb.Append(-value).Append(" -> ");
+        //                action.Invoke(sb, -value);
+        //                sb.Append('\n');
+
+        //                BuildInfoMod.Instance.Config.ScientificNotation.SetValue(true);
+
+        //                sb.Append(' ').Append(value).Append(" ->  ");
+        //                action.Invoke(sb, value);
+        //                sb.Append(" (sci)\n");
+
+        //                sb.Append(-value).Append(" -> ");
+        //                action.Invoke(sb, -value);
+        //                sb.Append(" (sci)\n");
+        //            }
+
+        //            sb.Append('\n');
+        //        }
+
+        //        Log.Info($"[DEV] testing formats:\n{sb}");
+        //    }
+        //    finally
+        //    {
+        //        BuildInfoMod.Instance.Config.ScientificNotation.SetValue(resetTo);
+        //    }
+        //}
 
         // testing GetVoxelContentInBoundingBox_Fast() with how VoxelPlacement uses it
         /*
@@ -242,25 +354,6 @@ namespace Digi.BuildInfo.Features
         //    DamagePerEnt.Clear();
         //}
 
-
-        public override void UnregisterComponent()
-        {
-            //MyAPIGateway.Gui.GuiControlCreated -= GuiControlCreated;
-            //MyAPIGateway.Gui.GuiControlRemoved -= GuiControlRemoved;
-
-            if(!Main.ComponentsRegistered)
-                return;
-
-            if(Main.IsPlayer)
-            {
-                Main.Config.Debug.ValueAssigned -= Debug_ValueAssigned;
-
-                //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
-                //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
-
-                //MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
-            }
-        }
 
         //Vector3 PrevDir;
 
