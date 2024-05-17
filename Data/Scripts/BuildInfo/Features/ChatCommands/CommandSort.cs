@@ -215,7 +215,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                         sb.Append(blockDef.CubeSize == MyCubeSize.Large ? "[Large] " : "[Small] ");
 
                     sb.Append(blockDef.DisplayNameText)
-                        .Append(" | ").MassFormat(blockDef.HasPhysics ? blockDef.Mass : 0)
+                        .Append(" | ").ExactMassFormat(blockDef.HasPhysics ? blockDef.Mass : 0)
                         .Append(" | ").Number(blockDef.MaxIntegrity).Append(" hp")
                         .Append(" | ").VolumeFormat((blockDef.Size * cellSize).Volume)
                         .Append('\n');
@@ -256,7 +256,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
                     sb.Append(num++).Append(". ")
                         .Append(compDef.DisplayNameText)
-                        .Append(" | ").MassFormat(compDef.Mass)
+                        .Append(" | ").ExactMassFormat(compDef.Mass)
                         .Append(" | ").Number(compDef.MaxIntegrity).Append(" hp")
                         .Append(" | ").VolumeFormat(compDef.Volume)
                         .Append('\n');

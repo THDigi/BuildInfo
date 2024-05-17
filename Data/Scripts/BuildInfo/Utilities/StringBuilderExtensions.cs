@@ -685,6 +685,29 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(m1, 0).Append(m2negative ? "~-" : "~").RoundedNumber(m2, 0).Append(" m");
         }
 
+        /// <summary>
+        /// Maximum precision number, no division to other units
+        /// </summary>
+        public static StringBuilder ExactMassFormat(this StringBuilder s, float kg)
+        {
+            if(!IsValid(s, kg, " kg"))
+                return s;
+
+            if(kg == 0)
+                return s.Append("0 kg");
+
+            if(kg < 0)
+            {
+                s.Append("-");
+                kg = -kg;
+            }
+
+            if(kg > 1e12f)
+                return s.Append(kg.ToString("0.######e0")).Append(" kg");
+
+            return s.Number(kg).Append(" kg");
+        }
+
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
         {
             if(!IsValid(s, kg, " kg"))

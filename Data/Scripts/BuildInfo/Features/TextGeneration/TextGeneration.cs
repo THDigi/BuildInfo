@@ -1140,7 +1140,7 @@ namespace Digi.BuildInfo.Features
 
                 if(isProjected)
                 {
-                    AddLine().Color(massColor).MassFormat(mass);
+                    AddLine().Color(massColor).ExactMassFormat(mass);
                 }
                 else
                 {
@@ -1163,7 +1163,7 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
-                    AddLine().Color(massColor).MassFormat(mass);
+                    AddLine().Color(massColor).ExactMassFormat(mass);
 
                     if(grid.Physics != null)
                     {
@@ -1174,7 +1174,7 @@ namespace Digi.BuildInfo.Features
                             gridMassCache = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
                         }
 
-                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").MassFormat(gridMassCache);
+                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").ExactMassFormat(gridMassCache);
                     }
                 }
             }
@@ -2237,7 +2237,7 @@ namespace Digi.BuildInfo.Features
                 StringBuilder line = AddLine().Append(partPrefix);
 
                 // HACK: game doesn't use mass from blocks with HasPhysics=false
-                line.Color(new Color(200, 255, 55)).MassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator();
+                line.Color(new Color(200, 255, 55)).ExactMassFormat(def.HasPhysics ? def.Mass : 0).ResetFormatting().Separator();
 
                 line.Size3DFormat(def.Size).Separator();
 
@@ -2249,7 +2249,7 @@ namespace Digi.BuildInfo.Features
                 }
 
                 SimpleTooltip("Weld and grind times are for lowest tier tools and non-enemy blocks."
-                            + $"\nFor blocks owned by enemies grind speed is multiplied by {MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
+                           + $"\nFor blocks owned by enemies, grind speed is multiplied by {MyAPIGateway.Session.HackSpeedMultiplier:0.##} until blue hack line.");
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
@@ -5201,7 +5201,7 @@ namespace Digi.BuildInfo.Features
                                 else
                                     tooltip.Append("Recoil: (none)\n");
 
-                                tooltip.Append("Missile mass: ").MassFormat(missile.MissileMass).Append('\n');
+                                tooltip.Append("Missile mass: ").ExactMassFormat(missile.MissileMass).Append('\n');
                             }
                         }
                     }

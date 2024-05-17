@@ -32,8 +32,8 @@ namespace Digi.BuildInfo.Features.HUD
 
             if(ShowCustomSuffix && format == Config.MassFormat.RealCustomSuffix)
                 return TempSB.Clear().MassFormat(CurrentValue).ToString();
-
-            return CurrentValue.ToString(NumberFormat);
+            else
+                return TempSB.Clear().ExactMassFormat(CurrentValue).ToString();
         }
 
         protected override void UpdateBeforeSim(ref float current, ref float min, ref float max)

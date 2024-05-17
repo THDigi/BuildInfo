@@ -25,6 +25,7 @@ using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
 // TODO: measuring tool?
+// TODO: show acceleration somehow
 
 namespace Digi.BuildInfo
 {

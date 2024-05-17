@@ -264,7 +264,7 @@ namespace Digi.BuildInfo.Features.Overlays
                             colorShapes = Color.Yellow;
 
                         LabelRender.DynamicLabel.Clear().Color(ColorMassLabel).Append(gridInfo.Grid.CustomName).Append(gridInfo.Grid.IsStatic ? " <color=gray>(Static)" : "")
-                            .Color(ColorMassLabel).Append("\nMass: ").MassFormat(gridInfo.Mass)
+                            .Color(ColorMassLabel).Append("\nMass: ").ExactMassFormat(gridInfo.Mass)
                             .Color(colorShapes).Append("\nPhysical shapes: ").RoundedNumber(shapes, 0).Append("<color=gray> / ").Append(maxShapes);
 
                         LabelRender.DrawLineLabel(LabelType.DynamicLabel, gridInfo.CenterOfMass, labelDir, ColorMassLabel, alwaysOnTop: true);
