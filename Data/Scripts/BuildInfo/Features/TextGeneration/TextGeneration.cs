@@ -4637,7 +4637,7 @@ namespace Digi.BuildInfo.Features
                     // DeviateShotAngleAiming only used by hand weapons
                     if(wpDef.DeviateShotAngle == 0)
                     {
-                        AddLine().Label("Accuracy").Color(COLOR_GOOD).Append("Pinpoint");
+                        AddLine().Label("Precision").Color(COLOR_GOOD).Append("Pinpoint");
                     }
                     else
                     {
@@ -4645,7 +4645,7 @@ namespace Digi.BuildInfo.Features
                         // DeviateShotAngle is in radians (same for Aiming one) and it's angle offset from center line
                         float coneBaseDiameter = 2 * (float)Math.Tan(wpDef.DeviateShotAngle) * 100;
 
-                        AddLine().Label("Accuracy").DistanceFormat(coneBaseDiameter).Append(" group at 100m");
+                        AddLine().Label("Precision").DistanceFormat(coneBaseDiameter).Append(" group at 100m");
                     }
                 }
 
