@@ -118,10 +118,9 @@ namespace Digi.BuildInfo.Features
     {
         public int LastReadAtTick { get; private set; }
 
-        IMyCubeGrid Grid;
+        MyCubeGrid Grid;
         float BlockBaseMass;
         float InventoryTotalMass;
-        HashSet<IMyCubeBlock> BlocksWithInventory = new HashSet<IMyCubeBlock>();
 
         public void Init(IMyCubeGrid grid)
         {
@@ -133,44 +132,48 @@ namespace Digi.BuildInfo.Features
 
             BlockBaseMass = 0;
             InventoryTotalMass = -1;
-            Grid = grid;
+            Grid = (MyCubeGrid)grid;
             Grid.OnBlockAdded += BlockAdded;
             Grid.OnBlockRemoved += BlockRemoved;
 
-            MyCubeGrid internalGrid = (MyCubeGrid)Grid;
-            float mass = 0f;
+            BlockBaseMass = 0f;
 
-            foreach(IMySlimBlock slimBlock in internalGrid.GetBlocks())
+            foreach(IMySlimBlock slimBlock in Grid.GetBlocks())
             {
-                // HACK: game doesn't use mass from blocks with HasPhysics=false
                 MyCubeBlockDefinition def = (MyCubeBlockDefinition)slimBlock.BlockDefinition;
 
-                IMyCubeBlock fatBlock = slimBlock.FatBlock;
-                if(fatBlock != null)
-                {
-                    if(fatBlock.InventoryCount > 0)
-                    {
-                        for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
-                        {
-                            MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
-                            if(inv != null)
-                                inv.InventoryContentChanged += InventoryContentChanged;
-                        }
+                // HACK: game doesn't use mass from blocks with HasPhysics=false
+                if(def.HasPhysics)
+                    BlockBaseMass += def.Mass;
 
-                        BlocksWithInventory.Add(fatBlock);
-                    }
+                // HACK: not using IMySlimBlock/IMyCubeBlock .Mass because it's not actually used by the game in mass calc
+                //       and spaceball will return its virtual mass for that, screwing up results ever so slightly
 
-                    if(def.HasPhysics)
-                        mass += fatBlock.Mass;
-                }
-                else
-                {
-                    if(def.HasPhysics)
-                        mass += slimBlock.Mass;
-                }
+                //IMyCubeBlock fatBlock = slimBlock.FatBlock;
+                //if(fatBlock != null)
+                //{
+                //    if(def.HasPhysics)
+                //        mass += fatBlock.Mass;
+                //}
+                //else
+                //{
+                //    if(def.HasPhysics)
+                //        mass += slimBlock.Mass;
+                //}
             }
 
-            BlockBaseMass = mass;
+            foreach(MyCubeBlock block in Grid.Inventories)
+            {
+                if(block.InventoryCount > 0)
+                {
+                    for(int i = (block.InventoryCount - 1); i >= 0; --i)
+                    {
+                        MyInventory inv = block.GetInventory(i);
+                        if(inv != null)
+                            inv.InventoryContentChanged += InventoryContentChanged;
+                    }
+                }
+            }
         }
 
         public void Reset()
@@ -183,18 +186,17 @@ namespace Digi.BuildInfo.Features
 
             if(!Grid.MarkedForClose)
             {
-                foreach(IMyCubeBlock fatBlock in BlocksWithInventory)
+                foreach(MyCubeBlock block in Grid.Inventories)
                 {
-                    for(int i = (fatBlock.InventoryCount - 1); i >= 0; --i)
+                    for(int i = (block.InventoryCount - 1); i >= 0; --i)
                     {
-                        MyInventory inv = (MyInventory)fatBlock.GetInventory(i);
+                        MyInventory inv = block.GetInventory(i);
                         if(inv != null)
                             inv.InventoryContentChanged -= InventoryContentChanged;
                     }
                 }
             }
 
-            BlocksWithInventory.Clear();
             Grid = null;
             BlockBaseMass = 0;
             InventoryTotalMass = -1;
@@ -210,11 +212,11 @@ namespace Digi.BuildInfo.Features
                 InventoryTotalMass = 0;
                 float cargoMassMultiplier = 1f / MyAPIGateway.Session.SessionSettings.BlocksInventorySizeMultiplier;
 
-                foreach(IMyCubeBlock block in BlocksWithInventory)
+                foreach(MyCubeBlock block in Grid.Inventories)
                 {
                     for(int i = (block.InventoryCount - 1); i >= 0; --i)
                     {
-                        IMyInventory inv = block.GetInventory(i);
+                        MyInventory inv = block.GetInventory(i);
                         if(inv != null)
                             InventoryTotalMass += (float)inv.CurrentMass * cargoMassMultiplier;
                     }
@@ -223,12 +225,11 @@ namespace Digi.BuildInfo.Features
 
             float mass = BlockBaseMass + InventoryTotalMass;
 
-            MyCubeGrid internalGrid = (MyCubeGrid)Grid;
-            if(internalGrid.OccupiedBlocks.Count > 0)
+            if(Grid.OccupiedBlocks.Count > 0)
             {
-                foreach(MyCockpit seat in internalGrid.OccupiedBlocks)
+                foreach(MyCockpit seat in Grid.OccupiedBlocks)
                 {
-                    IMyCharacter pilot = seat?.Pilot as IMyCharacter;
+                    IMyCharacter pilot = seat?.Pilot;
                     if(pilot != null)
                     {
                         // character inventory mass seems to not be added to grid physical mass
@@ -265,8 +266,6 @@ namespace Digi.BuildInfo.Features
                                     InventoryTotalMass += (float)inv.CurrentMass * cargoMassMultiplier;
                             }
                         }
-
-                        BlocksWithInventory.Add(fatBlock);
                     }
 
                     if(def.HasPhysics)
@@ -309,8 +308,6 @@ namespace Digi.BuildInfo.Features
                             }
                         }
                     }
-
-                    BlocksWithInventory.Remove(fatBlock);
 
                     if(def.HasPhysics)
                         BlockBaseMass -= fatBlock.Mass;
