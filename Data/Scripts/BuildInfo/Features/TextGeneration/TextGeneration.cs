@@ -4297,7 +4297,8 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Label("Artificial mass").MassFormat(artificialMass.VirtualMass);
+                AddLine().Label("Artificial weight").ExactMassFormat(artificialMass.VirtualMass);
+                SimpleTooltip("A force that gets applied directly to the grid at the block position by artificial gravity generators.");
             }
         }
 
@@ -4308,15 +4309,41 @@ namespace Digi.BuildInfo.Features
             // HACK: hardcoded; SpaceBall doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
 
+            var OB = new MyObjectBuilder_SpaceBall();
+
+            // HACK: broadcast is broken and starts off and doesn't get saved
+            OB.EnableBroadcast = false;
+
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Label("Max artificial mass").MassFormat(spaceBall.MaxVirtualMass);
+                AddLine().Label("Artificial weight - Max").ExactMassFormat(spaceBall.MaxVirtualMass).Separator().Label("Default").ExactMassFormat(OB.VirtualMass);
+                SimpleTooltip("A force that gets applied directly to the grid at the block position by artificial gravity generators.");
+
+                AddLine().LabelHardcoded("Radio broadcaster").DistanceFormat(Hardcoded.SpaceBall_RadioBroadcastRange).Separator().Label("Default").Append(OB.EnableBroadcast ? "On" : "Off");
+            }
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                AddLine().Label("Friction").ProportionToPercent(OB.Friction)
+                    .Separator().Label("Restitution").ProportionToPercent(OB.Restitution)
+                    .Separator().Color(MyPerGameSettings.BallFriendlyPhysics ? COLOR_GOOD : COLOR_NORMAL).Label("Configurable").BoolFormat(MyPerGameSettings.BallFriendlyPhysics);
+                SimpleTooltip("Friction affects how well it grips surfaces." +
+                              "\nRestitution is kinetic energy lost in collisions, affects bouncyness." +
+                              "\nWhether they're configurable in terminal is a world-wide setting that can only be enabled by mods using scripts.");
             }
         }
 
         private void Format_JumpDrive(MyCubeBlockDefinition def)
         {
             MyJumpDriveDefinition jumpDrive = (MyJumpDriveDefinition)def;
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Warnings))
+            {
+                if(!MyPerGameSettings.EnableJumpDrive)
+                {
+                    AddLine().Color(COLOR_BAD).Append("All vanilla jumpdrive functions are disabled by a script mod.");
+                }
+            }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -4340,7 +4367,7 @@ namespace Digi.BuildInfo.Features
 
                 AddLine().LabelHardcoded("Jump process").TimeFormat(Hardcoded.JumpDriveJumpDelay);
                 AddLine().Label("Distance limit").DistanceRangeFormat((float)jumpDrive.MinJumpDistance, (float)jumpDrive.MaxJumpDistance);
-                AddLine().Label("Max mass").MassFormat((float)jumpDrive.MaxJumpMass);
+                AddLine().Label("Max mass").ExactMassFormat((float)jumpDrive.MaxJumpMass);
             }
         }
         #endregion Magic blocks

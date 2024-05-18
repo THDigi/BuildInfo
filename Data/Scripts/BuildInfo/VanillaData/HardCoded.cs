@@ -568,6 +568,9 @@ namespace Digi.BuildInfo.VanillaData
         // MyLaserAntenna.INFINITE_RANGE - used to determine what range is considered infinite
         public const float LaserAntenna_InfiniteRange = 1E+08f;
 
+        // from MySpaceBall.Init()
+        public const float SpaceBall_RadioBroadcastRange = 50f;
+
         // from MySmallMissileLauncher.Init() & from MySmallGatlingGun.Init()
         public const float ShipGun_PowerReq = MyEnergyConstants.MAX_REQUIRED_POWER_SHIP_GUN; // 0.0002f
 
