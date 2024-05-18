@@ -424,7 +424,7 @@ namespace Digi.BuildInfo.Features.Config
             HealthOverride = new BoolSetting(Handler, "HUD: Health stat override", true,
                 "Shows actual health instead of percentage. It also tries to maintain the number within 4 characters width by using k suffix if it makes it shorter.");
 
-            MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.RealCustomSuffix,
+            MassOverride = new EnumSetting<MassFormat>(Handler, "HUD: Mass stat override", MassFormat.RealKg,
                 "Changes the ship mass format on the HUD.");
             MassOverride.SetEnumComment(MassFormat.Vanilla, "Game's default inaccurate mass and no station mass (same as info tab), shown in kg.");
             MassOverride.SetEnumComment(MassFormat.RealCustomSuffix, "Physical mass + station mass, formatted with SI unit multipliers (kg, Mg, Gg, Tg, Pg then scientific notation kg)");
