@@ -4508,7 +4508,8 @@ namespace Digi.BuildInfo.Features
 
                         float chargeTime = (capacitorDef.Capacity * 60 * 60) / (capacitorDef.RechargeDraw * capacitorChargeMultiplier);
 
-                        AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Color(COLOR_WARNING).Label("Recharge time").TimeFormat(chargeTime);
+                        AddLine().Label("Power Capacity").PowerStorageFormat(capacitorDef.Capacity).Separator().Color(COLOR_WARNING).Label("Recharge time").Append("around ").TimeFormat(chargeTime);
+                        SimpleTooltip("The recharge time varies greatly (-2s to +9s) because of how it's implemented.");
                     }
                     else
                     {
@@ -6058,7 +6059,7 @@ namespace Digi.BuildInfo.Features
                     AddLine().Color(color).Label("Power required");
 
                 if(mw <= 0)
-                    GetLine().Append("No");
+                    GetLine().Append("None!");
                 else
                     GetLine().PowerFormat(mw);
 
