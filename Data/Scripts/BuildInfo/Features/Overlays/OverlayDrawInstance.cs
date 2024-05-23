@@ -7,8 +7,10 @@ using Digi.BuildInfo.Features.Overlays.Specialized;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.ModAPI;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -589,7 +591,7 @@ namespace Digi.BuildInfo.Features.Overlays
                     SpecializedOverlay?.Draw(ref drawMatrix, this, def, block);
                 }
 
-                //NewFeatureTestingDraw(blockDef, block, drawMatrix);
+                //NewFeatureTestingDraw(def, block, drawMatrix);
             }
             catch(Exception e)
             {
@@ -975,7 +977,7 @@ namespace Digi.BuildInfo.Features.Overlays
             //if(block != null)
             //{
             //    IMySolarPanel solarPanel = block.FatBlock as IMySolarPanel;
-            //    if(solarPanel != null)
+            //    if(solarPanel != null && solarPanel.IsFunctional)
             //    {
             //        Vector3 sunDir = MyVisualScriptLogicProvider.GetSunDirection();
             //        MySolarPanelDefinition solarDef = (MySolarPanelDefinition)def;
@@ -983,44 +985,117 @@ namespace Digi.BuildInfo.Features.Overlays
             //        float angleToSun = Vector3.Dot(Vector3.Transform(solarDef.PanelOrientation, solarPanel.WorldMatrix.GetOrientation()), sunDir);
             //        bool isTwoSided = solarDef.IsTwoSided;
 
-            //        for(int idx = 0; idx < 8; idx++)
+            //        if(solarDef.Pivots != null)
             //        {
-            //            if((angleToSun < 0f && !isTwoSided) || !solarPanel.IsFunctional)
-            //                continue;
+            //            float scaleFactor = solarPanel.CubeGrid.GridSize;
+            //            Vector3[] positions = solarDef.Pivots;
+            //            Vector3[] pivots = new Vector3[positions.Length];
+            //            for(int i = 0; i < positions.Length; i++)
+            //            {
+            //                pivots[i] = positions[i] * scaleFactor;
+            //            }
 
-            //            //var pos = solar.WorldMatrix.Translation;
-            //            //MyPlanet closestPlanet = MyGamePruningStructure.GetClosestPlanet(pos);
-            //            //if(closestPlanet == null)
-            //            //    continue;
-            //            //
-            //            //public static bool IsThereNight(MyPlanet planet, ref Vector3D position)
-            //            //{
-            //            //    Vector3D value = position - planet.PositionComp.GetPosition();
-            //            //    if((float)value.Length() > planet.MaximumRadius * 1.1f)
-            //            //    {
-            //            //        return false;
-            //            //    }
-            //            //    Vector3 vector = Vector3.Normalize(value);
-            //            //    return Vector3.Dot(MySector.DirectionToSunNormalized, vector) < -0.1f;
-            //            //}
-            //            //if(IsThereNight(closestPlanet, ref pos))
-            //            //    continue;
+            //            int pivotsCount = isTwoSided ? pivots.Length / 2 : pivots.Length;
 
-            //            MatrixD orientation = solarPanel.WorldMatrix.GetOrientation();
-            //            Vector3D panelOrientationWorld = Vector3.Transform(solarDef.PanelOrientation, orientation);
+            //            for(int i = 0; i < pivotsCount; i++)
+            //            {
+            //                MatrixD worldMatrix = solarPanel.WorldMatrix;
+            //                Vector3 vector = Vector3.Transform(solarDef.PanelOrientation, worldMatrix.GetOrientation());
 
-            //            float dotFw = (float)solarPanel.WorldMatrix.Forward.Dot(panelOrientationWorld);
+            //                //float m_angleToSun = Vector3.Dot(vector, MySector.DirectionToSunNormalized);
+            //                //if((m_angleToSun < 0f && !m_isTwoSided) || !m_solarBlock.IsFunctional)
+            //                //{
+            //                //    MySandboxGame.Static.Invoke(OnSunAngleComputedFunc, "SolarGamelogic:OnSunAngleComputed");
+            //                //    return;
+            //                //}
 
-            //            Vector3D translation = solarPanel.WorldMatrix.Translation;
-            //            translation += ((idx % 4) - 1.5f) * CellSize * dotFw * (solarDef.Size.X / 4f) * solarPanel.WorldMatrix.Left;
-            //            translation += ((idx / 4) - 0.5f) * CellSize * dotFw * (solarDef.Size.Y / 2f) * solarPanel.WorldMatrix.Up;
+            //                //if(MySectorWeatherComponent.IsOnDarkSide(worldMatrix.Translation))
+            //                //{
+            //                //    m_isPivotInSun.ForEach(delegate (bool x)
+            //                //    {
+            //                //        x = false;
+            //                //    });
+            //                //    m_pivotsInSun = 0;
+            //                //    MySandboxGame.Static.Invoke(OnSunAngleComputedFunc, "SolarGamelogic:OnSunAngleComputed");
+            //                //    return;
+            //                //}
 
-            //            translation += CellSize * dotFw * (solarDef.Size.Z / 2f) * panelOrientationWorld * solarDef.PanelOffset;
+            //                int idx = i * (isTwoSided ? 2 : 1);
+            //                Vector3D point = worldMatrix.Translation;
+            //                point += worldMatrix.Right * pivots[idx].X;
+            //                point += worldMatrix.Up * pivots[idx].Y;
+            //                point += worldMatrix.Forward * pivots[idx].Z;
 
-            //            Vector3D from = translation + sunDir * 100f;
-            //            Vector3D to = translation + sunDir * solarPanel.CubeGrid.GridSize / 4f;
+            //                MyTransparentGeometry.AddPointBillboard(MaterialDot, Color.Red, point, 0.1f, 0, blendType: BlendTypeEnum.AdditiveTop);
+            //                DebugDraw.Draw3DText(new StringBuilder().Append(idx), point, 0.05, constantSize: false, alwaysOnTop: true);
 
-            //            MyTransparentGeometry.AddLineBillboard(OVERLAY_SQUARE_MATERIAL, Color.Orange, from, (to - from), 1f, 0.05f, OVERLAY_BLEND_TYPE);
+            //                if(isTwoSided)
+            //                {
+            //                    Vector3D point2 = worldMatrix.Translation;
+            //                    point2 += worldMatrix.Right * pivots[idx + 1].X;
+            //                    point2 += worldMatrix.Up * pivots[idx + 1].Y;
+            //                    point2 += worldMatrix.Forward * pivots[idx + 1].Z;
+
+            //                    MyTransparentGeometry.AddPointBillboard(MaterialDot, Color.Blue, point2, 0.1f, 0, blendType: BlendTypeEnum.AdditiveTop);
+            //                    DebugDraw.Draw3DText(new StringBuilder().Append(idx + 1), point2, 0.05, constantSize: false, alwaysOnTop: true);
+
+            //                    Vector3D test = worldMatrix.Translation + sunDir * 100f;
+
+            //                    if((point2 - test).LengthSquared() < (point - test).LengthSquared())
+            //                    {
+            //                        point = point2;
+            //                    }
+            //                }
+
+            //                Vector3D from = point + sunDir * 100f;
+            //                Vector3D to = point;
+
+            //                MyTransparentGeometry.AddLineBillboard(MaterialSquare, Color.Orange, from, (to - from), 1f, 0.03f, BlendTypeEnum.AdditiveTop);
+            //            }
+            //        }
+            //        else
+            //        {
+            //        #if false
+            //            for(int idx = 0; idx < 8; idx++)
+            //            {
+            //                if((angleToSun < 0f && !isTwoSided))
+            //                    continue;
+
+            //                //var pos = solar.WorldMatrix.Translation;
+            //                //MyPlanet closestPlanet = MyGamePruningStructure.GetClosestPlanet(pos);
+            //                //if(closestPlanet == null)
+            //                //    continue;
+            //                //
+            //                //public static bool IsThereNight(MyPlanet planet, ref Vector3D position)
+            //                //{
+            //                //    Vector3D value = position - planet.PositionComp.GetPosition();
+            //                //    if((float)value.Length() > planet.MaximumRadius * 1.1f)
+            //                //    {
+            //                //        return false;
+            //                //    }
+            //                //    Vector3 vector = Vector3.Normalize(value);
+            //                //    return Vector3.Dot(MySector.DirectionToSunNormalized, vector) < -0.1f;
+            //                //}
+            //                //if(IsThereNight(closestPlanet, ref pos))
+            //                //    continue;
+
+            //                MatrixD orientation = solarPanel.WorldMatrix.GetOrientation();
+            //                Vector3D panelOrientationWorld = Vector3.Transform(solarDef.PanelOrientation, orientation);
+
+            //                float dotFw = (float)solarPanel.WorldMatrix.Forward.Dot(panelOrientationWorld);
+
+            //                Vector3D translation = solarPanel.WorldMatrix.Translation;
+            //                translation += ((idx % 4) - 1.5f) * CellSize * dotFw * (solarDef.Size.X / 4f) * solarPanel.WorldMatrix.Left;
+            //                translation += ((idx / 4) - 0.5f) * CellSize * dotFw * (solarDef.Size.Y / 2f) * solarPanel.WorldMatrix.Up;
+
+            //                translation += CellSize * dotFw * (solarDef.Size.Z / 2f) * panelOrientationWorld * solarDef.PanelOffset;
+
+            //                Vector3D from = point + sunDir * 100f;
+            //                Vector3D to = point + sunDir * solarPanel.CubeGrid.GridSize / 4f;
+
+            //                PerPoint.Invoke(idx, from, to);
+            //            }
+            //            #endif
             //        }
             //    }
             //}

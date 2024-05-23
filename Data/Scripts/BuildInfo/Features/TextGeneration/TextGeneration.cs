@@ -3726,6 +3726,13 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine(oxygenFarm.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(oxygenFarm.IsTwoSided ? "Two-sided" : "One-sided");
+
+                // HACK: from MySolarGameLogicComponent
+                const int pivots = 8;
+                const float time = pivots * (100f / 60f); // uses update100()
+
+                AddLine().LabelHardcoded("Zero to Max output").Append("roughly ").TimeFormat(time);
+                SimpleTooltip($"Approximate time it takes to evaluate if all {pivots} points on the block have line of sight to the Sun.");
             }
         }
 
@@ -3894,6 +3901,20 @@ namespace Digi.BuildInfo.Features
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
                 {
                     AddLine(solarPanel.IsTwoSided ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append(solarPanel.IsTwoSided ? "Two-sided" : "One-sided");
+
+                    // HACK: from MySolarPanel.Init() and MySolarGameLogicComponent
+                    int pivots = 8;
+                    if(solarPanel.Pivots != null)
+                    {
+                        pivots = solarPanel.Pivots.Length;
+                        if(solarPanel.IsTwoSided)
+                            pivots /= 2;
+                    }
+
+                    float time = pivots * (100f / 60f); // uses update100()
+
+                    AddLine().LabelHardcoded("Zero to Max output").Append("roughly ").TimeFormat(time);
+                    SimpleTooltip($"Approximate time it takes to evaluate if all {pivots} points on the block have line of sight to the Sun.");
                 }
 
                 return;
