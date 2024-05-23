@@ -978,7 +978,20 @@ namespace Digi.BuildInfo.Features.Terminal
             //      Max Required Input: <n> W
             //      Oxygen output: <n> L/min
 
+            // always consumes max or 0, any point to showing this?
             info.DetailInfo_CurrentPowerUsage(Sink);
+
+            IMyOxygenFarm farm = block as IMyOxygenFarm;
+            var def = block?.SlimBlock?.BlockDefinition as MyOxygenFarmDefinition;
+            if(farm == null || def == null)
+                return;
+
+            //float potentialOutput = farm.GetOutput() * def.MaxGasOutput; // GetOutput() is a ratio
+            //float currentOutput = Source.CurrentOutputByType(def.ProducedGas);
+            //info.Append("Potential O2").Append(": ").VolumeFormat(potentialOutput).Append("/s (max: ").VolumeFormat(def.MaxGasOutput).Append("/s)\n");
+            //info.Append("Output O2").Append(": ").VolumeFormat(currentOutput).Append("/s\n");
+
+            info.Append("Max output").Append(": ").VolumeFormat(def.MaxGasOutput * 60f).Append("/min\n");
         }
 
         void Format_Seats(IMyTerminalBlock block, StringBuilder info)
