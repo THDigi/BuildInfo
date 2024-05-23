@@ -20,8 +20,8 @@ namespace Digi.BuildInfo.Features.Tooltips
     public class ItemTooltips : ModComponent
     {
         public const string ReqLargeConveyorSymbol = "Ф";
-        const string ReqLargeConveyorSymbolSet = "            " + ReqLargeConveyorSymbol;
-        const string ReqLargeConveyorSymbolAdd = "\n" + ReqLargeConveyorSymbolSet;
+        const string ReqLargeConveyorSymbolSet = "\n            " + ReqLargeConveyorSymbol;
+        const string ReqLargeConveyorSymbolAdd = ReqLargeConveyorSymbolSet;
 
         const int ListLimit = 6;
 
