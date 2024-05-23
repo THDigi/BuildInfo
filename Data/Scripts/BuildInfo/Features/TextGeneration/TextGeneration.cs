@@ -2726,9 +2726,18 @@ namespace Digi.BuildInfo.Features
                 {
                     StringBuilder sb = AddLine().Label("Connectable");
                     if(data.IsConnector)
-                        sb.Append("Yes (").Append(data.IsSmallConnector ? "Small" : "Large").Append(" port)");
+                    {
+                        sb.Append("Yes").Separator().Label("Port size").Append(data.IsSmallConnector ? "Small" : "Large");
+                        SimpleTooltip("Connectors can only connect to other connectors that have the same size port.");
+
+                        AddLine().LabelHardcoded("Connect limits - Max distance").DistanceFormat(Hardcoded.Connector_ConnectMaxDistance).Separator().LabelHardcoded("Max angle").AngleFormat(Hardcoded.Connector_ConnectAngleMinMax);
+                        SimpleTooltip("Connectors will only magnetize under these conditions relative to another." +
+                                      "\nDistance is checked from connecting position and angle is offset between connectors' Forward, resulting in a cone.");
+                    }
                     else
+                    {
                         sb.Append("No");
+                    }
 
                     AddLine().LabelHardcoded("Can throw out items").Append("Yes");
                 }

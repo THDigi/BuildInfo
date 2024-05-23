@@ -3,6 +3,7 @@ using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Sandbox.Definitions;
 using VRage.Game.ModAPI;
+using VRageMath;
 
 namespace Digi.BuildInfo.Features.LiveData
 {
@@ -13,6 +14,7 @@ namespace Digi.BuildInfo.Features.LiveData
         /// </summary>
         public bool IsConnector = false;
         public bool IsSmallConnector = false;
+        public Vector3D ConnectPosition;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
@@ -20,8 +22,9 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
             block.Model.GetDummies(dummies);
 
-            foreach(string name in dummies.Keys)
+            foreach(IMyModelDummy dummy in dummies.Values)
             {
+                string name = dummy.Name;
                 // from MyShipConnector.LoadDummies()
                 bool isConnector = name.ContainsIgnoreCase(Hardcoded.Connector_Connect_DummyName);
                 bool isEjector = name.ContainsIgnoreCase(Hardcoded.Connector_Ejector_DummyName);
@@ -33,6 +36,7 @@ namespace Digi.BuildInfo.Features.LiveData
                     }
 
                     IsConnector = isConnector;
+                    ConnectPosition = dummy.Matrix.Translation;
                     break;
                 }
             }

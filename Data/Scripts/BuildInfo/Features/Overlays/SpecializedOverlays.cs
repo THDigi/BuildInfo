@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Digi.BuildInfo.Features.Overlays.Specialized;
-using VRage.Game.ModAPI;
 using VRage.ObjectBuilders;
 
 namespace Digi.BuildInfo.Features.Overlays
@@ -22,6 +21,7 @@ namespace Digi.BuildInfo.Features.Overlays
             new ButtonPanel(this);
             new Camera(this);
             new Collector(this);
+            new Connector(this);
             new ConveyorSorter(this);
             new Door(this);
             new LandingGear(this);

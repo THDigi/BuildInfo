@@ -92,12 +92,15 @@ namespace Digi.BuildInfo.VanillaData
         }
 
         // from MyShipConnector.LoadDummies()
-        public static string Connector_Connect_DummyName = "connector";
-        public static string Connector_SmallPort_DummyName = "small_connector";
-        public static string Connector_Ejector_DummyName = "ejector";
+        public const string Connector_Connect_DummyName = "connector";
+        public const string Connector_SmallPort_DummyName = "small_connector";
+        public const string Connector_Ejector_DummyName = "ejector";
+        // from MyShipConnector.TryAttach()
+        public static readonly float Connector_ConnectAngleMinMax = MathHelper.ToRadians(45);
+        public static readonly float Connector_ConnectMaxDistance = (float)Math.Sqrt(0.35f);
 
         // from MyShipMergeBlock.LoadDummies()
-        public static string Merge_DummyName = "merge"; // see MergeFailDetector too!
+        public const string Merge_DummyName = "merge"; // see MergeFailDetector too!
 
         // from MyEngineerToolBase
         public const float EngineerToolBase_DefaultReachDistance = 2f;
