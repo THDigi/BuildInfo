@@ -13,6 +13,7 @@ using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.ComponentSystem;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -372,6 +373,26 @@ namespace Digi.BuildInfo.Features.Terminal
                     {
                         IMyJumpDrive jd = block as IMyJumpDrive;
 
+                        // HACK: while IMyEntityCapacitorComponent does exist, it's not actually implemented by the component...
+                        float capacitorStored = 0f;
+                        float capacitorMax = 0f;
+                        if(block is IMySmallMissileLauncher) // HACK: capacitor is only usable by static missile laucher
+                        {
+                            foreach(var comp in block.Components)
+                            {
+                                var storedRatio = comp as IMyStoredPowerRatio;
+                                if(storedRatio != null && comp.GetType().Name == "MyEntityCapacitorComponent")
+                                {
+                                    var capacitorDef = Utils.GetEntityComponentFromDef<MyEntityCapacitorComponentDefinition>(block.BlockDefinition, typeof(MyObjectBuilder_EntityCapacitorComponent));
+                                    if(capacitorDef != null)
+                                    {
+                                        capacitorMax = capacitorDef.Capacity;
+                                        capacitorStored = storedRatio.StoredPowerRatio * capacitorMax;
+                                    }
+                                }
+                            }
+                        }
+
                         foreach(MyDefinitionId resId in sink.AcceptedResources)
                         {
                             MyStringHash key = resId.SubtypeId;
@@ -380,6 +401,11 @@ namespace Digi.BuildInfo.Features.Terminal
                             if(jd != null && key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
                             {
                                 IncrementResInfo(ResStorage, key, jd.CurrentStoredPower, jd.MaxStoredPower);
+                            }
+
+                            if(capacitorMax > 0f && key == MyResourceDistributorComponent.ElectricityId.SubtypeId)
+                            {
+                                IncrementResInfo(ResStorage, key, capacitorStored, capacitorMax);
                             }
                         }
                     }
