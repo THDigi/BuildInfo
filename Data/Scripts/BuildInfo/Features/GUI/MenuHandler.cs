@@ -32,7 +32,6 @@ namespace Digi.BuildInfo.Features
         public MenuHandler(BuildInfoMod main) : base(main)
         {
             ServerInfoMenu.Test();
-
             UpdateOrder = 5000;
         }
 

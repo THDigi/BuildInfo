@@ -207,7 +207,7 @@ namespace Digi.BuildInfo.Systems
                 StringBuilder sb = new StringBuilder(512);
                 sb.Append("Resolution changed:");
                 sb.AppendLine().Append("Camera.ViewportSize = ").Append(resolution.X).Append(" x ").Append(resolution.Y);
-                sb.AppendLine().Append("Config.Screen =");
+                sb.AppendLine().Append("Config.Screen = ");
                 if(cfg != null)
                     sb.Append(cfg.ScreenWidth?.ToString() ?? "W NULL").Append(" x ").Append(cfg.ScreenHeight?.ToString() ?? "H NULL");
                 else

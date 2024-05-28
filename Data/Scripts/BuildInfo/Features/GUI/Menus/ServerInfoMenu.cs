@@ -1467,6 +1467,8 @@ namespace Digi.BuildInfo.Features.GUI
 
         void CheckSettings()
         {
+            Log.Info("[DEV] Checking world settings for new settings...");
+
             TestRun = true;
             AppendSettings();
             TestRun = false;
@@ -1513,7 +1515,9 @@ namespace Digi.BuildInfo.Features.GUI
             }
 
             if(foundNewSettings)
-                Log.Error($"Found new server setting(s)! See log.", Log.PRINT_MESSAGE);
+                Log.Error($"[DEV] Found new server setting(s)! See log.", Log.PRINT_MESSAGE);
+            else
+                Log.Info("[DEV] Done, found nothing new.");
         }
 
         enum Formatting
