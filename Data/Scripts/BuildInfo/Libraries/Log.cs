@@ -30,6 +30,8 @@ namespace Digi
         const int DEFAULT_TIME_INFO = 3000;
         const int DEFAULT_TIME_ERROR = 10000;
 
+        int MainThreadId;
+
         /// <summary>
         /// Print the generic error info.
         /// (For use in <see cref="Log.Error(string, string, int)"/>'s 2nd arg)
@@ -45,6 +47,7 @@ namespace Digi
         #region Handling of handler
         public override void LoadData()
         {
+            MainThreadId = Environment.CurrentManagedThreadId;
             EnsureHandlerCreated();
             handler.Init(this);
         }
@@ -469,10 +472,16 @@ namespace Digi
                 try
                 {
                     sb.Clear();
-                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(((MyAPIGateway.Session?.GameplayFrameCounter ?? 0) % 60).ToString("00")).Append("] ");
+                    sb.Append(DateTime.Now.ToString("[HH:mm:ss/")).Append(((MyAPIGateway.Session?.GameplayFrameCounter ?? 0) % 60).ToString("00"));
+
+                    int threadId = Environment.CurrentManagedThreadId;
+                    if(sessionComp.MainThreadId != threadId)
+                        sb.Append("|Thr").Append(threadId);
 
                     if(writer == null)
-                        sb.Append("(PRE-INIT) ");
+                        sb.Append("|PRE-INIT");
+
+                    sb.Append("] ");
 
                     for(int i = 0; i < indent; i++)
                         sb.Append(' ', 4);
