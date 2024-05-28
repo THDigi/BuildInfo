@@ -688,13 +688,15 @@ namespace Digi.BuildInfo.Utilities
         /// <summary>
         /// Maximum precision number, no division to other units
         /// </summary>
-        public static StringBuilder ExactMassFormat(this StringBuilder s, float kg)
+        public static StringBuilder ExactMassFormat(this StringBuilder s, float kg, bool includeUnit = true)
         {
-            if(!IsValid(s, kg, " kg"))
+            string unit = includeUnit ? " kg" : "";
+
+            if(!IsValid(s, kg, unit))
                 return s;
 
             if(kg == 0)
-                return s.Append("0 kg");
+                return s.Append('0').Append(unit);
 
             if(kg < 0)
             {
@@ -703,9 +705,9 @@ namespace Digi.BuildInfo.Utilities
             }
 
             if(kg > 1e12f)
-                return s.Append(kg.ToString("0.######e0")).Append(" kg");
+                return s.Append(kg.ToString("0.######e0")).Append(unit);
 
-            return s.Number(kg).Append(" kg");
+            return s.Number(kg).Append(unit);
         }
 
         public static StringBuilder MassFormat(this StringBuilder s, float kg)
