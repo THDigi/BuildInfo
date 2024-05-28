@@ -165,10 +165,20 @@ namespace Digi.ComponentLib
 
                 Log.Info($"Profiled component constructors, total: {totalMs.ToString(ModBase<IModBase>.MeasureFormat)} ms");
                 Log.IncreaseIndent();
-                foreach(ProfileData data in MeasuredResults)
+
+                const int Top = 10;
+                double totalPastTop = 0;
+
+                for(int i = 0; i < MeasuredResults.Count; i++)
                 {
-                    Log.Info($"{data.MeasuredMs.ToString(ModBase<IModBase>.MeasureFormat)} ms for {data.Name}");
+                    ProfileData data = MeasuredResults[i];
+
+                    if(i < Top)
+                        Log.Info($"{data.MeasuredMs.ToString(ModBase<IModBase>.MeasureFormat)} ms for {data.Name}");
+                    else
+                        totalPastTop += data.MeasuredMs;
                 }
+                Log.Info($"and {totalPastTop.ToString(ModBase<IModBase>.MeasureFormat)} ms in total for the rest of {MeasuredResults.Count - Top} components.");
                 Log.DecreaseIndent();
 
                 MeasuredResults.Clear();
@@ -231,12 +241,21 @@ namespace Digi.ComponentLib
                     totalMs += data.MeasuredMs;
                 }
 
+                const int Top = 10;
+                double totalPastTop = 0;
+
                 Log.Info($"Profiled component registering, total: {totalMs.ToString(MeasureFormat)} ms");
                 Log.IncreaseIndent();
-                foreach(ProfileData data in MeasuredResults)
+                for(int i = 0; i < MeasuredResults.Count; i++)
                 {
-                    Log.Info($"{data.MeasuredMs.ToString(MeasureFormat)} ms for {data.Name}");
+                    ProfileData data = MeasuredResults[i];
+
+                    if(i < Top)
+                        Log.Info($"{data.MeasuredMs.ToString(MeasureFormat)} ms for {data.Name}");
+                    else
+                        totalPastTop += data.MeasuredMs;
                 }
+                Log.Info($"and {totalPastTop.ToString(ModBase<IModBase>.MeasureFormat)} ms in total for the rest of {MeasuredResults.Count - Top} components.");
                 Log.DecreaseIndent();
             }
             else
