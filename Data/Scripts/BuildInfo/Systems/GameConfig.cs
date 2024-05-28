@@ -52,6 +52,13 @@ namespace Digi.BuildInfo.Systems
         public bool UsingGamepad { get; private set; }
         public event Action UsingGamepadChanged;
 
+        bool Spawned;
+
+        /// <summary>
+        /// Triggered when local player first spawns into a character this session.
+        /// </summary>
+        public event Action FirstSpawn;
+
         HashSet<string> HideHudRequests = new HashSet<string>();
 
         public GameConfig(BuildInfoMod main) : base(main)
@@ -104,6 +111,16 @@ namespace Digi.BuildInfo.Systems
             {
                 IsHudVisible = hudVisible;
                 HudVisibleChanged?.Invoke();
+            }
+
+            if(!Spawned)
+            {
+                IMyCharacter character = MyAPIGateway.Session?.Player?.Character;
+                if(character != null) // wait until first spawn
+                {
+                    Spawned = true;
+                    FirstSpawn?.Invoke();
+                }
             }
         }
 

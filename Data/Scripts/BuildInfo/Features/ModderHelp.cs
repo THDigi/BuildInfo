@@ -10,6 +10,7 @@ using Draygo.API;
 using ProtoBuf;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
@@ -41,6 +42,8 @@ namespace Digi.BuildInfo.Features
         const string Signature = "> [BuildInfo] ";
         const string LineSignature = "\n> ";
 
+        bool IsF11MenuAccessible => MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
+
         public ModderHelp(BuildInfoMod main) : base(main)
         {
         }
@@ -60,24 +63,27 @@ namespace Digi.BuildInfo.Features
                         localMods.Add(modItem.Name);
                 }
 
-                CheckErrors(localMods, MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE);
+                CheckErrors(localMods, IsF11MenuAccessible);
 
-                if(CheckEverything || (MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE && localMods.Count > 0))
+                if(CheckEverything || (IsF11MenuAccessible && localMods.Count > 0))
                 {
                     CheckMods();
 
                     F11MenuShownOnLoad = MyDefinitionErrors.ShouldShowModErrors;
                 }
-
-                // show chat alerts on first spawn, if applicable
-                SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
             }
+
+            // alert player in chat if applicable
+            Main.GameConfig.FirstSpawn += FirstSpawn;
+
+            CheckVideos();
         }
 
         public override void UnregisterComponent()
         {
             Main.GUIMonitor.ScreenAdded -= GUIScreenAdded;
             Main.GUIMonitor.ScreenRemoved -= GUIScreenRemoved;
+            Main.GameConfig.FirstSpawn -= FirstSpawn;
         }
 
         [ProtoContract]
@@ -1013,36 +1019,34 @@ namespace Digi.BuildInfo.Features
 
         public override void UpdateAfterSim(int tick)
         {
-            bool f11MenuAccessible = MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
-            if(f11MenuAccessible && Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11))
+            if(Main.Config.ModderHelpAlerts.Value && MyAPIGateway.Input.IsNewKeyPressed(MyKeys.F11) && IsF11MenuAccessible)
             {
                 CheckErrorsOnF11();
             }
+        }
 
-            if(tick % Constants.TicksPerSecond != 0)
-                return;
-
-            if(!FirstSpawnChecked)
+        void FirstSpawn()
+        {
+            if(Main.Config.ModderHelpAlerts.Value)
             {
-                IMyCharacter character = MyAPIGateway.Session?.Player?.Character;
-                if(character != null) // wait until first spawn
+                if(IsF11MenuAccessible)
+                    SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true); // check errors added in realtime
+
+                // F11 menu auto-popped up, don't bother writing to chat
+                if(!(IsF11MenuAccessible && F11MenuShownOnLoad))
                 {
-                    FirstSpawnChecked = true;
-
-                    if(!f11MenuAccessible)
-                        SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, false);
-
-                    // F11 menu auto-popped up, don't bother writing to chat
-                    if(!(f11MenuAccessible && F11MenuShownOnLoad))
-                    {
-                        if(CompileErrors) // online for published mods
-                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Mods have compile errors! See game log for details.", FontsHandler.RedSh);
-                        else if(ModProblems > 0) // offline+local mods
-                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Problems with local mods! See F11 menu.", FontsHandler.YellowSh);
-                        else if(DefinitionErrors) // offline+local mods
-                            Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Definition errors with mods! See F11 menu.", FontsHandler.YellowSh);
-                    }
+                    if(CompileErrors) // online for published mods
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Mods have compile errors! See game log for details.", FontsHandler.RedSh);
+                    else if(ModProblems > 0) // offline+local mods
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Problems with local mods! See F11 menu.", FontsHandler.YellowSh);
+                    else if(DefinitionErrors) // offline+local mods
+                        Utils.ShowColoredChatMessage(BuildInfoMod.ModName + " ModderHelp", "Definition errors with mods! See F11 menu.", FontsHandler.YellowSh);
                 }
+            }
+
+            if(AlertVideosInChat)
+            {
+                Utils.ShowColoredChatMessage(BuildInfoMod.ModName, AlertVideosMessage);
             }
         }
 
@@ -1074,6 +1078,74 @@ namespace Digi.BuildInfo.Features
             {
                 ErrorsMenuBackdrop.Visible = false;
                 Main.GameConfig.TempHideHUD(nameof(ModderHelp), false);
+            }
+        }
+        #endregion
+
+        #region Check menu videos existence
+        bool AlertVideosInChat = false;
+        const string AlertVideosMessage = "If you have black screen & no sound, restore the SE's Videos folder and restart game to fix.";
+
+        /// <summary>
+        /// This is done because the game in v204 (up to 204.018 at least) will have black screen and no sound in game worlds if the videos are missing, while main menu and HUD being fine.
+        /// </summary>
+        void CheckVideos()
+        {
+            const string VideosShutUpFile = "buildinfo shut up.txt";
+
+            if(!HasVideos())
+            {
+                string extraMsg = $"If Keen fixed this issue please let me know to remove this! Meanwhile you can add a '{VideosShutUpFile}' in your videos folder to hide the chat message.";
+                Log.Info($"WARNING: {AlertVideosMessage}\n{extraMsg}");
+                MyLog.Default.WriteLine($"### {BuildInfoMod.ModName} WARNING: {AlertVideosMessage}\n{extraMsg}");
+
+                if(MyAPIGateway.Utilities.FileExistsInGameContent(Path.Combine("Videos", "buildinfo shut up.txt")))
+                {
+                    Log.Info($"Found {VideosShutUpFile} in Videos folder, not nagging you about it in chat.");
+                }
+                else
+                {
+                    AlertVideosInChat = true;
+                }
+            }
+            else
+            {
+                Log.Info("Checked main menu videos presence, all good! (early warning for black screen if any is missing)");
+            }
+        }
+
+        static bool HasVideos()
+        {
+            try
+            {
+                // the exact files the game is looking for
+                string[] bgVideos = MyPerGameSettings.GUI.MainMenuBackgroundVideos;
+
+                if(bgVideos == null || bgVideos.Length == 0)
+                {
+                    Log.Info("WARNING: 'MyPerGameSettings.GUI.MainMenuBackgroundVideos' is null or has 0 videos. Unsure how this will behave regarding the black screen issue so I'll just mark it as 'no videos'.");
+                    return false;
+                }
+
+                foreach(string relativePath in bgVideos)
+                {
+                    if(!MyAPIGateway.Utilities.FileExistsInGameContent(relativePath))
+                    {
+                        Log.Info($"{relativePath} not found in game folder");
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch(Exception e)
+            {
+                if(!e.Message.Contains("DirectoryNotFoundException")) // not whitelisted
+                {
+                    Log.Error(e);
+                }
+
+                return false;
             }
         }
         #endregion
