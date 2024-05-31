@@ -233,7 +233,7 @@ namespace Digi.BuildInfo.Features
             localMatrix.Translation = (block.Max + block.Min) * grid.GridSizeHalf; // local block float-center
             fillData.BlockMatrix = localMatrix * grid.WorldMatrix;
 
-            if(fatBlock != null && def.BlockTopology == MyBlockTopology.TriangleMesh)
+            if(fatBlock != null && def.BlockTopology == MyBlockTopology.TriangleMesh && !(def is MyParachuteDefinition))
             {
                 fillData.ModelMatrix = fatBlock.PositionComp.WorldMatrixRef;
 
@@ -260,14 +260,19 @@ namespace Digi.BuildInfo.Features
                             {
                                 foreach(MyEntitySubpart subpart in entity.Subparts.Values)
                                 {
+                                    bool visible = subpart.Render.Visible;
+
                                     if(DebugDrawSubparts)
                                     {
                                         MatrixD wm = subpart.WorldMatrix;
                                         BoundingBoxD localBox = (BoundingBoxD)subpart.PositionComp.LocalAABB;
-                                        Color color = Color.Lime * 0.75f;
+                                        Color color = (visible ? Color.Lime : Color.Red) * 0.75f;
                                         MyStringId material = MyStringId.GetOrCompute("Square");
                                         MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBox, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, 0.01f, material, SelectionLineMaterial, blendType: BlendType.AdditiveTop);
                                     }
+
+                                    if(!visible)
+                                        continue;
 
                                     MyOrientedBoundingBoxD obb = new MyOrientedBoundingBoxD(subpart.PositionComp.LocalAABB, subpart.PositionComp.WorldMatrixRef);
                                     obb.GetCorners(Corners, 0);
