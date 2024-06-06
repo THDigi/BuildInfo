@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo;
 using Digi.BuildInfo.Features;
@@ -8,6 +9,7 @@ using Digi.ConfigLib;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Utils;
 
 namespace Digi.ComponentLib
@@ -38,18 +40,9 @@ namespace Digi.ComponentLib
             // time's up xD
             MyAPIGateway.Utilities.UnregisterMessageHandler(InterModId, ModMessageReceived);
 
-            // HACK: game bug check, usually on DS side
-            if(MyAPIGateway.Session.IsServer && !ModContext.ModPath.StartsWith(Path.GetFullPath(ModContext.ModPath)))
-            {
-                const string Error = "ERROR: Mod scripts cannot read from mod folders!\n" +
-                                     "This is a game bug with not cleaning paths properly.\n" +
-                                     "You can work around it by removing trailing slashes from '-path' launch command.\n" +
-                                     "(message given by BuildInfo mod)";
+            CheckPathBugs(ModContext);
 
-                MyLog.Default.WriteLineAndConsole(Error);
-            }
-
-            if(MyAPIGateway.Utilities == null || MyAPIGateway.Utilities.IsDedicated)
+            if(MyAPIGateway.Utilities.IsDedicated)
             {
                 IsKilled = true;
                 return; // this mod does nothing else server side (with no render), no reason to allocate any more memory.
@@ -204,6 +197,64 @@ namespace Digi.ComponentLib
             }
 
             return false;
+        }
+
+        static void CheckPathBugs(IMyModContext modContext)
+        {
+            // HACK: game bug check, usually on DS side
+            if(MyAPIGateway.Session.IsServer && !modContext.ModPath.StartsWith(Path.GetFullPath(modContext.ModPath)))
+            {
+                const string Error = "ERROR: Mod scripts cannot read from mod folders!\n" +
+                                     "This is a game bug with not cleaning paths properly.\n" +
+                                     "You can work around it by removing trailing slashes from '-path' launch command.\n" +
+                                     "(message given by BuildInfo mod)";
+
+                MyLog.Default.WriteLineAndConsole(Error);
+            }
+        }
+
+        // triggers on everyone, DS too!
+        void WorldLoaded()
+        {
+            CheckModsForDuplicates();
+        }
+
+        static void CheckModsForDuplicates()
+        {
+            try
+            {
+                MyLog.Default.WriteLineAndConsole($"{BuildInfoMod.ModName} mod: Checking mods list for duplicates");
+
+                bool isDS = MyAPIGateway.Utilities.IsDedicated;
+
+                HashSet<string> uniqueMods = new HashSet<string>();
+                int dupe = 0;
+
+                foreach(MyObjectBuilder_Checkpoint.ModItem mod in MyAPIGateway.Session.Mods)
+                {
+                    string id = mod.PublishedFileId == 0 ? mod.Name : $"{mod.PublishedServiceName}:{mod.PublishedFileId}";
+
+                    if(!uniqueMods.Add(id))
+                    {
+                        dupe++;
+
+                        var modContext = (MyModContext)mod.GetModContext();
+                        modContext.CurrentFile = "(all of it)";
+
+                        string text = $"  WARNING: Mod {mod.GetNameAndId()} is added more than once in the mods list!";
+                        MyLog.Default.WriteLineAndConsole(text);
+                    }
+                }
+
+                if(dupe > 0 && !isDS && MyAPIGateway.Session.PromoteLevel >= MyPromoteLevel.Moderator)
+                {
+                    MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, $"World has {dupe} duplicated mods!");
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error(e);
+            }
         }
     }
 }

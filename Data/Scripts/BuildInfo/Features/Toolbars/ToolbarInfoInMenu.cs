@@ -88,7 +88,7 @@ namespace Digi.BuildInfo.Features.Toolbars
                     string msg = $"{TargetBlock.BlockDefinition} not in tracked toolbars! Please inform author.";
                     MyAPIGateway.Utilities.ShowMessage(Log.ModName, msg);
                     Log.Info(msg);
-                    MyLog.Default.WriteLine($"{Log.ModName} warning: {msg}");
+                    MyLog.Default.WriteLine($"{BuildInfoMod.ModName} warning: {msg}");
                 }
 
                 return;

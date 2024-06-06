@@ -33,6 +33,7 @@ namespace Digi.BuildInfo.Features.Tooltips
         HashSet<MyBlueprintDefinitionBase> TmpBpsRequiringThis = new HashSet<MyBlueprintDefinitionBase>();
         Dictionary<string, Sizes> TmpNameAndSize = new Dictionary<string, Sizes>();
         HashSet<string> TmpStringSet = new HashSet<string>();
+        StringBuilder SB = new StringBuilder(1024);
 
         void DisposeTempObjects()
         {
@@ -42,8 +43,6 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             TmpStringSet = null;
         }
-
-        StringBuilder SB = new StringBuilder(1024);
 
         public ItemTooltips(BuildInfoMod main) : base(main)
         {
@@ -613,7 +612,6 @@ namespace Digi.BuildInfo.Features.Tooltips
         void Crafting_Ingredient(StringBuilder s, MyPhysicalItemDefinition physDef, bool detailed)
         {
             int usedForAssembly = 0;
-            Type baseItemType = typeof(MyObjectBuilder_PhysicalObject);
 
             TmpStringSet.Clear();
 

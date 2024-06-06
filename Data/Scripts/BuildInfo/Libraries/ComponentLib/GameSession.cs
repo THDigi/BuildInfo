@@ -32,6 +32,7 @@ namespace Digi.ComponentLib
         {
             try
             {
+                WorldLoaded();
                 ModBase?.WorldStart();
             }
             catch(Exception e)
