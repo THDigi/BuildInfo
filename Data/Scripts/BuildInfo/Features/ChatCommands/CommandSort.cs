@@ -46,6 +46,8 @@ namespace Digi.BuildInfo.Features.ChatCommands
 
         public override void Execute(Arguments args)
         {
+            bool survival = MyAPIGateway.Session.SurvivalMode;
+
             string type = args.Get(0);
             string sort = args.Get(1);
 
@@ -201,7 +203,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 int num = 1;
                 foreach(MyCubeBlockDefinition blockDef in defs)
                 {
-                    if(!blockDef.Public || (MyAPIGateway.Session.SurvivalMode && !blockDef.AvailableInSurvival))
+                    if(!blockDef.Public || (survival && !blockDef.AvailableInSurvival))
                         continue;
 
                     if(sizeFilter.HasValue && sizeFilter.Value != blockDef.CubeSize)
@@ -251,7 +253,7 @@ namespace Digi.BuildInfo.Features.ChatCommands
                 int num = 1;
                 foreach(MyComponentDefinition compDef in defs)
                 {
-                    if(!compDef.Public || (MyAPIGateway.Session.SurvivalMode && !compDef.AvailableInSurvival))
+                    if(!compDef.Public || (survival && !compDef.AvailableInSurvival))
                         continue;
 
                     sb.Append(num++).Append(". ")

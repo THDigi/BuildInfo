@@ -510,7 +510,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             foreach(MyBlueprintDefinitionBase bpDef in MyDefinitionManager.Static.GetBlueprintDefinitions())
             {
-                if(!bpDef.Public || (!survival && bpDef.AvailableInSurvival))
+                if(!bpDef.Public || (survival && !bpDef.AvailableInSurvival))
                     continue;
 
                 // if composite's subtype contains a type/subtype separator then assume it's for a block and skip it

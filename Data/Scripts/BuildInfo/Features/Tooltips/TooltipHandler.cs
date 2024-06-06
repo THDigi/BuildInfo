@@ -102,7 +102,7 @@ namespace Digi.BuildInfo.Features.Tooltips
 
             foreach(MyCubeBlockDefinition blockDef in Main.Caches.BlockDefs)
             {
-                if(!blockDef.Public || (!survival && blockDef.AvailableInSurvival))
+                if(!blockDef.Public || (survival && !blockDef.AvailableInSurvival))
                     continue;
 
                 {
