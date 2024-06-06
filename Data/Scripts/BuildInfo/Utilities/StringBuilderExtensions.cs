@@ -1299,8 +1299,15 @@ namespace Digi.BuildInfo.Utilities
                 if(useSci)
                     return s.Append(value.ToString("0.0000e0"));
                 else
+                {
                     // use zero-fill up to 4 digits to avoid mistaking it with thousands
-                    return s.Append(Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########"));
+                    string formatted = Math.Round(value, digits).ToString("###,###,###,###,###,##0.0000########");
+
+                    if(formatted.EndsWith(".0000"))
+                        return s.Append(formatted, 0, formatted.Length - 5);
+                    else
+                        return s.Append(formatted);
+                }
             }
         }
 
@@ -1385,6 +1392,9 @@ namespace Digi.BuildInfo.Utilities
             return s.RoundedNumber(value, 1);
         }
 
+        /// <summary>
+        /// Capped in character width, for use in toolbar status
+        /// </summary>
         public static StringBuilder NumberCapped(this StringBuilder s, int value, int maxLength)
         {
             if(value < 0) throw new Exception("negative values not supported");
@@ -1402,6 +1412,9 @@ namespace Digi.BuildInfo.Utilities
             return s.Append(value);
         }
 
+        /// <summary>
+        /// Capped in character width with a space at the end that is replaced by + if too large, for use in toolbar status
+        /// </summary>
         public static StringBuilder NumberCappedSpaced(this StringBuilder s, int value, int maxLength)
         {
             if(value < 0) throw new Exception("negative values not supported");
