@@ -152,6 +152,11 @@ namespace Digi.BuildInfo.Features.LiveData
         /// All conveyor ports on this block are large ports, if flag is missing then it can have mixed or all small.
         /// </summary>
         LargeConveyorPorts = (1 << 6),
+
+        /// <summary>
+        /// Block can be turned on/off (is IMyFunctionalBlock)
+        /// </summary>
+        OnOff = (1 << 7),
     }
 
     public class BData_Base
@@ -270,6 +275,9 @@ namespace Digi.BuildInfo.Features.LiveData
 
             if(block is IMyTerminalBlock)
                 Has |= BlockHas.Terminal;
+
+            if(block is IMyFunctionalBlock)
+                Has |= BlockHas.OnOff;
 
             if(block.HasInventory)
                 Has |= BlockHas.Inventory;
