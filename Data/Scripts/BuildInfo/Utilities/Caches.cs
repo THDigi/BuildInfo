@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Digi.ComponentLib;
 using Sandbox.Definitions;
@@ -35,6 +36,9 @@ namespace Digi.BuildInfo.Utilities
         private readonly HashSet<MyDefinitionId> DefIdSet = new HashSet<MyDefinitionId>(MyDefinitionId.Comparer);
         private readonly List<IMyCubeGrid> Grids = new List<IMyCubeGrid>();
 
+        public int LightningMinDamage { get; private set; }
+        public int LightningMaxDamage { get; private set; }
+
         public Caches(BuildInfoMod main) : base(main)
         {
             UpdateMethods = UpdateFlags.UPDATE_AFTER_SIM;
@@ -42,6 +46,7 @@ namespace Digi.BuildInfo.Utilities
             FillDefs();
             CacheTargetGroups();
             //ComputeMountpointProperties();
+            CacheLightningStats();
         }
 
         public override void RegisterComponent()
@@ -148,6 +153,28 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 #endif
+
+        void CacheLightningStats()
+        {
+            if(!MyAPIGateway.Session.SessionSettings.WeatherLightingDamage)
+            {
+                LightningMinDamage = 0;
+                LightningMaxDamage = 0;
+                return;
+            }
+
+            LightningMinDamage = int.MaxValue;
+            LightningMaxDamage = int.MinValue;
+
+            foreach(var weatherDef in MyDefinitionManager.Static.GetWeatherDefinitions())
+            {
+                if(weatherDef.Lightning != null && weatherDef.LightningGridHitIntervalMax > 0 || weatherDef.LightningCharacterHitIntervalMax > 0 || weatherDef.LightningIntervalMax > 0)
+                {
+                    LightningMinDamage = Math.Min(LightningMinDamage, weatherDef.Lightning.Damage);
+                    LightningMaxDamage = Math.Max(LightningMaxDamage, weatherDef.Lightning.Damage);
+                }
+            }
+        }
 
         public static HashSet<MyObjectBuilderType> GetObTypeSet()
         {

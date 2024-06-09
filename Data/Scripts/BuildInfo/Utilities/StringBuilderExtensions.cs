@@ -1015,6 +1015,27 @@ namespace Digi.BuildInfo.Utilities
             return s.Number(vec.X).Append('x').Number(vec.Y).Append('x').Number(vec.Z);
         }
 
+        public static StringBuilder VectorOffsetFormat(this StringBuilder s, Vector3 vec)
+        {
+            int lenBefore = s.Length;
+
+            if(Math.Abs(vec.X) > 0)
+                s.DistanceFormat(vec.X).Append(" right, ");
+
+            if(Math.Abs(vec.Y) > 0)
+                s.DistanceFormat(vec.Y).Append(" up, ");
+
+            if(Math.Abs(vec.Z) > 0)
+                s.DistanceFormat(vec.Z).Append(" back, ");
+
+            if(s.Length > lenBefore)
+                s.Length -= 2; // remove last comma and space
+            else
+                s.Append("None");
+
+            return s;
+        }
+
         public static StringBuilder SpeedFormat(this StringBuilder s, float metersPerSecond, int digits = 2)
         {
             if(!IsValid(s, metersPerSecond))

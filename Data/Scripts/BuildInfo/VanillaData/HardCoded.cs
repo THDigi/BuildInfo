@@ -367,6 +367,12 @@ namespace Digi.BuildInfo.VanillaData
         public const float WarheadScanRadiusShrink = 0.85f;
         public static float WarheadSearchRadius(MyCubeBlockDefinition def) => MyDefinitionManager.Static.GetCubeSize(def.CubeSize) * WarheadScanRadiusGridMul * WarheadScanRadiusShrink;
 
+        // from MySectorWeatherComponent.ProcessDecoys() where it does a hardcoded 3rd check for decoys giving them 50m radius, effectively clamping them to 50m
+        public const float Decoy_MinLightningRodDistance = 50;
+
+        // from MySectorWeatherComponent.ProcessDecoys(), sqrt(400)
+        public const float Tree_LightningRodRadius = 20;
+
         // from MyReflectorLight.CreateTerminalControls()
         public const float Spotlight_RotationSpeedToRPM = 20f;
         public const float Spotlight_RadiansPerSecondMul = Spotlight_RotationSpeedToRPM * 6f;

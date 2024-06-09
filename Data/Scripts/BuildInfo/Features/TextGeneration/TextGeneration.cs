@@ -42,6 +42,11 @@ namespace Digi.BuildInfo.Features
 {
     public class TextGeneration : ModComponent
     {
+        static readonly string LightningAttractionTooltip = "If lightning strikes within the range of a tree, decoy or radio antenna it will be redirected to that instead." +
+                                                            $"\nTrees have a radius of {Hardcoded.Tree_LightningRodRadius}m to attract lightning, but being under one does not guarantee that a decoy won't be hit." +
+                                                            "\nRadio antennas and decoys require to be functional and turned on to be targetted by lightning." +
+                                                            "\nLightning damage can be disabled by world settings or mods overriding weather definitions.";
+
         #region Constants
         private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
@@ -2668,6 +2673,8 @@ namespace Digi.BuildInfo.Features
 
             Add(Hardcoded.TargetDummyType, Format_TargetDummy);
 
+            Add(typeof(MyObjectBuilder_Decoy), Format_Decoy);
+
             Add(typeof(MyObjectBuilder_TurretControlBlock), Format_TurretControl);
 
             Add(typeof(MyObjectBuilder_Searchlight), Format_Searchlight);
@@ -3226,16 +3233,16 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_OreDetector(MyCubeBlockDefinition def)
+        void Format_OreDetector(MyCubeBlockDefinition def)
         {
             MyOreDetectorDefinition oreDetector = (MyOreDetectorDefinition)def;
 
             PowerRequired(Hardcoded.OreDetector_PowerReq, oreDetector.ResourceSinkGroup, powerHardcoded: true);
 
-            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
-            {
-                AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange);
-            }
+            StringBuilder sb = AddLine().Label("Max range").DistanceFormat(oreDetector.MaximumRange);
+
+            if(def.ModelOffset.LengthSquared() > 0)
+                sb.Separator().Label("Offset").VectorOffsetFormat(def.ModelOffset);
         }
 
         private void Format_Projector(MyCubeBlockDefinition def)
@@ -3945,16 +3952,30 @@ namespace Digi.BuildInfo.Features
         #region Communication
         void Format_RadioAntenna(MyCubeBlockDefinition def)
         {
-            MyRadioAntennaDefinition radioAntenna = (MyRadioAntennaDefinition)def;
+            var radioAntenna = def as MyRadioAntennaDefinition;
+            if(radioAntenna == null)
+                return;
 
             PowerRequired(Hardcoded.RadioAntenna_PowerReq(radioAntenna.MaxBroadcastRadius), radioAntenna.ResourceSinkGroup, powerHardcoded: true);
 
+            StringBuilder sb = AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius);
+
+            if(def.ModelOffset.LengthSquared() > 0)
+                sb.Separator().Label("Offset").VectorOffsetFormat(def.ModelOffset);
+
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Max radius").DistanceFormat(radioAntenna.MaxBroadcastRadius);
-            }
+                // from MyRadioAntenna.GetRodRadius()
+                float lightningCatchRadius = def.CubeSize == MyCubeSize.Small ? radioAntenna.LightningRodRadiusSmall : radioAntenna.LightningRodRadiusLarge; // bonkers
 
-            // TODO: lightning catch area? also for decoy blocks...
+                sb = AddLine().Label("Lightning attraction").DistanceFormat(lightningCatchRadius).Separator().Label("Damage");
+                if(Main.Caches.LightningMinDamage == Main.Caches.LightningMaxDamage)
+                    sb.Append(Main.Caches.LightningMinDamage);
+                else
+                    sb.Append(Main.Caches.LightningMinDamage).Append(" to ").Append(Main.Caches.LightningMaxDamage);
+
+                SimpleTooltip(LightningAttractionTooltip);
+            }
         }
 
         void Format_LaserAntenna(MyCubeBlockDefinition def)
@@ -5582,7 +5603,9 @@ namespace Digi.BuildInfo.Features
 
         private void Format_Warhead(MyCubeBlockDefinition def)
         {
-            MyWarheadDefinition warhead = (MyWarheadDefinition)def; // does not extend MyWeaponBlockDefinition
+            var warhead = def as MyWarheadDefinition; // does not extend MyWeaponBlockDefinition
+            if(warhead == null)
+                return;
 
             // HACK: hardcoded; Warhead doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -5624,7 +5647,9 @@ namespace Digi.BuildInfo.Features
 
         private void Format_TargetDummy(MyCubeBlockDefinition def)
         {
-            MyTargetDummyBlockDefinition dummyDef = (MyTargetDummyBlockDefinition)def;
+            var dummyDef = def as MyTargetDummyBlockDefinition;
+            if(dummyDef == null)
+                return;
 
             // HACK: hardcoded; TargetDummy doesn't require power
             PowerRequired(0, null, powerHardcoded: true);
@@ -5667,9 +5692,35 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        void Format_Decoy(MyCubeBlockDefinition def)
+        {
+            var decoy = def as MyDecoyDefinition;
+            if(decoy == null)
+                return;
+
+            // HACK: hardcoded; Decoy doesn't require power
+            PowerRequired(0, MyStringHash.NullOrEmpty, powerHardcoded: true, groupHardcoded: true);
+
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
+            {
+                // from MyDecoy.GetSafetyRodRadius()
+                float lightningCatchRadius = def.CubeSize == MyCubeSize.Small ? decoy.LightningRodRadiusSmall : decoy.LightningRodRadiusLarge; // bonkers
+
+                lightningCatchRadius = Math.Max(Hardcoded.Decoy_MinLightningRodDistance, lightningCatchRadius);
+
+                StringBuilder sb = AddLine().Label("Lightning attraction").DistanceFormat(lightningCatchRadius).Separator().Label("Damage");
+                if(Main.Caches.LightningMinDamage == Main.Caches.LightningMaxDamage)
+                    sb.Append(Main.Caches.LightningMinDamage);
+                else
+                    sb.Append(Main.Caches.LightningMinDamage).Append(" to ").Append(Main.Caches.LightningMaxDamage);
+
+                SimpleTooltip(LightningAttractionTooltip + $"\nNOTE: Decoys cannot have smaller radius than {Hardcoded.Decoy_MinLightningRodDistance}m.");
+            }
+        }
+
         private void Format_TurretControl(MyCubeBlockDefinition def)
         {
-            MyTurretControlBlockDefinition tcbDef = def as MyTurretControlBlockDefinition;
+            var tcbDef = def as MyTurretControlBlockDefinition;
             if(tcbDef == null)
                 return;
 
