@@ -5316,7 +5316,13 @@ namespace Digi.BuildInfo.Features
             tooltip.Append("Volume in inventory: ").VolumeFormat(magDef.Volume);
             if(invVolume > 0)
             {
-                int fit = (int)Math.Floor(invVolume / magDef.Volume);
+                // HACK: this can give wrong results for very tight fits, like 0.072f/0.024f = 2.99999976f, hence trying MyFixedPoint that the game uses
+                //int fit = (int)Math.Floor(invVolume / magDef.Volume);
+
+                MyFixedPoint invSize = (MyFixedPoint)invVolume;
+                MyFixedPoint mul = (MyFixedPoint)(1f / magDef.Volume); // HACK: because MyFixedPoint doesn't support division, using a multiplier instead
+                int fit = (int)MyFixedPoint.Floor(invSize * mul);
+
                 tooltip.Append(" (can fit ").Number(fit).Append(")");
             }
             tooltip.Append('\n');
