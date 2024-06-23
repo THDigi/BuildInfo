@@ -46,6 +46,10 @@ namespace Digi.BuildInfo.Features
         public const char IconCircle = (char)(IconStartingChar + 62);
         public const char IconSquare = (char)(IconStartingChar + 63); // last slot
 
+        public const char CharBulletOperator = '∙';
+        public const char CharMiddleDot = '·';
+        public const char CharBullet = '•';
+
         static readonly bool DoExportSpecialChars = false;
 
         // single-use for parsing, do not make public

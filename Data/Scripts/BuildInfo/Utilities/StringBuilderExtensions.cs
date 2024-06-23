@@ -534,6 +534,11 @@ namespace Digi.BuildInfo.Utilities
             return s.Number(N).Append(" N");
         }
 
+        public static StringBuilder TorqueFormat(this StringBuilder s, float Nm)
+        {
+            return s.ForceFormat(Nm).Append(FontsHandler.CharMiddleDot).Append('m');
+        }
+
         public static StringBuilder RotationSpeed(this StringBuilder s, float radPerSecond, int digits = 2)
         {
             float degPerSec = MathHelper.ToDegrees(radPerSecond);
@@ -542,38 +547,6 @@ namespace Digi.BuildInfo.Utilities
                 return s;
 
             return s.RoundedNumber(degPerSec, digits).Append("°/s");
-        }
-
-        public static StringBuilder TorqueFormat(this StringBuilder s, float Nm)
-        {
-            if(!IsValid(s, Nm, " N-m"))
-                return s;
-
-            if(Nm < 0)
-            {
-                s.Append("-");
-                Nm = -Nm;
-            }
-
-            if(Nm >= 1e18f || BuildInfoMod.Instance.Config.ScientificNotation.Value)
-                return s.ScientificNumber(Nm).Append(" N-m");
-
-            if(Nm >= 1e15f)
-                return s.Number(Nm / 1e15f).Append(" PN-m");
-
-            if(Nm >= 1e12f)
-                return s.Number(Nm / 1e12f).Append(" TN-m");
-
-            if(Nm >= 1e9f)
-                return s.Number(Nm / 1e9f).Append(" GN-m");
-
-            if(Nm >= 1e6f)
-                return s.Number(Nm / 1e6f).Append(" MN-m");
-
-            if(Nm >= 1e3f)
-                return s.Number(Nm / 1e3f).Append(" kN-m");
-
-            return s.Number(Nm).Append(" N-m");
         }
 
         public static StringBuilder PowerFormat(this StringBuilder s, float MW)
