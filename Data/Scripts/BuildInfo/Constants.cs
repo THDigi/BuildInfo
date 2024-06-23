@@ -19,7 +19,7 @@ namespace Digi.BuildInfo
     {
         public const int ModVersion = 7; // notifies player of notable changes and links them to workshop's changelog.
 
-        public const int TicksPerSecond = (int)(MyEngineConstants.UPDATE_STEPS_PER_MINUTE / 60);
+        public const int TicksPerSecond = (int)MyEngineConstants.UPDATE_STEPS_PER_SECOND;
 
         public const string WarnPlayerIsNull = "Local Player is null, silly bugs... try again in a few seconds.";
 

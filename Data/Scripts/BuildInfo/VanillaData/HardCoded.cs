@@ -590,6 +590,18 @@ namespace Digi.BuildInfo.VanillaData
         public const float Projectile_RandomRangeMin = 0.8f;
         public const float Projectile_RandomRangeMax = 1f;
 
+        // from MyProjectile.OnHit()
+        
+        /// <summary>
+        /// gets multiplied by this regardless of type!
+        /// </summary>
+        public const float Projectile_HitImpulsePreMultiplier = 0.5f;
+
+        /// <summary>
+        /// gets multiplied by this only if victim is a character
+        /// </summary>
+        public const float Projectile_HitImpulseCharacterMultiplier = 100f;
+
         // from MyGravityGeneratorSphere.CalculateRequiredPowerInputForRadius()
         public static float SphericalGravGen_PowerReq(MyGravityGeneratorSphereDefinition def, float radius, float gravityAcceleration)
         {

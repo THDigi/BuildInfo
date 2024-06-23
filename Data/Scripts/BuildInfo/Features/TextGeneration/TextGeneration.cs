@@ -4888,8 +4888,10 @@ namespace Digi.BuildInfo.Features
                                     tooltip.Color(COLOR_STAT_EXPLOSION).Append("Explosion:<reset> (none)\n");
                                 }
 
-                                if(projectile.ProjectileHitImpulse != 0f)
-                                    tooltip.Append("Impact push: ").ForceFormat(projectile.ProjectileHitImpulse).Append('\n');
+                                float impactForce = projectile.ProjectileHitImpulse * Hardcoded.Projectile_HitImpulsePreMultiplier * Constants.TicksPerSecond; // impulse to force
+
+                                if(impactForce != 0f)
+                                    tooltip.Append("Impact push: ").ForceFormat(impactForce).Append(" (x").Number(Hardcoded.Projectile_HitImpulseCharacterMultiplier).Append(" if it hits a character)\n");
                                 else
                                     tooltip.Append("Impact push: (none)\n");
 
@@ -4913,8 +4915,10 @@ namespace Digi.BuildInfo.Features
 
                                 tooltip.Append("Bullets are always affected by gravity ").Color(COLOR_WARNING).Append(FontsHandler.IconProjectileGravity).Append("<reset>\n");
 
-                                if(projectile.BackkickForce != 0f)
-                                    tooltip.Append("Recoil: ").ForceFormat(projectile.BackkickForce).Append('\n');
+                                float recoilForce = projectile.BackkickForce * Constants.TicksPerSecond; // impulse to force
+
+                                if(recoilForce != 0f)
+                                    tooltip.Append("Recoil: ").ForceFormat(recoilForce).Append('\n');
                                 else
                                     tooltip.Append("Recoil: (none)\n");
 
