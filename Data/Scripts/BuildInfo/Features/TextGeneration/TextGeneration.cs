@@ -5397,6 +5397,7 @@ namespace Digi.BuildInfo.Features
 
             int spacePadding = hardcoded ? 19 : 18;
 
+            int lines = 1;
             int totalOptions = 0;
             int optionsPerLine = 0;
 
@@ -5409,12 +5410,14 @@ namespace Digi.BuildInfo.Features
                 {
                     optionsPerLine = 0;
                     sb = AddLine().Color(COLOR_LIST).Append(' ', spacePadding).Append("| ").ResetFormatting();
+                    lines++;
                 }
 
                 bool comesEnabled = ((defaultOn & option) != 0);
                 string name = Hardcoded.CustomTargetingOptionName.GetValueOrDefault(option) ?? MyEnum<MyTurretTargetingOptions>.GetName(option);
 
-                sb.Color(comesEnabled ? new Color(230, 255, 230) : new Color(255, 230, 230)).Append(name).ResetFormatting().Append(", ");
+                const int OffShade = 215;
+                sb.Color(comesEnabled ? new Color(OffShade, 255, OffShade) : new Color(255, OffShade, OffShade)).Append(name).ResetFormatting().Append(", ");
 
                 optionsPerLine++;
                 totalOptions++;
@@ -5428,6 +5431,18 @@ namespace Digi.BuildInfo.Features
             else
             {
                 sb.Color(COLOR_BAD).Append("(Nothing)");
+            }
+
+            var tooltip = CreateTooltip(coveringLines: lines);
+            if(tooltip != null)
+            {
+                tooltip.Append("The slight shade of green means the option starts enabled, slight shade of red means the opposite.");
+
+                if((hidden & MyTurretTargetingOptions.Missiles) == 0)
+                {
+                    string name = Hardcoded.CustomTargetingOptionName.GetValueOrDefault(MyTurretTargetingOptions.Missiles) ?? MyEnum<MyTurretTargetingOptions>.GetName(MyTurretTargetingOptions.Missiles);
+                    tooltip.Append("\nThe ").Append(name).Append(" option can target any missile-type ammo.");
+                }
             }
         }
 

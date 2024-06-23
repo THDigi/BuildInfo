@@ -415,7 +415,7 @@ namespace Digi.BuildInfo.VanillaData
         public static Dictionary<MyTurretTargetingOptions, string> CustomTargetingOptionName = new Dictionary<MyTurretTargetingOptions, string>()
         {
             [MyTurretTargetingOptions.Asteroids] = "Meteors",
-            [MyTurretTargetingOptions.Missiles] = "Missiles",
+            [MyTurretTargetingOptions.Missiles] = "Rockets",
             [MyTurretTargetingOptions.Players] = "Characters",
             [MyTurretTargetingOptions.SmallShips] = "SmallGrids",
             [MyTurretTargetingOptions.LargeShips] = "LargeGrids",
@@ -591,7 +591,7 @@ namespace Digi.BuildInfo.VanillaData
         public const float Projectile_RandomRangeMax = 1f;
 
         // from MyProjectile.OnHit()
-        
+
         /// <summary>
         /// gets multiplied by this regardless of type!
         /// </summary>
