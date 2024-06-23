@@ -4764,7 +4764,14 @@ namespace Digi.BuildInfo.Features
                             printFirstAmmoData = false;
 
                             float rps = Hardcoded.WeaponRealRPS(ammoData.ShootIntervalInMiliseconds);
-                            StringBuilder sb = AddLine().Label(printBothAmmoData ? "Bullets - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
+                            StringBuilder sb = AddLine();
+
+                            if(printBothAmmoData)
+                                sb.Append("Bullets - ");
+
+                            // only show fire rate if it can't reload or shoots more than one round between reloads
+                            if(!blockTypeCanReload || ammoData.ShotsInBurst != 1)
+                                sb.Label("Rate of fire").Number(rps).Append("/s").Separator();
 
                             sb.Label("Reload");
                             if(blockTypeCanReload && ammoData.ShotsInBurst > 0)
@@ -4936,7 +4943,14 @@ namespace Digi.BuildInfo.Features
                             printFirstAmmoData = false;
 
                             float rps = Hardcoded.WeaponRealRPS(ammoData.ShootIntervalInMiliseconds);
-                            StringBuilder sb = AddLine().Label(printBothAmmoData ? "Missiles - Rate of fire" : "Rate of fire").Number(rps).Append("/s").Separator();
+                            StringBuilder sb = AddLine();
+
+                            if(printBothAmmoData)
+                                sb.Append("Missiles - ");
+
+                            // only show fire rate if it can't reload or shoots more than one round between reloads
+                            if(!blockTypeCanReload || ammoData.ShotsInBurst != 1)
+                                sb.Label("Rate of fire").Number(rps).Append("/s").Separator();
 
                             sb.Label("Reload");
                             if(blockTypeCanReload && ammoData.ShotsInBurst > 0)
