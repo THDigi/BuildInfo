@@ -1941,6 +1941,11 @@ namespace Digi.BuildInfo.Features.Terminal
                 return;
             }
 
+            if(block.OwnerId == 0)
+            {
+                info.Append("WARNING: PB not owned! It can't access owned blocks.\n");
+            }
+
             //if(MyAPIGateway.Session.SessionSettings.EnableScripterRole && MyAPIGateway.Session?.Player != null && MyAPIGateway.Session.Player.PromoteLevel < MyPromoteLevel.Scripter)
             //{
             //    info.Append("Scripter role is required to use in-game scripts.\n");
