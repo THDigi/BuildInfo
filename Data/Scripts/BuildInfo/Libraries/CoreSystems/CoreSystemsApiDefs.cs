@@ -4,6 +4,9 @@ using VRageMath;
 
 namespace CoreSystems.Api
 {
+    // Modified to fit the needs of this mod
+    // Grab the originals instead: https://github.com/Ash-LikeSnow/WeaponCore/tree/master/Data/Scripts/CoreSystems/Api
+
     public static class CoreSystemsDef
     {
         [ProtoContract]
@@ -239,7 +242,17 @@ namespace CoreSystems.Api
                     Grids,
                     Neutrals,
                     Meteors,
-                    Other
+                    Other,
+                    ScanNeutralGrid,
+                    ScanFriendlyGrid,
+                    ScanFriendlyCharacter,
+                    ScanRoid,
+                    ScanPlanet,
+                    ScanEnemyCharacter,
+                    ScanEnemyGrid,
+                    ScanNeutralCharacter,
+                    ScanUnOwnedGrid,
+                    ScanOwnersGrid
                 }
 
                 public enum BlockTypes
@@ -266,6 +279,48 @@ namespace CoreSystems.Api
                 [ProtoMember(10)] public float MinTargetDistance;
                 [ProtoMember(11)] public bool IgnoreDumbProjectiles;
                 [ProtoMember(12)] public bool LockedSmartOnly;
+                [ProtoMember(13)] public bool UniqueTargetPerWeapon;
+                [ProtoMember(14)] public int MaxTrackingTime;
+                [ProtoMember(15)] public bool ShootBlanks;
+                [ProtoMember(19)] public CommunicationDef Communications;
+                [ProtoMember(20)] public bool FocusOnly;
+                [ProtoMember(21)] public bool EvictUniqueTargets;
+                [ProtoMember(22)] public int CycleTargets;
+                [ProtoMember(23)] public int CycleBlocks;
+
+                [ProtoContract]
+                public struct CommunicationDef
+                {
+                    public enum Comms
+                    {
+                        NoComms,
+                        BroadCast,
+                        Relay,
+                        Jamming,
+                        RelayAndBroadCast,
+                    }
+
+                    public enum SecurityMode
+                    {
+                        Public,
+                        Private,
+                        Secure,
+                    }
+
+                    [ProtoMember(1)] public bool StoreTargets;
+                    [ProtoMember(2)] public int StorageLimit;
+                    [ProtoMember(3)] public string StorageLocation;
+                    [ProtoMember(4)] public Comms Mode;
+                    [ProtoMember(5)] public SecurityMode Security;
+                    [ProtoMember(6)] public string BroadCastChannel;
+                    [ProtoMember(7)] public double BroadCastRange;
+                    [ProtoMember(8)] public double JammingStrength;
+                    [ProtoMember(9)] public string RelayChannel;
+                    [ProtoMember(10)] public double RelayRange;
+                    [ProtoMember(11)] public bool TargetPersists;
+                    [ProtoMember(12)] public bool StoreLimitPerBlock;
+                    [ProtoMember(13)] public int MaxConnections;
+                }
             }
 
 
@@ -297,6 +352,14 @@ namespace CoreSystems.Api
                         LockDelay,
                     }
 
+                    public enum ResetConditions
+                    {
+                        None,
+                        Home,
+                        Off,
+                        On,
+                        Reloaded
+                    }
 
                     [ProtoMember(1)] public string[] SubpartId;
                     [ProtoMember(2)] public string BarrelId;
@@ -307,6 +370,7 @@ namespace CoreSystems.Api
                     [ProtoMember(7)] public Dictionary<EventTriggers, RelMove[]> EventMoveSets;
                     [ProtoMember(8)] public EventTriggers[] TriggerOnce;
                     [ProtoMember(9)] public EventTriggers[] ResetEmissives;
+                    [ProtoMember(10)] public ResetConditions Resets;
 
                 }
 
@@ -409,6 +473,8 @@ namespace CoreSystems.Api
                 [ProtoMember(12)] public OtherDef Other;
                 [ProtoMember(13)] public bool AddToleranceToTracking;
                 [ProtoMember(14)] public bool CanShootSubmerged;
+                [ProtoMember(15)] public bool NpcSafe;
+                [ProtoMember(16)] public bool ScanTrackOnly;
 
                 [ProtoContract]
                 public struct LoadingDef
@@ -435,6 +501,8 @@ namespace CoreSystems.Api
                     [ProtoMember(20)] public int MagsToLoad;
                     [ProtoMember(21)] public int MaxActiveProjectiles;
                     [ProtoMember(22)] public int MaxReloads;
+                    [ProtoMember(23)] public bool GoHomeToReload;
+                    [ProtoMember(24)] public bool DropTargetUntilLoaded;
                 }
 
 
@@ -445,6 +513,8 @@ namespace CoreSystems.Api
                     [ProtoMember(2)] public bool DamageModifier;
                     [ProtoMember(3)] public bool ToggleGuidance;
                     [ProtoMember(4)] public bool EnableOverload;
+                    [ProtoMember(5)] public bool AlternateUi;
+                    [ProtoMember(6)] public bool DisableStatus;
                 }
 
 
@@ -458,6 +528,8 @@ namespace CoreSystems.Api
                     [ProtoMember(5)] public bool LockOnFocus;
                     [ProtoMember(6)] public bool SuppressFire;
                     [ProtoMember(7)] public bool OverrideLeads;
+                    [ProtoMember(8)] public int DefaultLeadGroup;
+                    [ProtoMember(9)] public bool TargetGridCenter;
                 }
 
                 [ProtoContract]
@@ -521,6 +593,8 @@ namespace CoreSystems.Api
                     [ProtoMember(6)] public double RestrictionRadius;
                     [ProtoMember(7)] public bool CheckInflatedBox;
                     [ProtoMember(8)] public bool CheckForAnyWeapon;
+                    [ProtoMember(9)] public bool DisableLosCheck;
+                    [ProtoMember(10)] public bool NoVoxelLosCheck;
                 }
 
                 [ProtoContract]
@@ -562,6 +636,17 @@ namespace CoreSystems.Api
                 [ProtoMember(26)] public bool IgnoreVoxels;
                 [ProtoMember(27)] public bool Synchronize;
                 [ProtoMember(28)] public double HeatModifier;
+                [ProtoMember(29)] public bool NpcSafe;
+                [ProtoMember(30)] public SynchronizeDef Sync;
+                [ProtoMember(31)] public bool NoGridOrArmorScaling;
+
+                [ProtoContract]
+                public struct SynchronizeDef
+                {
+                    [ProtoMember(1)] public bool Full;
+                    [ProtoMember(2)] public bool PointDefense;
+                    [ProtoMember(3)] public bool OnHitDeath;
+                }
 
                 [ProtoContract]
                 public struct DamageScaleDef
@@ -579,6 +664,7 @@ namespace CoreSystems.Api
                     [ProtoMember(10)] public double HealthHitModifier;
                     [ProtoMember(11)] public double VoxelHitModifier;
                     [ProtoMember(12)] public DamageTypes DamageType;
+                    [ProtoMember(13)] public DeformDef Deform;
 
                     [ProtoContract]
                     public struct FallOffDef
@@ -647,6 +733,21 @@ namespace CoreSystems.Api
                         [ProtoMember(1)] public float Modifier;
                         [ProtoMember(2)] public ShieldType Type;
                         [ProtoMember(3)] public float BypassModifier;
+                        [ProtoMember(4)] public double HeatModifier;
+                    }
+
+                    [ProtoContract]
+                    public struct DeformDef
+                    {
+                        public enum DeformTypes
+                        {
+                            HitBlock,
+                            AllDamagedBlocks,
+                            NoDeform,
+                        }
+
+                        [ProtoMember(1)] public DeformTypes DeformType;
+                        [ProtoMember(2)] public int DeformDelay;
                     }
                 }
 
@@ -686,6 +787,7 @@ namespace CoreSystems.Api
                     [ProtoMember(3)] public string ModelName;
                     [ProtoMember(4)] public AmmoParticleDef Particles;
                     [ProtoMember(5)] public LineDef Lines;
+                    [ProtoMember(6)] public DecalDef Decals;
 
                     [ProtoContract]
                     public struct AmmoParticleDef
@@ -705,6 +807,12 @@ namespace CoreSystems.Api
                             Chaos,
                             Wave,
                         }
+                        public enum FactionColor
+                        {
+                            DontUse,
+                            Foreground,
+                            Background,
+                        }
 
                         [ProtoMember(1)] public TracerBaseDef Tracer;
                         [ProtoMember(2)] public string TracerMaterial;
@@ -712,6 +820,7 @@ namespace CoreSystems.Api
                         [ProtoMember(4)] public Randomize WidthVariance;
                         [ProtoMember(5)] public TrailDef Trail;
                         [ProtoMember(6)] public OffsetEffectDef OffsetEffect;
+                        [ProtoMember(7)] public bool DropParentVelocity;
 
                         [ProtoContract]
                         public struct OffsetEffectDef
@@ -733,6 +842,8 @@ namespace CoreSystems.Api
                             [ProtoMember(7)] public SegmentDef Segmentation;
                             [ProtoMember(8)] public string[] Textures;
                             [ProtoMember(9)] public Texture TextureMode;
+                            [ProtoMember(10)] public bool AlwaysDraw;
+                            [ProtoMember(11)] public FactionColor FactionColor;
 
                             [ProtoContract]
                             public struct SegmentDef
@@ -749,6 +860,7 @@ namespace CoreSystems.Api
                                 [ProtoMember(10)] public Randomize WidthVariance;
                                 [ProtoMember(11)] public string[] Textures;
                                 [ProtoMember(12)] public bool Enable;
+                                [ProtoMember(13)] public FactionColor FactionColor;
                             }
                         }
 
@@ -765,7 +877,23 @@ namespace CoreSystems.Api
                             [ProtoMember(8)] public bool UseColorFade;
                             [ProtoMember(9)] public string[] Textures;
                             [ProtoMember(10)] public Texture TextureMode;
+                            [ProtoMember(11)] public bool AlwaysDraw;
+                            [ProtoMember(12)] public FactionColor FactionColor;
+                        }
+                    }
 
+                    [ProtoContract]
+                    public struct DecalDef
+                    {
+
+                        [ProtoMember(1)] public int MaxAge;
+                        [ProtoMember(2)] public TextureMapDef[] Map;
+
+                        [ProtoContract]
+                        public struct TextureMapDef
+                        {
+                            [ProtoMember(1)] public string HitMaterial;
+                            [ProtoMember(2)] public string DecalMaterial;
                         }
                     }
                 }
@@ -778,6 +906,7 @@ namespace CoreSystems.Api
                     [ProtoMember(3)] public bool VirtualBeams;
                     [ProtoMember(4)] public bool RotateRealBeam;
                     [ProtoMember(5)] public bool OneParticle;
+                    [ProtoMember(6)] public bool FakeVoxelHits;
                 }
 
                 [ProtoContract]
@@ -796,6 +925,7 @@ namespace CoreSystems.Api
                     [ProtoMember(11)] public TimedSpawnDef TimedSpawns;
                     [ProtoMember(12)] public bool FireSound;
                     [ProtoMember(13)] public Vector3D AdvOffset;
+                    [ProtoMember(14)] public bool ArmWhenHit;
 
                     [ProtoContract]
                     public struct TimedSpawnDef
@@ -1140,6 +1270,8 @@ namespace CoreSystems.Api
                     [ProtoMember(12)] public MinesDef Mines;
                     [ProtoMember(13)] public float GravityMultiplier;
                     [ProtoMember(14)] public uint MaxTrajectoryTime;
+                    [ProtoMember(15)] public ApproachDef[] Approaches;
+                    [ProtoMember(16)] public double TotalAcceleration;
 
                     [ProtoContract]
                     public struct SmartsDef
@@ -1156,6 +1288,210 @@ namespace CoreSystems.Api
                         [ProtoMember(10)] public bool KeepAliveAfterTargetLoss;
                         [ProtoMember(11)] public float OffsetRatio;
                         [ProtoMember(12)] public int OffsetTime;
+                        [ProtoMember(13)] public bool CheckFutureIntersection;
+                        [ProtoMember(14)] public double NavAcceleration;
+                        [ProtoMember(15)] public bool AccelClearance;
+                        [ProtoMember(16)] public double SteeringLimit;
+                        [ProtoMember(17)] public bool FocusOnly;
+                        [ProtoMember(18)] public double OffsetMinRange;
+                        [ProtoMember(19)] public bool FocusEviction;
+                        [ProtoMember(20)] public double ScanRange;
+                        [ProtoMember(21)] public bool NoSteering;
+                        [ProtoMember(22)] public double FutureIntersectionRange;
+                        [ProtoMember(23)] public double MinTurnSpeed;
+                        [ProtoMember(24)] public bool NoTargetApproach;
+                        [ProtoMember(25)] public bool AltNavigation;
+                    }
+
+                    [ProtoContract]
+                    public struct ApproachDef
+                    {
+                        public enum ReInitCondition
+                        {
+                            Wait,
+                            MoveToPrevious,
+                            MoveToNext,
+                            ForceRestart,
+                        }
+
+                        public enum Conditions
+                        {
+                            Ignore,
+                            Spawn,
+                            DistanceFromPositionC,
+                            Lifetime,
+                            DesiredElevation,
+                            MinTravelRequired,
+                            MaxTravelRequired,
+                            Deadtime,
+                            DistanceToPositionC,
+                            NextTimedSpawn,
+                            RelativeLifetime,
+                            RelativeDeadtime,
+                            SinceTimedSpawn,
+                            RelativeSpawns,
+                            EnemyTargetLoss,
+                            RelativeHealthLost,
+                            HealthRemaining,
+                            DistanceFromPositionB,
+                            DistanceToPositionB,
+                            DistanceFromTarget,
+                            DistanceToTarget,
+                            DistanceFromEndTrajectory,
+                            DistanceToEndTrajectory,
+                        }
+
+                        public enum UpRelativeTo
+                        {
+                            UpRelativeToBlock,
+                            UpRelativeToGravity,
+                            UpTargetDirection,
+                            UpTargetVelocity,
+                            UpStoredStartDontUse,
+                            UpStoredEndDontUse,
+                            UpStoredStartPosition,
+                            UpStoredEndPosition,
+                            UpStoredStartLocalPosition,
+                            UpStoredEndLocalPosition,
+                            UpRelativeToShooter,
+                            UpOriginDirection,
+                            UpElevationDirection,
+                        }
+
+                        public enum FwdRelativeTo
+                        {
+                            ForwardElevationDirection,
+                            ForwardRelativeToBlock,
+                            ForwardRelativeToGravity,
+                            ForwardTargetDirection,
+                            ForwardTargetVelocity,
+                            ForwardStoredStartDontUse,
+                            ForwardStoredEndDontUse,
+                            ForwardStoredStartPosition,
+                            ForwardStoredEndPosition,
+                            ForwardStoredStartLocalPosition,
+                            ForwardStoredEndLocalPosition,
+                            ForwardRelativeToShooter,
+                            ForwardOriginDirection,
+                        }
+
+                        public enum RelativeTo
+                        {
+                            Origin,
+                            Shooter,
+                            Target,
+                            Surface,
+                            MidPoint,
+                            PositionA,
+                            Nothing,
+                            StoredStartDontUse,
+                            StoredEndDontUse,
+                            StoredStartPosition,
+                            StoredEndPosition,
+                            StoredStartLocalPosition,
+                            StoredEndLocalPosition,
+                        }
+
+                        public enum ConditionOperators
+                        {
+                            StartEnd_And,
+                            StartEnd_Or,
+                            StartAnd_EndOr,
+                            StartOr_EndAnd,
+                        }
+
+                        public enum StageEvents
+                        {
+                            DoNothing,
+                            EndProjectile,
+                            EndProjectileOnRestart,
+                            StoreDontUse,
+                            StorePositionDontUse,
+                            Refund,
+                            StorePositionA,
+                            StorePositionB,
+                            StorePositionC,
+                        }
+
+                        [ProtoContract]
+                        public struct WeightedIdListDef
+                        {
+
+                            [ProtoMember(1)] public int ApproachId;
+                            [ProtoMember(2)] public Randomize Weight;
+                            [ProtoMember(3)] public double End1WeightMod;
+                            [ProtoMember(4)] public double End2WeightMod;
+                            [ProtoMember(5)] public int MaxRuns;
+                            [ProtoMember(6)] public double End3WeightMod;
+                        }
+
+                        [ProtoMember(1)] public ReInitCondition RestartCondition;
+                        [ProtoMember(2)] public Conditions StartCondition1;
+                        [ProtoMember(3)] public Conditions EndCondition1;
+                        [ProtoMember(4)] public UpRelativeTo Up;
+                        [ProtoMember(5)] public RelativeTo PositionB;
+                        [ProtoMember(6)] public double AngleOffset;
+                        [ProtoMember(7)] public double Start1Value;
+                        [ProtoMember(8)] public double End1Value;
+                        [ProtoMember(9)] public double LeadDistance;
+                        [ProtoMember(10)] public double DesiredElevation;
+                        [ProtoMember(11)] public double AccelMulti;
+                        [ProtoMember(12)] public double SpeedCapMulti;
+                        [ProtoMember(13)] public bool AdjustPositionC;
+                        [ProtoMember(14)] public bool CanExpireOnceStarted;
+                        [ProtoMember(15)] public ParticleDef AlternateParticle;
+                        [ProtoMember(16)] public string AlternateSound;
+                        [ProtoMember(17)] public string AlternateModel;
+                        [ProtoMember(18)] public int OnRestartRevertTo;
+                        [ProtoMember(19)] public ParticleDef StartParticle;
+                        [ProtoMember(20)] public bool AdjustPositionB;
+                        [ProtoMember(21)] public bool AdjustUp;
+                        [ProtoMember(22)] public bool PushLeadByTravelDistance;
+                        [ProtoMember(23)] public double TrackingDistance;
+                        [ProtoMember(24)] public Conditions StartCondition2;
+                        [ProtoMember(25)] public double Start2Value;
+                        [ProtoMember(26)] public Conditions EndCondition2;
+                        [ProtoMember(27)] public double End2Value;
+                        [ProtoMember(28)] public RelativeTo Elevation;
+                        [ProtoMember(29)] public double ElevationTolerance;
+                        [ProtoMember(30)] public ConditionOperators Operators;
+                        [ProtoMember(31)] public StageEvents StartEvent;
+                        [ProtoMember(32)] public StageEvents EndEvent;
+                        [ProtoMember(33)] public double TotalAccelMulti;
+                        [ProtoMember(34)] public double DeAccelMulti;
+                        [ProtoMember(35)] public bool Orbit;
+                        [ProtoMember(36)] public double OrbitRadius;
+                        [ProtoMember(37)] public int OffsetTime;
+                        [ProtoMember(38)] public double OffsetMinRadius;
+                        [ProtoMember(39)] public bool NoTimedSpawns;
+                        [ProtoMember(40)] public double OffsetMaxRadius;
+                        [ProtoMember(41)] public bool ForceRestart;
+                        [ProtoMember(42)] public RelativeTo PositionC;
+                        [ProtoMember(43)] public bool DisableAvoidance;
+                        [ProtoMember(44)] public int StoredStartId;
+                        [ProtoMember(45)] public int StoredEndId;
+                        [ProtoMember(46)] public WeightedIdListDef[] RestartList;
+                        [ProtoMember(47)] public RelativeTo StoredStartType;
+                        [ProtoMember(48)] public RelativeTo StoredEndType;
+                        [ProtoMember(49)] public bool LeadRotateElevatePositionB;
+                        [ProtoMember(50)] public bool LeadRotateElevatePositionC;
+                        [ProtoMember(51)] public bool NoElevationLead;
+                        [ProtoMember(52)] public bool IgnoreAntiSmart;
+                        [ProtoMember(53)] public double HeatRefund;
+                        [ProtoMember(54)] public Randomize AngleVariance;
+                        [ProtoMember(55)] public bool ReloadRefund;
+                        [ProtoMember(56)] public int ModelRotateTime;
+                        [ProtoMember(57)] public FwdRelativeTo Forward;
+                        [ProtoMember(58)] public bool AdjustForward;
+                        [ProtoMember(59)] public bool ToggleIngoreVoxels;
+                        [ProtoMember(60)] public bool SelfAvoidance;
+                        [ProtoMember(61)] public bool TargetAvoidance;
+                        [ProtoMember(62)] public bool SelfPhasing;
+                        [ProtoMember(63)] public bool TrajectoryRelativeToB;
+                        [ProtoMember(64)] public Conditions EndCondition3;
+                        [ProtoMember(65)] public double End3Value;
+                        [ProtoMember(66)] public bool SwapNavigationType;
+                        [ProtoMember(67)] public bool ElevationRelativeToC;
                     }
 
                     [ProtoContract]
@@ -1197,8 +1533,9 @@ namespace CoreSystems.Api
                 [ProtoMember(3)] public Vector3D Offset;
                 [ProtoMember(4)] public ParticleOptionDef Extras;
                 [ProtoMember(5)] public bool ApplyToShield;
-                [ProtoMember(6)] public bool ShrinkByDistance;
+                [ProtoMember(6)] public bool DisableCameraCulling;
             }
         }
     }
+
 }

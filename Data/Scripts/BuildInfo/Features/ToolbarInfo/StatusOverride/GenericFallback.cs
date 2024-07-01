@@ -9,6 +9,7 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI;
 using VRage;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using IMyControllableEntityModAPI = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
@@ -163,11 +164,11 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 List<CoreSystemsDef.WeaponDefinition> csDefs;
                 if(CSHandler.Weapons.TryGetValue(item.Block.BlockDefinition, out csDefs))
                 {
-                    long identityId = CSHandler.API.GetPlayerController(item.Block);
+                    long identityId = CSHandler.API.GetPlayerController((MyEntity)item.Block);
 
                     if(identityId == -1 || identityId == 0) // WC for some reason has -1 as no identity
                     {
-                        MyTuple<bool, bool, bool, IMyEntity> targetInfo = CSHandler.API.GetWeaponTarget(item.Block);
+                        MyTuple<bool, bool, bool, MyEntity> targetInfo = CSHandler.API.GetWeaponTarget((MyEntity)item.Block);
 
                         //bool hasTarget = targetInfo.Item1;
                         //bool isTargetProjectile = targetInfo.Item2;
