@@ -16,7 +16,6 @@ using Sandbox.ModAPI;
 using SpaceEngineers.Game.Definitions.SafeZone;
 using VRage.Collections;
 using VRage.Game;
-using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 using VRage.Input;
 using VRage.Library.Utils;
@@ -33,7 +32,6 @@ namespace Digi.BuildInfo.Features
         int ModHints = 0;
         bool DefinitionErrors = false;
         bool CompileErrors = false;
-        bool FirstSpawnChecked = false;
         bool F11MenuShownOnLoad = false;
 
         HudAPIv2.BillBoardHUDMessage ErrorsMenuBackdrop;
@@ -316,6 +314,8 @@ namespace Digi.BuildInfo.Features
 
             CheckErrorsOnF11(); // to reduce severity on errors before setting DefinitionErrors
 
+            bool hasSignalDLC = MyAPIGateway.DLC.HasDLC("Signal", MyAPIGateway.Multiplayer.MyId);
+
             ListReader<MyDefinitionErrors.Error> errors = MyDefinitionErrors.GetErrors();
 
             for(int i = 0; i < errors.Count; i++)
@@ -354,12 +354,44 @@ namespace Digi.BuildInfo.Features
                     }
                 }
 
+                // HACK: hardcoded various MyDefinitionErrors
+
+                {
+                    // MyWaveBank.FindAudioFile()
+                    // "Unable to find audio file: '{cue.SubtypeId}', '{fileName}'"
+                    const string unableToFindAudioFile = "Unable to find audio file: '";
+                    if(error.Message.StartsWith(unableToFindAudioFile))
+                    {
+                        bool isMod = error.ModName != "Unknown";
+
+                        if(!isMod)
+                        {
+                            if(!hasSignalDLC)
+                            {
+                                string strippedMessage = error.Message.Substring(unableToFindAudioFile.Length).TrimStart();
+
+                                if(strippedMessage.StartsWith("MusConcert_"))
+                                {
+                                    error.Severity = TErrorSeverity.Notice;
+                                    error.Message += $"\n{Signature}This just a side effect of the Signal DLC not being installed.";
+                                }
+                            }
+
+                            continue;
+                        }
+
+                        if(isMod && f11MenuAccessible)
+                        {
+                            error.Message += $"\n{Signature}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
+                            continue;
+                        }
+                    }
+                }
+
                 if(f11MenuAccessible)
                 {
-                    // HACK: hardcoded various MyDefinitionErrors
-
                     // MyDefinitionManager.ProcessContentFilePath() + cloudlayer stuff from above
-                    string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
+                    const string resourceNotFoundPrefix = "Resource not found, setting to null. Resource path: ";
                     if(error.Message.StartsWith(resourceNotFoundPrefix))
                     {
                         string filePath = error.Message.Substring(resourceNotFoundPrefix.Length, error.Message.Length - resourceNotFoundPrefix.Length);
@@ -383,7 +415,7 @@ namespace Digi.BuildInfo.Features
                         continue;
                     }
 
-                    string fileDoesNotHaveProperExtension = "File does not have a proper extension: ";
+                    const string fileDoesNotHaveProperExtension = "File does not have a proper extension: ";
                     if(error.Message.StartsWith(resourceNotFoundPrefix))
                     {
                         string filePath = error.Message.Substring(fileDoesNotHaveProperExtension.Length, error.Message.Length - fileDoesNotHaveProperExtension.Length);
@@ -394,15 +426,6 @@ namespace Digi.BuildInfo.Features
                             error.Message += $"\n{Signature}Ignore this particular one, modder wants to use sound from the game folder and omitting extension is the only way to do that.";
                         }
 
-                        continue;
-                    }
-
-                    // MyWaveBank.FindAudioFile()
-                    // "Unable to find audio file: '{cue.SubtypeId}', '{fileName}'"
-                    string unableToFindAudioFile = "Unable to find audio file: '";
-                    if(error.Message.StartsWith(unableToFindAudioFile))
-                    {
-                        error.Message += $"\n{Signature}If you intend on referencing game sounds, you can only do with .wav files by using original relative path and removing the .wav extension.";
                         continue;
                     }
 
