@@ -22,7 +22,7 @@ namespace Digi.BuildInfo.Features.Config
 
         public const string FileName = "config.ini";
         public const string KillswitchName = "Killswitch";
-        public const int ConfigVersion = 11;
+        public const int ConfigVersion = 12;
 
         public BoolSetting Killswitch;
 
@@ -285,6 +285,16 @@ namespace Digi.BuildInfo.Features.Config
                     TerminalButtonsPosition.ResetToDefault();
 
                     Log.Info($"NOTE: '{TerminalButtonsPosition.Name}' is the previous default (0.731, -0.988), resetting to new default ({TerminalButtonsPosition.Value.X.ToString()}, {TerminalButtonsPosition.Value.Y.ToString()}).");
+                }
+            }
+
+            if(cfgv <= 11)
+            {
+                if(MassOverride.ValueEnum == MassFormat.RealCustomSuffix)
+                {
+                    MassOverride.ResetToDefault();
+
+                    Log.Info($"NOTE: '{MassOverride.Name}' is the previous default (RealCustomSuffix), resetting to new default ({MassOverride.ValueEnum.ToString()}).");
                 }
             }
         }
