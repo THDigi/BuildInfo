@@ -44,6 +44,17 @@ namespace Digi.BuildInfo.Features
 
         public ModderHelp(BuildInfoMod main) : base(main)
         {
+            if(MyAPIGateway.Session == null)
+            {
+                Log.Error("MyAPIGateway.Session is null in LoadData() O.o", Log.PRINT_MESSAGE);
+                return;
+            }
+
+            if(MyAPIGateway.Session.Config == null)
+            {
+                Log.Info("WARNING: `MyAPIGateway.Session.Config` is null.");
+                MyLog.Default.WriteLine($"{Signature}WARNING: `MyAPIGateway.Session.Config` is null.");
+            }
         }
 
         public override void RegisterComponent()
