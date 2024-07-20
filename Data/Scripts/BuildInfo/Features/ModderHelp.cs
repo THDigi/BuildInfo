@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features
 {
     public class ModderHelp : ModComponent
     {
-        static readonly bool CheckEverything = false;
+        public static readonly bool CheckEverything = false;
 
         int ModProblems = 0;
         int ModHints = 0;
@@ -1025,21 +1025,21 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        void ModProblem(MyDefinitionBase def, string text)
+        public void ModProblem(MyDefinitionBase def, string text)
         {
             string message = $"Problem with '{GetDefId(def)}': {text}";
             MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error);
             ModProblems++;
         }
 
-        void ModHint(MyDefinitionBase def, string text)
+        public void ModHint(MyDefinitionBase def, string text)
         {
             string message = $"Hint for '{GetDefId(def)}': {text}";
             MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Notice);
             ModHints++;
         }
 
-        void ModHint(MyModContext context, string text)
+        public void ModHint(MyModContext context, string text)
         {
             string message = $"Hint: {text}";
             MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Notice);

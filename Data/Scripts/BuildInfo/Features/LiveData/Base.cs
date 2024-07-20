@@ -307,6 +307,9 @@ namespace Digi.BuildInfo.Features.LiveData
             float cellSizeHalf = cellSize / 2f;
             Vector3 sizeMetric = new Vector3(def.Size) * cellSizeHalf;
 
+            bool blockTypeHasConveyorSupport = (Has & BlockHas.ConveyorSupport) != 0;
+            BuildInfoMod Main = BuildInfoMod.Instance;
+
             foreach(IMyModelDummy dummy in dummies.Values)
             {
                 string name = dummy.Name;
@@ -324,6 +327,17 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 if(detectorPtr.StartsWithCaseInsensitive("conveyor"))
                 {
+                    if(!blockTypeHasConveyorSupport)
+                    {
+                        if(Main.Config.ModderHelpAlerts.Value && (ModderHelp.CheckEverything || def.Context.IsLocal()))
+                        {
+                            Main.ModderHelp.ModHint(def, $"The model has convetor_* dummies but the block type does not support conveyor network." +
+                                                         "\nIf you want conveyor connection use a compatible block type (spaceengineers.wiki.gg has a list) or if you just want manual interaction use a detector_inventory instead.");
+                        }
+
+                        continue;
+                    }
+
                     ConveyorFlags flags = ConveyorFlags.None;
 
                     // from MyConveyorLine.GetBlockLinePositions()
