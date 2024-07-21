@@ -17,7 +17,7 @@ namespace Digi
     /// <summary>
     /// <para>Standalone logger, does not require any setup.</para>
     /// <para>Mod name is automatically set from workshop name or folder name. Can also be manually defined using <see cref="ModName"/>.</para>
-    /// <para>Version 1.56 by Digi</para>
+    /// <para>Version 1.57 by Digi</para>
     /// </summary>
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
     public class Log : MySessionComponentBase
@@ -71,10 +71,11 @@ namespace Digi
             handler = null;
         }
 
-        static void EnsureHandlerCreated()
+        static void EnsureHandlerCreated(string intendedMessage = null)
         {
             if(unloaded)
-                throw new Exception($"{typeof(Log).FullName} accessed after it was unloaded! Date started: {new DateTime(dateStarted).ToString()}");
+                throw new Exception($"{typeof(Log).FullName} accessed after it was unloaded! Date started: {new DateTime(dateStarted).ToString()}."
+                                    + (intendedMessage != null ? $"\nThe intended message: \"{intendedMessage}\"" : ""));
 
             if(handler == null)
             {
@@ -173,7 +174,7 @@ namespace Digi
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Error(Exception exception, string printText = PRINT_GENERIC_ERROR, int printTimeMs = DEFAULT_TIME_ERROR)
         {
-            EnsureHandlerCreated();
+            EnsureHandlerCreated(exception.ToString());
             handler.Error(exception.ToString(), printText, printTimeMs);
         }
 
@@ -185,7 +186,7 @@ namespace Digi
         /// <param name="printTimeMs">How long to show the HUD notification for, in miliseconds.</param>
         public static void Error(string message, string printText = PRINT_MESSAGE, int printTimeMs = DEFAULT_TIME_ERROR)
         {
-            EnsureHandlerCreated();
+            EnsureHandlerCreated(message);
             handler.Error(message, printText, printTimeMs);
         }
 
@@ -200,7 +201,7 @@ namespace Digi
         {
             // FIXME: using printText before update starts would make player miss the text
 
-            EnsureHandlerCreated();
+            EnsureHandlerCreated(message);
             handler.Info(message, printText, printTimeMs);
         }
 
