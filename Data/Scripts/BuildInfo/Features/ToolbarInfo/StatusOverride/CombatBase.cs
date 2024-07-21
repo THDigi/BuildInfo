@@ -111,10 +111,10 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
                 IMySearchEnemyComponent searchComp = comp as IMySearchEnemyComponent;
                 if(searchComp != null)
                 {
-                    MyGridTargetingRelationFiltering targetting = searchComp.TargetingLockOptions;
+                    MyGridTargetingRelationFiltering targeting = searchComp.TargetingLockOptions;
 
                     // same values as in MySearchEnemyComponent.Translate() and FillTargetLockList()
-                    switch(targetting)
+                    switch(targeting)
                     {
                         case MyGridTargetingRelationFiltering.Enemy:
                             return AttackModeEnum.Enemies;

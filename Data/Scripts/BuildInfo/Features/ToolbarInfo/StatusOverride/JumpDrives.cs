@@ -140,7 +140,7 @@ namespace Digi.BuildInfo.Features.ToolbarInfo.StatusOverride
         {
             IMyJumpDrive jd = (IMyJumpDrive)item.Block;
 
-            // warn that the distance adjustment is pointless as jumpdrive is targetting a GPS.
+            // warn that the distance adjustment is pointless as jumpdrive is targeting a GPS.
             if(Processor.AnimFlip)
             {
                 // HACK: JumpDistance slider is disabled if a GPS target is selected.

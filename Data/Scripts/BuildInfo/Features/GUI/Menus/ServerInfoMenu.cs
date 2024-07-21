@@ -1462,7 +1462,7 @@ namespace Digi.BuildInfo.Features.GUI
             PrintFormattedNumber(sb, nameof(settings.PrefetchShapeRayLengthLimit), settings.PrefetchShapeRayLengthLimit, DefaultSettings.PrefetchShapeRayLengthLimit, false,
                 "Prefetch Voxels Range Limit", " m", "Defines at what maximum distance weapons could interact with voxels." +
                                                      "\n\nIn technical terms: prevents MyPlanet.PrefetchShapeOnRay() from prefetching voxels if the line is longer than this." +
-                                                     "\nThis call is used by bullet projectiles, targetting systems and mods can use it too.");
+                                                     "\nThis call is used by bullet projectiles, targeting systems and mods can use it too.");
         }
 
         void CheckSettings()

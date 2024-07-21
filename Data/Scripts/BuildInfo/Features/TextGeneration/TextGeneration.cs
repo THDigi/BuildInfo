@@ -44,7 +44,7 @@ namespace Digi.BuildInfo.Features
     {
         static readonly string LightningAttractionTooltip = "If lightning strikes within the range of a tree, decoy or radio antenna it will be redirected to that instead." +
                                                             $"\nTrees have a radius of {Hardcoded.Tree_LightningRodRadius}m to attract lightning, but being under one does not guarantee that a decoy won't be hit." +
-                                                            "\nRadio antennas and decoys require to be functional and turned on to be targetted by lightning." +
+                                                            "\nRadio antennas and decoys require to be functional and turned on to be targeted by lightning." +
                                                             "\nLightning damage can be disabled by world settings or mods overriding weather definitions.";
 
         #region Constants
@@ -5378,7 +5378,7 @@ namespace Digi.BuildInfo.Features
             tooltip.Append('\n'); // empty line to separate magazine stats from ammo stats
 
             if(ammoDef is MyProjectileAmmoDefinition)
-                tooltip.Append("Ammo type: Bullet (can't be targetted)").Append('\n');
+                tooltip.Append("Ammo type: Bullet (can't be targeted)").Append('\n');
             else
                 tooltip.Append("Ammo type: Missile (can be targeted by turrets)").Append('\n');
         }
@@ -5553,7 +5553,7 @@ namespace Digi.BuildInfo.Features
                 //    AddLine().Append(paddingList).Append($"{upgrade.Key} = {upgrade.Value.Length} things");
                 //}
 
-                //AddLine().Append(paddingCategory).Label("Targetting");
+                //AddLine().Append(paddingCategory).Label("Targeting");
 
                 //AddLine().Append(paddingList).Append($"subsystems={string.Join(",", wpDef.Targeting.SubSystems)}; threats={string.Join(",", wpDef.Targeting.Threats)}");
             }
