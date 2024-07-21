@@ -2341,39 +2341,23 @@ namespace Digi.BuildInfo.Features
             // TODO: its own flag?
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Line2))
             {
-                StringBuilder sb = AddLine().Append(partPrefix).Label("Target - Priority").MultiplierFormat(def.PriorityModifier);
+                StringBuilder sb = AddLine().Append(partPrefix);
 
-                // HACK: from MyLargeTurretTargetingSystem.TestPotentialTarget()
-                // HACK: MyFunctionalBlockDefinition is also used by non-MyFunctionalBlock types...
-                if(MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_FunctionalBlock), def.Id.TypeId))
+                if(def.BlockTopology == MyBlockTopology.Cube && string.IsNullOrEmpty(def.Model)) // deformable armor can't be targeted as targets require to be entities
                 {
-                    sb.Separator().MultiplierFormat(def.PriorityModifier * def.NotWorkingPriorityMultiplier).Append(" if not working");
+                    sb.Color(COLOR_GOOD).Append("Not targetable");
                 }
-
-                bool hasGroup = def.TargetingGroups != null && def.TargetingGroups.Count > 0;
-                if(!hasGroup)
+                else if(def.PriorityModifier == 0f) // similar check the game does in MyLargeTurretTargetingSystem.TestPotentialTarget()
                 {
-                    foreach(MyTargetingGroupDefinition group in BuildInfoMod.Instance.Caches.OrderedTargetGroups)
-                    {
-                        if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
-                        {
-                            hasGroup = true;
-                            break;
-                        }
-                    }
+                    sb.Color(COLOR_GOOD).Append("Not targetable");
                 }
-
-                sb.Separator().Label("Type");
-                if(hasGroup)
+                else
                 {
-                    int atLabelLen = sb.Length;
+                    int groups = 0;
 
                     if(def.TargetingGroups != null && def.TargetingGroups.Count > 0)
                     {
-                        foreach(MyStringHash group in def.TargetingGroups)
-                        {
-                            sb.Append(group.String).Append(", ");
-                        }
+                        groups = def.TargetingGroups.Count;
                     }
                     else
                     {
@@ -2381,18 +2365,58 @@ namespace Digi.BuildInfo.Features
                         {
                             if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
                             {
-                                sb.Append(group.Id.SubtypeName).Append(", ");
+                                groups++;
                             }
                         }
                     }
 
-                    if(sb.Length > atLabelLen)
-                        sb.Length -= 2; // remove last comma
+                    if(groups > 0)
+                    {
+                        sb.Color(COLOR_WARNING).Label(groups > 1 ? "Targetable - Groups" : "Targetable - Group");
+
+                        int atLabelLen = sb.Length;
+
+                        if(def.TargetingGroups != null)
+                        {
+                            foreach(MyStringHash group in def.TargetingGroups)
+                            {
+                                sb.Append(group.String).Append(", ");
+                            }
+                        }
+                        else
+                        {
+                            foreach(MyTargetingGroupDefinition group in BuildInfoMod.Instance.Caches.OrderedTargetGroups)
+                            {
+                                if(group.DefaultBlockTypes.Contains(def.Id.TypeId))
+                                {
+                                    sb.Append(group.Id.SubtypeName).Append(", ");
+                                }
+                            }
+                        }
+
+                        if(sb.Length > atLabelLen)
+                            sb.Length -= 2; // remove last comma
+
+                        sb.Separator().Label("Priority").MultiplierFormat(def.PriorityModifier);
+
+                        // HACK: from MyLargeTurretTargetingSystem.TestPotentialTarget()
+                        // HACK: MyFunctionalBlockDefinition is also used by non-MyFunctionalBlock types...
+                        if(MyAPIGateway.Reflection.IsAssignableFrom(typeof(MyObjectBuilder_FunctionalBlock), def.Id.TypeId))
+                        {
+                            // and MyLargeTurretTargetingSystem.IsTarget() excludes broken blocks so that only leaves IsWorking as off or unpowered
+                            sb.Separator().MultiplierFormat(def.PriorityModifier * def.NotWorkingPriorityMultiplier).Append(" when off");
+                        }
+                    }
+                    else
+                    {
+                        sb.Color(COLOR_GOOD).Append("Not targetable");
+                    }
                 }
-                else
-                {
-                    sb.Append("Default");
-                }
+
+                SimpleTooltip("Whether this block can be targeted by automated enemy turrets." +
+                              "\nThe groups affect if turrets aim for a specific type of target." +
+                              "\nIf the block is not targetable it does not mean it is safe, turrets will shoot through it to reach targetable blocks." +
+                              "\nTargetable blocks that are damaged below functional state (red line) will become non-targetable.");
             }
             #endregion
 
