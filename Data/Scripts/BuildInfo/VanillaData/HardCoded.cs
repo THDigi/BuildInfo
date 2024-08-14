@@ -53,7 +53,7 @@ namespace Digi.BuildInfo.VanillaData
         public const float EarthGravity = 9.81f;
 
         // from MyGridConveyorSystem
-        public const float Conveyors_PowerReqPerGrid = 0.000001f; // HACK: CONVEYOR_SYSTEM_CONSUMPTION is 1E-07f (0.1W) but ingame it's 1W... so I dunno.
+        public const float Conveyors_PowerReqPerGrid = 1e-07f;
         public const string Conveyors_PowerGroup = "Conveyors"; // in ctor()
 
         // from MyGridConveyorSystem.NeedsLargeTube()
