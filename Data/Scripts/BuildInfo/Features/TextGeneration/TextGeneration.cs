@@ -2901,7 +2901,9 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
-                AddLine().Label("Pull strength").Append(merge.Strength.ToString("###,###,##0.#######"));
+                float maxStrengthPercent = merge.Strength * (def.CubeSize == MyCubeSize.Large ? Hardcoded.Merge_StrengthMulLargeGrid : Hardcoded.Merge_StrengthMulSmallGrid) * 100;
+                AddLine().Label("Pull strength").Append(maxStrengthPercent.ToString("###,###,##0.#######")).Append("% of the other ship mass");
+                SimpleTooltip("Gets reduced the farther it is from the other mergeblock and the faster they move towards eachother.");
             }
         }
 

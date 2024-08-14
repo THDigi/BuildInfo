@@ -102,6 +102,10 @@ namespace Digi.BuildInfo.VanillaData
         // from MyShipMergeBlock.LoadDummies()
         public const string Merge_DummyName = "merge"; // see MergeFailDetector too!
 
+        // from MyShipMergeBlock.CalculateMergeData()
+        public const float Merge_StrengthMulSmallGrid = 0.1f;
+        public const float Merge_StrengthMulLargeGrid = 0.005f;
+
         // from MyEngineerToolBase
         public const float EngineerToolBase_DefaultReachDistance = 2f;
 

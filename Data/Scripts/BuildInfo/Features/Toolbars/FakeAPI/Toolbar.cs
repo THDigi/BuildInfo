@@ -83,6 +83,10 @@ namespace Digi.BuildInfo.Features.Toolbars.FakeAPI
         /// </summary>
         public bool CheckPageInputs()
         {
+            // only care about toolbars with more than one page
+            if(PageCount <= 1)
+                return false;
+
             // NOTE: only designed with in-GUI toolbar in mind
             if(!MyAPIGateway.Gui.IsCursorVisible)
                 return false;
