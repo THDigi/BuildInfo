@@ -959,9 +959,9 @@ namespace Digi.BuildInfo.Features
             // TODO: remove last condition when adding overlay to WC
             if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
             {
-                AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
-                Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
-                GetLine().Append(" to cycle)");
+                StringBuilder sb = AddLine(FontsHandler.GraySh).Color(COLOR_UNIMPORTANT).Append("(Specialized overlay available. ");
+                Main.Config.CycleOverlaysBind.Value.GetBinds(sb);
+                sb.Append(" to cycle)");
             }
         }
 
@@ -982,14 +982,14 @@ namespace Digi.BuildInfo.Features
         #region Menu generation
         StringBuilder AddMenuItemLine(int item, bool enabled = true)
         {
-            AddLine(font: (Main.QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
+            StringBuilder sb = AddLine(font: (Main.QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
 
             if(Main.QuickMenu.SelectedItem == item)
-                GetLine().Color(COLOR_GOOD).Append("  > ");
+                sb.Color(COLOR_GOOD).Append("  > ");
             else
-                GetLine().Color(enabled ? COLOR_NORMAL : COLOR_UNIMPORTANT).Append(' ', 6);
+                sb.Color(enabled ? COLOR_NORMAL : COLOR_UNIMPORTANT).Append(' ', 6);
 
-            return GetLine();
+            return sb;
         }
 
         public void GenerateMenuText()
@@ -1002,18 +1002,18 @@ namespace Digi.BuildInfo.Features
 
             // HACK this must match the data from the HandleInput() which controls the actual actions of these
 
-            AddMenuItemLine(i++).Append("Close menu");
+            StringBuilder sb = AddMenuItemLine(i++).Append("Close menu");
 
-            GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+            sb.Color(COLOR_UNIMPORTANT).Append("   (");
             if(Main.Config.MenuBind.Value.IsAssigned())
             {
-                Main.Config.MenuBind.Value.GetBinds(GetLine());
+                Main.Config.MenuBind.Value.GetBinds(sb);
             }
             else
             {
-                GetLine().Append(Main.ChatCommandHandler.CommandQuickMenu.PrimaryCommand);
+                sb.Append(Main.ChatCommandHandler.CommandQuickMenu.PrimaryCommand);
             }
-            GetLine().Append(")");
+            sb.Append(")");
 
             if(Main.TextAPI.IsEnabled)
             {
@@ -1021,17 +1021,17 @@ namespace Digi.BuildInfo.Features
                 AddLine().Color(COLOR_BLOCKTITLE).Append("Actions:");
             }
 
-            AddMenuItemLine(i++).Append("Add aimed block to toolbar");
-            GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
+            sb = AddMenuItemLine(i++).Append("Add aimed block to toolbar");
+            sb.Color(COLOR_UNIMPORTANT).Append("   (");
             if(Main.Config.BlockPickerBind.Value.IsAssigned())
             {
-                Main.Config.BlockPickerBind.Value.GetBinds(GetLine());
+                Main.Config.BlockPickerBind.Value.GetBinds(sb);
             }
             else
             {
-                GetLine().Append(Main.ChatCommandHandler.CommandGetBlock.PrimaryCommand);
+                sb.Append(Main.ChatCommandHandler.CommandGetBlock.PrimaryCommand);
             }
-            GetLine().Append(")");
+            sb.Append(")");
 
             AddMenuItemLine(i++).Append("Open block's mod workshop").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandModLink.PrimaryCommand).Append(')');
 
@@ -1047,35 +1047,35 @@ namespace Digi.BuildInfo.Features
 
             AddMenuItemLine(i++).Append("Text info: ").Append(Main.Config.TextShow.ValueName);
 
-            AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayModeName);
+            sb = AddMenuItemLine(i++).Append("Draw overlays: ").Append(Main.Overlays.OverlayModeName);
             if(Main.Config.CycleOverlaysBind.Value.IsAssigned())
             {
-                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Main.Config.CycleOverlaysBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetFormatting();
+                sb.Color(COLOR_UNIMPORTANT).Append("   (");
+                Main.Config.CycleOverlaysBind.Value.GetBinds(sb);
+                sb.Append(")").ResetFormatting();
             }
 
-            AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
+            sb = AddMenuItemLine(i++).Append("Placement transparency: ").Append(MyCubeBuilder.Static.UseTransparency ? "ON" : "OFF");
             if(Main.Config.ToggleTransparencyBind.Value.IsAssigned())
             {
-                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Main.Config.ToggleTransparencyBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetFormatting();
+                sb.Color(COLOR_UNIMPORTANT).Append("   (");
+                Main.Config.ToggleTransparencyBind.Value.GetBinds(sb);
+                sb.Append(")").ResetFormatting();
             }
 
-            AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
+            sb = AddMenuItemLine(i++).Append("Freeze in position: ").Append(MyAPIGateway.CubeBuilder.FreezeGizmo ? "ON" : "OFF");
             if(Main.Config.FreezePlacementBind.Value.IsAssigned())
             {
-                GetLine().Color(COLOR_UNIMPORTANT).Append("   (");
-                Main.Config.FreezePlacementBind.Value.GetBinds(GetLine());
-                GetLine().Append(")").ResetFormatting();
+                sb.Color(COLOR_UNIMPORTANT).Append("   (");
+                Main.Config.FreezePlacementBind.Value.GetBinds(sb);
+                sb.Append(")").ResetFormatting();
             }
 
-            AddMenuItemLine(i++, Main.TextAPI.WasDetected).Append("Use TextAPI: ");
+            sb = AddMenuItemLine(i++, Main.TextAPI.WasDetected).Append("Use TextAPI: ");
             if(Main.TextAPI.WasDetected)
-                GetLine().Append(Main.TextAPI.Use ? "ON" : "OFF");
+                sb.Append(Main.TextAPI.Use ? "ON" : "OFF");
             else
-                GetLine().Append("OFF (Mod not detected)");
+                sb.Append("OFF (Mod not detected)");
 
             AddMenuItemLine(i++).Append("Reload settings file").Color(COLOR_UNIMPORTANT).Append("   (").Append(Main.ChatCommandHandler.CommandReloadConfig.PrimaryCommand).Append(')');
 
@@ -1168,7 +1168,7 @@ namespace Digi.BuildInfo.Features
                         }
                     }
 
-                    AddLine().Color(massColor).ExactMassFormat(mass);
+                    StringBuilder sb = AddLine().Color(massColor).ExactMassFormat(mass);
 
                     if(grid.Physics != null)
                     {
@@ -1179,7 +1179,7 @@ namespace Digi.BuildInfo.Features
                             gridMassCache = BuildInfoMod.Instance.GridMassCompute.GetGridMass(grid);
                         }
 
-                        GetLine().ResetFormatting().Separator().Append("Grid mass: ").ExactMassFormat(gridMassCache);
+                        sb.ResetFormatting().Separator().Append("Grid mass: ").ExactMassFormat(gridMassCache);
                     }
                 }
             }
@@ -1192,36 +1192,36 @@ namespace Digi.BuildInfo.Features
 
                 AddLine().Label("Projected by").Append("\"").Color(COLOR_BLOCKTITLE).AppendMaxLength(projectedBy.CustomName, BLOCK_NAME_MAX_LENGTH).ResetFormatting().Append('"');
 
-                AddLine().Label("Status");
+                StringBuilder sb = AddLine().Label("Status");
 
                 switch(Main.EquipmentMonitor.AimedProjectedCanBuild)
                 {
                     case BuildCheckResult.OK:
-                        GetLine().Color(COLOR_GOOD).Append("Ready to build");
+                        sb.Color(COLOR_GOOD).Append("Ready to build");
                         break;
                     case BuildCheckResult.AlreadyBuilt:
-                        GetLine().Color(COLOR_WARNING).Append("Already built!");
+                        sb.Color(COLOR_WARNING).Append("Already built!");
                         break;
                     case BuildCheckResult.IntersectedWithGrid:
-                        GetLine().Color(COLOR_BAD).Append("Other block in the way");
+                        sb.Color(COLOR_BAD).Append("Other block in the way");
                         break;
                     case BuildCheckResult.IntersectedWithSomethingElse:
                         if(!Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.BuildingProjections))
-                            GetLine().Color(COLOR_BAD).Append("Can't build projections in this SafeZone");
+                            sb.Color(COLOR_BAD).Append("Can't build projections in this SafeZone");
                         else if(!Utils.CheckSafezoneAction(aimedBlock, SafeZoneAction.Welding))
-                            GetLine().Color(COLOR_BAD).Append("Can't weld in this SafeZone");
+                            sb.Color(COLOR_BAD).Append("Can't weld in this SafeZone");
                         else
-                            GetLine().Color(COLOR_WARNING).Append("Something in the way");
+                            sb.Color(COLOR_WARNING).Append("Something in the way");
                         break;
                     case BuildCheckResult.NotConnected:
-                        GetLine().Color(COLOR_WARNING).Append("Nothing to attach to");
+                        sb.Color(COLOR_WARNING).Append("Nothing to attach to");
                         break;
                     case BuildCheckResult.NotWeldable:
-                        GetLine().Color(COLOR_BAD).Append("Projector doesn't allow building");
+                        sb.Color(COLOR_BAD).Append("Projector doesn't allow building");
                         break;
                     //case BuildCheckResult.NotFound: // not used by CanBuild()
                     default:
-                        GetLine().Color(COLOR_BAD).Append("(Unknown)");
+                        sb.Color(COLOR_BAD).Append("(Unknown)");
                         break;
                 }
             }
@@ -1281,12 +1281,12 @@ namespace Digi.BuildInfo.Features
                 }
                 else
                 {
-                    AddLine().ResetFormatting().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
+                    StringBuilder sb = AddLine().ResetFormatting().Append("Integrity: ").Color(integrityRatio < def.CriticalIntegrityRatio ? COLOR_BAD : (integrityRatio < 1 ? COLOR_WARNING : COLOR_GOOD))
                         .IntegrityFormat(aimedBlock.Integrity).ResetFormatting()
                         .Append(" / ").IntegrityFormat(aimedBlock.MaxIntegrity);
 
                     if(def.BlockTopology == MyBlockTopology.Cube && aimedBlock.HasDeformation)
-                        GetLine().Color(COLOR_WARNING).Append(" (deformed)");
+                        sb.Color(COLOR_WARNING).Append(" (deformed)");
                 }
             }
             #endregion Integrity
@@ -1416,20 +1416,20 @@ namespace Digi.BuildInfo.Features
                     else if(shareMode == MyOwnershipShareModeEnum.Faction)
                     {
                         if(relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
-                            GetLine().Color(COLOR_GOOD);
+                            sb.Color(COLOR_GOOD);
                         else
-                            GetLine().Color(COLOR_BAD);
+                            sb.Color(COLOR_BAD);
 
-                        GetLine().Append("Faction");
+                        sb.Append("Faction");
                     }
                     else if(shareMode == MyOwnershipShareModeEnum.None)
                     {
                         if(relation == MyRelationsBetweenPlayerAndBlock.Owner)
-                            GetLine().Color(COLOR_WARNING);
+                            sb.Color(COLOR_WARNING);
                         else
-                            GetLine().Color(COLOR_BAD);
+                            sb.Color(COLOR_BAD);
 
-                        GetLine().Append("Owner");
+                        sb.Append("Owner");
                     }
                 }
                 else if(isProjected)
@@ -1517,13 +1517,13 @@ namespace Digi.BuildInfo.Features
                     float currentTime = buildTime * (1 - integrityRatio);
                     if(currentTime > 0)
                     {
-                        AddLine().Append("Completed: ").TimeFormat(currentTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.WelderSpeedMultiplier).ResetFormatting();
+                        StringBuilder sb = AddLine().Append("Completed: ").TimeFormat(currentTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.WelderSpeedMultiplier).ResetFormatting();
 
                         if(def.CriticalIntegrityRatio < 1 && integrityRatio < def.CriticalIntegrityRatio)
                         {
                             float funcTime = buildTime * def.CriticalIntegrityRatio * (1 - (integrityRatio / def.CriticalIntegrityRatio));
 
-                            GetLine().Separator().Append("Functional: ").TimeFormat(funcTime);
+                            sb.Separator().Append("Functional: ").TimeFormat(funcTime);
                         }
                     }
                 }
@@ -1561,11 +1561,11 @@ namespace Digi.BuildInfo.Features
 
                     if(grindTime > 0)
                     {
-                        AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();
+                        StringBuilder sb = AddLine().Append("Dismantled: ").TimeFormat(grindTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.GrinderSpeedMultiplier).ResetFormatting();
 
                         if(hackable)
                         {
-                            GetLine().Separator().Append("Hacked: ").TimeFormat(hackTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.HackSpeedMultiplier).ResetFormatting();
+                            sb.Separator().Append("Hacked: ").TimeFormat(hackTime).Color(COLOR_UNIMPORTANT).OptionalMultiplier(MyAPIGateway.Session.HackSpeedMultiplier).ResetFormatting();
                         }
                     }
                 }
@@ -1600,19 +1600,19 @@ namespace Digi.BuildInfo.Features
 
                 if(hasLinearVel || hasAngularVel)
                 {
-                    AddLine().Color(COLOR_WARNING);
+                    StringBuilder sb = AddLine().Color(COLOR_WARNING);
 
                     if(hasLinearVel)
                     {
-                        GetLine().Append("Moving: ").SpeedFormat(grid.Physics.LinearVelocity.Length(), 2);
+                        sb.Append("Moving: ").SpeedFormat(grid.Physics.LinearVelocity.Length(), 2);
                     }
 
                     if(hasAngularVel)
                     {
                         if(hasLinearVel)
-                            GetLine().Separator();
+                            sb.Separator();
 
-                        GetLine().Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 2);
+                        sb.Append("Rotating: ").RotationSpeed((float)grid.Physics.AngularVelocity.Length(), 2);
                     }
                 }
             }
@@ -1630,12 +1630,9 @@ namespace Digi.BuildInfo.Features
                         float gridMass = Main.GridMassCompute.GetGridMass(aimedBlock.CubeGrid);
                         float speed = impulse / gridMass;
 
-                        if(speed >= 0.5f)
-                            AddLine(FontsHandler.RedSh).Color(COLOR_BAD);
-                        else
-                            AddLine(FontsHandler.RedSh).Color(COLOR_WARNING);
+                        StringBuilder sb = AddLine(FontsHandler.RedSh).Color(speed >= 0.5f ? COLOR_BAD : COLOR_WARNING);
 
-                        GetLine().Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")");
+                        sb.Append("Grind impulse: ").SpeedFormat(speed, 5).Append(" (").ForceFormat(impulse).Append(")");
                     }
                 }
             }
@@ -1821,7 +1818,7 @@ namespace Digi.BuildInfo.Features
             #region Block name line only for textAPI
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.BlockName) && Main.TextAPI.IsEnabled)
             {
-                AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
+                StringBuilder sb = AddLine().Color(COLOR_BLOCKTITLE).Append(def.DisplayNameText);
 
                 MyBlockVariantGroup variantsGroup = def.BlockVariantsGroup;
 
@@ -1845,7 +1842,7 @@ namespace Digi.BuildInfo.Features
                     }
 
                     if(totalBlocks > 1)
-                        GetLine().Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(blockNumber).Append(" of ").Append(totalBlocks).Append(")");
+                        sb.Append("  ").Color(COLOR_BLOCKVARIANTS).Append("(Variant ").Append(blockNumber).Append(" of ").Append(totalBlocks).Append(")");
                 }
 
                 // TODO: implement in some nicer way?
@@ -1875,13 +1872,13 @@ namespace Digi.BuildInfo.Features
 
                 StringBuilder tooltip = CreateTooltip(coveringLines: 2);
 
-                StringBuilder line = AddLine();
+                StringBuilder sb = AddLine();
 
                 Vector3 offset = def.ModelOffset;
-                line.Color(COLOR_INTERNAL).Label("ModelOffset").Color(offset.LengthSquared() > 0 ? COLOR_WARNING : COLOR_NORMAL).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z)
+                sb.Color(COLOR_INTERNAL).Label("ModelOffset").Color(offset.LengthSquared() > 0 ? COLOR_WARNING : COLOR_NORMAL).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z)
                     .ResetFormatting().Separator();
 
-                line.Color(COLOR_INTERNAL).Label("ModelIntersection").Color(def.UseModelIntersection ? COLOR_WARNING : COLOR_NORMAL).Append(def.UseModelIntersection);
+                sb.Color(COLOR_INTERNAL).Label("ModelIntersection").Color(def.UseModelIntersection ? COLOR_WARNING : COLOR_NORMAL).Append(def.UseModelIntersection);
 
                 if(tooltip != null)
                 {
@@ -1952,20 +1949,20 @@ namespace Digi.BuildInfo.Features
 
                     const int PlaceLimitAsSpaces = 31; // calculated with /bi measure "Voxel placement "
 
-                    StringBuilder line = AddLine();
+                    StringBuilder sb = AddLine();
                     if(identical)
                     {
-                        line.Label("Voxel placement");
-                        AppendVoxelPlacement(staticSettings, line);
+                        sb.Label("Voxel placement");
+                        AppendVoxelPlacement(staticSettings, sb);
                     }
                     else
                     {
-                        line.Label("Voxel placement - 3D grid");
-                        AppendVoxelPlacement(staticSettings, line);
+                        sb.Label("Voxel placement - 3D grid");
+                        AppendVoxelPlacement(staticSettings, sb);
                     }
 
                     if(fromCubeBuilder)
-                        GetLine().Append(" <color=gray>(default)");
+                        sb.Append(" <color=gray>(default)");
 
                     StringBuilder tooltip = CreateTooltip(coveringLines: identical ? 1 : 2);
                     if(tooltip != null)
@@ -1981,11 +1978,11 @@ namespace Digi.BuildInfo.Features
 
                     if(!identical)
                     {
-                        line = AddLine().Append(' ', PlaceLimitAsSpaces).Label("- Free");
-                        AppendVoxelPlacement(dynamicSettings, line);
+                        sb = AddLine().Append(' ', PlaceLimitAsSpaces).Label("- Free");
+                        AppendVoxelPlacement(dynamicSettings, sb);
 
                         if(fromCubeBuilder)
-                            GetLine().Append(" <color=gray>(default)");
+                            sb.Append(" <color=gray>(default)");
                     }
                 }
             }
@@ -2084,7 +2081,7 @@ namespace Digi.BuildInfo.Features
                         SimpleTooltip("These are for upgrade module blocks to be directly mounted onto (no conveyors)."
                                     + "\nWhich module blocks are supported depends on the available upgrades below and the module's provided upgrades.");
 
-                        AddLine().Label(upgrades > 1 ? "Optional upgrades" : "Optional upgrade");
+                        StringBuilder sb = AddLine().Label(upgrades > 1 ? "Optional upgrades" : "Optional upgrade");
                         const int SpacePadding = 32;
                         const int NumPerRow = 2;
 
@@ -2093,12 +2090,12 @@ namespace Digi.BuildInfo.Features
                             if(i > 0)
                             {
                                 if(i % NumPerRow == 0)
-                                    AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ");
+                                    sb = AddLine().Color(COLOR_LIST).Append(' ', SpacePadding).Append("| ");
                                 else
-                                    GetLine().Separator();
+                                    sb.Separator();
                             }
 
-                            GetLine().Color(COLOR_GOOD).Append(data.Upgrades[i]).ResetFormatting();
+                            sb.Color(COLOR_GOOD).Append(data.Upgrades[i]).ResetFormatting();
                         }
                     }
                     else if(upgradePorts > 0)
@@ -2736,8 +2733,9 @@ namespace Digi.BuildInfo.Features
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().LabelHardcoded("Power required");
-                GetLine().PowerFormat(Hardcoded.Conveyors_PowerReqPerGrid).Append(" per grid (regardless of conveyor presence)");
+                StringBuilder sb = AddLine().LabelHardcoded("Power required");
+
+                sb.PowerFormat(Hardcoded.Conveyors_PowerReqPerGrid).Append(" per grid (regardless of conveyor presence)");
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     AddLine().Append("    ").ResourcePriority(Hardcoded.Conveyors_PowerGroup, hardcoded: true);
@@ -2832,12 +2830,10 @@ namespace Digi.BuildInfo.Features
             MyMotorSuspensionDefinition suspension = def as MyMotorSuspensionDefinition;
             if(suspension != null)
             {
-                if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+                if(PowerRequired2("Idle", suspension.RequiredIdlePowerInput, "Max", suspension.RequiredPowerInput, suspension.ResourceSinkGroup))
                 {
-                    AddLine().Label("Power - Idle").PowerFormat(suspension.RequiredIdlePowerInput).Separator().Label("Running").PowerFormat(suspension.RequiredPowerInput);
-
-                    if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority(suspension.ResourceSinkGroup);
+                    SimpleTooltip("The power usage scales linearly between Idle and Max based on Power slider (propulsion force) and pedal (input or override)." +
+                                  "\nPower usage can drop if the motor isn't required to put much effort into it, for example if it's freely spinning it would go back to Idle usage.");
                 }
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -2880,10 +2876,7 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
             {
                 MyCubeBlockDefinitionGroup group = MyDefinitionManager.Static.TryGetDefinitionGroup(topPart);
-                if(group == null)
-                    return;
-
-                MyCubeBlockDefinition partDef = (def.CubeSize == MyCubeSize.Large ? group.Large : group.Small);
+                MyCubeBlockDefinition partDef = (def.CubeSize == MyCubeSize.Large ? group?.Large : group?.Small);
 
                 if(partDef != null)
                     AppendBasics(partDef, part: true);
@@ -3092,7 +3085,7 @@ namespace Digi.BuildInfo.Features
                         if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                             GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
 
-                        AddLine().Label("Consumption, Max").VolumeFormat(maxFuelUsage).Append("/s").Separator().Label("Idle").VolumeFormat(minFuelUsage).Append("/s");
+                        AddLine().Label("Consumption - Max").VolumeFormat(maxFuelUsage).Append("/s").Separator().Label("Idle").VolumeFormat(minFuelUsage).Append("/s");
                     }
                     else
                     {
@@ -3109,7 +3102,7 @@ namespace Digi.BuildInfo.Features
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                         GetLine().Separator().ResourcePriority(thrust.ResourceSinkGroup);
 
-                    AddLine().Label("Consumption, Max").PowerFormat(maxPowerUsage).Separator().Label("Idle").PowerFormat(minPowerUsage);
+                    AddLine().Label("Consumption - Max").PowerFormat(maxPowerUsage).Separator().Label("Idle").PowerFormat(minPowerUsage);
                 }
             }
 
@@ -3898,10 +3891,12 @@ namespace Digi.BuildInfo.Features
             {
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
                 {
-                    AddLine(battery.AdaptibleInput ? FontsHandler.WhiteSh : FontsHandler.YellowSh).Append("Power input: ").PowerFormat(battery.RequiredPowerInput).Append(battery.AdaptibleInput ? " (adaptable)" : " (minimum required)");
+                    // battery.AdaptibleInput is not used anywhere, ignoring.
+
+                    StringBuilder sb = AddLine().Append("Power input: ").PowerFormat(battery.RequiredPowerInput).IsPowerAdaptable(battery.ResourceSinkGroup, showNotAdaptable: true);
 
                     if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
-                        GetLine().Separator().ResourcePriority(battery.ResourceSinkGroup);
+                        sb.Separator().ResourcePriority(battery.ResourceSinkGroup);
                 }
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
@@ -6168,22 +6163,41 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
                 Color color = (mw <= 0 ? COLOR_GOOD : COLOR_NORMAL);
+                StringBuilder sb = AddLine().Color(color);
 
                 if(powerHardcoded)
-                    AddLine().Color(color).LabelHardcoded("Power required");
+                    sb.LabelHardcoded("Power required");
                 else
-                    AddLine().Color(color).Label("Power required");
+                    sb.Label("Power required");
 
                 if(mw <= 0)
-                    GetLine().Append("None!");
+                    sb.Append("None!");
                 else
-                    GetLine().PowerFormat(mw);
+                    sb.PowerFormat(mw);
 
                 if(mw > 0 && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                 {
-                    GetLine().ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
+                    sb.ResetFormatting().Separator().ResourcePriority(groupName, groupHardcoded);
                 }
             }
+        }
+
+
+        bool PowerRequired2(string labelA, float mwA, string labelB, float mwB, MyStringHash group, bool groupHardcoded = false)
+        {
+            if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
+            {
+                StringBuilder sb = AddLine().Append("Power - ").Label(labelA).PowerFormat(mwA).Separator().Label(labelB).PowerFormat(mwB);
+
+                if((mwA > 0 || mwB > 0) && Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
+                {
+                    sb.Separator().ResourcePriority(group, groupHardcoded);
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true, MyInventoryConstraint constraintFromDef = null)
@@ -6226,19 +6240,19 @@ namespace Digi.BuildInfo.Features
 
                 if(maxItems > 0 || maxMass > 0)
                 {
-                    AddLine().Append("    ");
+                    StringBuilder sb = AddLine().Append("    ");
 
                     if(maxItems > 0)
                     {
-                        GetLine().Color(COLOR_BAD).Label("Max items").Append(maxItems).ResetFormatting();
+                        sb.Color(COLOR_BAD).Label("Max items").Append(maxItems).ResetFormatting();
                     }
 
                     if(maxMass > 0)
                     {
                         if(maxItems > 0)
-                            GetLine().Separator();
+                            sb.Separator();
 
-                        GetLine().Color(COLOR_BAD).Label("Max mass").MassFormat(maxMass).ResetFormatting();
+                        sb.Color(COLOR_BAD).Label("Max mass").MassFormat(maxMass).ResetFormatting();
                     }
                 }
             }

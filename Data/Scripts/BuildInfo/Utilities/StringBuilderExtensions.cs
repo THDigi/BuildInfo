@@ -444,6 +444,27 @@ namespace Digi.BuildInfo.Utilities
             return sb;
         }
 
+        public static StringBuilder IsPowerAdaptable(this StringBuilder s, MyStringHash groupId, bool showNotAdaptable = false)
+        {
+            Constants constants = BuildInfoMod.Instance.Constants;
+            ResourceGroupData data;
+
+            bool adaptible = false;
+
+            if(groupId != MyStringHash.NullOrEmpty && constants.ResourceGroupPriority.TryGetValue(groupId, out data))
+            {
+                if(data.Def.IsAdaptible)
+                    adaptible = true;
+            }
+
+            if(adaptible)
+                s.Append(" (adaptable)");
+            else if(showNotAdaptable)
+                s.Append(" (non-adaptable)");
+
+            return s;
+        }
+
         // Some ResourceSinkGroup are string and some are MyStringHash...
         public static StringBuilder ResourcePriority(this StringBuilder s, string groupName, bool hardcoded = false, bool isSource = false)
         {
