@@ -48,34 +48,34 @@ namespace Digi.BuildInfo.Features
                                                             "\nLightning damage can be disabled by world settings or mods overriding weather definitions.";
 
         #region Constants
-        private const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
+        const BlendTypeEnum FG_BLEND_TYPE = BlendTypeEnum.PostPP;
 
-        private readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
-        private readonly Color BG_COLOR = new Color(41, 54, 62);
-        private const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
+        readonly MyStringId BG_MATERIAL = MyStringId.GetOrCompute("BuildInfo_UI_Square");
+        readonly Color BG_COLOR = new Color(41, 54, 62);
+        const float BG_EDGE = 0.02f; // added padding edge around the text boundary for the background image
 
-        private const float CharInvVolM3Offset = 50 / 1000f; // subtracting 50L from char inv max volume to account for common tools
+        const float CharInvVolM3Offset = 50 / 1000f; // subtracting 50L from char inv max volume to account for common tools
 
-        private const float MENU_BG_OPACITY = 0.7f;
+        const float MENU_BG_OPACITY = 0.7f;
 
-        private const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
-        private const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
-        private const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
+        const int SCROLL_FROM_LINE = 2; // ignore lines to this line when scrolling, to keep important stuff like mass in view at all times; used in HUD notification view mode.
+        const int SPACE_SIZE = 8; // space character's width; used in HUD notification view mode.
+        const int MAX_LINES = 8; // max amount of HUD notification lines to print; used in HUD notification view mode.
         public const int MOD_NAME_MAX_LENGTH = 40;
         public const int PLAYER_NAME_MAX_LENGTH = 24;
         public const int BLOCK_NAME_MAX_LENGTH = 35;
 
-        private const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
+        const double FREEZE_MAX_DISTANCE_SQ = 50 * 50; // max distance allowed to go from the frozen block preview before it gets turned off.
 
         public const int CACHE_PURGE_TICKS = 60 * 30; // how frequent the caches are being checked for purging, in ticks
         public const int CACHE_EXPIRE_SECONDS = 60 * 5; // how long a cached string remains stored until it's purged, in seconds
 
-        private readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9675, 0.49); // textAPI default left side position
-        private readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9675 / 3f, 0.49); // textAPI default left side position when using a really wide resolution
-        private readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.9692, 0.26); // textAPI default right side position
-        private readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.9692 / 3f, 0.26); // textAPI default right side position when using a really wide resolution
+        readonly Vector2D TEXT_HUDPOS = new Vector2D(-0.9675, 0.49); // textAPI default left side position
+        readonly Vector2D TEXT_HUDPOS_WIDE = new Vector2D(-0.9675 / 3f, 0.49); // textAPI default left side position when using a really wide resolution
+        readonly Vector2D TEXT_HUDPOS_RIGHT = new Vector2D(0.9692, 0.26); // textAPI default right side position
+        readonly Vector2D TEXT_HUDPOS_RIGHT_WIDE = new Vector2D(0.9692 / 3f, 0.26); // textAPI default right side position when using a really wide resolution
 
-        private readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
+        readonly MyDefinitionId DEFID_MENU = new MyDefinitionId(typeof(MyObjectBuilder_GuiScreen)); // just a random non-block type to use as the menu's ID
 
         public readonly Color COLOR_BLOCKTITLE = new Color(50, 155, 255);
         public readonly Color COLOR_BLOCKVARIANTS = new Color(255, 233, 55);
@@ -98,40 +98,40 @@ namespace Digi.BuildInfo.Features
 
         public MyDefinitionId LastDefId; // last selected definition ID, can be set to MENU_DEFID too!
         public bool textShown = false;
-        private bool aimInfoNeedsUpdate = false;
-        private readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
+        bool aimInfoNeedsUpdate = false;
+        readonly HashSet<IMySlimBlock> ProjectedUnder = new HashSet<IMySlimBlock>();
         public Vector3D? LastGizmoPosition;
         public Cache cache = null; // currently selected cache to avoid another dictionary lookup in Draw()
 
-        private int gridMassComputeCooldown;
-        private float gridMassCache;
-        private long prevSelectedGrid;
+        int gridMassComputeCooldown;
+        float gridMassCache;
+        long prevSelectedGrid;
 
         // used by the textAPI view mode
         public readonly Dictionary<MyDefinitionId, Cache> CachedBuildInfoTextAPI = new Dictionary<MyDefinitionId, Cache>(MyDefinitionId.Comparer);
-        private bool useLeftSide = true;
-        private double prevAspectRatio = 1;
-        private int lines;
-        private int forceDrawTicks = 0;
-        private StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
-        private TextAPI.TextPackage textObject;
-        private const int TEXTAPI_TEXT_LENGTH = 2048;
+        bool useLeftSide = true;
+        double prevAspectRatio = 1;
+        int lines;
+        int forceDrawTicks = 0;
+        StringBuilder textAPIlines = new StringBuilder(TEXTAPI_TEXT_LENGTH);
+        TextAPI.TextPackage textObject;
+        const int TEXTAPI_TEXT_LENGTH = 2048;
 
         // used by the HUD notification view mode
         public readonly List<IMyHudNotification> hudNotifLines = new List<IMyHudNotification>();
         public readonly Dictionary<MyDefinitionId, Cache> CachedBuildInfoNotification = new Dictionary<MyDefinitionId, Cache>(MyDefinitionId.Comparer);
-        private int atLine = SCROLL_FROM_LINE;
-        private long lastScroll = 0;
-        private int largestLineWidth = 0;
-        private List<HudLine> notificationLines = new List<HudLine>();
+        int atLine = SCROLL_FROM_LINE;
+        long lastScroll = 0;
+        int largestLineWidth = 0;
+        List<HudLine> notificationLines = new List<HudLine>();
 
         // used in generating the block info text or menu for either view mode
-        private int line = -1;
-        private bool addLineCalled = false;
+        int line = -1;
+        bool addLineCalled = false;
 
         // used to quickly find the format method for block types
-        private delegate void TextGenerationCall(MyCubeBlockDefinition def);
-        private readonly Dictionary<MyObjectBuilderType, TextGenerationCall> formatLookup
+        delegate void TextGenerationCall(MyCubeBlockDefinition def);
+        readonly Dictionary<MyObjectBuilderType, TextGenerationCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, TextGenerationCall>(MyObjectBuilderType.Comparer);
 
         public TextGeneration(BuildInfoMod main) : base(main)
@@ -159,13 +159,13 @@ namespace Digi.BuildInfo.Features
             Main.EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
         }
 
-        private void TextAPI_APIDetected()
+        void TextAPI_APIDetected()
         {
             // FIXME: doesn't re-show the menu if in it while this happens...
             Main.TextGeneration.HideText(); // force a re-check to make the HUD -> textAPI transition
         }
 
-        private void GameConfig_HudStateChanged(HudStateChangedInfo info)
+        void GameConfig_HudStateChanged(HudStateChangedInfo info)
         {
             if(info.IsTemporary)
                 return;
@@ -178,7 +178,7 @@ namespace Digi.BuildInfo.Features
             ReCheckSide();
         }
 
-        private void GUIMonitor_OptionsMenuClosed()
+        void GUIMonitor_OptionsMenuClosed()
         {
             ReCheckSide();
 
@@ -189,12 +189,12 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
+        void EquipmentMonitor_ToolChanged(MyDefinitionId toolDefId)
         {
             LastDefId = default(MyDefinitionId);
         }
 
-        private void ReCheckSide()
+        void ReCheckSide()
         {
             bool shouldUseLeftSide = (Main.GameConfig.HudState != HudState.BASIC);
 
@@ -242,7 +242,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Update(int tick)
+        void Update(int tick)
         {
             MyDefinitionId prevToolDefId = Main.EquipmentMonitor.ToolDefId;
 
@@ -279,7 +279,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private bool UpdateWithDef(MyCubeBlockDefinition def)
+        bool UpdateWithDef(MyCubeBlockDefinition def)
         {
             LocalTooltips.Clear();
 
@@ -527,7 +527,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private Vector2D UpdateTextAPIvisuals(StringBuilder textSB, Vector2D textSize = default(Vector2D))
+        Vector2D UpdateTextAPIvisuals(StringBuilder textSB, Vector2D textSize = default(Vector2D))
         {
             if(textObject == null)
             {
@@ -867,7 +867,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void ResetLines()
+        void ResetLines()
         {
             if(Main.TextAPI.IsEnabled)
             {
@@ -886,7 +886,7 @@ namespace Digi.BuildInfo.Features
             addLineCalled = false;
         }
 
-        private StringBuilder AddLine(string font = FontsHandler.WhiteSh)
+        StringBuilder AddLine(string font = FontsHandler.WhiteSh)
         {
             EndAddedLines();
             addLineCalled = true;
@@ -949,12 +949,12 @@ namespace Digi.BuildInfo.Features
             LineHadTooltip = false;
         }
 
-        private StringBuilder GetLine()
+        StringBuilder GetLine()
         {
             return (Main.TextAPI.IsEnabled ? textAPIlines : notificationLines[line].str);
         }
 
-        private void AddOverlaysHint(MyCubeBlockDefinition def)
+        void AddOverlaysHint(MyCubeBlockDefinition def)
         {
             // TODO: remove last condition when adding overlay to WC
             if(Main.SpecializedOverlays.Get(def.Id.TypeId) != null && !Main.CoreSystemsAPIHandler.Weapons.ContainsKey(def.Id))
@@ -980,7 +980,7 @@ namespace Digi.BuildInfo.Features
         #endregion Text handling
 
         #region Menu generation
-        private StringBuilder AddMenuItemLine(int item, bool enabled = true)
+        StringBuilder AddMenuItemLine(int item, bool enabled = true)
         {
             AddLine(font: (Main.QuickMenu.SelectedItem == item ? FontsHandler.GreenSh : (enabled ? FontsHandler.WhiteSh : FontsHandler.RedSh)));
 
@@ -2187,7 +2187,7 @@ namespace Digi.BuildInfo.Features
         #endregion Equipped block info generation
 
         #region Shared generation methods
-        private void AppendBasics(MyCubeBlockDefinition def, bool part = false)
+        void AppendBasics(MyCubeBlockDefinition def, bool part = false)
         {
             bool deformable = (def.BlockTopology == MyBlockTopology.Cube && def.UsesDeformation);
             bool buildModels = (def.BuildProgressModels != null && def.BuildProgressModels.Length > 0);
@@ -2720,19 +2720,19 @@ namespace Digi.BuildInfo.Features
             Add(typeof(MyObjectBuilder_VendingMachine), Format_StoreBlock);
         }
 
-        private void Add(MyObjectBuilderType blockType, TextGenerationCall call)
+        void Add(MyObjectBuilderType blockType, TextGenerationCall call)
         {
             formatLookup.Add(blockType, call);
         }
 
-        private void Format_TerminalBlock(MyCubeBlockDefinition def)
+        void Format_TerminalBlock(MyCubeBlockDefinition def)
         {
             // HACK hardcoded; control panel doesn't use power
             PowerRequired(0, null, powerHardcoded: true);
         }
 
         #region Conveyors
-        private void Format_Conveyors(MyCubeBlockDefinition def)
+        void Format_Conveyors(MyCubeBlockDefinition def)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -2744,7 +2744,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Connector(MyCubeBlockDefinition def)
+        void Format_Connector(MyCubeBlockDefinition def)
         {
             PowerRequired(0, null, powerHardcoded: true);
 
@@ -2775,7 +2775,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_CargoAndCollector(MyCubeBlockDefinition def)
+        void Format_CargoAndCollector(MyCubeBlockDefinition def)
         {
             MyCargoContainerDefinition cargo = (MyCargoContainerDefinition)def;
 
@@ -2788,7 +2788,7 @@ namespace Digi.BuildInfo.Features
             InventoryStats(def, alternateVolume: cargo.InventorySize.Volume);
         }
 
-        private void Format_ConveyorSorter(MyCubeBlockDefinition def)
+        void Format_ConveyorSorter(MyCubeBlockDefinition def)
         {
             // conveyor sorter type is used by WeaponCore too.
             List<CoreSystemsDef.WeaponDefinition> csWeaponDefs;
@@ -2808,7 +2808,7 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Conveyors
 
-        private void Format_Piston(MyCubeBlockDefinition def)
+        void Format_Piston(MyCubeBlockDefinition def)
         {
             MyPistonBaseDefinition piston = (MyPistonBaseDefinition)def;
 
@@ -2826,7 +2826,7 @@ namespace Digi.BuildInfo.Features
             Suffix_Mechanical(def, piston.TopPart);
         }
 
-        private void Format_Rotor(MyCubeBlockDefinition def)
+        void Format_Rotor(MyCubeBlockDefinition def)
         {
             MyMotorStatorDefinition motor = (MyMotorStatorDefinition)def;
             MyMotorSuspensionDefinition suspension = def as MyMotorSuspensionDefinition;
@@ -2875,7 +2875,7 @@ namespace Digi.BuildInfo.Features
             Suffix_Mechanical(def, motor.TopPart);
         }
 
-        private void Suffix_Mechanical(MyCubeBlockDefinition def, string topPart)
+        void Suffix_Mechanical(MyCubeBlockDefinition def, string topPart)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PartStats))
             {
@@ -2892,7 +2892,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_MergeBlock(MyCubeBlockDefinition def)
+        void Format_MergeBlock(MyCubeBlockDefinition def)
         {
             MyMergeBlockDefinition merge = (MyMergeBlockDefinition)def;
 
@@ -2905,7 +2905,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_LandingGear(MyCubeBlockDefinition def)
+        void Format_LandingGear(MyCubeBlockDefinition def)
         {
             MyLandingGearDefinition lg = (MyLandingGearDefinition)def;
 
@@ -2919,7 +2919,7 @@ namespace Digi.BuildInfo.Features
         }
 
         #region Ship tools
-        private void Format_Drill(MyCubeBlockDefinition def)
+        void Format_Drill(MyCubeBlockDefinition def)
         {
             MyShipDrillDefinition shipDrill = (MyShipDrillDefinition)def;
 
@@ -2941,7 +2941,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_WelderAndGrinder(MyCubeBlockDefinition def)
+        void Format_WelderAndGrinder(MyCubeBlockDefinition def)
         {
             MyShipToolDefinition shipTool = (MyShipToolDefinition)def;
             bool isWelder = def is MyShipWelderDefinition;
@@ -2984,7 +2984,7 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Ship tools
 
-        private void Format_ShipController(MyCubeBlockDefinition def)
+        void Format_ShipController(MyCubeBlockDefinition def)
         {
             MyShipControllerDefinition shipController = (MyShipControllerDefinition)def;
 
@@ -3065,7 +3065,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Thrust(MyCubeBlockDefinition def)
+        void Format_Thrust(MyCubeBlockDefinition def)
         {
             MyThrustDefinition thrust = (MyThrustDefinition)def;
 
@@ -3211,7 +3211,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Gyro(MyCubeBlockDefinition def)
+        void Format_Gyro(MyCubeBlockDefinition def)
         {
             MyGyroDefinition gyro = (MyGyroDefinition)def;
 
@@ -3223,7 +3223,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Light(MyCubeBlockDefinition def)
+        void Format_Light(MyCubeBlockDefinition def)
         {
             MyLightingBlockDefinition light = (MyLightingBlockDefinition)def;
 
@@ -3269,7 +3269,7 @@ namespace Digi.BuildInfo.Features
                 sb.Separator().Label("Offset").VectorOffsetFormat(def.ModelOffset);
         }
 
-        private void Format_Projector(MyCubeBlockDefinition def)
+        void Format_Projector(MyCubeBlockDefinition def)
         {
             MyProjectorDefinition projector = (MyProjectorDefinition)def;
 
@@ -3292,7 +3292,7 @@ namespace Digi.BuildInfo.Features
         }
 
         #region Doors
-        private void Format_Door(MyCubeBlockDefinition def)
+        void Format_Door(MyCubeBlockDefinition def)
         {
             MyDoorDefinition door = (MyDoorDefinition)def;
 
@@ -3305,7 +3305,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_AirtightDoor(MyCubeBlockDefinition def)
+        void Format_AirtightDoor(MyCubeBlockDefinition def)
         {
             MyAirtightDoorGenericDefinition airTightDoor = (MyAirtightDoorGenericDefinition)def; // does not extend MyDoorDefinition
 
@@ -3326,7 +3326,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_AdvancedDoor(MyCubeBlockDefinition def)
+        void Format_AdvancedDoor(MyCubeBlockDefinition def)
         {
             MyAdvancedDoorDefinition advDoor = (MyAdvancedDoorDefinition)def; // does not extend MyDoorDefinition
 
@@ -3348,7 +3348,7 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Doors
 
-        private void Format_Ladder(MyCubeBlockDefinition def)
+        void Format_Ladder(MyCubeBlockDefinition def)
         {
             PowerRequired(0, null, powerHardcoded: true);
 
@@ -3360,7 +3360,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Parachute(MyCubeBlockDefinition def)
+        void Format_Parachute(MyCubeBlockDefinition def)
         {
             MyParachuteDefinition parachute = (MyParachuteDefinition)def;
 
@@ -3392,7 +3392,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_MedicalRoom(MyCubeBlockDefinition def)
+        void Format_MedicalRoom(MyCubeBlockDefinition def)
         {
             MyMedicalRoomDefinition medicalRoom = (MyMedicalRoomDefinition)def;
 
@@ -3469,7 +3469,7 @@ namespace Digi.BuildInfo.Features
         }
 
         #region Production
-        private void Format_Production(MyCubeBlockDefinition def)
+        void Format_Production(MyCubeBlockDefinition def)
         {
             MyProductionBlockDefinition production = (MyProductionBlockDefinition)def;
 
@@ -3740,7 +3740,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_OxygenFarm(MyCubeBlockDefinition def)
+        void Format_OxygenFarm(MyCubeBlockDefinition def)
         {
             MyOxygenFarmDefinition oxygenFarm = (MyOxygenFarmDefinition)def; // does not extend MyProductionBlockDefinition
 
@@ -3767,7 +3767,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_AirVent(MyCubeBlockDefinition def)
+        void Format_AirVent(MyCubeBlockDefinition def)
         {
             MyAirVentDefinition vent = (MyAirVentDefinition)def; // does not extend MyProductionBlockDefinition
 
@@ -3796,7 +3796,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_UpgradeModule(MyCubeBlockDefinition def)
+        void Format_UpgradeModule(MyCubeBlockDefinition def)
         {
             MyUpgradeModuleDefinition upgradeModule = (MyUpgradeModuleDefinition)def;
 
@@ -3831,7 +3831,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_PowerProducer(MyCubeBlockDefinition def)
+        void Format_PowerProducer(MyCubeBlockDefinition def)
         {
             MyPowerProducerDefinition powerProducer = (MyPowerProducerDefinition)def;
 
@@ -4104,7 +4104,7 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Communication
 
-        private void Format_Timer(MyCubeBlockDefinition def)
+        void Format_Timer(MyCubeBlockDefinition def)
         {
             MyTimerBlockDefinition timer = (MyTimerBlockDefinition)def;
 
@@ -4116,7 +4116,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_ProgrammableBlock(MyCubeBlockDefinition def)
+        void Format_ProgrammableBlock(MyCubeBlockDefinition def)
         {
             MyProgrammableBlockDefinition pb = (MyProgrammableBlockDefinition)def;
 
@@ -4273,7 +4273,7 @@ namespace Digi.BuildInfo.Features
             //}
         }
 
-        private void Format_Sensor(MyCubeBlockDefinition def)
+        void Format_Sensor(MyCubeBlockDefinition def)
         {
             MySensorBlockDefinition sensor = (MySensorBlockDefinition)def;
 
@@ -4288,7 +4288,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Camera(MyCubeBlockDefinition def)
+        void Format_Camera(MyCubeBlockDefinition def)
         {
             MyCameraBlockDefinition camera = (MyCameraBlockDefinition)def;
 
@@ -4317,7 +4317,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_Button(MyCubeBlockDefinition def)
+        void Format_Button(MyCubeBlockDefinition def)
         {
             MyButtonPanelDefinition button = (MyButtonPanelDefinition)def;
 
@@ -4330,7 +4330,7 @@ namespace Digi.BuildInfo.Features
         }
 
         #region Magic blocks
-        private void Format_GravityGenerator(MyCubeBlockDefinition def)
+        void Format_GravityGenerator(MyCubeBlockDefinition def)
         {
             MyGravityGeneratorBaseDefinition gravGen = (MyGravityGeneratorBaseDefinition)def;
 
@@ -4364,7 +4364,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_ArtificialMass(MyCubeBlockDefinition def)
+        void Format_ArtificialMass(MyCubeBlockDefinition def)
         {
             MyVirtualMassDefinition artificialMass = (MyVirtualMassDefinition)def;
 
@@ -4377,7 +4377,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_SpaceBall(MyCubeBlockDefinition def)
+        void Format_SpaceBall(MyCubeBlockDefinition def)
         {
             MySpaceBallDefinition spaceBall = (MySpaceBallDefinition)def; // this doesn't extend MyVirtualMassDefinition
 
@@ -4408,7 +4408,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_JumpDrive(MyCubeBlockDefinition def)
+        void Format_JumpDrive(MyCubeBlockDefinition def)
         {
             MyJumpDriveDefinition jumpDrive = (MyJumpDriveDefinition)def;
 
@@ -4457,7 +4457,7 @@ namespace Digi.BuildInfo.Features
         readonly List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>> AmmoBullets = new List<MyTuple<MyAmmoMagazineDefinition, MyProjectileAmmoDefinition>>();
         readonly List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>> AmmoMissiles = new List<MyTuple<MyAmmoMagazineDefinition, MyMissileAmmoDefinition>>();
 
-        private void Format_Weapon(MyCubeBlockDefinition def)
+        void Format_Weapon(MyCubeBlockDefinition def)
         {
             #region for debugging icons
             //{
@@ -5664,7 +5664,7 @@ namespace Digi.BuildInfo.Features
         //    return controlId;
         //}
 
-        private void Format_Warhead(MyCubeBlockDefinition def)
+        void Format_Warhead(MyCubeBlockDefinition def)
         {
             var warhead = def as MyWarheadDefinition; // does not extend MyWeaponBlockDefinition
             if(warhead == null)
@@ -5708,7 +5708,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_TargetDummy(MyCubeBlockDefinition def)
+        void Format_TargetDummy(MyCubeBlockDefinition def)
         {
             var dummyDef = def as MyTargetDummyBlockDefinition;
             if(dummyDef == null)
@@ -5781,7 +5781,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_TurretControl(MyCubeBlockDefinition def)
+        void Format_TurretControl(MyCubeBlockDefinition def)
         {
             var tcbDef = def as MyTurretControlBlockDefinition;
             if(tcbDef == null)
@@ -5807,7 +5807,7 @@ namespace Digi.BuildInfo.Features
             AddLine().Color(hasSunTracker ? COLOR_NORMAL : COLOR_WARNING).Label("Can track Sun").BoolFormat(hasSunTracker);
         }
 
-        private void Format_Searchlight(MyCubeBlockDefinition def)
+        void Format_Searchlight(MyCubeBlockDefinition def)
         {
             MySearchlightDefinition searchlight = def as MySearchlightDefinition;
             if(searchlight == null)
@@ -5848,7 +5848,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_AIBlocks(MyCubeBlockDefinition def)
+        void Format_AIBlocks(MyCubeBlockDefinition def)
         {
             MyObjectBuilder_AiBlockPowerComponentDefinition powerCompOB = null;
             //MyObjectBuilder_SearchEnemyComponentDefinition searchCompOB = null;
@@ -5943,7 +5943,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_EventController(MyCubeBlockDefinition def)
+        void Format_EventController(MyCubeBlockDefinition def)
         {
             var eventDef = def as MyEventControllerBlockDefinition;
             if(eventDef == null)
@@ -5952,7 +5952,7 @@ namespace Digi.BuildInfo.Features
             PowerRequired(eventDef.RequiredPowerInput, eventDef.ResourceSinkGroup);
         }
 
-        private void Format_EmotionController(MyCubeBlockDefinition def)
+        void Format_EmotionController(MyCubeBlockDefinition def)
         {
             var emoDef = def as MyEmotionControllerBlockDefinition;
             if(emoDef == null)
@@ -5961,7 +5961,7 @@ namespace Digi.BuildInfo.Features
             PowerRequired(emoDef.RequiredPowerInput, emoDef.ResourceSinkGroup);
         }
 
-        private void Format_HeatVent(MyCubeBlockDefinition def)
+        void Format_HeatVent(MyCubeBlockDefinition def)
         {
             MyHeatVentBlockDefinition ventDef = def as MyHeatVentBlockDefinition;
             if(ventDef == null)
@@ -5996,7 +5996,7 @@ namespace Digi.BuildInfo.Features
             */
         }
 
-        private void Format_SafeZone(MyCubeBlockDefinition def)
+        void Format_SafeZone(MyCubeBlockDefinition def)
         {
             MySafeZoneBlockDefinition safeZone = (MySafeZoneBlockDefinition)def;
 
@@ -6031,12 +6031,12 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void Format_ContractBlock(MyCubeBlockDefinition def)
+        void Format_ContractBlock(MyCubeBlockDefinition def)
         {
             PowerRequired(0, MyStringHash.NullOrEmpty, powerHardcoded: true, groupHardcoded: true);
         }
 
-        private void Format_StoreBlock(MyCubeBlockDefinition def)
+        void Format_StoreBlock(MyCubeBlockDefinition def)
         {
             MyStoreBlockDefinition store = (MyStoreBlockDefinition)def;
             MyVendingMachineDefinition vending = def as MyVendingMachineDefinition;
@@ -6097,7 +6097,7 @@ namespace Digi.BuildInfo.Features
         }
         #endregion Per block info
 
-        private void DLCFormat(MyCubeBlockDefinition def)
+        void DLCFormat(MyCubeBlockDefinition def)
         {
             if(def.DLCs == null || def.DLCs.Length == 0)
                 return;
@@ -6133,7 +6133,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void DamageMultiplierAsResistance(float damageMultiplier, string label = "Resistance")
+        void DamageMultiplierAsResistance(float damageMultiplier, string label = "Resistance")
         {
             int dmgResPercent = (int)(((1f / damageMultiplier) - 1) * 100);
 
@@ -6142,7 +6142,7 @@ namespace Digi.BuildInfo.Features
                 .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(damageMultiplier, 2).Append(")").ResetFormatting();
         }
 
-        private void ResistanceFormat(double resistance, string label = "Resistance")
+        void ResistanceFormat(double resistance, string label = "Resistance")
         {
             int resPercent = (int)((resistance - 1) * 100f);
             float multiplier = (float)(1d / resistance);
@@ -6152,7 +6152,7 @@ namespace Digi.BuildInfo.Features
                 .Color(COLOR_UNIMPORTANT).Append(" (x").RoundedNumber(multiplier, 2).Append(")").ResetFormatting();
         }
 
-        private void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
+        void PowerRequired(float mw, string groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -6161,7 +6161,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false, bool groupHardcoded = false)
+        void PowerRequired(float mw, MyStringHash groupName, bool powerHardcoded = false, bool groupHardcoded = false)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
@@ -6184,7 +6184,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true, MyInventoryConstraint constraintFromDef = null)
+        void InventoryStats(MyCubeBlockDefinition def, float alternateVolume = 0, float hardcodedVolume = 0, bool showConstraints = true, MyInventoryConstraint constraintFromDef = null)
         {
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryStats))
             {
@@ -6206,7 +6206,7 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit, MyInventoryComponentDefinition invComp)
+        void InventoryConstraints(float maxVolume, MyInventoryConstraint invLimit, MyInventoryComponentDefinition invComp)
         {
             if(!Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.InventoryExtras))
                 return;
@@ -6282,8 +6282,8 @@ namespace Digi.BuildInfo.Features
             }
         }
 
-        private readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
-        private void PurgeCache()
+        readonly List<MyDefinitionId> removeCacheIds = new List<MyDefinitionId>();
+        void PurgeCache()
         {
             bool haveNotifCache = CachedBuildInfoNotification.Count > 0;
             bool haveTextAPICache = CachedBuildInfoTextAPI.Count > 0;
