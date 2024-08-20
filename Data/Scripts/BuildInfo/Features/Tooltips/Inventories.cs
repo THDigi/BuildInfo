@@ -88,12 +88,17 @@ namespace Digi.BuildInfo.Features.Tooltips
                             if(DebugLog)
                                 Log.Info($"{blockDef.Id}:");
 
+                            bool moddedBpClass = false;
+
                             // HACK: getting items types for icon from here instead of the constraint because the constraint contains things it cannot build
                             // for example, it allows ZoneChip in assembler inventory, but it cannot build it nor deconstruct it, it's from the LargeBlocks having SafeZone and does not check.
                             foreach(MyBlueprintClassDefinition bpClassDef in productionDef.BlueprintClasses)
                             {
                                 if(DebugLog)
                                     Log.Info($"  {bpClassDef.Id} - type={bpClassDef.GetType().Name}");
+
+                                if(!moddedBpClass && bpClassDef.Context != null && !bpClassDef.Context.IsBaseGame)
+                                    moddedBpClass = true;
 
                                 foreach(MyBlueprintDefinitionBase bp in bpClassDef)
                                 {
@@ -128,8 +133,12 @@ namespace Digi.BuildInfo.Features.Tooltips
                             SetTooltip(blockDef, ref productionDef.InputInventoryConstraint, productionDef.BlueprintClasses, true);
                             SetTooltip(blockDef, ref productionDef.OutputInventoryConstraint, productionDef.BlueprintClasses, false);
 
-                            SetIcon(productionDef, productionDef.InputInventoryConstraint, InputTypes, true);
-                            SetIcon(productionDef, productionDef.OutputInventoryConstraint, OutputTypes, false);
+                            // only fix if all bpclasses are vanilla
+                            if(!moddedBpClass)
+                            {
+                                SetIcon(productionDef, productionDef.InputInventoryConstraint, InputTypes, true);
+                                SetIcon(productionDef, productionDef.OutputInventoryConstraint, OutputTypes, false);
+                            }
 
                             continue;
                         }
