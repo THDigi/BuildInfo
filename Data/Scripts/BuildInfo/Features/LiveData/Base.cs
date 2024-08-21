@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Digi.BuildInfo.Features.ModderHelp;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
@@ -329,9 +330,9 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     if(!blockTypeHasConveyorSupport)
                     {
-                        if(Main.Config.ModderHelpAlerts.Value && (ModderHelp.CheckEverything || def.Context.IsLocal()))
+                        if(Main.Config.ModderHelpAlerts.Value && (ModderHelpMain.CheckEverything || def.Context.IsLocal()))
                         {
-                            Main.ModderHelp.ModHint(def, $"The model has convetor_* dummies but the block type does not support conveyor network." +
+                            Main.ModderHelpMain.ModHint(def, $"The model has convetor_* dummies but the block type does not support conveyor network." +
                                                          "\nIf you want conveyor connection use a compatible block type (spaceengineers.wiki.gg has a list) or if you just want manual interaction use a detector_inventory instead.");
                         }
 

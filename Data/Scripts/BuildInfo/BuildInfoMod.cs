@@ -4,6 +4,7 @@ using Digi.BuildInfo.Features.ChatCommands;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Features.ConfigMenu;
 using Digi.BuildInfo.Features.LiveData;
+using Digi.BuildInfo.Features.ModderHelp;
 using Digi.BuildInfo.Features.ModelPreview;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Features.Overlays.ConveyorNetwork;
@@ -116,7 +117,7 @@ namespace Digi.BuildInfo
         public readonly InterModAPI InterModAPI;
         public readonly DebugEvents DebugEvents;
         public readonly DebugLog DebugLog;
-        public readonly ModderHelp ModderHelp;
+        public readonly ModderHelpMain ModderHelpMain;
         public readonly ProfilerDisplay ProfilerDisplay;
 
         public static bool IsDevMod { get; private set; } = false;
@@ -213,7 +214,7 @@ namespace Digi.BuildInfo
             InterModAPI = new InterModAPI(this);
             DebugEvents = new DebugEvents(this);
             DebugLog = new DebugLog(this);
-            ModderHelp = new ModderHelp(this);
+            ModderHelpMain = new ModderHelpMain(this);
             ProfilerDisplay = new ProfilerDisplay(this);
         }
     }
