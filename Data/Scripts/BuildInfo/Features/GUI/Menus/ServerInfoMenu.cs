@@ -1089,13 +1089,15 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.StationVoxelSupport), settings.StationVoxelSupport, DefaultSettings.StationVoxelSupport, true,
                 "Maintain static on split", "By enabling this option grids will no longer turn dynamic when disconnected from static grids." + TooltipOriginalName("WorldSettings_StationVoxelSupport"));
             PrintSetting(sb, nameof(settings.EnableConvertToStation), settings.EnableConvertToStation, DefaultSettings.EnableConvertToStation, true,
-                "Allow convert to station", "Allows players to use Convert to Station from info tab in terminal, making the grid static.");
+                "Allow convert to station", "Adds the 'Convert to Station' button in grids' Info tab in the Terminal.\n" +
+                                            "Also allows pasted static grids to remain static even if not touching any voxel.");
             PrintSetting(sb, nameof(settings.ThrusterDamage), settings.ThrusterDamage, DefaultSettings.ThrusterDamage, true,
                 "Thruster Damage", "Thruster blocks damage blocks and living things in their flame path.");
             PrintSetting(sb, nameof(settings.EnableSubgridDamage), settings.EnableSubgridDamage, DefaultSettings.EnableSubgridDamage, false,
                 "Sub-Grid Physical Damage", "Allows physically connected grids to damage eachother from physical forces.");
             PrintSetting(sb, nameof(settings.EnableToolShake), settings.EnableToolShake, DefaultSettings.EnableToolShake, true,
-                "Tool Shake", "Ship drills move the ship while mining and ship grinders move both the tool's ship and the grinded ship.");
+                "Tool Shake", "Ship drills move the ship while mining and ship grinders move both the tool's ship and the grinded ship." +
+                              "\nCamera shake is present regardless of this setting.");
             PrintSetting(sb, nameof(settings.EnableIngameScripts), settings.EnableIngameScripts, DefaultSettings.EnableIngameScripts, true,
                 "Programmable Block Scripts", "Allows players to use scripts in programmable block (decoration otherwise).");
             PrintSetting(sb, nameof(settings.EnableScripterRole), settings.EnableScripterRole, DefaultSettings.EnableScripterRole, true,
@@ -1238,7 +1240,7 @@ namespace Digi.BuildInfo.Features.GUI
                 "Economy update time", " sec", "Seconds between two economy updates (station contracts, etc)",
                 GrayIfFalse(settings.EnableEconomy));
             PrintSetting(sb, nameof(settings.EnableBountyContracts), settings.EnableBountyContracts, DefaultSettings.EnableBountyContracts, false,
-                "Bounty Contracts", "If enabled bounty contracts will be available on stations.",
+                "Bounty Contracts", "If trading outposts generate kill contracts for players that have low standing with that faction.",
                 GrayIfFalse(settings.EnableEconomy));
             PrintSetting(sb, nameof(settings.EnableContainerDrops), settings.EnableContainerDrops, DefaultSettings.EnableContainerDrops, false,
                 "Drop Containers", "Enables drop containers (unknown signals).");
@@ -1442,14 +1444,15 @@ namespace Digi.BuildInfo.Features.GUI
             PrintSetting(sb, nameof(settings.MaxCargoBags), settings.MaxCargoBags, DefaultSettings.MaxCargoBags, false,
                 "Max Cargo Bags", "The maximum number of existing cargo bags.");
             PrintSetting(sb, nameof(settings.AdaptiveSimulationQuality), settings.AdaptiveSimulationQuality, DefaultSettings.AdaptiveSimulationQuality, false,
-                "Adaptive Simulation Quality", "Enables adaptive simulation quality system. This system is useful if you have a lot of voxel deformations in the world and low simulation speed.");
+                "Adaptive Simulation Quality", "If enabled and CPU load (locally) is higher than 90% sustained, then a few things stop happening:" +
+                                               "\nBlock deformations, some voxel cutouts, voxel cutouts from explosions, projectiles update less frequent, character limb IK and ragdoll, some grid impact details.");
             PrintSetting(sb, nameof(settings.EnableSelectivePhysicsUpdates), settings.EnableSelectivePhysicsUpdates, DefaultSettings.EnableSelectivePhysicsUpdates, false,
                 "Selective Physics Updates", "When enabled game will update physics only in the specific clusters, which are necessary.\nOnly works on dedicated servers.");
             PrintSetting(sb, nameof(settings.SimplifiedSimulation), settings.SimplifiedSimulation, DefaultSettings.SimplifiedSimulation, false,
                 "Simplified Simulation", "It is not recommended on for survival!" +
                                          "\nResources are not properly consumed, inventories are not updated and ammunition is not consumed.");
             PrintSetting(sb, nameof(settings.PhysicsIterations), settings.PhysicsIterations, DefaultSettings.PhysicsIterations, false,
-                "Physics Iterations");
+                "Physics Iterations", $"Havok physics engine solver iterations, higher would have slightly more accurate physics but require more CPU power. It cannot be lower than {Hardcoded.SolverIterationsMin}.");
             PrintSetting(sb, nameof(settings.EnableOrca), settings.EnableOrca, DefaultSettings.EnableOrca, false,
                 "Advanced ORCA algorithm", "Enable advanced Optimal Reciprocal Collision Avoidance algorithm.");
             PrintSetting(sb, nameof(settings.PredefinedAsteroids), settings.PredefinedAsteroids, DefaultSettings.PredefinedAsteroids, false,

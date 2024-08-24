@@ -52,6 +52,9 @@ namespace Digi.BuildInfo.VanillaData
         // from MyGravityProviderSystem.G
         public const float EarthGravity = 9.81f;
 
+        // from MyPhysics.CreateWorldCInfo()
+        public const int SolverIterationsMin = 8;
+
         // from MyGridConveyorSystem
         public const float Conveyors_PowerReqPerGrid = 1e-07f;
         public const string Conveyors_PowerGroup = "Conveyors"; // in ctor()
