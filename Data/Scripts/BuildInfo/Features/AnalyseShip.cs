@@ -284,7 +284,7 @@ namespace Digi.BuildInfo.Features
         {
             foreach(MyAssetModifierDefinition assetDef in MyDefinitionManager.Static.GetAssetModifierDefinitions())
             {
-                if(assetDef.Id.SubtypeName.EndsWith("_Armor"))
+                if(IsBlockSkin(assetDef))
                 {
                     if(assetDef.DLCs != null && assetDef.DLCs.Length != 0)
                     {
@@ -299,6 +299,64 @@ namespace Digi.BuildInfo.Features
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Attempt to identify if the given asset definition is for blocks (as opposed to skins for characters or tools)
+        /// </summary>
+        static bool IsBlockSkin(MyAssetModifierDefinition assetDef)
+        {
+            try
+            {
+                if(assetDef == null)
+                    return false;
+
+                string subtype = assetDef.Id.SubtypeName;
+
+                if(subtype == "TestArmor")
+                    return false; // skip unusable vanilla test armor
+
+                //if(subtype == "RustNonColorable_Armor")
+                //    return false; // DLC-less skin that has no steam item
+
+                if(subtype.EndsWith("_Armor"))
+                    return true;
+
+                // now to guess the ones that don't have _Armor suffix...
+
+                if(assetDef.Icons != null)
+                {
+                    foreach(string icon in assetDef.Icons)
+                    {
+                        if(icon == null)
+                            continue;
+
+                        if(icon.IndexOf("armor", StringComparison.OrdinalIgnoreCase) != -1)
+                            return true;
+                    }
+                }
+
+                if(assetDef.Textures != null)
+                {
+                    foreach(MyObjectBuilder_AssetModifierDefinition.MyAssetTexture texture in assetDef.Textures)
+                    {
+                        if(texture.Location == null)
+                            continue;
+
+                        if(texture.Location.Equals("SquarePlate", StringComparison.OrdinalIgnoreCase))
+                            return true;
+
+                        if(texture.Location.Equals("PaintedMetal_Colorable", StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Error($"Error in IsSkinAsset() for asset={assetDef.Id.ToString()}\n{e}");
+            }
+
+            return false;
         }
 
         public bool AnalyseRealGrid(IMyCubeGrid targetGrid)
