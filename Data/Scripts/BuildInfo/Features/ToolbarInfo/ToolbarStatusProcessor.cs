@@ -97,49 +97,6 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
         {
         }
 
-        /// <summary>
-        /// Appends intermitent OFF if block is turned off.
-        /// Returns true if it was appended.
-        /// </summary>
-        public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
-        {
-            if(!AnimFlip)
-                return false;
-
-            // doesn't need IsFunctional, slot is grayed out in that case
-
-            IMyFunctionalBlock toggleable = block as IMyFunctionalBlock;
-            if(toggleable != null && !toggleable.Enabled)
-            {
-                sb.Append(IconPowerOff).Append("OFF\n");
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Returns true if it appended something but only for half a second as these are blinking.
-        /// </summary>
-        public bool AppendGroupStats(StringBuilder sb, int broken, int off)
-        {
-            if(!AnimFlip)
-                return false;
-
-            if(broken > 0)
-            {
-                sb.NumberCapped(broken, MaxChars - 4).Append(IconBroken).Append("DMG\n");
-                return true;
-            }
-            else if(off > 0)
-            {
-                sb.NumberCapped(off, MaxChars - 4).Append(IconPowerOff).Append("OFF\n");
-                return true;
-            }
-
-            return false;
-        }
-
         public override void RegisterComponent()
         {
             new StatusOverride.GenericFallback(this);
@@ -237,6 +194,49 @@ namespace Digi.BuildInfo.Features.ToolbarInfo
             if(actionId6 != null) actions.Add(actionId6, func);
         }
         #endregion Registering methods
+
+        /// <summary>
+        /// Appends intermitent OFF if block is turned off.
+        /// Returns true if it was appended.
+        /// </summary>
+        public bool AppendSingleStats(StringBuilder sb, IMyTerminalBlock block)
+        {
+            if(!AnimFlip)
+                return false;
+
+            // doesn't need IsFunctional, slot is grayed out in that case
+
+            IMyFunctionalBlock toggleable = block as IMyFunctionalBlock;
+            if(toggleable != null && !toggleable.Enabled)
+            {
+                sb.Append(IconPowerOff).Append("OFF\n");
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns true if it appended something but only for half a second as these are blinking.
+        /// </summary>
+        public bool AppendGroupStats(StringBuilder sb, int broken, int off)
+        {
+            if(!AnimFlip)
+                return false;
+
+            if(broken > 0)
+            {
+                sb.NumberCapped(broken, MaxChars - 4).Append(IconBroken).Append("DMG\n");
+                return true;
+            }
+            else if(off > 0)
+            {
+                sb.NumberCapped(off, MaxChars - 4).Append(IconPowerOff).Append("OFF\n");
+                return true;
+            }
+
+            return false;
+        }
 
         void ToolbarPageChanged()
         {

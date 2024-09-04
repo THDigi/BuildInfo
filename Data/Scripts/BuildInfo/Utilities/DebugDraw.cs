@@ -68,7 +68,7 @@ namespace Digi.BuildInfo.Utilities
 
             MyStringId mat = MyStringId.GetOrCompute("Square");
 
-            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, faceMaterial: mat, lineMaterial: mat, blendType: BlendTypeEnum.PostPP);
+            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, faceMaterial: mat, lineMaterial: mat, blendType: blend);
 
             if(extraAdditive)
                 DrawOBB(obb, color, draw, BlendTypeEnum.AdditiveTop, extraAdditive: false);
