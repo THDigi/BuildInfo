@@ -104,10 +104,7 @@ namespace Digi.BuildInfo.Features.Terminal.Underlays
                 }
 
                 if(!block.HasLocalPlayerAccess())
-                {
-                    DrawSelectionBox(block, Color.Red);
                     continue;
-                }
 
                 DrawSelectionBox(block, block.IsFunctional ? blockBBcolor : Color.Yellow);
 
