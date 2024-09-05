@@ -134,9 +134,11 @@ namespace Digi.BuildInfo.Systems
                 InModMenuChanged?.Invoke(InModMenu);
             }
 
-            if(!WasDetected && Main.Tick == Constants.TicksPerSecond * 3)
+            if(!WasDetected && Main.Tick == Constants.TicksPerSecond * 5)
             {
-                Log.Info("TextAPI did not reply in 3 seconds, it's either missing or it failed to compile.");
+                string msg = "TextAPI did not reply, it's either missing or it failed to compile.";
+                Log.Info(msg);
+                MyAPIGateway.Utilities.ShowMessage(BuildInfoMod.ModName, msg);
             }
         }
 
