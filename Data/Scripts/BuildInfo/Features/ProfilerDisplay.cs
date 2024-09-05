@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Draygo.API;
 using Sandbox.ModAPI;
@@ -156,8 +157,15 @@ namespace Digi.BuildInfo.Features
 
             sb.Append("Framework: ").Append(frameworkTotal.ToString(MeasureFormat)).Append(" ms avg | ").Append((int)((frameworkTotal / TotalAvgMs) * 100)).Append("% of total\n");
 
+            sb.Append("Total: ").Append(TotalAvgMs.ToString(MeasureFormat)).Append(" ms avg | ");
+
             const double MsPerTick = (1000.0 / Constants.TicksPerSecond);
-            sb.Append("Total: ").Append(TotalAvgMs.ToString(MeasureFormat)).Append(" ms avg | ").Append((int)((TotalAvgMs / MsPerTick) * 100)).Append("% of tick time\n");
+            float ratioOfTick = (float)(TotalAvgMs / MsPerTick);
+
+            const float BadRatio = 0.2f; // reach red at 20%, which is ~3.2ms
+            float ratioForColor = MathHelper.Clamp(MathHelper.Lerp(0, 1f / BadRatio, ratioOfTick), 0, 1);
+
+            sb.Color(Color.Lerp(Color.Lime, Color.Red, ratioForColor)).Append((ratioOfTick * 100).ToString("0.##")).Append("%<reset> of tick budget\n");
 
             if(detailed)
             {

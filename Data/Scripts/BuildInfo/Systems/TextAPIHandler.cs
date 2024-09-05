@@ -105,6 +105,7 @@ namespace Digi.BuildInfo.Systems
         public override void UpdateInput(bool anyKeyOrMouse, bool inMenu, bool paused)
         {
             // TextAPI's draw calls combined cost
+            if(BuildInfoMod.Instance.Profile)
             {
                 double ms = PerFrameDrawCostMs;
                 ProfileMeasure profiled = DrawCost;
