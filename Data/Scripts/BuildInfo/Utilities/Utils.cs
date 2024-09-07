@@ -841,17 +841,18 @@ namespace Digi.BuildInfo.Utilities
             #region Cylinder
             double wireDivAngle = MathHelperD.Pi * 2f / (double)wireDivideRatio;
 
+            double cos = radius; // radius * Math.Cos(0)
+            double sin = 0; // radius * Math.Sin(0)
+
             for(int k = 0; k < wireDivideRatio; k++)
             {
-                double angle = k * wireDivAngle;
-                double cos = (radius * Math.Cos(angle));
-                double sin = (radius * Math.Sin(angle));
+                // cos & sin would be assigned here, but optimized to maintain last iteration's values instead
                 quad.Point0.X = cos;
                 quad.Point0.Z = sin;
                 quad.Point3.X = cos;
                 quad.Point3.Z = sin;
 
-                angle = (k + 1) * wireDivAngle;
+                double angle = (k + 1) * wireDivAngle;
                 cos = (radius * Math.Cos(angle));
                 sin = (radius * Math.Sin(angle));
                 quad.Point1.X = cos;
@@ -883,6 +884,47 @@ namespace Digi.BuildInfo.Utilities
             #endregion
         }
 
+        // Added wireframe and blend type as well as optimized.
+        public static void DrawHalfSphere(ref MatrixD worldMatrix, float radius, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId material, float lineThickness = -1, int customViewProjection = -1, BlendTypeEnum blendType = BlendTypeEnum.Standard)
+        {
+            if(lineThickness < 0)
+                lineThickness = 0.01f;
+
+            bool drawWireframe = (rasterization != MySimpleObjectRasterizer.Solid);
+            bool drawSolid = (rasterization != MySimpleObjectRasterizer.Wireframe);
+
+            Vector3D center = worldMatrix.Translation;
+            MyQuadD quad;
+
+            List<Vector3D> vertices = BuildInfoMod.Instance.Caches.Vertices;
+            vertices.Clear();
+            GetSphereVertices(ref worldMatrix, radius, wireDivideRatio, vertices);
+
+            int halfVerts = vertices.Count / 2;
+
+            for(int i = 0; i < halfVerts; i += 4)
+            {
+                quad.Point0 = vertices[i + 1];
+                quad.Point1 = vertices[i + 3];
+                quad.Point2 = vertices[i + 2];
+                quad.Point3 = vertices[i];
+
+                if(drawWireframe)
+                {
+                    // lines circling around Y axis
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point0, (Vector3)(quad.Point1 - quad.Point0), 1f, lineThickness, blendType, customViewProjection);
+
+                    // lines from pole to half
+                    MyTransparentGeometry.AddLineBillboard(material, color, quad.Point1, (Vector3)(quad.Point2 - quad.Point1), 1f, lineThickness, blendType, customViewProjection);
+                }
+
+                if(drawSolid)
+                {
+                    MyTransparentGeometry.AddQuad(material, ref quad, color, ref center, customViewProjection, blendType);
+                }
+            }
+        }
+
         public static void DrawTransparentCylinder(ref MatrixD worldMatrix, float radius, float height, ref Color color, MySimpleObjectRasterizer rasterization, int wireDivideRatio, MyStringId faceMaterial, MyStringId lineMaterial, float lineThickness = -1, int customViewProjection = -1, bool drawCaps = true, BlendTypeEnum blendType = BlendTypeEnum.Standard)
         {
             if(lineThickness < 0)
@@ -909,17 +951,18 @@ namespace Digi.BuildInfo.Utilities
             Vector2 uv1 = new Vector2(1, 0);
             Vector2 uv2 = new Vector2(1, 1);
 
+            double cos = radius; // radius * Math.Cos(0)
+            double sin = 0; // radius * Math.Sin(0)
+
             for(int k = 0; k < wireDivideRatio; k++)
             {
-                double angle = k * wireDivAngle;
-                double cos = (radius * Math.Cos(angle));
-                double sin = (radius * Math.Sin(angle));
+                // cos & sin would be assigned here, but optimized to maintain last iteration's values instead
                 quad.Point0.X = cos;
                 quad.Point0.Z = sin;
                 quad.Point3.X = cos;
                 quad.Point3.Z = sin;
 
-                angle = (k + 1) * wireDivAngle;
+                double angle = (k + 1) * wireDivAngle;
                 cos = (radius * Math.Cos(angle));
                 sin = (radius * Math.Sin(angle));
                 quad.Point1.X = cos;
