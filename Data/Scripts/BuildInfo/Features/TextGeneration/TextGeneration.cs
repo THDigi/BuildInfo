@@ -398,7 +398,9 @@ namespace Digi.BuildInfo.Features
         /// </summary>
         /// <param name="action">Called when clicking the line.</param>
         /// <param name="line">if -1 then the current line is used and automatically calls <see cref="Utilities.StringBuilderExtensions.MarkTooltip(StringBuilder)"/> when it ends.</param>
-        /// <param name="coveringLines">how many lines the tooltip to cover (only first gets the [i]).</param>
+        /// <param name="coveringLines">How many lines the tooltip to cover.
+        /// Must be called after the first line but before the other lines!
+        /// Only the first line will get the info symbol.</param>
         /// <returns></returns>
         StringBuilder CreateTooltip(Action action = null, int line = -1, int coveringLines = 1)
         {
@@ -3126,10 +3128,27 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.Production))
             {
-                AddLine().Label("Force").ForceFormat(thrust.ForceMagnitude * effMulMax);
+                float forceN = thrust.ForceMagnitude * effMulMax;
+
+                StringBuilder line = AddLine().Label("Force").ForceFormat(forceN);
+
+                // TODO: thrust-to-weight ratio useful?
+                //float twr = float.PositiveInfinity;
+                //if(def.HasPhysics)
+                //    twr = forceN / (def.Mass * Hardcoded.EarthGravity);
+                //
+                //line.Separator().Label("Thrust-to-weight ratio").RoundedNumber(twr, 4);
 
                 if(Math.Abs(thrust.SlowdownFactor - 1) > 0.001f)
-                    GetLine().Separator().Color(COLOR_WARNING).Label("Dampeners").Append("x").RoundedNumber(thrust.SlowdownFactor, 2);
+                {
+                    line.Separator().Color(COLOR_WARNING).Label("Dampeners").Append("x").RoundedNumber(thrust.SlowdownFactor, 2);
+
+                    // HACK: from MyThrusterBlockThrustComponent.RegisterLazy()
+                    SimpleTooltip("This thruster has different force multiplier when dampeners trigger the thruster, called SlowdownFactor internally." +
+                                 "\nNOTE: The highest SlowdownFactor from all thrusters is used for all thrusters!");
+                }
+
+                //SimpleTooltip($"Thrust-to-weight is shown in Earth gravity ({Hardcoded.EarthGravity:0.##}m/s/s)");
 
                 AddLine().Label("Limits");
                 const int PrefixSpaces = 11;
@@ -3193,12 +3212,31 @@ namespace Digi.BuildInfo.Features
                 BData_Thrust data = Main.LiveDataHandler.Get<BData_Thrust>(def);
                 if(data != null)
                 {
-                    AddLine().Label("Flames").Append(data.Flames.Count)
-                        .Separator().Label("Longest").DistanceFormat(data.LongestFlame, 2)
-                        .Append(" (").DistanceFormat(data.LongestFlamePastEdge).Append(" past cube edge)");
+                    //AddLine().Label("Flames").Append(data.Flames.Count)
+                    //    .Separator().Label("Longest").DistanceFormat(data.LongestFlame, 2)
+                    //    .Append(" (").DistanceFormat(data.LongestFlamePastEdge).Append(" past cube edge)");
 
-                    AddLine().Label("Damage to ships").Number(data.DamagePerTickToBlocks * Constants.TicksPerSecond).Append("/s")
-                        .Separator().Label("to other").Number(data.DamagePerTickToOther * Constants.TicksPerSecond).Append("/s");
+                    AddLine().Label("Damage - To Ships").Number(data.DamagePerTickToBlocks * Constants.TicksPerSecond).Append("/s")
+                        .Separator().Label("To Others").Number(data.DamagePerTickToOther * Constants.TicksPerSecond).Append("/s");
+
+                    var tooltip = CreateTooltip(coveringLines: 2);
+                    if(tooltip != null)
+                    {
+                        // HACK: from MyThrust.ThrustDamageDealDamage()
+                        tooltip.Append("Voxels are not damaged by thrusters. The \"To Others\" are: characters, loose items, missiles and meteorites.");
+                        tooltip.Append("\nFor ships, damage is dealt for each physics shape that intersects with the flame capsule.");
+                        tooltip.Append("\n  e.g. Ship Welder has 3 physics shapes which means it can take up to 3 times the damage.");
+                        tooltip.Append("\nThruster update rate varies, however it damages for the right amount for the game-time that passed.");
+                    }
+
+                    float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
+                    int flameRangeInBlocks = (int)Math.Ceiling(data.LongestFlamePastEdge / cellSize);
+
+                    StringBuilder line = AddLine()
+                        .Label("Damage - Range").DistanceFormat(data.LongestFlamePastEdge).Append(" past edge (").Append(flameRangeInBlocks).Append(" blocks)");
+
+                    if(data.Flames.Count > 1)
+                        line.Separator().Append("From ").Append(data.Flames.Count).Append(" different points");
                 }
 
                 if(!MyAPIGateway.Session.SessionSettings.ThrusterDamage)
