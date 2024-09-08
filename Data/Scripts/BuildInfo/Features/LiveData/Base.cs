@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Digi.BuildInfo.Features.ModderHelp;
 using Digi.BuildInfo.Features.Overlays;
 using Digi.BuildInfo.Utilities;
@@ -311,6 +312,8 @@ namespace Digi.BuildInfo.Features.LiveData
             bool blockTypeHasConveyorSupport = (Has & BlockHas.ConveyorSupport) != 0;
             BuildInfoMod Main = BuildInfoMod.Instance;
 
+            bool hasConveyorsForUnsupported = false;
+
             foreach(IMyModelDummy dummy in dummies.Values)
             {
                 string name = dummy.Name;
@@ -330,12 +333,7 @@ namespace Digi.BuildInfo.Features.LiveData
                 {
                     if(!blockTypeHasConveyorSupport)
                     {
-                        if(Main.Config.ModderHelpAlerts.Value && (ModderHelpMain.CheckEverything || def.Context.IsLocal()))
-                        {
-                            Main.ModderHelpMain.ModHint(def, $"The model has convetor_* dummies but the block type does not support conveyor network." +
-                                                         "\nIf you want conveyor connection use a compatible block type (spaceengineers.wiki.gg has a list) or if you just want manual interaction use a detector_inventory instead.");
-                        }
-
+                        hasConveyorsForUnsupported = true;
                         continue;
                     }
 
@@ -496,6 +494,18 @@ namespace Digi.BuildInfo.Features.LiveData
                 else if(BuildInfoMod.IsDevMod)
                 {
                     Log.Info($"[DEV] Model for {def.Id.ToString()} has unknown dummy '{name}'.");
+                }
+            }
+
+            if(hasConveyorsForUnsupported && Main.Config.ModderHelpAlerts.Value && (ModderHelpMain.CheckEverything || def.Context.IsLocal()))
+            {
+                // skip models in game folder unless we're checking everything
+                if(ModderHelpMain.CheckEverything || !Path.IsPathRooted(def.Model))
+                {
+                    Main.ModderHelpMain.ModHint(def, $"Its model has 'conveyor_' dummies but the block type does not support connecting to conveyor network." +
+                                                      "\nDepending on the intent:" +
+                                                      "\n- If you want conveyor connection you must pick a compatible block type, see: https://spaceengineers.wiki.gg/wiki/Modding/Reference/SBC/BlockTypeSupport " +
+                                                      "\n- If you only want interaction to open inventory, use a 'detector_inventory' dummy instead.");
                 }
             }
 
