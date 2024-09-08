@@ -37,6 +37,7 @@ namespace Digi.BuildInfo.Features.Overlays
         YawLimit,
         AirtightWhenClosed,
         ThrustDamage,
+        ThrustOther,
         MagnetizedArea,
         CollectionArea,
         TerrainClearance,

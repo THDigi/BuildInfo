@@ -10,8 +10,12 @@ namespace Digi.BuildInfo.Features.LiveData
 {
     public class BData_Thrust : BData_Base
     {
-        public float LongestFlamePastEdge;
+        /// <summary>
+        /// Longest past the block edge. NOTE: This is for blocks only, only uses the cylinder! Add the <see cref="LongestFlameCapsuleRadius"/> to get the damage-all range.
+        /// </summary>
         public float LongestFlame;
+        public float LongestFlameCapsuleRadius;
+
         public float DamagePerTickToBlocks;
         public float DamagePerTickToOther;
         public List<FlameInfo> Flames = new List<FlameInfo>();
@@ -19,21 +23,17 @@ namespace Digi.BuildInfo.Features.LiveData
         public struct FlameInfo
         {
             public readonly Vector3 LocalFrom;
-            public readonly Vector3 LocalTo;
-            public readonly Vector3 Direction;
-            public readonly float DummyRadius;
+            public readonly Vector3 LocalDirection;
             public readonly float CapsuleRadius;
             public readonly float CapsuleLength;
+            //public readonly float DummyRadius;
 
-            public FlameInfo(Vector3 localFrom, Vector3 localTo, float dummyRadius, float capsuleRadius)
+            public FlameInfo(Vector3 localFrom, Vector3 localDirection, float capsuleRadius, float capsuleLength)
             {
                 LocalFrom = localFrom;
-                LocalTo = localTo;
-                DummyRadius = dummyRadius;
+                LocalDirection = localDirection;
                 CapsuleRadius = capsuleRadius;
-
-                Direction = (LocalTo - LocalFrom);
-                CapsuleLength = Direction.Normalize();
+                CapsuleLength = capsuleLength;
             }
         }
 
@@ -51,7 +51,7 @@ namespace Digi.BuildInfo.Features.LiveData
             dummies.Clear();
             Flames.Clear();
             LongestFlame = 0;
-            LongestFlamePastEdge = 0;
+            LongestFlameCapsuleRadius = 0;
             DamagePerTickToBlocks = 0;
             DamagePerTickToOther = 0;
 
@@ -73,33 +73,41 @@ namespace Digi.BuildInfo.Features.LiveData
                     DamagePerTickToOther += dummyRadius * thrustDef.FlameDamage; // from MyThrust.ThrustDamageDealDamage()
 
                     float flameLength = 2f * ((thrustMaxLength * dummyRadius * 0.5f) * thrustDef.FlameDamageLengthScale) - dummyRadius; // from MyThrust.GetDamageCapsuleLine()
-                    Vector3 endPosition = startPosition + direction * flameLength;
-
                     float capsuleRadius = dummyRadius * thrustDef.FlameDamageLengthScale; // from MyThrust.ThrustDamageShapeCast()
-                    Flames.Add(new FlameInfo(startPosition, endPosition, dummyRadius, capsuleRadius));
+                    Flames.Add(new FlameInfo(startPosition, direction, capsuleRadius, flameLength));
 
-                    // compute how far the flame goes outside of block's boundingbox
-                    Vector3 capsuleEdgeStart = startPosition - direction * capsuleRadius;
-                    float capsuleEdgesLength = flameLength + capsuleRadius * 2;
+                    #region flame length outside the block
+
+                    // HACK: not including capsule radius because game doesn't for blocks only, and blocks are main thing we care about
+                    Vector3 capsuleEdgeStart = startPosition; // - direction * capsuleRadius;
+                    float capsuleEdgesLength = flameLength; // + capsuleRadius * 2;
 
                     Vector3 blockHalfSize = def.Size * (0.5f * MyDefinitionManager.Static.GetCubeSize(def.CubeSize));
                     BoundingBox blockBB = new BoundingBox(-blockHalfSize, blockHalfSize);
 
                     // TODO: thrusters with angled flames?
 
-                    const float RayStartDistance = 1000; // arbitrary large value
+                    const float RayStartDistance = 10000; // arbitrary large value
                     Ray ray = new Ray(capsuleEdgeStart + direction * RayStartDistance, -direction);
                     float? hitDist = blockBB.Intersects(ray);
 
-                    float pastEdge = 0;
+                    float pastEdge = float.NaN;
                     if(hitDist.HasValue)
                     {
                         float penetrating = (RayStartDistance - hitDist.Value);
-                        pastEdge = capsuleEdgesLength - penetrating; // if it penetrates more than the flame length then it's be negative
+                        pastEdge = capsuleEdgesLength - penetrating; // if it penetrates more than the flame length then it's negative
+                    }
+                    else
+                    {
+                        Log.Error($"Unexpected: {def.Id} has flame that doesn't intersect the block itself, please report to BuildInfo author with the mod!");
                     }
 
-                    LongestFlame = Math.Max(LongestFlame, capsuleEdgesLength);
-                    LongestFlamePastEdge = Math.Max(LongestFlamePastEdge, pastEdge);
+                    if(pastEdge > LongestFlame)
+                    {
+                        LongestFlame = pastEdge;
+                        LongestFlameCapsuleRadius = capsuleRadius;
+                    }
+                    #endregion
                 }
             }
 

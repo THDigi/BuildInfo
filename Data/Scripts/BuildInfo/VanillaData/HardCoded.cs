@@ -617,6 +617,7 @@ namespace Digi.BuildInfo.VanillaData
             return currentVolume / defaultVolume * def.BasePowerInput * (Math.Abs(gravityAcceleration) / EarthGravity);
         }
 
+        public const float Thrust_DamageRangeRandomMin = 0.6f;
         public const float Thrust_DamageCapsuleRadiusAdd = 0.05f; // visual tweak to match what the physics engine hits
 
         // not from the game but it's relevant to mods using excessive values
