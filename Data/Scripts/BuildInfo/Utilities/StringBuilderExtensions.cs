@@ -631,10 +631,7 @@ namespace Digi.BuildInfo.Utilities
                 if(m >= 1000)
                     return s.Number(m / 1000).Append(" km");
 
-                if(m < 10)
-                    return s.Number(m).Append(" m");
-
-                return s.Append((int)m).Append(" m");
+                return s.Number(m).Append(" m");
             }
             else
             {
