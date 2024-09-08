@@ -95,10 +95,6 @@ namespace Digi.BuildInfo.Features
 
         public DebugEvents(BuildInfoMod main) : base(main)
         {
-            //SetUpdateMethods(UpdateFlags.UPDATE_DRAW, true);
-
-            //SetUpdateMethods(UpdateFlags.UPDATE_AFTER_SIM, true);
-
             //MyAPIGateway.Gui.GuiControlCreated += GuiControlCreated;
             //MyAPIGateway.Gui.GuiControlRemoved += GuiControlRemoved;
         }
@@ -171,6 +167,97 @@ namespace Digi.BuildInfo.Features
             //EquipmentMonitor.ToolChanged -= EquipmentMonitor_ToolChanged;
             //EquipmentMonitor.BlockChanged -= EquipmentMonitor_BlockChanged;
         }
+
+        /*
+        Vector3I? RememberA;
+        Vector3I? RememberB;
+        MyDefinitionId? RememberId;
+
+        public override void UpdateAfterSim(int tick)
+        {
+            var grid = MyAPIGateway.CubeBuilder.FindClosestGrid() as MyCubeGrid;
+            var camWM = MyAPIGateway.Session.Camera.WorldMatrix;
+
+            if(grid != null)
+            {
+                {
+                    var gridOBB = new MyOrientedBoundingBoxD(grid.PositionComp.LocalAABB, grid.WorldMatrix);
+                    DebugDraw.DrawOBB(gridOBB, Color.Lime * 0.25f, MySimpleObjectRasterizer.Wireframe, BlendType.PostPP);
+                }
+
+                Vector3D pointWorld = camWM.Translation + camWM.Forward * 3;
+
+                DebugDraw.DrawSphere(new BoundingSphereD(pointWorld, 0.1), Color.Lime, MySimpleObjectRasterizer.Solid, BlendType.AdditiveTop);
+                DebugDraw.DrawSphere(new BoundingSphereD(pointWorld, 0.1), Color.Lime * 0.5f, MySimpleObjectRasterizer.Solid, BlendType.PostPP);
+
+                Vector3I pointGrid = grid.WorldToGridInteger(pointWorld);
+                MyAPIGateway.Utilities.ShowNotification($"pointGrid: {pointGrid.X},{pointGrid.Y},{pointGrid.Z}", 16);
+
+                bool remember = MyAPIGateway.Input.IsRightMousePressed();
+
+                var slim = grid.GetCubeBlock(pointGrid) as IMySlimBlock;
+                if(slim != null)
+                {
+                    var def = (MyCubeBlockDefinition)slim.BlockDefinition;
+
+                    {
+                        var wm = grid.WorldMatrix;
+                        wm.Translation = grid.GridIntegerToWorld(pointGrid);
+                        var cellOBB = new MyOrientedBoundingBoxD(new BoundingBoxD(-grid.GridSizeHalfVector, grid.GridSizeHalfVector), wm);
+                        DebugDraw.DrawOBB(cellOBB, Color.Lime * 0.25f, MySimpleObjectRasterizer.Wireframe, BlendType.PostPP);
+                    }
+
+                    if(remember)
+                        RememberId = def.Id;
+
+                    if(RememberId != null && RememberId.Value != def.Id)
+                    {
+                        MyAPIGateway.Utilities.ShowNotification("Different block ID than remmbered!", 16);
+                    }
+
+                    {
+                        MatrixI blockLM = new MatrixI(slim.Orientation);
+                        blockLM.Translation = slim.Position;
+                        MatrixI blockLMInv;
+                        MatrixI.Invert(ref blockLM, out blockLMInv);
+
+                        Vector3I local = Vector3I.Transform(pointGrid, ref blockLMInv);
+
+                        MyFontEnum font = (RememberA == null ? MyFontEnum.White : RememberA.Value == local ? MyFontEnum.Green : MyFontEnum.Red);
+                        MyAPIGateway.Utilities.ShowNotification($"simple integer local: {local.X},{local.Y},{local.Z}", 16, font);
+
+                        if(remember)
+                            RememberA = local;
+                    }
+
+                    {
+                        Matrix localMatrix;
+                        slim.Orientation.GetMatrix(out localMatrix);
+                        localMatrix.Translation = (slim.Min + slim.Max) * 0.5f * grid.GridSize;
+                        //Vector3 offset;
+                        //Vector3.TransformNormal(ref def.ModelOffset, ref localMatrix, out offset);
+                        //localMatrix.Translation += offset;
+
+                        Vector3 pointGridFloat = pointGrid * grid.GridSize;
+
+                        //MyAPIGateway.Utilities.ShowNotification($"pointGridFloat: {pointGridFloat.X},{pointGridFloat.Y},{pointGridFloat.Z}", 16);
+
+                        Vector3 localFloat = Vector3.Transform(pointGridFloat, Matrix.Invert(localMatrix));
+
+                        //MyAPIGateway.Utilities.ShowNotification($"block localFloat: {localFloat.X},{localFloat.Y},{localFloat.Z}", 16);
+
+                        Vector3I local = Vector3I.Round(localFloat);
+
+                        MyFontEnum font = (RememberB == null ? MyFontEnum.White : RememberB.Value == local ? MyFontEnum.Green : MyFontEnum.Red);
+                        MyAPIGateway.Utilities.ShowNotification($"float to integer local: {local.X},{local.Y},{local.Z}", 16, font);
+
+                        if(remember)
+                            RememberB = local;
+                    }
+                }
+            }
+        }
+        */
 
         //void MyEntities_OnEntityAdd(MyEntity ent)
         //{

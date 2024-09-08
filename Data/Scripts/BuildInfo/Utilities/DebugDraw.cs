@@ -59,7 +59,7 @@ namespace Digi.BuildInfo.Utilities
             new HudAPIv2.HUDMessage(text, new Vector2D(transformed.X, transformed.Y), Scale: scale, HideHud: false, TimeToLive: 2, Blend: BlendTypeEnum.PostPP);
         }
 
-        public static void DrawOBB(MyOrientedBoundingBoxD obb, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraAdditive = true)
+        public static void DrawOBB(MyOrientedBoundingBoxD obb, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP, bool extraSeeThrough = true)
         {
             MatrixD wm = MatrixD.CreateFromQuaternion(obb.Orientation);
             wm.Translation = obb.Center;
@@ -68,10 +68,10 @@ namespace Digi.BuildInfo.Utilities
 
             MyStringId mat = MyStringId.GetOrCompute("Square");
 
-            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, MySimpleObjectRasterizer.SolidAndWireframe, 1, faceMaterial: mat, lineMaterial: mat, blendType: blend);
+            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref localBB, ref color, draw, 1, faceMaterial: mat, lineMaterial: mat, blendType: blend);
 
-            if(extraAdditive)
-                DrawOBB(obb, color, draw, BlendTypeEnum.AdditiveTop, extraAdditive: false);
+            if(extraSeeThrough)
+                DrawOBB(obb, color, draw, BlendTypeEnum.AdditiveTop, extraSeeThrough: false);
         }
 
         public static void DrawSphere(BoundingSphereD sphere, Color color, MySimpleObjectRasterizer draw = MySimpleObjectRasterizer.SolidAndWireframe, BlendTypeEnum blend = BlendTypeEnum.PostPP)
