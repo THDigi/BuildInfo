@@ -3205,6 +3205,8 @@ namespace Digi.BuildInfo.Features
                 {
                     GetLine().Color(COLOR_GOOD).Append("full thrust in atmosphere and vacuum");
                 }
+
+                SimpleTooltip("Thrust power linearly scales between the indicated air density values.");
             }
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
@@ -3222,18 +3224,25 @@ namespace Digi.BuildInfo.Features
                     var tooltip = CreateTooltip(coveringLines: 2);
                     if(tooltip != null)
                     {
+                        int rangeMinPercent = (int)(Hardcoded.Thrust_DamageRangeRandomMin * 100);
+
                         // HACK: from MyThrust.ThrustDamageDealDamage()
                         tooltip.Append("Voxels are not damaged by thrusters. The \"To Others\" are: characters, loose items, missiles and meteorites.");
-                        tooltip.Append("\nFor ships, damage is dealt for each physics shape that intersects with the flame capsule.");
+                        tooltip.Append("\nFor blocks, damage is dealt for each physics shape that intersects with the flame capsule, but only if the block boundingbox is within the cylinder.");
                         tooltip.Append("\n  e.g. Ship Welder has 3 physics shapes which means it can take up to 3 times the damage.");
                         tooltip.Append("\nThruster update rate varies, however it damages for the right amount for the game-time that passed.");
+                        tooltip.Append('\n');
+                        tooltip.Append("\nThe range is for blocks only. There's an extra ").DistanceFormat(data.LongestFlameCapsuleRadius, 4).Append(" on this block that can damage everything else. See the overlay for visualization.");
+                        tooltip.Append("\nThe flame range is random between ").Append(rangeMinPercent).Append("% and 100% (on all thrusters) which means there's a lower chance to hit blocks the farther they are.");
+                        tooltip.Append('\n');
+                        tooltip.Append("\nIn the overlay, the entire capsule damages everything except blocks, while only the cylinder is used for blocks.");
                     }
 
                     float cellSize = MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
-                    int flameRangeInBlocks = (int)Math.Ceiling(data.LongestFlamePastEdge / cellSize);
+                    float flameRangeInBlocks = (data.LongestFlame / cellSize);
 
                     StringBuilder line = AddLine()
-                        .Label("Damage - Range").DistanceFormat(data.LongestFlamePastEdge).Append(" past edge (").Append(flameRangeInBlocks).Append(" blocks)");
+                        .Label("Damage - Range").DistanceFormat(data.LongestFlame, 4).Append(" past edge (").Append(flameRangeInBlocks.ToString("0.##")).Append(" blocks)");
 
                     if(data.Flames.Count > 1)
                         line.Separator().Append("From ").Append(data.Flames.Count).Append(" different points");
