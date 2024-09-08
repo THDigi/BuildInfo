@@ -1869,18 +1869,20 @@ namespace Digi.BuildInfo.Features
             {
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = def.Id.TypeId.ToString();
-                AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName)
-                    .Separator().Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
 
-                StringBuilder tooltip = CreateTooltip(coveringLines: 2);
+                StringBuilder line = AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL)
+                    .Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
 
-                StringBuilder sb = AddLine();
+                StringBuilder tooltip = CreateTooltip(coveringLines: 3);
+
+                line = AddLine().Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
+                line = AddLine();
 
                 Vector3 offset = def.ModelOffset;
-                sb.Color(COLOR_INTERNAL).Label("ModelOffset").Color(offset.LengthSquared() > 0 ? COLOR_WARNING : COLOR_NORMAL).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z)
+                line.Color(COLOR_INTERNAL).Label("ModelOffset").Color(offset.LengthSquared() > 0 ? COLOR_WARNING : COLOR_NORMAL).Append("X:").Number(offset.X).Append(" Y:").Number(offset.Y).Append(" Z:").Number(offset.Z)
                     .ResetFormatting().Separator();
 
-                sb.Color(COLOR_INTERNAL).Label("ModelIntersection").Color(def.UseModelIntersection ? COLOR_WARNING : COLOR_NORMAL).Append(def.UseModelIntersection);
+                line.Color(COLOR_INTERNAL).Label("ModelIntersection").Color(def.UseModelIntersection ? COLOR_WARNING : COLOR_NORMAL).Append(def.UseModelIntersection);
 
                 if(tooltip != null)
                 {
