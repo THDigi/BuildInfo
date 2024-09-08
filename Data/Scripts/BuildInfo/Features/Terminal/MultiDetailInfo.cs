@@ -905,16 +905,16 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.Append(connected).Append(" / ").Append(blocks.Count);
             info.Append('\n');
 
-            info.Append("Current Thrust: ").ForceFormat(currentForce).Append('\n');
+            info.Append("Active thrust: ").ForceFormat(currentForce).Append('\n');
 
             if(canBeSubOptimal)
             {
-                info.Append("Current Max Thrust: ").ForceFormat(effectiveMax).Append('\n');
-                info.Append("Optimal Max Thrust: ").ForceFormat(absoluteMax).Append('\n');
+                info.Append("Total effective: ").ForceFormat(effectiveMax).Append('\n');
+                info.Append("Total max: ").ForceFormat(absoluteMax).Append('\n');
             }
             else
             {
-                info.Append("Max Thrust: ").ForceFormat(absoluteMax).Append('\n');
+                info.Append("Total max: ").ForceFormat(absoluteMax).Append('\n');
             }
 
             if(allSameGrid)
