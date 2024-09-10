@@ -15,6 +15,17 @@ namespace Digi.BuildInfo.Utilities
             return modContext != null && !modContext.IsBaseGame && modContext.ModItem.PublishedFileId == 0;
         }
 
+        public static string GetNameAndId(this MyModContext modContext)
+        {
+            if(modContext == null)
+                return "(unknown)";
+
+            if(modContext.IsBaseGame)
+                return "(basegame)";
+
+            return modContext.ModItem.GetNameAndId();
+        }
+
         public static string GetNameAndId(this MyObjectBuilder_Checkpoint.ModItem modItem)
         {
             if(modItem.PublishedFileId == 0)

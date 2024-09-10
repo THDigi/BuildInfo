@@ -182,7 +182,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public bool CheckAndAdd(IMyCubeBlock block) // only gets called if the block IsBuilt
         {
             if(!block.SlimBlock.ComponentStack.IsBuilt)
-                Log.Error($"CheckAndAdd() called for a !IsBuilt block! {block.BlockDefinition} / entId={block.EntityId}");
+                Log.Error($"CheckAndAdd() called for a not-IsBuilt block! {block.BlockDefinition} / entId={block.EntityId}");
 
             if(!Utils.AssertMainThread(false))
                 Log.Error($"CheckAndAdd() not on main thread! for block: {block.BlockDefinition} / entId={block.EntityId}");
@@ -192,6 +192,9 @@ namespace Digi.BuildInfo.Features.LiveData
             Dictionary<string, IMyModelDummy> dummies = BuildInfoMod.Instance.Caches.Dummies;
             dummies.Clear();
             block.Model.GetDummies(dummies);
+
+            if(new BoundingBoxI(block.Min, block.Max).Contains(block.Position) == ContainmentType.Disjoint)
+                Log.Error($"Block {def.Id} ({def.Context.GetNameAndId()}) has grid Position outside of boundingbox, this will cause various issues with vanilla and mod scripts!\nContact author to fix (likely the <Center> tag is wrong).");
 
             DisassembleRatio = block.DisassembleRatio;
 

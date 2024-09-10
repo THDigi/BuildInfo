@@ -262,6 +262,8 @@ namespace Digi.ComponentLib
             {
                 OnWorldStart?.Invoke();
             }
+
+            Log.Info("World started simulation.");
         }
 
         void IModBase.WorldExit()

@@ -19,8 +19,6 @@ using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
 using Digi.ComponentLib;
-using Sandbox.ModAPI;
-using VRage.Game;
 using VRage.Game.Components;
 using Whiplash.WeaponFramework;
 
