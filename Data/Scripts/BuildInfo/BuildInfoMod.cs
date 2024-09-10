@@ -65,6 +65,7 @@ namespace Digi.BuildInfo
         public readonly ScreenTooltips ScreenTooltips;
         public readonly JumpDriveMonitor JumpDriveMonitor;
         public readonly ProjectedBlockInfo ProjectedBlockInfo;
+        public readonly ProjectorShowRemaining ProjectorShowRemaining;
         public readonly ShipOverlays ShipOverlays;
         public readonly ConveyorNetworkView ConveyorNetworkView;
         public readonly Overlays Overlays;
@@ -162,6 +163,7 @@ namespace Digi.BuildInfo
             HUDEditor = new HUDEditor(this);
             ScreenTooltips = new ScreenTooltips(this);
             ProjectedBlockInfo = new ProjectedBlockInfo(this);
+            ProjectorShowRemaining = new ProjectorShowRemaining(this);
             OverrideToolSelectionDraw = new OverrideToolSelectionDraw(this);
             ShipOverlays = new ShipOverlays(this);
             ConveyorNetworkView = new ConveyorNetworkView(this);
