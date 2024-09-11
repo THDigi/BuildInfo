@@ -850,7 +850,8 @@ namespace Digi.BuildInfo.Features.Terminal
             float currentForce = 0;
             float effectiveMax = 0;
             float absoluteMax = 0;
-            string fuelType = null;
+            float maxFuelUsage = 0f;
+            MyStringHash fuelType = MyStringHash.NullOrEmpty;
             bool mixedFuels = false;
             bool canBeSubOptimal = false;
             bool allSameGrid = true;
@@ -871,6 +872,7 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 IMyThrust apiThrust = (IMyThrust)thrust;
                 MyThrustDefinition def = thrust.BlockDefinition;
+
                 float effMulMax = Math.Max(def.EffectivenessAtMinInfluence, def.EffectivenessAtMaxInfluence);
                 float currentThrust = apiThrust.CurrentThrust;
                 float maxEffectiveThrust = apiThrust.MaxEffectiveThrust;
@@ -885,32 +887,54 @@ namespace Digi.BuildInfo.Features.Terminal
 
                 if(!mixedFuels)
                 {
-                    string fuel = thrust.FuelDefinition?.Id.SubtypeName ?? MyResourceDistributorComponent.ElectricityId.SubtypeName;
+                    Hardcoded.ThrustInfo thrustInfo = Hardcoded.Thrust_GetUsage(thrust);
 
-                    if(fuelType == null)
+                    MyStringHash fuel = thrustInfo.Fuel.SubtypeId;
+
+                    if(fuelType == MyStringHash.NullOrEmpty)
                         fuelType = fuel;
                     else if(fuelType != fuel)
                         mixedFuels = true;
+
+                    maxFuelUsage += thrustInfo.MaxUsage;
                 }
 
                 ThrustPerSide[(int)thrust.Orientation.Forward] += new Vector3(currentThrust, maxEffectiveThrust, maxThrust);
             }
 
-            info.Append("Requires: ").Append(mixedFuels ? "Mixed" : fuelType).Append('\n');
+            bool usesElectricity = (!mixedFuels && fuelType == MyResourceDistributorComponent.ElectricityId.SubtypeId);
 
-            info.Append("Connected to fuel: ");
-            if(connected >= blocks.Count)
-                info.Append("All");
+            info.Append("Requires: ");
+            if(mixedFuels)
+            {
+                info.Append("(Mixed)");
+            }
             else
-                info.Append(connected).Append(" / ").Append(blocks.Count);
+            {
+                info.Append(fuelType.String).Append(", Max: ");
+
+                if(usesElectricity)
+                    info.PowerFormat(maxFuelUsage);
+                else
+                    info.VolumeFormat(maxFuelUsage);
+            }
             info.Append('\n');
+
+            if(mixedFuels || !usesElectricity)
+            {
+                info.Append("Connected to fuel: ");
+                if(connected >= blocks.Count)
+                    info.Append("All");
+                else
+                    info.Append(connected).Append(" / ").Append(blocks.Count);
+                info.Append('\n');
+            }
 
             info.Append("Active thrust: ").ForceFormat(currentForce).Append('\n');
 
             if(canBeSubOptimal)
             {
-                info.Append("Total effective: ").ForceFormat(effectiveMax).Append('\n');
-                info.Append("Total max: ").ForceFormat(absoluteMax).Append('\n');
+                info.Append("Total effective: ").ForceFormat(effectiveMax).Append(", max: ").ForceFormat(absoluteMax).Append('\n');
             }
             else
             {
