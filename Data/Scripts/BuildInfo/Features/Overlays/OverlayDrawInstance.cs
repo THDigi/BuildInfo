@@ -130,6 +130,8 @@ namespace Digi.BuildInfo.Features.Overlays
                         return;
                 }
 
+                bool isCamController = (block?.FatBlock != null && MyAPIGateway.Session.CameraController == block.FatBlock);
+
                 #region draw ModelOffset indicator
                 if(Config.InternalInfo.Value && def.ModelOffset.LengthSquared() > 0)
                 {
@@ -161,6 +163,7 @@ namespace Digi.BuildInfo.Features.Overlays
                 #endregion
 
                 #region draw orientation indicators
+                if(!isCamController)
                 {
                     float textScale = 1f;
 
