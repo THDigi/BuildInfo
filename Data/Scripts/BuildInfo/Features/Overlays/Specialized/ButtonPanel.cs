@@ -1,6 +1,7 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -38,11 +39,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
 
                     if(drawLabel)
                     {
-                        Vector3D labelDir = drawMatrix.Up;
                         Vector3D labelPos = matrix.Translation;
 
+                        // direction towards camera
+                        var dir = Vector3D.Normalize(MyAPIGateway.Session.Camera.Position - labelPos);
+                        // direction from block center
+                        //var dir = Vector3D.Normalize(labelPos - drawMatrix.Translation);
+                        Vector3D labelDir = blockWorldMatrix.GetDirectionVector(blockWorldMatrix.GetClosestDirection(dir));
+
                         drawInstance.LabelRender.DynamicLabel.Clear().Append("Button ").Append(buttonInfo.Index + 1);
-                        drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, Color, scale: 1f, lineHeight: 0.2f);
+                        drawInstance.LabelRender.DrawLineLabel(LabelType.DynamicLabel, labelPos, labelDir, Color, scale: 1f, lineHeight: 0f, alwaysOnTop: true, align: Draygo.API.HudAPIv2.TextOrientation.center);
                     }
                 }
             }

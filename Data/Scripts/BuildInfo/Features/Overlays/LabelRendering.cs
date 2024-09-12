@@ -162,8 +162,11 @@ namespace Digi.BuildInfo.Features.Overlays
 
             Vector3D shadowOffset = cm.Right * (ShadowOffset.X * scale) + cm.Up * (ShadowOffset.Y * scale);
 
-            MyTransparentGeometry.AddLineBillboard(LineMaterial, ShadowColor, start + shadowOffset, (Vector3)direction, lineHeight, lineThick, ShadowBlendType);
-            MyTransparentGeometry.AddLineBillboard(LineMaterial, color, start, (Vector3)direction, lineHeight, lineThick, TextBlendType);
+            if(lineHeight > 0 && lineThick > 0)
+            {
+                MyTransparentGeometry.AddLineBillboard(LineMaterial, ShadowColor, start + shadowOffset, (Vector3)direction, lineHeight, lineThick, ShadowBlendType);
+                MyTransparentGeometry.AddLineBillboard(LineMaterial, color, start, (Vector3)direction, lineHeight, lineThick, TextBlendType);
+            }
 
             if(!Main.Config.OverlayLabels.IsSet(settingFlag) && !(Main.Config.OverlaysShowLabelsWithBind.Value && InputLib.GetGameControlPressed(ControlContext.CHARACTER, MyControlsSpace.LOOKAROUND)))
                 return;
@@ -248,6 +251,10 @@ namespace Digi.BuildInfo.Features.Overlays
             text.Draw();
 
             float underlineLength = labelData.UnderlineLength * scale;
+
+            if(align == HudAPIv2.TextOrientation.center)
+                textWorldPos -= textDir * underlineLength * 0.5;
+
             MyTransparentGeometry.AddLineBillboard(LineMaterial, ShadowColor, textWorldPos + shadowOffset, (Vector3)textDir, underlineLength, lineThick, ShadowBlendType);
             MyTransparentGeometry.AddLineBillboard(LineMaterial, color, textWorldPos, (Vector3)textDir, underlineLength, lineThick, TextBlendType);
 
