@@ -103,10 +103,10 @@ namespace Digi.BuildInfo.Utilities
                 // connecting lines
                 thick = 0.01f * scale;
                 color = Color.Yellow;
-                DrawLine(corners[0], corners[4], color, thick, blend);
-                DrawLine(corners[1], corners[5], color, thick, blend);
-                DrawLine(corners[2], corners[6], color, thick, blend);
-                DrawLine(corners[3], corners[7], color, thick, blend);
+                for(int i = 0; i <= 3; i++)
+                {
+                    DrawLine(corners[i], corners[i + 4], color, thick, blend);
+                }
 
                 // far square
                 thick = 0.1f * scale;
@@ -150,20 +150,20 @@ namespace Digi.BuildInfo.Utilities
 
                 // left
                 {
-                    quad.Point0 = corners[0];
-                    quad.Point1 = corners[3];
-                    quad.Point2 = corners[7];
-                    quad.Point3 = corners[4];
+                    quad.Point0 = corners[3];
+                    quad.Point1 = corners[7];
+                    quad.Point2 = corners[4];
+                    quad.Point3 = corners[0];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
                     MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
                 }
 
                 // bottom
                 {
-                    quad.Point0 = corners[3];
-                    quad.Point1 = corners[2];
-                    quad.Point2 = corners[6];
-                    quad.Point3 = corners[7];
+                    quad.Point0 = corners[2];
+                    quad.Point1 = corners[6];
+                    quad.Point2 = corners[7];
+                    quad.Point3 = corners[3];
                     Vector3D center = (quad.Point0 + quad.Point1 + quad.Point2 + quad.Point3) / 4;
                     MyTransparentGeometry.AddQuad(mat, ref quad, color, ref center, blendType: blend);
                 }
