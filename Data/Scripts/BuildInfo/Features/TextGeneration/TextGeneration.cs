@@ -1135,7 +1135,16 @@ namespace Digi.BuildInfo.Features
                 int obPrefixLen = "MyObjectBuilder_".Length;
                 string typeIdString = def.Id.TypeId.ToString();
                 AddLine().Color(COLOR_INTERNAL).Label("Id").ResetFormatting().Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
+
+                StringBuilder tooltip = CreateTooltip(() => CopyDefIdToClipboard(def.Id), coveringLines: 2);
+
                 AddLine().Color(COLOR_INTERNAL).Label("BlockPairName").ResetFormatting().Append(def.BlockPairName);
+
+                if(tooltip != null)
+                {
+                    tooltip.Append("These are only shown because you have '").Append(Main.Config.InternalInfo.Name).Append("' setting turned on for this mod.");
+                    tooltip.Append("\n<color=yellow>Click<reset> to copy the TypeId/SubtypeId format to clipboard.");
+                }
             }
             #endregion Internal info
 
@@ -1809,6 +1818,14 @@ namespace Digi.BuildInfo.Features
             }
         }
 
+        void CopyDefIdToClipboard(MyDefinitionId defId)
+        {
+            string typeIdString = defId.TypeId.ToString().Substring("MyObjectBuilder_".Length);
+            string text = $"{typeIdString}/{defId.SubtypeName}";
+            MyClipboardHelper.SetClipboard(text);
+            MyAPIGateway.Utilities.ShowNotification($"Copied '{text}' to system clipboard.");
+        }
+
         #region Equipped block info generation
         public void GenerateBlockText(MyCubeBlockDefinition def)
         {
@@ -1873,7 +1890,7 @@ namespace Digi.BuildInfo.Features
                 StringBuilder line = AddLine().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL)
                     .Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName);
 
-                StringBuilder tooltip = CreateTooltip(coveringLines: 3);
+                StringBuilder tooltip = CreateTooltip(() => CopyDefIdToClipboard(def.Id), coveringLines: 3);
 
                 line = AddLine().Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
                 line = AddLine();
@@ -1887,6 +1904,7 @@ namespace Digi.BuildInfo.Features
                 if(tooltip != null)
                 {
                     tooltip.Append("These are only shown because you have '").Append(Main.Config.InternalInfo.Name).Append("' setting turned on for this mod.");
+                    tooltip.Append("\n<color=yellow>click<reset> to copy the TypeId/SubtypeId format to clipboard.");
                 }
             }
             #endregion Internal info
@@ -2235,6 +2253,14 @@ namespace Digi.BuildInfo.Features
                     line.ResetFormatting()
                         .Separator().Color(COLOR_INTERNAL).Label("Id").Color(COLOR_NORMAL).Append(typeIdString, obPrefixLen, (typeIdString.Length - obPrefixLen)).Append("/").Append(def.Id.SubtypeName)
                         .Separator().Color(COLOR_INTERNAL).Label("Pair").Color(COLOR_NORMAL).Append(def.BlockPairName);
+
+                    StringBuilder tooltip = CreateTooltip(() => CopyDefIdToClipboard(def.Id));
+
+                    if(tooltip != null)
+                    {
+                        tooltip.Append("These are only shown because you have '").Append(Main.Config.InternalInfo.Name).Append("' setting turned on for this mod.");
+                        tooltip.Append("\n<color=yellow>click<reset> to copy the TypeId/SubtypeId format to clipboard.");
+                    }
                 }
             }
 
