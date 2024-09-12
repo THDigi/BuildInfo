@@ -4366,7 +4366,7 @@ namespace Digi.BuildInfo.Features
 
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.PowerStats))
             {
-                AddLine().Label("Power - Normal use").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast charging").PowerFormat(camera.RequiredChargingInput);
+                AddLine().Label("Power - Normal").PowerFormat(camera.RequiredPowerInput).Separator().Label("Raycast enabled").PowerFormat(camera.RequiredChargingInput);
 
                 if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ResourcePriorities))
                     GetLine().Separator().ResourcePriority(camera.ResourceSinkGroup);
@@ -4375,17 +4375,26 @@ namespace Digi.BuildInfo.Features
             if(Main.Config.PlaceInfo.IsSet(PlaceInfoFlags.ExtraInfo))
             {
                 AddLine().Label("Field of view").AngleFormat(camera.MaxFov).Append(" to ").AngleFormat(camera.MinFov);
-                AddLine().Label("Raycast - Cone limit").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Distance limit");
+                AddLine().Label("Raycast - Max Angle").AngleFormatDeg(camera.RaycastConeLimit).Separator().Label("Max Distance");
 
-                if(camera.RaycastDistanceLimit < 0)
+                if(camera.RaycastDistanceLimit == -1.0) // exactly how the game checks it
                     GetLine().Append("Infinite");
                 else
                     GetLine().DistanceFormat((float)camera.RaycastDistanceLimit);
 
-                GetLine().Separator().Label("Time multiplier").RoundedNumber(camera.RaycastTimeMultiplier, 2);
+                // HACK: from MyCameraBlock;
+                float metersPerSecond = 1000 * camera.RaycastTimeMultiplier; // meters = 1000ms * RaycastTimeMultiplier
+                GetLine().Separator().Label("Charge").SpeedFormat(metersPerSecond, 2);
 
-                SimpleTooltip("Programmable Block can use Camera blocks to rangefind objects using physics raycast."
-                            + "\nFor more info see the PB API (on MDK wiki for example).");
+                const string Link = @"https://spaceengineers.wiki.gg/wiki/Scripting/Detecting_Things#Camera_Block_+_Raycasting";
+
+                StringBuilder tooltip = CreateTooltip(() => Utils.OpenExternalLink(Link));
+
+                if(tooltip != null)
+                {
+                    tooltip.Append("Programmable Block can use Camera blocks to rangefind objects using physics raycast.");
+                    tooltip.Append("\nFor more info <color=yellow>click<reset> to go to: ").Append(Link);
+                }
             }
         }
 

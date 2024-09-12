@@ -118,6 +118,12 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
+        public static void OpenExternalLink(string link)
+        {
+            MyVisualScriptLogicProvider.OpenSteamOverlayLocal(@"https://steamcommunity.com/linkfilter/?u=" + link);
+            Utils.ShowColoredChatMessage(Log.ModName, $"Opened game overlay with: {link}", senderFont: FontsHandler.GreenSh);
+        }
+
         /// <summary>
         /// Reason this exists is that MyDefinitionManager.Static.GetAmmoDefinition() does not check if it exists.
         /// </summary>

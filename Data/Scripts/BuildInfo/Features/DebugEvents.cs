@@ -36,6 +36,50 @@ using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
 
 namespace Digi.BuildInfo.Features
 {
+    //[MyEntityComponentDescriptor(typeof(MyObjectBuilder_CameraBlock), false)]
+    //public class TestCameraRaycastCharge : MyGameLogicComponent
+    //{
+    //    IMyCameraBlock Block;
+    //    int Tick = 0;
+
+    //    public override void Init(MyObjectBuilder_EntityBase objectBuilder)
+    //    {
+    //        Block = (IMyCameraBlock)Entity;
+    //        NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+    //    }
+
+    //    public override void UpdateAfterSimulation()
+    //    {
+    //        try
+    //        {
+    //            if(Tick == 0)
+    //            {
+    //                if(Block.CustomName.Contains("debug"))
+    //                {
+    //                    Block.EnableRaycast = true;
+    //                }
+    //                else
+    //                {
+    //                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+    //                    return;
+    //                }
+    //            }
+
+    //            if(Tick % 60 == 0)
+    //            {
+    //                Log.Info($"[DEBUG] {Tick} scanRange={Block.AvailableScanRange:0.######}m");
+    //            }
+    //        }
+    //        catch(Exception e)
+    //        {
+    //            Log.Error(e);
+    //            NeedsUpdate = MyEntityUpdateEnum.NONE;
+    //        }
+
+    //        Tick++;
+    //    }
+    //}
+
     //[MyEntityComponentDescriptor(typeof(MyObjectBuilder_ShipWelder), false)]
     //public class ShipWelderHpTest : MyGameLogicComponent
     //{
