@@ -322,18 +322,20 @@ namespace Digi.BuildInfo.Features.LiveData
             }
 
             const StringComparison CompareType = StringComparison.OrdinalIgnoreCase;
-
-            Interactive = new List<InteractionInfo>(dummies.Values.Count);
+            BuildInfoMod Main = BuildInfoMod.Instance;
 
             // using grid's actual size in case this is a supergrid'd block, to properly translate into cells
             float cellSize = block.CubeGrid.GridSize; // MyDefinitionManager.Static.GetCubeSize(def.CubeSize);
             float cellSizeHalf = cellSize / 2f;
             Vector3 sizeMetric = new Vector3(def.Size) * cellSizeHalf;
 
-            bool blockTypeHasConveyorSupport = (Has & BlockHas.ConveyorSupport) != 0;
-            BuildInfoMod Main = BuildInfoMod.Instance;
+            bool showModderAlerts = ModderHelpMain.CheckEverything || (Main.Config.ModderHelpAlerts.Value && def.Context.IsLocal());
+            bool isModModel = ModderHelpMain.CheckEverything || Path.IsPathRooted(def.Model);
 
+            bool typeHasConveyorSupport = (Has & BlockHas.ConveyorSupport) != 0;
             bool hasConveyorsForUnsupported = false;
+
+            Interactive = new List<InteractionInfo>(dummies.Values.Count);
 
             foreach(IMyModelDummy dummy in dummies.Values)
             {
@@ -352,7 +354,7 @@ namespace Digi.BuildInfo.Features.LiveData
 
                 if(detectorPtr.StartsWithCaseInsensitive("conveyor"))
                 {
-                    if(!blockTypeHasConveyorSupport)
+                    if(!typeHasConveyorSupport)
                     {
                         hasConveyorsForUnsupported = true;
                         continue;
@@ -396,6 +398,12 @@ namespace Digi.BuildInfo.Features.LiveData
                         {
                             Interactive.Add(new InteractionInfo(matrix, "Inventory/Terminal access", OverlayDrawInstance.InteractiveTerminalColor));
                             Has |= BlockHas.PhysicalTerminalAccess;
+
+                            if(showModderAlerts && isModModel)
+                                Main.ModderHelpMain.ModHint(def, $"Conveyor port '{dummy.Name}' cannot connect to a different block!" +
+                                                                  "\nMove dummy's position towards the edge but not outside the boundingbox." +
+                                                                  "\nIf it's not meant to be a conveyor port, then use 'detector_inventory' instead or just ignore this hint.");
+
                             continue;
                         }
                     }
@@ -440,6 +448,19 @@ namespace Digi.BuildInfo.Features.LiveData
 
                     var port = new UpgradePortInfo(matrix, portCellPos, portDir);
 
+                    // detect connecting to self
+                    if(showModderAlerts)
+                    {
+                        PortPos portPos = port.TransformToGrid(block.SlimBlock);
+                        Vector3I connectingToCell = portPos.Position + Base6Directions.GetIntVector(portPos.Direction);
+                        IMySlimBlock slimCheck = block.CubeGrid.GetCubeBlock(connectingToCell);
+                        if(slimCheck == block.SlimBlock)
+                        {
+                            Main.ModderHelpMain.ModProblem(def, $"Upgrade port '{dummy.Name}' cannot connect to a different block!" +
+                                                                 "\nMove dummy's position towards the edge but not outside the boundingbox.");
+                            continue;
+                        }
+                    }
 
                     UpgradePorts.Add(port);
                 }
@@ -529,16 +550,12 @@ namespace Digi.BuildInfo.Features.LiveData
                 }
             }
 
-            if(hasConveyorsForUnsupported && Main.Config.ModderHelpAlerts.Value && (ModderHelpMain.CheckEverything || def.Context.IsLocal()))
+            if(hasConveyorsForUnsupported && showModderAlerts && isModModel)
             {
-                // skip models in game folder unless we're checking everything
-                if(ModderHelpMain.CheckEverything || !Path.IsPathRooted(def.Model))
-                {
-                    Main.ModderHelpMain.ModHint(def, $"Its model has 'conveyor_' dummies but the block type does not support connecting to conveyor network." +
-                                                      "\nDepending on the intent:" +
-                                                      "\n- If you want conveyor connection you must pick a compatible block type, see: https://spaceengineers.wiki.gg/wiki/Modding/Reference/SBC/BlockTypeSupport " +
-                                                      "\n- If you only want interaction to open inventory, use a 'detector_inventory' dummy instead.");
-                }
+                Main.ModderHelpMain.ModHint(def, $"Its model has 'conveyor_' dummies but the block type does not support connecting to conveyor network." +
+                                                  "\nDepending on the intent:" +
+                                                  "\n- If you want conveyor connection you must pick a compatible block type, see: https://spaceengineers.wiki.gg/wiki/Modding/Reference/SBC/BlockTypeSupport " +
+                                                  "\n- If you only want interaction to open inventory, use a 'detector_inventory' dummy instead.");
             }
 
             dummies.Clear();
