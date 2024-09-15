@@ -26,7 +26,7 @@ namespace Digi.BuildInfo.Features.ModderHelp
 {
     public class ModderHelpMain : ModComponent
     {
-        public static readonly bool CheckEverything = false;
+        public const bool CheckEverything = false;
 
         int ModProblems = 0;
         int ModHints = 0;
@@ -44,6 +44,8 @@ namespace Digi.BuildInfo.Features.ModderHelp
 
         public ModderHelpMain(BuildInfoMod main) : base(main)
         {
+            //CheckEverything = BuildInfoMod.IsDevMod;
+
             if(MyAPIGateway.Session == null)
             {
                 Log.Error("MyAPIGateway.Session is null in LoadData() O.o", Log.PRINT_MESSAGE);
@@ -1036,21 +1038,27 @@ namespace Digi.BuildInfo.Features.ModderHelp
         public void ModProblem(MyDefinitionBase def, string text)
         {
             string message = $"Problem with '{GetDefId(def)}': {text}";
-            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error);
+            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Error, writeToLog: false);
+            MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
+            Log.Info($"[ModderHelp] {message}");
             ModProblems++;
         }
 
         public void ModHint(MyDefinitionBase def, string text)
         {
             string message = $"Hint for '{GetDefId(def)}': {text}";
-            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Notice);
+            MyDefinitionErrors.Add(def.Context, $"{Signature}{message}", TErrorSeverity.Notice, writeToLog: false);
+            MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
+            Log.Info($"[ModderHelp] {message}");
             ModHints++;
         }
 
         public void ModHint(MyModContext context, string text)
         {
             string message = $"Hint: {text}";
-            MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Notice);
+            MyDefinitionErrors.Add(context, $"{Signature}{message}", TErrorSeverity.Notice, writeToLog: false);
+            MyLog.Default.WriteLine($"BuildInfo ModderHelp: {message}");
+            Log.Info($"[ModderHelp] {message}");
             ModHints++;
         }
 
