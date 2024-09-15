@@ -38,8 +38,11 @@ namespace Digi.BuildInfo.Features
         {
             try
             {
+                if(MyAPIGateway.Utilities.IsDedicated)
+                    return;
+
                 var block = Entity as IMyCubeBlock;
-                if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null)
+                if(block?.CubeGrid?.Physics == null)
                     return;
 
                 Player = new MergeBlock_PlayerSide(this);
@@ -97,7 +100,7 @@ namespace Digi.BuildInfo.Features
         Base6Directions.Direction Right;
         bool LoadedDummies = false;
         bool IsFailing = false;
-        bool BlinkSwitch = false;
+        int BlinkState = 0;
         int UpdateCounter = 0;
 
         IMySlimBlock MarkThis;
@@ -208,8 +211,13 @@ namespace Digi.BuildInfo.Features
 
             if(IsFailing)
             {
-                Block.SetEmissiveParts(EmissiveName, (BlinkSwitch ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
-                BlinkSwitch = !BlinkSwitch;
+                if(++BlinkState >= 6)
+                    BlinkState = 0;
+
+                if(BlinkState == 0 || BlinkState == 3)
+                {
+                    Block.SetEmissiveParts(EmissiveName, (BlinkState == 0 ? EmissiveColorBlinkA : EmissiveColorBlinkB), 1);
+                }
             }
         }
 
@@ -234,7 +242,6 @@ namespace Digi.BuildInfo.Features
             {
                 MarkThis = null;
                 MarkOther = null;
-                BlinkSwitch = false;
                 ((MyCubeBlock)Block).CheckEmissiveState(true);
             }
         }
