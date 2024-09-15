@@ -2,6 +2,7 @@
 using System.Text;
 using Digi.BuildInfo.Features.Config;
 using Digi.BuildInfo.Systems;
+using Digi.BuildInfo.Utilities;
 using Digi.ComponentLib;
 using Digi.ConfigLib;
 using Draygo.API;
@@ -62,7 +63,12 @@ namespace Digi.BuildInfo.Features
 
         void SetUpdate()
         {
-            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, Text != null && Main.Config.UnderCrosshairMessages.Value && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit) && Main.EquipmentMonitor.IsAnyGrinder);
+            bool update = Text != null
+                       && Main.Config.UnderCrosshairMessages.Value
+                       && Main.Config.AimInfo.IsSet(AimInfoFlags.GrindGridSplit)
+                       && (Main.EquipmentMonitor.IsAnyGrinder || Main.EquipmentMonitor.IsCubeBuilder);
+
+            SetUpdateMethods(UpdateFlags.UPDATE_DRAW, update);
         }
 
         public override void UpdateDraw()
@@ -70,8 +76,23 @@ namespace Digi.BuildInfo.Features
             if(Text == null)
                 return;
 
-            IMySlimBlock aimedBlock = Main.EquipmentMonitor.AimedBlock;
-            if(aimedBlock != null && Main.EquipmentMonitor.IsAnyGrinder && Main.EquipmentMonitor.AimedProjectedBy == null)
+            if(Main.EquipmentMonitor.AimedProjectedBy != null)
+                return;
+
+            IMySlimBlock aimedBlock = null;
+
+            if(Main.EquipmentMonitor.IsAnyGrinder)
+            {
+                aimedBlock = Main.EquipmentMonitor.AimedBlock;
+            }
+
+            // TODO: some way to show this when UnderCrosshairMessages is turned off (which is default)
+            if(aimedBlock == null && Utils.CreativeToolsEnabled)
+            {
+                aimedBlock = Main.EquipmentMonitor.BuilderAimedBlock;
+            }
+
+            if(aimedBlock != null)
             {
                 SplitFlags splitInfo = Main.SplitChecking.GetSplitInfo(aimedBlock);
 

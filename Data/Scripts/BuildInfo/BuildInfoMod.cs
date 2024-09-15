@@ -24,6 +24,7 @@ using Whiplash.WeaponFramework;
 
 // TODO: measuring tool?
 // TODO: show acceleration somehow
+// TODO: compute jumpdrive obstacles and show them? ... code looks nasty xD
 
 namespace Digi.BuildInfo
 {
