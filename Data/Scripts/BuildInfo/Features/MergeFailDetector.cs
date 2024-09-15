@@ -22,9 +22,9 @@ using VRageRender;
 namespace Digi.BuildInfo.Features
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_MergeBlock), useEntityUpdate: false)]
-    public class MergeBlock : MyGameLogicComponent
+    public class MergeBlockGL : MyGameLogicComponent
     {
-        public MergeBlockPlayer Player;
+        public MergeBlock_PlayerSide Player;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -42,7 +42,7 @@ namespace Digi.BuildInfo.Features
                 if(MyAPIGateway.Utilities.IsDedicated || block?.CubeGrid?.Physics == null)
                     return;
 
-                Player = new MergeBlockPlayer(this);
+                Player = new MergeBlock_PlayerSide(this);
             }
             catch(Exception e)
             {
@@ -87,9 +87,9 @@ namespace Digi.BuildInfo.Features
         }
     }
 
-    public class MergeBlockPlayer
+    public class MergeBlock_PlayerSide
     {
-        readonly MergeBlock GameLogic;
+        readonly MergeBlockGL GameLogic;
         readonly IMyShipMergeBlock Block;
         readonly MyMergeBlockDefinition Def;
 
@@ -111,7 +111,7 @@ namespace Digi.BuildInfo.Features
         static readonly Color EmissiveColorBlinkB = Color.Red;
         static readonly MyStringId LineMaterial = MyStringId.GetOrCompute("BuildInfo_Laser");
 
-        public MergeBlockPlayer(MergeBlock gamelogic)
+        public MergeBlock_PlayerSide(MergeBlockGL gamelogic)
         {
             GameLogic = gamelogic;
             Block = (IMyShipMergeBlock)GameLogic.Entity;
@@ -171,7 +171,7 @@ namespace Digi.BuildInfo.Features
                         }
                         else
                         {
-                            MergeBlockPlayer otherLogic = other?.GameLogic?.GetAs<MergeBlock>()?.Player;
+                            MergeBlock_PlayerSide otherLogic = other?.GameLogic?.GetAs<MergeBlockGL>()?.Player;
                             if(otherLogic != null)
                             {
                                 MarkThis = otherLogic.MarkThis;
@@ -413,8 +413,8 @@ namespace Digi.BuildInfo.Features
         {
             IMyShipMergeBlock other = b.Other;
 
-            MergeBlockPlayer blockLogic = b.GameLogic?.GetAs<MergeBlock>()?.Player;
-            MergeBlockPlayer otherLogic = other.GameLogic?.GetAs<MergeBlock>().Player;
+            MergeBlock_PlayerSide blockLogic = b.GameLogic?.GetAs<MergeBlockGL>()?.Player;
+            MergeBlock_PlayerSide otherLogic = other.GameLogic?.GetAs<MergeBlockGL>().Player;
 
             Vector3 value = ConstraintPositionInGridSpace(b, blockLogic.Forward) / b.CubeGrid.GridSize;
             Vector3 vector = -ConstraintPositionInGridSpace(other, blockLogic.Forward) / other.CubeGrid.GridSize;
