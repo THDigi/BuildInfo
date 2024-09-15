@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Systems;
 using Digi.BuildInfo.Utilities;
 using Digi.BuildInfo.VanillaData;
@@ -14,6 +15,7 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ObjectBuilders.ComponentSystem;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Input;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -254,6 +256,9 @@ namespace Digi.BuildInfo.Features.Terminal
             bool allSameType = true;
             bool allSimilarType = true;
 
+            int modulesTotal = 0;
+            int modulesFilled = 0;
+
             HashSet<MyObjectBuilderType> firstSimilarTo = SameType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null);
             if(firstSimilarTo == null)
             {
@@ -266,6 +271,7 @@ namespace Digi.BuildInfo.Features.Terminal
             for(int blockIdx = 0; blockIdx < selected.Count; blockIdx++)
             {
                 IMyTerminalBlock block = selected[blockIdx];
+                MyCubeBlock internalBlock = (MyCubeBlock)block;
 
                 #region Compute outside view
                 {
@@ -324,7 +330,6 @@ namespace Digi.BuildInfo.Features.Terminal
                 #endregion
 
                 #region Compute ownership
-                MyCubeBlock internalBlock = (MyCubeBlock)block;
                 if(internalBlock.IDModule != null)
                 {
                     long ownerId = block.OwnerId;
@@ -466,13 +471,35 @@ namespace Digi.BuildInfo.Features.Terminal
                     inventoryBlocks++;
                 }
                 #endregion
+
+                #region Compute upgrade modules attached
+                {
+                    MyUpgradableBlockComponent upgradeComponent = internalBlock.GetComponent();
+                    if(upgradeComponent != null && internalBlock.CurrentAttachedUpgradeModules != null && internalBlock.CurrentAttachedUpgradeModules.Count > 0)
+                    {
+                        int totalSlots = upgradeComponent.ConnectionPositions.Count;
+                        int mountedSlots = 0;
+
+                        foreach(MyCubeBlock.AttachedUpgradeModule module in internalBlock.CurrentAttachedUpgradeModules.Values)
+                        {
+                            if(module.Compatible)
+                                mountedSlots += module.SlotCount;
+                        }
+
+                        modulesTotal += totalSlots;
+                        modulesFilled += mountedSlots;
+                    }
+                }
+                #endregion
             }
             #endregion Block compute loop
 
+            #region Write to detailed info
             // NOTE: the same SB is used by both the text and the shadow, therefore it can't use colors.
             // NOTE: this SB is also used on the copy detail info feature, if adding colors, must strip them there.
             StringBuilder info = InfoText.Clear();
 
+            #region Block tally
             info.Append("--- ").Append(totalBlocks).Append("x ");
 
             if(allSameId)
@@ -491,9 +518,12 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 info.Append("mixed blocks");
             }
+            #endregion
 
             info.Append(" ---\n");
 
+            #region Resource input, output and storage
+            // print input+output+storage together
             foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResInput)
             {
                 MyStringHash resource = kv.Key;
@@ -503,19 +533,19 @@ namespace Digi.BuildInfo.Features.Terminal
                 // get output for this resource too
                 if(ResOutput.TryGetValue(resource, out resInfo))
                 {
-                    ResOutput.Remove(resource); // and consume it
+                    ResOutput.Remove(resource); // required for the below foreach()
                     AppendOutputFormat(info, resource, resInfo);
                 }
 
                 // and storage too!
                 if(ResStorage.TryGetValue(resource, out resInfo))
                 {
-                    ResStorage.Remove(resource); // and consume it
+                    ResStorage.Remove(resource); // required for the below foreach()
                     AppendStorageFormat(info, resource, resInfo);
                 }
             }
 
-            // print leftover outputs that have no inputs
+            // print leftover outputs+storage that have no inputs
             foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResOutput)
             {
                 MyStringHash resource = kv.Key;
@@ -525,25 +555,26 @@ namespace Digi.BuildInfo.Features.Terminal
                 // print storage for this resource
                 if(ResStorage.TryGetValue(resource, out resInfo))
                 {
-                    ResStorage.Remove(resource); // and consume it
+                    ResStorage.Remove(resource); // required for the below foreach()
                     AppendStorageFormat(info, resource, resInfo);
                 }
             }
 
-            // print leftover storage
+            // print leftover storage (that have no inputs or outputs which is an odd case but whatever)
             foreach(KeyValuePair<MyStringHash, ResInfo> kv in ResStorage)
             {
                 MyStringHash resource = kv.Key;
                 ResInfo resInfo = kv.Value;
                 AppendStorageFormat(info, resource, resInfo);
             }
+            #endregion
 
             if(inventoryBlocks > 0)
             {
                 info.Append(inventoryBlocks).Append("x Inventories: ").VolumeFormat(inventoryCurrentM3 * 1000).Append(" / ").VolumeFormat(inventoryMaxM3 * 1000).Append(" (").MassFormat(inventoryMass).Append(")\n");
             }
 
-            // unfinished/damaged/broken
+            #region unfinished/damaged/broken
             {
                 int lenBefore = info.Length;
 
@@ -563,8 +594,9 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Append('\n');
                 }
             }
+            #endregion
 
-            // owners summary
+            #region owners summary
             {
                 int lenBefore = info.Length;
 
@@ -611,19 +643,36 @@ namespace Digi.BuildInfo.Features.Terminal
                     info.Append('\n');
                 }
             }
+            #endregion
 
-            // outside of view
             if(outsideView > 0)
             {
                 info.Append(outsideView).Append(" outside of view.\n");
             }
 
+            if(modulesTotal > 0)
+            {
+                info.Append(modulesFilled).Append(" of ").Append(modulesTotal).Append(" upgrade ports attached").Append('\n');
+            }
+
+            // append extra info if all blocks are a specific type
             if(allSimilarType)
             {
                 info.Append('\n');
 
                 MultiInfoPerType.GetValueOrDefault(firstBlock.BlockDefinition.TypeId, null)?.Invoke(info, selected, allSameType, allSameId);
                 info.Append('\n');
+            }
+            #endregion
+
+            if(BuildInfoMod.IsDevMod) // checks for myself
+            {
+                string text = info.ToString();
+
+                if(text.Contains("<color"))
+                {
+                    Log.Error("Multi-detailed info cannot contain colors because of shadow! Redesign if you want colors.");
+                }
             }
         }
 
@@ -669,6 +718,8 @@ namespace Digi.BuildInfo.Features.Terminal
             AddFormatterAndPairTypes(Info_PBs, typeof(MyObjectBuilder_MyProgrammableBlock));
 
             AddFormatterAndPairTypes(Info_Thrusters, typeof(MyObjectBuilder_Thrust));
+
+            AddFormatterAndPairTypes(Info_UpgradeModules, typeof(MyObjectBuilder_UpgradeModule));
         }
 
         /// <summary>
@@ -1004,6 +1055,59 @@ namespace Digi.BuildInfo.Features.Terminal
                 info.ForceFormat(data.Z).Append(" max");
 
             info.Append('\n');
+        }
+
+        void Info_UpgradeModules(StringBuilder info, List<IMyTerminalBlock> blocks, bool allSameType, bool allSameId)
+        {
+            int realModules = 0;
+
+            foreach(IMyUpgradeModule upgradeModule in blocks)
+            {
+                MyUpgradeModuleDefinition def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
+
+                if(def.Upgrades == null) // required as UpgradeCount throws NRE if block has no Upgrades tag at all (empty tag would be fine)
+                    continue;
+
+                if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
+                    continue;
+
+                realModules++;
+            }
+
+            if(realModules < blocks.Count)
+                return; // no info shown because not all of them are real modules
+
+            int allPorts = 0;
+            int allAttached = 0;
+
+            foreach(IMyUpgradeModule upgradeModule in blocks)
+            {
+                MyUpgradeModuleDefinition def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
+                BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
+
+                int portsTotal = (data.UpgradePorts?.Count ?? 0);
+
+                allPorts += portsTotal;
+
+                // NOTE: upgradeModule.Connections is blocks not ports.
+                if(upgradeModule.Connections > 0)
+                {
+                    using(Utils.UpgradeModule.Token results = Utils.UpgradeModule.GetAttached(upgradeModule))
+                    {
+                        int portsAttached = 0;
+
+                        foreach(Utils.UpgradeModule.AttachedTo attached in results.Attached)
+                        {
+                            if(attached.Compatible)
+                                portsAttached += attached.Ports;
+                        }
+
+                        allAttached += portsAttached;
+                    }
+                }
+            }
+
+            info.Append("Attached to ").Append(allAttached).Append(" of ").Append(allPorts).Append(" valid ports\n");
         }
         #endregion
     }
