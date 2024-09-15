@@ -1084,6 +1084,8 @@ namespace Digi.BuildInfo.Features.Terminal
             {
                 MyUpgradeModuleDefinition def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
                 BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
+                if(data == null)
+                    continue;
 
                 int portsTotal = (data.UpgradePorts?.Count ?? 0);
 
@@ -1092,7 +1094,7 @@ namespace Digi.BuildInfo.Features.Terminal
                 // NOTE: upgradeModule.Connections is blocks not ports.
                 if(upgradeModule.Connections > 0)
                 {
-                    using(Utils.UpgradeModule.Token results = Utils.UpgradeModule.GetAttached(upgradeModule))
+                    using(Utils.UpgradeModule.Result results = Utils.UpgradeModule.GetAttached(upgradeModule, data))
                     {
                         int portsAttached = 0;
 

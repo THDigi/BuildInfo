@@ -913,27 +913,34 @@ namespace Digi.BuildInfo.Features.Terminal
             // NOTE: upgradeModule.Connections is blocks not ports.
             if(upgradeModule.Connections > 0)
             {
-                using(Utils.UpgradeModule.Token results = Utils.UpgradeModule.GetAttached(upgradeModule))
+                using(Utils.UpgradeModule.Result results = Utils.UpgradeModule.GetAttached(upgradeModule, data))
                 {
-                    int portsAttached = 0;
-
-                    foreach(Utils.UpgradeModule.AttachedTo attached in results.Attached)
+                    if(results.HasData)
                     {
-                        if(attached.Compatible)
-                            portsAttached += attached.Ports;
+                        int portsAttached = 0;
+
+                        foreach(Utils.UpgradeModule.AttachedTo attached in results.Attached)
+                        {
+                            if(attached.Compatible)
+                                portsAttached += attached.Ports;
+                        }
+
+                        info.Append(portsAttached).Append(" of ").Append(portsTotal).Append(" valid ports\n");
+
+                        foreach(var attached in results.Attached)
+                        {
+                            string name = (attached.Block as IMyTerminalBlock)?.CustomName ?? attached.Block.DisplayNameText;
+                            info.Append("• ").Append(attached.Ports).Append(" to ").Append(name);
+
+                            if(!attached.Compatible)
+                                info.Append(" (incompatible)");
+
+                            info.Append('\n');
+                        }
                     }
-
-                    info.Append(portsAttached).Append(" of ").Append(portsTotal).Append(" valid ports\n");
-
-                    foreach(var attached in results.Attached)
+                    else
                     {
-                        string name = (attached.Block as IMyTerminalBlock)?.CustomName ?? attached.Block.DisplayNameText;
-                        info.Append("• ").Append(attached.Ports).Append(" to ").Append(name);
-
-                        if(!attached.Compatible)
-                            info.Append(" (incompatible)");
-
-                        info.Append('\n');
+                        info.Append(" (no data yet)\n");
                     }
                 }
             }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Digi.BuildInfo.Features;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.Features.Overlays.Specialized;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -12,6 +13,7 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -572,56 +574,52 @@ namespace Digi.BuildInfo.Utilities
 
         public static class UpgradeModule
         {
-            static readonly HashSet<long> _TempCheckedBlocks = new HashSet<long>();
-            static readonly List<IMySlimBlock> _TempAttachedBlocks = new List<IMySlimBlock>();
-            static readonly List<AttachedTo> _TempAttached = new List<AttachedTo>();
-
             public struct AttachedTo
             {
                 public MyCubeBlock Block;
-                public int Ports;
                 public bool Compatible;
+                public int Ports;
             }
 
-            public struct Token : IDisposable
+#if false // it can be wrong for modules that aren't mountable on the port sides
+            public struct Result : IDisposable
             {
-                public List<AttachedTo> Attached;
+                public IEnumerable<AttachedTo> Attached;
 
                 public void Dispose()
                 {
-                    _TempAttached.Clear();
+                    TempResults.Clear();
                 }
             }
 
-            public static Token GetAttached(IMyUpgradeModule upgradeModule)
+            static readonly HashSet<long> TempCheckedBlocks = new HashSet<long>();
+            static readonly List<IMySlimBlock> TempNeighbours = new List<IMySlimBlock>();
+            static readonly List<AttachedTo> TempResults = new List<AttachedTo>();
+            
+            public static Result GetAttached(IMyUpgradeModule upgradeModule)
             {
                 AssertMainThread(true);
 
-                if(_TempAttached.Count > 0)
+                if(TempResults.Count > 0)
                     throw new Exception("Cannot call this stacked!");
 
                 try
                 {
-                    var token = new Token()
-                    {
-                        Attached = _TempAttached,
-                    };
-
-                    _TempCheckedBlocks.Clear();
-                    _TempAttachedBlocks.Clear();
+                    TempCheckedBlocks.Clear();
+                    TempNeighbours.Clear();
 
                     // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
-                    upgradeModule.SlimBlock.GetNeighbours(_TempAttachedBlocks);
+                    upgradeModule.SlimBlock.GetNeighbours(TempNeighbours);
 
-                    foreach(IMySlimBlock nearSlim in _TempAttachedBlocks)
+                    foreach(IMySlimBlock nearSlim in TempNeighbours)
                     {
                         if(nearSlim?.FatBlock == null)
                             continue;
 
-                        if(_TempCheckedBlocks.Contains(nearSlim.FatBlock.EntityId))
+                        if(TempCheckedBlocks.Contains(nearSlim.FatBlock.EntityId))
                             continue; // already processed this block
 
-                        _TempCheckedBlocks.Add(nearSlim.FatBlock.EntityId);
+                        TempCheckedBlocks.Add(nearSlim.FatBlock.EntityId);
 
                         MyCubeBlock nearCube = (MyCubeBlock)nearSlim.FatBlock;
 
@@ -632,7 +630,7 @@ namespace Digi.BuildInfo.Utilities
                         {
                             if(attached.Block == upgradeModule)
                             {
-                                token.Attached.Add(new AttachedTo()
+                                TempResults.Add(new AttachedTo()
                                 {
                                     Block = nearCube,
                                     Compatible = attached.Compatible,
@@ -643,14 +641,128 @@ namespace Digi.BuildInfo.Utilities
                         }
                     }
 
-                    return token;
+                    return new Result()
+                    {
+                        Attached = TempResults,
+                    };
                 }
                 finally
                 {
-                    _TempAttachedBlocks.Clear();
-                    _TempCheckedBlocks.Clear();
+                    TempNeighbours.Clear();
+                    TempCheckedBlocks.Clear();
                 }
             }
+
+#else
+
+            public struct Result : IDisposable
+            {
+                public bool HasData;
+                public int PortsAttached;
+                public int PortsTotal;
+                public IEnumerable<AttachedTo> Attached;
+
+                public void Dispose()
+                {
+                    TempPortsUsed.Clear();
+                }
+            }
+
+            static readonly Dictionary<long, AttachedTo> TempPortsUsed = new Dictionary<long, AttachedTo>();
+
+            public static Result GetAttached(IMyUpgradeModule upgradeModule, BData_Base data = null)
+            {
+                AssertMainThread(true);
+
+                if(TempPortsUsed.Count > 0)
+                    throw new Exception("Cannot call this stacked!");
+
+                var result = new Result()
+                {
+                    HasData = false,
+                    Attached = TempPortsUsed.Values,
+                };
+
+                var liveDataHandler = BuildInfoMod.Instance.LiveDataHandler;
+                var def = (MyUpgradeModuleDefinition)upgradeModule.SlimBlock.BlockDefinition;
+
+                if(data == null)
+                    data = liveDataHandler.Get<BData_Base>(def);
+
+                if(data?.UpgradePorts == null)
+                    return result;
+
+                result.HasData = true;
+                result.PortsTotal = data.UpgradePorts.Count;
+
+                foreach(UpgradePortInfo port in data.UpgradePorts)
+                {
+                    PortPos portPos = port.TransformToGrid(upgradeModule.SlimBlock);
+                    PortPos expectedPortPos = new PortPos()
+                    {
+                        Position = portPos.Position + Base6Directions.GetIntVector(portPos.Direction),
+                        Direction = Base6Directions.GetOppositeDirection(portPos.Direction),
+                    };
+
+                    IMySlimBlock otherSlim = upgradeModule.CubeGrid.GetCubeBlock(expectedPortPos.Position);
+                    MyCubeBlock otherBlock = otherSlim?.FatBlock as MyCubeBlock;
+                    if(otherBlock?.UpgradeValues == null)
+                        continue;
+
+                    BData_Base otherData = liveDataHandler.Get<BData_Base>(otherBlock.BlockDefinition);
+                    if(otherData?.UpgradePorts == null)
+                        continue;
+
+                    bool connected = false;
+
+                    foreach(UpgradePortInfo otherPort in otherData.UpgradePorts)
+                    {
+                        PortPos otherPortPos = otherPort.TransformToGrid(otherSlim);
+                        if(expectedPortPos.Direction != otherPortPos.Direction || expectedPortPos.Position != otherPortPos.Position)
+                            continue;
+
+                        connected = true;
+                        break;
+                    }
+
+                    if(!connected)
+                        continue;
+
+                    AttachedTo attached;
+                    long key = otherBlock.EntityId;
+                    if(!TempPortsUsed.TryGetValue(key, out attached))
+                    {
+                        attached = new AttachedTo()
+                        {
+                            Block = otherBlock,
+                            Compatible = false,
+                            Ports = 1,
+                        };
+
+                        // HACK from MyUpgradeModule.CanAffectBlock()
+                        foreach(MyUpgradeModuleInfo upgrade in def.Upgrades)
+                        {
+                            if(otherBlock.UpgradeValues.ContainsKey(upgrade.UpgradeType))
+                            {
+                                attached.Compatible = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        attached.Ports++;
+                    }
+
+                    // add or overwrite struct copy
+                    TempPortsUsed[key] = attached;
+
+                    result.PortsAttached++;
+                }
+
+                return result;
+            }
+#endif
         }
 
         /// <summary>
@@ -1208,7 +1320,6 @@ namespace Digi.BuildInfo.Utilities
 
         /// <summary>
         /// Same logic used by game terminal to color blocks based on the grid they're on.
-        /// Colors loop from index 20.
         /// </summary>
         public static Vector3 GetTerminalColorHSV(int index)
         {
@@ -1225,13 +1336,13 @@ namespace Digi.BuildInfo.Utilities
             {
                 //color = new Vector3((index % 20) / 20f, 0.75f, 1f).HSVtoColor();
 
-                hsv.X = (index % 20) / 20f;
+                hsv.X = (index++ % 20) / 20f;
 
                 distA = Math.Abs(hsv.X); // hsv.X - HueA
                 distA = Math.Min(distA, 1f - distA);
 
                 distB = Math.Abs(hsv.X - HueB);
-                distA = Math.Min(distB, 1f - distB);
+                distB = Math.Min(distB, 1f - distB);
             }
             //while(color.HueDistance(Color.Red) < 0.04f || color.HueDistance(0.65f) < 0.07f);
             while(distA < 0.04f || distB < 0.07f);
