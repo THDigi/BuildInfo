@@ -70,7 +70,7 @@ namespace Digi.BuildInfo.Features.Overlays
         public static Color MountpointColorAutoRotate = new Color(0, 55, 255) * MountpointAlpha;
         public static Color MountpointAimedColor = Color.White;
 
-        public const float AirtightAlpha = 0.95f;
+        public const float AirtightAlpha = 0.8f;
         public static Color AirtightColor = new Color(0, 155, 255) * AirtightAlpha;
         public static Color AirtightUnavailableColor = Color.Gray * AirtightAlpha;
 
@@ -607,6 +607,8 @@ namespace Digi.BuildInfo.Features.Overlays
 
         void DrawPort(string message, MatrixD portMatrix, Color color, bool largePort = false)
         {
+            const float LineIntensity = 10f;
+
             MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
             float lineWidth = 0.01f;
 
@@ -616,12 +618,14 @@ namespace Digi.BuildInfo.Features.Overlays
             float scale = ConvertToAlwaysOnTop(ref closeRenderMatrix);
             lineWidth *= scale;
 
-            Color colorFace = color * 0.1f;
+            Color colorFace = color * 0.3f;
             Color colorLine = color;
 
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1, faceMaterial: MaterialSquare, blendType: PortAimedBlendType);
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref UnitBB, ref colorFace, MySimpleObjectRasterizer.Solid, 1,
+                faceMaterial: MaterialSquare, blendType: PortAimedBlendType);
 
-            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref UnitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth, lineMaterial: MaterialLaser, blendType: PortAimedBlendType);
+            MySimpleObjectDraw.DrawTransparentBox(ref closeRenderMatrix, ref UnitBB, ref colorLine, MySimpleObjectRasterizer.Wireframe, 1, lineWidth,
+                lineMaterial: MaterialLaser, blendType: PortAimedBlendType, intensity: LineIntensity);
 
             // TODO: some kind of large conveyor indicator?
             //if(largePort)
