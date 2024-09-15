@@ -35,6 +35,7 @@ namespace Digi.BuildInfo.Features.Overlays
         GrindingRadius,
         PitchLimit,
         YawLimit,
+        RotationLimit,
         AirtightWhenClosed,
         ThrustDamage,
         ThrustOther,

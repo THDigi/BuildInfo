@@ -160,7 +160,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             {
                 Vector3D labelPos = circleMatrix.Translation + circleMatrix.Forward * radius;
                 Vector3D labelDir = Vector3D.Normalize(labelPos - circleMatrix.Translation);
-                drawInstance.LabelRender.DrawLineLabel(LabelType.PitchLimit, labelPos, labelDir, LabelRotationLimits, "Rotation limit");
+                drawInstance.LabelRender.DrawLineLabel(LabelType.RotationLimit, labelPos, labelDir, LabelRotationLimits, "Rotation limit");
             }
 
             // current angle line + label
