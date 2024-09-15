@@ -907,8 +907,6 @@ namespace Digi.BuildInfo.Features.Terminal
             if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
                 return;
 
-            MyUpgradeModuleDefinition upgradeModuleDef = (MyUpgradeModuleDefinition)block.SlimBlock.BlockDefinition;
-
             info.Append("Connections:");
 
             if(upgradeModule.Connections > 0) // NOTE: upgradeModule.Connections is blocks not ports.
@@ -961,11 +959,7 @@ namespace Digi.BuildInfo.Features.Terminal
             }
 
             info.Append("\nUpgrades per slot:\n");
-
-            List<MyUpgradeModuleInfo> upgrades;
-            upgradeModule.GetUpgradeList(out upgrades);
-
-            foreach(MyUpgradeModuleInfo item in upgrades)
+            foreach(MyUpgradeModuleInfo item in def.Upgrades)
             {
                 info.Append("• ").AppendUpgrade(item).Append('\n');
             }
