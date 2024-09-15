@@ -10,16 +10,15 @@ namespace Digi.BuildInfo.Features.LiveData
     public class BData_Wheel : BData_Base
     {
         public Vector3 WheelDummy;
-        public Vector3 ModelCenter;
+        public BoundingBox ModelBB;
         public float WheelRadius;
 
         protected override bool IsValid(IMyCubeBlock block, MyCubeBlockDefinition def)
         {
             bool success = false;
 
-            BoundingBox modelBB = block.LocalAABB;
-            ModelCenter = modelBB.Center;
-            WheelRadius = Math.Max(modelBB.Depth, modelBB.Width);
+            ModelBB = block.LocalAABB;
+            WheelRadius = Math.Max(ModelBB.Depth, ModelBB.Width);
 
             // from MyAttachableTopBlockBase.LoadDummies()
             Dictionary<string, IMyModelDummy> dummies = Utils.GetDummies(block.Model);

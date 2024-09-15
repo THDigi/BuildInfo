@@ -49,7 +49,7 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             MatrixD gridWorldMatrix = blockWorldMatrix;
 
             float height = 0; // MathHelper.Clamp(-9999, suspensionDef.MinHeight, suspensionDef.MaxHeight);
-            MatrixD topMatrix = data.GetWheelMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, height);
+            MatrixD topMatrix = data.GetWheelMatrix(ref localMatrix, ref blockWorldMatrix, ref gridWorldMatrix, height);
 
             // MyMotorSuspension.CanPlaceRotor() does it negative too
             //topMatrix.Translation -= Vector3D.TransformNormal(wheelData.WheelDummy, topMatrix);

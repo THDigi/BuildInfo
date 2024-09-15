@@ -170,10 +170,10 @@ namespace Digi.BuildInfo.Utilities
             }
         }
 
-        public static void DrawLine(Vector3D from, Vector3D to, Color color, float thick = 0.005f, BlendTypeEnum blend = BlendTypeEnum.PostPP)
+        public static void DrawLine(Vector3D from, Vector3D to, Color color, float thick = 0.005f, BlendTypeEnum blend = BlendTypeEnum.PostPP, float intensity = 1f)
         {
             MyStringId mat = MyStringId.GetOrCompute("Square");
-            MyTransparentGeometry.AddLineBillboard(mat, color, from, (to - from), 1f, thick, blend);
+            MyTransparentGeometry.AddLineBillboard(mat, color, from, (to - from), 1f, thick, blend, intensity: intensity);
         }
 
         public static void DrawPlane(PlaneD plane, Color color, float size = 1000, BlendTypeEnum blend = BlendTypeEnum.PostPP)

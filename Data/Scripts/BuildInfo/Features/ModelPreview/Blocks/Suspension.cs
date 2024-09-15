@@ -1,5 +1,7 @@
-﻿using Digi.BuildInfo.Features.LiveData;
+﻿using System;
+using Digi.BuildInfo.Features.LiveData;
 using Digi.BuildInfo.VanillaData;
+using Digi.Input;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -17,6 +19,9 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
         BData_Wheel WheelData;
         //float Angle;
         float RaycastOffset = 0;
+
+        // remember between suspensions
+        static int SteerPercentage;
 
         static readonly float DefaultHeight = -9999; // new MyObjectBuilder_MotorSuspension().Height;
 
@@ -62,7 +67,30 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
 
             float height = MathHelper.Clamp(DefaultHeight, Data.SuspensionDef.MinHeight, Data.SuspensionDef.MaxHeight);
 
-            MatrixD topMatrix = Data.GetWheelMatrix(localMatrix, blockWorldMatrix, gridWorldMatrix, height);
+            MatrixD topMatrix = Data.GetWheelMatrix(ref localMatrix, ref blockWorldMatrix, ref gridWorldMatrix, height);
+
+            #region input to steer
+            if(MyAPIGateway.Input.IsAnyShiftKeyPressed() && InputLib.IsInputReadable())
+            {
+                const int SteerPercentPerScroll = 20;
+
+                int scroll = MyAPIGateway.Input.DeltaMouseScrollWheelValue();
+                if(scroll != 0)
+                {
+                    SteerPercentage -= Math.Sign(scroll) * SteerPercentPerScroll;
+                    SteerPercentage = MathHelper.Clamp(SteerPercentage, -100, 100);
+                }
+
+                if(MyAPIGateway.Input.IsNewMiddleMousePressed())
+                {
+                    SteerPercentage = 0;
+                }
+            }
+
+            float maxSteerRad = Data.SuspensionDef.MaxSteer;
+            float steerAngleRad = maxSteerRad * (SteerPercentage * 0.01f);
+            topMatrix = MatrixD.CreateRotationZ(steerAngleRad) * topMatrix;
+            #endregion
 
             // MyMotorSuspension.CanPlaceRotor() does it negative too
             topMatrix.Translation -= Vector3D.TransformNormal(WheelData.WheelDummy, topMatrix);
@@ -73,14 +101,17 @@ namespace Digi.BuildInfo.Features.ModelPreview.Blocks
                 float totalTravel = (Data.SuspensionDef.MaxHeight - Data.SuspensionDef.MinHeight);
                 if(totalTravel > 0)
                 {
-                    Vector3D wheelCenter = Vector3D.Transform(WheelData.ModelCenter, topMatrix);
+                    float halfRadius = (WheelData.WheelRadius * 0.5f);
+                    Vector3D wheelCenter = Vector3D.Transform(WheelData.ModelBB.Center, topMatrix);
                     Vector3D raycastFrom = wheelCenter + topMatrix.Forward * totalTravel;
-                    Vector3D raycastTo = wheelCenter + topMatrix.Backward * (WheelData.WheelRadius / 2f);
+                    Vector3D raycastTo = wheelCenter + topMatrix.Backward * halfRadius;
+
+                    //DebugDraw.DrawLine(raycastFrom, raycastTo, Color.Magenta, 0.01f, VRageRender.MyBillboard.BlendTypeEnum.AdditiveTop, 10f);
 
                     IHitInfo hit;
                     if(MyAPIGateway.Physics.CastRay(raycastFrom, raycastTo, out hit, CollisionLayers.CollisionLayerWithoutCharacter))
                     {
-                        float length = totalTravel + (WheelData.WheelRadius / 2f);
+                        float length = totalTravel + halfRadius;
                         RaycastOffset = MathHelper.Clamp((1f - hit.Fraction) * length, 0, totalTravel);
                     }
                     else

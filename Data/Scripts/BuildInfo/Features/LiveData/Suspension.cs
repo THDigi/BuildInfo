@@ -9,7 +9,7 @@ namespace Digi.BuildInfo.Features.LiveData
         public MyMotorSuspensionDefinition SuspensionDef;
 
         // from MyMotorSuspension.GetTopGridMatrix()
-        public MatrixD GetWheelMatrix(Matrix localMatrix, MatrixD blockWorldMatrix, MatrixD gridWorldMatrix, float height)
+        public MatrixD GetWheelMatrix(ref Matrix localMatrix, ref MatrixD blockWorldMatrix, ref MatrixD gridWorldMatrix, float height)
         {
             Vector3 forward = localMatrix.Forward;
             Vector3 dummyPos = GetDummyLocalPosition(localMatrix, displacement: 0);
