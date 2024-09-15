@@ -1,9 +1,11 @@
 ﻿using Digi.BuildInfo.Features.LiveData;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
+using static VRageRender.MyBillboard;
 
 namespace Digi.BuildInfo.Features.Overlays.Specialized
 {
@@ -13,6 +15,9 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
         static Vector4 ColorLine = (Color * LaserOverlayAlpha).ToVector4();
 
         const float LineWidth = 0.05f;
+        const float LineIntensity = 10f;
+        const float MarkerWidth = LineWidth * 3;
+        const BlendTypeEnum LineBlend = BlendTypeEnum.AdditiveTop;
 
         public Suspension(SpecializedOverlays processor) : base(processor)
         {
@@ -57,7 +62,16 @@ namespace Digi.BuildInfo.Features.Overlays.Specialized
             //float axisLengthHalf = (def.Size.Z * MyDefinitionManager.Static.GetCubeSize(def.CubeSize)) * 1.5f;
 
             float totalTravel = (suspensionDef.MaxHeight - suspensionDef.MinHeight);
-            MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorLine, topMatrix.Translation + blockWorldMatrix.Forward * suspensionDef.MinHeight, blockWorldMatrix.Forward, totalTravel, LineWidth, BlendType);
+            Vector3 travelDir = blockWorldMatrix.Forward;
+            Vector3D minPos = topMatrix.Translation + travelDir * suspensionDef.MinHeight;
+            Vector3D maxPos = minPos + travelDir * totalTravel;
+
+            MatrixD camMatrix = MyAPIGateway.Session.Camera.WorldMatrix;
+            Vector3 rightScaled = (Vector3)Vector3D.Cross(travelDir, camMatrix.Forward) * MarkerWidth;
+
+            MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorLine, minPos - rightScaled, rightScaled, 2f, LineWidth, LineBlend, intensity: LineIntensity);
+            MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorLine, minPos, travelDir, totalTravel, LineWidth, LineBlend, intensity: LineIntensity);
+            MyTransparentGeometry.AddLineBillboard(MaterialLaser, ColorLine, maxPos - rightScaled, rightScaled, 2f, LineWidth, LineBlend, intensity: LineIntensity);
 
             if(drawInstance.LabelRender.CanDrawLabel())
             {
