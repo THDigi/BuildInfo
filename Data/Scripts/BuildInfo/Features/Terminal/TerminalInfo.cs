@@ -67,9 +67,6 @@ namespace Digi.BuildInfo.Features.Terminal
         private readonly Dictionary<MyObjectBuilderType, CustomInfoCall> formatLookup
                    = new Dictionary<MyObjectBuilderType, CustomInfoCall>(MyObjectBuilderType.Comparer);
 
-        private readonly HashSet<long> longSetTemp = new HashSet<long>();
-        private readonly List<IMySlimBlock> nearbyBlocksCache = new List<IMySlimBlock>(); // list for reuse only
-
         readonly ResourceStatsCollector ResourceStats;
 
         private MyResourceSinkComponent _sinkCache = null;
@@ -907,51 +904,38 @@ namespace Digi.BuildInfo.Features.Terminal
             if(upgradeModule.UpgradeCount == 0) // probably a platform for something else and not an actual upgrade module, therefore skip
                 return;
 
-            info.Append("Connections:");
+            BData_Base data = Main.LiveDataHandler.Get<BData_Base>(def);
+            // bdata optional here, would catch better informed errors if it prints -1 instead of blank
+            int portsTotal = (data?.UpgradePorts?.Count ?? -1);
 
-            if(upgradeModule.Connections > 0) // NOTE: upgradeModule.Connections is blocks not ports.
+            info.Append("Connections: ");
+
+            // NOTE: upgradeModule.Connections is blocks not ports.
+            if(upgradeModule.Connections > 0)
             {
-                info.Append('\n');
-
-                // since upgrade module doesn't expose what blocks it's connected to, I'll look for nearby blocks that have this upgrade module listed in their upgrades.
-                longSetTemp.Clear();
-
-                nearbyBlocksCache.Clear();
-                upgradeModule.SlimBlock.GetNeighbours(nearbyBlocksCache);
-
-                foreach(IMySlimBlock nearSlim in nearbyBlocksCache)
+                using(Utils.UpgradeModule.Token results = Utils.UpgradeModule.GetAttached(upgradeModule))
                 {
-                    if(nearSlim?.FatBlock == null)
-                        continue;
+                    int portsAttached = 0;
 
-                    if(longSetTemp.Contains(nearSlim.FatBlock.EntityId)) // already processed this item
-                        continue;
-
-                    longSetTemp.Add(nearSlim.FatBlock.EntityId);
-
-                    MyCubeBlock nearCube = (MyCubeBlock)nearSlim.FatBlock;
-
-                    if(nearCube.CurrentAttachedUpgradeModules == null)
-                        continue;
-
-                    foreach(MyCubeBlock.AttachedUpgradeModule module in nearCube.CurrentAttachedUpgradeModules.Values)
+                    foreach(Utils.UpgradeModule.AttachedTo attached in results.Attached)
                     {
-                        if(module.Block == upgradeModule)
-                        {
-                            string name = ((nearCube as IMyTerminalBlock)?.CustomName ?? nearCube.DisplayNameText);
-                            info.Append("• ").Append(module.SlotCount).Append("x ").Append(name);
+                        if(attached.Compatible)
+                            portsAttached += attached.Ports;
+                    }
 
-                            if(!module.Compatible)
-                                info.Append(" (incompatible)");
+                    info.Append(portsAttached).Append(" of ").Append(portsTotal).Append(" valid ports\n");
 
-                            info.Append('\n');
-                            break;
-                        }
+                    foreach(var attached in results.Attached)
+                    {
+                        string name = (attached.Block as IMyTerminalBlock)?.CustomName ?? attached.Block.DisplayNameText;
+                        info.Append("• ").Append(attached.Ports).Append(" to ").Append(name);
+
+                        if(!attached.Compatible)
+                            info.Append(" (incompatible)");
+
+                        info.Append('\n');
                     }
                 }
-
-                nearbyBlocksCache.Clear();
-                longSetTemp.Clear();
             }
             else
             {
